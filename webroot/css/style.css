@@ -1,0 +1,25 @@
+.ui-widget {
+	font-size: 12px;
+}
+
+.header {
+	color:  #2779aa;;
+}
+
+.wire-frame{
+	border: 1px solid #aed0ea;
+	width: 500px;
+	padding: 10px;
+}
+
+textarea{
+	border-color: #aed0ea;
+	padding:0;
+	margin: 0;
+	width: 525px;
+}
+
+.footnote{
+	font-size: 10px;
+	padding-top: 5px;;
+}

@@ -1,0 +1,184 @@
+<html>
+
+<head>
+	<link href="css/cupertino/jquery-ui-1.10.0.custom.css" rel="stylesheet">
+	<link href="css/style.css" rel="stylesheet">
+
+	<script src="js/jquery.1.9.0.min.js"></script>
+	<script src="js/highcharts.js"></script>
+	<script src="js/highcharts-more.js"></script>
+	<script src="js/pulse.js"></script>
+	<script src="js/pulse-query.js"></script>
+	<script src="js/graph.js"></script>
+	<script src="js/jquery-ui-1.10.0.custom.min.js"></script>
+	<script src="js/graph.js"></script>
+
+	<script>
+		var metricNames = [];
+		var tagNames = [];
+		var tagValues = [];
+
+		$(function () {
+			$("#submitButton").button().click(updateChart);
+			$("#startTime").datepicker();
+			$("#endTime").datepicker();
+			$("#errorContainer").hide();
+
+			$("#addTagButton").button({
+				text: false,
+				icons: {
+					primary: 'ui-icon-plus'
+				}
+			}).click(addTag);
+
+			$.getJSON("/api/v1/metricnames", function (json) {
+				metricNames = json.results;
+				$("#metric")
+						.autocomplete({
+							source: metricNames
+						});
+			});
+
+			$.getJSON("/api/v1/tagnames", function (json) {
+				tagNames = json.results;
+				$("[name='tagName']")
+						.autocomplete({
+							source: tagNames
+						});
+				$("#groupBy")
+						.autocomplete({
+							source: tagNames
+						});
+			});
+
+			$.getJSON("/api/v1/tagvalues", function (json) {
+				tagValues = json.results;
+				$("[name='tagValue']")
+						.autocomplete({
+							source: tagValues
+						});
+			});
+		});
+	</script>
+
+</head>
+
+<body>
+
+<H2 class="header">OpenTSDB 2</H2>
+
+<span class="header ui-widget">Time Range</span>
+
+<div class="wire-frame">
+	<table>
+		<tr>
+			<td colspan="3" align="center" class="ui-widget header">Absolute</td>
+			<td colspan="3" align="center" class="ui-widget header">Relative</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td class="ui-widget">From*</td>
+			<td><input id="startTime" class="ui-widget" type="text"/></td>
+			<td class="ui-widget">or</td>
+			<td><input id="startRelativeValue" class="ui-widget" style="width: 30px;" type="text">
+				<select id="startRelativeUnit" class="ui-widget">
+					<option value="years">Years</option>
+					<option value="months">Months</option>
+					<option value="weeks">Weeks</option>
+					<option value="days">Days</option>
+					<option value="hours">Hours</option>
+					<option value="minutes">Minutes</option>
+					<option value="seconds">Seconds</option>
+				</select>
+			</td>
+			<td class="ui-widget"> ago</td>
+		</tr>
+		<!-- todo how to let the user know that end time defaults to today. use Required fields -->
+		<tr>
+			<td class="ui-widget">To</td>
+			<td><input id="endTime" class="ui-widget" type="text"/></td>
+			<td class="ui-widget">or</td>
+			<td><input id="endRelativeValue" class="ui-widget" style="width: 30px;" type="text">
+				<select id="endRelativeUnit" class="ui-widget">
+					<option value="years">Years</option>
+					<option value="months">Months</option>
+					<option value="weeks">Weeks</option>
+					<option value="days">Days</option>
+					<option value="hours">Hours</option>
+					<option value="minutes">Minutes</option>
+					<option value="seconds">Seconds</option>
+				</select>
+			</td>
+			<td class="ui-widget"> ago</td>
+		</tr>
+	</table>
+</div>
+
+<p></p>
+
+<span class="header ui-widget">Metric</span>
+
+<div class="wire-frame">
+	<table>
+		<tr>
+			<td class="ui-widget">Name*</td>
+			<td><input id="metric" class="ui-widget" type="text"></td>
+		</tr>
+		<tr>
+			<td class="ui-widget">Group By</td>
+			<td><input id="groupBy" class="ui-widget" type="text" value=""></td>
+		</tr>
+		<tr>
+			<td class="ui-widget">Aggregate</td>
+			<td>
+				<select id="aggregate" class="ui-widget">
+					<option value="none">NONE</option>
+					<option value="min">MIN</option>
+					<option value="max">MAX</option>
+					<option value="sum" selected="selected">SUM</option>
+					<option value="avg">AVG</option>
+					<option value="dev">DEV</option>
+				</select>
+			</td>
+		</tr>
+	</table>
+
+	<div id="tagsContainer" style="margin-top: 10px;">
+		<span class="header ui-widget">Tags</span>
+
+		<div>
+			<div name="tags" id="tagContainer" style="float:left;">
+				<span class="ui-widget">Name</span>
+				<span><input id="tagName" name="tagName" class="ui-widget" type="text"
+				             style="margin-left: 4px;"/></span>
+				<span class="ui-widget" style="margin-left: 4px;">Value</span>
+				<span><input id="tagValue" name="tagValue" class="ui-widget" type="text"
+				             style="margin-left: 4px;"/></span>
+			</div>
+			<button id="addTagButton" style="padding-bottom: 3px; margin-left: 4px;"></button>
+		</div>
+	</div>
+</div>
+<div class="ui-widget footnote">* Required Fields</div>
+
+<p>
+	<button id="submitButton" style="margin-top: 10px;">Load Graph</button>
+
+<div class="ui-widget">
+	<div id="errorContainer" class="ui-state-error ui-corner-all" style="padding:5px; width: 500px;"></div>
+	<p>
+
+	<p>
+</div>
+
+<span class="header ui-widget">Query JSON</span>
+<br>
+<textarea id="query-text" class="ui-widget" rows="5"></textarea>
+
+<p></p>
+<span class="header ui-widget">Query Time: </span><span id="queryTime" class="ui-widget"></span>
+
+<div id="container"></div>
+
+</body>
+</html>

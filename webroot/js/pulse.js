@@ -1,0 +1,179 @@
+if (pulse === undefined) {
+	var pulse = {};
+}
+
+pulse.MetricException = function (message) {
+	this.message = message;
+};
+
+pulse.Unit =  //Values used for relative start and end times
+{
+	SECONDS: "seconds",
+	MINUTES: "minutes",
+	HOURS: "hours",
+	DAYS: "days",
+	WEEKS: "weeks",
+	MONTHS: "months",
+	YEARS: "years"
+};
+
+pulse.Aggregate =
+{
+	NONE: "none",
+	MIN: "min",
+	MAX: "max",
+	SUM: "sum",
+	AVG: "avg",
+	DEV: "dev"
+};
+
+/**
+ name: Name of the metric
+ Aggregate: Aggregate function to use (see Aggregate above)
+ rate: (boolean) show rate
+ groupBy: tag to group results by
+ */
+pulse.Metric = function (name, aggregate, rate, groupBy) {
+	this.tags = new Object();
+	this.name = name;
+	this.aggregate = aggregate;
+	this.rate = rate;
+
+	if (groupBy && groupBy != undefined) {
+		this.group_by = groupBy;
+	}
+
+	this.addTag = function (name, value) {
+		this.tags[name] = value;
+	};
+
+	this.setSampling = function (duration, unit, aggregate) {
+		this.sampling = new Object();
+		this.sampling.duration = duration;
+		this.sampling.unit = unit;
+		this.sampling.aggregate = aggregate;
+	}
+
+};
+
+/**
+ cacheTime: the amount of time in seconds to cache the query
+ */
+pulse.MetricQuery = function (cacheTime) {
+	this.metrics = new Array();
+	this.cache_time = 0;
+	if (cacheTime != undefined)
+		this.cache_time = cacheTime;
+
+	/**
+	 */
+	this.setStartAbsolute = function (value) {
+		this.start_absolute = value;
+		if (this.start_relative != undefined)
+			throw new pulse.MetricException(
+				'You cannot define both start_absolute and start_relative');
+	};
+
+	/**
+	 */
+	this.setStartRelative = function (value, unit) {
+		this.start_relative = new Object();
+		this.start_relative.value = value;
+		this.start_relative.unit = unit;
+		if (this.start_absolute != undefined)
+			throw new pulse.MetricException(
+				'You cannot define both start_absolute and start_relative');
+	};
+
+	/**
+	 */
+	this.setEndAbsolute = function (value) {
+		this.end_absolute = value;
+		if (this.end_relative != undefined)
+			throw new pulse.MetricException(
+				'You cannot define both end_absolute and end_relative');
+	};
+
+	/**
+	 */
+	this.setEndRelative = function (value, unit) {
+		this.end_relative = new Object();
+		this.end_relative.value = value;
+		this.end_relative.unit = unit;
+		if (this.end_absolute != undefined)
+			throw new pulse.MetricException(
+				'You cannot define both end_absolute and end_relative');
+	};
+
+	/**
+	 Used to add a pulse.Metric object to the MetricQuery
+	 */
+	this.addMetric = function (metric) {
+		this.metrics.push(metric);
+	};
+
+	/**
+	 Called to validate the MetricQuery object
+	 */
+	this.validate = function () {
+		if ((this.start_relative == undefined) && (this.start_absolute == undefined))
+			throw new pulse.MetricException(
+				'You must define a start_relative or a start_absolute property');
+
+		if (this.metrics.length == 0)
+			throw new pulse.MetricException(
+				'You must specify one or more metrics to query upon');
+	}
+};
+
+pulse.showError = function (message) {
+	alert(message);
+};
+
+//---------------------------------------------------------------------------
+/**
+ @param values Array of arrays of timestamp, value
+ @returns: Array[0-6] each containing an array of values for that day
+ */
+pulse.collectWeeklyValues = function (values) {
+	var week = new Array();
+
+	$.each(values, function (i, val) {
+		var date = new Date(0);
+		date.setUTCSeconds(val[0]);
+		var day = date.getDay();
+		if (week[day] == undefined)
+			week[day] = new Array();
+
+		week[day].push(val[1]);
+	});
+
+	return (week);
+};
+
+
+//---------------------------------------------------------------------------
+/**
+ Takes the return from collectWeeklyValues and averages them to one number
+ @return: returns an array of numbers for each day of the week
+ */
+pulse.averageWeeklyValues = function (weekData) {
+	var weekAvg = new Array();
+
+	for (i = 0; i < 7; i++) {
+		if (weekData[i] == undefined) {
+			weekAvg[i] = 0;
+		}
+		else {
+			var dayValues = weekData[i];
+			var sum = 0;
+			dayValues.forEach(function (element) {
+				sum += element;
+			});
+			weekAvg[i] = sum / dayValues.length;
+		}
+	}
+
+	return weekAvg;
+};
+

@@ -1,0 +1,25 @@
+
+    "start_relative": {
+        "value": 5,
+        "unit": "days"
+    },
+    "end_relative": {
+        "value": 10,
+        "unit": "years"
+    },
+    "metrics": [
+        {
+            "aggregate": "sum",
+            "sampling": {
+                "duration": 10,
+                "unit": "minutes",
+                "aggregate": "avg"
+            },
+            "rate": false,
+            "tags": {
+                "host": "foo",
+                "type": "bar"
+            }
+        }
+    ]
+}

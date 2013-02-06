@@ -1,0 +1,10 @@
+*.ipr
+*.iws
+*.iml
+var/*
+target/*
+build/*
+*/target/*
+.gradle/*
+out/*
+dependency.txt

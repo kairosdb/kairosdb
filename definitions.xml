@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+
+<definitions xmlns="http://www.cpmake.org" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+	<definition name="genormous" command="java">
+		<!-- <command name="genorm">java</command>
+		<command name="genquery">java</command> -->
+
+		<option name="classpath" pattern="(.+)">-cp $1</option>
+		<option name="genorm">genorm.Genormous</option>
+		<option name="genquery">genorm.QueryGen</option>
+
+		<option name="source" pattern="(.+)">-s $1</option>
+
+	</definition>
+
+
+	<!-- ======================================================================= -->
+	<definition name="linux-notify" command="notify-send">
+		<option name="title" pattern="(.+)">"$1"</option>
+		<option name="message" pattern="(.+)">"$1"</option>
+	</definition>
+
+</definitions>

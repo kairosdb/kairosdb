@@ -1,0 +1,12 @@
+[{
+	"name": "archive.file.tracked",
+	"value": 123,
+	"timestamp": 1349109376,
+	"tags":{"host":"test"}
+},
+{
+	"name": "archive.file.search",
+	"value": 321,
+	"timestamp": 0,
+	"tags":{"host":"test"}
+}]

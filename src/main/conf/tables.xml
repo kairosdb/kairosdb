@@ -1,0 +1,197 @@
+<!DOCTYPE tables SYSTEM "http://genormous.googlecode.com/svn/trunk/genormous/doc/tables_1_4.dtd">
+
+<tables>
+	<configuration>
+		<option name="genorm.package" value="net.opentsdb.datastore.h2.orm"/>
+		<option name="genorm.destination" value="src/main/java/net/opentsdb/datastore/h2/orm"/>
+
+		<type_map>
+			<type custom="integer" java="int" db="INT"/>
+			<type custom="long" java="long" db="BIGINT"/>
+			<type custom="double" java="double" db="DOUBLE"/>
+			<type custom="date" java="java.sql.Date" db="DATE"/>
+			<type custom="boolean" java="boolean" db="BOOLEAN"/>
+			<type custom="string" java="String" db="VARCHAR"/>
+			<type custom="timestamp" java="java.sql.Timestamp" db="TIMESTAMP"/>
+			<type custom="binary" java="byte[]" db="BYTEA"/>
+			<type custom="money" java="java.math.BigDecimal" db="DECIMAL"/>
+			<type custom="version" java="Double" db="DOUBLE PRECISION"/>
+		</type_map>
+
+		<plugin class="genorm.plugins.dbsupport.HSQLDB"/>
+	</configuration>
+
+	<table name="metric">
+		<property key="hsqldb_tableType" value="CACHED"/>
+		<col name="id" type="string" primary_key="true">
+			<comment>id is the combination of the name and tags</comment>
+		</col>
+		<col name="name" type="string"/>
+	</table>
+
+	<table name="tag">
+		<property key="hsqldb_tableType" value="CACHED"/>
+		<col name="name" type="string" primary_key="true"/>
+		<col name="value" type="string" primary_key="true"/>
+	</table>
+
+	<table name="data_point">
+		<property key="hsqldb_tableType" value="CACHED"/>
+		<col name="id" type="integer" primary_key="true"/>
+		<col name="metric_id" type="string">
+			<reference table="metric" column="id"/>
+		</col>
+		<col name="timestamp" type="timestamp"/>
+		<col name="long_value" type="long"/>
+		<col name="double_value" type="double"/>
+
+		<table_query name="for_metric" result_type="multi">
+			<input>
+				<param name="metric_name" type="string" test="foo"/>
+				<param name="start_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
+				<param name="end_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
+			</input>
+			<replace>
+				<param name="tags" tag="tags" type="string" test=""/>
+			</replace>
+			<sql>
+				from data_point this, metric m, metric_tag mt
+				where
+				this."metric_id" = m."id" and mt."metric_id" = m."id"
+				and m."name" = ?
+				and this."timestamp" &gt;= ?
+				and this."timestamp" &lt;= ?
+				%tags%
+				order by this."timestamp"
+			</sql>
+		</table_query>
+	</table>
+
+	<table name="metric_tag">
+		<property key="hsqldb_tableType" value="CACHED"/>
+		<col name="metric_id" type="string" primary_key="true">
+			<reference table="metric" column="id"/>
+		</col>
+		<col name="tag_name" type="string" primary_key="true">
+			<reference table="tag" column="name"/>
+		</col>
+		<col name="tag_value" type="string" primary_key="true">
+			<reference table="tag" column="value"/>
+		</col>
+	</table>
+
+
+	<!-- ======================================================================= -->
+	<queries>
+		<query name="metric_names">
+			<input>
+			</input>
+			<return>
+				<param name="name" type="string"/>
+			</return>
+			<sql>
+				select distinct "name" from metric
+			</sql>
+		</query>
+
+		<query name="tag_names">
+			<input>
+			</input>
+			<return>
+				<param name="name" type="string"/>
+			</return>
+			<sql>
+				select distinct "name" from tag
+			</sql>
+		</query>
+
+		<query name="tag_values">
+			<input>
+			</input>
+			<return>
+				<param name="value" type="string"/>
+			</return>
+			<sql>
+				select distinct "value" from tag
+			</sql>
+		</query>
+
+		<query name="tags_in_query">
+			<comment>Returns the super set of tags that are in a datapoint set</comment>
+			<input>
+				<param name="metric_name" type="string" test="foo"/>
+				<param name="start_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
+				<param name="end_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
+			</input>
+			<replace>
+				<param name="tags" tag="tags" type="string" test=""/>
+			</replace>
+			<return>
+				<param name="tag_name" type="string"/>
+				<param name="tag_value" type="string"/>
+			</return>
+			<sql>
+				select distinct mt."tag_name", mt."tag_value" from
+				data_point dp, metric_tag mt
+				where
+				dp."metric_id" = mt."metric_id" and
+				dp."id" in (
+					select dp."id"
+					from data_point dp, metric m, metric_tag mt
+					where
+					dp."metric_id" = m."id" and mt."metric_id" = m."id"
+					and m."name" = ?
+					and dp."timestamp" &gt;= ?
+					and dp."timestamp" &lt;= ?
+					%tags%
+					)
+			</sql>
+		</query>
+		<!--<query name="books_by_author">
+			<input>
+				<param name="name" type="string" test="Tolkien"/>
+			</input>
+			<return>
+				<param name="title" type="string"/>
+				<param name="isbn" type="string"/>
+			</return>
+			<sql>
+				select b."title", b."isbn"
+				from
+				author a, book b
+				where
+				a."name" = ? and
+				b."author" = a."author_id"
+			</sql>
+		</query>
+
+		<query name="all_books">
+			<input>
+			</input>
+			<return>
+				<param name="title" type="string"/>
+				<param name="author" type="string"/>
+			</return>
+			<sql>
+				select b."title", a."name" as author
+				from
+				book b, author a
+				where
+				b."author" = a."author_id"
+			</sql>
+		</query>
+
+		<query name="all_authors">
+			<input>
+			</input>
+			<return>
+				<param name="author_id" type="integer"/>
+				<param name="name" type="string"/>
+			</return>
+			<sql>
+				select "author_id", "name"
+				from author
+			</sql>
+		</query>-->
+	</queries>
+</tables>

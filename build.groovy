@@ -21,7 +21,7 @@ println("===============================================");
 
 
 programName = "opentsdb2"
-version = "2.0.0-alpha"
+version = "2.0.0-alpha-2"
 release = "1" //package release number
 summary = "OpenTSDB 2"
 description = """\
@@ -46,6 +46,9 @@ ivy = new IvyAddon().setup()
 
 jp = new JavaProgram().setProgramName(programName)
 		.setup()
+
+jp.getCompileRule().getDefinition().set("target", "1.6")
+jp.getCompileRule().getDefinition().set("source", "1.6")
 
 additionalFiles = new RegExFileSet("src/main/java", ".*\\.sql").recurse()
 jp.getJarRule().addFileSet(additionalFiles)
@@ -113,24 +116,29 @@ rpmRule = new SimpleRule("package-rpm").setDescription("Build RPM Package")
 def doRPM(Rule rule)
 {
 	rpmBuilder = new Builder()
-	rpmBuilder.setDescription(description)
-	rpmBuilder.setGroup("System Environment/Daemons")
-	rpmBuilder.setLicense("licesnse")
-	rpmBuilder.setPackage(programName, version, release)
-	rpmBuilder.setPlatform(Architecture.NOARCH, Os.LINUX)
-	rpmBuilder.setSummary(summary)
-	rpmBuilder.setType(RpmType.BINARY)
-	rpmBuilder.setUrl("http://code.google.com/p/opentsdb2/")
-	rpmBuilder.setVendor("Proofpoint Inc.")
-	rpmBuilder.addDependencyMore("java", "1.6.0")
-	rpmBuilder.setProvides(programName)
-	rpmBuilder.setPrefixes(rpmBaseInstallDir)
+	rpmBuilder.with
+			{
+				description = description
+				group = "System Environment/Daemons"
+				license = "license"
+				setPackage(programName, version, release)
+				setPlatform(Architecture.NOARCH, Os.LINUX)
+				summary = summary
+				type = RpmType.BINARY
+				url = "http://code.google.com/p/opentsdb2/"
+				vendor = "Proofpoint Inc."
+				addDependencyMore("java", "1.6.0")
+				provides = programName
+				prefixes = rpmBaseInstallDir
+			}
+
 
 	for (AbstractFileSet fs in libFileSets)
 		addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/lib", fs)
 
 	addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/bin", scriptsFileSet)
 
+	rpmBuilder.addFile("/etc/init.d/opentsdb2", new File("src/scripts/opentsdb2-service.sh"), 0755)
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/opentsdb.properties", new File("src/main/resources/opentsdb.properties"))
 
 	for (AbstractFileSet.File f : webrootFileSet.getFiles())

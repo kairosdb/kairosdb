@@ -192,15 +192,23 @@ public class CachedSearchResult
 		}
 	}
 
-	public void addDataPoint(long timestamp, long value)
+	public void addDataPoint(long timestamp, long value) throws IOException
 	{
+		if (!m_writeBuffer.hasRemaining())
+		{
+			flushWriteBuffer();
+		}
 		m_writeBuffer.putLong(timestamp);
 		m_writeBuffer.put(LONG_FLAG);
 		m_writeBuffer.putLong(value);
 	}
 
-	public void addDataPoint(long timestamp, double value)
+	public void addDataPoint(long timestamp, double value) throws IOException
 	{
+		if (!m_writeBuffer.hasRemaining())
+		{
+			flushWriteBuffer();
+		}
 		m_writeBuffer.putLong(timestamp);
 		m_writeBuffer.put(DOUBLE_FLAG);
 		m_writeBuffer.putDouble(value);

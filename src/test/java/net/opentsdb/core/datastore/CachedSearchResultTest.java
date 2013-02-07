@@ -19,11 +19,14 @@ import net.opentsdb.core.DataPoint;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CachedSearchResultTest
 {
@@ -78,6 +81,70 @@ public class CachedSearchResultTest
 		assertValues(rows.get(1), 1L, 1.1, 2L, 2.1);
 
 		assertValues(rows.get(2), 3L, 3.1, 4L, 4.1);
+	}
+
+	@Test
+	public void test_AddLongsBeyondBufferSize() throws IOException
+	{
+		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
+		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult("metric2", tempFile);
+
+		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
+		csResult.startDataPointSet(Collections.<String, String>emptyMap());
+
+		long now = System.currentTimeMillis();
+		for (int i = 0; i < numberOfDataPoints; i++)
+		{
+			csResult.addDataPoint(now, 42);
+		}
+
+		csResult.endDataPoints();
+
+		List<TaggedDataPoints> rows = csResult.getRows();
+		TaggedDataPoints taggedDataPoints = rows.iterator().next();
+
+		int count = 0;
+		while(taggedDataPoints.hasNext())
+		{
+			DataPoint dataPoint = taggedDataPoints.next();
+			assertThat(dataPoint.getLongValue(), equalTo(42L));
+			count++;
+		}
+
+		assertThat(count, equalTo(numberOfDataPoints));
+
+	}
+
+	@Test
+	public void test_AddDoublesBeyondBufferSize() throws IOException
+	{
+		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
+		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult("metric3", tempFile);
+
+		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
+		csResult.startDataPointSet(Collections.<String, String>emptyMap());
+
+		long now = System.currentTimeMillis();
+		for (int i = 0; i < numberOfDataPoints; i++)
+		{
+			csResult.addDataPoint(now, 42.2);
+		}
+
+		csResult.endDataPoints();
+
+		List<TaggedDataPoints> rows = csResult.getRows();
+		TaggedDataPoints taggedDataPoints = rows.iterator().next();
+
+		int count = 0;
+		while(taggedDataPoints.hasNext())
+		{
+			DataPoint dataPoint = taggedDataPoints.next();
+			assertThat(dataPoint.getDoubleValue(), equalTo(42.2));
+			count++;
+		}
+
+		assertThat(count, equalTo(numberOfDataPoints));
+
 	}
 
 	private void assertValues(TaggedDataPoints dataPoints, Number... numbers)

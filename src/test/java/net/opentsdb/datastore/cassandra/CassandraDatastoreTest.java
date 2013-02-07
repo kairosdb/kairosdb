@@ -14,14 +14,15 @@ package net.opentsdb.datastore.cassandra;
 
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.DataPointSet;
+import net.opentsdb.core.datastore.DataPointGroup;
 import net.opentsdb.core.datastore.DatastoreMetricQuery;
+import net.opentsdb.core.datastore.QueryMetric;
 import net.opentsdb.core.exception.DatastoreException;
 import net.opentsdb.datastore.DatastoreMetricQueryImpl;
 import net.opentsdb.datastore.DatastoreTestHelper;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,6 +41,11 @@ import static junit.framework.TestCase.assertEquals;
 public class CassandraDatastoreTest extends DatastoreTestHelper
 {
 	public static final String ROW_KEY_TEST_METRIC = "row_key_test_metric";
+	public static final String ROW_KEY_BIG_METRIC = "row_key_big_metric";
+
+	private static final int MAX_ROW_READ_SIZE=1024;
+	private static final int OVERFLOW_SIZE = MAX_ROW_READ_SIZE * 2 + 10;
+
 	private static CassandraDatastore s_datastore;
 	private static long s_dataPointTime;
 
@@ -81,13 +87,25 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addDataPoint(new DataPoint(s_dataPointTime, 42));
 
 		s_datastore.putDataPoints(dpSet);
+
+
+		// Add a row of data that is larger than MAX_ROW_READ_SIZE
+		dpSet = new DataPointSet(ROW_KEY_BIG_METRIC);
+		dpSet.addTag("host", "E");
+
+		for (int i = OVERFLOW_SIZE; i > 0; i--)
+		{
+			dpSet.addDataPoint(new DataPoint(s_dataPointTime - (long)i, 42));
+		}
+
+		s_datastore.putDataPoints(dpSet);
 	}
 
 	@BeforeClass
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
 		s_datastore = new CassandraDatastore("localhost",
-				"9160", 1, 7257600000L, 1024);
+				"9160", 1, 7257600000L, MAX_ROW_READ_SIZE);
 
 		DatastoreTestHelper.s_datastore = s_datastore;
 
@@ -107,9 +125,9 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public void test_getKeysForQuery()
 	{
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
-				Collections.EMPTY_MAP, s_dataPointTime, s_dataPointTime);
+				Collections.<String, String>emptyMap(), s_dataPointTime, s_dataPointTime);
 
-		List<DataPointsRowKey> keys = ((CassandraDatastore)s_datastore).getKeysForQuery(query);
+		List<DataPointsRowKey> keys = s_datastore.getKeysForQuery(query);
 
 		assertEquals(4, keys.size());
 	}
@@ -123,9 +141,32 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
 				tagFilter, s_dataPointTime, s_dataPointTime);
 
-		List<DataPointsRowKey> keys = ((CassandraDatastore)s_datastore).getKeysForQuery(query);
+		List<DataPointsRowKey> keys = s_datastore.getKeysForQuery(query);
 
 		assertEquals(2, keys.size());
+	}
+
+	@Test
+	public void test_rowLargerThanMaxReadSize() throws DatastoreException
+	{
+		Map<String, String> tagFilter = new HashMap<String, String>();
+		tagFilter.put("host", "E");
+
+		QueryMetric query = new QueryMetric(s_dataPointTime - OVERFLOW_SIZE, 0, ROW_KEY_BIG_METRIC, "none");
+		query.setEndTime(s_dataPointTime);
+		query.setTags(tagFilter);
+
+		List<DataPointGroup> results = s_datastore.query(query);
+
+		DataPointGroup dataPointGroup = results.get(0);
+		int counter = 0;
+		while(dataPointGroup.hasNext())
+		{
+			dataPointGroup.next();
+			counter++;
+		}
+
+		assertEquals(OVERFLOW_SIZE, counter);
 	}
 
 }

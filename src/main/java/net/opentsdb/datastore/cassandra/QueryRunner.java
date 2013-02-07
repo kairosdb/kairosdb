@@ -101,11 +101,11 @@ public class QueryRunner
 			sliceQuery.setColumnFamily(m_columnFamily);
 			sliceQuery.setKey(key);
 
-			List<HColumn<Long, LongOrDouble>> columns = null;
+			List<HColumn<Long, LongOrDouble>> columns = unfinishedRow.getColumnSlice().getColumns();
 
 			do
 			{
-				Long lastTime = unfinishedRow.getColumnSlice().getColumns().get(m_maxRowSize -1).getName();
+				Long lastTime = columns.get(m_maxRowSize -1).getName();
 
 				sliceQuery.setRange(lastTime+1, m_endTime, false, m_maxRowSize);
 

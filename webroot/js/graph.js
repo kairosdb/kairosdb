@@ -57,7 +57,7 @@ function updateChart() {
 	}
 
 	$("#query-text").val(JSON.stringify(query, null, 2));
-	showChartForQuery(metricName, "", "", "", "", query);
+	showChartForQuery(metricName, " (Click and drag to zoom)", "", "", "", query);
 }
 
 function showErrorMessage(message){
@@ -120,7 +120,7 @@ function drawSingleSeriesChart(title, subTitle, chartType, yAxisTitle, seriesTit
 		},
 		title:{
 			text:title,
-			x:-20 //center
+			x:-20, //center
 		},
 		subtitle:{
 			text:subTitle,

@@ -14,26 +14,24 @@
 package net.opentsdb.core.telnet;
 
 import com.google.inject.Inject;
-import net.opentsdb.core.ProtocolService;
+import net.opentsdb.core.OpenTsdbService;
+import net.opentsdb.core.exception.TsdbException;
 import org.jboss.netty.channel.*;
 import com.google.inject.name.Named;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.Delimiters;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.string.StringDecoder;
 import org.jboss.netty.handler.codec.string.StringEncoder;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Executors;
 
 public class TelnetServer extends SimpleChannelUpstreamHandler implements ChannelPipelineFactory,
-		ProtocolService
+		OpenTsdbService
 {
 	private int m_port;
 	private Map<String, TelnetCommand> m_commands;
@@ -56,23 +54,6 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 		}
 	}
 
-	public void run()
-	{
-		// Configure the server.
-		ServerBootstrap bootstrap = new ServerBootstrap(
-				new NioServerSocketChannelFactory(
-				Executors.newCachedThreadPool(),
-				Executors.newCachedThreadPool()));
-
-		// Configure the pipeline factory.
-		bootstrap.setPipelineFactory(this);
-		bootstrap.setOption("child.tcpNoDelay", true);
-		bootstrap.setOption("child.keepAlive", true);
-		bootstrap.setOption("reuseAddress", true);
-
-		// Bind and start to accept incoming connections.
-		bootstrap.bind(new InetSocketAddress(m_port));
-	}
 
 	@Override
 	public ChannelPipeline getPipeline() throws Exception
@@ -121,5 +102,30 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 					+ " while serving " + pretty_message, e);
 			exceptions_caught.incrementAndGet();*/
 		}
+	}
+
+	@Override
+	public void start() throws TsdbException
+	{
+		// Configure the server.
+		ServerBootstrap bootstrap = new ServerBootstrap(
+				new NioServerSocketChannelFactory(
+						Executors.newCachedThreadPool(),
+						Executors.newCachedThreadPool()));
+
+		// Configure the pipeline factory.
+		bootstrap.setPipelineFactory(this);
+		bootstrap.setOption("child.tcpNoDelay", true);
+		bootstrap.setOption("child.keepAlive", true);
+		bootstrap.setOption("reuseAddress", true);
+
+		// Bind and start to accept incoming connections.
+		bootstrap.bind(new InetSocketAddress(m_port));
+	}
+
+	@Override
+	public void stop()
+	{
+
 	}
 }

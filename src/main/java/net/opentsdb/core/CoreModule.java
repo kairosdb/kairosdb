@@ -38,11 +38,7 @@ public class CoreModule extends AbstractModule
 	@Override
 	protected void configure()
 	{
-		bind(TelnetServer.class).in(Singleton.class);
-		bind(TelnetCommand.class).annotatedWith(Names.named("put")).to(PutCommand.class);
-		bind(CommandProvider.class).to(GuiceCommandProvider.class);
-
-		String dsClassName = m_props.getProperty(DATASTORE_CLASS_PROPERTY);
+		/*String dsClassName = m_props.getProperty(DATASTORE_CLASS_PROPERTY);
 		try
 		{
 			Class dsClass = Class.forName(dsClassName);
@@ -52,7 +48,7 @@ public class CoreModule extends AbstractModule
 		{
 			throw new MissingResourceException("Unable to load Datastore class",
 					dsClassName, DATASTORE_CLASS_PROPERTY);
-		}
+		}*/
 
 		Names.bindProperties(binder(), m_props);
 	}

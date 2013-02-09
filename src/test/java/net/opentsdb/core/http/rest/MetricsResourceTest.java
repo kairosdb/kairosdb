@@ -25,7 +25,7 @@ import net.opentsdb.core.datastore.Datastore;
 import net.opentsdb.core.datastore.DatastoreMetricQuery;
 import net.opentsdb.core.datastore.TaggedDataPoints;
 import net.opentsdb.core.exception.DatastoreException;
-import net.opentsdb.core.http.JettyServerProvider;
+import net.opentsdb.core.http.WebServer;
 import net.opentsdb.core.http.WebServletModule;
 import net.opentsdb.testing.JsonResponse;
 import net.opentsdb.testing.TaggedDataPointsImpl;
@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -60,24 +61,24 @@ public class MetricsResourceTest
 	private static final String TAG_VALUES_URL = "http://localhost:9000/api/v1/tagvalues";
 
 	private static HttpClient client;
-	private static Server server;
+	private static WebServer server;
 
 	@BeforeClass
 	public static void startup() throws Exception
 	{
-		Injector injector = Guice.createInjector(new WebServletModule(), new AbstractModule()
+		Injector injector = Guice.createInjector(new WebServletModule(new Properties()), new AbstractModule()
 		{
 			private Datastore datastore = new TestDatastore();
 
 			@Override
 			protected void configure()
 			{
-				bind(Integer.class).annotatedWith(Names.named(JettyServerProvider.JETTY_PORT_PROPERTY)).toInstance(9000);
-				bind(String.class).annotatedWith(Names.named(JettyServerProvider.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
+				bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9000);
+				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
 				bind(Datastore.class).toInstance(datastore);
 			}
 		});
-		server = injector.getInstance(Server.class);
+		server = injector.getInstance(WebServer.class);
 		server.start();
 
 		client = new DefaultHttpClient();

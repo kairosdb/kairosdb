@@ -21,6 +21,8 @@ import net.opentsdb.core.http.rest.MetricsResource;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
 import org.eclipse.jetty.server.Server;
 
+import java.util.Properties;
+
 
 /**
  Created with IntelliJ IDEA.
@@ -31,18 +33,21 @@ import org.eclipse.jetty.server.Server;
  */
 public class WebServletModule extends ServletModule
 {
+	public WebServletModule(Properties props)
+	{
+	}
+
 	@Override
 	protected void configureServlets()
 	{
 		binder().requireExplicitBindings();
 		bind(GuiceFilter.class);
 
-		bind(Server.class).toProvider(JettyServerProvider.class)
-				.in(Singleton.class);
+		//Bind web server
+		bind(WebServer.class);
 
 		//Bind resource classes here
 		bind(MetricsResource.class).in(Scopes.SINGLETON);
-
 
 		bind(GuiceContainer.class);
 		// hook Jackson into Jersey as the POJO <-> JSON mapper

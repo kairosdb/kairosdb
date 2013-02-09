@@ -9,20 +9,22 @@
 
 start() {
         initlog -c "echo -n Starting OpenTSDB2 server: "
-        /opt/opentsd2/bin/opentsdb2.sh start
+        /opt/opentsdb2/bin/opentsdb2.sh start
         ### Create the lock file ###
         touch /var/lock/subsys/OpenTSDB2
         success $"OpenTSDB2 server startup"
         echo
 }
-# Restart the service FOO
+
+# Restart the service OpenTSDB2
 stop() {
-        initlog -c "echo -n Stopping FOO server: "
-        /opt/opentsd2/bin/opentsdb2.sh stop
+        initlog -c "echo -n Stopping OpenTSDB2 server: "
+        /opt/opentsdb2/bin/opentsdb2.sh stop
         ### Now, delete the lock file ###
         rm -f /var/lock/subsys/OpenTSDB2
         echo
 }
+
 ### main logic ###
 case "$1" in
   start)

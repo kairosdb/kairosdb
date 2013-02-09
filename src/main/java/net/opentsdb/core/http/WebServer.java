@@ -1,0 +1,86 @@
+package net.opentsdb.core.http;
+
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.google.inject.servlet.GuiceFilter;
+import net.opentsdb.core.OpenTsdbService;
+import net.opentsdb.core.exception.TsdbException;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.DefaultHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.DefaultServlet;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ Created with IntelliJ IDEA.
+ User: bhawkins
+ Date: 2/8/13
+ Time: 6:53 PM
+ To change this template use File | Settings | File Templates.
+ */
+public class WebServer implements OpenTsdbService
+{
+	public static final Logger logger = LoggerFactory.getLogger(WebServer.class);
+
+	public static final String JETTY_PORT_PROPERTY = "opentsdb.jetty.port";
+	public static final String JETTY_WEB_ROOT_PROPERTY = "opentsdb.jetty.static_web_root";
+
+	private int m_port;
+	private String m_webRoot;
+	private Server m_server;
+
+	@Inject
+	public WebServer(@Named(JETTY_PORT_PROPERTY)int port,
+			@Named(JETTY_WEB_ROOT_PROPERTY)String webRoot)
+	{
+		m_port = port;
+		m_webRoot = webRoot;
+	}
+
+	@Override
+	public void start() throws TsdbException
+	{
+		try
+		{
+			m_server = new Server(m_port);
+			ServletContextHandler servletContextHandler =
+					new ServletContextHandler();
+
+			servletContextHandler.addFilter(GuiceFilter.class, "/api/*", null);
+			servletContextHandler.addServlet(DefaultServlet.class, "/api/*");
+
+			ResourceHandler resourceHandler = new ResourceHandler();
+			resourceHandler.setDirectoriesListed(true);
+			resourceHandler.setWelcomeFiles(new String[]{"index.html"});
+			resourceHandler.setResourceBase(m_webRoot);
+
+			HandlerList handlers = new HandlerList();
+			handlers.setHandlers(new Handler[] { servletContextHandler, resourceHandler, new DefaultHandler() });
+			m_server.setHandler(handlers);
+
+			m_server.start();
+		}
+		catch (Exception e)
+		{
+			throw new TsdbException(e);
+		}
+	}
+
+	@Override
+	public void stop()
+	{
+		try
+		{
+			m_server.stop();
+			m_server.join();
+		}
+		catch (Exception e)
+		{
+			logger.error("Error stopping web server", e);
+		}
+	}
+}

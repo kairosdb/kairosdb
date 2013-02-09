@@ -8,3 +8,5 @@ build/*
 .gradle/*
 out/*
 dependency.txt
+.tablesawcache
+.idea

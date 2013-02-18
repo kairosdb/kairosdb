@@ -2,6 +2,15 @@
 	font-size: 12px;
 }
 
+.ui-widget-content{
+	/* Change tab content background */
+	background: none;;
+}
+.ui-widget-header{
+	/* Remove tab header border */
+	border: none;
+}
+
 .header {
 	color:  #2779aa;;
 }
@@ -22,4 +31,9 @@ textarea{
 .footnote{
 	font-size: 10px;
 	padding-top: 5px;;
+}
+
+button{
+	padding-bottom: 3px;
+	margin-left: 4px;
 }

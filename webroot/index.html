@@ -1,4 +1,4 @@
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 
 <head>
 	<link href="css/cupertino/jquery-ui-1.10.0.custom.css" rel="stylesheet">
@@ -23,13 +23,17 @@
 			$("#startTime").datepicker();
 			$("#endTime").datepicker();
 			$("#errorContainer").hide();
+			$("#metricTemplate").hide();
+			$("#tagTemplate").hide();
+			$("#tabs").tabs({'active': 0});
+			addMetric();
 
-			$("#addTagButton").button({
+			$("#addMetricButton").button({
 				text: false,
 				icons: {
 					primary: 'ui-icon-plus'
 				}
-			}).click(addTag);
+			}).click(addMetric);
 
 			$.getJSON("/api/v1/metricnames", function (json) {
 				metricNames = json.results;
@@ -116,49 +120,12 @@
 
 <p></p>
 
-<span class="header ui-widget">Metric</span>
+<span class="header ui-widget">Metrics</span><button id="addMetricButton"></button>
 
-<div class="wire-frame">
-	<table>
-		<tr>
-			<td class="ui-widget">Name*</td>
-			<td><input id="metric" class="ui-widget" type="text"></td>
-		</tr>
-		<tr>
-			<td class="ui-widget">Group By</td>
-			<td><input id="groupBy" class="ui-widget" type="text" value=""></td>
-		</tr>
-		<tr>
-			<td class="ui-widget">Aggregate</td>
-			<td>
-				<select id="aggregate" class="ui-widget">
-					<option value="none">NONE</option>
-					<option value="min">MIN</option>
-					<option value="max">MAX</option>
-					<option value="sum" selected="selected">SUM</option>
-					<option value="avg">AVG</option>
-					<option value="dev">DEV</option>
-				</select>
-			</td>
-		</tr>
-	</table>
-
-	<div id="tagsContainer" style="margin-top: 10px;">
-		<span class="header ui-widget">Tags</span>
-
-		<div>
-			<div name="tags" id="tagContainer" style="float:left;">
-				<span class="ui-widget">Name</span>
-				<span><input id="tagName" name="tagName" class="ui-widget" type="text"
-				             style="margin-left: 4px;"/></span>
-				<span class="ui-widget" style="margin-left: 4px;">Value</span>
-				<span><input id="tagValue" name="tagValue" class="ui-widget" type="text"
-				             style="margin-left: 4px;"/></span>
-			</div>
-			<button id="addTagButton" style="padding-bottom: 3px; margin-left: 4px;"></button>
-		</div>
-	</div>
+<div id="tabs" style="width:520px;">
+	<ul></ul>
 </div>
+
 <div class="ui-widget footnote">* Required Fields</div>
 
 <p>
@@ -179,6 +146,49 @@
 <span class="header ui-widget">Query Time: </span><span id="queryTime" class="ui-widget"></span>
 
 <div id="container"></div>
+
+<!-- Hidden Metric div used for cloning -->
+<div id="metricTemplate" class="metricContainer">
+	<table class="ui-widget">
+		<tr>
+			<td class="ui-widget">Name*</td>
+			<td><input class="ui-widget metricName" type="text"></td>
+		</tr>
+		<tr>
+			<td class="ui-widget">Group By</td>
+			<td><input class="ui-widget metricGroupBy" type="text" value=""></td>
+		</tr>
+		<tr>
+			<td class="ui-widget">Aggregate</td>
+			<td>
+				<select class="ui-widget metricAggregate">
+					<option value="none">NONE</option>
+					<option value="min">MIN</option>
+					<option value="max">MAX</option>
+					<option value="sum" selected="selected">SUM</option>
+					<option value="avg">AVG</option>
+					<option value="dev">DEV</option>
+				</select>
+			</td>
+		</tr>
+	</table>
+
+	<p></p>
+	<span class="header ui-widget">Tags</span> <button id="tagButton"></button>
+
+	<div id="tagsContainer" style="margin-bottom: 5px;"></div>
+</div>
+
+<!-- Hidden Tag div used for cloning -->
+<div id="tagTemplate" style="margin-top: 10px;">
+	<div name="tags" id="tagContainer">
+		<span class="ui-widget">Name</span>
+		<span><input id="tagName" name="tagName" class="ui-widget" type="text" style="margin-left: 4px;"/></span>
+		<span class="ui-widget" style="margin-left: 4px;">Value</span>
+		<span><input id="tagValue" name="tagValue" class="ui-widget" type="text" style="margin-left: 4px; margin-bottom: 5px;"/></span>
+	</div>
+</div>
+
 
 </body>
 </html>

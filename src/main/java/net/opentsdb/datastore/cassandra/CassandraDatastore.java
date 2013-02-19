@@ -188,6 +188,8 @@ public class CassandraDatastore extends Datastore
 			long rowTime;
 			long nextRow = 0L;
 			DataPointsRowKey rowKey = null;
+			//time the data is written.
+			long writeTime = System.currentTimeMillis();
 
 			for (DataPoint dp : dps.getDataPoints())
 			{
@@ -235,12 +237,12 @@ public class CassandraDatastore extends Datastore
 				if (dp.isInteger())
 				{
 					m_dataPointWriteBuffer.addData(rowKey, dp.getTimestamp(),
-							new LongOrDouble(dp.getLongValue()), dp.getTimestamp());
+							new LongOrDouble(dp.getLongValue()), writeTime);
 				}
 				else
 				{
 					m_dataPointWriteBuffer.addData(rowKey, dp.getTimestamp(),
-							new LongOrDouble(dp.getDoubleValue()), dp.getTimestamp());
+							new LongOrDouble(dp.getDoubleValue()), writeTime);
 				}
 			}
 		}

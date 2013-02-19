@@ -34,11 +34,11 @@ done
 
 if [ "$1" = "run" ] ; then
 	shift
-	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH net.opentsdb.core.Main -p conf/opentsdb.properties
+	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH net.opentsdb.core.Main -c run -p conf/opentsdb.properties
 elif [ "$1" = "start" ] ; then
 	shift
 	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH net.opentsdb.core.Main \
-		-p conf/opentsdb.properties >> "$TSDB_LOG_DIR/tsdb.log" 2>&1 &
+		-c run -p conf/opentsdb.properties >> "$TSDB_LOG_DIR/tsdb.log" 2>&1 &
 	echo $! > "$pid"
 elif [ "$1" = "stop" ] ; then
 	shift
@@ -48,6 +48,9 @@ elif [ "$1" = "stop" ] ; then
 		sleep 1;
 	done
 	rm $pid
+elif [ "$1" = "export" ] ; then
+	shift
+	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH net.opentsdb.core.Main -c export -p conf/opentsdb.properties $*
 else
 	echo "Unrecognized command."
 	exit 1

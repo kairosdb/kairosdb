@@ -114,7 +114,7 @@ function addMetric() {
 
 	// Add text listener to name
 	var $tab = $newMetric.find('.metricTab');
-	$metricContainer.find(".metricName").keyup(function (event) {
+	$metricContainer.find(".metricName").bind("change paste keyup autocompleteclose", function () {
 		var metricName = $(this).val();
 		if (metricName.length > 0) {
 			$tab.text(metricName);

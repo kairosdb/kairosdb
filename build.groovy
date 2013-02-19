@@ -200,11 +200,11 @@ new SimpleRule("run").setDescription("Runs opentsdb")
 
 def doRun(Rule rule)
 {
-	args = ""
+	args = "-c run"
 	//Check if you have a custom opentsdb.properties file and load it.
 	customProps = new File("opentsdb.properties")
 	if (customProps.exists())
-		args = "-p opentsdb.properties"
+		args += " -p opentsdb.properties"
 
 	debug = ""
 	if (rule.getProperty("DEBUG"))

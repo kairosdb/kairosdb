@@ -12,17 +12,25 @@
 // see <http://www.gnu.org/licenses/>
 package net.opentsdb.core;
 
+import com.google.common.collect.SetMultimap;
 import com.google.inject.*;
 import jcmdline.*;
+import net.opentsdb.core.datastore.DataPointGroup;
+import net.opentsdb.core.datastore.Datastore;
+import net.opentsdb.core.datastore.QueryMetric;
+import net.opentsdb.core.exception.DatastoreException;
 import net.opentsdb.core.exception.TsdbException;
 import net.opentsdb.core.http.WebServletModule;
 import net.opentsdb.core.telnet.TelnetServer;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.util.ajax.JSONObjectConvertor;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -37,19 +45,26 @@ public class Main
 			"a custom properties file", FileParam.IS_FILE & FileParam.IS_READABLE,
 			FileParam.OPTIONAL);
 
+	private static FileParam s_exportFile = new FileParam("f",
+			"file to save export to or read from depending on command", FileParam.IS_FILE,
+			FileParam.OPTIONAL);
+
+	private static StringParam s_operationCommand = new StringParam("c",
+			"command to run", new String[] {"run", "export", "import"});
+
 	private static Object s_shutdownObject = new Object();
 
 	private Injector m_injector;
 	private List<OpenTsdbService> m_services = new ArrayList<OpenTsdbService>();
 
 
-	public Main() throws IOException
+	public Main(File propertiesFile) throws IOException
 	{
 		Properties props = new Properties();
 		props.load(getClass().getClassLoader().getResourceAsStream("opentsdb.properties"));
 
-		if (s_propertiesFile.isSet())
-			props.load(new FileInputStream(s_propertiesFile.getValue()));
+		if (propertiesFile != null)
+			props.load(new FileInputStream(propertiesFile));
 
 		List<Module> moduleList = new ArrayList<Module>();
 		moduleList.add(new CoreModule(props));
@@ -67,7 +82,6 @@ public class Main
 					aClass = Class.forName(props.getProperty(propName));
 					if (Module.class.isAssignableFrom(aClass))
 					{
-						System.out.println(aClass.getName());
 						Constructor<?> constructor = null;
 
 						try
@@ -106,26 +120,99 @@ public class Main
 	{
 		CmdLineHandler cl = new VersionCmdLineHandler("Version 2.0",
 				new HelpCmdLineHandler("Opentsdb Help", "opentsdb", "Starts OpenTSDB",
-						new Parameter[] { s_propertiesFile }, null));
+						new Parameter[] { s_operationCommand, s_propertiesFile, s_exportFile }, null));
 
 		cl.parse(args);
-		final Main main = new Main();
 
-		main.startServices();
+		File propertiesFile = null;
+		if (s_propertiesFile.isSet())
+			propertiesFile = s_propertiesFile.getValue();
 
-		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
+		final Main main = new Main(propertiesFile);
+
+		String operation = s_operationCommand.getValue();
+
+		if (operation.equals("export"))
 		{
-			public void run()
+			if (s_exportFile.isSet())
 			{
-				main.stopServices();
-				synchronized (s_shutdownObject)
+				PrintStream ps = new PrintStream(new FileOutputStream(s_exportFile.getValue()));
+				main.export(ps);
+				ps.close();
+			}
+			else
+			{
+				main.export(System.out);
+			}
+		}
+		else if (operation.equals("run"))
+		{
+			main.startServices();
+
+			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
+			{
+				public void run()
 				{
-					s_shutdownObject.notify();
+					main.stopServices();
+					synchronized (s_shutdownObject)
+					{
+						s_shutdownObject.notify();
+					}
+				}
+			}));
+
+			waitForShutdown();
+		}
+	}
+
+	public void export(PrintStream out) throws DatastoreException, IOException
+	{
+		Datastore ds = m_injector.getInstance(Datastore.class);
+
+		Iterable<String> metrics = ds.getMetricNames();
+
+		try
+		{
+			for (String metric : metrics)
+			{
+				QueryMetric qm = new QueryMetric(1L, 0, metric, "none");
+				List<DataPointGroup> results = ds.query(qm);
+
+				for (DataPointGroup result : results)
+				{
+					JSONObject tags = new JSONObject();
+					SetMultimap<String, String> resTags = result.getTags();
+					for (String key : resTags.keySet())
+					{
+						tags.put(key, resTags.get(key).iterator().next());
+					}
+
+					while (result.hasNext())
+					{
+						DataPoint dp = result.next();
+
+						JSONObject jsObj = new JSONObject();
+						jsObj.put("name", metric);
+						jsObj.put("time", dp.getTimestamp());
+
+						if (dp.isInteger())
+							jsObj.put("value", dp.getLongValue());
+						else
+							jsObj.put("value", dp.getDoubleValue());
+
+						jsObj.put("tags", tags);
+
+						out.println(jsObj.toString());
+					}
 				}
 			}
-		}));
+		}
+		catch (JSONException e)
+		{
+			e.printStackTrace();
+		}
 
-		waitForShutdown();
+		out.flush();
 	}
 
 	/**

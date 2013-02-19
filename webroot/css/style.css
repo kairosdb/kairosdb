@@ -2,10 +2,6 @@
 	font-size: 12px;
 }
 
-.ui-widget-content{
-	/* Change tab content background */
-	background: none;;
-}
 .ui-widget-header{
 	/* Remove tab header border */
 	border: none;

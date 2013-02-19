@@ -35,10 +35,11 @@
 				}
 			}).click(addMetric);
 
-			// todo fix autocomplete
+			// todo Timing issue for the first tab (metric). Can't add autocomplete until we have retrieved the
+			// todo metric names, tag names and tag values. Find a more elegant solution than to add to the first metric here.
 			$.getJSON("/api/v1/metricnames", function (json) {
 				metricNames = json.results;
-				$("#metric")
+				$(".metricName")
 						.autocomplete({
 							source: metricNames
 						});
@@ -50,7 +51,7 @@
 						.autocomplete({
 							source: tagNames
 						});
-				$("#groupBy")
+				$(".metricGroupBy")
 						.autocomplete({
 							source: tagNames
 						});
@@ -123,7 +124,7 @@
 
 <span class="header ui-widget">Metrics</span><button id="addMetricButton"></button>
 
-<div id="tabs" style="width:520px;">
+<div id="tabs" style="width:520px; background:none;">
 	<ul></ul>
 </div>
 
@@ -153,7 +154,7 @@
 	<table class="ui-widget">
 		<tr>
 			<td class="ui-widget">Name*</td>
-			<td><input class="ui-widget metricName" type="text"></td>
+			<td><input class="ui-widget metricName" type="#groupBytext"></td>
 		</tr>
 		<tr>
 			<td class="ui-widget">Group By</td>

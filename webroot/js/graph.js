@@ -86,7 +86,7 @@ function addMetric() {
 	metricCount += 1;
 
 	// Create tab
-	var $newMetric = $('<li id="metricTab' + metricCount + '"><a class="metricTab" href="#metricContainer' + metricCount + '">New Tab</a>' +
+	var $newMetric = $('<li id="metricTab' + metricCount + '"><a class="metricTab" href="#metricContainer' + metricCount + '">Metric</a>' +
 		'<button id="removeMetric' + metricCount + '" style="background:none; border: none; width:15px;"></button></li>');
 	$newMetric.appendTo('#tabs .ui-tabs-nav');
 
@@ -114,8 +114,16 @@ function addMetric() {
 	// Add text listener to name
 	var $tab = $newMetric.find('.metricTab');
 	$metricContainer.find(".metricName").keyup(function (event) {
-		$tab.text($(this).val());
+		var metricName = $(this).val();
+		if (metricName.length > 0) {
+			$tab.text(metricName);
+		}
+		else {
+			$tab.text("metric");
+		}
 	});
+
+	addAutocomplete($metricContainer);
 
 	// Setup tag button
 	var tagButtonName = "mertric-" + metricCount + "AddTagButton";
@@ -141,6 +149,28 @@ function addMetric() {
 	// Activate newly added tab
 	var lastTab = $(".ui-tabs-nav").children().size() - 1;
 	$("#tabs").tabs({active: lastTab});
+}
+
+function addAutocomplete(metricContainer) {
+	metricContainer.find(".metricName")
+		.autocomplete({
+			source: metricNames
+		});
+
+	metricContainer.find("[name='tagName']")
+		.autocomplete({
+			source: tagNames
+		});
+
+	metricContainer.find(".metricGroupBy")
+		.autocomplete({
+			source: tagNames
+		});
+
+	metricContainer.find("[name='tagValue']")
+		.autocomplete({
+			source: tagValues
+		});
 }
 
 function addTag(tagContainer) {

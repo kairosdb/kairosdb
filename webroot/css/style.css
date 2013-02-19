@@ -2,24 +2,39 @@
 	font-size: 12px;
 }
 
-.header {
-	color:  #2779aa;;
+.ui-widget-header {
+	/* Remove tab header border */
+	border: none;
 }
 
-.wire-frame{
+:focus {
+	/* Remove outline on tab when it is selected */
+	outline: none;
+}
+
+.header {
+	color: #2779aa;;
+}
+
+.wire-frame {
 	border: 1px solid #aed0ea;
 	width: 500px;
 	padding: 10px;
 }
 
-textarea{
+textarea {
 	border-color: #aed0ea;
-	padding:0;
+	padding: 0;
 	margin: 0;
 	width: 525px;
 }
 
-.footnote{
+.footnote {
 	font-size: 10px;
 	padding-top: 5px;;
+}
+
+button {
+	padding-bottom: 3px;
+	margin-left: 4px;
 }

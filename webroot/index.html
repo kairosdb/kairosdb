@@ -35,6 +35,7 @@
 				}
 			}).click(addMetric);
 
+			// todo fix autocomplete
 			$.getJSON("/api/v1/metricnames", function (json) {
 				metricNames = json.results;
 				$("#metric")
@@ -148,7 +149,7 @@
 <div id="container"></div>
 
 <!-- Hidden Metric div used for cloning -->
-<div id="metricTemplate" class="metricContainer">
+<div id="metricTemplate">
 	<table class="ui-widget">
 		<tr>
 			<td class="ui-widget">Name*</td>

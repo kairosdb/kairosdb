@@ -5,10 +5,8 @@ function updateChart() {
 
 	// todo cachetime
 
-	$('.metricContainer').each(function(index, element)
-	{
+	$('.metricContainer').each(function (index, element) {
 		var $metricContainer = $(element);
-
 		var metricName = $metricContainer.find('.metricName').val();
 		if (!metricName) {
 			showErrorMessage("Metric Name is required.");
@@ -20,7 +18,7 @@ function updateChart() {
 		var metric = new pulse.Metric(metricName, aggregate, false, groupBy);
 
 		// Add Tags
-		$.each($("[name='tags']"), function (index, tagContainer) {
+		$metricContainer.find("[name='tags']").each(function (index, tagContainer) {
 			var name = $(tagContainer).find("[name='tagName']").val();
 			var value = $(tagContainer).find("[name='tagValue']").val();
 
@@ -61,7 +59,7 @@ function updateChart() {
 	}
 
 	$("#query-text").val(JSON.stringify(query, null, 2));
-	showChartForQuery(metricName, " (Click and drag to zoom)", "", "", "", query);
+	showChartForQuery("", " (Click and drag to zoom)", "", "", "", query);
 }
 
 function showErrorMessage(message) {
@@ -72,8 +70,7 @@ function showErrorMessage(message) {
 }
 
 function removeMetric(removeButton) {
-	if (metricCount == 0)
-	{
+	if (metricCount == 0) {
 		return;
 	}
 
@@ -86,13 +83,12 @@ function removeMetric(removeButton) {
 var metricCount = -1;
 
 function addMetric() {
-	debugger;
 	metricCount += 1;
 
 	// Create tab
-	var newMetric = $('<li id="metricTab' + metricCount + '"><a href="#metricContainer' + metricCount + '">New Tab</a>' +
+	var $newMetric = $('<li id="metricTab' + metricCount + '"><a class="metricTab" href="#metricContainer' + metricCount + '">New Tab</a>' +
 		'<button id="removeMetric' + metricCount + '" style="background:none; border: none; width:15px;"></button></li>');
-	newMetric.appendTo('#tabs .ui-tabs-nav');
+	$newMetric.appendTo('#tabs .ui-tabs-nav');
 
 	var removeButton = $('#removeMetric' + metricCount);
 	removeButton.data("metricCount", metricCount);
@@ -109,15 +105,21 @@ function addMetric() {
 
 	// Add tab content
 	var tagContainerName = "metric-" + metricCount + "-tagsContainer";
-
-	var metricContainer = $("#metricTemplate").clone();
-	metricContainer
+	var $metricContainer = $("#metricTemplate").clone();
+	$metricContainer
 		.attr('id', 'metricContainer' + metricCount)
+		.addClass("metricContainer")
 		.appendTo('#tabs');
+
+	// Add text listener to name
+	var $tab = $newMetric.find('.metricTab');
+	$metricContainer.find(".metricName").keyup(function (event) {
+		$tab.text($(this).val());
+	});
 
 	// Setup tag button
 	var tagButtonName = "mertric-" + metricCount + "AddTagButton";
-	var tagButton = metricContainer.find("#tagButton");
+	var tagButton = $metricContainer.find("#tagButton");
 	tagButton.attr("id", tagButtonName);
 	tagButton.button({
 		text: false,
@@ -130,7 +132,7 @@ function addMetric() {
 
 	// Add new tag
 	var tagContainer = $('<div id="' + tagContainerName + '"></div>');
-	tagContainer.appendTo(metricContainer);
+	tagContainer.appendTo($metricContainer);
 	addTag(tagContainer);
 
 	// Tell tabs object to update changes
@@ -165,16 +167,18 @@ function showChartForQuery(title, subTitle, chartType, yAxisTitle, seriesTitle, 
 }
 
 function showChart(title, subTitle, chartType, yAxisTitle, seriesTitle, queries) {
-	var results = queries[0].results;
-
-	if (results.length == 0) {
+	if (queries.length == 0) {
 		return;
 	}
 
-	var values = $.map(results[0].values, function (n) {
-		return n[1];
+	var data = [];
+	queries.forEach(function (resultSet) {
+		var result = {};
+		result.name = resultSet.results[0].name;
+		result.data = resultSet.results[0].values;
+		data.push(result);
 	});
-	drawSingleSeriesChart(title, subTitle, chartType, yAxisTitle, seriesTitle, results[0].values);
+	drawSingleSeriesChart(title, subTitle, chartType, yAxisTitle, seriesTitle, data);
 }
 
 function drawSingleSeriesChart(title, subTitle, chartType, yAxisTitle, seriesTitle, data) {
@@ -235,12 +239,7 @@ function drawSingleSeriesChart(title, subTitle, chartType, yAxisTitle, seriesTit
 			y: 100,
 			borderWidth: 0
 		},
-		series: [
-			{
-				name: seriesTitle,
-				data: data
-			}
-		]
+		series: data
 	});
 }
 

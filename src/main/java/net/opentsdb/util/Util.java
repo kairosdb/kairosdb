@@ -1,5 +1,5 @@
-// OpenTSDB2
-// Copyright (C) 2013 Proofpoint, Inc.
+// This file is part of OpenTSDB.
+// Copyright (C) 2010-2012  The OpenTSDB Authors.
 //
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
@@ -9,7 +9,7 @@
 // of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser
 // General Public License for more details.  You should have received a copy
 // of the GNU Lesser General Public License along with this program.  If not,
-// see <http://www.gnu.org/licenses/>
+// see <http://www.gnu.org/licenses/>.
 package net.opentsdb.util;
 
 

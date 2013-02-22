@@ -52,7 +52,8 @@ public class CassandraDatastore extends Datastore
 	public static final String REPLICATION_FACTOR_PROPERTY = "opentsdb.datastore.cassandra.replication_factor";
 	public static final String ROW_WIDTH_PROPERTY = "opentsdb.datastore.cassandra.row_width";
 //	public static final String WRITE_DELAY_PROPERTY = "opentsdb.datastore.cassandra.write_delay";
-	public static final String ROW_READ_SIZE_PROPERTY = "opentsdb.datastore.cassandra.row_read_size";
+	public static final String SINGLE_ROW_READ_SIZE_PROPERTY = "opentsdb.datastore.cassandra.single_row_read_size";
+	public static final String MULTI_ROW_READ_SIZE_PROPERTY = "opentsdb.datastore.cassandra.multi_row_read_size";
 
 	public static final String KEYSPACE = "opentsdb";
 	public static final String CF_DATA_POINTS = "data_points";
@@ -66,7 +67,8 @@ public class CassandraDatastore extends Datastore
 	private Cluster m_cluster;
 	private Keyspace m_keyspace;
 	private long m_rowWidth;
-	private int m_rowReadSize;
+	private int m_singleRowReadSize;
+	private int m_multiRowReadSize;
 	private WriteBuffer<DataPointsRowKey, Long, LongOrDouble> m_dataPointWriteBuffer;
 	private WriteBuffer<String, DataPointsRowKey, String> m_rowKeyWriteBuffer;
 	private WriteBuffer<String, String, String> m_stringIndexWriteBuffer;
@@ -82,10 +84,12 @@ public class CassandraDatastore extends Datastore
 			@Named(PORT_PROPERTY)String cassandraPort,
 			@Named(REPLICATION_FACTOR_PROPERTY)int replicationFactor,
 			@Named(ROW_WIDTH_PROPERTY)long rowWidth,
-			@Named(ROW_READ_SIZE_PROPERTY)int rowReadSize) throws DatastoreException
+			@Named(SINGLE_ROW_READ_SIZE_PROPERTY)int singleRowReadSize,
+			@Named(MULTI_ROW_READ_SIZE_PROPERTY)int multiRowReadSize) throws DatastoreException
 	{
 		m_rowWidth = rowWidth;
-		m_rowReadSize = rowReadSize;
+		m_singleRowReadSize = singleRowReadSize;
+		m_multiRowReadSize = multiRowReadSize;
 
 		m_cluster = HFactory.getOrCreateCluster("tsdb-cluster",
 				cassandraHost+":"+cassandraPort);
@@ -178,6 +182,7 @@ public class CassandraDatastore extends Datastore
 	{
 		m_dataPointWriteBuffer.close();
 		m_rowKeyWriteBuffer.close();
+		m_stringIndexWriteBuffer.close();
 	}
 
 	@Override
@@ -263,7 +268,7 @@ public class CassandraDatastore extends Datastore
 		sliceQuery.setKey(ROW_KEY_METRIC_NAMES);
 
 		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String)null, false, m_rowReadSize);
+				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String)null, false, m_singleRowReadSize);
 
 		List<String> ret = new ArrayList<String>();
 
@@ -284,7 +289,7 @@ public class CassandraDatastore extends Datastore
 		sliceQuery.setKey(ROW_KEY_TAG_NAMES);
 
 		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String)null, false, m_rowReadSize);
+				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String)null, false, m_singleRowReadSize);
 
 		List<String> ret = new ArrayList<String>();
 
@@ -305,7 +310,7 @@ public class CassandraDatastore extends Datastore
 		sliceQuery.setKey(ROW_KEY_TAG_VALUES);
 
 		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String)null, false, m_rowReadSize);
+				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String)null, false, m_singleRowReadSize);
 
 		List<String> ret = new ArrayList<String>();
 
@@ -322,7 +327,8 @@ public class CassandraDatastore extends Datastore
 
 
 		QueryRunner qRunner = new QueryRunner(m_keyspace, CF_DATA_POINTS, rowKeys,
-				query.getStartTime(), query.getEndTime(), cachedSearchResult, m_rowReadSize);
+				query.getStartTime(), query.getEndTime(), cachedSearchResult, m_singleRowReadSize,
+				m_multiRowReadSize);
 
 		try
 		{
@@ -360,7 +366,7 @@ public class CassandraDatastore extends Datastore
 
 		ColumnSliceIterator<String, DataPointsRowKey, String> iterator =
 				new ColumnSliceIterator<String, DataPointsRowKey, String>(sliceQuery,
-						startKey, endKey, false, 1024);
+						startKey, endKey, false, m_singleRowReadSize);
 
 		Map<String, String> filterTags = query.getTags();
 		outer: while (iterator.hasNext())
@@ -387,5 +393,19 @@ public class CassandraDatastore extends Datastore
 	private long calculateRowTime(long timestamp)
 	{
 		return (timestamp - (timestamp % m_rowWidth));
+	}
+
+
+	private class WriteBufferStatsImpl implements WriteBufferStats
+	{
+		@Override
+		public void saveWriteSize(int pendingWrites)
+		{
+			DataPointSet dps = new DataPointSet("opentsdb.datastore.write_size");
+			dps.addTag("host", "server");
+			dps.addTag("buffer", CF_DATA_POINTS);
+			dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
+			putDataPoints(dps);
+		}
 	}
 }

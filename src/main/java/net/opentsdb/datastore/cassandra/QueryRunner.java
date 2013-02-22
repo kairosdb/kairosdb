@@ -45,12 +45,13 @@ public class QueryRunner
 	private long m_startTime;
 	private long m_endTime;
 	private CachedSearchResult m_cachedResults;
-	private int m_maxRowSize;
+	private int m_singleRowReadSize;
+	private int m_multiRowReadSize;
 
 	public QueryRunner(Keyspace keyspace, String columnFamily,
 			List<DataPointsRowKey> rowKeys, long startTime, long endTime,
 			CachedSearchResult csResult,
-			int maxRowSize)
+			int singleRowReadSize, int multiRowReadSize)
 	{
 		m_keyspace = keyspace;
 		m_columnFamily = columnFamily;
@@ -58,7 +59,8 @@ public class QueryRunner
 		m_startTime = startTime;
 		m_endTime = endTime;
 		m_cachedResults = csResult;
-		m_maxRowSize = maxRowSize;
+		m_singleRowReadSize = singleRowReadSize;
+		m_multiRowReadSize = multiRowReadSize;
 	}
 
 	public void runQuery() throws IOException
@@ -70,7 +72,7 @@ public class QueryRunner
 
 		msliceQuery.setColumnFamily(m_columnFamily);
 		msliceQuery.setKeys(m_rowKeys);
-		msliceQuery.setRange(m_startTime, m_endTime, false, m_maxRowSize);
+		msliceQuery.setRange(m_startTime, m_endTime, false, m_multiRowReadSize);
 
 		Rows<DataPointsRowKey, Long, LongOrDouble> rows =
 				msliceQuery.execute().get();
@@ -81,7 +83,7 @@ public class QueryRunner
 		for (Row<DataPointsRowKey, Long, LongOrDouble> row : rows)
 		{
 			List<HColumn<Long, LongOrDouble>> columns = row.getColumnSlice().getColumns();
-			if (columns.size() == m_maxRowSize)
+			if (columns.size() == m_multiRowReadSize)
 				unfinishedRows.add(row);
 
 			writeColumns(row.getKey().getTags(), columns);
@@ -105,14 +107,14 @@ public class QueryRunner
 
 			do
 			{
-				Long lastTime = columns.get(m_maxRowSize -1).getName();
+				Long lastTime = columns.get(columns.size() -1).getName();
 
-				sliceQuery.setRange(lastTime+1, m_endTime, false, m_maxRowSize);
+				sliceQuery.setRange(lastTime+1, m_endTime, false, m_singleRowReadSize);
 
 				columns = sliceQuery.execute().get().getColumns();
 				writeColumns(key.getTags(), columns);
 
-			} while (columns.size() == m_maxRowSize);
+			} while (columns.size() == m_singleRowReadSize);
 		}
 
 		m_cachedResults.endDataPoints();

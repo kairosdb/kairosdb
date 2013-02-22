@@ -103,7 +103,8 @@ public class H2Datastore extends Datastore
 	{
 		try
 		{
-			m_holdConnection.close();
+			if (m_holdConnection != null)
+				m_holdConnection.close();
 		}
 		catch (SQLException e)
 		{

@@ -18,6 +18,12 @@ import me.prettyprint.cassandra.serializers.AbstractSerializer;
 import me.prettyprint.hector.api.Keyspace;
 import me.prettyprint.hector.api.Serializer;
 import me.prettyprint.hector.api.mutation.Mutator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -29,10 +35,14 @@ import me.prettyprint.hector.api.mutation.Mutator;
  */
 public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runnable
 {
+	public static final Logger logger = LoggerFactory.getLogger(WriteBuffer.class);
+
 	private Keyspace m_keyspace;
 	private String m_cfName;
 	private Mutator<RowKeyType> m_mutator;
-	private final Object m_mutatorLock = new Object();
+	private volatile int m_bufferCount = 0;
+	private final ReentrantLock m_mutatorLock = new ReentrantLock();
+	private final Condition m_lockCondition = m_mutatorLock.newCondition();
 
 	private Thread m_writeThread;
 	private boolean m_exit = false;
@@ -41,6 +51,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 	private Serializer<ColumnKeyType> m_columnKeySerializer;
 	private Serializer<ValueType> m_valueSerializer;
 	private WriteBufferStats m_writeStats;
+	private int m_maxBufferSize = 500000;
 
 	public WriteBuffer(Keyspace keyspace, String cfName,
 			int writeDelay, Serializer<RowKeyType> keySerializer,
@@ -64,11 +75,26 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 	public void addData(RowKeyType rowKey, ColumnKeyType columnKey, ValueType value,
 			long timestamp)
 	{
-		synchronized (m_mutatorLock)
+		m_mutatorLock.lock();
+		try
 		{
+			if ((m_bufferCount > m_maxBufferSize) && (m_mutatorLock.getHoldCount() == 1))
+			{
+				try
+				{
+					m_lockCondition.await();
+				}
+				catch (InterruptedException e) {}
+			}
+
+			m_bufferCount ++;
 			m_mutator.addInsertion(rowKey, m_cfName,
 					new HColumnImpl<ColumnKeyType, ValueType>(columnKey, value,
 							timestamp, m_columnKeySerializer, m_valueSerializer));
+		}
+		finally
+		{
+			m_mutatorLock.unlock();
 		}
 	}
 
@@ -90,22 +116,25 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			{
 				Thread.sleep(m_writeDelay);
 			}
-			catch (InterruptedException e)
-			{
-				// todo add logging here
-			}
+			catch (InterruptedException e) {}
 
 			Mutator<RowKeyType> pendingMutations = null;
 
-			int pending = m_mutator.getPendingMutationCount();
-			if (pending != 0)
+			if (m_bufferCount != 0)
 			{
-				m_writeStats.saveWriteSize(pending);
-
-				synchronized (m_mutatorLock)
+				m_mutatorLock.lock();
+				try
 				{
+					m_writeStats.saveWriteSize(m_bufferCount);
+
 					pendingMutations = m_mutator;
 					m_mutator = new MutatorImpl<RowKeyType>(m_keyspace, m_rowKeySerializer);
+					m_bufferCount = 0;
+					m_lockCondition.signalAll();
+				}
+				finally
+				{
+					m_mutatorLock.unlock();
 				}
 			}
 
@@ -113,11 +142,37 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			{
 				if (pendingMutations != null)
 					pendingMutations.execute();
+
+				pendingMutations = null;
 			}
 			catch (Exception e)
 			{
-				//TODO:
-				e.printStackTrace();
+				logger.error("Error sending data to Cassandra", e);
+
+				m_maxBufferSize = m_maxBufferSize * 3 / 4;
+
+				logger.error("Reducing write buffer size to "+m_maxBufferSize);
+			}
+
+
+			//If the batch failed we will retry it without changing the buffer size.
+			while (pendingMutations != null)
+			{
+				try
+				{
+					Thread.sleep(100);
+				}
+				catch (InterruptedException e){ }
+
+				try
+				{
+					pendingMutations.execute();
+					pendingMutations = null;
+				}
+				catch (Exception e)
+				{
+					logger.error("Error resending data", e);
+				}
 			}
 		}
 	}

@@ -27,7 +27,7 @@ public class ExportTest
 		Main main = new Main(props);
 
 		PrintStream ps = new PrintStream(new FileOutputStream("build/export.json"));
-		main.export(ps);
+		main.runExport(ps);
 		ps.close();
 	}
 }

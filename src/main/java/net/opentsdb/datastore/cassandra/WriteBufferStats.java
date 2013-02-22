@@ -23,6 +23,8 @@ public interface WriteBufferStats
 {
 	/**
 	 This is called right before a write to cassandra is performed.
+	 If this data is being written into cassandra it must be done on a separate
+	 thread from the calling thread, otherwise a deadlock could occur.
 	 @param pendingWrites
 	 */
 	public void saveWriteSize(int pendingWrites);

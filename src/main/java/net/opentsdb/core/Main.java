@@ -12,6 +12,11 @@
 // see <http://www.gnu.org/licenses/>
 package net.opentsdb.core;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.filter.Filter;
+import ch.qos.logback.core.spi.FilterReply;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.*;
 import jcmdline.*;
@@ -20,25 +25,21 @@ import net.opentsdb.core.datastore.Datastore;
 import net.opentsdb.core.datastore.QueryMetric;
 import net.opentsdb.core.exception.DatastoreException;
 import net.opentsdb.core.exception.TsdbException;
-import net.opentsdb.core.http.WebServletModule;
-import net.opentsdb.core.telnet.TelnetServer;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.util.ajax.JSONObjectConvertor;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONWriter;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.Charset;
 import java.util.*;
 
 public class Main
 {
-	public static final Logger logger = LoggerFactory.getLogger(Main.class);
+	public static final Logger logger = (Logger)LoggerFactory.getLogger(Main.class);
 
+	public static final Charset UTF_8 = Charset.forName("UTF-8");
 	public static final String SERVICE_PREFIX = "opentsdb.service";
 
 	private static FileParam s_propertiesFile = new FileParam("p",
@@ -46,7 +47,7 @@ public class Main
 			FileParam.OPTIONAL);
 
 	private static FileParam s_exportFile = new FileParam("f",
-			"file to save export to or read from depending on command", FileParam.IS_FILE,
+			"file to save export to or read from depending on command", FileParam.NO_ATTRIBUTES,
 			FileParam.OPTIONAL);
 
 	private static StringParam s_operationCommand = new StringParam("c",
@@ -124,26 +125,60 @@ public class Main
 
 		cl.parse(args);
 
+		//This sends jersey java util logging to logback
+		SLF4JBridgeHandler.removeHandlersForRootLogger();
+		SLF4JBridgeHandler.install();
+
+		String operation = s_operationCommand.getValue();
+
+		if (!operation.equals("run"))
+		{
+			//Turn off console logging
+			Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+			root.getAppender("stdout").addFilter(new Filter<ILoggingEvent>(){
+				@Override
+				public FilterReply decide(ILoggingEvent iLoggingEvent)
+				{
+					return (FilterReply.DENY);
+				}
+			});
+		}
+
 		File propertiesFile = null;
 		if (s_propertiesFile.isSet())
 			propertiesFile = s_propertiesFile.getValue();
 
 		final Main main = new Main(propertiesFile);
 
-		String operation = s_operationCommand.getValue();
-
 		if (operation.equals("export"))
 		{
 			if (s_exportFile.isSet())
 			{
 				PrintStream ps = new PrintStream(new FileOutputStream(s_exportFile.getValue()));
-				main.export(ps);
+				main.runExport(ps);
 				ps.close();
 			}
 			else
 			{
-				main.export(System.out);
+				main.runExport(System.out);
 			}
+
+			main.stopServices();
+		}
+		else if (operation.equals("import"))
+		{
+			if (s_exportFile.isSet())
+			{
+				FileInputStream fin = new FileInputStream(s_exportFile.getValue());
+				main.runImport(fin);
+				fin.close();
+			}
+			else
+			{
+				main.runImport(System.in);
+			}
+
+			main.stopServices();
 		}
 		else if (operation.equals("run"))
 		{
@@ -153,10 +188,19 @@ public class Main
 			{
 				public void run()
 				{
-					main.stopServices();
-					synchronized (s_shutdownObject)
+
+					try
 					{
-						s_shutdownObject.notify();
+						main.stopServices();
+
+						synchronized (s_shutdownObject)
+						{
+							s_shutdownObject.notify();
+						}
+					}
+					catch (Exception e)
+					{
+						logger.error("Shutdown exception:", e);
 					}
 				}
 			}));
@@ -165,7 +209,7 @@ public class Main
 		}
 	}
 
-	public void export(PrintStream out) throws DatastoreException, IOException
+	public void runExport(PrintStream out) throws DatastoreException, IOException
 	{
 		Datastore ds = m_injector.getInstance(Datastore.class);
 
@@ -175,6 +219,7 @@ public class Main
 		{
 			for (String metric : metrics)
 			{
+				logger.info("Exporting: " + metric);
 				QueryMetric qm = new QueryMetric(1L, 0, metric, "none");
 				List<DataPointGroup> results = ds.query(qm);
 
@@ -196,9 +241,15 @@ public class Main
 						jsObj.put("time", dp.getTimestamp());
 
 						if (dp.isInteger())
+						{
+							jsObj.put("int_value", true);
 							jsObj.put("value", dp.getLongValue());
+						}
 						else
+						{
+							jsObj.put("int_value", false);
 							jsObj.put("value", dp.getDoubleValue());
+						}
 
 						jsObj.put("tags", tags);
 
@@ -213,6 +264,41 @@ public class Main
 		}
 
 		out.flush();
+	}
+
+	public void runImport(InputStream in) throws IOException, JSONException, DatastoreException
+	{
+		Datastore ds = m_injector.getInstance(Datastore.class);
+
+		BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8));
+
+		String line = null;
+		while ((line = reader.readLine()) != null)
+		{
+			JSONObject metric = new JSONObject(line);
+
+			DataPointSet dps = new DataPointSet(metric.getString("name"));
+
+			JSONObject tags = metric.getJSONObject("tags");
+			Iterator<Object> keys = tags.keys();
+			while (keys.hasNext())
+			{
+				String tagName = (String)keys.next();
+				String tagValue = tags.getString(tagName);
+
+				dps.addTag(tagName, tagValue);
+			}
+
+			DataPoint dp;
+			if (metric.getBoolean("int_value"))
+				dp = new DataPoint(metric.getLong("time"), metric.getLong("value"));
+			else
+				dp = new DataPoint(metric.getLong("time"), metric.getDouble("value"));
+
+			dps.addDataPoint(dp);
+
+			ds.putDataPoints(dps);
+		}
 	}
 
 	/**
@@ -254,12 +340,16 @@ public class Main
 	}
 
 
-	public void stopServices()
+	public void stopServices() throws DatastoreException, InterruptedException
 	{
 		System.err.println("Shutting down");
 		for (OpenTsdbService service : m_services)
 		{
 			service.stop();
 		}
+
+		//Stop the datastore
+		Datastore ds = m_injector.getInstance(Datastore.class);
+		ds.close();
 	}
 }

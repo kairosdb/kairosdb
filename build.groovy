@@ -21,7 +21,7 @@ println("===============================================");
 
 
 programName = "opentsdb2"
-version = "2.0.0-alpha-2"
+version = "2.0.0-alpha-3"
 release = "1" //package release number
 summary = "OpenTSDB 2"
 description = """\
@@ -201,7 +201,7 @@ new SimpleRule("run").setDescription("Runs opentsdb")
 def doRun(Rule rule)
 {
 	//args = "-c import -f export.txt"
-	//args = "-c export -f my_export.txt"
+	//args = "-c export"
 	args = "-c run"
 	//Check if you have a custom opentsdb.properties file and load it.
 	customProps = new File("opentsdb.properties")

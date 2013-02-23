@@ -66,6 +66,44 @@ public abstract class Datastore
 
 	public abstract Iterable<String> getTagValues() throws DatastoreException;
 
+	/**
+	 Exports the data for a metric query without doing any aggregation or sorting
+	 @param metric
+	 @return
+	 @throws DatastoreException
+	 */
+	public List<TaggedDataPoints> export(QueryMetric metric) throws DatastoreException
+	{
+		checkNotNull(metric);
+
+		CachedSearchResult cachedResults = null;
+
+		try
+		{
+			String cacheFilename = calculateFilenameHash(metric);
+			String tempFile = System.getProperty("java.io.tmpdir") + "/" + cacheFilename;
+
+			if (metric.getCacheTime() > 0)
+			{
+				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(), tempFile, metric.getCacheTime());
+			}
+
+			if (cachedResults == null)
+			{
+				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile);
+			}
+		}
+		catch (Exception e)
+		{
+			throw new DatastoreException(e);
+		}
+
+		List<DataPointGroup> aggregatedResults = new ArrayList<DataPointGroup>();
+
+		return (queryDatabase(metric, cachedResults));
+	}
+
+
 	public List<DataPointGroup> query(QueryMetric metric) throws DatastoreException
 	{
 		checkNotNull(metric);

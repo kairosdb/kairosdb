@@ -51,6 +51,9 @@ elif [ "$1" = "stop" ] ; then
 elif [ "$1" = "export" ] ; then
 	shift
 	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH net.opentsdb.core.Main -c export -p conf/opentsdb.properties $*
+elif [ "$1" = "import" ] ; then
+	shift
+	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH net.opentsdb.core.Main -c import -p conf/opentsdb.properties $*
 else
 	echo "Unrecognized command."
 	exit 1

@@ -23,6 +23,7 @@ import jcmdline.*;
 import net.opentsdb.core.datastore.DataPointGroup;
 import net.opentsdb.core.datastore.Datastore;
 import net.opentsdb.core.datastore.QueryMetric;
+import net.opentsdb.core.datastore.TaggedDataPoints;
 import net.opentsdb.core.exception.DatastoreException;
 import net.opentsdb.core.exception.TsdbException;
 import org.json.JSONException;
@@ -221,15 +222,15 @@ public class Main
 			{
 				logger.info("Exporting: " + metric);
 				QueryMetric qm = new QueryMetric(1L, 0, metric, "none");
-				List<DataPointGroup> results = ds.query(qm);
+				List<TaggedDataPoints> results = ds.export(qm);
 
-				for (DataPointGroup result : results)
+				for (TaggedDataPoints result : results)
 				{
 					JSONObject tags = new JSONObject();
-					SetMultimap<String, String> resTags = result.getTags();
+					Map<String, String> resTags = result.getTags();
 					for (String key : resTags.keySet())
 					{
-						tags.put(key, resTags.get(key).iterator().next());
+						tags.put(key, resTags.get(key));
 					}
 
 					while (result.hasNext())

@@ -131,6 +131,7 @@ def doRPM(Rule rule)
 				addDependencyMore("java", "1.6.0")
 				provides = programName
 				prefixes = rpmBaseInstallDir
+				postInstallScript = 'chkconfig --add opentsdb2\nchkconfig opentsdb2 on'
 			}
 
 

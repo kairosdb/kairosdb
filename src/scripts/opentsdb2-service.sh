@@ -7,6 +7,8 @@
 . /etc/init.d/functions
 # Start the service OpenTSDB2
 
+export JAVA_HOME=/etc/alternatives/jre
+
 start() {
         initlog -c "echo -n Starting OpenTSDB2 server: "
         /opt/opentsdb2/bin/opentsdb2.sh start

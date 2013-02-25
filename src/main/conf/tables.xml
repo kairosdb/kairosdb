@@ -140,7 +140,7 @@
 			</sql>
 		</query>
 
-		
+
 		<!--<query name="books_by_author">
 			<input>
 				<param name="name" type="string" test="Tolkien"/>

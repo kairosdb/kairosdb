@@ -208,26 +208,35 @@ public class H2Datastore extends Datastore
 			sb.append("'");
 		}
 
-		DataPoint.ResultSet results = DataPoint.factory.getForMetric(query.getName(),
-				new Timestamp(query.getStartTime()),
-				new Timestamp(query.getEndTime()),
-				sb.toString());
-
-		TagsInQueryQuery.ResultSet tagsQueryResults = new TagsInQueryQuery(query.getName(),
+		MetricIdsQuery.ResultSet idQuery = new MetricIdsQuery(query.getName(),
 				new Timestamp(query.getStartTime()),
 				new Timestamp(query.getEndTime()),
 				sb.toString()).runQuery();
 
-		Map<String, String> tags = new TreeMap<String, String>();
-		while (tagsQueryResults.next())
+		List<TaggedDataPoints> retList = new ArrayList<TaggedDataPoints>();
+		while (idQuery.next())
 		{
-			TagsInQueryData data = tagsQueryResults.getRecord();
-			tags.put(data.getTagName(), data.getTagValue());
+			String metricId = idQuery.getRecord().getMetricId();
+
+			//Collect the tags in the results
+			MetricTag.ResultSet tags = MetricTag.factory.getByMetric(metricId);
+			Map<String, String> tagMap = new TreeMap<String, String>();
+			while (tags.next())
+			{
+				MetricTag mtag = tags.getRecord();
+				tagMap.put(mtag.getTagName(), mtag.getTagValue());
+			}
+
+			DataPoint.ResultSet resultSet = DataPoint.factory.getForMetricId(metricId,
+					new Timestamp(query.getStartTime()),
+					new Timestamp(query.getEndTime()));
+
+			//The H2DataPointGroup will close the resultSet
+			retList.add(new H2DataPointGroup(tagMap, resultSet));
 		}
 
-		H2DataPointGroup dpGroup = new H2DataPointGroup(tags, results);
 
-		return (Collections.singletonList((TaggedDataPoints)dpGroup));
+		return (retList);
 
 	}
 

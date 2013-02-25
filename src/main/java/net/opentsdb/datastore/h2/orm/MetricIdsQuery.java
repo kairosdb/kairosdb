@@ -17,19 +17,18 @@ import genorm.runtime.*;
 
 
 /**
-	Returns the super set of tags that are in a datapoint set
+	Returns the metric ids for a specified query. In essence this the initial rows returned.
 */
-public class TagsInQueryQuery extends genorm.runtime.SQLQuery
+public class MetricIdsQuery extends genorm.runtime.SQLQuery
 	{
-	private static final Logger s_logger = LoggerFactory.getLogger(TagsInQueryQuery.class.getName());
+	private static final Logger s_logger = LoggerFactory.getLogger(MetricIdsQuery.class.getName());
 	
-	public static final String QUERY_NAME = "tags_in_query";
-	public static final String QUERY = "select distinct mt.\"tag_name\", mt.\"tag_value\" from\n				data_point dp, metric_tag mt\n				where\n				dp.\"metric_id\" = mt.\"metric_id\" and\n				dp.\"id\" in (\n					select dp.\"id\"\n					from data_point dp, metric m, metric_tag mt\n					where\n					dp.\"metric_id\" = m.\"id\" and mt.\"metric_id\" = m.\"id\"\n					and m.\"name\" = ?\n					and dp.\"timestamp\" >= ?\n					and dp.\"timestamp\" <= ?\n					%tags%\n					)";
-	private static final int ATTRIBUTE_COUNT = 2;
+	public static final String QUERY_NAME = "metric_ids";
+	public static final String QUERY = "select distinct dp.\"metric_id\"\n				from data_point dp, metric m, metric_tag mt\n				where\n				dp.\"metric_id\" = m.\"id\" and mt.\"metric_id\" = m.\"id\"\n				and m.\"name\" = ?\n				and dp.\"timestamp\" >= ?\n				and dp.\"timestamp\" <= ?\n				%tags%";
+	private static final int ATTRIBUTE_COUNT = 1;
 	private static Map<String, Integer> s_attributeIndex;
 	private static String[] s_attributeNames = {
-			"tagName",
-			"tagValue" };
+			"metricId" };
 			
 	static
 		{
@@ -46,12 +45,12 @@ public class TagsInQueryQuery extends genorm.runtime.SQLQuery
 	private String m_tags;
 
 	//Deprecated
-	public TagsInQueryQuery()
+	public MetricIdsQuery()
 		{
 		super();
 		}		
 	//---------------------------------------------------------------------------
-	public TagsInQueryQuery(String metricName, java.sql.Timestamp startTime, java.sql.Timestamp endTime, String tags)
+	public MetricIdsQuery(String metricName, java.sql.Timestamp startTime, java.sql.Timestamp endTime, String tags)
 		{
 		super();
 		m_metricName = metricName;
@@ -97,7 +96,7 @@ public class TagsInQueryQuery extends genorm.runtime.SQLQuery
 		
 		while (rs.next())
 			{
-			TagsInQueryData rec = rs.getRecord();
+			MetricIdsData rec = rs.getRecord();
 			ch.startElement("", tagName, tagName, rec);
 			ch.endElement("", tagName, tagName);
 			}
@@ -206,10 +205,10 @@ public class TagsInQueryQuery extends genorm.runtime.SQLQuery
 	//===========================================================================
 	public interface ResultSet extends GenOrmQueryResultSet
 		{
-		public List<TagsInQueryData> getArrayList(int maxRows);
-		public List<TagsInQueryData> getArrayList();
-		public TagsInQueryData getRecord();
-		public TagsInQueryData getOnlyRecord();
+		public List<MetricIdsData> getArrayList(int maxRows);
+		public List<MetricIdsData> getArrayList();
+		public MetricIdsData getRecord();
+		public MetricIdsData getOnlyRecord();
 		}
 		
 	//===========================================================================
@@ -255,9 +254,9 @@ public class TagsInQueryQuery extends genorm.runtime.SQLQuery
 			Returns the reults as an ArrayList of Record objects.
 			The Result set is closed within this call
 		*/
-		public List<TagsInQueryData> getArrayList(int maxRows)
+		public List<MetricIdsData> getArrayList(int maxRows)
 			{
-			ArrayList<TagsInQueryData> results = new ArrayList<TagsInQueryData>();
+			ArrayList<MetricIdsData> results = new ArrayList<MetricIdsData>();
 			int count = 0;
 			
 			try
@@ -265,13 +264,13 @@ public class TagsInQueryQuery extends genorm.runtime.SQLQuery
 				if (m_onFirstResult)
 					{
 					count ++;
-					results.add(new TagsInQueryData(TagsInQueryQuery.this, m_resultSet));
+					results.add(new MetricIdsData(MetricIdsQuery.this, m_resultSet));
 					}
 					
 				while (m_resultSet.next() && (count < maxRows))
 					{
 					count ++;
-					results.add(new TagsInQueryData(TagsInQueryQuery.this, m_resultSet));
+					results.add(new MetricIdsData(MetricIdsQuery.this, m_resultSet));
 					}
 					
 				if (m_resultSet.next())
@@ -291,17 +290,17 @@ public class TagsInQueryQuery extends genorm.runtime.SQLQuery
 			Returns the reults as an ArrayList of Record objects.
 			The Result set is closed within this call
 		*/
-		public List<TagsInQueryData> getArrayList()
+		public List<MetricIdsData> getArrayList()
 			{
-			ArrayList<TagsInQueryData> results = new ArrayList<TagsInQueryData>();
+			ArrayList<MetricIdsData> results = new ArrayList<MetricIdsData>();
 			
 			try
 				{
 				if (m_onFirstResult)
-					results.add(new TagsInQueryData(TagsInQueryQuery.this, m_resultSet));
+					results.add(new MetricIdsData(MetricIdsQuery.this, m_resultSet));
 					
 				while (m_resultSet.next())
-					results.add(new TagsInQueryData(TagsInQueryQuery.this, m_resultSet));
+					results.add(new MetricIdsData(MetricIdsQuery.this, m_resultSet));
 				}
 			catch (java.sql.SQLException sqle)
 				{
@@ -325,12 +324,12 @@ public class TagsInQueryQuery extends genorm.runtime.SQLQuery
 		/**
 			Returns the current record in the result set
 		*/
-		public TagsInQueryData getRecord()
+		public MetricIdsData getRecord()
 			{
-			TagsInQueryData ret = null;
+			MetricIdsData ret = null;
 			try
 				{
-				ret = new TagsInQueryData(TagsInQueryQuery.this, m_resultSet);
+				ret = new MetricIdsData(MetricIdsQuery.this, m_resultSet);
 				}
 			catch (java.sql.SQLException sqle)
 				{
@@ -346,17 +345,17 @@ public class TagsInQueryQuery extends genorm.runtime.SQLQuery
 			are found an excpetion is thrown.
 			The ResultSet object is automatically closed by this call.
 		*/
-		public TagsInQueryData getOnlyRecord()
+		public MetricIdsData getOnlyRecord()
 			{
-			TagsInQueryData ret = null;
+			MetricIdsData ret = null;
 			
 			try
 				{
 				if (m_resultSet.next())
-					ret = new TagsInQueryData(TagsInQueryQuery.this, m_resultSet);
+					ret = new MetricIdsData(MetricIdsQuery.this, m_resultSet);
 					
 				if (m_resultSet.next())
-					throw new GenOrmException("Multiple rows returned in call from TagsInQueryQuery.ResultSet.getOnlyRecord");
+					throw new GenOrmException("Multiple rows returned in call from MetricIdsQuery.ResultSet.getOnlyRecord");
 				}
 			catch (java.sql.SQLException sqle)
 				{
@@ -391,40 +390,33 @@ public class TagsInQueryQuery extends genorm.runtime.SQLQuery
 	//===========================================================================
 	public class Record extends GenOrmQueryRecord implements Attributes
 		{
-		protected String m_tagName;
-		protected String m_tagValue;
+		protected String m_metricId;
 
 		protected String[] m_attrValues;
 		
 		protected Record(java.sql.ResultSet rs)
 				throws java.sql.SQLException
 			{
-			m_tagName = (String)rs.getString(1);
-			m_tagValue = (String)rs.getString(2);
+			m_metricId = (String)rs.getString(1);
 
 			if (m_serializable)
 				{
 				m_attrValues = new String[ATTRIBUTE_COUNT];
 				
-				m_attrValues[0] = TagsInQueryQuery.this.m_formatter.toString(s_attributeNames[0], m_tagName);
-				m_attrValues[1] = TagsInQueryQuery.this.m_formatter.toString(s_attributeNames[1], m_tagValue);
+				m_attrValues[0] = MetricIdsQuery.this.m_formatter.toString(s_attributeNames[0], m_metricId);
 
 				}
 			}
 			
-		public String getTagName() { return (m_tagName); }
-		public String getTagValue() { return (m_tagValue); }
+		public String getMetricId() { return (m_metricId); }
  
 		
 		//------------------------------------------------------------------------
 		public String toString()
 			{
 			StringBuilder sb = new StringBuilder();
-			sb.append(" tag_name=\"");
-			sb.append(m_tagName);
-			sb.append("\"");
-			sb.append(" tag_value=\"");
-			sb.append(m_tagValue);
+			sb.append(" metric_id=\"");
+			sb.append(m_metricId);
 			sb.append("\"");
 
 			return (sb.toString().trim());

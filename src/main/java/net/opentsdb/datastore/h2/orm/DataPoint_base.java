@@ -140,7 +140,7 @@ public class DataPoint_base extends GenOrmRecord
 		public DataPoint findOrCreate(int id);
 		/**
 		*/
-		public ResultSet getForMetric(String metricName, java.sql.Timestamp startTime, java.sql.Timestamp endTime, String tags);/**
+		public ResultSet getForMetricId(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime);/**
 		*/
 		public ResultSet getByMetric(String metricId);
 		}
@@ -428,19 +428,16 @@ public class DataPoint_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 		*/
-		public ResultSet getForMetric(String metricName, java.sql.Timestamp startTime, java.sql.Timestamp endTime, String tags)
+		public ResultSet getForMetricId(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime)
 			{
-			String query = SELECT+"from data_point this, metric m, metric_tag mt\n				where\n				this.\"metric_id\" = m.\"id\" and mt.\"metric_id\" = m.\"id\"\n				and m.\"name\" = ?\n				and this.\"timestamp\" >= ?\n				and this.\"timestamp\" <= ?\n				%tags%\n				order by this.\"timestamp\"";
-			HashMap<String, String> replaceMap = new HashMap<String, String>();
-			replaceMap.put("tags", tags);
-			query = QueryHelper.replaceText(query, replaceMap);
+			String query = SELECT+"from data_point this\n				where\n				this.\"metric_id\" = ?\n				and this.\"timestamp\" >= ?\n				and this.\"timestamp\" <= ?\n				order by this.\"timestamp\"";
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			
 			try
 				{
 				genorm_statement = GenOrmDataSource.prepareStatement(query);
-				genorm_statement.setString(1, metricName);genorm_statement.setTimestamp(2, startTime);genorm_statement.setTimestamp(3, endTime);
+				genorm_statement.setString(1, metricId);genorm_statement.setTimestamp(2, startTime);genorm_statement.setTimestamp(3, endTime);
 				
 				s_logger.debug(genorm_statement.toString());
 				
@@ -507,8 +504,8 @@ public class DataPoint_base extends GenOrmRecord
 		public void testQueryMethods()
 			{
 			ResultSet rs;
-			System.out.println("DataPoint.getForMetric");
-			rs = getForMetric("foo", new java.sql.Timestamp(0L), new java.sql.Timestamp(0L), "");
+			System.out.println("DataPoint.getForMetricId");
+			rs = getForMetricId("foo", new java.sql.Timestamp(0L), new java.sql.Timestamp(0L));
 			rs.close();
 
 			}

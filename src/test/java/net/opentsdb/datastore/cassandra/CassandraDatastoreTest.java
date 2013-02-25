@@ -105,7 +105,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
 		s_datastore = new CassandraDatastore("localhost",
-				"9160", 1, 7257600000L, MAX_ROW_READ_SIZE);
+				"9160", 1, 7257600000L, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE);
 
 		DatastoreTestHelper.s_datastore = s_datastore;
 

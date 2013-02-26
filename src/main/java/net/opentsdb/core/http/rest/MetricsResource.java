@@ -59,12 +59,15 @@ public class MetricsResource
 
 	private final Datastore datastore;
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
+	private final ObjectMapper mapper;
 
 	@Inject
 	public MetricsResource(Datastore datastore)
 	{
 		this.datastore = checkNotNull(datastore);
 		formatters.put("json", new JsonFormatter());
+
+		mapper = new ObjectMapper();
 	}
 
 	@GET
@@ -212,7 +215,6 @@ public class MetricsResource
 	{
 		Object object;
 		try {
-			ObjectMapper mapper = new ObjectMapper();
 			JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(json);
 			object = mapper.readValue(jsonParser, mapper.getTypeFactory().constructType(type));
 		}

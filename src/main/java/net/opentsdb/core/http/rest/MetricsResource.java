@@ -103,7 +103,10 @@ public class MetricsResource
 
 		try
 		{
+			//long start = System.currentTimeMillis();
 			MetricRequestList metrics = (MetricRequestList) parseJson(MetricRequestList.class, json);
+			//long time = System.currentTimeMillis() - start;
+			//System.out.println("Parse Time: "+time);
 
 			for (NewMetricRequest metricRequest : metrics.getMetricsRequest())
 			{

@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class CassandraDatastore extends Datastore
 {
@@ -101,6 +103,9 @@ public class CassandraDatastore extends Datastore
 
 		m_keyspace = HFactory.createKeyspace(KEYSPACE, m_cluster);
 
+		ReentrantLock mutatorLock = new ReentrantLock();
+		Condition lockCondition =mutatorLock.newCondition();
+
 		m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Long, LongOrDouble>(
 				m_keyspace, CF_DATA_POINTS, 1000,
 				DATA_POINTS_ROW_KEY_SERIALIZER,
@@ -117,7 +122,7 @@ public class CassandraDatastore extends Datastore
 						dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
 						putDataPoints(dps);
 					}
-				});
+				}, mutatorLock, lockCondition);
 
 		m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
 				m_keyspace, CF_ROW_KEY_INDEX, 1000,
@@ -135,7 +140,7 @@ public class CassandraDatastore extends Datastore
 						dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
 						putDataPoints(dps);
 					}
-				});
+				}, mutatorLock, lockCondition);
 
 		m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
 				m_keyspace, CF_STRING_INDEX, 1000,
@@ -153,7 +158,7 @@ public class CassandraDatastore extends Datastore
 						dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
 						putDataPoints(dps);
 					}
-				});
+				}, mutatorLock, lockCondition);
 	}
 
 	private void createSchema(int replicationFactor)

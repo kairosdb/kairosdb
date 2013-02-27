@@ -41,8 +41,8 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 	private String m_cfName;
 	private Mutator<RowKeyType> m_mutator;
 	private volatile int m_bufferCount = 0;
-	private final ReentrantLock m_mutatorLock = new ReentrantLock();
-	private final Condition m_lockCondition = m_mutatorLock.newCondition();
+	private ReentrantLock m_mutatorLock;
+	private Condition m_lockCondition;
 
 	private Thread m_writeThread;
 	private boolean m_exit = false;
@@ -57,7 +57,9 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			int writeDelay, Serializer<RowKeyType> keySerializer,
 			Serializer<ColumnKeyType> columnKeySerializer,
 			Serializer<ValueType> valueSerializer,
-			WriteBufferStats stats)
+			WriteBufferStats stats,
+			ReentrantLock mutatorLock,
+			Condition lockCondition)
 	{
 		m_keyspace = keyspace;
 		m_cfName = cfName;
@@ -66,6 +68,8 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		m_columnKeySerializer = columnKeySerializer;
 		m_valueSerializer = valueSerializer;
 		m_writeStats = stats;
+		m_mutatorLock = mutatorLock;
+		m_lockCondition = lockCondition;
 
 		m_mutator = new MutatorImpl<RowKeyType>(keyspace, keySerializer);
 		m_writeThread = new Thread(this);

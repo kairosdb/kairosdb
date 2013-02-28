@@ -72,7 +72,7 @@ public class CachedSearchResultTest
 
 		csResult.endDataPoints();
 
-		List<TaggedDataPoints> rows = csResult.getRows();
+		List<DataPointRow> rows = csResult.getRows();
 
 		assertEquals(3, rows.size());
 
@@ -100,8 +100,8 @@ public class CachedSearchResultTest
 
 		csResult.endDataPoints();
 
-		List<TaggedDataPoints> rows = csResult.getRows();
-		TaggedDataPoints taggedDataPoints = rows.iterator().next();
+		List<DataPointRow> rows = csResult.getRows();
+		DataPointRow taggedDataPoints = rows.iterator().next();
 
 		int count = 0;
 		while(taggedDataPoints.hasNext())
@@ -132,8 +132,8 @@ public class CachedSearchResultTest
 
 		csResult.endDataPoints();
 
-		List<TaggedDataPoints> rows = csResult.getRows();
-		TaggedDataPoints taggedDataPoints = rows.iterator().next();
+		List<DataPointRow> rows = csResult.getRows();
+		DataPointRow taggedDataPoints = rows.iterator().next();
 
 		int count = 0;
 		while(taggedDataPoints.hasNext())
@@ -147,7 +147,7 @@ public class CachedSearchResultTest
 
 	}
 
-	private void assertValues(TaggedDataPoints dataPoints, Number... numbers)
+	private void assertValues(DataPointRow dataPoints, Number... numbers)
 	{
 		int count = 0;
 		while (dataPoints.hasNext())

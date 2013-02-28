@@ -14,6 +14,7 @@ package net.opentsdb.datastore.cassandra;
 
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.DataPointSet;
+import net.opentsdb.core.datastore.AbstractDataPointGroup;
 import net.opentsdb.core.datastore.DataPointGroup;
 import net.opentsdb.core.datastore.DatastoreMetricQuery;
 import net.opentsdb.core.datastore.QueryMetric;

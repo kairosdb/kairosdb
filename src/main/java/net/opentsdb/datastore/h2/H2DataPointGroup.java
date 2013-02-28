@@ -14,21 +14,25 @@
 package net.opentsdb.datastore.h2;
 
 import net.opentsdb.core.DataPoint;
-import net.opentsdb.core.datastore.TaggedDataPoints;
+import net.opentsdb.core.datastore.DataPointRow;
 import net.opentsdb.datastore.h2.orm.DataPoint_base;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
-public class H2DataPointGroup implements TaggedDataPoints
+public class H2DataPointGroup implements DataPointRow
 {
+	private String m_name;
 	private DataPoint_base.ResultSet m_results;
 	private DataPoint_base m_nextDataPoint;
 	private Map<String, String> m_tags = new TreeMap<String, String>();
 
-	public H2DataPointGroup(Map<String, String> tags,
+	public H2DataPointGroup(String name, Map<String, String> tags,
 			DataPoint_base.ResultSet resultSet)
 	{
+		m_name = name;
 		m_tags = tags;
 		m_results = resultSet;
 		if (m_results.next())
@@ -68,9 +72,21 @@ public class H2DataPointGroup implements TaggedDataPoints
 	}
 
 	@Override
-	public Map<String, String> getTags()
+	public String getName()
 	{
-		return (m_tags);
+		return (m_name);
+	}
+
+	@Override
+	public Set<String> getTagNames()
+	{
+		return (m_tags.keySet());
+	}
+
+	@Override
+	public String getTagValue(String tag)
+	{
+		return (m_tags.get(tag));
 	}
 
 	@Override

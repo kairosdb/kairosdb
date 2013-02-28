@@ -17,6 +17,7 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.DataPointSet;
+import net.opentsdb.core.datastore.AbstractDataPointGroup;
 import net.opentsdb.core.datastore.DataPointGroup;
 import net.opentsdb.core.datastore.Datastore;
 import net.opentsdb.core.datastore.QueryMetric;
@@ -49,6 +50,21 @@ public abstract class DatastoreTestHelper
 		}
 
 		return (ret);
+	}
+
+	private static SetMultimap<String, String> extractTags(DataPointGroup dpGroup)
+	{
+		SetMultimap<String, String> resp = TreeMultimap.create();
+
+		for (String tag : dpGroup.getTagNames())
+		{
+			for (String value : dpGroup.getTagValues(tag))
+			{
+				resp.put(tag, value);
+			}
+		}
+
+		return (resp);
 	}
 
 	/**
@@ -154,7 +170,7 @@ public abstract class DatastoreTestHelper
 		DataPointGroup dpg = results.get(0);
 
 		assertThat(dpg.getName(), is("metric1"));
-		SetMultimap<String, String> resTags = dpg.getTags();
+		SetMultimap<String, String> resTags = extractTags(dpg);
 
 		assertThat(resTags.size(), is(5));
 		SetMultimap<String, String> expectedTags = TreeMultimap.create();
@@ -189,7 +205,7 @@ public abstract class DatastoreTestHelper
 		DataPointGroup dpg = results.get(0);
 
 		assertThat(dpg.getName(), is("metric1"));
-		SetMultimap<String, String> resTags = dpg.getTags();
+		SetMultimap<String, String> resTags = extractTags(dpg);
 
 		assertEquals(4, resTags.size());
 		SetMultimap<String, String> expectedTags = TreeMultimap.create();
@@ -222,7 +238,7 @@ public abstract class DatastoreTestHelper
 
 		DataPointGroup dpg = results.get(0);
 		assertThat(dpg.getName(), is("metric1"));
-		SetMultimap<String, String> resTags = dpg.getTags();
+		SetMultimap<String, String> resTags = extractTags(dpg);
 
 		assertThat(resTags.keySet().size(), is(3));
 		SetMultimap<String, String> expectedTags = TreeMultimap.create();
@@ -237,7 +253,7 @@ public abstract class DatastoreTestHelper
 
 		dpg = results.get(1);
 		assertThat(dpg.getName(), is("metric1"));
-		resTags = dpg.getTags();
+		resTags = extractTags(dpg);
 
 		assertThat(resTags.keySet().size(), is(3));
 		expectedTags = TreeMultimap.create();

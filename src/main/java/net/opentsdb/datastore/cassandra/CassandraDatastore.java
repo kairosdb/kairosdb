@@ -326,7 +326,7 @@ public class CassandraDatastore extends Datastore
 	}
 
 	@Override
-	protected List<TaggedDataPoints> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+	protected List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
 	{
 		List<DataPointsRowKey> rowKeys = getKeysForQuery(query);
 

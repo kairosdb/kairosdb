@@ -1,5 +1,5 @@
 //
-// DataPointGroup.java
+// DataPointRow.java
 //
 // Copyright 2013, NextPage Inc. All rights reserved.
 //
@@ -11,7 +11,7 @@ import net.opentsdb.core.DataPoint;
 import java.util.Iterator;
 import java.util.Set;
 
-public interface DataPointGroup extends Iterator<DataPoint>
+public interface DataPointRow extends Iterator<DataPoint>
 {
 	/**
 	 Returns the metric name for this group
@@ -26,18 +26,15 @@ public interface DataPointGroup extends Iterator<DataPoint>
 	public Set<String> getTagNames();
 
 	/**
-	 Returns the tag values for the given tag name.  After a grouping or aggregation
-	 occurs a tag could have multiple values.
+	 Returns the tag value for the given tag name.
 	 @param tag Tag to get the value for
-	 @return A set of tag values
+	 @return A tag value
 	 */
-	public Set<String> getTagValues(String tag);
+	public String getTagValue(String tag);
 
 	/**
 	 Close any underlying resources held open by this DataPointGroup.  This
 	 will be called at the end of a query to free up resources.
 	 */
 	public void close();
-
-
 }

@@ -195,7 +195,7 @@ public class H2Datastore extends Datastore
 	}
 
 	@Override
-	protected List<TaggedDataPoints> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+	protected List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
 	{
 		StringBuilder sb = new StringBuilder();
 
@@ -213,7 +213,7 @@ public class H2Datastore extends Datastore
 				new Timestamp(query.getEndTime()),
 				sb.toString()).runQuery();
 
-		List<TaggedDataPoints> retList = new ArrayList<TaggedDataPoints>();
+		List<DataPointRow> retList = new ArrayList<DataPointRow>();
 		while (idQuery.next())
 		{
 			String metricId = idQuery.getRecord().getMetricId();
@@ -232,7 +232,7 @@ public class H2Datastore extends Datastore
 					new Timestamp(query.getEndTime()));
 
 			//The H2DataPointGroup will close the resultSet
-			retList.add(new H2DataPointGroup(tagMap, resultSet));
+			retList.add(new H2DataPointGroup(query.getName(), tagMap, resultSet));
 		}
 
 

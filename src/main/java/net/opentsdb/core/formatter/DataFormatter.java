@@ -12,8 +12,8 @@
 // see <http://www.gnu.org/licenses/>
 package net.opentsdb.core.formatter;
 
+import net.opentsdb.core.datastore.AbstractDataPointGroup;
 import net.opentsdb.core.datastore.DataPointGroup;
-import net.opentsdb.core.datastore.StringIterable;
 
 import java.io.Writer;
 import java.util.List;

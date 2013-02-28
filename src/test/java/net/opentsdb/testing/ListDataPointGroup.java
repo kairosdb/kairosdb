@@ -13,13 +13,13 @@
 package net.opentsdb.testing;
 
 import net.opentsdb.core.DataPoint;
-import net.opentsdb.core.datastore.DataPointGroup;
+import net.opentsdb.core.datastore.AbstractDataPointGroup;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class ListDataPointGroup extends DataPointGroup
+public class ListDataPointGroup extends AbstractDataPointGroup
 {
 	private List<DataPoint> dataPoints = new ArrayList<DataPoint>();
 	private Iterator<DataPoint> iterator;

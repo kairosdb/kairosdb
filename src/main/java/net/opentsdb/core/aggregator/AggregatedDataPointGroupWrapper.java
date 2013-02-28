@@ -13,12 +13,12 @@
 package net.opentsdb.core.aggregator;
 
 import net.opentsdb.core.DataPoint;
+import net.opentsdb.core.datastore.AbstractDataPointGroup;
 import net.opentsdb.core.datastore.DataPointGroup;
 
-import java.util.Iterator;
-import java.util.Map;
+import java.util.Set;
 
-public abstract class AggregatedDataPointGroupWrapper extends DataPointGroup
+public abstract class AggregatedDataPointGroupWrapper implements DataPointGroup
 {
 	protected DataPoint currentDataPoint = null;
 	private DataPointGroup innerDataPointGroup;
@@ -26,11 +26,28 @@ public abstract class AggregatedDataPointGroupWrapper extends DataPointGroup
 
 	public AggregatedDataPointGroupWrapper(DataPointGroup innerDataPointGroup)
 	{
-		super(innerDataPointGroup.getName(), innerDataPointGroup.getTags());
-
 		this.innerDataPointGroup = innerDataPointGroup;
+
 		if (innerDataPointGroup.hasNext())
 			currentDataPoint = innerDataPointGroup.next();
+	}
+
+	@Override
+	public String getName()
+	{
+		return (innerDataPointGroup.getName());
+	}
+
+	@Override
+	public Set<String> getTagNames()
+	{
+		return (innerDataPointGroup.getTagNames());
+	}
+
+	@Override
+	public Set<String> getTagValues(String tag)
+	{
+		return (innerDataPointGroup.getTagValues(tag));
 	}
 
 	@Override

@@ -13,6 +13,7 @@
 package net.opentsdb.core.formatter;
 
 import net.opentsdb.core.DataPoint;
+import net.opentsdb.core.datastore.AbstractDataPointGroup;
 import net.opentsdb.core.datastore.DataPointGroup;
 import net.opentsdb.core.datastore.StringIterable;
 import net.opentsdb.testing.ListDataPointGroup;

@@ -14,11 +14,10 @@ package net.opentsdb.core.aggregator;
 
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.datastore.DataPointGroup;
+import net.opentsdb.core.datastore.DataPointGroup;
 import net.opentsdb.testing.ListDataPointGroup;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Iterator;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.closeTo;

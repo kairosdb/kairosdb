@@ -13,12 +13,9 @@
 package net.opentsdb.datastore.hbase;
 
 import net.opentsdb.core.datastore.CachedSearchResult;
-import net.opentsdb.core.datastore.DataPointGroup;
 import org.hbase.async.HBaseException;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 /**
  * A query to retreive data from the TSDB.

@@ -13,26 +13,46 @@
 package net.opentsdb.testing;
 
 import net.opentsdb.core.DataPoint;
-import net.opentsdb.core.datastore.TaggedDataPoints;
+import net.opentsdb.core.datastore.DataPointGroup;
+import net.opentsdb.core.datastore.DataPointRow;
 
 import java.util.*;
 
-public class TaggedDataPointsImpl implements TaggedDataPoints
+public class TestingDataPointRowImpl implements DataPointRow
 {
 	private List<DataPoint> dataPoints = new ArrayList<DataPoint>();
 	private Iterator<DataPoint> iterator;
 	private Map<String, String> tags = new TreeMap<String, String>();
+	private String name;
 
 	public void addTag(String name, String value)
 	{
 		tags.put(name, value);
 	}
 
-	@Override
-	public Map<String, String> getTags()
+	public void setName(String name)
 	{
-		return tags;
+		this.name = name;
 	}
+
+	@Override
+	public String getName()
+	{
+		return (name);
+	}
+
+	@Override
+	public Set<String> getTagNames()
+	{
+		return (tags.keySet());
+	}
+
+	@Override
+	public String getTagValue(String tag)
+	{
+		return (tags.get(tag));
+	}
+
 
 	@Override
 	public void close()

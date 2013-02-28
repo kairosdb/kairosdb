@@ -17,7 +17,7 @@ import net.opentsdb.core.DataPointSet;
 import net.opentsdb.core.exception.DatastoreException;
 import net.opentsdb.core.exception.TsdbException;
 import net.opentsdb.core.exception.UnknownAggregator;
-import net.opentsdb.testing.TaggedDataPointsImpl;
+import net.opentsdb.testing.TestingDataPointRowImpl;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -174,11 +174,11 @@ public class DatastoreTest
 		}
 
 		@Override
-		protected List<TaggedDataPoints> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+		protected List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
 		{
-			List<TaggedDataPoints> groups = new ArrayList<TaggedDataPoints>();
+			List<DataPointRow> groups = new ArrayList<DataPointRow>();
 
-			TaggedDataPointsImpl group1 = new TaggedDataPointsImpl();
+			TestingDataPointRowImpl group1 = new TestingDataPointRowImpl();
 			group1.addDataPoint(new DataPoint(1, 3));
 			group1.addDataPoint(new DataPoint(1, 10));
 			group1.addDataPoint(new DataPoint(1, 20));
@@ -188,7 +188,7 @@ public class DatastoreTest
 			group1.addDataPoint(new DataPoint(3, 25));
 			groups.add(group1);
 
-			TaggedDataPointsImpl group2 = new TaggedDataPointsImpl();
+			TestingDataPointRowImpl group2 = new TestingDataPointRowImpl();
 			group2.addDataPoint(new DataPoint(1, 5));
 			group2.addDataPoint(new DataPoint(1, 14));
 			group2.addDataPoint(new DataPoint(1, 20));

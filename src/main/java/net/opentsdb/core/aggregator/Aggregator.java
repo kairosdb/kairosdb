@@ -13,6 +13,7 @@
 package net.opentsdb.core.aggregator;
 
 import net.opentsdb.core.datastore.DataPointGroup;
+import net.opentsdb.core.datastore.DataPointGroup;
 
 public interface Aggregator
 {

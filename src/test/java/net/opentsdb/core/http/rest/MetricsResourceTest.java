@@ -20,22 +20,18 @@ import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.DataPointSet;
-import net.opentsdb.core.datastore.CachedSearchResult;
-import net.opentsdb.core.datastore.Datastore;
-import net.opentsdb.core.datastore.DatastoreMetricQuery;
-import net.opentsdb.core.datastore.TaggedDataPoints;
+import net.opentsdb.core.datastore.*;
 import net.opentsdb.core.exception.DatastoreException;
 import net.opentsdb.core.http.WebServer;
 import net.opentsdb.core.http.WebServletModule;
 import net.opentsdb.testing.JsonResponse;
-import net.opentsdb.testing.TaggedDataPointsImpl;
+import net.opentsdb.testing.TestingDataPointRowImpl;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.eclipse.jetty.server.Server;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -281,11 +277,11 @@ public class MetricsResourceTest
 		}
 
 		@Override
-		protected List<TaggedDataPoints> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+		protected List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
 		{
-			List<TaggedDataPoints> groups = new ArrayList<TaggedDataPoints>();
+			List<DataPointRow> groups = new ArrayList<DataPointRow>();
 
-			TaggedDataPointsImpl group1 = new TaggedDataPointsImpl();
+			TestingDataPointRowImpl group1 = new TestingDataPointRowImpl();
 			group1.addDataPoint(new DataPoint(1, 10));
 			group1.addDataPoint(new DataPoint(1, 20));
 			group1.addDataPoint(new DataPoint(2, 10));
@@ -296,7 +292,7 @@ public class MetricsResourceTest
 
 			groups.add(group1);
 
-			TaggedDataPointsImpl group2 = new TaggedDataPointsImpl();
+			TestingDataPointRowImpl group2 = new TestingDataPointRowImpl();
 			group2.addDataPoint(new DataPoint(1, 10.1));
 			group2.addDataPoint(new DataPoint(1, 20.1));
 			group2.addDataPoint(new DataPoint(2, 10.1));

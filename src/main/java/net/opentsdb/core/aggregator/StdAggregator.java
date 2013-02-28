@@ -15,8 +15,6 @@ package net.opentsdb.core.aggregator;
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.datastore.DataPointGroup;
 
-import java.util.Iterator;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**

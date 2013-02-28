@@ -15,8 +15,8 @@ package net.opentsdb.core.formatter;
 import com.chargebee.org.json.JSONException;
 import com.chargebee.org.json.JSONWriter;
 import net.opentsdb.core.DataPoint;
+import net.opentsdb.core.datastore.AbstractDataPointGroup;
 import net.opentsdb.core.datastore.DataPointGroup;
-import net.opentsdb.core.datastore.StringIterable;
 
 import java.io.Writer;
 import java.util.List;
@@ -70,10 +70,10 @@ public class JsonFormatter implements DataFormatter
 					jsonWriter.key("name").value(metric);
 					jsonWriter.key("tags").object();
 
-					for (String tagName : group.getTags().keySet())
+					for (String tagName : group.getTagNames())
 					{
 						jsonWriter.key(tagName);
-						jsonWriter.value(group.getTags().get(tagName));
+						jsonWriter.value(group.getTagValues(tagName));
 					}
 					jsonWriter.endObject();
 

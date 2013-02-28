@@ -72,7 +72,7 @@ public abstract class Datastore
 	 @return
 	 @throws DatastoreException
 	 */
-	public List<TaggedDataPoints> export(QueryMetric metric) throws DatastoreException
+	public List<DataPointRow> export(QueryMetric metric) throws DatastoreException
 	{
 		checkNotNull(metric);
 
@@ -148,7 +148,7 @@ public abstract class Datastore
 		return aggregatedResults;
 	}
 
-	private List<DataPointGroup> groupBy(String metricName, List<TaggedDataPoints> dataPointsList, String groupByTag)
+	private List<DataPointGroup> groupBy(String metricName, List<DataPointRow> dataPointsList, String groupByTag)
 	{
 		List<DataPointGroup> ret;
 
@@ -156,11 +156,11 @@ public abstract class Datastore
 		{
 			Map<String, TournamentTreeDataGroup> groups = new HashMap<String, TournamentTreeDataGroup>();
 
-			for (TaggedDataPoints taggedDataPoints : dataPointsList)
+			for (DataPointRow dataPointRow : dataPointsList)
 			{
 				//Todo: Add code to datastore implementations to filter by the group by tag
 
-				String tagValue = taggedDataPoints.getTags().get(groupByTag);
+				String tagValue = dataPointRow.getTagValue(groupByTag);
 
 				if (tagValue == null)
 					continue;
@@ -172,7 +172,7 @@ public abstract class Datastore
 					groups.put(tagValue, tree);
 				}
 
-				tree.addIterator(taggedDataPoints);
+				tree.addIterator(new DataPointGroupRowWrapper(dataPointRow));
 			}
 
 			ret = new ArrayList<DataPointGroup>(groups.values());
@@ -186,13 +186,13 @@ public abstract class Datastore
 		return ret;
 	}
 
-	protected abstract List<TaggedDataPoints> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException;
+	protected abstract List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException;
 
-	private class TournamentTreeDataGroup extends DataPointGroup
+	private class TournamentTreeDataGroup extends AbstractDataPointGroup
 	{
 		private TournamentTree<DataPoint> tree;
 		//We keep this list so we can close the iterators
-		private List<TaggedDataPoints> taggedDataPointsList = new ArrayList<TaggedDataPoints>();
+		private List<DataPointGroup> taggedDataPointsList = new ArrayList<DataPointGroup>();
 
 		public TournamentTreeDataGroup(String name)
 		{
@@ -201,20 +201,30 @@ public abstract class Datastore
 			tree = new TournamentTree<DataPoint>(new DataPointComparator());
 		}
 
-		public TournamentTreeDataGroup(String name, List<TaggedDataPoints> listTaggedDataPoints)
+		public TournamentTreeDataGroup(String name, List<DataPointRow> listDataPointRow)
 		{
 			this(name);
 
-			for (TaggedDataPoints dataPoints : listTaggedDataPoints)
+			for (DataPointRow dataPoints : listDataPointRow)
+			{
+				addIterator(new DataPointGroupRowWrapper(dataPoints));
+			}
+		}
+
+		/*public TournamentTreeDataGroup(String name, List<DataPointGroup> listDataPointGroup)
+		{
+			this(name);
+
+			for (DataPointGroup dataPoints : listDataPointGroup)
 			{
 				addIterator(dataPoints);
 			}
-		}
+		}*/
 
 		@Override
 		public void close()
 		{
-			for (TaggedDataPoints taggedDataPoints : taggedDataPointsList)
+			for (DataPointGroup taggedDataPoints : taggedDataPointsList)
 			{
 				taggedDataPoints.close();
 			}
@@ -234,10 +244,10 @@ public abstract class Datastore
 			return ret;
 		}
 
-		public void addIterator(TaggedDataPoints taggedDataPoints)
+		public void addIterator(DataPointGroup taggedDataPoints)
 		{
 			tree.addIterator(taggedDataPoints);
-			addTags(taggedDataPoints.getTags());
+			addTags(taggedDataPoints);
 			taggedDataPointsList.add(taggedDataPoints);
 		}
 	}

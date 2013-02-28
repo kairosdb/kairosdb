@@ -12,18 +12,15 @@
 // see <http://www.gnu.org/licenses/>
 package net.opentsdb.core;
 
-import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
-import com.google.common.collect.SetMultimap;
 import com.google.inject.*;
 import jcmdline.*;
-import net.opentsdb.core.datastore.DataPointGroup;
+import net.opentsdb.core.datastore.DataPointRow;
 import net.opentsdb.core.datastore.Datastore;
 import net.opentsdb.core.datastore.QueryMetric;
-import net.opentsdb.core.datastore.TaggedDataPoints;
 import net.opentsdb.core.exception.DatastoreException;
 import net.opentsdb.core.exception.TsdbException;
 import org.json.JSONException;
@@ -222,15 +219,14 @@ public class Main
 			{
 				logger.info("Exporting: " + metric);
 				QueryMetric qm = new QueryMetric(1L, 0, metric, "none");
-				List<TaggedDataPoints> results = ds.export(qm);
+				List<DataPointRow> results = ds.export(qm);
 
-				for (TaggedDataPoints result : results)
+				for (DataPointRow result : results)
 				{
 					JSONObject tags = new JSONObject();
-					Map<String, String> resTags = result.getTags();
-					for (String key : resTags.keySet())
+					for (String key : result.getTagNames())
 					{
-						tags.put(key, resTags.get(key));
+						tags.put(key, result.getTagValue(key));
 					}
 
 					while (result.hasNext())

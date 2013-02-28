@@ -26,6 +26,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CachedSearchResult
@@ -39,6 +40,7 @@ public class CachedSearchResult
 	public static final byte LONG_FLAG = 0x1;
 	public static final byte DOUBLE_FLAG = 0x2;
 
+	private String m_metricName;
 	private List<FilePositionMarker> m_dataPointSets;
 	private ByteBuffer m_writeBuffer;
 	private FileChannel m_dataFileChannel;
@@ -59,9 +61,10 @@ public class CachedSearchResult
 		return (new File(dataFileName));
 	}
 
-	private CachedSearchResult(File dataFile, File indexFile)
+	private CachedSearchResult(String metricName, File dataFile, File indexFile)
 			throws FileNotFoundException
 	{
+		m_metricName = metricName;
 		m_writeBuffer = ByteBuffer.allocate(DATA_POINT_SIZE * WRITE_BUFFER_SIZE);
 		m_writeBuffer.clear();
 		m_indexFile = indexFile;
@@ -98,7 +101,7 @@ public class CachedSearchResult
 		File dataFile = getDataFile(baseFileName);
 		File indexFile = getIndexFile(baseFileName);
 
-		CachedSearchResult ret = new CachedSearchResult(dataFile, indexFile);
+		CachedSearchResult ret = new CachedSearchResult(metricName, dataFile, indexFile);
 
 		ret.clearDataFile();
 
@@ -122,7 +125,7 @@ public class CachedSearchResult
 		{
 			File indexFile = getIndexFile(baseFileName);
 
-			ret = new CachedSearchResult(dataFile, indexFile);
+			ret = new CachedSearchResult(metricName, dataFile, indexFile);
 			ret.loadIndex();
 		}
 
@@ -214,9 +217,9 @@ public class CachedSearchResult
 		m_writeBuffer.putDouble(value);
 	}
 
-	public List<TaggedDataPoints> getRows()
+	public List<DataPointRow> getRows()
 	{
-		List<TaggedDataPoints> ret = new ArrayList<TaggedDataPoints>();
+		List<DataPointRow> ret = new ArrayList<DataPointRow>();
 		for (FilePositionMarker dpSet : m_dataPointSets)
 		{
 			ret.add(dpSet.iterator());
@@ -250,21 +253,21 @@ public class CachedSearchResult
 		}
 
 		@Override
-		public CachedDataPointGroup iterator()
+		public CachedDataPointRow iterator()
 		{
-			return (new CachedDataPointGroup(m_tags, m_startPosition, m_endPosition));
+			return (new CachedDataPointRow(m_tags, m_startPosition, m_endPosition));
 		}
 	}
 
 	//===========================================================================
-	private class CachedDataPointGroup implements TaggedDataPoints
+	private class CachedDataPointRow implements DataPointRow
 	{
 		private long m_currentPosition;
 		private long m_endPostition;
 		private ByteBuffer m_readBuffer;
 		private Map<String, String> m_tags;
 
-		public CachedDataPointGroup(Map<String, String> tags,
+		public CachedDataPointRow(Map<String, String> tags,
 				long startPosition, long endPostition)
 		{
 			m_currentPosition = startPosition;
@@ -332,9 +335,21 @@ public class CachedSearchResult
 		}
 
 		@Override
-		public Map<String, String> getTags()
+		public String getName()
 		{
-			return m_tags;
+			return (m_metricName);
+		}
+
+		@Override
+		public Set<String> getTagNames()
+		{
+			return (m_tags.keySet());
+		}
+
+		@Override
+		public String getTagValue(String tag)
+		{
+			return (m_tags.get(tag));
 		}
 
 		@Override

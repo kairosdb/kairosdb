@@ -125,7 +125,7 @@ public class HBaseDatastore extends Datastore
 	}
 
 	@Override
-	protected List<TaggedDataPoints> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException
+	protected List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException
 	{
 		try
 		{

@@ -15,7 +15,9 @@ package net.opentsdb.core.aggregator;
 import net.opentsdb.core.datastore.DataPointGroup;
 import net.opentsdb.core.datastore.DataPointGroup;
 
+import java.util.List;
+
 public interface Aggregator
 {
-	DataPointGroup aggregate(DataPointGroup dataPointGroup);
+	DataPointGroup aggregate(List<DataPointGroup> dataPointGroup);
 }

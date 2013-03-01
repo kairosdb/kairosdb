@@ -218,7 +218,7 @@ public class Main
 			for (String metric : metrics)
 			{
 				logger.info("Exporting: " + metric);
-				QueryMetric qm = new QueryMetric(1L, 0, metric, "none");
+				QueryMetric qm = new QueryMetric(1L, 0, metric);
 				List<DataPointRow> results = ds.export(qm);
 
 				for (DataPointRow result : results)

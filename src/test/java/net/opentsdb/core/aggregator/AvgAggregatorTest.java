@@ -19,6 +19,8 @@ import net.opentsdb.testing.ListDataPointGroup;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.closeTo;
 import static org.junit.Assert.assertThat;
@@ -36,7 +38,7 @@ public class AvgAggregatorTest
 	@Test(expected = NullPointerException.class)
 	public void test_nullSet_invalid()
 	{
-		aggregator.aggregate(null);
+		aggregator.aggregate((List<DataPointGroup>) null);
 	}
 
 	@Test

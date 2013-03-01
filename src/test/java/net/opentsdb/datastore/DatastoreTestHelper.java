@@ -17,6 +17,8 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.DataPointSet;
+import net.opentsdb.core.aggregator.AggregatorFactory;
+import net.opentsdb.core.aggregator.TestAggregatorFactory;
 import net.opentsdb.core.datastore.AbstractDataPointGroup;
 import net.opentsdb.core.datastore.DataPointGroup;
 import net.opentsdb.core.datastore.Datastore;
@@ -38,6 +40,7 @@ import static org.hamcrest.core.Is.is;
 
 public abstract class DatastoreTestHelper
 {
+	protected AggregatorFactory m_aggFactory = new TestAggregatorFactory();
 	protected static Datastore s_datastore;
 	private static long s_startTime;
 
@@ -158,7 +161,8 @@ public abstract class DatastoreTestHelper
 	{
 
 		Map<String, String> tags = new TreeMap<String, String>();
-		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1", "none");
+		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1");
+		query.addAggregator(m_aggFactory.createAggregator("sort"));
 		query.setEndTime(s_startTime + 3000);
 
 		query.setTags(tags);
@@ -193,7 +197,8 @@ public abstract class DatastoreTestHelper
 
 		Map<String, String> tags = new TreeMap<String, String>();
 		tags.put("client", "foo");
-		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1", "none");
+		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1");
+		query.addAggregator(m_aggFactory.createAggregator("sort"));
 		query.setEndTime(s_startTime + 3000);
 
 		query.setTags(tags);
@@ -226,7 +231,8 @@ public abstract class DatastoreTestHelper
 	{
 
 		Map<String, String> tags = new TreeMap<String, String>();
-		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1", "none");
+		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1");
+		query.addAggregator(m_aggFactory.createAggregator("sort"));
 		query.setGroupBy("host");
 		query.setEndTime(s_startTime + 3000);
 

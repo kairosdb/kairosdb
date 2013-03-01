@@ -20,7 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
-public class MaxAggregator implements Aggregator
+public class MaxAggregator extends SortedAggregator
 {
 	@Override
 	public DataPointGroup aggregate(final DataPointGroup dataPointGroup)

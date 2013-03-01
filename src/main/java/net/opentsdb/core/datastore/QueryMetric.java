@@ -12,8 +12,11 @@
 // see <http://www.gnu.org/licenses/>
 package net.opentsdb.core.datastore;
 
+import net.opentsdb.core.aggregator.Aggregator;
+
 import java.util.*;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static net.opentsdb.util.Preconditions.checkNotNullOrEmpty;
 
 public class QueryMetric implements DatastoreMetricQuery
@@ -22,30 +25,24 @@ public class QueryMetric implements DatastoreMetricQuery
 	private long endTime = -1;
 	private int cacheTime;
 	private String name;
-	private String aggregator;
-	private String downSample;
-	private boolean rate;
 	private Map<String, String> tags = new HashMap<String, String>();
 	private String groupBy;
+	private List<Aggregator> aggregators;
 
-	public QueryMetric(long start_time, int cacheTime, String name, String aggregator)
+	public QueryMetric(long start_time, int cacheTime, String name)
 	{
+		this.aggregators = new ArrayList<Aggregator>();
 		this.startTime = start_time;
 		this.cacheTime = cacheTime;
 		this.name = checkNotNullOrEmpty(name);
-		this.aggregator = checkNotNullOrEmpty(aggregator);
 	}
 
-	public QueryMetric setRate(boolean rate)
+	public QueryMetric addAggregator(Aggregator aggregator)
 	{
-		this.rate = rate;
-		return this;
-	}
+		checkNotNull(aggregator);
 
-	public QueryMetric setDownSample(int duration, TimeUnit unit, String aggregator)
-	{
-		this.downSample = duration + "-" + unit.toString() + "-" + aggregator;
-		return this;
+		this.aggregators.add(aggregator);
+		return (this);
 	}
 
 	public QueryMetric setTags(Map<String, String> tags)
@@ -66,19 +63,9 @@ public class QueryMetric implements DatastoreMetricQuery
 		return name;
 	}
 
-	public String getAggregator()
+	public List<Aggregator> getAggregators()
 	{
-		return aggregator;
-	}
-
-	public String getDownSample()
-	{
-		return downSample;
-	}
-
-	public boolean isRate()
-	{
-		return rate;
+		return aggregators;
 	}
 
 	@Override

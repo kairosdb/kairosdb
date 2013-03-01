@@ -15,7 +15,7 @@ package net.opentsdb.core.http.rest;
 
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.DataPointSet;
-import net.opentsdb.core.datastore.AbstractDataPointGroup;
+import net.opentsdb.core.aggregator.AggregatorFactory;
 import net.opentsdb.core.datastore.DataPointGroup;
 import net.opentsdb.core.datastore.Datastore;
 import net.opentsdb.core.datastore.QueryMetric;
@@ -59,13 +59,15 @@ public class MetricsResource
 	private static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
 
 	private final Datastore datastore;
+	private final AggregatorFactory aggregatorFactory;
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
 	private final ObjectMapper mapper;
 
 	@Inject
-	public MetricsResource(Datastore datastore)
+	public MetricsResource(Datastore datastore, AggregatorFactory aggregatorFactory)
 	{
 		this.datastore = checkNotNull(datastore);
+		this.aggregatorFactory = checkNotNull(aggregatorFactory);
 		formatters.put("json", new JsonFormatter());
 
 		mapper = new ObjectMapper();
@@ -168,17 +170,20 @@ public class MetricsResource
 			for (Metric metric : request.getMetrics())
 			{
 				QueryMetric queryMetric = new QueryMetric(getStartTime(request), request.getCacheTime(),
-						metric.getName(), metric.getAggregate());
+						metric.getName());
+
+				queryMetric.addAggregator(aggregatorFactory.createAggregator(metric.getAggregate()));
+
 				long endTime = getEndTime(request);
 				if (endTime > -1)
 					queryMetric.setEndTime(endTime);
-				queryMetric.setRate(metric.isRate());
+				//queryMetric.setRate(metric.isRate());
 				queryMetric.setGroupBy(metric.getGroupBy());
-				if (metric.getSampling() != null)
+				/*if (metric.getSampling() != null)
 				{
 					queryMetric.setDownSample(metric.getSampling().getDuration(),
 							metric.getSampling().getUnit(), metric.getSampling().getAggregate());
-				}
+				}*/
 				queryMetric.setTags(metric.getTags());
 
 				aggregatedResults.add(datastore.query(queryMetric));

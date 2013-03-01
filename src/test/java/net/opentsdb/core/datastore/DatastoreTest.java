@@ -14,6 +14,8 @@ package net.opentsdb.core.datastore;
 
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.DataPointSet;
+import net.opentsdb.core.aggregator.AggregatorFactory;
+import net.opentsdb.core.aggregator.TestAggregatorFactory;
 import net.opentsdb.core.exception.DatastoreException;
 import net.opentsdb.core.exception.TsdbException;
 import net.opentsdb.core.exception.UnknownAggregator;
@@ -29,6 +31,7 @@ import static org.junit.Assert.assertThat;
 
 public class DatastoreTest
 {
+	private AggregatorFactory aggFactory = new TestAggregatorFactory();
 
 	@Test(expected = NullPointerException.class)
 	public void test_query_nullMetricInvalid() throws TsdbException
@@ -38,20 +41,21 @@ public class DatastoreTest
 		datastore.query(null);
 	}
 
-	@Test(expected = UnknownAggregator.class)
+	/*@Test(expected = UnknownAggregator.class)
 	public void test_query_invalidAggregator() throws TsdbException
 	{
 		TestDatastore datastore = new TestDatastore();
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1", "bogus");
 
 		datastore.query(metric);
-	}
+	}*/
 
 	@Test
 	public void test_query_sumAggregator() throws TsdbException
 	{
 		TestDatastore datastore = new TestDatastore();
-		QueryMetric metric = new QueryMetric(1L, 1, "metric1", "sum");
+		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
+		metric.addAggregator(aggFactory.createAggregator("sum"));
 
 		List<DataPointGroup> results = datastore.query(metric);
 
@@ -74,7 +78,8 @@ public class DatastoreTest
 	public void test_query_noneAggregator() throws TsdbException
 	{
 		TestDatastore datastore = new TestDatastore();
-		QueryMetric metric = new QueryMetric(1L, 1, "metric1", "none");
+		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
+		metric.addAggregator(aggFactory.createAggregator("sort"));
 
 		List<DataPointGroup> results = datastore.query(metric);
 
@@ -179,6 +184,7 @@ public class DatastoreTest
 			List<DataPointRow> groups = new ArrayList<DataPointRow>();
 
 			TestingDataPointRowImpl group1 = new TestingDataPointRowImpl();
+			group1.setName(query.getName());
 			group1.addDataPoint(new DataPoint(1, 3));
 			group1.addDataPoint(new DataPoint(1, 10));
 			group1.addDataPoint(new DataPoint(1, 20));
@@ -189,6 +195,7 @@ public class DatastoreTest
 			groups.add(group1);
 
 			TestingDataPointRowImpl group2 = new TestingDataPointRowImpl();
+			group2.setName(query.getName());
 			group2.addDataPoint(new DataPoint(1, 5));
 			group2.addDataPoint(new DataPoint(1, 14));
 			group2.addDataPoint(new DataPoint(1, 20));

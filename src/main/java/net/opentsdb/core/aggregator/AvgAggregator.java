@@ -14,19 +14,20 @@ package net.opentsdb.core.aggregator;
 
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.datastore.DataPointGroup;
+import net.opentsdb.core.datastore.SortingDataPointGroup;
+
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
-public class AvgAggregator implements Aggregator
+public class AvgAggregator extends SortedAggregator
 {
 	@Override
 	public DataPointGroup aggregate(final DataPointGroup dataPointGroup)
 	{
-		checkNotNull(dataPointGroup);
-
 		return (new AvgDataPointAggregator(dataPointGroup));
 	}
 

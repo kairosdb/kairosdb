@@ -13,6 +13,9 @@
 package net.opentsdb.core.datastore;
 
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimap;
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.DataPointSet;
 import net.opentsdb.core.aggregator.*;
@@ -49,7 +52,6 @@ public abstract class Datastore
 		aggregators.put("max", new MaxAggregator());
 		aggregators.put("avg", new AvgAggregator());
 		aggregators.put("dev", new StdAggregator());
-		aggregators.put("none", new NoneAggregator());
 	}
 
 	/**
@@ -132,55 +134,92 @@ public abstract class Datastore
 
 		List<DataPointGroup> aggregatedResults = new ArrayList<DataPointGroup>();
 
-		List<DataPointGroup> queryResults = groupBy(metric.getName(), queryDatabase(metric, cachedResults), metric.getGroupBy());
+		List<List<DataPointGroup>> queryResults = groupBy(metric.getName(),
+				wrapRows(queryDatabase(metric, cachedResults)), metric.getGroupBy());
 
-		for (DataPointGroup dataPointGroup : queryResults)
+		for (List<DataPointGroup> dataPointGroupList : queryResults)
 		{
-			Aggregator aggregator = aggregators.get(metric.getAggregator());
+			List<DataPointGroup> aggregatedGroupList = dataPointGroupList;
+
+			//This will pipe the aggregators together.
+			for (Aggregator aggregator : metric.getAggregators())
+			{
+				aggregatedGroupList = Collections.singletonList(aggregator.aggregate(aggregatedGroupList));
+			}
+
+			//Take whatever is left and add them to the return list.
+			//If there were no aggregation done then we iterate over dataPointGroupList
+			//and return what we got from the data store
+			for (DataPointGroup dataPointGroup : aggregatedGroupList)
+			{
+				aggregatedResults.add(dataPointGroup);
+			}
+
+			/*Aggregator aggregator = aggregators.get(metric.getAggregator());
 			if (aggregator == null)
 			{
 				throw new UnknownAggregator(metric.getAggregator());
 			}
 
-			aggregatedResults.add(aggregator.aggregate(dataPointGroup));
+			aggregatedResults.add(aggregator.aggregate(dataPointGroupList));*/
 		}
 
 		return aggregatedResults;
 	}
 
-	private List<DataPointGroup> groupBy(String metricName, List<DataPointRow> dataPointsList, String groupByTag)
+	private List<DataPointGroup> wrapRows(List<DataPointRow> rows)
 	{
-		List<DataPointGroup> ret;
+		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
+
+		for (DataPointRow row : rows)
+		{
+			ret.add(new DataPointGroupRowWrapper(row));
+		}
+
+		return (ret);
+	}
+
+	private List<List<DataPointGroup>> groupBy(String metricName, List<DataPointGroup> dataPointsList, String groupByTag)
+	{
+		List<List<DataPointGroup>> ret = new ArrayList<List<DataPointGroup>>();
 
 		if (groupByTag != null)
 		{
-			Map<String, TournamentTreeDataGroup> groups = new HashMap<String, TournamentTreeDataGroup>();
+			ListMultimap<String, DataPointGroup> groups = ArrayListMultimap.create();
+			//Map<String, List<DataPointGroup>> groups = new HashMap<String, List<DataPointGroup>>();
 
-			for (DataPointRow dataPointRow : dataPointsList)
+			for (DataPointGroup dataPointGroup : dataPointsList)
 			{
 				//Todo: Add code to datastore implementations to filter by the group by tag
 
-				String tagValue = dataPointRow.getTagValue(groupByTag);
+				Set<String> tagValues = dataPointGroup.getTagValues(groupByTag);
+				if (tagValues == null)
+					continue;
+
+				String tagValue = tagValues.iterator().next();
 
 				if (tagValue == null)
 					continue;
 
-				TournamentTreeDataGroup tree = groups.get(tagValue);
+				groups.put(tagValue, dataPointGroup);
+				/*TournamentTreeDataGroup tree = groups.get(tagValue);
 				if (tree == null)
 				{
 					tree = new TournamentTreeDataGroup(metricName);
 					groups.put(tagValue, tree);
 				}
 
-				tree.addIterator(new DataPointGroupRowWrapper(dataPointRow));
+				tree.addIterator(new DataPointGroupRowWrapper(dataPointGroup));*/
 			}
 
-			ret = new ArrayList<DataPointGroup>(groups.values());
+			for (String key : groups.keySet())
+			{
+				ret.add(groups.get(key));
+			}
 		}
 		else
 		{
-			ret = new ArrayList<DataPointGroup>();
-			ret.add(new TournamentTreeDataGroup(metricName, dataPointsList));
+			ret.add(dataPointsList);
 		}
 
 		return ret;
@@ -267,7 +306,6 @@ public abstract class Datastore
 		builder.append(metric.getName());
 		builder.append(metric.getStartTime());
 		builder.append(metric.getEndTime());
-		builder.append(metric.getAggregator());
 
 		SortedMap<String, String> tags = metric.getTags();
 		for (String key : metric.getTags().keySet())

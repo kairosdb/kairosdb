@@ -153,7 +153,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		Map<String, String> tagFilter = new HashMap<String, String>();
 		tagFilter.put("host", "E");
 
-		QueryMetric query = new QueryMetric(s_dataPointTime - OVERFLOW_SIZE, 0, ROW_KEY_BIG_METRIC, "none");
+		QueryMetric query = new QueryMetric(s_dataPointTime - OVERFLOW_SIZE, 0, ROW_KEY_BIG_METRIC);
+		query.addAggregator(m_aggFactory.createAggregator("sort"));
 		query.setEndTime(s_dataPointTime);
 		query.setTags(tagFilter);
 

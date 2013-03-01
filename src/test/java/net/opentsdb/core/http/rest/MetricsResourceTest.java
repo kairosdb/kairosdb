@@ -20,6 +20,8 @@ import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.DataPointSet;
+import net.opentsdb.core.aggregator.AggregatorFactory;
+import net.opentsdb.core.aggregator.TestAggregatorFactory;
 import net.opentsdb.core.datastore.*;
 import net.opentsdb.core.exception.DatastoreException;
 import net.opentsdb.core.http.WebServer;
@@ -72,6 +74,7 @@ public class MetricsResourceTest
 				bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9000);
 				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
 				bind(Datastore.class).toInstance(datastore);
+				bind(AggregatorFactory.class).to(TestAggregatorFactory.class);
 			}
 		});
 		server = injector.getInstance(WebServer.class);
@@ -282,6 +285,7 @@ public class MetricsResourceTest
 			List<DataPointRow> groups = new ArrayList<DataPointRow>();
 
 			TestingDataPointRowImpl group1 = new TestingDataPointRowImpl();
+			group1.setName(query.getName());
 			group1.addDataPoint(new DataPoint(1, 10));
 			group1.addDataPoint(new DataPoint(1, 20));
 			group1.addDataPoint(new DataPoint(2, 10));
@@ -293,6 +297,7 @@ public class MetricsResourceTest
 			groups.add(group1);
 
 			TestingDataPointRowImpl group2 = new TestingDataPointRowImpl();
+			group2.setName(query.getName());
 			group2.addDataPoint(new DataPoint(1, 10.1));
 			group2.addDataPoint(new DataPoint(1, 20.1));
 			group2.addDataPoint(new DataPoint(2, 10.1));

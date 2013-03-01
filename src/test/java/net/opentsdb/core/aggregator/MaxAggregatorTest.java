@@ -18,6 +18,8 @@ import net.opentsdb.testing.ListDataPointGroup;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
@@ -34,7 +36,7 @@ public class MaxAggregatorTest
 	@Test(expected = NullPointerException.class)
 	public void test_nullSet_invalid()
 	{
-		aggregator.aggregate(null);
+		aggregator.aggregate((List<DataPointGroup>) null);
 	}
 
 	@Test

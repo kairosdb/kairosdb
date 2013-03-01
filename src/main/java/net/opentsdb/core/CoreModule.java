@@ -18,6 +18,8 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
+import net.opentsdb.core.aggregator.AggregatorFactory;
+import net.opentsdb.core.aggregator.GuiceAggregatorFactory;
 import net.opentsdb.core.datastore.Datastore;
 import net.opentsdb.core.telnet.*;
 
@@ -49,6 +51,7 @@ public class CoreModule extends AbstractModule
 			throw new MissingResourceException("Unable to load Datastore class",
 					dsClassName, DATASTORE_CLASS_PROPERTY);
 		}*/
+		bind(AggregatorFactory.class).to(GuiceAggregatorFactory.class);
 
 		Names.bindProperties(binder(), m_props);
 	}

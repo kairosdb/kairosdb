@@ -14,16 +14,10 @@
 package net.opentsdb.core;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Scopes;
 import com.google.inject.Singleton;
-import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
-import net.opentsdb.core.aggregator.AggregatorFactory;
-import net.opentsdb.core.aggregator.GuiceAggregatorFactory;
-import net.opentsdb.core.datastore.Datastore;
-import net.opentsdb.core.telnet.*;
+import net.opentsdb.core.aggregator.*;
 
-import java.util.MissingResourceException;
 import java.util.Properties;
 
 public class CoreModule extends AbstractModule
@@ -51,7 +45,14 @@ public class CoreModule extends AbstractModule
 			throw new MissingResourceException("Unable to load Datastore class",
 					dsClassName, DATASTORE_CLASS_PROPERTY);
 		}*/
-		bind(AggregatorFactory.class).to(GuiceAggregatorFactory.class);
+		bind(AggregatorFactory.class).to(GuiceAggregatorFactory.class).in(Singleton.class);
+
+		bind(SumAggregator.class);
+		bind(MinAggregator.class);
+		bind(MaxAggregator.class);
+		bind(AvgAggregator.class);
+		bind(StdAggregator.class);
+		bind(SortAggregator.class);
 
 		Names.bindProperties(binder(), m_props);
 	}

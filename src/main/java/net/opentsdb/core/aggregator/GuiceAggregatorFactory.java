@@ -1,7 +1,14 @@
 package net.opentsdb.core.aggregator;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.google.inject.Binding;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import net.opentsdb.core.OpenTsdbService;
+import net.opentsdb.core.aggregator.annotation.AggregatorName;
+import net.opentsdb.core.exception.TsdbException;
+
+import java.util.*;
 
 /**
  Created with IntelliJ IDEA.
@@ -12,20 +19,39 @@ import java.util.Map;
  */
 public class GuiceAggregatorFactory implements AggregatorFactory
 {
-	private Map<String, Aggregator> m_aggregators = new HashMap<String, Aggregator>();
+	private Map<String, Class<Aggregator>> m_aggregators = new HashMap<String, Class<Aggregator>>();
+	private Injector m_injector;
 
-	public GuiceAggregatorFactory()
+
+	@Inject
+	public GuiceAggregatorFactory(Injector injector)
 	{
-		m_aggregators.put("sum", new SumAggregator());
-		m_aggregators.put("min", new MinAggregator());
-		m_aggregators.put("max", new MaxAggregator());
-		m_aggregators.put("avg", new AvgAggregator());
-		m_aggregators.put("dev", new StdAggregator());
-		m_aggregators.put("sort", new SortAggregator());
+		m_injector = injector;
+		Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
+
+		for (Key<?> key : bindings.keySet())
+		{
+			Class bindingClass = key.getTypeLiteral().getRawType();
+			if (Aggregator.class.isAssignableFrom(bindingClass))
+			{
+				AggregatorName ann = (AggregatorName)bindingClass.getAnnotation(AggregatorName.class);
+				if (ann == null)
+					continue;
+
+				m_aggregators.put(ann.name(), bindingClass);
+			}
+		}
 	}
 
 	public Aggregator createAggregator(String name)
 	{
-		return (m_aggregators.get(name));
+		Class<Aggregator> aggClass = m_aggregators.get(name);
+
+		if (aggClass == null)
+			return (null);
+
+		Aggregator agg = m_injector.getInstance(aggClass);
+		return (agg);
 	}
+
 }

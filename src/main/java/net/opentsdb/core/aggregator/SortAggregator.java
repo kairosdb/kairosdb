@@ -1,5 +1,6 @@
 package net.opentsdb.core.aggregator;
 
+import net.opentsdb.core.aggregator.annotation.AggregatorName;
 import net.opentsdb.core.datastore.DataPointGroup;
 
 /**
@@ -9,6 +10,7 @@ import net.opentsdb.core.datastore.DataPointGroup;
  Time: 2:10 PM
  To change this template use File | Settings | File Templates.
  */
+@AggregatorName(name="sort")
 public class SortAggregator extends SortedAggregator
 {
 	@Override

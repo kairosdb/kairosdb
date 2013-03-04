@@ -13,6 +13,7 @@
 package net.opentsdb.core.aggregator;
 
 import net.opentsdb.core.DataPoint;
+import net.opentsdb.core.aggregator.annotation.AggregatorName;
 import net.opentsdb.core.datastore.DataPointGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
+@AggregatorName(name="sum")
 public class SumAggregator extends SortedAggregator
 {
 	public static final Logger logger = LoggerFactory.getLogger(SumAggregator.class);

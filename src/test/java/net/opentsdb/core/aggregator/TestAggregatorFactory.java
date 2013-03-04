@@ -1,5 +1,7 @@
 package net.opentsdb.core.aggregator;
 
+import net.opentsdb.core.aggregator.annotation.AggregatorName;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,12 +18,18 @@ public class TestAggregatorFactory implements AggregatorFactory
 
 	public TestAggregatorFactory()
 	{
-		m_aggregators.put("sum", new SumAggregator());
-		m_aggregators.put("min", new MinAggregator());
-		m_aggregators.put("max", new MaxAggregator());
-		m_aggregators.put("avg", new AvgAggregator());
-		m_aggregators.put("dev", new StdAggregator());
-		m_aggregators.put("sort", new SortAggregator());
+		addAggregator(new SumAggregator());
+		addAggregator(new MinAggregator());
+		addAggregator(new MaxAggregator());
+		addAggregator(new AvgAggregator());
+		addAggregator(new StdAggregator());
+		addAggregator(new SortAggregator());
+	}
+
+	private void addAggregator(Aggregator agg)
+	{
+		String name = (agg.getClass().getAnnotation(AggregatorName.class)).name();
+		m_aggregators.put(name, agg);
 	}
 
 	public Aggregator createAggregator(String name)

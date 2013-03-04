@@ -186,7 +186,6 @@ public class Main
 			{
 				public void run()
 				{
-
 					try
 					{
 						main.stopServices();
@@ -324,8 +323,7 @@ public class Main
 		for (Key<?> key : bindings.keySet())
 		{
 			Class bindingClass = key.getTypeLiteral().getRawType();
-			Set<Class> interfaces = new HashSet<Class>(Arrays.asList(bindingClass.getInterfaces()));
-			if (interfaces.contains(OpenTsdbService.class))
+			if (OpenTsdbService.class.isAssignableFrom(bindingClass))
 			{
 				OpenTsdbService service = (OpenTsdbService)m_injector.getInstance(bindingClass);
 				m_services.add(service);

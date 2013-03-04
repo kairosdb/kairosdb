@@ -13,6 +13,7 @@
 package net.opentsdb.core.aggregator;
 
 import net.opentsdb.core.DataPoint;
+import net.opentsdb.core.aggregator.annotation.AggregatorName;
 import net.opentsdb.core.datastore.DataPointGroup;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -28,6 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * Converts all longs to double. This will cause a loss of precision for very large long values.
 */
+@AggregatorName(name="dev")
 public class StdAggregator extends SortedAggregator
 {
 	@Override

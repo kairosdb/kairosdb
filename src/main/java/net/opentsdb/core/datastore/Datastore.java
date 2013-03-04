@@ -33,7 +33,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class Datastore
 {
-	private final Map<String, Aggregator> aggregators = new HashMap<String, Aggregator>();
 	MessageDigest messageDigest;
 
 	protected Datastore() throws DatastoreException
@@ -46,12 +45,6 @@ public abstract class Datastore
 		{
 			throw new DatastoreException(e);
 		}
-
-		aggregators.put("sum", new SumAggregator());
-		aggregators.put("min", new MinAggregator());
-		aggregators.put("max", new MaxAggregator());
-		aggregators.put("avg", new AvgAggregator());
-		aggregators.put("dev", new StdAggregator());
 	}
 
 	/**

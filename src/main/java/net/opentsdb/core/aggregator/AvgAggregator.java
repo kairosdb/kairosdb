@@ -17,6 +17,7 @@ import net.opentsdb.core.aggregator.annotation.AggregatorName;
 import net.opentsdb.core.datastore.DataPointGroup;
 import net.opentsdb.core.datastore.SortingDataPointGroup;
 
+import java.util.Iterator;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -24,39 +25,30 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
-@AggregatorName(name="avg")
-public class AvgAggregator extends SortedAggregator
+@AggregatorName(name = "avg", description = "Averages the data points together.")
+public class AvgAggregator extends RangeAggregator
 {
 	@Override
-	public DataPointGroup aggregate(final DataPointGroup dataPointGroup)
+	protected RangeSubAggregator getSubAggregator()
 	{
-		return (new AvgDataPointAggregator(dataPointGroup));
+		return (new AvgDataPointAggregator());
 	}
 
-	private class AvgDataPointAggregator extends AggregatedDataPointGroupWrapper
+	private class AvgDataPointAggregator implements RangeSubAggregator
 	{
-		public AvgDataPointAggregator(DataPointGroup dataPointGroup)
-		{
-			super(dataPointGroup);
-		}
 
 		@Override
-		public DataPoint next()
+		public DataPoint getNextDataPoint(long returnTime, Iterator<DataPoint> dataPointRange)
 		{
 			int count = 0;
 			double sum = 0;
-			long lastTimestamp  = currentDataPoint.getTimestamp();
-			while (currentDataPoint.getTimestamp() == lastTimestamp)
+			while (dataPointRange.hasNext())
 			{
-				sum += currentDataPoint.getDoubleValue();
+				sum += dataPointRange.next().getDoubleValue();
 				count++;
-
-				if (!hasNextInternal())
-					break;
-				currentDataPoint = nextInternal();
 			}
 
-			return new DataPoint(lastTimestamp, sum / count);
+			return new DataPoint(returnTime, sum / count);
 		}
 	}
 

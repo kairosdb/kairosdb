@@ -10,7 +10,7 @@ import net.opentsdb.core.datastore.DataPointGroup;
  Time: 2:10 PM
  To change this template use File | Settings | File Templates.
  */
-@AggregatorName(name="sort")
+@AggregatorName(name="sort", description = "Sorts the data points according to time from lowest to highest.")
 public class SortAggregator extends SortedAggregator
 {
 	@Override

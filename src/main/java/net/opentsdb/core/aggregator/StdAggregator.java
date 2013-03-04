@@ -16,6 +16,8 @@ import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.aggregator.annotation.AggregatorName;
 import net.opentsdb.core.datastore.DataPointGroup;
 
+import java.util.Iterator;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -29,46 +31,35 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * Converts all longs to double. This will cause a loss of precision for very large long values.
 */
-@AggregatorName(name="dev")
-public class StdAggregator extends SortedAggregator
+@AggregatorName(name="dev", description = "Calculates the standard deviation of the time series.")
+public class StdAggregator extends RangeAggregator
 {
 	@Override
-	public DataPointGroup aggregate(final DataPointGroup dataPointGroup)
+	protected RangeSubAggregator getSubAggregator()
 	{
-		checkNotNull(dataPointGroup);
-
-		return (new StdDataPointAggregator(dataPointGroup));
+		return (new StdDataPointAggregator());
 	}
 
-	private class StdDataPointAggregator extends AggregatedDataPointGroupWrapper
+	private class StdDataPointAggregator implements RangeSubAggregator
 	{
-		public StdDataPointAggregator(DataPointGroup dataPointGroup)
-		{
-			super(dataPointGroup);
-		}
-
 		@Override
-		public DataPoint next()
+		public DataPoint getNextDataPoint(long returnTime, Iterator<DataPoint> dataPointRange)
 		{
 			int count = 0;
 			double average = 0;
 			double pwrSumAvg = 0;
 			double stdDev = 0;
 
-			long lastTimestamp = currentDataPoint.getTimestamp();
-			while (currentDataPoint.getTimestamp() == lastTimestamp)
+			while (dataPointRange.hasNext())
 			{
 				count++;
-				average += (currentDataPoint.getDoubleValue() - average) / count;
-				pwrSumAvg += (currentDataPoint.getDoubleValue() * currentDataPoint.getDoubleValue() - pwrSumAvg) / count;
+				DataPoint dp = dataPointRange.next();
+				average += (dp.getDoubleValue() - average) / count;
+				pwrSumAvg += (dp.getDoubleValue() * dp.getDoubleValue() - pwrSumAvg) / count;
 				stdDev = Math.sqrt((pwrSumAvg * count - count * average * average) / (count - 1));
-
-				if (!hasNextInternal())
-					break;
-				currentDataPoint = nextInternal();
 			}
 
-			return new DataPoint(lastTimestamp, Double.isNaN(stdDev) ? 0 : stdDev);
+			return new DataPoint(returnTime, Double.isNaN(stdDev) ? 0 : stdDev);
 		}
 	}
 

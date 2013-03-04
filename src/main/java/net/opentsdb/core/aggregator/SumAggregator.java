@@ -18,45 +18,36 @@ import net.opentsdb.core.datastore.DataPointGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Iterator;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
-@AggregatorName(name="sum")
-public class SumAggregator extends SortedAggregator
+@AggregatorName(name = "sum", description = "Adds data points together.")
+public class SumAggregator extends RangeAggregator
 {
 	public static final Logger logger = LoggerFactory.getLogger(SumAggregator.class);
 
-	@Override
-	public DataPointGroup aggregate(final DataPointGroup dataPointGroup)
-	{
-		checkNotNull(dataPointGroup);
 
-		return (new SumDataPointAggregator(dataPointGroup));
+	@Override
+	protected RangeSubAggregator getSubAggregator()
+	{
+		return (new SumDataPointAggregator());
 	}
 
-	private class SumDataPointAggregator extends AggregatedDataPointGroupWrapper
+	private class SumDataPointAggregator implements RangeSubAggregator
 	{
-		public SumDataPointAggregator(DataPointGroup dataPointGroup)
-		{
-			super(dataPointGroup);
-		}
-
 
 		@Override
-		public DataPoint next()
+		public DataPoint getNextDataPoint(long returnTime, Iterator<DataPoint> dataPointRange)
 		{
 			double sum = 0;
 			int counter = 0;
-			long lastTimestamp  = currentDataPoint.getTimestamp();
-			while (currentDataPoint.getTimestamp() == lastTimestamp)
+			while (dataPointRange.hasNext())
 			{
-				sum += currentDataPoint.getDoubleValue();
-
-				if (!hasNextInternal())
-					break;
-				currentDataPoint = nextInternal();
+				sum += dataPointRange.next().getDoubleValue();
 				counter ++;
 			}
 
@@ -65,7 +56,7 @@ public class SumAggregator extends SortedAggregator
 				logger.debug("Aggregating "+counter+" values");
 			}
 
-			return new DataPoint(lastTimestamp, sum);
+			return new DataPoint(returnTime, sum);
 		}
 	}
 }

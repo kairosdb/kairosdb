@@ -16,47 +16,37 @@ import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.aggregator.annotation.AggregatorName;
 import net.opentsdb.core.datastore.DataPointGroup;
 
+import java.util.Iterator;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
-@AggregatorName(name="min")
-public class MinAggregator extends SortedAggregator
+@AggregatorName(name = "min", description = "Returns the minimum value data point for the time range.")
+public class MinAggregator extends RangeAggregator
 {
 	@Override
-	public DataPointGroup aggregate(final DataPointGroup dataPointGroup)
+	protected RangeSubAggregator getSubAggregator()
 	{
-		checkNotNull(dataPointGroup);
-
-		return (new MinDataPointAggregator(dataPointGroup));
+		return (new MinDataPointAggregator());
 	}
 
-	private class MinDataPointAggregator extends AggregatedDataPointGroupWrapper
+	private class MinDataPointAggregator implements RangeSubAggregator
 	{
-		public MinDataPointAggregator(DataPointGroup dataPointGroup)
-		{
-			super(dataPointGroup);
-		}
 
 		@Override
-		public DataPoint next()
+		public DataPoint getNextDataPoint(long returnTime, Iterator<DataPoint> dataPointRange)
 		{
-			double min = Double.NaN;
-			long lastTimestamp  = currentDataPoint.getTimestamp();
-			while (currentDataPoint.getTimestamp() == lastTimestamp)
+			double min = Double.MAX_VALUE;
+			while (dataPointRange.hasNext())
 			{
-				if (Double.isNaN(min))
-					min = currentDataPoint.getDoubleValue();
-				else
-					min = Math.min(min, currentDataPoint.getDoubleValue());
+				DataPoint dp = dataPointRange.next();
 
-				if (!hasNextInternal())
-					break;
-				currentDataPoint = nextInternal();
+				min = Math.min(min, dp.getDoubleValue());
 			}
 
-			return new DataPoint(lastTimestamp, min);
+			return new DataPoint(returnTime, min);
 		}
 	}
 }

@@ -36,7 +36,8 @@ public class GuiceAggregatorFactory implements AggregatorFactory
 			{
 				AggregatorName ann = (AggregatorName)bindingClass.getAnnotation(AggregatorName.class);
 				if (ann == null)
-					continue;
+					throw new IllegalStateException("Aggregator class "+bindingClass.getName()+
+							" does not have required annotation "+AggregatorName.class.getName());
 
 				m_aggregators.put(ann.name(), bindingClass);
 			}

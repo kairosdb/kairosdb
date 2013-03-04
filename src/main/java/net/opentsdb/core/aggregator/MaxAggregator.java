@@ -16,44 +16,35 @@ import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.aggregator.annotation.AggregatorName;
 import net.opentsdb.core.datastore.DataPointGroup;
 
+import java.util.Iterator;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
-@AggregatorName(name="max")
-public class MaxAggregator extends SortedAggregator
+@AggregatorName(name = "max", description = "Returns the maximum value data point for the time range.")
+public class MaxAggregator extends RangeAggregator
 {
-	@Override
-	public DataPointGroup aggregate(final DataPointGroup dataPointGroup)
-	{
-		checkNotNull(dataPointGroup);
 
-		return (new MaxDataPointAggregator(dataPointGroup));
+	@Override
+	protected RangeSubAggregator getSubAggregator()
+	{
+		return (new MaxDataPointAggregator());
 	}
 
-	private class MaxDataPointAggregator extends AggregatedDataPointGroupWrapper
+	private class MaxDataPointAggregator implements RangeSubAggregator
 	{
-		public MaxDataPointAggregator(DataPointGroup dataPointGroup)
-		{
-			super(dataPointGroup);
-		}
-
 		@Override
-		public DataPoint next()
+		public DataPoint getNextDataPoint(long returnTime, Iterator<DataPoint> dataPointRange)
 		{
-			double max = 0;
-			long lastTimestamp  = currentDataPoint.getTimestamp();
-			while (currentDataPoint.getTimestamp() == lastTimestamp)
+			double max = Double.MIN_VALUE;
+			while (dataPointRange.hasNext())
 			{
-				max = Math.max(max, currentDataPoint.getDoubleValue());
-
-				if (!hasNextInternal())
-					break;
-				currentDataPoint = nextInternal();
+				max = Math.max(max, dataPointRange.next().getDoubleValue());
 			}
 
-			return new DataPoint(lastTimestamp, max);
+			return new DataPoint(returnTime, max);
 		}
 	}
 }

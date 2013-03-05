@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class SortedAggregator implements Aggregator
 {
 	@Override
-	public DataPointGroup aggregate(List<DataPointGroup> listDataPointGroup)
+	public DataPointGroup createAggregatorGroup(List<DataPointGroup> listDataPointGroup)
 	{
 		checkNotNull(listDataPointGroup);
 

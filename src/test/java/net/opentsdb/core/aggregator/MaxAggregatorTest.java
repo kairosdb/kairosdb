@@ -36,7 +36,7 @@ public class MaxAggregatorTest
 	@Test(expected = NullPointerException.class)
 	public void test_nullSet_invalid()
 	{
-		aggregator.aggregate((List<DataPointGroup>) null);
+		aggregator.createAggregatorGroup((List<DataPointGroup>) null);
 	}
 
 	@Test

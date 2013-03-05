@@ -19,7 +19,7 @@ import java.util.List;
 
 public interface Aggregator
 {
-	public DataPointGroup aggregate(List<DataPointGroup> dataPointGroup);
+	public DataPointGroup createAggregatorGroup(List<DataPointGroup> dataPointGroup);
 	/*public void setStart(long startTime);
 	public void setDuration(int duration);*/
 }

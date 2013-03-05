@@ -15,12 +15,10 @@ package net.opentsdb.core.datastore;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Multimap;
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.DataPointSet;
 import net.opentsdb.core.aggregator.*;
 import net.opentsdb.core.exception.DatastoreException;
-import net.opentsdb.core.exception.UnknownAggregator;
 import net.opentsdb.util.TournamentTree;
 
 import java.io.UnsupportedEncodingException;
@@ -137,7 +135,7 @@ public abstract class Datastore
 			//This will pipe the aggregators together.
 			for (Aggregator aggregator : metric.getAggregators())
 			{
-				aggregatedGroupList = Collections.singletonList(aggregator.aggregate(aggregatedGroupList));
+				aggregatedGroupList = Collections.singletonList(aggregator.createAggregatorGroup(aggregatedGroupList));
 			}
 
 			//Take whatever is left and add them to the return list.

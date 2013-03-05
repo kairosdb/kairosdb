@@ -13,7 +13,7 @@ import java.util.Iterator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public abstract class RangeAggregator extends SortAggregator
+public abstract class RangeAggregator extends SortedAggregator
 {
 	private long m_startTime;
 	private long m_range = 1L;

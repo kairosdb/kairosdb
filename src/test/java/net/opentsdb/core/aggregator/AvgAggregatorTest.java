@@ -14,7 +14,6 @@ package net.opentsdb.core.aggregator;
 
 import net.opentsdb.core.DataPoint;
 import net.opentsdb.core.datastore.DataPointGroup;
-import net.opentsdb.core.datastore.DataPointGroup;
 import net.opentsdb.testing.ListDataPointGroup;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +37,7 @@ public class AvgAggregatorTest
 	@Test(expected = NullPointerException.class)
 	public void test_nullSet_invalid()
 	{
-		aggregator.aggregate((List<DataPointGroup>) null);
+		aggregator.createAggregatorGroup((List<DataPointGroup>) null);
 	}
 
 	@Test

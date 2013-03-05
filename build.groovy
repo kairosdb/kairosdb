@@ -75,6 +75,9 @@ junit = new JUnitRule().addSources(testSources)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
 
+if (saw.getProperty("jacoco", "false").equals("true"))
+	junit.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
+
 //------------------------------------------------------------------------------
 //Build zip deployable application
 rpmFile = "$programName-$version-1.rpm"

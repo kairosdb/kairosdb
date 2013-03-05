@@ -11,7 +11,6 @@
 		<option name="genquery">genorm.QueryGen</option>
 
 		<option name="source" pattern="(.+)">-s $1</option>
-
 	</definition>
 
 

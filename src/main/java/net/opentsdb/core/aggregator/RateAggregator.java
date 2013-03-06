@@ -29,24 +29,31 @@ public class RateAggregator extends SortedAggregator
 		@Override
 		public DataPoint next()
 		{
-			final long x0 = currentDataPoint.getTimestamp();
-			final double y0 = currentDataPoint.getDoubleValue();
+			final double x0 = currentDataPoint.getDoubleValue();
+			final long y0 = currentDataPoint.getTimestamp();
 
 			//This defaults the rate to 0 if no more data points exists
-			long x1 = x0+1;
-			double y1 = y0;
+			double x1 = x0;
+			long y1 = y0+1;
 
 			if (hasNextInternal())
 			{
 				currentDataPoint = nextInternal();
 
-				x1 = currentDataPoint.getTimestamp();
-				y1 = currentDataPoint.getDoubleValue();
+				x1 = currentDataPoint.getDoubleValue();
+				y1 = currentDataPoint.getTimestamp();
+
+				if (y1 == y0)
+				{
+					throw new IllegalStateException(
+							"The rate aggregator cannot compute rate for data points with the same time stamp.  "+
+							"You must precede rate with another aggregator.");
+				}
 			}
 
 			double rate = (x1 - x0)/(y1 - y0);
 
-			return (new DataPoint(x0, rate));
+			return (new DataPoint(y0, rate));
 		}
 	}
 }

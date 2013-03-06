@@ -31,22 +31,66 @@ public class RateAggregatorTest
 
 		DataPoint dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(1L));
-		assertThat(dp.getDoubleValue(), equalTo(0.1));
+		assertThat(dp.getDoubleValue(), equalTo(10.0));
 
 		dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(2L));
-		assertThat(dp.getDoubleValue(), equalTo(0.1));
+		assertThat(dp.getDoubleValue(), equalTo(10.0));
 
 		dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(3L));
-		assertThat(dp.getDoubleValue(), equalTo(0.1));
+		assertThat(dp.getDoubleValue(), equalTo(10.0));
 
-		/*dp = results.next();
+		dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(4L));
-		assertThat(dp.getDoubleValue(), equalTo(0.0));*/
+		assertThat(dp.getDoubleValue(), equalTo(0.0));
+	}
+
+	@Test
+	public void test_changingRate()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("rate");
+		group.addDataPoint(new DataPoint(1, 10));
+		group.addDataPoint(new DataPoint(2, 10));
+		group.addDataPoint(new DataPoint(3, 5));
+		group.addDataPoint(new DataPoint(4, 20));
+
+		RateAggregator rateAggregator = new RateAggregator();
+		DataPointGroup results = rateAggregator.aggregate(group);
+
+		DataPoint dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(1L));
+		assertThat(dp.getDoubleValue(), equalTo(0.0));
+
+		dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(2L));
+		assertThat(dp.getDoubleValue(), equalTo(-5.0));
+
+		dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(3L));
+		assertThat(dp.getDoubleValue(), equalTo(15.0));
+
+		dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(4L));
+		assertThat(dp.getDoubleValue(), equalTo(0.0));
 	}
 
 
-	//Test multiple data point on same time
+	@Test(expected = IllegalStateException.class)
+	public void test_dataPointsAtSameTime()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("rate");
+		group.addDataPoint(new DataPoint(1, 10));
+		group.addDataPoint(new DataPoint(1, 15));
+		group.addDataPoint(new DataPoint(2, 5));
+		group.addDataPoint(new DataPoint(2, 20));
+		group.addDataPoint(new DataPoint(3, 30));
+
+
+		RateAggregator rateAggregator = new RateAggregator();
+		DataPointGroup results = rateAggregator.aggregate(group);
+
+		DataPoint dp = results.next();
+	}
 
 }

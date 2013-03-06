@@ -20,16 +20,16 @@ import javax.swing.JPasswordField
 println("===============================================");
 
 
-programName = "opentsdb2"
-version = "2.0.0-alpha-3"
+programName = "kairosdb"
+version = "1.0.0-alpha-3"
 release = "1" //package release number
-summary = "OpenTSDB 2"
+summary = "KairosDB"
 description = """\
-OpenTSDB 2 is a time series database that stores numeric values along
+KairosDB is a time series database that stores numeric values along
 with key/value tags to a nosql data store.  Currently supported
 backends are Cassandra and HBase.  An H2 implementation is provided
 for development work.
-OpenTSDB 2 is a rewrite of OpenTSDB to support modular interfaces.
+KairosDB is a rewrite of OpenTSDB to support modular interfaces.
 """
 
 saw = Tablesaw.getCurrentTablesaw()
@@ -52,7 +52,7 @@ jp.getCompileRule().getDefinition().set("source", "1.6")
 
 additionalFiles = new RegExFileSet("src/main/java", ".*\\.sql").recurse()
 jp.getJarRule().addFileSet(additionalFiles)
-jp.getJarRule().addFiles("src/main/resources", "opentsdb.properties",
+jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties",
 		"logback.xml")
 saw.setDefaultTarget("jar")
 
@@ -98,7 +98,7 @@ tarRule = new TarRule("build/${programName}-${version}.tar")
 		.addDepend(jp.getJarRule())
 		.addFileSetTo(zipBinDir, scriptsFileSet)
 		.addFileSetTo(zipWebRootDir, webrootFileSet)
-		.addFileTo(zipConfDir, "src/main/resources", "opentsdb.properties")
+		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.properties")
 		.setFilePermission(".*\\.sh", 0755)
 
 for (AbstractFileSet fs in libFileSets)
@@ -129,12 +129,12 @@ def doRPM(Rule rule)
 				setPlatform(Architecture.NOARCH, Os.LINUX)
 				summary = summary
 				type = RpmType.BINARY
-				url = "http://code.google.com/p/opentsdb2/"
+				url = "http://code.google.com/p/kairosdb/"
 				vendor = "Proofpoint Inc."
 				addDependencyMore("java", "1.6.0")
 				provides = programName
 				prefixes = rpmBaseInstallDir
-				postInstallScript = 'chkconfig --add opentsdb2\nchkconfig opentsdb2 on'
+				postInstallScript = 'chkconfig --add kairosdb\nchkconfig kairosdb on'
 			}
 
 
@@ -143,8 +143,8 @@ def doRPM(Rule rule)
 
 	addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/bin", scriptsFileSet)
 
-	rpmBuilder.addFile("/etc/init.d/opentsdb2", new File("src/scripts/opentsdb2-service.sh"), 0755)
-	rpmBuilder.addFile("$rpmBaseInstallDir/conf/opentsdb.properties", new File("src/main/resources/opentsdb.properties"))
+	rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
+	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.properties", new File("src/main/resources/kairosdb.properties"))
 
 	for (AbstractFileSet.File f : webrootFileSet.getFiles())
 		rpmBuilder.addFile("$rpmBaseInstallDir/webroot/$f.file", new File(f.getBaseDir(), f.getFile()))
@@ -193,12 +193,12 @@ def doDeb(Rule rule)
 
 //------------------------------------------------------------------------------
 //Run the tsd application
-new SimpleRule("run-debug").setDescription("Runs opentsdb so a debugger can attach to port 5005")
+new SimpleRule("run-debug").setDescription("Runs kairosdb so a debugger can attach to port 5005")
 		.addDepends(jp.getJarRule())
 		.setMakeAction("doRun")
 		.setProperty("DEBUG", true)
 
-new SimpleRule("run").setDescription("Runs opentsdb")
+new SimpleRule("run").setDescription("Runs kairosdb")
 		.addDepends(jp.getJarRule())
 		.setMakeAction("doRun")
 		.setProperty("DEBUG", false)
@@ -208,16 +208,16 @@ def doRun(Rule rule)
 	//args = "-c import -f export.txt"
 	//args = "-c export"
 	args = "-c run"
-	//Check if you have a custom opentsdb.properties file and load it.
-	customProps = new File("opentsdb.properties")
+	//Check if you have a custom kairosdb.properties file and load it.
+	customProps = new File("kairosdb.properties")
 	if (customProps.exists())
-		args += " -p opentsdb.properties"
+		args += " -p kairosdb.properties"
 
 	debug = ""
 	if (rule.getProperty("DEBUG"))
 		debug = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
 
-	saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${testClasspath} net.opentsdb.core.Main ${args}")
+	saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${testClasspath} org.kairosdb.core.Main ${args}")
 }
 
 

@@ -14,10 +14,10 @@
 		</encoder>
 	</appender>
 	<appender name="logfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>log/opentsdb2.log</file>
+		<file>log/kairosdb.log</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<!-- daily rollover -->
-			<fileNamePattern>log/opentsdb2.%d{yyyy-MM-dd}.log</fileNamePattern>
+			<fileNamePattern>log/kairosdb.%d{yyyy-MM-dd}.log</fileNamePattern>
 
 			<!-- keep 30 days' worth of history -->
 			<maxHistory>30</maxHistory>
@@ -29,8 +29,8 @@
 
 	<!--<logger name="org.hbase.async.RegionClient" level="DEBUG"/>-->
 
-	<!--<logger name="net.opentsdb.core.aggregator.SumAggregator" level="DEBUG"/>
-	<logger name="net.opentsdb.datastore.cassandra.CassandraDatastore" level="DEBUG"/>-->
+	<!--<logger name="org.kairosdb.core.aggregator.SumAggregator" level="DEBUG"/>
+	<logger name="org.kairosdb.datastore.cassandra.CassandraDatastore" level="DEBUG"/>-->
 
 	<root level="INFO">
 		<appender-ref ref="stdout"/>

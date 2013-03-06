@@ -1,5 +1,5 @@
 #!/bin/sh
-# Small script to setup the HBase tables used by OpenTSDB.
+# Small script to setup the HBase tables used by KairosDB.
 
 test -n "$HBASE_HOME" || {
   echo >&2 'The environment variable HBASE_HOME must be set'

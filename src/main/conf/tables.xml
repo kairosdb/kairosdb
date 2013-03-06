@@ -2,8 +2,8 @@
 
 <tables>
 	<configuration>
-		<option name="genorm.package" value="net.opentsdb.datastore.h2.orm"/>
-		<option name="genorm.destination" value="src/main/java/net/opentsdb/datastore/h2/orm"/>
+		<option name="genorm.package" value="net.kairosdb.datastore.h2.orm"/>
+		<option name="genorm.destination" value="src/main/java/net/kairosdb/datastore/h2/orm"/>
 		<option name="genorm.graphvizFile" value="build/tables.dot"/>
 
 		<type_map>

@@ -15,10 +15,12 @@ package net.opentsdb.core.http.rest.json;
 import org.apache.bval.constraints.NotEmpty;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.map.annotate.JsonDeserialize;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class NewMetricRequest
@@ -27,25 +29,27 @@ public class NewMetricRequest
 	@NotEmpty
 	private String name;
 
-	@NotNull
-	@NotEmpty
-	private String value;
+//	@NotNull
+//	@NotEmpty
+//	private String value;
 
-	@Min(1)
-	private long timestamp;
+//	@Min(1)
+//	private long timestamp;
 
 	private Map<String, String> tags;
 
+	@JsonDeserialize(using = DataPointDeserializer.class)
+	private List<DataPointRequest> datapoints;
 
 	@JsonCreator
 	public NewMetricRequest(@JsonProperty("name") String name,
-			@JsonProperty("value") String value,
-			@JsonProperty("timestamp") long timestamp,
+//			@JsonProperty("value") String value,
+//			@JsonProperty("timestamp") long timestamp,
 			@JsonProperty("tags") Map<String, String> tags)
 	{
 		this.name = name;
-		this.value = value;
-		this.timestamp = timestamp;
+//		this.value = value;
+//		this.timestamp = timestamp;
 		this.tags = tags;
 	}
 
@@ -55,16 +59,9 @@ public class NewMetricRequest
 		return name;
 	}
 
-	@JsonProperty
-	public String getValue()
+	public List<DataPointRequest> getDatapoints()
 	{
-		return value;
-	}
-
-	@JsonProperty
-	public long getTimestamp()
-	{
-		return timestamp;
+		return Collections.unmodifiableList(datapoints);
 	}
 
 	@JsonProperty

@@ -121,6 +121,16 @@ public class MetricsResourceTest
 	}
 
 	@Test
+	public void testAddMutipleDatapointSuccess() throws Exception
+	{
+		String json = Resources.toString(Resources.getResource("multiple-datapoints-metric.json"), Charsets.UTF_8);
+
+		JsonResponse response = post(json, ADD_METRIC_URL);
+
+		assertResponse(response, 204);
+	}
+
+	@Test
 	public void testAddMultipleMetricLongValueSuccess() throws Exception
 	{
 		String json = Resources.toString(Resources.getResource("multi-metric-long.json"), Charsets.UTF_8);
@@ -147,7 +157,7 @@ public class MetricsResourceTest
 
 		JsonResponse response = post(json, ADD_METRIC_URL);
 
-		assertResponse(response, 400, "{\"errors\":[\"metricsRequest[1].timestamp must be greater than or equal to 1\"]}");
+		assertResponse(response, 400, "{\"errors\":[\"timestamp must be greater than or equal to 1\"]}");
 	}
 
 	@Test

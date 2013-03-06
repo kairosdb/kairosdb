@@ -1,6 +1,5 @@
 [{
     "name": "governance.file.tracked",
-    "value": 123.56,
-    "timestamp": 1349109376,
+	"datapoints": [[1349109376, 123.56]],
     "tags":{"host":"test"}
 }]

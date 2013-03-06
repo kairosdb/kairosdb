@@ -24,58 +24,58 @@ import static org.junit.Assert.assertThat;
 
 public class NewMetricRequestTest
 {
-	@Test
-	public void testNullNameInvalid()
-	{
-		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(new NewMetricRequest(null, "value", 5, null));
-		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
-
-		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("name may not be null"));
-
-	}
-
-	@Test
-	public void testEmptyNameInvalid()
-	{
-		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(new NewMetricRequest("", "value", 5, null));
-		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
-
-		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("name may not be empty"));
-
-	}
-
-	@Test
-	public void testNullValueInvalid()
-	{
-		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(new NewMetricRequest("the name", null, 5, null));
-		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
-
-		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("value may not be null"));
-
-	}
-
-	@Test
-	public void testEmptyValueInvalid()
-	{
-		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(new NewMetricRequest("the name", "", 5, null));
-		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
-
-		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("value may not be empty"));
-
-	}
-
-	@Test
-	public void testTimestampZeroInvalid()
-	{
-		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(new NewMetricRequest("the name", "value", 0, null));
-		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
-
-		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("timestamp must be greater than or equal to 1"));
-
-	}
+//	@Test
+//	public void testNullNameInvalid()
+//	{
+//		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(new NewMetricRequest(null, "value", 5, null));
+//		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
+//
+//		assertThat(violationMessages.size(), equalTo(1));
+//		assertThat(violationMessages.get(0), equalTo("name may not be null"));
+//
+//	}
+//
+//	@Test
+//	public void testEmptyNameInvalid()
+//	{
+//		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(new NewMetricRequest("", "value", 5, null));
+//		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
+//
+//		assertThat(violationMessages.size(), equalTo(1));
+//		assertThat(violationMessages.get(0), equalTo("name may not be empty"));
+//
+//	}
+//
+//	@Test
+//	public void testNullValueInvalid()
+//	{
+//		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(new NewMetricRequest("the name", null, 5, null));
+//		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
+//
+//		assertThat(violationMessages.size(), equalTo(1));
+//		assertThat(violationMessages.get(0), equalTo("value may not be null"));
+//
+//	}
+//
+//	@Test
+//	public void testEmptyValueInvalid()
+//	{
+//		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(new NewMetricRequest("the name", "", 5, null));
+//		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
+//
+//		assertThat(violationMessages.size(), equalTo(1));
+//		assertThat(violationMessages.get(0), equalTo("value may not be empty"));
+//
+//	}
+//
+//	@Test
+//	public void testTimestampZeroInvalid()
+//	{
+//		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(new NewMetricRequest("the name", "value", 0, null));
+//		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
+//
+//		assertThat(violationMessages.size(), equalTo(1));
+//		assertThat(violationMessages.get(0), equalTo("timestamp must be greater than or equal to 1"));
+//
+//	}
 }

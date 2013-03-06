@@ -1,6 +1,5 @@
 [{
     "name": "archive.file.tracked",
-    "value": 123,
-    "timestamp": 1349109376,
+	"datapoints": [[1349109376, 123]],
     "tags":{"host":"test"}
 }]

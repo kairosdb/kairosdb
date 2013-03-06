@@ -1,0 +1,5 @@
+[{
+    "name": "archive.file.tracked",
+	"datapoints": [[1349109376, 123], [1349109377, 13.2],  [1349109378, 23.1]],
+    "tags":{"host":"test"}
+}]

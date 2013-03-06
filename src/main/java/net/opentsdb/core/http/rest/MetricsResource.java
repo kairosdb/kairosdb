@@ -106,22 +106,23 @@ public class MetricsResource
 
 		try
 		{
-			//long start = System.currentTimeMillis();
 			MetricRequestList metrics = (MetricRequestList) parseJson(MetricRequestList.class, json);
-			//long time = System.currentTimeMillis() - start;
-			//System.out.println("Parse Time: "+time);
 
 			for (NewMetricRequest metricRequest : metrics.getMetricsRequest())
 			{
 				DataPointSet set = new DataPointSet(metricRequest.getName());
-				if (metricRequest.getValue().contains("."))
+				for (DataPointRequest dataPointRequest : metricRequest.getDatapoints())
 				{
-					set.addDataPoint(new DataPoint(metricRequest.getTimestamp(), Double.parseDouble(metricRequest.getValue())));
+					if (dataPointRequest.getValue().contains("."))
+					{
+						set.addDataPoint(new DataPoint(dataPointRequest.getTimestamp(), Double.parseDouble(dataPointRequest.getValue())));
+					}
+					else
+					{
+						set.addDataPoint(new DataPoint(dataPointRequest.getTimestamp(), Long.parseLong(dataPointRequest.getValue())));
+					}
 				}
-				else
-				{
-					set.addDataPoint(new DataPoint(metricRequest.getTimestamp(), Long.parseLong(metricRequest.getValue())));
-				}
+
 
 				Map<String, String> tags = metricRequest.getTags();
 				for (String key : tags.keySet())

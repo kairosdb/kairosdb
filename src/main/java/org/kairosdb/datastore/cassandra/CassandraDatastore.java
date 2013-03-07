@@ -12,8 +12,11 @@
 // see <http://www.gnu.org/licenses/>
 package org.kairosdb.datastore.cassandra;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import me.prettyprint.cassandra.serializers.IntegerSerializer;
 import me.prettyprint.cassandra.serializers.LongSerializer;
 import me.prettyprint.cassandra.serializers.StringSerializer;
 import me.prettyprint.cassandra.service.ColumnSliceIterator;
@@ -55,7 +58,8 @@ public class CassandraDatastore extends Datastore
 	public static final String HOST_NAME_PROPERTY = "kairosdb.datastore.cassandra.host_name";
 	public static final String PORT_PROPERTY = "kairosdb.datastore.cassandra.port";
 	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
-	public static final String ROW_WIDTH_PROPERTY = "kairosdb.datastore.cassandra.row_width";
+	//public static final String ROW_WIDTH_PROPERTY = "kairosdb.datastore.cassandra.row_width";
+	public static final int ROW_WIDTH = 1814400000; //3 Weeks wide
 //	public static final String WRITE_DELAY_PROPERTY = "kairosdb.datastore.cassandra.write_delay";
 	public static final String SINGLE_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.single_row_read_size";
 	public static final String MULTI_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_read_size";
@@ -71,10 +75,9 @@ public class CassandraDatastore extends Datastore
 
 	private Cluster m_cluster;
 	private Keyspace m_keyspace;
-	private long m_rowWidth;
 	private int m_singleRowReadSize;
 	private int m_multiRowReadSize;
-	private WriteBuffer<DataPointsRowKey, Long, LongOrDouble> m_dataPointWriteBuffer;
+	private WriteBuffer<DataPointsRowKey, Integer, LongOrDouble> m_dataPointWriteBuffer;
 	private WriteBuffer<String, DataPointsRowKey, String> m_rowKeyWriteBuffer;
 	private WriteBuffer<String, String, String> m_stringIndexWriteBuffer;
 
@@ -88,11 +91,9 @@ public class CassandraDatastore extends Datastore
 	public CassandraDatastore(@Named(HOST_NAME_PROPERTY)String cassandraHost,
 			@Named(PORT_PROPERTY)String cassandraPort,
 			@Named(REPLICATION_FACTOR_PROPERTY)int replicationFactor,
-			@Named(ROW_WIDTH_PROPERTY)long rowWidth,
 			@Named(SINGLE_ROW_READ_SIZE_PROPERTY)int singleRowReadSize,
 			@Named(MULTI_ROW_READ_SIZE_PROPERTY)int multiRowReadSize) throws DatastoreException
 	{
-		m_rowWidth = rowWidth;
 		m_singleRowReadSize = singleRowReadSize;
 		m_multiRowReadSize = multiRowReadSize;
 
@@ -109,10 +110,10 @@ public class CassandraDatastore extends Datastore
 		ReentrantLock mutatorLock = new ReentrantLock();
 		Condition lockCondition =mutatorLock.newCondition();
 
-		m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Long, LongOrDouble>(
+		m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, LongOrDouble>(
 				m_keyspace, CF_DATA_POINTS, 1000,
 				DATA_POINTS_ROW_KEY_SERIALIZER,
-				LongSerializer.get(),
+				IntegerSerializer.get(),
 				LONG_OR_DOUBLE_SERIALIZER,
 				new WriteBufferStats()
 				{
@@ -193,12 +194,13 @@ public class CassandraDatastore extends Datastore
 		m_stringIndexWriteBuffer.close();
 	}
 
+
 	@Override
 	public void putDataPoints(DataPointSet dps)
 	{
 		try
 		{
-			long rowTime;
+			long rowTime = 0L;
 			long nextRow = 0L;
 			DataPointsRowKey rowKey = null;
 			//time the data is written.
@@ -206,11 +208,12 @@ public class CassandraDatastore extends Datastore
 
 			for (DataPoint dp : dps.getDataPoints())
 			{
+				//This will always be true the first time.
 				if (dp.getTimestamp() > nextRow)
 				{
 					//System.out.println("Creating new row key");
 					rowTime = calculateRowTime(dp.getTimestamp());
-					nextRow = rowTime + m_rowWidth;
+					nextRow = rowTime + ROW_WIDTH;
 
 					rowKey = new DataPointsRowKey(dps.getName(), rowTime, dps.getTags());
 
@@ -245,16 +248,17 @@ public class CassandraDatastore extends Datastore
 					}
 				}
 
+				int columnTime = getColumnName(rowTime, dp.getTimestamp());
 				//System.out.println("Adding data point value");
 				//System.out.println("Inserting "+dp);
 				if (dp.isInteger())
 				{
-					m_dataPointWriteBuffer.addData(rowKey, dp.getTimestamp(),
+					m_dataPointWriteBuffer.addData(rowKey, columnTime,
 							new LongOrDouble(dp.getLongValue()), writeTime);
 				}
 				else
 				{
-					m_dataPointWriteBuffer.addData(rowKey, dp.getTimestamp(),
+					m_dataPointWriteBuffer.addData(rowKey, columnTime,
 							new LongOrDouble(dp.getDoubleValue()), writeTime);
 				}
 			}
@@ -331,16 +335,30 @@ public class CassandraDatastore extends Datastore
 	@Override
 	protected List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
 	{
-		List<DataPointsRowKey> rowKeys = getKeysForQuery(query);
+		ListMultimap<Long, DataPointsRowKey> rowKeys = getKeysForQuery(query);
+
+		List<QueryRunner> runners = new ArrayList<QueryRunner>();
+
+		for (Long ts : rowKeys.keySet())
+		{
+			List<DataPointsRowKey> tierKeys = rowKeys.get(ts);
+
+			QueryRunner qRunner = new QueryRunner(m_keyspace, CF_DATA_POINTS, tierKeys,
+					query.getStartTime(), query.getEndTime(), cachedSearchResult, m_singleRowReadSize,
+					m_multiRowReadSize);
+
+			runners.add(qRunner);
+		}
 
 
-		QueryRunner qRunner = new QueryRunner(m_keyspace, CF_DATA_POINTS, rowKeys,
-				query.getStartTime(), query.getEndTime(), cachedSearchResult, m_singleRowReadSize,
-				m_multiRowReadSize);
 
 		try
 		{
-			qRunner.runQuery();
+			//TODO: Run this with multiple threads
+			for (QueryRunner runner : runners)
+			{
+				runner.runQuery();
+			}
 		}
 		catch (IOException e)
 		{
@@ -350,9 +368,16 @@ public class CassandraDatastore extends Datastore
 		return cachedSearchResult.getRows();
 	}
 
-	/*package*/ List<DataPointsRowKey> getKeysForQuery(DatastoreMetricQuery query)
+	/**
+	 Returns the row keys for the query in tiers ie grouped by row key timestamp
+	 @param query
+	 @return
+	 */
+	/*package*/ ListMultimap<Long, DataPointsRowKey> getKeysForQuery(DatastoreMetricQuery query)
 	{
-		List<DataPointsRowKey> ret = new ArrayList<DataPointsRowKey>();
+		ListMultimap<Long, DataPointsRowKey> retMap = ArrayListMultimap.create();
+
+		//List<DataPointsRowKey> ret = new ArrayList<DataPointsRowKey>();
 
 		SliceQuery<String, DataPointsRowKey, String> sliceQuery =
 				HFactory.createSliceQuery(m_keyspace, StringSerializer.get(),
@@ -389,18 +414,32 @@ public class CassandraDatastore extends Datastore
 					continue outer; //Don't want this key
 			}
 
-			ret.add(rowKey);
+			retMap.put(rowKey.getTimestamp(), rowKey);
+			//ret.add(rowKey);
 		}
 
 		if (logger.isDebugEnabled())
-			logger.debug("Querying the database using " + ret.size() + " keys");
+			logger.debug("Querying the database using " + retMap.size() + " keys");
 
-		return (ret);
+		return (retMap);
 	}
 
 	private long calculateRowTime(long timestamp)
 	{
-		return (timestamp - (timestamp % m_rowWidth));
+		return (timestamp - (timestamp % ROW_WIDTH));
+	}
+
+
+	public static int getColumnName(long rowTime, long timestamp)
+	{
+		int ret = (int)(timestamp - rowTime);
+
+		return (ret << 1);
+	}
+
+	public static long getColumnTimestamp(long rowTime, int columnName)
+	{
+		return (rowTime + (long)(columnName >>> 1));
 	}
 
 

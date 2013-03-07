@@ -12,6 +12,7 @@
 // see <http://www.gnu.org/licenses/>
 package org.kairosdb.datastore.cassandra;
 
+import com.google.common.collect.ListMultimap;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -105,7 +106,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
 		s_datastore = new CassandraDatastore("localhost",
-				"9160", 1, 7257600000L, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE);
+				"9160", 1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE);
 
 		DatastoreTestHelper.s_datastore = s_datastore;
 
@@ -127,7 +128,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
 				Collections.<String, String>emptyMap(), s_dataPointTime, s_dataPointTime);
 
-		List<DataPointsRowKey> keys = s_datastore.getKeysForQuery(query);
+		ListMultimap<Long, DataPointsRowKey> keys = s_datastore.getKeysForQuery(query);
 
 		assertEquals(4, keys.size());
 	}
@@ -141,7 +142,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
 				tagFilter, s_dataPointTime, s_dataPointTime);
 
-		List<DataPointsRowKey> keys = s_datastore.getKeysForQuery(query);
+		ListMultimap<Long, DataPointsRowKey> keys = s_datastore.getKeysForQuery(query);
 
 		assertEquals(2, keys.size());
 	}

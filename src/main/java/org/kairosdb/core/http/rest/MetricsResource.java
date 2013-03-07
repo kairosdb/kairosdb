@@ -13,19 +13,19 @@
 
 package org.kairosdb.core.http.rest;
 
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
+import com.google.gson.stream.MalformedJsonException;
+import org.apache.bval.jsr303.ApacheValidationProvider;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.JsonFormatter;
-import org.apache.bval.jsr303.ApacheValidationProvider;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.kairosdb.core.http.rest.json.*;
+import org.kairosdb.core.http.rest.validation.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,55 +100,24 @@ public class MetricsResource
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints")
-	public Response add(String json)
+	public Response add(InputStream json)
 	{
-		checkNotNull(json);
-
 		try
 		{
-			//long start = System.currentTimeMillis();
-			MetricRequestList metrics = (MetricRequestList) parseJson(MetricRequestList.class, json);
-			//long time = System.currentTimeMillis() - start;
-			//System.out.println("Parse Time: "+time);
+			JsonMetricParser parser = new JsonMetricParser(datastore, json);
+			parser.parse();
 
-			for (NewMetricRequest metricRequest : metrics.getMetricsRequest())
-			{
-				DataPointSet set = new DataPointSet(metricRequest.getName());
-				for (DataPointRequest dataPointRequest : metricRequest.getDatapoints())
-				{
-					if (dataPointRequest.getValue().contains("."))
-					{
-						set.addDataPoint(new DataPoint(dataPointRequest.getTimestamp(), Double.parseDouble(dataPointRequest.getValue())));
-					}
-					else
-					{
-						set.addDataPoint(new DataPoint(dataPointRequest.getTimestamp(), Long.parseLong(dataPointRequest.getValue())));
-					}
-				}
-
-
-				Map<String, String> tags = metricRequest.getTags();
-				for (String key : tags.keySet())
-				{
-					set.addTag(key, tags.get(key));
-				}
-
-				datastore.putDataPoints(set);
-			}
 			return Response.status(204).build();
 		}
-		catch (BeanValidationException e)
+		catch (ValidationException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			return builder.addErrors(e.getErrorMessages()).build();
+			return builder.addError(e.getMessage()).build();
 		}
-		catch(JsonMapperParsingException e)
+		catch(MalformedJsonException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			return builder
-					.addError(e.getMessage() + ":" + e.getCause().getMessage())
-					.build();
-
+			return builder.addError(e.getMessage()).build();
 		}
 		catch (Exception e)
 		{
@@ -181,13 +150,7 @@ public class MetricsResource
 				long endTime = getEndTime(request);
 				if (endTime > -1)
 					queryMetric.setEndTime(endTime);
-				//queryMetric.setRate(metric.isRate());
 				queryMetric.setGroupBy(metric.getGroupBy());
-				/*if (metric.getSampling() != null)
-				{
-					queryMetric.setDownSample(metric.getSampling().getDuration(),
-							metric.getSampling().getUnit(), metric.getSampling().getAggregate());
-				}*/
 				queryMetric.setTags(metric.getTags());
 
 				aggregatedResults.add(datastore.query(queryMetric));

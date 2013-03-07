@@ -1,0 +1,17 @@
+[
+	{
+		"name": "archive_file_tracked",
+		"datapoints": [[1349109376, 123], [1349109377, 13.2], [1349109378, 23.1]],
+		"tags": {
+			"host": "server1"
+		}
+	},
+	{
+		"name": "archive_file_search",
+		"datapoints": [[1349109378, 321]],
+		"tags": {
+			"host": "server2",
+			"customer": "Acme"
+		}
+	}
+]

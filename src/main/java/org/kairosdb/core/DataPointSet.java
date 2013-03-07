@@ -28,6 +28,13 @@ public class DataPointSet
 		m_dataPoints = new ArrayList<DataPoint>();
 	}
 
+	public DataPointSet(String mName, Map<String, String> tags, List<DataPoint> dataPoints)
+	{
+		this.m_name = mName;
+		this.m_tags = new TreeMap<String, String>(tags);
+		this.m_dataPoints = new ArrayList<DataPoint>(dataPoints);
+	}
+
 	public void addTag(String name, String value)
 	{
 		m_tags.put(name, value);

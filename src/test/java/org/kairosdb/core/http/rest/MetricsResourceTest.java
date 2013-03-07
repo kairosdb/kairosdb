@@ -100,7 +100,7 @@ public class MetricsResourceTest
 	{
 		JsonResponse response = post("", ADD_METRIC_URL);
 
-		assertResponse(response, 400, "{\"errors\":[\"Invalid json for Java type MetricRequestList:No content to map to Object due to end of input\"]}");
+		assertResponse(response, 400, "{\"errors\":[\"Invalid json. No content due to end of input.\"]}");
 	}
 
 	@Test
@@ -150,7 +150,7 @@ public class MetricsResourceTest
 
 		JsonResponse response = post(json, ADD_METRIC_URL);
 
-		assertResponse(response, 400, "{\"errors\":[\"metricsRequest[0].name may not be empty\"]}");
+		assertResponse(response, 400, "{\"errors\":[\"metric[0].name may not be empty.\"]}");
 	}
 
 	@Test
@@ -160,7 +160,7 @@ public class MetricsResourceTest
 
 		JsonResponse response = post(json, ADD_METRIC_URL);
 
-		assertResponse(response, 400, "{\"errors\":[\"timestamp must be greater than or equal to 1\"]}");
+		assertResponse(response, 400, "{\"errors\":[\"datapoints.timestamp must be greater than or equal to 1\"]}");
 	}
 
 	@Test

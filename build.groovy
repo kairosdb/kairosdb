@@ -206,7 +206,7 @@ new SimpleRule("run").setDescription("Runs kairosdb")
 def doRun(Rule rule)
 {
 	//args = "-c import -f export.txt"
-	//args = "-c export"
+	//args = "-c export -f test_export.txt"
 	args = "-c run"
 	//Check if you have a custom kairosdb.properties file and load it.
 	customProps = new File("kairosdb.properties")

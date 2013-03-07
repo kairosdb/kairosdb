@@ -17,25 +17,27 @@ import me.prettyprint.cassandra.serializers.AbstractSerializer;
 
 import java.nio.ByteBuffer;
 
-public class LongOrDoubleSerializer extends AbstractSerializer<LongOrDouble>
+public class ValueSerializer
 {
-	public static final byte LONG_VALUE = 0x1;
+	public static final byte FLOAT_VALUE = 0x1;
 	public static final byte DOUBLE_VALUE = 0x2;
 
-	@Override
-	public ByteBuffer toByteBuffer(LongOrDouble longOrDouble)
+	public static ByteBuffer toByteBuffer(long value)
 	{
-		ByteBuffer buffer = ByteBuffer.allocate(9);
+		ByteBuffer buffer = ByteBuffer.allocate(8);
+		boolean writeRest = false;
 
-		if (longOrDouble.isLong())
+		if (value != 0L)  //Short circuit for zero values
 		{
-			buffer.put(LONG_VALUE);
-			buffer.putLong(longOrDouble.getLongValue());
-		}
-		else
-		{
-			buffer.put(DOUBLE_VALUE);
-			buffer.putDouble(longOrDouble.getDoubleValue());
+			for (int I = 1; I <= 8; I++)
+			{
+				byte b = (byte)((value >>> (64 - (8 * I))) & 0xFF);
+				if (writeRest || b != 0)
+				{
+					buffer.put(b);
+					writeRest = true;
+				}
+			}
 		}
 
 		buffer.flip();
@@ -43,16 +45,43 @@ public class LongOrDoubleSerializer extends AbstractSerializer<LongOrDouble>
 		return (buffer);
 	}
 
-	@Override
-	public LongOrDouble fromByteBuffer(ByteBuffer byteBuffer)
+	public static long getLongFromByteBuffer(ByteBuffer byteBuffer)
+	{
+		long ret = 0L;
+
+		while (byteBuffer.hasRemaining())
+		{
+			ret <<= 8;
+			byte b = byteBuffer.get();
+			ret |= (b & 0xFF);
+		}
+
+		return (ret);
+	}
+
+
+	public static ByteBuffer toByteBuffer(float value)
+	{
+		ByteBuffer buffer = ByteBuffer.allocate(5);
+
+		buffer.put(FLOAT_VALUE);
+		buffer.putFloat(value);
+
+		buffer.flip();
+
+		return (buffer);
+	}
+
+
+	public static double getDoubleFromByteBuffer(ByteBuffer byteBuffer)
 	{
 		byte flag = byteBuffer.get();
-		LongOrDouble ret = null;
+		double ret = 0;
 
-		if (flag == LONG_VALUE)
-			ret = new LongOrDouble(byteBuffer.getLong());
+		if (flag == FLOAT_VALUE)
+			ret = byteBuffer.getFloat();
 		else
-			ret = new LongOrDouble(byteBuffer.getDouble());
+			ret = byteBuffer.getDouble();
 
 		return (ret);
 	}

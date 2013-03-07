@@ -12,8 +12,8 @@
 // see <http://www.gnu.org/licenses/>
 package org.kairosdb.datastore.cassandra;
 
+import me.prettyprint.cassandra.serializers.ByteBufferSerializer;
 import me.prettyprint.cassandra.serializers.IntegerSerializer;
-import me.prettyprint.cassandra.serializers.LongSerializer;
 import me.prettyprint.hector.api.Keyspace;
 import me.prettyprint.hector.api.beans.HColumn;
 import me.prettyprint.hector.api.beans.Row;
@@ -24,13 +24,12 @@ import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.datastore.CachedSearchResult;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.kairosdb.datastore.cassandra.CassandraDatastore.ROW_WIDTH;
-import static org.kairosdb.datastore.cassandra.CassandraDatastore.getColumnName;
-import static org.kairosdb.datastore.cassandra.CassandraDatastore.getColumnTimestamp;
+import static org.kairosdb.datastore.cassandra.CassandraDatastore.*;
 
 /**
  Created with IntelliJ IDEA.
@@ -42,7 +41,7 @@ import static org.kairosdb.datastore.cassandra.CassandraDatastore.getColumnTimes
 public class QueryRunner
 {
 	public static final DataPointsRowKeySerializer ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
-	public static final LongOrDoubleSerializer LONG_OR_DOUBLE_SERIALIZER = new LongOrDoubleSerializer();
+	public static final ValueSerializer LONG_OR_DOUBLE_SERIALIZER = new ValueSerializer();
 
 	private Keyspace m_keyspace;
 	private String m_columnFamily;
@@ -66,12 +65,12 @@ public class QueryRunner
 		if (startTime < m_tierRowTime)
 			m_startTime = 0;
 		else
-			m_startTime = getColumnName(m_tierRowTime, startTime);
+			m_startTime = getColumnName(m_tierRowTime, startTime, true); //Pass true so we get 0x0 for last bit
 
 		if (endTime > (m_tierRowTime + ROW_WIDTH))
-			m_endTime = ROW_WIDTH;
+			m_endTime = getColumnName(m_tierRowTime, m_tierRowTime + ROW_WIDTH, false);
 		else
-			m_endTime = getColumnName(m_tierRowTime, endTime);
+			m_endTime = getColumnName(m_tierRowTime, endTime, false); //Pass false so we get 0x1 for last bit
 
 		m_cachedResults = csResult;
 		m_singleRowReadSize = singleRowReadSize;
@@ -82,24 +81,24 @@ public class QueryRunner
 
 	public void runQuery() throws IOException
 	{
-		MultigetSliceQuery<DataPointsRowKey, Integer, LongOrDouble> msliceQuery =
+		MultigetSliceQuery<DataPointsRowKey, Integer, ByteBuffer> msliceQuery =
 				HFactory.createMultigetSliceQuery(m_keyspace,
 						ROW_KEY_SERIALIZER,
-						IntegerSerializer.get(), LONG_OR_DOUBLE_SERIALIZER);
+						IntegerSerializer.get(), ByteBufferSerializer.get());
 
 		msliceQuery.setColumnFamily(m_columnFamily);
 		msliceQuery.setKeys(m_rowKeys);
 		msliceQuery.setRange(m_startTime, m_endTime, false, m_multiRowReadSize);
 
-		Rows<DataPointsRowKey, Integer, LongOrDouble> rows =
+		Rows<DataPointsRowKey, Integer, ByteBuffer> rows =
 				msliceQuery.execute().get();
 
-		List<Row<DataPointsRowKey, Integer, LongOrDouble>> unfinishedRows =
-				new ArrayList<Row<DataPointsRowKey, Integer, LongOrDouble>>();
+		List<Row<DataPointsRowKey, Integer, ByteBuffer>> unfinishedRows =
+				new ArrayList<Row<DataPointsRowKey, Integer, ByteBuffer>>();
 
-		for (Row<DataPointsRowKey, Integer, LongOrDouble> row : rows)
+		for (Row<DataPointsRowKey, Integer, ByteBuffer> row : rows)
 		{
-			List<HColumn<Integer, LongOrDouble>> columns = row.getColumnSlice().getColumns();
+			List<HColumn<Integer, ByteBuffer>> columns = row.getColumnSlice().getColumns();
 			if (columns.size() == m_multiRowReadSize)
 				unfinishedRows.add(row);
 
@@ -109,18 +108,18 @@ public class QueryRunner
 
 		//Iterate through the unfinished rows and get the rest of the data.
 		//todo: use multiple threads to retrieve this data
-		for (Row<DataPointsRowKey, Integer, LongOrDouble> unfinishedRow : unfinishedRows)
+		for (Row<DataPointsRowKey, Integer, ByteBuffer> unfinishedRow : unfinishedRows)
 		{
 			DataPointsRowKey key = unfinishedRow.getKey();
 
-			SliceQuery<DataPointsRowKey, Integer, LongOrDouble> sliceQuery =
+			SliceQuery<DataPointsRowKey, Integer, ByteBuffer> sliceQuery =
 					HFactory.createSliceQuery(m_keyspace, ROW_KEY_SERIALIZER,
-					IntegerSerializer.get(), LONG_OR_DOUBLE_SERIALIZER);
+					IntegerSerializer.get(), ByteBufferSerializer.get());
 
 			sliceQuery.setColumnFamily(m_columnFamily);
 			sliceQuery.setKey(key);
 
-			List<HColumn<Integer, LongOrDouble>> columns = unfinishedRow.getColumnSlice().getColumns();
+			List<HColumn<Integer, ByteBuffer>> columns = unfinishedRow.getColumnSlice().getColumns();
 
 			do
 			{
@@ -134,33 +133,30 @@ public class QueryRunner
 			} while (columns.size() == m_singleRowReadSize);
 		}
 
-		m_cachedResults.endDataPoints();
+		//m_cachedResults.endDataPoints();
 	}
 
 
-	private void writeColumns(DataPointsRowKey rowKey, List<HColumn<Integer, LongOrDouble>> columns)
+	private void writeColumns(DataPointsRowKey rowKey, List<HColumn<Integer, ByteBuffer>> columns)
 			throws IOException
 	{
 		Map<String, String> tags = rowKey.getTags();
 		m_cachedResults.startDataPointSet(tags);
-		//long lastTime = 0;
 
-		for (HColumn<Integer, LongOrDouble> column : columns)
+		for (HColumn<Integer, ByteBuffer> column : columns)
 		{
-			/*if (column.getName() < lastTime)
-				System.out.println("ERROR "+column.getName()+" : "+column.getValue().getLongValue());
+			int columnTime = column.getName();
 
-			lastTime = column.getName();*/
-			LongOrDouble value = column.getValue();
-			if (value.isLong())
+			ByteBuffer value = column.getValue();
+			if (isLongValue(columnTime))
 			{
 				m_cachedResults.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
-						column.getName()), value.getLongValue());
+						columnTime), ValueSerializer.getLongFromByteBuffer(value));
 			}
 			else
 			{
 				m_cachedResults.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
-						column.getName()), value.getDoubleValue());
+						columnTime), ValueSerializer.getDoubleFromByteBuffer(value));
 			}
 		}
 	}

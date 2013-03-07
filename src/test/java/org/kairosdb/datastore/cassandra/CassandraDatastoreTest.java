@@ -13,6 +13,7 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.google.common.collect.ListMultimap;
+import junit.framework.Assert;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -31,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 
 /**
  Created with IntelliJ IDEA.
@@ -162,12 +165,15 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		DataPointGroup dataPointGroup = results.get(0);
 		int counter = 0;
+		int total = 0;
 		while(dataPointGroup.hasNext())
 		{
-			dataPointGroup.next();
+			DataPoint dp = dataPointGroup.next();
+			total += dp.getLongValue();
 			counter++;
 		}
 
+		assertThat(total, equalTo(counter * 42));
 		assertEquals(OVERFLOW_SIZE, counter);
 	}
 

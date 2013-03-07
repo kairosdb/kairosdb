@@ -275,7 +275,7 @@ public abstract class DatastoreTestHelper
 
 	private void assertValues(DataPointGroup group, long... values)
 	{
-		System.out.println("start_time=" + s_startTime);
+		//System.out.println("start_time=" + s_startTime);
 		for (long expected : values)
 		{
 			assertThat(group.hasNext(), is(true));

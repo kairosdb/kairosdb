@@ -16,8 +16,8 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import me.prettyprint.cassandra.serializers.ByteBufferSerializer;
 import me.prettyprint.cassandra.serializers.IntegerSerializer;
-import me.prettyprint.cassandra.serializers.LongSerializer;
 import me.prettyprint.cassandra.serializers.StringSerializer;
 import me.prettyprint.cassandra.service.ColumnSliceIterator;
 import me.prettyprint.cassandra.service.ThriftKsDef;
@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,8 +53,11 @@ public class CassandraDatastore extends Datastore
 	public static final int ROW_KEY_CACHE_SIZE = 1024;
 	public static final int STRING_CACHE_SIZE = 1024;
 
+	public static final int LONG_FLAG = 0x0;
+	public static final int FLOAT_FLAG = 0x1;
+
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
-	public static final LongOrDoubleSerializer LONG_OR_DOUBLE_SERIALIZER = new LongOrDoubleSerializer();
+	public static final ValueSerializer LONG_OR_DOUBLE_SERIALIZER = new ValueSerializer();
 
 	public static final String HOST_NAME_PROPERTY = "kairosdb.datastore.cassandra.host_name";
 	public static final String PORT_PROPERTY = "kairosdb.datastore.cassandra.port";
@@ -73,11 +77,13 @@ public class CassandraDatastore extends Datastore
 	public static final String ROW_KEY_TAG_NAMES = "tag_names";
 	public static final String ROW_KEY_TAG_VALUES = "tag_values";
 
+
+
 	private Cluster m_cluster;
 	private Keyspace m_keyspace;
 	private int m_singleRowReadSize;
 	private int m_multiRowReadSize;
-	private WriteBuffer<DataPointsRowKey, Integer, LongOrDouble> m_dataPointWriteBuffer;
+	private WriteBuffer<DataPointsRowKey, Integer, ByteBuffer> m_dataPointWriteBuffer;
 	private WriteBuffer<String, DataPointsRowKey, String> m_rowKeyWriteBuffer;
 	private WriteBuffer<String, String, String> m_stringIndexWriteBuffer;
 
@@ -110,11 +116,11 @@ public class CassandraDatastore extends Datastore
 		ReentrantLock mutatorLock = new ReentrantLock();
 		Condition lockCondition =mutatorLock.newCondition();
 
-		m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, LongOrDouble>(
+		m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, ByteBuffer>(
 				m_keyspace, CF_DATA_POINTS, 1000,
 				DATA_POINTS_ROW_KEY_SERIALIZER,
 				IntegerSerializer.get(),
-				LONG_OR_DOUBLE_SERIALIZER,
+				ByteBufferSerializer.get(),
 				new WriteBufferStats()
 				{
 					@Override
@@ -248,18 +254,18 @@ public class CassandraDatastore extends Datastore
 					}
 				}
 
-				int columnTime = getColumnName(rowTime, dp.getTimestamp());
+				int columnTime = getColumnName(rowTime, dp.getTimestamp(), dp.isInteger());
 				//System.out.println("Adding data point value");
 				//System.out.println("Inserting "+dp);
 				if (dp.isInteger())
 				{
 					m_dataPointWriteBuffer.addData(rowKey, columnTime,
-							new LongOrDouble(dp.getLongValue()), writeTime);
+							ValueSerializer.toByteBuffer(dp.getLongValue()), writeTime);
 				}
 				else
 				{
 					m_dataPointWriteBuffer.addData(rowKey, columnTime,
-							new LongOrDouble(dp.getDoubleValue()), writeTime);
+							ValueSerializer.toByteBuffer((float)dp.getDoubleValue()), writeTime);
 				}
 			}
 		}
@@ -359,6 +365,8 @@ public class CassandraDatastore extends Datastore
 			{
 				runner.runQuery();
 			}
+
+			cachedSearchResult.endDataPoints();
 		}
 		catch (IOException e)
 		{
@@ -430,16 +438,25 @@ public class CassandraDatastore extends Datastore
 	}
 
 
-	public static int getColumnName(long rowTime, long timestamp)
+	public static int getColumnName(long rowTime, long timestamp, boolean isInteger)
 	{
 		int ret = (int)(timestamp - rowTime);
 
-		return (ret << 1);
+		if (isInteger)
+			return ((ret << 1) | LONG_FLAG);
+		else
+			return ((ret << 1) | FLOAT_FLAG);
+
 	}
 
 	public static long getColumnTimestamp(long rowTime, int columnName)
 	{
 		return (rowTime + (long)(columnName >>> 1));
+	}
+
+	public static boolean isLongValue(int columnName)
+	{
+		return ((columnName & 0x1) == LONG_FLAG);
 	}
 
 

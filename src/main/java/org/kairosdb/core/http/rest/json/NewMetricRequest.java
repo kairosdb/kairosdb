@@ -17,8 +17,10 @@ import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.map.annotate.JsonDeserialize;
 
+import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -29,27 +31,17 @@ public class NewMetricRequest
 	@NotEmpty
 	private String name;
 
-//	@NotNull
-//	@NotEmpty
-//	private String value;
-
-//	@Min(1)
-//	private long timestamp;
-
 	private Map<String, String> tags;
 
+	@Valid
 	@JsonDeserialize(using = DataPointDeserializer.class)
-	private List<DataPointRequest> datapoints;
+	private List<DataPointRequest> datapoints = new ArrayList<DataPointRequest>();
 
 	@JsonCreator
 	public NewMetricRequest(@JsonProperty("name") String name,
-//			@JsonProperty("value") String value,
-//			@JsonProperty("timestamp") long timestamp,
 			@JsonProperty("tags") Map<String, String> tags)
 	{
 		this.name = name;
-//		this.value = value;
-//		this.timestamp = timestamp;
 		this.tags = tags;
 	}
 
@@ -57,6 +49,11 @@ public class NewMetricRequest
 	public String getName()
 	{
 		return name;
+	}
+
+	public void addDataPoint(DataPointRequest dataPoint)
+	{
+		this.datapoints.add(dataPoint);
 	}
 
 	public List<DataPointRequest> getDatapoints()

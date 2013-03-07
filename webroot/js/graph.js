@@ -59,7 +59,7 @@ function updateChart() {
 	}
 
 	$("#query-text").val(JSON.stringify(query, null, 2));
-	showChartForQuery("", " (Click and drag to zoom)", "", "", "", query);
+	showChartForQuery("", " (Click and drag to zoom)", "", query);
 }
 
 function showErrorMessage(message) {
@@ -191,13 +191,13 @@ function addTag(tagContainer) {
 	});
 }
 
-function showChartForQuery(title, subTitle, chartType, yAxisTitle, seriesTitle, query) {
+function showChartForQuery(title, subTitle, yAxisTitle, query) {
 	pulse.dataPointsQuery(query, function (queries) {
-		showChart(title, subTitle, chartType, yAxisTitle, seriesTitle, queries);
+		showChart(title, subTitle, yAxisTitle, queries);
 	});
 }
 
-function showChart(title, subTitle, chartType, yAxisTitle, seriesTitle, queries) {
+function showChart(title, subTitle, yAxisTitle, queries) {
 	if (queries.length == 0) {
 		return;
 	}
@@ -209,20 +209,23 @@ function showChart(title, subTitle, chartType, yAxisTitle, seriesTitle, queries)
 		result.data = resultSet.results[0].values;
 		data.push(result);
 	});
-	drawSingleSeriesChart(title, subTitle, chartType, yAxisTitle, seriesTitle, data);
+	drawSingleSeriesChart(title, subTitle, yAxisTitle, data);
 }
 
-function drawSingleSeriesChart(title, subTitle, chartType, yAxisTitle, seriesTitle, data) {
+function drawSingleSeriesChart(title, subTitle, yAxisTitle, data) {
 	chart = new Highcharts.Chart({
 		chart: {
 			renderTo: 'container',
-			type: chartType,
+			type: 'line',
 			marginRight: 130,
 			marginBottom: 50,
 			zoomType: 'x'
 		},
 		title: {
 			text: title,
+			startOnTick: true,
+			endOnTick: true,
+			showLastLabel: true,
 			x: -20 //center
 		},
 		subtitle: {

@@ -52,10 +52,6 @@ function updateChart() {
 		if (endRelativeValue) {
 			query.setEndRelative(endRelativeValue, $("#endRelativeUnit").val())
 		}
-		else {
-			// Set end time to NOW
-			query.setEndAbsolute(new Date().getTime());
-		}
 	}
 
 	$("#query-text").val(JSON.stringify(query, null, 2));

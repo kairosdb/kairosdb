@@ -171,7 +171,6 @@ function addMetric() {
 	$("#tabs").tabs({active: lastTab});
 }
 
-// todo how to remove aggregators?
 function addAggregator(container) {
 	var aggregators = container.find(".aggregator");
 

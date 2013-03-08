@@ -13,9 +13,17 @@ function updateChart() {
 			return;
 		}
 
-		var aggregate = $metricContainer.find('.metricAggregate').val();
 		var groupBy = $metricContainer.find('.metricGroupBy').val();
-		var metric = new pulse.Metric(metricName, aggregate, false, groupBy);
+		var metric = new pulse.Metric(metricName, groupBy);
+
+		// Add aggregators
+		$metricContainer.find(".aggregator").each(function (index, aggregator) {
+			var name = $(aggregator).find(".aggregatorName").val();
+			var value = $(aggregator).find(".aggregatorSamplingValue").val();
+			var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+
+			metric.addAggregator(name, value, unit);
+		});
 
 		// Add Tags
 		$metricContainer.find("[name='tags']").each(function (index, tagContainer) {
@@ -140,12 +148,54 @@ function addMetric() {
 	tagContainer.appendTo($metricContainer);
 	addTag(tagContainer);
 
+	// Rename Aggregator Container
+	$metricContainer.find("#aggregatorContainer").attr('id', 'metric-' + metricCount + 'AggregatorContainer');
+	var $aggregatorContainer = $('#metric-' + metricCount + 'AggregatorContainer');
+
+	// Listen to aggregator button
+	var aggregatorButton = $metricContainer.find("#addAggregatorButton");
+	aggregatorButton.button({
+		text: false,
+		icons: {
+			primary: 'ui-icon-plus'
+		}
+	}).click(function () {
+			addAggregator($aggregatorContainer)
+		});
+
 	// Tell tabs object to update changes
 	$("#tabs").tabs("refresh");
 
 	// Activate newly added tab
 	var lastTab = $(".ui-tabs-nav").children().size() - 1;
 	$("#tabs").tabs({active: lastTab});
+}
+
+// todo how to remove aggregators?
+function addAggregator(container) {
+	var aggregators = container.find(".aggregator");
+
+	if (aggregators.length > 0) {
+		// Add arrow
+		$('<span class="ui-icon ui-icon-arrowthick-1-s" style="margin-left: 45px;"></span>').appendTo(container);
+	}
+
+	var $aggregatorContainer = $("#aggregatorTemplate").clone();
+	$aggregatorContainer.removeAttr("id").appendTo(container);
+	$aggregatorContainer.show();
+
+	// Add listener for aggregator change
+	debugger;
+	container.find(".aggregatorName").change(function () {
+		debugger;
+		var name = container.find(".aggregatorName").val();
+		if (name == "sort" || name == "rate")
+		{
+			container.find(".aggregatorSampling").hide();
+		}
+		else
+			container.find(".aggregatorSampling").show();
+	});
 }
 
 function addAutocomplete(metricContainer) {

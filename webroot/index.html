@@ -25,6 +25,7 @@
 			$("#errorContainer").hide();
 			$("#metricTemplate").hide();
 			$("#tagTemplate").hide();
+			$("#aggregatorTemplate").hide();
 			$("#tabs").tabs({'active': 0});
 			addMetric();
 
@@ -121,7 +122,8 @@
 
 <p></p>
 
-<span class="header ui-widget">Metrics</span><button id="addMetricButton"></button>
+<span class="header ui-widget">Metrics</span>
+<button id="addMetricButton"></button>
 
 <div id="tabs" style="width:520px; background:none;margin-top: 5px;">
 	<ul></ul>
@@ -158,23 +160,17 @@
 			<td class="ui-widget">Group By</td>
 			<td><input class="ui-widget metricGroupBy" type="text" value=""></td>
 		</tr>
-		<tr>
-			<td class="ui-widget">Aggregate</td>
-			<td>
-				<select class="ui-widget metricAggregate">
-					<option value="none">NONE</option>
-					<option value="min">MIN</option>
-					<option value="max">MAX</option>
-					<option value="sum" selected="selected">SUM</option>
-					<option value="avg">AVG</option>
-					<option value="dev">DEV</option>
-				</select>
-			</td>
-		</tr>
 	</table>
 
 	<p></p>
-	<span class="header ui-widget">Tags</span> <button id="tagButton"></button>
+	<span class="header ui-widget">Aggregators</span>
+	<button id="addAggregatorButton"></button>
+
+	<div id="aggregatorContainer"></div>
+
+	<p></p>
+	<span class="header ui-widget">Tags</span>
+	<button id="tagButton"></button>
 
 	<div id="tagsContainer" style="margin-bottom: 5px;"></div>
 </div>
@@ -185,7 +181,46 @@
 		<span class="ui-widget">Name</span>
 		<span><input id="tagName" name="tagName" class="ui-widget" type="text" style="margin-left: 4px;"/></span>
 		<span class="ui-widget" style="margin-left: 4px;">Value</span>
-		<span><input id="tagValue" name="tagValue" class="ui-widget" type="text" style="margin-left: 4px; margin-bottom: 5px;"/></span>
+		<span><input id="tagValue" name="tagValue" class="ui-widget" type="text"
+		             style="margin-left: 4px; margin-bottom: 5px;"/></span>
+	</div>
+</div>
+
+<!-- Hidden Aggregator div used for cloning -->
+<div id="aggregatorTemplate" class="aggregator-frame aggregator"
+     style="margin-left: 15px; margin-top: 3px; display: table;">
+	<div style="display: table-row">
+		<div style="display: table-cell">
+			<select class="ui-widget aggregatorName">
+				<option value="avg">AVG</option>
+				<option value="dev">DEV</option>
+				<option value="min">MIN</option>
+				<option value="max">MAX</option>
+				<option value="rate">RATE</option>
+				<option value="sort">SORT</option>
+				<option value="sum" selected="selected">SUM</option>
+			</select>
+		</div>
+		<div class="aggregatorSampling">
+			<div style="display: table-cell">
+				<span class="header" style="margin-left: 30px; vertical-align: top;">Sampling</span>
+			</div>
+			<div style="display: table-cell">
+				<input class="ui-widget aggregatorSamplingValue" style="width: 30px; margin-left: 10px;" type="text">
+			</div>
+			<div style="display: table-cell;">
+				<select class="ui-widget aggregatorSamplingUnit" style="margin-left: 10px;">
+					<option value="years">Years</option>
+					<option value="months">Months</option>
+					<option value="weeks">Weeks</option>
+					<option value="days">Days</option>
+					<option value="hours">Hours</option>
+					<option value="minutes">Minutes</option>
+					<option value="seconds">Seconds</option>
+					<option value="milliseconds">Milliseconds</option>
+				</select>
+			</div>
+		</div>
 	</div>
 </div>
 

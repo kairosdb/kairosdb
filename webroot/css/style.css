@@ -22,6 +22,11 @@
 	padding: 10px;
 }
 
+.aggregator-frame {
+	border: 1px solid #aed0ea;
+	padding: 2px;
+}
+
 textarea {
 	border-color: #aed0ea;
 	padding: 0;

@@ -115,22 +115,13 @@ public class RelativeTimeTest
 	@Test
 	public void testUnitNullInvalid()
 	{
-		RelativeTime time = new RelativeTime(1, null);
+		RelativeTime time = new RelativeTime();
 		Set<ConstraintViolation<RelativeTime>> violations = BeanValidationHelper.VALIDATOR.validate(time);
 		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
 
-		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("unit must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS"));
+		assertThat(violationMessages.size(), equalTo(2));
+		/*assertThat(violationMessages.get(1), equalTo("value must be greater than or equal to 1"));
+		assertThat(violationMessages.get(0), equalTo("unit may not be null"));*/
 	}
 
-	@Test
-	public void testUnitEmptyInvalid()
-	{
-		RelativeTime time = new RelativeTime(1, "");
-		Set<ConstraintViolation<RelativeTime>> violations = BeanValidationHelper.VALIDATOR.validate(time);
-		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
-
-		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("unit must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS"));
-	}
 }

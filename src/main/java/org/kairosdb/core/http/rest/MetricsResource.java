@@ -13,16 +13,15 @@
 
 package org.kairosdb.core.http.rest;
 
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import org.apache.bval.jsr303.ApacheValidationProvider;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.formatter.DataFormatter;
+import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
 import org.kairosdb.core.http.rest.json.*;
 import org.kairosdb.core.http.rest.validation.ValidationException;
@@ -30,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.ws.rs.*;
@@ -38,7 +36,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.*;
-import java.lang.reflect.Type;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -59,15 +56,15 @@ public class MetricsResource
 	private static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
 
 	private final Datastore datastore;
-	private final AggregatorFactory aggregatorFactory;
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
 	private final ObjectMapper mapper;
+	private final GsonParser gsonParser;
 
 	@Inject
-	public MetricsResource(Datastore datastore, AggregatorFactory aggregatorFactory)
+	public MetricsResource(Datastore datastore, GsonParser gsonParser)
 	{
 		this.datastore = checkNotNull(datastore);
-		this.aggregatorFactory = checkNotNull(aggregatorFactory);
+		this.gsonParser= checkNotNull(gsonParser);
 		formatters.put("json", new JsonFormatter());
 
 		mapper = new ObjectMapper();
@@ -136,49 +133,35 @@ public class MetricsResource
 
 		try
 		{
-			QueryRequest request = (QueryRequest) parseJson(QueryRequest.class, json);
-
 			List<List<DataPointGroup>> aggregatedResults = new ArrayList<List<DataPointGroup>>();
 
-			for (Metric metric : request.getMetrics())
+			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
+
+			for (QueryMetric query : queries)
 			{
-				QueryMetric queryMetric = new QueryMetric(getStartTime(request), request.getCacheTime(),
-						metric.getName());
-
-				queryMetric.addAggregator(aggregatorFactory.createAggregator(metric.getAggregate()));
-
-				long endTime = getEndTime(request);
-				if (endTime > -1)
-					queryMetric.setEndTime(endTime);
-				queryMetric.setGroupBy(metric.getGroupBy());
-				queryMetric.setTags(metric.getTags());
-
-				aggregatedResults.add(datastore.query(queryMetric));
+				aggregatedResults.add(datastore.query(query));
 			}
 
-			File cachedOutput = File.createTempFile("query", "output");
-			FileWriter writer = new FileWriter(cachedOutput);
-
 			DataFormatter formatter = formatters.get("json");
-			formatter.format(writer, aggregatedResults);
-			writer.flush();
-			writer.close();
 
-			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(new ResponseStreamingOutput(cachedOutput));
+			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
+					new DataPointsStreamingOutput(formatter, aggregatedResults));
 			return responseBuilder.build();
+		}
+		catch (JsonSyntaxException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addError(e.getMessage()).build();
+		}
+		catch (QueryException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addError(e.getMessage()).build();
 		}
 		catch (BeanValidationException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addErrors(e.getErrorMessages()).build();
-		}
-		catch(JsonMapperParsingException e)
-		{
-			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			return builder
-					.addError(e.getMessage() + ":" + e.getCause().getMessage())
-					.build();
-
 		}
 		catch (Exception e)
 		{
@@ -187,49 +170,6 @@ public class MetricsResource
 		}
 	}
 
-	private Object parseJson(Type type, String json) throws Exception
-	{
-		Object object;
-		try {
-			JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(json);
-			object = mapper.readValue(jsonParser, mapper.getTypeFactory().constructType(type));
-		}
-		catch (Exception e) {
-			// We want to handle parsing exceptions differently than regular IOExceptions so just rethrow IOExceptions
-			if (e instanceof IOException && !(e instanceof JsonProcessingException) && !(e instanceof EOFException)) {
-				throw e;
-			}
-
-			log.debug("Invalid json for Java type " + MetricRequestList.class.getName(), e);
-
-			throw new JsonMapperParsingException(MetricRequestList.class, e);
-		}
-
-		// validate object using the bean validation framework
-		Set<ConstraintViolation<Object>> violations = VALIDATOR.validate(object);
-		if (!violations.isEmpty()) {
-			throw new BeanValidationException(violations);
-		}
-
-		return object;
-	}
-
-	private long getStartTime(QueryRequest request)
-	{
-		if (request.getStartAbsolute() != null)
-			return Long.parseLong(request.getStartAbsolute());
-		else
-			return request.getStartRelative().getTimeRelativeTo(System.currentTimeMillis());
-	}
-
-	private long getEndTime(QueryRequest request)
-	{
-		if (request.getEndAbsolute() != null)
-			return Long.parseLong(request.getEndAbsolute());
-		else if (request.getEndRelative() != null)
-			return request.getEndRelative().getTimeRelativeTo(System.currentTimeMillis());
-		return -1;
-	}
 
 	private Response executeNameQuery(NameType type)
 	{
@@ -249,45 +189,75 @@ public class MetricsResource
 					break;
 			}
 
-			File cachedOutput = File.createTempFile("query", "output");
-			FileWriter writer = new FileWriter(cachedOutput);
-
 			DataFormatter formatter = formatters.get("json");
-			formatter.format(writer, values);
-			writer.flush();
-			writer.close();
 
-			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(new ResponseStreamingOutput(cachedOutput));
+			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
+					new ValuesStreamingOutput(formatter, values));
 			return responseBuilder.build();
 		}
 		catch (Exception e)
 		{
 			log.error("Failed to get " + type, e);
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
+					new ErrorResponse(e.getMessage())).build();
 		}
 	}
 
-	public class ResponseStreamingOutput implements StreamingOutput
+	public class ValuesStreamingOutput implements StreamingOutput
 	{
-		private File file;
+		private DataFormatter m_formatter;
+		private Iterable<String> m_values;
 
-		public ResponseStreamingOutput(File file)
+		public ValuesStreamingOutput(DataFormatter formatter, Iterable<String> values)
 		{
-			this.file = file;
+			m_formatter = formatter;
+			m_values = values;
 		}
 
 		@SuppressWarnings("ResultOfMethodCallIgnored")
 		public void write(OutputStream output) throws IOException, WebApplicationException
 		{
-			FileInputStream inputStream = new FileInputStream(file);
-			byte[] buffer = new byte[1024];
-			int bytesRead;
-			while ((bytesRead = inputStream.read(buffer)) != -1)
+			Writer writer = new OutputStreamWriter(output,  "UTF-8");
+
+			try
 			{
-				output.write(buffer, 0, bytesRead);
+				m_formatter.format(writer, m_values);
+			}
+			catch (FormatterException e)
+			{
+				log.error("Description of what failed:", e);
 			}
 
-			file.delete();
+			writer.flush();
+		}
+	}
+
+	public class DataPointsStreamingOutput implements StreamingOutput
+	{
+		private DataFormatter m_formatter;
+		private List<List<DataPointGroup>> m_data;
+
+		public DataPointsStreamingOutput(DataFormatter formatter, List<List<DataPointGroup>> data)
+		{
+			m_formatter = formatter;
+			m_data = data;
+		}
+
+		@SuppressWarnings("ResultOfMethodCallIgnored")
+		public void write(OutputStream output) throws IOException, WebApplicationException
+		{
+			Writer writer = new OutputStreamWriter(output,  "UTF-8");
+
+			try
+			{
+				m_formatter.format(writer, m_data);
+			}
+			catch (FormatterException e)
+			{
+				log.error("Description of what failed:", e);
+			}
+
+			writer.flush();
 		}
 	}
 }

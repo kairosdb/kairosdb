@@ -12,13 +12,15 @@
     "metrics": [
         {
             "name": "abc.123",
-            "aggregate": "sum",
-            "sampling":{
-                "duration": 10,
-                "unit": "minutes",
-                "aggregate": "avg"
-            },
-            "rate": false,
+            "aggregators":[
+                {
+                    "name":"sum",
+                    "sampling":{
+                        "unit":"minutes",
+                        "value": 10
+                    }
+                }
+            ],
             "tags": {
                 "host": "foo",
                 "type": "bar"

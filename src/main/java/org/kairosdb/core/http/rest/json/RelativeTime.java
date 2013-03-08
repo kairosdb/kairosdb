@@ -31,6 +31,10 @@ public class RelativeTime
 
 	private Calendar calendar;
 
+	public RelativeTime()
+	{
+	}
+
 	@JsonCreator
 	public RelativeTime(@JsonProperty("value") int value, @JsonProperty("unit") String unit)
 	{
@@ -49,10 +53,13 @@ public class RelativeTime
 		return TimeUnit.from(unit);
 	}
 
+
 	public long getTimeRelativeTo(long time)
 	{
 		int field = 0;
-		if (getUnit() == TimeUnit.SECONDS )
+		if (getUnit() == TimeUnit.MILLISECONDS)
+			field = Calendar.MILLISECOND;
+		else if (getUnit() == TimeUnit.SECONDS )
 			field = Calendar.SECOND;
 		else if (getUnit() == TimeUnit.MINUTES)
 			field = Calendar.MINUTE;

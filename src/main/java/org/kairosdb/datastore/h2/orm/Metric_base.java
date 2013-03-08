@@ -124,7 +124,7 @@ public class Metric_base extends GenOrmRecord
 		/**
 		If the table has a primary key that has a key generator this method will 
 		return a new table entry with a generated primary key.
-		@return Metric with generated primary key
+		@return GSMetric with generated primary key
 		*/
 		public Metric createWithGeneratedKey()
 			{
@@ -148,7 +148,7 @@ public class Metric_base extends GenOrmRecord
 		@param keys This must match the primary key for this record.  If the 
 		record has multiple primary keys this parameter must be of type Object[] 
 		where each element is the corresponding key.
-		@return Metric or null if no record is found
+		@return GSMetric or null if no record is found
 		*/
 		public Metric findRecord(Object keys)
 			{
@@ -193,7 +193,7 @@ public class Metric_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 		Find the record with the specified primary keys
-		@return Metric or null if no record is found
+		@return GSMetric or null if no record is found
 		*/
 		public Metric find(String id)
 			{
@@ -474,7 +474,7 @@ public class Metric_base extends GenOrmRecord
 					ret = factory.newMetric(m_resultSet);
 					
 				if (m_resultSet.next())
-					throw new GenOrmException("Multiple rows returned in call from Metric.getOnlyRecord");
+					throw new GenOrmException("Multiple rows returned in call from GSMetric.getOnlyRecord");
 				}
 			catch (java.sql.SQLException sqle)
 				{

@@ -15,7 +15,7 @@ public interface DataPointRow extends Iterator<DataPoint>
 {
 	/**
 	 Returns the metric name for this group
-	 @return Metric name
+	 @return GSMetric name
 	 */
 	public String getName();
 

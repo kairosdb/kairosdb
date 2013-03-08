@@ -17,6 +17,7 @@ import com.google.common.io.Resources;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
@@ -27,6 +28,7 @@ import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
+import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.testing.TestingDataPointRowImpl;
 import org.apache.http.HttpResponse;
@@ -78,6 +80,7 @@ public class MetricsResourceTest
 				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
 				bind(Datastore.class).toInstance(datastore);
 				bind(AggregatorFactory.class).to(TestAggregatorFactory.class);
+				bind(GsonParser.class).in(Singleton.class);
 			}
 		});
 		server = injector.getInstance(WebServer.class);
@@ -184,7 +187,7 @@ public class MetricsResourceTest
 		JsonResponse response = post(json, GET_METRIC_URL);
 
 		assertResponse(response, 400,
-				"{\"errors\":[\"startRelative.unit must be one of SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS\"]}");
+				"{\"errors\":[\"\\\"bogus\\\" is not a valid time unit, must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS\"]}");
 	}
 
 	@Test
@@ -195,9 +198,7 @@ public class MetricsResourceTest
 		JsonResponse response = post(json, GET_METRIC_URL);
 
 		assertResponse(response, 400,
-				"{\"errors\":[\"Invalid json for Java type MetricRequestList:Can not instantiate value of type " +
-						"[simple type, class org.kairosdb.core.http.rest.json.QueryRequest] from JSON String; " +
-						"no single-String constructor/factory method\"]}");
+				"{\"errors\":[\"com.google.gson.stream.MalformedJsonException: Expected EOF at line 2 column 21\"]}");
 	}
 
 	@Test

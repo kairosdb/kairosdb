@@ -110,7 +110,7 @@ pulse.MetricQuery = function (cacheTime) {
 	};
 
 	/**
-	 Used to add a pulse.Metric object to the MetricQuery
+	 Used to add a pulse.GSMetric object to the MetricQuery
 	 */
 	this.addMetric = function (metric) {
 		this.metrics.push(metric);

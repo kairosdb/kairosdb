@@ -8,6 +8,8 @@ package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.core.datastore.Sampling;
+import org.kairosdb.core.http.rest.json.RelativeTime;
 
 import java.util.Iterator;
 
@@ -26,6 +28,12 @@ public abstract class RangeAggregator extends SortedAggregator
 		return (new RangeDataPointAggregator(dataPointGroup, getSubAggregator()));
 	}
 
+	public void setSampling(Sampling sampling)
+	{
+		//Todo: make this smarter to handle months
+		m_range = sampling.getSampling();
+	}
+
 	/**
 	 Start time to calculate the ranges from.  Typically this is the start
 	 of the query
@@ -36,14 +44,6 @@ public abstract class RangeAggregator extends SortedAggregator
 		m_startTime = startTime;
 	}
 
-	/**
-	 Range in which to do aggregation over.
-	 @param range Range of time in milliseconds
-	 */
-	public void setRange(long range)
-	{
-		m_range = range;
-	}
 
 	/**
 	 Return a RangeSubAggregator that will be used to aggregate data over a

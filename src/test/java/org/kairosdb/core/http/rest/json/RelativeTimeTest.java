@@ -120,7 +120,7 @@ public class RelativeTimeTest
 		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
 
 		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("unit must be one of SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS"));
+		assertThat(violationMessages.get(0), equalTo("unit must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS"));
 	}
 
 	@Test
@@ -131,6 +131,6 @@ public class RelativeTimeTest
 		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
 
 		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("unit must be one of SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS"));
+		assertThat(violationMessages.get(0), equalTo("unit must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS"));
 	}
 }

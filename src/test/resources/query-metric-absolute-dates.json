@@ -4,13 +4,11 @@
 	"metrics": [
 		{
 			"name": "abc.123",
-			"aggregate": "sum",
-			"sampling":{
-				"duration": 10,
-				"unit": "minutes",
-				"aggregate": "avg"
-			},
-			"rate": false,
+			"aggregators":[
+                {
+                    "name":"sum"
+                }
+            ],
 			"tags": {
 				"host": "foo",
 				"type": "bar"

@@ -17,6 +17,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 import org.kairosdb.core.aggregator.*;
+import org.kairosdb.core.http.rest.json.GsonParser;
 
 import java.util.Properties;
 
@@ -46,6 +47,7 @@ public class CoreModule extends AbstractModule
 					dsClassName, DATASTORE_CLASS_PROPERTY);
 		}*/
 		bind(AggregatorFactory.class).to(GuiceAggregatorFactory.class).in(Singleton.class);
+		bind(GsonParser.class).in(Singleton.class);
 
 		bind(SumAggregator.class);
 		bind(MinAggregator.class);

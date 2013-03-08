@@ -17,6 +17,7 @@ import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 public enum TimeUnit
 {
+	MILLISECONDS,
 	SECONDS,
 	MINUTES,
 	HOURS,

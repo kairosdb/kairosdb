@@ -1,6 +1,7 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datastore.DataPointGroup;
 
 /**
@@ -10,6 +11,7 @@ import org.kairosdb.core.datastore.DataPointGroup;
  Time: 2:13 PM
  To change this template use File | Settings | File Templates.
  */
+@AggregatorName(name = "rate", description = "Computes the rate of change for the data points.")
 public class RateAggregator extends SortedAggregator
 {
 	@Override

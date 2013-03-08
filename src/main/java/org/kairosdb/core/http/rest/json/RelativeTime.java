@@ -12,6 +12,7 @@
 // see <http://www.gnu.org/licenses/>
 package org.kairosdb.core.http.rest.json;
 
+import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.http.rest.validation.TimeUnitRequired;
 import org.codehaus.jackson.annotate.JsonCreator;
@@ -21,38 +22,25 @@ import javax.validation.constraints.Min;
 import java.util.Calendar;
 import java.util.TimeZone;
 
-public class RelativeTime
+public class RelativeTime extends Duration
 {
-	@Min(1)
-	private int value;
-
-	@TimeUnitRequired
-	private String unit;
-
 	private Calendar calendar;
 
-	public RelativeTime()
+	private void initialize()
 	{
-	}
-
-	@JsonCreator
-	public RelativeTime(@JsonProperty("value") int value, @JsonProperty("unit") String unit)
-	{
-		this.value = value;
-		this.unit = unit;
 		calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	}
 
-	public int getValue()
+	public RelativeTime()
 	{
-		return value;
+		initialize();
 	}
 
-	public TimeUnit getUnit()
+	public RelativeTime(int value, String unit)
 	{
-		return TimeUnit.from(unit);
+		super(value, TimeUnit.from(unit));
+		initialize();
 	}
-
 
 	public long getTimeRelativeTo(long time)
 	{

@@ -1,8 +1,15 @@
+// KairosDB2
+// Copyright (C) 2013 Proofpoint, Inc.
 //
-// GsonParser.java
-//
-// Copyright 2013, NextPage Inc. All rights reserved.
-//
+// This program is free software: you can redistribute it and/or modify it
+// under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 2.1 of the License, or (at your
+// option) any later version.  This program is distributed in the hope that it
+// will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+// of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser
+// General Public License for more details.  You should have received a copy
+// of the GNU Lesser General Public License along with this program.  If not,
+// see <http://www.gnu.org/licenses/>
 
 package org.kairosdb.core.http.rest.json;
 
@@ -15,16 +22,12 @@ import com.google.gson.stream.JsonWriter;
 import com.google.inject.Inject;
 import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
-import org.codehaus.jackson.annotate.JsonCreator;
-import org.codehaus.jackson.annotate.JsonProperty;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.AggregatorFactory;
-import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
-import org.kairosdb.core.http.rest.validation.TimeUnitRequired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,20 +35,16 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Valid;
 import javax.validation.Validation;
 import javax.validation.Validator;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class GsonParser
 {
@@ -55,7 +54,7 @@ public class GsonParser
 
 	private AggregatorFactory m_aggregatorFactory;
 	private Map<Class, Map<String, PropertyDescriptor>> m_descriptorMap;
-	private Object m_descriptorMapLock = new Object();
+	private final Object m_descriptorMapLock = new Object();
 	private Gson m_gson;
 
 	@Inject
@@ -314,6 +313,7 @@ public class GsonParser
 		}
 	}
 
+	//===========================================================================
 	private static class LowercaseEnumTypeAdapterFactory implements TypeAdapterFactory
 	{
 		public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type)
@@ -365,6 +365,7 @@ public class GsonParser
 		}
 	}
 
+	//===========================================================================
 	private class TimeUnitDeserializer implements JsonDeserializer<TimeUnit>
 	{
 		public TimeUnit deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
@@ -384,44 +385,6 @@ public class GsonParser
 			}
 
 			return tu;
-		}
-	}
-
-
-	private class RelativeTime extends Duration
-	{
-		private Calendar calendar;
-
-		public RelativeTime()
-		{
-			calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-		}
-
-
-		public long getTimeRelativeTo(long time)
-		{
-			int field = 0;
-			if (getUnit() == TimeUnit.MILLISECONDS)
-				field = Calendar.MILLISECOND;
-			else if (getUnit() == TimeUnit.SECONDS )
-				field = Calendar.SECOND;
-			else if (getUnit() == TimeUnit.MINUTES)
-				field = Calendar.MINUTE;
-			else if (getUnit() == TimeUnit.HOURS)
-				field = Calendar.HOUR;
-			else if (getUnit() == TimeUnit.DAYS)
-				field = Calendar.DATE;
-			else if (getUnit() == TimeUnit.WEEKS)
-				field = Calendar.WEEK_OF_MONTH;
-			else if (getUnit() == TimeUnit.MONTHS)
-				field = Calendar.MONTH;
-			else if (getUnit() == TimeUnit.YEARS)
-				field = Calendar.YEAR;
-
-			calendar.setTimeInMillis(time);
-			calendar.add(field, -value);
-
-			return calendar.getTime().getTime();
 		}
 	}
 }

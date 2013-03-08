@@ -9,13 +9,15 @@
     },
     "metrics": [
         {
-            "aggregate": "sum",
-            "sampling": {
-                "duration": 10,
-                "unit": "minutes",
-                "aggregate": "avg"
-            },
-            "rate": false,
+            "aggregators":[
+            	{
+            		"name":"sum",
+            		"sampling": {
+            			"duration": 10,
+            			"unit": "minutes",
+            		}
+            	}
+            ],
             "tags": {
                 "host": "foo",
                 "type": "bar"

@@ -9,7 +9,7 @@ function updateChart() {
 		var $metricContainer = $(element);
 		var metricName = $metricContainer.find('.metricName').val();
 		if (!metricName) {
-			showErrorMessage("Metric Name is required.");
+			showErrorMessage("GSMetric Name is required.");
 			return;
 		}
 
@@ -83,7 +83,7 @@ function addMetric() {
 
 	// Create tab
 	var $newMetric = $('<li id="metricTab' + metricCount + '">' +
-		'<a class="metricTab" style="padding-right:2px;" href="#metricContainer' + metricCount + '">Metric</a>' +
+		'<a class="metricTab" style="padding-right:2px;" href="#metricContainer' + metricCount + '">GSMetric</a>' +
 		'<button id="removeMetric' + metricCount + '" style="background:none; border: none; width:15px;"></button></li>');
 	$newMetric.appendTo('#tabs .ui-tabs-nav');
 

@@ -191,6 +191,9 @@ function addAggregator(container) {
 		if (name == "sort" || name == "rate")
 		{
 			container.find(".aggregatorSampling").hide();
+
+			// clear values
+			container.find(".aggregatorSamplingValue").val("")
 		}
 		else
 			container.find(".aggregatorSampling").show();

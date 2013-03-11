@@ -163,6 +163,9 @@ function addMetric() {
 			addAggregator($aggregatorContainer)
 		});
 
+	// Add a default aggregator
+	addAggregator($aggregatorContainer);
+
 	// Tell tabs object to update changes
 	$("#tabs").tabs("refresh");
 

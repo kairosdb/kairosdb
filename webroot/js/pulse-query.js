@@ -5,6 +5,11 @@ if (pulse === undefined)
 
 pulse.dataPointsQuery = function (metricQuery, callback) {
 	var startTime = new Date();
+
+	var $queryTime = $("#queryTime");
+	$queryTime.html("");
+	$queryTime.html("<i>in progress...</i>");
+
 	$.ajax({
 		type: "POST",
 		url: "/api/v1/datapoints/query",
@@ -12,7 +17,6 @@ pulse.dataPointsQuery = function (metricQuery, callback) {
 		data: JSON.stringify(metricQuery),
 		dataType: 'json',
 		success: function (data, textStatus, jqXHR) {
-			var $queryTime = $("#queryTime");
 			$queryTime.html("");
 			$queryTime.append(new Date().getTime() - startTime.getTime() + " ms");
 			callback(data.queries);

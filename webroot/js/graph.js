@@ -252,11 +252,15 @@ function showChart(title, subTitle, yAxisTitle, queries) {
 
 	var data = [];
 	queries.forEach(function (resultSet) {
-		var result = {};
-		result.name = resultSet.results[0].name;
-		result.data = resultSet.results[0].values;
-		data.push(result);
+
+		resultSet.results.forEach(function(queryResult) {
+			var result = {};
+			result.name = queryResult.name;
+			result.data = queryResult.values;
+			data.push(result);
+		});
 	});
+
 	drawSingleSeriesChart(title, subTitle, yAxisTitle, data);
 }
 

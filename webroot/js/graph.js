@@ -241,11 +241,11 @@ function addTag(tagContainer) {
 
 function showChartForQuery(title, subTitle, yAxisTitle, query) {
 	pulse.dataPointsQuery(query, function (queries) {
-		showChart(title, subTitle, yAxisTitle, queries);
+		showChart(title, subTitle, yAxisTitle, query, queries);
 	});
 }
 
-function showChart(title, subTitle, yAxisTitle, queries) {
+function showChart(title, subTitle, yAxisTitle, query, queries) {
 	if (queries.length == 0) {
 		return;
 	}
@@ -253,9 +253,17 @@ function showChart(title, subTitle, yAxisTitle, queries) {
 	var data = [];
 	queries.forEach(function (resultSet) {
 
+		var metricCount = 0;
 		resultSet.results.forEach(function(queryResult) {
+
+			debugger;
+			var groupName = "";
+			var groupBy = query.metrics[metricCount].group_by;
+			if (groupBy)
+				groupName = queryResult.tags[groupBy][0];
+
 			var result = {};
-			result.name = queryResult.name;
+			result.name = queryResult.name + '<br>(' + groupBy + '=' + groupName + ')';
 			result.data = queryResult.values;
 			data.push(result);
 		});

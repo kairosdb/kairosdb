@@ -21,7 +21,7 @@ println("===============================================");
 
 
 programName = "kairosdb"
-version = "1.0.0-alpha-3"
+version = "1.0.0-alpha-4"
 release = "1" //package release number
 summary = "KairosDB"
 description = """\
@@ -134,9 +134,9 @@ def doRPM(Rule rule)
 				addDependencyMore("java", "1.6.0")
 				provides = programName
 				prefixes = rpmBaseInstallDir
-				postInstallScript = 'chkconfig --add kairosdb\nchkconfig kairosdb on'
 			}
 
+	rpmBuilder.setPostInstallScript("chkconfig --add kairosdb\nchkconfig kairosdb on")
 
 	for (AbstractFileSet fs in libFileSets)
 		addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/lib", fs)

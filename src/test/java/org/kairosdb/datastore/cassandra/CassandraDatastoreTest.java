@@ -1,15 +1,18 @@
-// KairosDB2
-// Copyright (C) 2013 Proofpoint, Inc.
-//
-// This program is free software: you can redistribute it and/or modify it
-// under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 2.1 of the License, or (at your
-// option) any later version.  This program is distributed in the hope that it
-// will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-// of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser
-// General Public License for more details.  You should have received a copy
-// of the GNU Lesser General Public License along with this program.  If not,
-// see <http://www.gnu.org/licenses/>
+/*
+ * Copyright 2013 Proofpoint Inc.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
 package org.kairosdb.datastore.cassandra;
 
 import com.google.common.collect.ListMultimap;
@@ -35,13 +38,7 @@ import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-/**
- Created with IntelliJ IDEA.
- User: bhawkins
- Date: 1/25/13
- Time: 12:53 PM
- To change this template use File | Settings | File Templates.
- */
+
 public class CassandraDatastoreTest extends DatastoreTestHelper
 {
 	public static final String ROW_KEY_TEST_METRIC = "row_key_test_metric";

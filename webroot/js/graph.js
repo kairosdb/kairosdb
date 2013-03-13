@@ -187,9 +187,7 @@ function addAggregator(container) {
 	$aggregatorContainer.show();
 
 	// Add listener for aggregator change
-	debugger;
 	container.find(".aggregatorName").change(function () {
-		debugger;
 		var name = container.find(".aggregatorName").val();
 		if (name == "sort" || name == "rate")
 		{
@@ -259,7 +257,6 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 		var metricCount = 0;
 		resultSet.results.forEach(function(queryResult) {
 
-			debugger;
 			var groupName = "";
 			var groupBy = query.metrics[metricCount].group_by;
 			if (groupBy)

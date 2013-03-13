@@ -19,7 +19,7 @@ package org.kairosdb.core.datastore.hbase;
 
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreTestHelper;
-import org.kairosdb.datastore.hbase.HBaseDatastore;
+import net.opentsdb.kairosdb.HBaseDatastore;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;

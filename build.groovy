@@ -21,7 +21,7 @@ println("===============================================");
 
 
 programName = "kairosdb"
-version = "1.0.0-alpha-4"
+version = "1.0.0-alpha-4a"
 release = "1" //package release number
 summary = "KairosDB"
 description = """\
@@ -81,6 +81,7 @@ if (saw.getProperty("jacoco", "false").equals("true"))
 //------------------------------------------------------------------------------
 //Build zip deployable application
 rpmFile = "$programName-$version-1.rpm"
+srcRpmFile = "$programName-$version-1.src.rpm"
 libFileSets = [
 		new RegExFileSet("build/jar", ".*\\.jar"),
 		new RegExFileSet("lib", ".*\\.jar"),
@@ -119,6 +120,7 @@ rpmRule = new SimpleRule("package-rpm").setDescription("Build RPM Package")
 
 def doRPM(Rule rule)
 {
+	host = InetAddress.getLocalHost().getHostName()
 	rpmBuilder = new Builder()
 	rpmBuilder.with
 			{
@@ -134,6 +136,8 @@ def doRPM(Rule rule)
 				addDependencyMore("java", "1.6.0")
 				provides = programName
 				prefixes = rpmBaseInstallDir
+				buildHost = host
+				sourceRpm = srcRpmFile
 			}
 
 	rpmBuilder.setPostInstallScript("chkconfig --add kairosdb\nchkconfig kairosdb on")

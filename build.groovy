@@ -39,8 +39,10 @@ ivyConfig = ["default"]
 
 
 rpmDir = "build/rpm"
+rpmNoDepDir = "build/rpm-nodep"
 new DirectoryRule("build")
 rpmDirRule = new DirectoryRule(rpmDir)
+rpmNoDepDirRule = new DirectoryRule(rpmNoDepDir)
 
 ivy = new IvyAddon().setup()
 
@@ -117,6 +119,13 @@ rpmRule = new SimpleRule("package-rpm").setDescription("Build RPM Package")
 		.addDepend(rpmDirRule)
 		.addTarget("$rpmDir/$rpmFile")
 		.setMakeAction("doRPM")
+		.setProperty("dependency", "on")
+
+new SimpleRule("package-rpm-nodep").setDescription("Build RPM Package with no dependencies")
+		.addDepend(jp.getJarRule())
+		.addDepend(rpmNoDepDirRule)
+		.addTarget("${rpmNoDepDir}/$rpmFile")
+		.setMakeAction("doRPM")
 
 def doRPM(Rule rule)
 {
@@ -133,12 +142,14 @@ def doRPM(Rule rule)
 				type = RpmType.BINARY
 				url = "http://code.google.com/p/kairosdb/"
 				vendor = "Proofpoint Inc."
-				addDependencyMore("java", "1.6.0")
 				provides = programName
 				prefixes = rpmBaseInstallDir
 				buildHost = host
 				sourceRpm = srcRpmFile
 			}
+
+	if ("on".equals(rule.getProperty("dependency")))
+		rpmBuilder.addDependencyMore("java", "1.6")
 
 	rpmBuilder.setPostInstallScript("chkconfig --add kairosdb\nchkconfig kairosdb on")
 
@@ -153,7 +164,7 @@ def doRPM(Rule rule)
 	for (AbstractFileSet.File f : webrootFileSet.getFiles())
 		rpmBuilder.addFile("$rpmBaseInstallDir/webroot/$f.file", new File(f.getBaseDir(), f.getFile()))
 
-	println("Building RPM to $rpmDir")
+	println("Building RPM "+rule.getTarget())
 	outputFile = new FileOutputStream(rule.getTarget())
 	rpmBuilder.build(outputFile.channel)
 	outputFile.close()

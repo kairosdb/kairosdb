@@ -7,7 +7,8 @@
 . /etc/init.d/functions
 # Start the service KairosDB2
 
-export JAVA_HOME=/etc/alternatives/jre
+#Set JAVA_HOME if your java is not in the path already
+#export JAVA_HOME=/etc/alternatives/jre
 
 start() {
         initlog -c "echo -n Starting KairosDB server: "

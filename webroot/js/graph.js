@@ -275,7 +275,7 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 				show: true
 			},
 			points: {
-				show: true,
+				show: true
 			}
 		},
 		grid: {
@@ -288,7 +288,8 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 			mode: "time"
 		},
 		legend: {
-			container: $("#graphLegend")
+			container: $("#graphLegend"),
+			noColumns: 5
 		},
 		colors: ["#4572a7", "#aa4643", "#89a54e", "#80699b", "#db843d"]
 	};

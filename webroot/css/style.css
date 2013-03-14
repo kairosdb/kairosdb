@@ -44,15 +44,10 @@ button {
 	margin-left: 4px;
 }
 
-.center {
-	margin-left: auto;
-	margin-right: auto;
-	width: 10%;
-}
-
 .graphSubtitle{
 	color: #6d91c6;
 	font-size: small;
+	text-align: center;
 }
 
 .graphTooltip{
@@ -64,5 +59,5 @@ button {
 	font-size: 14px;
 	font-weight: 600;
 	font-family: MS,serif;
-	opacity: 0.80
+	opacity: 0.80;
 }

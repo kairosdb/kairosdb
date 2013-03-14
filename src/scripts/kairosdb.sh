@@ -17,12 +17,12 @@ if [ "$TSDB_PID_DIR" = "" ]; then
 fi
 
 
-if [ "$JAVA_HOME" = "" ]; then
-	echo "Error: JAVA_HOME is not set."
-	exit 1
+# Use JAVA_HOME if set, otherwise look for java in PATH
+if [ -n "$JAVA_HOME" ]; then
+    JAVA="$JAVA_HOME/bin/java"
+else
+    JAVA=java
 fi
-
-JAVA=$JAVA_HOME/bin/java
 
 pid=$TSDB_PID_DIR/kairosdb.pid
 

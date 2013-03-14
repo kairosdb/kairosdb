@@ -63,7 +63,7 @@ function updateChart() {
 	}
 
 	$("#query-text").val(JSON.stringify(query, null, 2));
-	showChartForQuery("", " (Click and drag to zoom)", "", query);
+	showChartForQuery("", "(Click and drag to zoom)", "", query);
 }
 
 function showErrorMessage(message) {
@@ -189,8 +189,7 @@ function addAggregator(container) {
 	// Add listener for aggregator change
 	container.find(".aggregatorName").change(function () {
 		var name = container.find(".aggregatorName").val();
-		if (name == "sort" || name == "rate")
-		{
+		if (name == "sort" || name == "rate") {
 			container.find(".aggregatorSampling").hide();
 
 			// clear values
@@ -255,85 +254,92 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 	queries.forEach(function (resultSet) {
 
 		var metricCount = 0;
-		resultSet.results.forEach(function(queryResult) {
+		resultSet.results.forEach(function (queryResult) {
 
-			var groupName = "";
+			var groupByMessage = "";
 			var groupBy = query.metrics[metricCount].group_by;
 			if (groupBy)
-				groupName = queryResult.tags[groupBy][0];
+				groupByMessage = '<br>(' + groupBy + '=' + queryResult.tags[groupBy][0] + ')';
 
 			var result = {};
-			result.name = queryResult.name + '<br>(' + groupBy + '=' + groupName + ')';
+			result.name = queryResult.name + groupByMessage;
+			result.label = queryResult.name + groupByMessage;
 			result.data = queryResult.values;
 			data.push(result);
 		});
 	});
 
-	drawSingleSeriesChart(title, subTitle, yAxisTitle, data);
-}
-
-function drawSingleSeriesChart(title, subTitle, yAxisTitle, data) {
-	chart = new Highcharts.Chart({
-		chart: {
-			renderTo: 'container',
-			type: 'line',
-			marginRight: 130,
-			marginBottom: 50,
-			zoomType: 'x'
-		},
-		title: {
-			text: title,
-			startOnTick: true,
-			endOnTick: true,
-			showLastLabel: true,
-			x: -20 //center
-		},
-		subtitle: {
-			text: subTitle,
-			x: -20
-		},
-		xAxis: {
-			type: 'datetime',
-			labels: {
-				rotation: -45
+	var flotOptions = {
+		series: {
+			lines: {
+				show: true
 			},
-			dateTimeLabelFormats: {
-				second: '%H:%M:%S',
-				minute: '%e %H:%M',
-				hour: '%e %H',
-				day: '%e. %b',
-				week: '%e %b',
-				month: '%b \'%y',
-				year: '%Y'
+			points: {
+				show: true,
 			}
 		},
-		yAxis: {
-			title: {
-				text: yAxisTitle
-			},
-			plotLines: [
-				{
-					value: 0,
-					width: 1,
-					color: '#808080'
-				}
-			]
+		grid: {
+			hoverable: true
 		},
-		tooltip: {
-			formatter: function () {
-				return '<b>' + this.series.name + '</b><br/>' +
-					this.x + ': ' + this.y;
-			}
+		selection: {
+			mode: "x"
+		},
+		xaxis: {
+			mode: "time"
 		},
 		legend: {
-			layout: 'vertical',
-			align: 'right',
-			verticalAlign: 'top',
-			x: -10,
-			y: 100,
-			borderWidth: 0
+			container: $("#graphLegend")
 		},
-		series: data
+		colors: ["#4572a7", "#aa4643", "#89a54e", "#80699b", "#db843d"]
+	};
+
+	drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions);
+
+	$("#resetZoom").click(function () {
+		drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions);
+		$("#resetZoom").hide();
 	});
 }
 
+function drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions) {
+	$("#flotTitle").html(subTitle);
+
+	var $flotcontainer = $("#flotcontainer");
+
+	$.plot($flotcontainer, data, flotOptions);
+
+	$flotcontainer.bind("plothover", function (event, pos, item) {
+		if (item) {
+			if (previousPoint != item.dataIndex) {
+				previousPoint = item.dataIndex;
+
+				$("#tooltip").remove();
+				var x = item.datapoint[0].toFixed(2);
+				var y = item.datapoint[1].toFixed(2);
+
+				showTooltip(item.pageX, item.pageY,
+					item.series.label + "<br>" + x + " : " + y);
+			}
+		} else {
+			$("#tooltip").remove();
+			previousPoint = null;
+		}
+	});
+
+	$flotcontainer.bind("plotselected", function (event, ranges) {
+		$.plot($flotcontainer, data, $.extend(true, {}, flotOptions, {
+			xaxis: {
+				min: ranges.xaxis.from,
+				max: ranges.xaxis.to
+			}
+		}));
+		$("#resetZoom").show();
+	});
+}
+
+function showTooltip(x, y, contents) {
+	$('<div id="tooltip" class="graphTooltip">' + contents + '</div>').css({
+		top: y + 5,
+		left: x + 5
+	}).appendTo("body").fadeIn(200);
+}

@@ -276,6 +276,26 @@ public abstract class DatastoreTestHelper
 		dpg.close();
 	}
 
+	@Test
+	public void test_queryWithMultipleTagsFilter() throws DatastoreException
+	{
+		Map<String, String> tags = new TreeMap<String, String>();
+		tags.put("host", "A");
+		tags.put("client", "bar");
+		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1");
+		query.addAggregator(m_aggFactory.createAggregator("sort"));
+		query.setGroupBy("host");
+		query.setEndTime(s_startTime + 3000);
+
+		query.setTags(tags);
+
+		List<DataPointGroup> results = s_datastore.query(query);
+
+		assertThat(results.size(), is(1));
+
+		assertValues(results.get(0), 9, 10, 11, 12);
+	}
+
 	private void assertValues(DataPointGroup group, long... values)
 	{
 		//System.out.println("start_time=" + s_startTime);

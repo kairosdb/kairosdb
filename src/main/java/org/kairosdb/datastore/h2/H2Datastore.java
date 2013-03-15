@@ -18,6 +18,7 @@ package org.kairosdb.datastore.h2;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import genorm.runtime.GenOrmQueryResultSet;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.h2.jdbcx.JdbcDataSource;
@@ -206,19 +207,37 @@ public class H2Datastore extends Datastore
 	{
 		StringBuilder sb = new StringBuilder();
 
+		GenOrmQueryResultSet<? extends MetricIdResults> idQuery = null;
+
 		//Manually build the where clause for the tags
 		//This is subject to sql injection
-		for (String tag : query.getTags().keySet())
+		Set<String> filterTags = query.getTags().keySet();
+		if (filterTags.size() != 0)
 		{
-			sb.append(" and mt.\"tag_name\" = '").append(tag);
-			sb.append("' and mt.\"tag_value\" = '").append(query.getTags().get(tag));
-			sb.append("'");
+			sb.append(" and (");
+			boolean first = true;
+			for (String tag : filterTags)
+			{
+				if (!first)
+					sb.append(" or ");
+				first = false;
+
+				sb.append(" (mt.\"tag_name\" = '").append(tag);
+				sb.append("' and mt.\"tag_value\" = '").append(query.getTags().get(tag));
+				sb.append("')");
+			}
+
+			sb.append(") ");
+
+			idQuery = new MetricIdsWithTagsQuery(query.getName(), filterTags.size(),
+					sb.toString()).runQuery();
+		}
+		else
+		{
+			idQuery = new MetricIdsQuery(query.getName()).runQuery();
 		}
 
-		MetricIdsQuery.ResultSet idQuery = new MetricIdsQuery(query.getName(),
-				new Timestamp(query.getStartTime()),
-				new Timestamp(query.getEndTime()),
-				sb.toString()).runQuery();
+
 
 		List<DataPointRow> retList = new ArrayList<DataPointRow>();
 		while (idQuery.next())

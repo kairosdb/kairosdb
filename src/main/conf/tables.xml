@@ -2,8 +2,8 @@
 
 <tables>
 	<configuration>
-		<option name="genorm.package" value="net.kairosdb.datastore.h2.orm"/>
-		<option name="genorm.destination" value="src/main/java/net/kairosdb/datastore/h2/orm"/>
+		<option name="genorm.package" value="org.kairosdb.datastore.h2.orm"/>
+		<option name="genorm.destination" value="src/main/java/org/kairosdb/datastore/h2/orm"/>
 		<option name="genorm.graphvizFile" value="build/tables.dot"/>
 
 		<type_map>
@@ -119,8 +119,25 @@
 			the initial rows returned.</comment>
 			<input>
 				<param name="metric_name" type="string" test="foo"/>
-				<param name="start_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
-				<param name="end_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
+			</input>
+			<return>
+				<param name="metric_id" type="string"/>
+			</return>
+			<sql>
+				select m."id" as metric_id from metric m, metric_tag mt
+				where
+				mt."metric_id" = m."id"
+				and m."name" = ?
+				group by m."id"
+			</sql>
+		</query>
+
+		<query name="metric_ids_with_tags">
+			<comment>Returns the metric ids for a specified query.  In essence this
+			the initial rows returned.  Takes a tags filter</comment>
+			<input>
+				<param name="metric_name" type="string" test="foo"/>
+				<param name="tag_count" type="integer" test="1"/>
 			</input>
 			<replace>
 				<param name="tags" tag="tags" type="string" test=""/>
@@ -129,63 +146,13 @@
 				<param name="metric_id" type="string"/>
 			</return>
 			<sql>
-				select distinct dp."metric_id"
-				from data_point dp, metric m, metric_tag mt
+				select m."id" as metric_id from metric m, metric_tag mt
 				where
-				dp."metric_id" = m."id" and mt."metric_id" = m."id"
+				mt."metric_id" = m."id"
 				and m."name" = ?
-				and dp."timestamp" &gt;= ?
-				and dp."timestamp" &lt;= ?
 				%tags%
+				group by m."id" having count(0) = ?
 			</sql>
 		</query>
-
-
-		<!--<query name="books_by_author">
-			<input>
-				<param name="name" type="string" test="Tolkien"/>
-			</input>
-			<return>
-				<param name="title" type="string"/>
-				<param name="isbn" type="string"/>
-			</return>
-			<sql>
-				select b."title", b."isbn"
-				from
-				author a, book b
-				where
-				a."name" = ? and
-				b."author" = a."author_id"
-			</sql>
-		</query>
-
-		<query name="all_books">
-			<input>
-			</input>
-			<return>
-				<param name="title" type="string"/>
-				<param name="author" type="string"/>
-			</return>
-			<sql>
-				select b."title", a."name" as author
-				from
-				book b, author a
-				where
-				b."author" = a."author_id"
-			</sql>
-		</query>
-
-		<query name="all_authors">
-			<input>
-			</input>
-			<return>
-				<param name="author_id" type="integer"/>
-				<param name="name" type="string"/>
-			</return>
-			<sql>
-				select "author_id", "name"
-				from author
-			</sql>
-		</query>-->
 	</queries>
 </tables>

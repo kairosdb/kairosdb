@@ -1,19 +1,3 @@
-/*
- * Copyright 2013 Proofpoint Inc.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
-
 package org.kairosdb.datastore.h2.orm;
 
 import java.util.*;
@@ -140,7 +124,7 @@ public class Metric_base extends GenOrmRecord
 		/**
 		If the table has a primary key that has a key generator this method will 
 		return a new table entry with a generated primary key.
-		@return GSMetric with generated primary key
+		@return Metric with generated primary key
 		*/
 		public Metric createWithGeneratedKey()
 			{
@@ -164,7 +148,7 @@ public class Metric_base extends GenOrmRecord
 		@param keys This must match the primary key for this record.  If the 
 		record has multiple primary keys this parameter must be of type Object[] 
 		where each element is the corresponding key.
-		@return GSMetric or null if no record is found
+		@return Metric or null if no record is found
 		*/
 		public Metric findRecord(Object keys)
 			{
@@ -209,7 +193,7 @@ public class Metric_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 		Find the record with the specified primary keys
-		@return GSMetric or null if no record is found
+		@return Metric or null if no record is found
 		*/
 		public Metric find(String id)
 			{
@@ -490,7 +474,7 @@ public class Metric_base extends GenOrmRecord
 					ret = factory.newMetric(m_resultSet);
 					
 				if (m_resultSet.next())
-					throw new GenOrmException("Multiple rows returned in call from GSMetric.getOnlyRecord");
+					throw new GenOrmException("Multiple rows returned in call from Metric.getOnlyRecord");
 				}
 			catch (java.sql.SQLException sqle)
 				{

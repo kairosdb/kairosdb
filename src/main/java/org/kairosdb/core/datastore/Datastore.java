@@ -18,11 +18,9 @@ package org.kairosdb.core.datastore;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.util.TournamentTree;
 import org.kairosdb.core.aggregator.Aggregator;
+import org.kairosdb.core.exception.DatastoreException;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -63,8 +61,8 @@ public abstract class Datastore
 
 	/**
 	 Exports the data for a metric query without doing any aggregation or sorting
-	 @param metric
-	 @return
+	 @param metric metric
+	 @return list of data point rows
 	 @throws DatastoreException
 	 */
 	public List<DataPointRow> export(QueryMetric metric) throws DatastoreException
@@ -92,8 +90,6 @@ public abstract class Datastore
 		{
 			throw new DatastoreException(e);
 		}
-
-		List<DataPointGroup> aggregatedResults = new ArrayList<DataPointGroup>();
 
 		return (queryDatabase(metric, cachedResults));
 	}
@@ -147,14 +143,6 @@ public abstract class Datastore
 			{
 				aggregatedResults.add(dataPointGroup);
 			}
-
-			/*Aggregator aggregator = aggregators.get(metric.getAggregator());
-			if (aggregator == null)
-			{
-				throw new UnknownAggregator(metric.getAggregator());
-			}
-
-			aggregatedResults.add(aggregator.aggregate(dataPointGroupList));*/
 		}
 
 		return aggregatedResults;
@@ -195,14 +183,6 @@ public abstract class Datastore
 					continue;
 
 				groups.put(tagValue, dataPointGroup);
-				/*TournamentTreeDataGroup tree = groups.get(tagValue);
-				if (tree == null)
-				{
-					tree = new TournamentTreeDataGroup(metricName);
-					groups.put(tagValue, tree);
-				}
-
-				tree.addIterator(new DataPointGroupRowWrapper(dataPointGroup));*/
 			}
 
 			for (String key : groups.keySet())
@@ -219,79 +199,6 @@ public abstract class Datastore
 	}
 
 	protected abstract List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException;
-
-	private class TournamentTreeDataGroup extends AbstractDataPointGroup
-	{
-		private TournamentTree<DataPoint> tree;
-		//We keep this list so we can close the iterators
-		private List<DataPointGroup> taggedDataPointsList = new ArrayList<DataPointGroup>();
-
-		public TournamentTreeDataGroup(String name)
-		{
-			super(name);
-
-			tree = new TournamentTree<DataPoint>(new DataPointComparator());
-		}
-
-		public TournamentTreeDataGroup(String name, List<DataPointRow> listDataPointRow)
-		{
-			this(name);
-
-			for (DataPointRow dataPoints : listDataPointRow)
-			{
-				addIterator(new DataPointGroupRowWrapper(dataPoints));
-			}
-		}
-
-		/*public TournamentTreeDataGroup(String name, List<DataPointGroup> listDataPointGroup)
-		{
-			this(name);
-
-			for (DataPointGroup dataPoints : listDataPointGroup)
-			{
-				addIterator(dataPoints);
-			}
-		}*/
-
-		@Override
-		public void close()
-		{
-			for (DataPointGroup taggedDataPoints : taggedDataPointsList)
-			{
-				taggedDataPoints.close();
-			}
-		}
-
-		@Override
-		public boolean hasNext()
-		{
-			return tree.hasNext();
-		}
-
-		@Override
-		public DataPoint next()
-		{
-			DataPoint ret = tree.nextElement();
-
-			return ret;
-		}
-
-		public void addIterator(DataPointGroup taggedDataPoints)
-		{
-			tree.addIterator(taggedDataPoints);
-			addTags(taggedDataPoints);
-			taggedDataPointsList.add(taggedDataPoints);
-		}
-	}
-
-	private class DataPointComparator implements Comparator<DataPoint>
-	{
-		@Override
-		public int compare(DataPoint point1, DataPoint point2)
-		{
-			return point1.compareTo(point2);
-		}
-	}
 
 	private String calculateFilenameHash(QueryMetric metric) throws NoSuchAlgorithmException, UnsupportedEncodingException
 	{

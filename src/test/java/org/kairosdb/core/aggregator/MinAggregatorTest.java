@@ -39,7 +39,7 @@ public class MinAggregatorTest
 	@Test(expected = NullPointerException.class)
 	public void test_nullSet_invalid()
 	{
-		aggregator.createAggregatorGroup((List<DataPointGroup>) null);
+		aggregator.aggregate(null);
 	}
 
 	@Test

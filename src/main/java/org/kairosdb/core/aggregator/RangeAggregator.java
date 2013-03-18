@@ -19,19 +19,17 @@ package org.kairosdb.core.aggregator;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
-import org.kairosdb.core.http.rest.json.RelativeTime;
 
 import java.util.Iterator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public abstract class RangeAggregator extends SortedAggregator
+public abstract class RangeAggregator implements Aggregator
 {
 	private long m_startTime;
 	private long m_range = 1L;
 
-	@Override
-	protected DataPointGroup aggregate(DataPointGroup dataPointGroup)
+	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
 		checkNotNull(dataPointGroup);
 

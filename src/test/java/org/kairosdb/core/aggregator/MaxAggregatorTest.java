@@ -15,13 +15,11 @@
  */
 package org.kairosdb.core.aggregator;
 
+import org.junit.Before;
+import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.testing.ListDataPointGroup;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -39,7 +37,7 @@ public class MaxAggregatorTest
 	@Test(expected = NullPointerException.class)
 	public void test_nullSet_invalid()
 	{
-		aggregator.createAggregatorGroup((List<DataPointGroup>) null);
+		aggregator.aggregate(null);
 	}
 
 	@Test

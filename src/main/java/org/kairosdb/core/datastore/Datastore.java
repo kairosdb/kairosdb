@@ -60,10 +60,11 @@ public abstract class Datastore
 	public abstract Iterable<String> getTagValues() throws DatastoreException;
 
 	/**
-	 Exports the data for a metric query without doing any aggregation or sorting
-	 @param metric metric
-	 @return list of data point rows
-	 @throws DatastoreException
+	 * Exports the data for a metric query without doing any aggregation or sorting
+	 *
+	 * @param metric metric
+	 * @return list of data point rows
+	 * @throws DatastoreException
 	 */
 	public List<DataPointRow> export(QueryMetric metric) throws DatastoreException
 	{
@@ -121,28 +122,22 @@ public abstract class Datastore
 			throw new DatastoreException(e);
 		}
 
+		List<DataPointGroup> queryResults = groupBy(wrapRows(queryDatabase(metric, cachedResults)), metric.getGroupBy());
+
 		List<DataPointGroup> aggregatedResults = new ArrayList<DataPointGroup>();
-
-		List<List<DataPointGroup>> queryResults = groupBy(metric.getName(),
-				wrapRows(queryDatabase(metric, cachedResults)), metric.getGroupBy());
-
-		for (List<DataPointGroup> dataPointGroupList : queryResults)
+		for (DataPointGroup queryResult : queryResults)
 		{
-			List<DataPointGroup> aggregatedGroupList = dataPointGroupList;
+			DataPointGroup aggregatedGroup = queryResult;
+
+			List<Aggregator> aggregators = metric.getAggregators();
 
 			//This will pipe the aggregators together.
-			for (Aggregator aggregator : metric.getAggregators())
+			for (Aggregator aggregator : aggregators)
 			{
-				aggregatedGroupList = Collections.singletonList(aggregator.createAggregatorGroup(aggregatedGroupList));
+				aggregatedGroup = aggregator.aggregate(aggregatedGroup);
 			}
 
-			//Take whatever is left and add them to the return list.
-			//If there were no aggregation done then we iterate over dataPointGroupList
-			//and return what we got from the data store
-			for (DataPointGroup dataPointGroup : aggregatedGroupList)
-			{
-				aggregatedResults.add(dataPointGroup);
-			}
+			aggregatedResults.add(aggregatedGroup);
 		}
 
 		return aggregatedResults;
@@ -160,14 +155,13 @@ public abstract class Datastore
 		return (ret);
 	}
 
-	private List<List<DataPointGroup>> groupBy(String metricName, List<DataPointGroup> dataPointsList, String groupByTag)
+	private List<DataPointGroup> groupBy(List<DataPointGroup> dataPointsList, String groupByTag)
 	{
-		List<List<DataPointGroup>> ret = new ArrayList<List<DataPointGroup>>();
+		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
 
 		if (groupByTag != null)
 		{
 			ListMultimap<String, DataPointGroup> groups = ArrayListMultimap.create();
-			//Map<String, List<DataPointGroup>> groups = new HashMap<String, List<DataPointGroup>>();
 
 			for (DataPointGroup dataPointGroup : dataPointsList)
 			{
@@ -187,12 +181,12 @@ public abstract class Datastore
 
 			for (String key : groups.keySet())
 			{
-				ret.add(groups.get(key));
+				ret.add(new SortingDataPointGroup(groups.get(key)));
 			}
 		}
 		else
 		{
-			ret.add(dataPointsList);
+			ret.add(new SortingDataPointGroup(dataPointsList));
 		}
 
 		return ret;

@@ -21,12 +21,5 @@ import java.util.List;
 
 public interface Aggregator
 {
-	/**
-
-	 @param dataPointGroup
-	 @return
-	 */
-	public DataPointGroup createAggregatorGroup(List<DataPointGroup> dataPointGroup);
-	/*public void setStart(long startTime);
-	public void setDuration(int duration);*/
+	DataPointGroup aggregate(DataPointGroup dataPointGroup);
 }

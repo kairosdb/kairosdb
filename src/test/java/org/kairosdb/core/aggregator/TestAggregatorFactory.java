@@ -33,7 +33,6 @@ public class TestAggregatorFactory implements AggregatorFactory
 		addAggregator(new MaxAggregator());
 		addAggregator(new AvgAggregator());
 		addAggregator(new StdAggregator());
-		addAggregator(new SortAggregator());
 	}
 
 	private void addAggregator(Aggregator agg)

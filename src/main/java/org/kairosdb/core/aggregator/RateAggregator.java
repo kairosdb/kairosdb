@@ -21,10 +21,9 @@ import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datastore.DataPointGroup;
 
 @AggregatorName(name = "rate", description = "Computes the rate of change for the data points.")
-public class RateAggregator extends SortedAggregator
+public class RateAggregator implements Aggregator
 {
-	@Override
-	protected DataPointGroup aggregate(DataPointGroup dataPointGroup)
+	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
 		return (new RateDataPointAggregator(dataPointGroup));
 	}

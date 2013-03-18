@@ -26,6 +26,12 @@ import static org.junit.Assert.assertThat;
 
 public class RateAggregatorTest
 {
+	@Test(expected = NullPointerException.class)
+	public void test_nullSet_invalid()
+	{
+		new RateAggregator().aggregate(null);
+	}
+
 	@Test
 	public void test_steadyRate()
 	{

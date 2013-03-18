@@ -57,7 +57,6 @@ public class CoreModule extends AbstractModule
 		bind(MaxAggregator.class);
 		bind(AvgAggregator.class);
 		bind(StdAggregator.class);
-		bind(SortAggregator.class);
 		bind(RateAggregator.class);
 
 		Names.bindProperties(binder(), m_props);

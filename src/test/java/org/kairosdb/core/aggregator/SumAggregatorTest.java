@@ -41,7 +41,7 @@ public class SumAggregatorTest
 	@Test(expected = NullPointerException.class)
 	public void test_nullSet_invalid()
 	{
-		aggregator.createAggregatorGroup((List<DataPointGroup>) null);
+		aggregator.aggregate(null);
 	}
 
 	@Test
@@ -56,7 +56,7 @@ public class SumAggregatorTest
 		group.addDataPoint(new DataPoint(2, 5));
 		group.addDataPoint(new DataPoint(3, 25));
 
-		DataPointGroup results = aggregator.createAggregatorGroup(Collections.singletonList((DataPointGroup) group));
+		DataPointGroup results = aggregator.aggregate(group);
 
 		assertThat(results.hasNext(), equalTo(true));
 		DataPoint dataPoint = results.next();
@@ -88,7 +88,7 @@ public class SumAggregatorTest
 		group.addDataPoint(new DataPoint(2, 5.0));
 		group.addDataPoint(new DataPoint(3, 25.1));
 
-		DataPointGroup results = aggregator.createAggregatorGroup(Collections.singletonList((DataPointGroup) group));
+		DataPointGroup results = aggregator.aggregate(group);
 
 		DataPoint dataPoint = results.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(1L));
@@ -117,7 +117,7 @@ public class SumAggregatorTest
 		group.addDataPoint(new DataPoint(2, 5.0));
 		group.addDataPoint(new DataPoint(3, 25.1));
 
-		DataPointGroup results = aggregator.createAggregatorGroup(Collections.singletonList((DataPointGroup)group));
+		DataPointGroup results = aggregator.aggregate(group);
 
 		assertThat(results.hasNext(), equalTo(true));
 		DataPoint dataPoint = results.next();
@@ -142,48 +142,7 @@ public class SumAggregatorTest
 	{
 		ListDataPointGroup group = new ListDataPointGroup("group");
 
-		DataPointGroup results = aggregator.createAggregatorGroup(Collections.singletonList((DataPointGroup) group));
-
-		assertThat(results.hasNext(), equalTo(false));
-	}
-
-
-	@Test
-	public void test_multipleGroups()
-	{
-		long time = System.currentTimeMillis();
-		ListDataPointGroup group = new ListDataPointGroup("group");
-		group.addDataPoint(new DataPoint(time+1, 10));
-		group.addDataPoint(new DataPoint(time+1, 3));
-		group.addDataPoint(new DataPoint(time+2, 1));
-		group.addDataPoint(new DataPoint(time+2, 5));
-		group.addDataPoint(new DataPoint(time+3, 25));
-
-		ListDataPointGroup group2 = new ListDataPointGroup("group");
-
-		group2.addDataPoint(new DataPoint(time+1, 20));
-		group2.addDataPoint(new DataPoint(time+2, 3));
-
-		List<DataPointGroup> groups = new ArrayList<DataPointGroup>();
-		groups.add(group);
-		groups.add(group2);
-
-		DataPointGroup results = aggregator.createAggregatorGroup(groups);
-
-		assertThat(results.hasNext(), equalTo(true));
-		DataPoint dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(time+1L));
-		assertThat(dataPoint.getLongValue(), equalTo(33L));
-
-		assertThat(results.hasNext(), equalTo(true));
-		dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(time+2L));
-		assertThat(dataPoint.getLongValue(), equalTo(9L));
-
-		assertThat(results.hasNext(), equalTo(true));
-		dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(time+3L));
-		assertThat(dataPoint.getLongValue(), equalTo(25L));
+		DataPointGroup results = aggregator.aggregate(group);
 
 		assertThat(results.hasNext(), equalTo(false));
 	}

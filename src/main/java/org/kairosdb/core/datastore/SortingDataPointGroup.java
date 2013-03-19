@@ -17,6 +17,7 @@
 package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.util.TournamentTree;
 
 import java.util.ArrayList;
@@ -35,26 +36,23 @@ public class SortingDataPointGroup extends AbstractDataPointGroup
 		m_tree = new TournamentTree<DataPoint>(new DataPointComparator());
 	}
 
-	public SortingDataPointGroup(String name, List<DataPointRow> listDataPointRow)
-	{
-		this(name);
-
-		for (DataPointRow dataPoints : listDataPointRow)
-		{
-			addIterator(new DataPointGroupRowWrapper(dataPoints));
-		}
-	}
-
 	public SortingDataPointGroup(List<DataPointGroup> listDataPointGroup)
 	{
+		this(listDataPointGroup, null);
+	}
+
+	public SortingDataPointGroup(List<DataPointGroup> listDataPointGroup, GroupByResult groupByResult)
+	{
 		this(listDataPointGroup.size() == 0 ? "" : listDataPointGroup.get(0).getName());
+
+		if (groupByResult != null)
+			addGroupByResult(groupByResult);
 
 		for (DataPointGroup dataPoints : listDataPointGroup)
 		{
 			addIterator(dataPoints);
 		}
 	}
-
 
 	public void addIterator(DataPointGroup taggedDataPoints)
 	{
@@ -81,9 +79,7 @@ public class SortingDataPointGroup extends AbstractDataPointGroup
 	@Override
 	public DataPoint next()
 	{
-		DataPoint ret = m_tree.nextElement();
-
-		return ret;
+		return m_tree.nextElement();
 	}
 
 

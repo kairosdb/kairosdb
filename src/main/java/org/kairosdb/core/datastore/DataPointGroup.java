@@ -17,8 +17,10 @@
 package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.groupby.GroupByResult;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 public interface DataPointGroup extends Iterator<DataPoint>
@@ -42,6 +44,13 @@ public interface DataPointGroup extends Iterator<DataPoint>
 	 @return A set of tag values
 	 */
 	public Set<String> getTagValues(String tag);
+
+	/**
+	 * Returns the list of group by results or an empty list if the results are not grouped.
+	 *
+	 * @return list of group by results
+	 */
+	public List<GroupByResult> getGroupByResult();
 
 	/**
 	 Close any underlying resources held open by this DataPointGroup.  This

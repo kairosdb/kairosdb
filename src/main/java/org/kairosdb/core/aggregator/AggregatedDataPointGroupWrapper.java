@@ -17,7 +17,9 @@ package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.core.groupby.GroupByResult;
 
+import java.util.List;
 import java.util.Set;
 
 public abstract class AggregatedDataPointGroupWrapper implements DataPointGroup
@@ -84,5 +86,11 @@ public abstract class AggregatedDataPointGroupWrapper implements DataPointGroup
 	public void close()
 	{
 		innerDataPointGroup.close();
+	}
+
+	@Override
+	public List<GroupByResult> getGroupByResult()
+	{
+		return innerDataPointGroup.getGroupByResult();
 	}
 }

@@ -29,6 +29,7 @@ import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.datastore.TimeUnit;
+import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
 import org.slf4j.Logger;
@@ -101,7 +102,8 @@ public class GsonParser
 	{
 		// validate object using the bean validation framework
 		Set<ConstraintViolation<Object>> violations = VALIDATOR.validate(object);
-		if (!violations.isEmpty()) {
+		if (!violations.isEmpty())
+		{
 			throw new BeanValidationException(violations);
 		}
 	}
@@ -151,13 +153,13 @@ public class GsonParser
 					}
 					catch (IntrospectionException e)
 					{
-						logger.error("Introspection error on "+aggregator.getClass(), e);
+						logger.error("Introspection error on " + aggregator.getClass(), e);
 					}
 
 					if (pd == null)
 					{
-						String msg = "Property '"+property+"' was specified for aggregator '"+aggName+
-								"' but no matching setter was found on '"+aggregator.getClass()+"'";
+						String msg = "Property '" + property + "' was specified for aggregator '" + aggName +
+								"' but no matching setter was found on '" + aggregator.getClass() + "'";
 
 						throw new QueryException(msg);
 					}
@@ -169,8 +171,8 @@ public class GsonParser
 					Method method = pd.getWriteMethod();
 					if (method == null)
 					{
-						String msg = "Property '"+property+"' was specified for aggregator '"+aggName+
-								"' but no matching setter was found on '"+aggregator.getClass().getName()+"'";
+						String msg = "Property '" + property + "' was specified for aggregator '" + aggName +
+								"' but no matching setter was found on '" + aggregator.getClass().getName() + "'";
 
 						throw new QueryException(msg);
 					}
@@ -182,8 +184,8 @@ public class GsonParser
 					catch (Exception e)
 					{
 						logger.error("Invocation error: ", e);
-						String msg = "Call to "+aggregator.getClass().getName()+":"+method.getName()+
-								" failed with message: "+e.getMessage();
+						String msg = "Call to " + aggregator.getClass().getName() + ":" + method.getName() +
+								" failed with message: " + e.getMessage();
 
 						throw new QueryException(msg);
 					}
@@ -192,11 +194,21 @@ public class GsonParser
 				queryMetric.addAggregator(aggregator);
 			}
 
-
 			long endTime = getEndTime(query);
 			if (endTime > -1)
 				queryMetric.setEndTime(endTime);
-			queryMetric.setGroupBy(metric.getGroupBy());
+
+			JsonElement group_by = jsMetric.get("group_by");
+			if (group_by != null)
+			{
+				JsonArray groupBys = group_by.getAsJsonArray();
+				for (JsonElement groupBy : groupBys)
+				{
+					TagGroupBy tagGroupBy = m_gson.fromJson(groupBy, TagGroupBy.class);
+					queryMetric.addGroupBy(tagGroupBy);
+				}
+			}
+
 			queryMetric.setTags(metric.getTags());
 
 			ret.add(queryMetric);
@@ -231,18 +243,10 @@ public class GsonParser
 		private String m_name;
 		@SerializedName("tags")
 		private Map<String, String> m_tags;
-		@SerializedName("group_by")
-		private String m_groupBy;
-
 
 		public String getName()
 		{
 			return m_name;
-		}
-
-		public String getGroupBy()
-		{
-			return (m_groupBy);
 		}
 
 		public Map<String, String> getTags()
@@ -383,7 +387,7 @@ public class GsonParser
 			}
 			catch (IllegalArgumentException e)
 			{
-				throw new JsonSyntaxException(json.toString()+" is not a valid time unit, must be one of "+
+				throw new JsonSyntaxException(json.toString() + " is not a valid time unit, must be one of " +
 						TimeUnit.toValueNames());
 			}
 

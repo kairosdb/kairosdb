@@ -16,7 +16,9 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.google.common.collect.ListMultimap;
-import junit.framework.Assert;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -25,9 +27,6 @@ import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreMetricQueryImpl;
 import org.kairosdb.datastore.DatastoreTestHelper;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -154,7 +153,6 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		tagFilter.put("host", "E");
 
 		QueryMetric query = new QueryMetric(s_dataPointTime - OVERFLOW_SIZE, 0, ROW_KEY_BIG_METRIC);
-		query.addAggregator(m_aggFactory.createAggregator("sort"));
 		query.setEndTime(s_dataPointTime);
 		query.setTags(tagFilter);
 

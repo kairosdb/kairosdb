@@ -16,12 +16,12 @@
 package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.aggregator.Aggregator;
+import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.util.Preconditions;
 
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 public class QueryMetric implements DatastoreMetricQuery
 {
@@ -30,7 +30,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	private int cacheTime;
 	private String name;
 	private Map<String, String> tags = new HashMap<String, String>();
-	private String groupBy;
+	private List<GroupBy> groupBys = new ArrayList<GroupBy>();
 	private List<Aggregator> aggregators;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
@@ -102,13 +102,13 @@ public class QueryMetric implements DatastoreMetricQuery
 		this.endTime = endTime;
 	}
 
-	public String getGroupBy()
+	public List<GroupBy> getGroupBys()
 	{
-		return groupBy;
+		return Collections.unmodifiableList(groupBys);
 	}
 
-	public void setGroupBy(String groupBy)
+	public void addGroupBy(GroupBy groupBy)
 	{
-		this.groupBy = groupBy;
+		this.groupBys.add(groupBy);
 	}
 }

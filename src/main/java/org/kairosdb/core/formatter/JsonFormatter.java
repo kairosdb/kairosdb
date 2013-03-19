@@ -19,7 +19,9 @@ import com.chargebee.org.json.JSONException;
 import com.chargebee.org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.core.groupby.GroupByResult;
 
+import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 
@@ -42,7 +44,8 @@ public class JsonFormatter implements DataFormatter
 				jsonWriter.value(string);
 			}
 			jsonWriter.endArray().endObject();
-		} catch (JSONException e)
+		}
+		catch (JSONException e)
 		{
 			throw new FormatterException(e);
 		}
@@ -70,6 +73,18 @@ public class JsonFormatter implements DataFormatter
 
 					jsonWriter.object();
 					jsonWriter.key("name").value(metric);
+
+					if (!group.getGroupByResult().isEmpty())
+					{
+						jsonWriter.key("group_by");
+						jsonWriter.array();
+						for (GroupByResult groupByResult : group.getGroupByResult())
+						{
+							writer.write(groupByResult.toJson());
+						}
+						jsonWriter.endArray();
+					}
+
 					jsonWriter.key("tags").object();
 
 					for (String tagName : group.getTagNames())
@@ -110,7 +125,12 @@ public class JsonFormatter implements DataFormatter
 			}
 
 			jsonWriter.endArray().endObject();
-		} catch (JSONException e)
+		}
+		catch (JSONException e)
+		{
+			throw new FormatterException(e);
+		}
+		catch (IOException e)
 		{
 			throw new FormatterException(e);
 		}

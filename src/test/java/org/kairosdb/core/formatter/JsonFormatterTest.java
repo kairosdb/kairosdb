@@ -15,16 +15,16 @@
  */
 package org.kairosdb.core.formatter;
 
+import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.StringIterable;
+import org.kairosdb.core.groupby.TagGroupBy;
+import org.kairosdb.core.groupby.TagGroupByResult;
 import org.kairosdb.testing.ListDataPointGroup;
-import org.junit.Test;
 
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -90,6 +90,41 @@ public class JsonFormatterTest
 
 		assertThat(writer.toString(),
 				equalTo("{\"queries\":[{\"results\":[{\"name\":\"group1\",\"tags\":{\"tag1\":[\"tag1Value\"],\"tag2\":[\"tag2Value\"]},\"values\":[[1,10],[1,20],[1,3],[2,1],[2,3],[2,5],[3,25]]}]},{\"results\":[{\"name\":\"group2\",\"tags\":{\"tag3\":[\"tag3Value\"],\"tag4\":[\"tag4Value\"]},\"values\":[[1,5],[1,20],[1,14],[2,6],[2,9],[2,8],[3,7]]}]}]}"));
+
+	}
+
+	@Test
+	public void test_format_withGroupBy() throws FormatterException
+	{
+		List<DataPointGroup> metric1 = new ArrayList<DataPointGroup>();
+
+		ListDataPointGroup group1 = new ListDataPointGroup("group1");
+		group1.addTag("tag1", "tag1Value");
+		group1.addTag("tag2", "tag2Value");
+
+		Map<String, String> tagResults = new LinkedHashMap<String, String>();
+		tagResults.put("foo", "fi");
+		tagResults.put("bar", "fo");
+		group1.addGroupByResult(new TagGroupByResult(new TagGroupBy("foo", "bar"), tagResults));
+
+		group1.addDataPoint(new DataPoint(1, 10));
+		group1.addDataPoint(new DataPoint(1, 20));
+		group1.addDataPoint(new DataPoint(1, 3));
+		group1.addDataPoint(new DataPoint(2, 1));
+		group1.addDataPoint(new DataPoint(2, 3));
+		group1.addDataPoint(new DataPoint(2, 5));
+		group1.addDataPoint(new DataPoint(3, 25));
+		metric1.add(group1);
+
+		List<List<DataPointGroup>> results = new ArrayList<List<DataPointGroup>>();
+		results.add(metric1);
+
+		JsonFormatter formatter = new JsonFormatter();
+		StringWriter writer = new StringWriter();
+		formatter.format(writer, results);
+
+		assertThat(writer.toString(),
+				equalTo("{\"queries\":[{\"results\":[{\"name\":\"group1\",\"group_by\":[{\"name\":\"tag\",\"tags\":[\"foo\",\"bar\"],\"group\":{\"foo\":\"fi\",\"bar\":\"fo\"}}],\"tags\":{\"tag1\":[\"tag1Value\"],\"tag2\":[\"tag2Value\"]},\"values\":[[1,10],[1,20],[1,3],[2,1],[2,3],[2,5],[3,25]]}]}]}"));
 
 	}
 

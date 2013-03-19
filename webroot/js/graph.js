@@ -13,8 +13,9 @@ function updateChart() {
 			return;
 		}
 
-		var groupBy = $metricContainer.find('.metricGroupBy').val();
-		var metric = new pulse.Metric(metricName, groupBy);
+		var metric = new pulse.Metric(metricName);
+
+		metric.addGroupBy($metricContainer.find('.metricGroupBy').val());
 
 		// Add aggregators
 		$metricContainer.find(".aggregator").each(function (index, aggregator) {
@@ -256,10 +257,15 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 		var metricCount = 0;
 		resultSet.results.forEach(function (queryResult) {
 
+			// todo Create some group by message for all groups not just the first one.
 			var groupByMessage = "";
-			var groupBy = query.metrics[metricCount].group_by;
+			var groupBy = queryResult.group_by;
 			if (groupBy)
-				groupByMessage = '<br>(' + groupBy + '=' + queryResult.tags[groupBy][0] + ')';
+			{
+				$.each(groupBy[0].group, function (key, value) {
+					groupByMessage = '<br>(' + key + '=' + value + ')';
+				});
+			}
 
 			var result = {};
 			result.name = queryResult.name + groupByMessage;

@@ -15,17 +15,24 @@
  */
 package org.kairosdb.core.datastore;
 
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.TreeMultimap;
+import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.util.Preconditions;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class AbstractDataPointGroup implements DataPointGroup
 {
 	private String name;
 	private TreeMultimap<String, String> tags = TreeMultimap.create();
+	private List<GroupByResult> groupByResult = new ArrayList<GroupByResult>();
 
 	public AbstractDataPointGroup(String name)
 	{
@@ -65,6 +72,16 @@ public abstract class AbstractDataPointGroup implements DataPointGroup
 				this.tags.put(key, value);
 			}
 		}
+	}
+
+	public void addGroupByResult(GroupByResult groupByResult)
+	{
+		this.groupByResult.add(checkNotNull(groupByResult));
+	}
+
+	public List<GroupByResult> getGroupByResult()
+	{
+		return groupByResult;
 	}
 
 	public String getName()

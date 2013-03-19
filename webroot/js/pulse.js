@@ -31,22 +31,34 @@ pulse.Unit =  //Values used for Aggregator sampling and Relative time
 
 /**
  name: Name of the metric
- groupBy: tag to group results by
  */
-pulse.Metric = function (name, groupBy) {
+pulse.Metric = function (name) {
 	this.tags = {};
 	this.name = name;
 	this.aggregators = [];
+	this.group_by;
 
-	if (groupBy && groupBy != undefined) {
-		this.group_by = groupBy;
-	}
+	this.addGroupBy = function (tagName) {
+		if (tagName) {
+			if (!this.group_by)
+			{
+				this.group_by = [];
+			}
+
+			var groupBy = {};
+			groupBy.name = "tag";
+			groupBy.tags = [];
+			groupBy.tags.push(tagName);
+
+			this.group_by.push(groupBy);
+		}
+	};
 
 	this.addTag = function (name, value) {
 		this.tags[name] = value;
 	};
 
-	this.addAggregator = function(name, value, unit){
+	this.addAggregator = function (name, value, unit) {
 		var aggregator = {};
 		aggregator.name = name;
 

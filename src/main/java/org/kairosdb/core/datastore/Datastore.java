@@ -21,6 +21,9 @@ import com.google.common.collect.ListMultimap;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.core.groupby.GroupBy;
+import org.kairosdb.core.groupby.TagGroupBy;
+import org.kairosdb.core.groupby.TagGroupByResult;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -122,7 +125,8 @@ public abstract class Datastore
 			throw new DatastoreException(e);
 		}
 
-		List<DataPointGroup> queryResults = groupBy(wrapRows(queryDatabase(metric, cachedResults)), metric.getGroupBy());
+		// It is more efficient to group by tags using the cached results because we have pointers to each tag.
+		List<DataPointGroup> queryResults = groupByTags(wrapRows(queryDatabase(metric, cachedResults)), getTagGroupBy(metric.getGroupBys()));
 
 		List<DataPointGroup> aggregatedResults = new ArrayList<DataPointGroup>();
 		for (DataPointGroup queryResult : queryResults)
@@ -143,6 +147,16 @@ public abstract class Datastore
 		return aggregatedResults;
 	}
 
+	private TagGroupBy getTagGroupBy(List<GroupBy> groupBys)
+	{
+		for (GroupBy groupBy : groupBys)
+		{
+			if (groupBy instanceof TagGroupBy)
+				return (TagGroupBy) groupBy;
+		}
+		return null;
+	}
+
 	private List<DataPointGroup> wrapRows(List<DataPointRow> rows)
 	{
 		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
@@ -155,33 +169,28 @@ public abstract class Datastore
 		return (ret);
 	}
 
-	private List<DataPointGroup> groupBy(List<DataPointGroup> dataPointsList, String groupByTag)
+	private List<DataPointGroup> groupByTags(List<DataPointGroup> dataPointsList, TagGroupBy tagGroupBy)
 	{
 		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
 
-		if (groupByTag != null)
+		if (tagGroupBy != null)
 		{
 			ListMultimap<String, DataPointGroup> groups = ArrayListMultimap.create();
+			Map<String, TagGroupByResult> groupByResults = new HashMap<String, TagGroupByResult>();
 
 			for (DataPointGroup dataPointGroup : dataPointsList)
 			{
 				//Todo: Add code to datastore implementations to filter by the group by tag
 
-				Set<String> tagValues = dataPointGroup.getTagValues(groupByTag);
-				if (tagValues == null)
-					continue;
-
-				String tagValue = tagValues.iterator().next();
-
-				if (tagValue == null)
-					continue;
-
-				groups.put(tagValue, dataPointGroup);
+				LinkedHashMap<String, String> matchingTags = getMatchingTags(dataPointGroup, tagGroupBy.getTagNames());
+				String tagsKey = getTagsKey(matchingTags);
+				groups.put(tagsKey, dataPointGroup);
+				groupByResults.put(tagsKey, new TagGroupByResult(tagGroupBy, matchingTags));
 			}
 
 			for (String key : groups.keySet())
 			{
-				ret.add(new SortingDataPointGroup(groups.get(key)));
+				ret.add(new SortingDataPointGroup(groups.get(key), groupByResults.get(key)));
 			}
 		}
 		else
@@ -190,6 +199,33 @@ public abstract class Datastore
 		}
 
 		return ret;
+	}
+
+	private String getTagsKey(LinkedHashMap<String, String> tags)
+	{
+		StringBuilder builder = new StringBuilder();
+		for (String name : tags.keySet())
+		{
+		 	builder.append(tags.get(name));
+		}
+
+		return builder.toString();
+	}
+
+	private LinkedHashMap<String, String> getMatchingTags(DataPointGroup datapointGroup, List<String> tagNames)
+	{
+		LinkedHashMap<String, String> matchingTags = new LinkedHashMap<String, String>();
+		for (String tagName : tagNames)
+		{
+			Set<String> tagValues = datapointGroup.getTagValues(tagName);
+			if (tagValues != null)
+			{
+				String tagValue = tagValues.iterator().next();
+				matchingTags.put(tagName, tagValue != null ? tagValue : "");
+			}
+		}
+
+		return matchingTags;
 	}
 
 	protected abstract List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException;

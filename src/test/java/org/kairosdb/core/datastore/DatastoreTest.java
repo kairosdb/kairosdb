@@ -15,6 +15,7 @@
  */
 package org.kairosdb.core.datastore;
 
+import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.AggregatorFactory;
@@ -22,7 +23,6 @@ import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.TsdbException;
 import org.kairosdb.testing.TestingDataPointRowImpl;
-import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,15 +42,6 @@ public class DatastoreTest
 
 		datastore.query(null);
 	}
-
-	/*@Test(expected = UnknownAggregator.class)
-	public void test_query_invalidAggregator() throws TsdbException
-	{
-		TestDatastore datastore = new TestDatastore();
-		QueryMetric metric = new QueryMetric(1L, 1, "metric1", "bogus");
-
-		datastore.query(metric);
-	}*/
 
 	@Test
 	public void test_query_sumAggregator() throws TsdbException
@@ -77,11 +68,10 @@ public class DatastoreTest
 	}
 
 	@Test
-	public void test_query_noneAggregator() throws TsdbException
+	public void test_query_noAggregator() throws TsdbException
 	{
 		TestDatastore datastore = new TestDatastore();
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
-		metric.addAggregator(aggFactory.createAggregator("sort"));
 
 		List<DataPointGroup> results = datastore.query(metric);
 

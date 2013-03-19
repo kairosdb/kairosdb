@@ -17,8 +17,10 @@
 package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.groupby.GroupByResult;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 public class DataPointGroupRowWrapper implements DataPointGroup
@@ -47,6 +49,12 @@ public class DataPointGroupRowWrapper implements DataPointGroup
 	public Set<String> getTagValues(String tag)
 	{
 		return (Collections.singleton(m_row.getTagValue(tag)));
+	}
+
+	@Override
+	public List<GroupByResult> getGroupByResult()
+	{
+		return null;
 	}
 
 	@Override

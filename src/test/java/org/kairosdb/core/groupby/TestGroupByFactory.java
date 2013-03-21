@@ -15,9 +15,30 @@
  */
 package org.kairosdb.core.groupby;
 
-import org.kairosdb.core.formatter.FormatterException;
+import org.kairosdb.core.aggregator.annotation.GroupByName;
 
-public interface GroupByResult
+import java.util.HashMap;
+import java.util.Map;
+
+public class TestGroupByFactory implements GroupByFactory
 {
-	String toJson() throws FormatterException;
+	private Map<String, GroupBy> groupBys = new HashMap<String, GroupBy>();
+
+	public TestGroupByFactory()
+	{
+		addGroupBy(new SimpleTimeGroupBy());
+		addGroupBy(new ValueGroupBy());
+	}
+
+	private void addGroupBy(GroupBy groupBy)
+	{
+		String name = (groupBy.getClass().getAnnotation(GroupByName.class)).name();
+		groupBys.put(name, groupBy);
+	}
+
+	@Override
+	public GroupBy createGroupBy(String name)
+	{
+		return groupBys.get(name);
+	}
 }

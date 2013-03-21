@@ -20,6 +20,10 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 import org.kairosdb.core.aggregator.*;
+import org.kairosdb.core.groupby.GroupByFactory;
+import org.kairosdb.core.groupby.GuiceGroupByFactory;
+import org.kairosdb.core.groupby.TimeGroupBy;
+import org.kairosdb.core.groupby.ValueGroupBy;
 import org.kairosdb.core.http.rest.json.GsonParser;
 
 import java.util.Properties;
@@ -50,6 +54,7 @@ public class CoreModule extends AbstractModule
 					dsClassName, DATASTORE_CLASS_PROPERTY);
 		}*/
 		bind(AggregatorFactory.class).to(GuiceAggregatorFactory.class).in(Singleton.class);
+		bind(GroupByFactory.class).to(GuiceGroupByFactory.class).in(Singleton.class);
 		bind(GsonParser.class).in(Singleton.class);
 
 		bind(SumAggregator.class);
@@ -58,6 +63,9 @@ public class CoreModule extends AbstractModule
 		bind(AvgAggregator.class);
 		bind(StdAggregator.class);
 		bind(RateAggregator.class);
+
+		bind(ValueGroupBy.class);
+		bind(TimeGroupBy.class);
 
 		Names.bindProperties(binder(), m_props);
 	}

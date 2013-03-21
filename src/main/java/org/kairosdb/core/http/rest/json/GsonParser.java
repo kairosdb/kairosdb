@@ -29,7 +29,8 @@ import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.datastore.TimeUnit;
-import org.kairosdb.core.groupby.TagGroupBy;
+import org.kairosdb.core.groupby.GroupBy;
+import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
 import org.slf4j.Logger;
@@ -49,6 +50,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
 
+import static com.google.common.base.Preconditions.checkState;
+
 
 public class GsonParser
 {
@@ -57,14 +60,16 @@ public class GsonParser
 	private static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
 
 	private AggregatorFactory m_aggregatorFactory;
+	private GroupByFactory m_groupByFactory;
 	private Map<Class, Map<String, PropertyDescriptor>> m_descriptorMap;
 	private final Object m_descriptorMapLock = new Object();
 	private Gson m_gson;
 
 	@Inject
-	public GsonParser(AggregatorFactory aggregatorFactory)
+	public GsonParser(AggregatorFactory aggregatorFactory, GroupByFactory groupByFactory)
 	{
 		m_aggregatorFactory = aggregatorFactory;
+		m_groupByFactory = groupByFactory;
 
 		m_descriptorMap = new HashMap<Class, Map<String, PropertyDescriptor>>();
 
@@ -90,12 +95,27 @@ public class GsonParser
 				PropertyDescriptor[] descriptors = beanInfo.getPropertyDescriptors();
 				for (PropertyDescriptor descriptor : descriptors)
 				{
-					propMap.put(descriptor.getName(), descriptor);
+					propMap.put(getUnderscorePropertyName(descriptor.getName()), descriptor);
 				}
 			}
 
 			return (propMap.get(property));
 		}
+	}
+
+	public static String getUnderscorePropertyName(String camelCaseName)
+	{
+		StringBuilder sb = new StringBuilder();
+
+		for (char c : camelCaseName.toCharArray())
+		{
+			if (Character.isUpperCase(c))
+				sb.append('_').append(Character.toLowerCase(c));
+			else
+				sb.append(c);
+		}
+
+		return (sb.toString());
 	}
 
 	private void validateObject(Object object) throws BeanValidationException
@@ -132,67 +152,7 @@ public class GsonParser
 			JsonObject jsMetric = metricsArray.get(I).getAsJsonObject();
 			JsonArray aggregators = jsMetric.get("aggregators").getAsJsonArray();
 
-			for (int J = 0; J < aggregators.size(); J++)
-			{
-				JsonObject jsAggregator = aggregators.get(J).getAsJsonObject();
-
-				String aggName = jsAggregator.get("name").getAsString();
-				Aggregator aggregator = m_aggregatorFactory.createAggregator(aggName);
-
-				Set<Map.Entry<String, JsonElement>> props = jsAggregator.entrySet();
-				for (Map.Entry<String, JsonElement> prop : props)
-				{
-					String property = prop.getKey();
-					if (property.equals("name"))
-						continue;
-
-					PropertyDescriptor pd = null;
-					try
-					{
-						pd = getPropertyDescriptor(aggregator.getClass(), property);
-					}
-					catch (IntrospectionException e)
-					{
-						logger.error("Introspection error on " + aggregator.getClass(), e);
-					}
-
-					if (pd == null)
-					{
-						String msg = "Property '" + property + "' was specified for aggregator '" + aggName +
-								"' but no matching setter was found on '" + aggregator.getClass() + "'";
-
-						throw new QueryException(msg);
-					}
-
-					Class propClass = pd.getPropertyType();
-
-					Object propValue = m_gson.fromJson(prop.getValue(), propClass);
-
-					Method method = pd.getWriteMethod();
-					if (method == null)
-					{
-						String msg = "Property '" + property + "' was specified for aggregator '" + aggName +
-								"' but no matching setter was found on '" + aggregator.getClass().getName() + "'";
-
-						throw new QueryException(msg);
-					}
-
-					try
-					{
-						method.invoke(aggregator, propValue);
-					}
-					catch (Exception e)
-					{
-						logger.error("Invocation error: ", e);
-						String msg = "Call to " + aggregator.getClass().getName() + ":" + method.getName() +
-								" failed with message: " + e.getMessage();
-
-						throw new QueryException(msg);
-					}
-				}
-
-				queryMetric.addAggregator(aggregator);
-			}
+			parseAggregators(queryMetric, aggregators);
 
 			long endTime = getEndTime(query);
 			if (endTime > -1)
@@ -202,11 +162,7 @@ public class GsonParser
 			if (group_by != null)
 			{
 				JsonArray groupBys = group_by.getAsJsonArray();
-				for (JsonElement groupBy : groupBys)
-				{
-					TagGroupBy tagGroupBy = m_gson.fromJson(groupBy, TagGroupBy.class);
-					queryMetric.addGroupBy(tagGroupBy);
-				}
+				parseGroupBy(queryMetric, groupBys);
 			}
 
 			queryMetric.setTags(metric.getTags());
@@ -215,6 +171,96 @@ public class GsonParser
 		}
 
 		return (ret);
+	}
+
+	private void parseAggregators(QueryMetric queryMetric, JsonArray aggregators) throws QueryException
+	{
+		for (int J = 0; J < aggregators.size(); J++)
+		{
+			JsonObject jsAggregator = aggregators.get(J).getAsJsonObject();
+
+			String aggName = jsAggregator.get("name").getAsString();
+			Aggregator aggregator = m_aggregatorFactory.createAggregator(aggName);
+			checkState(aggregator != null, "Aggregator " + aggName + " could not be found.");
+
+
+			serializeProperties(jsAggregator, aggName, aggregator);
+
+			queryMetric.addAggregator(aggregator);
+		}
+	}
+
+	private void parseGroupBy(QueryMetric queryMetric, JsonArray groupBys) throws QueryException
+	{
+		for (int J = 0; J < groupBys.size(); J++)
+		{
+			JsonObject jsGroupBy = groupBys.get(J).getAsJsonObject();
+
+			String name = jsGroupBy.get("name").getAsString();
+			GroupBy groupBy = m_groupByFactory.createGroupBy(name);
+			checkState(groupBy != null, "GroupBy " + name + " could not be found.");
+
+			serializeProperties(jsGroupBy, name, groupBy);
+
+			groupBy.setStartDate(queryMetric.getStartTime());
+
+			queryMetric.addGroupBy(groupBy);
+		}
+	}
+
+	private void serializeProperties(JsonObject jsonObject, String name, Object object) throws QueryException
+	{
+		Set<Map.Entry<String, JsonElement>> props = jsonObject.entrySet();
+		for (Map.Entry<String, JsonElement> prop : props)
+		{
+			String property = prop.getKey();
+			if (property.equals("name"))
+				continue;
+
+			PropertyDescriptor pd = null;
+			try
+			{
+				pd = getPropertyDescriptor(object.getClass(), property);
+			}
+			catch (IntrospectionException e)
+			{
+				logger.error("Introspection error on " + object.getClass(), e);
+			}
+
+			if (pd == null)
+			{
+				String msg = "Property '" + property + "' was specified for object '" + name +
+						"' but no matching setter was found on '" + object.getClass() + "'";
+
+				throw new QueryException(msg);
+			}
+
+			Class propClass = pd.getPropertyType();
+
+			Object propValue = m_gson.fromJson(prop.getValue(), propClass);
+
+			Method method = pd.getWriteMethod();
+			if (method == null)
+			{
+				String msg = "Property '" + property + "' was specified for object '" + name +
+						"' but no matching setter was found on '" + object.getClass().getName() + "'";
+
+				throw new QueryException(msg);
+			}
+
+			try
+			{
+				method.invoke(object, propValue);
+			}
+			catch (Exception e)
+			{
+				logger.error("Invocation error: ", e);
+				String msg = "Call to " + object.getClass().getName() + ":" + method.getName() +
+						" failed with message: " + e.getMessage();
+
+				throw new QueryException(msg);
+			}
+		}
 	}
 
 	private long getStartTime(Query request)

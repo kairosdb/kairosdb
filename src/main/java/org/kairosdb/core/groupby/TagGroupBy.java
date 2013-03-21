@@ -54,6 +54,11 @@ public class TagGroupBy implements GroupBy
 		return null;
 	}
 
+	@Override
+	public void setStartDate(long startDate)
+	{
+	}
+
 	/**
 	 * Returns the list of tag names to group by.
 	 * @return list of tag names to group by

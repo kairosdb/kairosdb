@@ -48,9 +48,9 @@ public class SortingDataPointGroup extends AbstractDataPointGroup
 		if (groupByResult != null)
 			addGroupByResult(groupByResult);
 
-		for (DataPointGroup dataPoints : listDataPointGroup)
+		for (DataPointGroup dataPointGroup : listDataPointGroup)
 		{
-			addIterator(dataPoints);
+			addIterator(dataPointGroup);
 		}
 	}
 

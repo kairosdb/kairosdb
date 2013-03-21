@@ -22,9 +22,11 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupBy;
+import org.kairosdb.core.groupby.Grouper;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.groupby.TagGroupByResult;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -35,7 +37,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class Datastore
 {
-	MessageDigest messageDigest;
+	private MessageDigest messageDigest;
 
 	protected Datastore() throws DatastoreException
 	{
@@ -128,6 +130,17 @@ public abstract class Datastore
 		// It is more efficient to group by tags using the cached results because we have pointers to each tag.
 		List<DataPointGroup> queryResults = groupByTags(wrapRows(queryDatabase(metric, cachedResults)), getTagGroupBy(metric.getGroupBys()));
 
+		// Now group for all other types of group bys.
+		Grouper grouper = new Grouper();
+		try
+		{
+			queryResults = grouper.group(removeTagGroupBy(metric.getGroupBys()), queryResults);
+		}
+		catch (IOException e)
+		{
+			throw new DatastoreException(e);
+		}
+
 		List<DataPointGroup> aggregatedResults = new ArrayList<DataPointGroup>();
 		for (DataPointGroup queryResult : queryResults)
 		{
@@ -145,6 +158,17 @@ public abstract class Datastore
 		}
 
 		return aggregatedResults;
+	}
+
+	private List<GroupBy> removeTagGroupBy(List<GroupBy> groupBys)
+	{
+		List<GroupBy> modifiedGroupBys = new ArrayList<GroupBy>();
+		for (GroupBy groupBy : groupBys)
+		{
+			if (!(groupBy instanceof TagGroupBy))
+				modifiedGroupBys.add(groupBy);
+		}
+		return modifiedGroupBys;
 	}
 
 	private TagGroupBy getTagGroupBy(List<GroupBy> groupBys)

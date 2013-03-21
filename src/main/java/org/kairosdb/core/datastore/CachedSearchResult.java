@@ -325,7 +325,7 @@ public class CachedSearchResult
 			}
 			catch (IOException ioe)
 			{
-				ioe.printStackTrace();
+				logger.error("Error reading next data point.", ioe);
 			}
 
 			return (ret);

@@ -13,11 +13,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package org.kairosdb.core.groupby;
 
-import org.kairosdb.core.formatter.FormatterException;
-
-public interface GroupByResult
+public interface GroupByFactory
 {
-	String toJson() throws FormatterException;
+	GroupBy createGroupBy(String name);
 }

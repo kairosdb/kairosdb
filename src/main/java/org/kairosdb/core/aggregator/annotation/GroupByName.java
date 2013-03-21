@@ -13,11 +13,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.kairosdb.core.groupby;
+package org.kairosdb.core.aggregator.annotation;
 
-import org.kairosdb.core.formatter.FormatterException;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-public interface GroupByResult
+@Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE})
+public @interface GroupByName
 {
-	String toJson() throws FormatterException;
+	String name();
+	String description();
 }
+

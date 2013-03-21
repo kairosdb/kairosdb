@@ -24,4 +24,11 @@ public interface GroupBy
 	int getGroupId(DataPoint dataPoint, Map<String, String> tags);
 
 	GroupByResult getGroupByResult(int id);
+
+	/**
+	 * Called when the object is instantiated with the query start date.
+	 *
+	 * @param startDate query start date
+	 */
+	void setStartDate(long startDate);
 }

@@ -22,7 +22,7 @@
 	padding: 10px;
 }
 
-.aggregator-frame {
+.component-frame {
 	border: 1px solid #aed0ea;
 	padding: 2px;
 }
@@ -44,13 +44,13 @@ button {
 	margin-left: 4px;
 }
 
-.graphSubtitle{
+.graphSubtitle {
 	color: #6d91c6;
 	font-size: small;
 	text-align: center;
 }
 
-.graphTooltip{
+.graphTooltip {
 	position: absolute;
 	display: none;
 	border: 2px solid #4572a7;
@@ -58,6 +58,7 @@ button {
 	background-color: #ffffff;
 	font-size: 14px;
 	font-weight: 600;
-	font-family: MS,serif;
+	font-family: MS, serif;
 	opacity: 0.80;
 }
+

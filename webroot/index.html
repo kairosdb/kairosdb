@@ -28,6 +28,10 @@
 			$("#metricTemplate").hide();
 			$("#tagTemplate").hide();
 			$("#aggregatorTemplate").hide();
+			$("#groupByTemplate").hide();
+			$("#groupByTagsTemplate").hide();
+			$("#groupByTimeTemplate").hide();
+			$("#groupByValueTemplate").hide();
 			$("#tabs").tabs({'active': 0});
 			addMetric();
 
@@ -74,12 +78,15 @@
 
 <body>
 
+<!-- todo allow a user to remove an aggregator-->
+
 <H2 class="header">KairosDB</H2>
 
 <span class="header ui-widget">Time Range</span>
 
 <div class="wire-frame" style="margin-top: 5px;">
 	<table>
+		<tr>
 		<tr>
 			<td colspan="3" align="center" class="ui-widget header">Absolute</td>
 			<td colspan="3" align="center" class="ui-widget header">Relative</td>
@@ -151,7 +158,9 @@
 
 <table style="width: 100%;">
 	<tr>
-		<td align="right"><div id="graphLegend"></div></td>
+		<td align="right">
+			<div id="graphLegend"></div>
+		</td>
 	</tr>
 	<tr>
 		<td>
@@ -177,11 +186,13 @@
 			<td class="ui-widget">Name*</td>
 			<td><input class="ui-widget metricName" type="#groupBytext"></td>
 		</tr>
-		<tr>
-			<td class="ui-widget">Group By</td>
-			<td><input class="ui-widget metricGroupBy" type="text" value=""></td>
-		</tr>
 	</table>
+
+	<p></p>
+	<span class="header ui-widget">Group By</span>
+	<button id="addGroupByButton"></button>
+
+	<div id="groupByContainer"></div>
 
 	<p></p>
 	<span class="header ui-widget">Aggregators</span>
@@ -207,8 +218,80 @@
 	</div>
 </div>
 
+<!-- Hidden GroupBy div used for cloning -->
+<div id="groupByTemplate" class="component-frame groupBy"
+     style="margin-left: 15px; margin-top: 3px; margin-bottom: 5px; display: table;">
+	<button class="removeGroupBy"
+	        style="background:none; border: none; width:1px; float:right; margin-right: 5px; margin-top: 0;"></button>
+	<div style="display: table-row">
+		<div style="display: table-cell">
+			<select class="ui-widget groupByName">
+				<option value="tags">Tags</option>
+				<option value="time">Time</option>
+				<option value="value">Value</option>
+			</select>
+		</div>
+		<div class="groupByContent"></div>
+	</div>
+</div>
+
+<!-- Hidden GroupBy div used for cloning -->
+<div id="groupByTagsTemplate">
+	<div style="display: table-cell">
+		<span class="header" style="margin-left: 30px; vertical-align: top;">Tags</span>
+	</div>
+	<div style="display: table-cell">
+		<input class="ui-widget groupByTagsValue" style="width: 300px; margin-left: 10px;" type="text">
+	</div>
+	<div style="display: table-cell;">
+		<!-- todo replace with search button -->
+	</div>
+</div>
+
+<!-- Hidden GroupBy div used for cloning -->
+<div id="groupByTimeTemplate">
+	<div style="display: table-cell">
+		<span class="header" style="margin-left: 30px; vertical-align: top;">Size</span>
+	</div>
+
+	<!-- todo add count field-->
+	<div style="display: table-cell">
+		<input class="ui-widget groupByTimeSizeValue" style="width: 30px; margin-left: 10px;" type="text"
+		       value="1">
+	</div>
+	<div style="display: table-cell;">
+		<select class="ui-widget groupByTimeUnit" style="margin-left: 10px;">
+			<option value="years">Years</option>
+			<option value="months">Months</option>
+			<option value="weeks">Weeks</option>
+			<option value="days">Days</option>
+			<option value="hours">Hours</option>
+			<option value="minutes">Minutes</option>
+			<option value="seconds">Seconds</option>
+			<option value="milliseconds" selected="selected">Milliseconds</option>
+		</select>
+	</div>
+
+	<div style="display: table-cell">
+		<span class="header" style="margin-left: 30px; vertical-align: top;">Count</span>
+	</div>
+	<div style="display: table-cell">
+		<input class="ui-widget groupByTimeCount" style="width: 30px; margin-left: 10px;" type="text">
+	</div>
+</div>
+
+<!-- Hidden GroupBy div used for cloning -->
+<div id="groupByValueTemplate">
+	<div style="display: table-cell">
+		<span class="header" style="margin-left: 30px; vertical-align: top;">Size</span>
+	</div>
+	<div style="display: table-cell">
+		<input class="ui-widget groupByValueValue" style="width: 40px; margin-left: 10px;" type="text">
+	</div>
+</div>
+
 <!-- Hidden Aggregator div used for cloning -->
-<div id="aggregatorTemplate" class="aggregator-frame aggregator"
+<div id="aggregatorTemplate" class="component-frame aggregator"
      style="margin-left: 15px; margin-top: 3px; display: table;">
 	<div style="display: table-row">
 		<div style="display: table-cell">
@@ -218,7 +301,6 @@
 				<option value="min">MIN</option>
 				<option value="max">MAX</option>
 				<option value="rate">RATE</option>
-				<option value="sort">SORT</option>
 				<option value="sum" selected="selected">SUM</option>
 			</select>
 		</div>

@@ -29,6 +29,9 @@ pulse.dataPointsQuery = function (metricQuery, callback) {
 			$errorContainer.append("Status Code: " +  jqXHR.status + "</br>");
 			$errorContainer.append("Status: " +  jqXHR.statusText + "<br>");
 			$errorContainer.append("Return Value: " +  jqXHR.responseText);
+
+			$queryTime.html("");
+			$queryTime.append(new Date().getTime() - startTime.getTime() + " ms");
 		}
 	});
 };

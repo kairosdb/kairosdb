@@ -78,9 +78,13 @@ public class JsonFormatter implements DataFormatter
 					{
 						jsonWriter.key("group_by");
 						jsonWriter.array();
+						boolean first = true;
 						for (GroupByResult groupByResult : group.getGroupByResult())
 						{
+							if (!first)
+								writer.write(",");
 							writer.write(groupByResult.toJson());
+							first = false;
 						}
 						jsonWriter.endArray();
 					}

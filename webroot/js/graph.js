@@ -15,7 +15,42 @@ function updateChart() {
 
 		var metric = new pulse.Metric(metricName);
 
-		metric.addGroupBy($metricContainer.find('.metricGroupBy').val());
+		$metricContainer.find(".groupBy").each(function (index, groupBy) {
+			var name = $(groupBy).find(".groupByName").val();
+
+			if (name == "tags") {
+				var tags = $(groupBy).find(".groupByTagsValue").val();
+				if (!tags || tags.length < 1) {
+					showErrorMessage("Missing Group By tag names.");
+					return true; // continue to next item
+				}
+				metric.addGroupBy(new pulse.TagGroupBy(tags));
+			}
+			else if (name == "time") {
+				var value = $(groupBy).find(".groupByTimeSizeValue").val();
+				var unit = $(groupBy).find(".groupByTimeUnit").val();
+				var count = $(groupBy).find(".groupByTimeCount").val();
+
+				if (value < 1) {
+					showErrorMessage("Missing Time Group By size must be greater than 0.")
+					return true;
+				}
+
+				if (count < 1) {
+					showErrorMessage("Missing Time Group By count must be greater than 0.")
+					return true;
+				}
+				metric.addGroupBy(new pulse.TimeGroupBy(value, unit, count));
+			}
+			else if (name == "value") {
+				var size = $(groupBy).find(".groupByValueValue").val();
+				if (size < 1) {
+					showErrorMessage("Missing Value Group By size must be greater than 0.")
+					return true;
+				}
+				metric.addGroupBy(new pulse.ValueGroupBy(size));
+			}
+		});
 
 		// Add aggregators
 		$metricContainer.find(".aggregator").each(function (index, aggregator) {
@@ -167,12 +202,78 @@ function addMetric() {
 	// Add a default aggregator
 	addAggregator($aggregatorContainer);
 
+	// Rename GroupBy Container
+	$metricContainer.find("#groupByContainer").attr('id', 'metric-' + metricCount + 'GroupByContainer');
+	var $groupByContainer = $('#metric-' + metricCount + 'GroupByContainer');
+
+	// Listen to aggregator button
+	var groupByButton = $metricContainer.find("#addGroupByButton");
+
+	// Listen to groupBy button
+	groupByButton.button({
+		text: false,
+		icons: {
+			primary: 'ui-icon-plus'
+		}
+	}).click(function () {
+			addGroupBy($groupByContainer)
+		});
+
 	// Tell tabs object to update changes
 	$("#tabs").tabs("refresh");
 
 	// Activate newly added tab
 	var lastTab = $(".ui-tabs-nav").children().size() - 1;
 	$("#tabs").tabs({active: lastTab});
+}
+
+function addGroupBy(container) {
+	var $groupByContainer = $("#groupByTemplate").clone();
+	$groupByContainer.removeAttr("id").appendTo(container);
+
+	var removeButton = $groupByContainer.find(".removeGroupBy");
+	removeButton.button({
+		text: false,
+		icons: {
+			primary: 'ui-icon-close'
+		}
+	}).click(function () {
+			$groupByContainer.remove();
+		});
+
+	var name = $groupByContainer.find(".groupByName");
+	name.change(function () {
+		var groupByContainer = $groupByContainer.find(".groupByContent");
+
+		// Remove old group by
+		groupByContainer.empty();
+
+		var groupBy;
+		var newName = $groupByContainer.find(".groupByName").val();
+		if (newName == "tags") {
+			$groupBy = $("#groupByTagsTemplate").clone();
+			$groupBy.removeAttr("id").appendTo(groupByContainer);
+			$groupBy.show();
+		}
+		else if (newName == "time") {
+			$groupBy = $("#groupByTimeTemplate").clone();
+			$groupBy.removeAttr("id").appendTo(groupByContainer);
+			$groupBy.show();
+
+		}
+		else if (newName = "value") {
+			$groupBy = $("#groupByValueTemplate").clone();
+			$groupBy.removeAttr("id").appendTo(groupByContainer);
+			$groupBy.show();
+		}
+	});
+
+	// Set default to Tags group by and cause event to happen
+	name.val("tags");
+	name.change();
+
+
+	$groupByContainer.show();
 }
 
 function addAggregator(container) {
@@ -188,16 +289,16 @@ function addAggregator(container) {
 	$aggregatorContainer.show();
 
 	// Add listener for aggregator change
-	container.find(".aggregatorName").change(function () {
-		var name = container.find(".aggregatorName").val();
-		if (name == "sort" || name == "rate") {
-			container.find(".aggregatorSampling").hide();
+	$aggregatorContainer.find(".aggregatorName").change(function () {
+		var name = $aggregatorContainer.find(".aggregatorName").val();
+		if (name == "rate") {
+			$aggregatorContainer.find(".aggregatorSampling").hide();
 
 			// clear values
-			container.find(".aggregatorSamplingValue").val("")
+			$aggregatorContainer.find(".aggregatorSamplingValue").val("")
 		}
 		else
-			container.find(".aggregatorSampling").show();
+			$aggregatorContainer.find(".aggregatorSampling").show();
 	});
 }
 
@@ -257,13 +358,22 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 		var metricCount = 0;
 		resultSet.results.forEach(function (queryResult) {
 
-			// todo Create some group by message for all groups not just the first one.
 			var groupByMessage = "";
 			var groupBy = queryResult.group_by;
-			if (groupBy)
-			{
-				$.each(groupBy[0].group, function (key, value) {
-					groupByMessage = '<br>(' + key + '=' + value + ')';
+			if (groupBy) {
+				$.each(groupBy, function (index, group) {
+					groupByMessage += '<br>(' + group.name + ': ';
+
+					var first = true;
+					$.each(group.group, function (key, value) {
+						if (!first)
+							groupByMessage += ",";
+						groupByMessage +=  key + '=' + value ;
+						first = false;
+					});
+
+					groupByMessage += ')';
+
 				});
 			}
 

@@ -29,7 +29,6 @@ import java.util.Map;
  */
 public class Grouper
 {
-	Map<List<Integer>, Group> groupIdsToGroup = new LinkedHashMap<List<Integer>, Group>();
 
 	/**
 	 * Groups data points by group bys.
@@ -43,9 +42,10 @@ public class Grouper
 		if (groupBys.size() < 1)
 			return dataPointGroupList;
 
-
+		List<DataPointGroup> dataPointGroups = new ArrayList<DataPointGroup>();
 		for (DataPointGroup dataPointGroup : dataPointGroupList)
 		{
+			Map<List<Integer>, Group> groupIdsToGroup = new LinkedHashMap<List<Integer>, Group>();
 			Map<String, String> tags = getTags(dataPointGroup);
 
 			while (dataPointGroup.hasNext())
@@ -62,22 +62,26 @@ public class Grouper
 				}
 
 				// add to group
-				Group group = getGroup(dataPointGroup, groupIds, results);
+				Group group = getGroup(groupIdsToGroup, dataPointGroup, groupIds, results);
 				group.addDataPoint(dataPoint);
 //				group.addTags(dataPointGroup); // todo what to do about tags. This causes the grouping to be very, very slow.
 			}
+
+			for (Group group : groupIdsToGroup.values())
+			{
+				if (!dataPointGroup.getGroupByResult().isEmpty())
+				{
+					group.addGroupByResults(dataPointGroup.getGroupByResult());
+				}
+				dataPointGroups.add(group.getDataPointGroup());
+			}
 		}
 
-		List<DataPointGroup> dataPointGroups = new ArrayList<DataPointGroup>();
-		for (Group group : groupIdsToGroup.values())
-		{
-			dataPointGroups.add(group.getDataPointGroup());
-		}
 
 		return dataPointGroups;
 	}
 
-	private Group getGroup(DataPointGroup dataPointGroup, List<Integer> groupIds, List<GroupByResult> results) throws IOException
+	private Group getGroup(Map<List<Integer>, Group> groupIdsToGroup, DataPointGroup dataPointGroup, List<Integer> groupIds, List<GroupByResult> results) throws IOException
 	{
 		Group group = groupIdsToGroup.get(groupIds);
 		if (group == null)

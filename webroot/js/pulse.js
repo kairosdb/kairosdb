@@ -38,20 +38,12 @@ pulse.Metric = function (name) {
 	this.aggregators = [];
 	this.group_by;
 
-	this.addGroupBy = function (tagName) {
-		if (tagName) {
-			if (!this.group_by)
-			{
-				this.group_by = [];
-			}
-
-			var groupBy = {};
-			groupBy.name = "tag";
-			groupBy.tags = [];
-			groupBy.tags.push(tagName);
-
-			this.group_by.push(groupBy);
+	this.addGroupBy = function (groupBy) {
+		if (!this.group_by) {
+			this.group_by = [];
 		}
+
+		this.group_by.push(groupBy);
 	};
 
 	this.addTag = function (name, value) {
@@ -70,6 +62,44 @@ pulse.Metric = function (name) {
 
 		this.aggregators.push(aggregator);
 	}
+};
+
+/**
+ * Tag groupBy
+ * @param tags  space or comma delimited list of tag names
+ */
+pulse.TagGroupBy = function (tags) {
+	this.name = "tag";
+	this.tags = [];
+
+	if (tags) {
+		this.tags = tags.split(/[\s,]+/);
+	}
+};
+
+/**
+ * Value groupBy
+ * @param groupSize
+ */
+pulse.ValueGroupBy = function (groupSize) {
+	this.name = "value";
+	this.group_size = groupSize;
+};
+
+/**
+ * Time groupBy
+ * @param groupSizeValue group size value
+ * @param groupSizeUnit group size unit: milliseconds, seconds, minutes, hours, days, months, years
+ * @param groupCount group count
+ */
+pulse.TimeGroupBy = function (groupSizeValue, groupSizeUnit, groupCount)
+{
+	this.name = "time";
+	this.group_count = groupCount;
+	this.group_size = {};
+
+	this.group_size.value = groupSizeValue;
+	this.group_size.unit = groupSizeUnit;
 };
 
 /**

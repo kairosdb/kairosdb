@@ -125,6 +125,11 @@ public class Group
 		}
 	}
 
+	public void addGroupByResults(List<GroupByResult> results)
+	{
+		groupByResults.addAll(checkNotNull(results));
+	}
+
 	public DataPointGroup getDataPointGroup() throws IOException
 	{
 		flushWriteBuffer();

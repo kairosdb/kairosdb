@@ -20,10 +20,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 import org.kairosdb.core.aggregator.*;
-import org.kairosdb.core.groupby.GroupByFactory;
-import org.kairosdb.core.groupby.GuiceGroupByFactory;
-import org.kairosdb.core.groupby.TimeGroupBy;
-import org.kairosdb.core.groupby.ValueGroupBy;
+import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.http.rest.json.GsonParser;
 
 import java.util.Properties;
@@ -66,6 +63,7 @@ public class CoreModule extends AbstractModule
 
 		bind(ValueGroupBy.class);
 		bind(TimeGroupBy.class);
+		bind(TagGroupBy.class);
 
 		Names.bindProperties(binder(), m_props);
 	}

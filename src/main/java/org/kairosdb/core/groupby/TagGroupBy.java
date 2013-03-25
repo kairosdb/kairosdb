@@ -16,6 +16,7 @@
 package org.kairosdb.core.groupby;
 
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.aggregator.annotation.GroupByName;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,9 +25,14 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+@GroupByName(name = "tag", description = "Groups data points by tag names.")
 public class TagGroupBy implements GroupBy
 {
 	private List<String> tags;
+
+	public TagGroupBy()
+	{
+	}
 
 	public TagGroupBy(List<String> tagNames)
 	{
@@ -66,5 +72,10 @@ public class TagGroupBy implements GroupBy
 	public List<String> getTagNames()
 	{
 		return Collections.unmodifiableList(tags);
+	}
+
+	public void setTags(List<String> tags)
+	{
+		this.tags = tags;
 	}
 }

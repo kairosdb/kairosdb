@@ -33,7 +33,30 @@
 			$("#groupByTimeTemplate").hide();
 			$("#groupByValueTemplate").hide();
 			$("#tabs").tabs({'active': 0});
+
 			addMetric();
+
+			$("#groupByTagDialog").dialog(
+					{
+						resizable: false,
+						autoOpen: false,
+							width: 230,
+							height: 75
+					});
+			$(".ui-dialog-titlebar").hide();
+
+
+			$("#cancelTagNameButton").button({
+				text: false,
+				icons: {
+					primary: 'ui-icon-close'
+				}
+			}).click(function () {
+						$("#groupByTagDialog").dialog("close");
+						$("#autocompleteTagName").val(""); // clear value
+					});
+
+			$("#addTagNameButton").button({text: true});
 
 			$("#addMetricButton").button({
 				text: false,
@@ -58,7 +81,7 @@
 						.autocomplete({
 							source: tagNames
 						});
-				$(".metricGroupBy")
+				$("#autocompleteTagName")
 						.autocomplete({
 							source: tagNames
 						});
@@ -241,10 +264,12 @@
 		<span class="header" style="margin-left: 30px; vertical-align: top;">Tags</span>
 	</div>
 	<div style="display: table-cell">
-		<input class="ui-widget groupByTagsValue" style="width: 300px; margin-left: 10px;" type="text">
+		<input class="ui-widget groupByTagsValue" style="width: 250px; margin-left: 10px;" type="text">
+		<br>
+		<span class="ui-widget" style="font-size: xx-small;margin-left: 10px;">*Comma or space separated list</span>
 	</div>
 	<div style="display: table-cell;">
-		<!-- todo replace with search button -->
+		<button class="tagSearch"></button>
 	</div>
 </div>
 
@@ -288,6 +313,17 @@
 	<div style="display: table-cell">
 		<input class="ui-widget groupByValueValue" style="width: 40px; margin-left: 10px;" type="text">
 	</div>
+</div>
+
+<!-- Hidden GroupBy Dialog. Used for auto-completion of tag name -->
+<div id="groupByTagDialog" class="tagDialog">
+	<button id="cancelTagNameButton" class="ui-widget"
+	        style="background:none; border: none; width:1px; float:right; margin-right: 5px; margin-top: 0;"></button>
+	<span class="ui-widget header">Search for tag name.</span>
+	<br>
+
+	<input id="autocompleteTagName" class="ui-widget" style="width: 120px;" type="text">
+	<button id="addTagNameButton">Add</button>
 </div>
 
 <!-- Hidden Aggregator div used for cloning -->

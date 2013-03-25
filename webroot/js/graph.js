@@ -228,9 +228,11 @@ function addMetric() {
 }
 
 function addGroupBy(container) {
+	// Clone groupBy template
 	var $groupByContainer = $("#groupByTemplate").clone();
 	$groupByContainer.removeAttr("id").appendTo(container);
 
+	// Add remove button
 	var removeButton = $groupByContainer.find(".removeGroupBy");
 	removeButton.button({
 		text: false,
@@ -251,9 +253,7 @@ function addGroupBy(container) {
 		var groupBy;
 		var newName = $groupByContainer.find(".groupByName").val();
 		if (newName == "tags") {
-			$groupBy = $("#groupByTagsTemplate").clone();
-			$groupBy.removeAttr("id").appendTo(groupByContainer);
-			$groupBy.show();
+			handleTagGroupBy(groupByContainer);
 		}
 		else if (newName == "time") {
 			$groupBy = $("#groupByTimeTemplate").clone();
@@ -272,8 +272,51 @@ function addGroupBy(container) {
 	name.val("tags");
 	name.change();
 
-
 	$groupByContainer.show();
+}
+
+function handleTagGroupBy(groupByContainer)
+{
+	// Clone groupBy tag template
+	$groupBy = $("#groupByTagsTemplate").clone();
+	$groupBy.removeAttr("id").appendTo(groupByContainer);
+
+	// Add search button
+	var searchButton = $groupBy.find(".tagSearch");
+	searchButton.button({
+		text: false,
+		icons: {
+			primary: 'ui-icon-search'
+		}
+	}).click(function () {
+			var $groupByTagDialog = $("#groupByTagDialog");
+			$groupByTagDialog.dialog("open");
+			$groupByTagDialog.dialog({position: {my: "left bottom", at: "right bottom", of: searchButton}});
+			$groupByTagDialog.keypress(function(e){
+				if (e.keyCode == $ui.keyCode.ENTER)
+					addTagNameToGroupBy();
+			});
+
+			$("#autocompleteTagName").focus();
+
+			$("#addTagNameButton").click(function () {
+				addTagNameToGroupBy();
+			});
+		});
+
+	$groupBy.show();
+}
+
+function addTagNameToGroupBy()
+{
+	var $autocompleteTagName = $("#autocompleteTagName");
+	var value = $groupBy.find(".groupByTagsValue");
+	value.val(value.val() + " " + $autocompleteTagName.val() );
+	$autocompleteTagName.val(""); // clear value
+
+	$("#addTagNameButton").unbind("click");
+
+	$("#groupByTagDialog").dialog("close");
 }
 
 function addAggregator(container) {
@@ -368,7 +411,7 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 					$.each(group.group, function (key, value) {
 						if (!first)
 							groupByMessage += ",";
-						groupByMessage +=  key + '=' + value ;
+						groupByMessage += key + '=' + value;
 						first = false;
 					});
 

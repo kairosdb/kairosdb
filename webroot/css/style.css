@@ -62,3 +62,6 @@ button {
 	opacity: 0.80;
 }
 
+.tagDialog {
+	display:none;
+}

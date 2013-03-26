@@ -27,32 +27,31 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * Groups data points by value. Data points are grouped into groups of the specified size.
- * Values are groups by moding it against bucket size.
+ * Groups data points by value. Data points are a range of values specified by range size.
  */
 @GroupByName(name = "value", description = "Groups data points by value.")
 public class ValueGroupBy implements GroupBy
 {
-	private int groupSize;
+	private int rangeSize;
 
 	public ValueGroupBy()
 	{
 	}
 
-	public ValueGroupBy(int groupSize)
+	public ValueGroupBy(int rangeSize)
 	{
-		checkArgument(groupSize > 0);
+		checkArgument(rangeSize > 0);
 
-		this.groupSize = groupSize;
+		this.rangeSize = rangeSize;
 	}
 
 	@Override
 	public int getGroupId(DataPoint dataPoint, Map<String, String> tags)
 	{
 		if (dataPoint.isInteger())
-			return (int) (dataPoint.getLongValue() / groupSize);
+			return (int) (dataPoint.getLongValue() / rangeSize);
 		else
-			return (int) dataPoint.getDoubleValue() / groupSize;
+			return (int) dataPoint.getDoubleValue() / rangeSize;
 	}
 
 	@Override
@@ -70,7 +69,7 @@ public class ValueGroupBy implements GroupBy
 
 					writer.object();
 					writer.key("name").value("value");
-					writer.key("group_size").value(groupSize);
+					writer.key("group_size").value(rangeSize);
 
 					writer.key("group").object();
 					writer.key("group_number").value(id);
@@ -92,8 +91,8 @@ public class ValueGroupBy implements GroupBy
 	{
 	}
 
-	public void setGroupSize(int groupSize)
+	public void setRangeSize(int rangeSize)
 	{
-		this.groupSize = groupSize;
+		this.rangeSize = rangeSize;
 	}
 }

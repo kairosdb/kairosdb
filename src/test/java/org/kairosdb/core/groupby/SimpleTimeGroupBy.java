@@ -28,22 +28,22 @@ import java.util.Map;
 @GroupByName(name = "simpleTime", description = "Groups data points by time.")
 public class SimpleTimeGroupBy implements GroupBy
 {
-	private int groupSize;
+	private int rangeSize;
 
 	public SimpleTimeGroupBy()
 	{
-		groupSize = 2;
+		rangeSize = 2;
 	}
 
-	public SimpleTimeGroupBy(int groupSize)
+	public SimpleTimeGroupBy(int rangeSize)
 	{
-		this.groupSize = groupSize;
+		this.rangeSize = rangeSize;
 	}
 
 	@Override
 	public int getGroupId(DataPoint dataPoint, Map<String, String> tags)
 	{
-		return (int) (dataPoint.getTimestamp() / groupSize);
+		return (int) (dataPoint.getTimestamp() / rangeSize);
 	}
 
 	@Override
@@ -61,7 +61,7 @@ public class SimpleTimeGroupBy implements GroupBy
 
 					writer.object();
 					writer.key("name").value("simpleTime");
-					writer.key("group_size").value(groupSize);
+					writer.key("target_size").value(rangeSize);
 
 					writer.key("group").object();
 					writer.key("group_number").value(id);
@@ -83,8 +83,8 @@ public class SimpleTimeGroupBy implements GroupBy
 	{
 	}
 
-	public void setGroupSize(int groupSize)
+	public void setRangeSize(int groupSize)
 	{
-		this.groupSize = groupSize;
+		this.rangeSize = groupSize;
 	}
 }

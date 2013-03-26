@@ -32,7 +32,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @GroupByName(name = "time", description = "Groups data points in time ranges.")
 public class TimeGroupBy implements GroupBy
 {
-	private Duration groupSize;
+	private Duration rangeSize;
 	private int groupCount;
 	private long startDate;
 
@@ -40,11 +40,11 @@ public class TimeGroupBy implements GroupBy
 	{
 	}
 
-	public TimeGroupBy(Duration groupSize, int groupCount)
+	public TimeGroupBy(Duration rangeSize, int groupCount)
 	{
 		checkArgument(groupCount > 0);
 
-		this.groupSize = checkNotNull(groupSize);
+		this.rangeSize = checkNotNull(rangeSize);
 		this.groupCount = groupCount;
 	}
 
@@ -57,8 +57,8 @@ public class TimeGroupBy implements GroupBy
 	@SuppressWarnings("NumericOverflow")
 	private long convertGroupSizeToMillis()
 	{
-		long milliseconds = groupSize.getValue();
-		switch(groupSize.getUnit())
+		long milliseconds = rangeSize.getValue();
+		switch(rangeSize.getUnit())
 		{
 			case MONTHS: milliseconds *= 30L * 7L * 24L * 60L * 60L * 1000L;
 				break;
@@ -73,9 +73,9 @@ public class TimeGroupBy implements GroupBy
 		return milliseconds;
 	}
 
-	public void setGroupSize(Duration groupSize)
+	public void setRangeSize(Duration rangeSize)
 	{
-		this.groupSize = groupSize;
+		this.rangeSize = rangeSize;
 	}
 
 	public void setGroupCount(int groupCount)
@@ -98,9 +98,9 @@ public class TimeGroupBy implements GroupBy
 
 					writer.object();
 					writer.key("name").value("time");
-					writer.key("group_size").object();
-					writer.key("value").value(groupSize.getValue());
-					writer.key("unit").value(groupSize.getUnit().toString());
+					writer.key("range_size").object();
+					writer.key("value").value(rangeSize.getValue());
+					writer.key("unit").value(rangeSize.getUnit().toString());
 					writer.endObject();
 					writer.key("group_count").value(groupCount);
 					writer.key("group").object();

@@ -83,7 +83,7 @@ pulse.TagGroupBy = function (tags) {
  */
 pulse.ValueGroupBy = function (groupSize) {
 	this.name = "value";
-	this.group_size = groupSize;
+	this.range_size = groupSize;
 };
 
 /**
@@ -96,10 +96,10 @@ pulse.TimeGroupBy = function (groupSizeValue, groupSizeUnit, groupCount)
 {
 	this.name = "time";
 	this.group_count = groupCount;
-	this.group_size = {};
+	this.range_size = {};
 
-	this.group_size.value = groupSizeValue;
-	this.group_size.unit = groupSizeUnit;
+	this.range_size.value = groupSizeValue;
+	this.range_size.unit = groupSizeUnit;
 };
 
 /**

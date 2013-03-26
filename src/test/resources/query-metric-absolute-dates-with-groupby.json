@@ -16,11 +16,11 @@
 			"group_by":[
 				{
 					"name": "value",
-					"group_size": 10
+					"range_size": 10
 				},
 				{
 					"name": "simpleTime",
-					"group_size": 2
+					"range_size": 2
 				}
 			]
 		}

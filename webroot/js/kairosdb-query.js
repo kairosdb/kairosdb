@@ -1,9 +1,9 @@
-if (pulse === undefined)
+if (kairosdb === undefined)
 {
-	var pulse = {};
+	var kairosdb = {};
 }
 
-pulse.dataPointsQuery = function (metricQuery, callback) {
+kairosdb.dataPointsQuery = function (metricQuery, callback) {
 	var startTime = new Date();
 
 	var $queryTime = $("#queryTime");

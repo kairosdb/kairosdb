@@ -1,7 +1,7 @@
 function updateChart() {
 	$("#errorContainer").hide();
 
-	var query = new pulse.MetricQuery();
+	var query = new kairosdb.MetricQuery();
 
 	// todo cachetime
 
@@ -13,7 +13,7 @@ function updateChart() {
 			return;
 		}
 
-		var metric = new pulse.Metric(metricName);
+		var metric = new kairosdb.Metric(metricName);
 
 		$metricContainer.find(".groupBy").each(function (index, groupBy) {
 			var name = $(groupBy).find(".groupByName").val();
@@ -24,7 +24,7 @@ function updateChart() {
 					showErrorMessage("Missing Group By tag names.");
 					return true; // continue to next item
 				}
-				metric.addGroupBy(new pulse.TagGroupBy(tags));
+				metric.addGroupBy(new kairosdb.TagGroupBy(tags));
 			}
 			else if (name == "time") {
 				var value = $(groupBy).find(".groupByTimeSizeValue").val();
@@ -40,7 +40,7 @@ function updateChart() {
 					showErrorMessage("Missing Time Group By count must be greater than 0.")
 					return true;
 				}
-				metric.addGroupBy(new pulse.TimeGroupBy(value, unit, count));
+				metric.addGroupBy(new kairosdb.TimeGroupBy(value, unit, count));
 			}
 			else if (name == "value") {
 				var size = $(groupBy).find(".groupByValueValue").val();
@@ -48,7 +48,7 @@ function updateChart() {
 					showErrorMessage("Missing Value Group By size must be greater than 0.")
 					return true;
 				}
-				metric.addGroupBy(new pulse.ValueGroupBy(size));
+				metric.addGroupBy(new kairosdb.ValueGroupBy(size));
 			}
 		});
 
@@ -385,7 +385,7 @@ function addTag(tagContainer) {
 }
 
 function showChartForQuery(title, subTitle, yAxisTitle, query) {
-	pulse.dataPointsQuery(query, function (queries) {
+	kairosdb.dataPointsQuery(query, function (queries) {
 		showChart(title, subTitle, yAxisTitle, query, queries);
 	});
 }

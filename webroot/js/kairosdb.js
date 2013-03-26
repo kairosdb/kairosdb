@@ -1,12 +1,12 @@
-if (pulse === undefined) {
-	var pulse = {};
+if (kairosdb === undefined) {
+	var kairosdb = {};
 }
 
-pulse.MetricException = function (message) {
+kairosdb.MetricException = function (message) {
 	this.message = message;
 };
 
-pulse.Aggregators =
+kairosdb.Aggregators =
 {
 	AVG: "avg",
 	DEV: "dev",
@@ -17,7 +17,7 @@ pulse.Aggregators =
 	SUM: "sum"
 };
 
-pulse.Unit =  //Values used for Aggregator sampling and Relative time
+kairosdb.Unit =  //Values used for Aggregator sampling and Relative time
 {
 	MILLISECONDS: "milliseconds",
 	SECONDS: "seconds",
@@ -32,7 +32,7 @@ pulse.Unit =  //Values used for Aggregator sampling and Relative time
 /**
  name: Name of the metric
  */
-pulse.Metric = function (name) {
+kairosdb.Metric = function (name) {
 	this.tags = {};
 	this.name = name;
 	this.aggregators = [];
@@ -68,7 +68,7 @@ pulse.Metric = function (name) {
  * Tag groupBy
  * @param tags  space or comma delimited list of tag names
  */
-pulse.TagGroupBy = function (tags) {
+kairosdb.TagGroupBy = function (tags) {
 	this.name = "tag";
 	this.tags = [];
 
@@ -81,7 +81,7 @@ pulse.TagGroupBy = function (tags) {
  * Value groupBy
  * @param groupSize
  */
-pulse.ValueGroupBy = function (groupSize) {
+kairosdb.ValueGroupBy = function (groupSize) {
 	this.name = "value";
 	this.range_size = groupSize;
 };
@@ -92,7 +92,7 @@ pulse.ValueGroupBy = function (groupSize) {
  * @param groupSizeUnit group size unit: milliseconds, seconds, minutes, hours, days, months, years
  * @param groupCount group count
  */
-pulse.TimeGroupBy = function (groupSizeValue, groupSizeUnit, groupCount)
+kairosdb.TimeGroupBy = function (groupSizeValue, groupSizeUnit, groupCount)
 {
 	this.name = "time";
 	this.group_count = groupCount;
@@ -105,7 +105,7 @@ pulse.TimeGroupBy = function (groupSizeValue, groupSizeUnit, groupCount)
 /**
  cacheTime: the amount of time in seconds to cache the query
  */
-pulse.MetricQuery = function (cacheTime) {
+kairosdb.MetricQuery = function (cacheTime) {
 	this.metrics = [];
 	this.cache_time = 0;
 	if (cacheTime != undefined)
@@ -116,7 +116,7 @@ pulse.MetricQuery = function (cacheTime) {
 	this.setStartAbsolute = function (value) {
 		this.start_absolute = value;
 		if (this.start_relative != undefined)
-			throw new pulse.MetricException(
+			throw new kairosdb.MetricException(
 				'You cannot define both start_absolute and start_relative');
 	};
 
@@ -127,7 +127,7 @@ pulse.MetricQuery = function (cacheTime) {
 		this.start_relative.value = value;
 		this.start_relative.unit = unit;
 		if (this.start_absolute != undefined)
-			throw new pulse.MetricException(
+			throw new kairosdb.MetricException(
 				'You cannot define both start_absolute and start_relative');
 	};
 
@@ -136,7 +136,7 @@ pulse.MetricQuery = function (cacheTime) {
 	this.setEndAbsolute = function (value) {
 		this.end_absolute = value;
 		if (this.end_relative != undefined)
-			throw new pulse.MetricException(
+			throw new kairosdb.MetricException(
 				'You cannot define both end_absolute and end_relative');
 	};
 
@@ -147,12 +147,12 @@ pulse.MetricQuery = function (cacheTime) {
 		this.end_relative.value = value;
 		this.end_relative.unit = unit;
 		if (this.end_absolute != undefined)
-			throw new pulse.MetricException(
+			throw new kairosdb.MetricException(
 				'You cannot define both end_absolute and end_relative');
 	};
 
 	/**
-	 Used to add a pulse.GSMetric object to the MetricQuery
+	 Used to add a kairos.Metric object to the MetricQuery
 	 */
 	this.addMetric = function (metric) {
 		this.metrics.push(metric);
@@ -163,16 +163,16 @@ pulse.MetricQuery = function (cacheTime) {
 	 */
 	this.validate = function () {
 		if ((this.start_relative == undefined) && (this.start_absolute == undefined))
-			throw new pulse.MetricException(
+			throw new kairosdb.MetricException(
 				'You must define a start_relative or a start_absolute property');
 
 		if (this.metrics.length == 0)
-			throw new pulse.MetricException(
+			throw new kairosdb.MetricException(
 				'You must specify one or more metrics to query upon');
 	}
 };
 
-pulse.showError = function (message) {
+kairosdb.showError = function (message) {
 	alert(message);
 };
 
@@ -181,7 +181,7 @@ pulse.showError = function (message) {
  @param values Array of arrays of timestamp, value
  @returns: Array[0-6] each containing an array of values for that day
  */
-pulse.collectWeeklyValues = function (values) {
+kairosdb.collectWeeklyValues = function (values) {
 	var week = [];
 
 	$.each(values, function (i, val) {
@@ -203,7 +203,7 @@ pulse.collectWeeklyValues = function (values) {
  Takes the return from collectWeeklyValues and averages them to one number
  @return: returns an array of numbers for each day of the week
  */
-pulse.averageWeeklyValues = function (weekData) {
+kairosdb.averageWeeklyValues = function (weekData) {
 	var weekAvg = [];
 
 	for (i = 0; i < 7; i++) {

@@ -20,16 +20,10 @@ import org.kairosdb.core.DataPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CachedSearchResult
@@ -49,6 +43,7 @@ public class CachedSearchResult
 	private FileChannel m_dataFileChannel;
 	private File m_indexFile;
 	private AtomicInteger m_closeCounter = new AtomicInteger();
+	private boolean m_readFromCache = false;
 
 	private static File getIndexFile(String baseFileName)
 	{
@@ -82,14 +77,35 @@ public class CachedSearchResult
 	/**
 	 Reads the index file into memory
 	 */
-	private void loadIndex()
+	private void loadIndex() throws IOException, ClassNotFoundException
 	{
-		//TODO:
+		ObjectInputStream in = new ObjectInputStream(new FileInputStream(m_indexFile));
+		int size = in.readInt();
+		for (int I = 0; I < size; I++)
+		{
+			FilePositionMarker marker = new FilePositionMarker();
+			marker.readExternal(in);
+			m_dataPointSets.add(marker);
+		}
+
+		m_readFromCache = true;
+		in.close();
 	}
 
-	private void saveIndex()
+	private void saveIndex() throws IOException
 	{
-		//TODO;
+		if (m_readFromCache)
+			return; //No need to save if we read it from the file
+
+		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(m_indexFile));
+		out.writeInt(m_dataPointSets.size());
+		for (FilePositionMarker marker : m_dataPointSets)
+		{
+			marker.writeExternal(out);
+		}
+
+		out.flush();
+		out.close();
 	}
 
 	private void clearDataFile() throws IOException
@@ -114,7 +130,7 @@ public class CachedSearchResult
 	/**
 
 	 @param baseFileName
-	 @param cacheTime The number of milliseconds to still open the file
+	 @param cacheTime The number of seconds to still open the file
 	 @return The CachedSearchResult if the file exists or null if it doesn't
 	 */
 	public static CachedSearchResult openCachedSearchResult(String metricName,
@@ -124,12 +140,20 @@ public class CachedSearchResult
 		File dataFile = getDataFile(baseFileName);
 		long now = System.currentTimeMillis();
 
-		if (dataFile.exists() && ((now - dataFile.lastModified()) < cacheTime))
+		if (dataFile.exists() && ((now - dataFile.lastModified()) < ((long)cacheTime * 1000)))
 		{
 			File indexFile = getIndexFile(baseFileName);
 
 			ret = new CachedSearchResult(metricName, dataFile, indexFile);
-			ret.loadIndex();
+			try
+			{
+				ret.loadIndex();
+			}
+			catch (ClassNotFoundException e)
+			{
+				logger.error("Unable to load cache file", e);
+				ret = null;
+			}
 		}
 
 		return (ret);
@@ -145,8 +169,6 @@ public class CachedSearchResult
 		long curPosition = m_dataFileChannel.position();
 		if (m_dataPointSets.size() != 0)
 			((FilePositionMarker)m_dataPointSets.get(m_dataPointSets.size() -1)).setEndPosition(curPosition);
-
-		saveIndex();
 	}
 
 	/**
@@ -158,6 +180,8 @@ public class CachedSearchResult
 		try
 		{
 			m_dataFileChannel.close();
+
+			saveIndex();
 		}
 		catch (IOException e)
 		{
@@ -233,11 +257,19 @@ public class CachedSearchResult
 	}
 
 	//===========================================================================
-	private class FilePositionMarker implements Iterable<DataPoint>
+	private class FilePositionMarker implements Iterable<DataPoint>, Externalizable
 	{
 		private long m_startPosition;
 		private long m_endPosition;
 		private Map<String, String> m_tags;
+
+
+		public FilePositionMarker()
+		{
+			m_startPosition = 0L;
+			m_endPosition = 0L;
+			m_tags = new HashMap<String, String>();
+		}
 
 		public FilePositionMarker(long startPosition, Map<String, String> tags)
 		{
@@ -259,6 +291,33 @@ public class CachedSearchResult
 		public CachedDataPointRow iterator()
 		{
 			return (new CachedDataPointRow(m_tags, m_startPosition, m_endPosition));
+		}
+
+		@Override
+		public void writeExternal(ObjectOutput out) throws IOException
+		{
+			out.writeLong(m_startPosition);
+			out.writeLong(m_endPosition);
+			out.writeInt(m_tags.size());
+			for (String s : m_tags.keySet())
+			{
+				out.writeObject(s);
+				out.writeObject(m_tags.get(s));
+			}
+		}
+
+		@Override
+		public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException
+		{
+			m_startPosition = in.readLong();
+			m_endPosition = in.readLong();
+			int tagCount = in.readInt();
+			for (int I = 0; I < tagCount; I++)
+			{
+				String key = (String)in.readObject();
+				String value = (String)in.readObject();
+				m_tags.put(key, value);
+			}
 		}
 	}
 

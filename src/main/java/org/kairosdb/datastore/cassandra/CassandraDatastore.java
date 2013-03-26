@@ -147,7 +147,7 @@ public class CassandraDatastore extends Datastore
 					@Override
 					public void saveWriteSize(int pendingWrites)
 					{
-						DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
+						DataPointSet dps = new DataPointSet("kairosdb.datastore.key_write_size");
 						dps.addTag("host", "server");
 						dps.addTag("buffer", CF_ROW_KEY_INDEX);
 						dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));

@@ -22,7 +22,7 @@ println("===============================================");
 
 programName = "kairosdb"
 version = "1.0.0-alpha-4a"
-release = "1" //package release number
+release = "3" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -82,8 +82,8 @@ if (saw.getProperty("jacoco", "false").equals("true"))
 
 //------------------------------------------------------------------------------
 //Build zip deployable application
-rpmFile = "$programName-$version-1.rpm"
-srcRpmFile = "$programName-$version-1.src.rpm"
+rpmFile = "$programName-$version-${release}.rpm"
+srcRpmFile = "$programName-$version-${release}.src.rpm"
 libFileSets = [
 		new RegExFileSet("build/jar", ".*\\.jar"),
 		new RegExFileSet("lib", ".*\\.jar"),

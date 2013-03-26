@@ -107,6 +107,7 @@ public abstract class Datastore
 
 		CachedSearchResult cachedResults = null;
 
+		List<DataPointRow> returnedRows = null;
 		try
 		{
 			String cacheFilename = calculateFilenameHash(metric);
@@ -115,11 +116,16 @@ public abstract class Datastore
 			if (metric.getCacheTime() > 0)
 			{
 				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(), tempFile, metric.getCacheTime());
+				if (cachedResults != null)
+				{
+					returnedRows = cachedResults.getRows();
+				}
 			}
 
 			if (cachedResults == null)
 			{
 				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile);
+				returnedRows = queryDatabase(metric, cachedResults);
 			}
 		}
 		catch (Exception e)
@@ -128,7 +134,7 @@ public abstract class Datastore
 		}
 
 		// It is more efficient to group by tags using the cached results because we have pointers to each tag.
-		List<DataPointGroup> queryResults = groupByTags(wrapRows(queryDatabase(metric, cachedResults)), getTagGroupBy(metric.getGroupBys()));
+		List<DataPointGroup> queryResults = groupByTags(wrapRows(returnedRows), getTagGroupBy(metric.getGroupBys()));
 
 		// Now group for all other types of group bys.
 		Grouper grouper = new Grouper();

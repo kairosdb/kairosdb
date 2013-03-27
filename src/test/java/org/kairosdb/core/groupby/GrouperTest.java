@@ -55,44 +55,62 @@ public class GrouperTest
 
 		List<DataPointGroup> groups = grouper.group(groupBys, dataPointGroups);
 
-		assertThat(groups.size(), equalTo(4));
+		assertThat(groups.size(), equalTo(5));
 
+		// Group 1
 		DataPointGroup group1 = groups.get(0);
 		assertThat(group1.getTagValues("host"), hasItems("server1"));
 		assertThat(group1.getTagValues("customer"), hasItems("acme"));
 
-		assertThat(group1.next().getLongValue(), equalTo(0L));
-		assertThat(group1.next().getLongValue(), equalTo(1L));
+		assertDataPoint(group1.next(), 1, 0);
+		assertDataPoint(group1.next(),1, 1);
 		assertThat(group1.next(), equalTo(null));
 		group1.close();  // cleans up temp files
 
+		// Group 2
 		DataPointGroup group2 = groups.get(1);
 		assertThat(group2.getTagValues("host"), hasItems("server1"));
 		assertThat(group2.getTagValues("customer"), hasItems("acme"));
 
-		assertThat(group2.next().getLongValue(), equalTo(2L));
+		assertDataPoint(group2.next(), 2, 2);
 		assertThat(group2.next(), equalTo(null));
 		group2.close();  // cleans up temp files
 
+		// Group 3
 		DataPointGroup group3 = groups.get(2);
 		assertThat(group3.getTagValues("host"), hasItems("server1"));
 		assertThat(group3.getTagValues("customer"), hasItems("acme"));
 
-		assertThat(group3.next().getLongValue(), equalTo(3L));
-		assertThat(group3.next().getLongValue(), equalTo(4L));
-		assertThat(group3.next().getLongValue(), equalTo(5L));
+		assertDataPoint(group3.next(), 2, 3);
+		assertDataPoint(group3.next(), 2, 4);
 		assertThat(group3.next(), equalTo(null));
 		group3.close();  // cleans up temp files
 
+		// Group 4
 		DataPointGroup group4 = groups.get(3);
 		assertThat(group4.getTagValues("host"), hasItems("server2"));
 		assertThat(group4.getTagValues("customer"), hasItems("foobar"));
 
-		assertThat(group4.next().getLongValue(), equalTo(6L));
-		assertThat(group4.next().getLongValue(), equalTo(7L));
-		assertThat(group4.next().getLongValue(), equalTo(8L));
+		assertDataPoint(group4.next(), 2, 5);
 		assertThat(group4.next(), equalTo(null));
 		group4.close();  // cleans up temp files
+
+		// Group 5
+		DataPointGroup group5 = groups.get(4);
+		assertThat(group5.getTagValues("host"), hasItems("server2"));
+		assertThat(group5.getTagValues("customer"), hasItems("foobar"));
+
+		assertDataPoint(group5.next(), 2, 6);
+		assertDataPoint(group5.next(), 2, 7);
+		assertDataPoint(group5.next(), 2, 8);
+		assertThat(group5.next(), equalTo(null));
+		group5.close();  // cleans up temp files
+	}
+
+	private void assertDataPoint(DataPoint dataPoint, long expectedTimestamp, long expectedValue)
+	{
+		assertThat(dataPoint.getTimestamp(), equalTo(expectedTimestamp));
+		assertThat(dataPoint.getLongValue(), equalTo(expectedValue));
 	}
 
 }

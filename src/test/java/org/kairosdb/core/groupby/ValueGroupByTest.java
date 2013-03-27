@@ -47,7 +47,7 @@ public class ValueGroupByTest
 
 		GroupByResult groupByResult = groupBy.getGroupByResult(2);
 
-		assertThat(groupByResult.toJson(), equalTo("{\"name\":\"value\",\"group_size\":3,\"group\":{\"group_number\":2}}"));
+		assertThat(groupByResult.toJson(), equalTo("{\"name\":\"value\",\"range_size\":3,\"group\":{\"group_number\":2}}"));
 	}
 
 	@Test

@@ -37,7 +37,7 @@ public class TimeGroupByTest
 
 		GroupByResult groupByResult = groupBy.getGroupByResult(2);
 
-		assertThat(groupByResult.toJson(), equalTo("{\"name\":\"time\",\"target_size\":{\"value\":2,\"unit\":\"DAYS\"},\"group_count\":14,\"group\":{\"group_number\":2}}"));
+		assertThat(groupByResult.toJson(), equalTo("{\"name\":\"time\",\"range_size\":{\"value\":2,\"unit\":\"DAYS\"},\"group_count\":14,\"group\":{\"group_number\":2}}"));
 	}
 
 	@Test

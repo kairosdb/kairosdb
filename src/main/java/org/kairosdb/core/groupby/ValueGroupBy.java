@@ -69,7 +69,7 @@ public class ValueGroupBy implements GroupBy
 
 					writer.object();
 					writer.key("name").value("value");
-					writer.key("group_size").value(rangeSize);
+					writer.key("range_size").value(rangeSize);
 
 					writer.key("group").object();
 					writer.key("group_number").value(id);

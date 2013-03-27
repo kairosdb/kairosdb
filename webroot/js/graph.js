@@ -1,4 +1,5 @@
 function updateChart() {
+	$("#resetZoom").hide();
 	$("#errorContainer").hide();
 
 	var query = new kairosdb.MetricQuery();

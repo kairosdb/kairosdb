@@ -411,7 +411,7 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 					var first = true;
 					$.each(group.group, function (key, value) {
 						if (!first)
-							groupByMessage += ",";
+							groupByMessage += ", ";
 						groupByMessage += key + '=' + value;
 						first = false;
 					});

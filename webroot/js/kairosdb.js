@@ -73,7 +73,7 @@ kairosdb.TagGroupBy = function (tags) {
 	this.tags = [];
 
 	if (tags) {
-		this.tags = tags.split(/[\s,]+/);
+		this.tags = tags.trim().split(/[\s,]+/);
 	}
 };
 

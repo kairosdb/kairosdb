@@ -20,9 +20,12 @@
 		var tagValues = [];
 
 		$(function () {
+			var $startTime = $("#startTime");
+			var $endTime = $("#endTime");
+
 			$("#submitButton").button().click(updateChart);
-			$("#startTime").datepicker();
-			$("#endTime").datepicker();
+			$startTime.datepicker();
+			$endTime.datepicker();
 			$("#resetZoom").hide();
 			$("#errorContainer").hide();
 			$("#metricTemplate").hide();
@@ -33,6 +36,26 @@
 			$("#groupByTimeTemplate").hide();
 			$("#groupByValueTemplate").hide();
 			$("#tabs").tabs({'active': 0});
+
+			$startTime.bind("change paste keyup", function(){
+				// clear relative time if absolute time is set
+				$("#startRelativeValue").val("");
+			});
+
+			$("#startRelativeValue").bind("change paste keyup", function(){
+				// clear absolute time if relative time is set
+				$startTime.val("");
+			});
+
+			$endTime.bind("change paste keyup", function(){
+				// clear relative time if absolute time is set
+				$("#endRelativeValue").val("");
+			});
+
+			$("#endRelativeValue").bind("change paste keyup", function(){
+				// clear absolute time if relative time is set
+				$endTime.val("");
+			});
 
 			addMetric();
 

@@ -150,9 +150,10 @@ public class GsonParser
 					metric.getName());
 
 			JsonObject jsMetric = metricsArray.get(I).getAsJsonObject();
-			JsonArray aggregators = jsMetric.get("aggregators").getAsJsonArray();
 
-			parseAggregators(queryMetric, aggregators);
+			JsonElement aggregators = jsMetric.get("aggregators");
+			if (aggregators != null)
+				parseAggregators(queryMetric, aggregators.getAsJsonArray());
 
 			long endTime = getEndTime(query);
 			if (endTime > -1)

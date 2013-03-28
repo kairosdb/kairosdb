@@ -49,6 +49,24 @@ public class GsonParserTest
 	}
 
 	@Test
+	public void test_withNoAggregators() throws Exception
+	{
+		GsonParser parser = new GsonParser(new TestAggregatorFactory(), new TestGroupByFactory());
+		String json = Resources.toString(Resources.getResource("query-metric-no-aggregators.json"), Charsets.UTF_8);
+
+		List<QueryMetric> results = parser.parseQueryMetric(json);
+
+		assertThat(results.size(), equalTo(1));
+
+		QueryMetric queryMetric = results.get(0);
+		assertThat(queryMetric.getName(), equalTo("abc.123"));
+		assertThat(queryMetric.getStartTime(), equalTo(784041330L));
+		assertThat(queryMetric.getEndTime(), equalTo(788879730L));
+		assertThat(queryMetric.getAggregators().size(), equalTo(0));
+		assertThat(queryMetric.getGroupBys().size(), equalTo(2));
+	}
+
+	@Test
 	public void test_underscoreConverter()
 	{
 		assertThat(GsonParser.getUnderscorePropertyName("groupBy"), equalTo("group_by"));

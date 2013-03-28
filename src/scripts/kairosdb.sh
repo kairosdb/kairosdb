@@ -1,19 +1,19 @@
 #!/bin/bash
 
 # Find the location of the bin directory and change to the root of kairosdb
-TSDB_BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "$TSDB_BIN_DIR/.."
+KAIROSDB_BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$KAIROSDB_BIN_DIR/.."
 
-TSDB_LIB_DIR="lib"
-TSDB_LOG_DIR="log"
+KAIROSDB_LIB_DIR="lib"
+KAIROSDB_LOG_DIR="log"
 JAVA_OPTS=
 
-if [ ! -d "$TSDB_LOG_DIR" ]; then
-	mkdir "$TSDB_LOG_DIR"
+if [ ! -d "$KAIROSDB_LOG_DIR" ]; then
+	mkdir "$KAIROSDB_LOG_DIR"
 fi
 
-if [ "$TSDB_PID_DIR" = "" ]; then
-	TSDB_PID_DIR=/tmp
+if [ "$KAIROSDB_PID_DIR" = "" ]; then
+	KAIROSDB_PID_DIR=/tmp
 fi
 
 
@@ -24,10 +24,10 @@ else
     JAVA=java
 fi
 
-pid=$TSDB_PID_DIR/kairosdb.pid
+pid=$KAIROSDB_PID_DIR/kairosdb.pid
 
 # Load up the classpath
-for jar in $TSDB_LIB_DIR/*.jar; do
+for jar in $KAIROSDB_LIB_DIR/*.jar; do
 	CLASSPATH="$CLASSPATH:$jar"
 done
 
@@ -38,7 +38,7 @@ if [ "$1" = "run" ] ; then
 elif [ "$1" = "start" ] ; then
 	shift
 	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main \
-		-c run -p conf/kairosdb.properties >> "$TSDB_LOG_DIR/tsdb.log" 2>&1 &
+		-c run -p conf/kairosdb.properties >> "$KAIROSDB_LOG_DIR/kairosdb.log" 2>&1 &
 	echo $! > "$pid"
 elif [ "$1" = "stop" ] ; then
 	shift

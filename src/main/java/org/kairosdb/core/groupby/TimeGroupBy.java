@@ -21,10 +21,13 @@ import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.GroupByName;
 import org.kairosdb.core.datastore.Duration;
+import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.formatter.FormatterException;
 
 import java.io.StringWriter;
+import java.util.Calendar;
 import java.util.Map;
+import java.util.TimeZone;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -35,6 +38,8 @@ public class TimeGroupBy implements GroupBy
 	private Duration rangeSize;
 	private int groupCount;
 	private long startDate;
+	private Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
 
 	public TimeGroupBy()
 	{
@@ -51,7 +56,20 @@ public class TimeGroupBy implements GroupBy
 	@Override
 	public int getGroupId(DataPoint dataPoint, Map<String, String> tags)
 	{
-	 	return (int) (((dataPoint.getTimestamp() - startDate) / convertGroupSizeToMillis() ) % groupCount);
+		if (rangeSize.getUnit() == TimeUnit.MONTHS)
+		{
+			calendar.setTimeInMillis(dataPoint.getTimestamp());
+			int dataPointYear = calendar.get(Calendar.YEAR);
+			int dataPointMonth = calendar.get(Calendar.MONTH);
+
+			calendar.setTimeInMillis(startDate);
+			int startDateYear = calendar.get(Calendar.YEAR);
+			int startDateMonth = calendar.get(Calendar.MONTH);
+
+			return ((dataPointYear - startDateYear) * 12 + (dataPointMonth - startDateMonth)) % groupCount;
+		}
+		else
+	 	    return (int) (((dataPoint.getTimestamp() - startDate) / convertGroupSizeToMillis() ) % groupCount);
 	}
 
 	@SuppressWarnings("NumericOverflow")
@@ -60,8 +78,6 @@ public class TimeGroupBy implements GroupBy
 		long milliseconds = rangeSize.getValue();
 		switch(rangeSize.getUnit())
 		{
-			case MONTHS: milliseconds *= 30L * 7L * 24L * 60L * 60L * 1000L;
-				break;
 			case YEARS: milliseconds *= 52;
 			case WEEKS: milliseconds *= 7;
 			case DAYS: milliseconds *= 24;

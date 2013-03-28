@@ -294,7 +294,8 @@ function handleTagGroupBy(groupByContainer)
 			$groupByTagDialog.dialog("open");
 			$groupByTagDialog.dialog({position: {my: "left bottom", at: "right bottom", of: searchButton}});
 			$groupByTagDialog.keypress(function(e){
-				if (e.keyCode == $ui.keyCode.ENTER)
+				var code = (e.keyCode ? e.keyCode : e.which);
+				if(code == 13) // ENTER key
 					addTagNameToGroupBy();
 			});
 

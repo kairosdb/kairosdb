@@ -33,6 +33,7 @@ import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
+import org.kairosdb.core.http.rest.validation.ValidMapRequired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -287,20 +288,22 @@ public class GsonParser
 		@NotNull
 		@NotEmpty()
 		@SerializedName("name")
-		private String m_name;
+		private String name;
+
+		@ValidMapRequired
 		@SerializedName("tags")
-		private Map<String, String> m_tags;
+		private Map<String, String> tags;
 
 		public String getName()
 		{
-			return m_name;
+			return name;
 		}
 
 		public Map<String, String> getTags()
 		{
-			if (m_tags != null)
+			if (tags != null)
 			{
-				return new HashMap<String, String>(m_tags);
+				return new HashMap<String, String>(tags);
 			}
 			else
 			{

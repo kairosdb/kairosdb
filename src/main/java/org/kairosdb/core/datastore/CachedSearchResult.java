@@ -138,11 +138,11 @@ public class CachedSearchResult
 	{
 		CachedSearchResult ret = null;
 		File dataFile = getDataFile(baseFileName);
+		File indexFile = getIndexFile(baseFileName);
 		long now = System.currentTimeMillis();
 
-		if (dataFile.exists() && ((now - dataFile.lastModified()) < ((long)cacheTime * 1000)))
+		if (dataFile.exists() && indexFile.exists() && ((now - dataFile.lastModified()) < ((long)cacheTime * 1000)))
 		{
-			File indexFile = getIndexFile(baseFileName);
 
 			ret = new CachedSearchResult(metricName, dataFile, indexFile);
 			try

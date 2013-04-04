@@ -27,6 +27,7 @@ import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.AggregatorFactory;
+import org.kairosdb.core.aggregator.RangeAggregator;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.groupby.GroupBy;
@@ -185,8 +186,15 @@ public class GsonParser
 			Aggregator aggregator = m_aggregatorFactory.createAggregator(aggName);
 			checkState(aggregator != null, "Aggregator " + aggName + " could not be found.");
 
+			//If it is a range aggregator we will default the start time to
+			//the start of the query.
+			if (aggregator instanceof RangeAggregator)
+			{
+				RangeAggregator ra = (RangeAggregator)aggregator;
+				ra.setStartTime(queryMetric.getStartTime());
+			}
 
-			serializeProperties(jsAggregator, aggName, aggregator);
+			deserializeProperties(jsAggregator, aggName, aggregator);
 
 			queryMetric.addAggregator(aggregator);
 		}
@@ -202,7 +210,7 @@ public class GsonParser
 			GroupBy groupBy = m_groupByFactory.createGroupBy(name);
 			checkState(groupBy != null, "GroupBy " + name + " could not be found.");
 
-			serializeProperties(jsGroupBy, name, groupBy);
+			deserializeProperties(jsGroupBy, name, groupBy);
 
 			groupBy.setStartDate(queryMetric.getStartTime());
 
@@ -210,7 +218,7 @@ public class GsonParser
 		}
 	}
 
-	private void serializeProperties(JsonObject jsonObject, String name, Object object) throws QueryException
+	private void deserializeProperties(JsonObject jsonObject, String name, Object object) throws QueryException
 	{
 		Set<Map.Entry<String, JsonElement>> props = jsonObject.entrySet();
 		for (Map.Entry<String, JsonElement> prop : props)

@@ -23,25 +23,30 @@ public class Sampling extends Duration
 		super();
 	}
 
+	public Sampling(int value, TimeUnit unit)
+	{
+		super(value, unit);
+	}
+
+	/**
+	 Works for any time unit except month.  Months are special cased in
+	 the RangeAggregator
+
+	 Note this does not account for leap years
+	 @return
+	 */
 	public long getSampling()
 	{
 		long val = value;
 		switch (unit)
 		{
-			case MILLISECONDS:
-				break;
+			case YEARS: val *= 52;
+			case WEEKS: val *= 7;
+			case DAYS: val *= 24;
+			case HOURS: val *= 60;
+			case MINUTES: val *= 60;
 			case SECONDS: val *= 1000;
-				break;
-			case MINUTES: val *= (60 * 1000);
-				break;
-			case HOURS: val *= (60 * 60 * 1000);
-				break;
-			case DAYS: val *= (24 * 60 * 60 * 1000);
-				break;
-			case WEEKS: val *= (7 * 24 * 60 * 60 * 1000);
-				break;
-			case YEARS: val *= (365 * 7 * 24 * 60 * 60 * 1000);
-				break;
+			case MILLISECONDS:
 		}
 
 		return (val);

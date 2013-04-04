@@ -19,15 +19,20 @@ package org.kairosdb.core.aggregator;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
+import org.kairosdb.core.datastore.TimeUnit;
 
+import java.util.Calendar;
 import java.util.Iterator;
+import java.util.TimeZone;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class RangeAggregator implements Aggregator
 {
-	private long m_startTime;
+	private long m_startTime = 0L;
 	private long m_range = 1L;
+	private Sampling m_sampling = null;
+	private long m_dayOfMonthOffset = 0L; //day of month offset in milliseconds
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
@@ -38,7 +43,7 @@ public abstract class RangeAggregator implements Aggregator
 
 	public void setSampling(Sampling sampling)
 	{
-		//Todo: make this smarter to handle months
+		m_sampling = sampling;
 		m_range = sampling.getSampling();
 	}
 
@@ -50,6 +55,10 @@ public abstract class RangeAggregator implements Aggregator
 	public void setStartTime(long startTime)
 	{
 		m_startTime = startTime;
+		//Get the day of the month for month calculations
+		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		cal.setTimeInMillis(startTime);
+		m_dayOfMonthOffset = cal.get(Calendar.DAY_OF_MONTH) * 24L * 60L * 60L * 1000L;
 	}
 
 
@@ -76,6 +85,7 @@ public abstract class RangeAggregator implements Aggregator
 	private class RangeDataPointAggregator extends AggregatedDataPointGroupWrapper
 	{
 		private RangeSubAggregator m_subAggregator;
+		private Calendar m_calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
 		public RangeDataPointAggregator(DataPointGroup innerDataPointGroup,
 				RangeSubAggregator subAggregator)
@@ -84,9 +94,27 @@ public abstract class RangeAggregator implements Aggregator
 			m_subAggregator = subAggregator;
 		}
 
+		/**
+		 This returns some value that represents the range the timestamp falls into
+		 The actual value returned is not considered just as long as it is unique
+		 for the time range.
+		 @param timestamp
+		 @return
+		 */
 		private long getRange(long timestamp)
 		{
-			return ((int)((timestamp - m_startTime) / m_range));
+			if (m_sampling.getUnit() == TimeUnit.MONTHS)
+			{
+				m_calendar.setTimeInMillis(timestamp - m_dayOfMonthOffset);
+				int dataPointYear = m_calendar.get(Calendar.YEAR);
+				int dataPointMonth = m_calendar.get(Calendar.MONTH);
+
+				return ((dataPointYear * 12 + dataPointMonth) / m_sampling.getValue());
+			}
+			else
+			{
+				return ((int)((timestamp - m_startTime) / m_range));
+			}
 		}
 
 		@Override

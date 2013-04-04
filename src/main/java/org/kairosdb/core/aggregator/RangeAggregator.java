@@ -58,7 +58,9 @@ public abstract class RangeAggregator implements Aggregator
 		//Get the day of the month for month calculations
 		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		cal.setTimeInMillis(startTime);
-		m_dayOfMonthOffset = cal.get(Calendar.DAY_OF_MONTH) * 24L * 60L * 60L * 1000L;
+		int dayOfMonth = cal.get(Calendar.DAY_OF_MONTH);
+		dayOfMonth -= 1; //offset this value so when we subtract it from the data point tome it wont do anything for 1
+		m_dayOfMonthOffset = dayOfMonth * 24L * 60L * 60L * 1000L;
 	}
 
 
@@ -103,7 +105,7 @@ public abstract class RangeAggregator implements Aggregator
 		 */
 		private long getRange(long timestamp)
 		{
-			if (m_sampling.getUnit() == TimeUnit.MONTHS)
+			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
 			{
 				m_calendar.setTimeInMillis(timestamp - m_dayOfMonthOffset);
 				int dataPointYear = m_calendar.get(Calendar.YEAR);

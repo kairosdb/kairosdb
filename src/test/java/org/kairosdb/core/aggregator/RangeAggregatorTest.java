@@ -65,7 +65,7 @@ public class RangeAggregatorTest
 		SumAggregator agg = new SumAggregator();
 		agg.setSampling(new Sampling(1, TimeUnit.MONTHS));
 		cal.clear();
-		cal.set(2012, 0, 0, 0, 0, 0);
+		cal.set(2012, 0, 1, 0, 0, 0);
 		agg.setStartTime(cal.getTimeInMillis());
 
 		DataPointGroup dpg = agg.aggregate(dpGroup);
@@ -98,7 +98,7 @@ public class RangeAggregatorTest
 		SumAggregator agg = new SumAggregator();
 		agg.setSampling(new Sampling(2, TimeUnit.MONTHS));
 		cal.clear();
-		cal.set(2012, 0, 0, 0, 0, 0);
+		cal.set(2012, 0, 1, 0, 0, 0);
 		agg.setStartTime(cal.getTimeInMillis());
 
 		DataPointGroup dpg = agg.aggregate(dpGroup);
@@ -131,7 +131,7 @@ public class RangeAggregatorTest
 		SumAggregator agg = new SumAggregator();
 		agg.setSampling(new Sampling(1, TimeUnit.MONTHS));
 		cal.clear();
-		cal.set(2012, 0, 15, 0, 0, 0);
+		cal.set(2012, 0, 16, 0, 0, 0);
 		agg.setStartTime(cal.getTimeInMillis());
 
 		DataPointGroup dpg = agg.aggregate(dpGroup);

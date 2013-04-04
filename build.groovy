@@ -5,6 +5,7 @@ import org.freecompany.redline.header.RpmType
 import tablesaw.AbstractFileSet
 import tablesaw.Tablesaw
 import tablesaw.RegExFileSet
+import tablesaw.TablesawException
 import tablesaw.addons.GZipRule
 import tablesaw.addons.ZipRule
 import tablesaw.addons.TarRule
@@ -201,7 +202,9 @@ def doDeb(Rule rule)
 		sudo.run()
 		//pass the password to the process on stdin
 		sudo.sendMessage("$password\n")
-		sudo.waitForProcess();
+		sudo.waitForProcess()
+		if (sudo.getExitCode() != 0)
+			throw new TablesawException("Unable to run alien application")
 	}
 }
 

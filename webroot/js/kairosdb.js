@@ -35,7 +35,7 @@ kairosdb.Unit =  //Values used for Aggregator sampling and Relative time
 kairosdb.Metric = function (name) {
 	this.tags = {};
 	this.name = name;
-	this.aggregators = [];
+	this.aggregators;
 	this.group_by;
 
 	this.addGroupBy = function (groupBy) {
@@ -51,6 +51,9 @@ kairosdb.Metric = function (name) {
 	};
 
 	this.addAggregator = function (name, value, unit) {
+		if (!this.aggregators)
+			this.aggregators = [];
+
 		var aggregator = {};
 		aggregator.name = name;
 

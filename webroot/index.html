@@ -124,8 +124,6 @@
 
 <body>
 
-<!-- todo allow a user to remove an aggregator-->
-
 <H2 class="header">KairosDB</H2>
 
 <span class="header ui-widget">Time Range</span>
@@ -302,7 +300,6 @@
 		<span class="header" style="margin-left: 30px; vertical-align: top;">Target Size</span>
 	</div>
 
-	<!-- todo add count field-->
 	<div style="display: table-cell">
 		<input class="ui-widget groupByTimeSizeValue" style="width: 30px; margin-left: 10px;" type="text"
 		       value="1">
@@ -352,6 +349,9 @@
 <!-- Hidden Aggregator div used for cloning -->
 <div id="aggregatorTemplate" class="component-frame aggregator"
      style="margin-left: 15px; margin-top: 3px; display: table;">
+	<button class="removeAggregator"
+	        style="background:none; border: none; width:1px; float:right; margin-right: 5px; margin-top: 0;"></button>
+
 	<div style="display: table-row">
 		<div style="display: table-cell">
 			<select class="ui-widget aggregatorName">

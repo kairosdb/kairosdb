@@ -276,8 +276,7 @@ function addGroupBy(container) {
 	$groupByContainer.show();
 }
 
-function handleTagGroupBy(groupByContainer)
-{
+function handleTagGroupBy(groupByContainer) {
 	// Clone groupBy tag template
 	$groupBy = $("#groupByTagsTemplate").clone();
 	$groupBy.removeAttr("id").appendTo(groupByContainer);
@@ -293,9 +292,9 @@ function handleTagGroupBy(groupByContainer)
 			var $groupByTagDialog = $("#groupByTagDialog");
 			$groupByTagDialog.dialog("open");
 			$groupByTagDialog.dialog({position: {my: "left bottom", at: "right bottom", of: searchButton}});
-			$groupByTagDialog.keypress(function(e){
+			$groupByTagDialog.keypress(function (e) {
 				var code = (e.keyCode ? e.keyCode : e.which);
-				if(code == 13) // ENTER key
+				if (code == 13) // ENTER key
 					addTagNameToGroupBy();
 			});
 
@@ -309,11 +308,10 @@ function handleTagGroupBy(groupByContainer)
 	$groupBy.show();
 }
 
-function addTagNameToGroupBy()
-{
+function addTagNameToGroupBy() {
 	var $autocompleteTagName = $("#autocompleteTagName");
 	var value = $groupBy.find(".groupByTagsValue");
-	value.val(value.val() + " " + $autocompleteTagName.val() );
+	value.val(value.val() + " " + $autocompleteTagName.val());
 	$autocompleteTagName.val(""); // clear value
 
 	$("#addTagNameButton").unbind("click");
@@ -326,12 +324,34 @@ function addAggregator(container) {
 
 	if (aggregators.length > 0) {
 		// Add arrow
-		$('<span class="ui-icon ui-icon-arrowthick-1-s" style="margin-left: 45px;"></span>').appendTo(container);
+		$('<span class="ui-icon ui-icon-arrowthick-1-s aggregatorArrow" style="margin-left: 45px;"></span>').appendTo(container);
 	}
 
 	var $aggregatorContainer = $("#aggregatorTemplate").clone();
 	$aggregatorContainer.removeAttr("id").appendTo(container);
 	$aggregatorContainer.show();
+
+	// Add remove button
+	var removeButton = $aggregatorContainer.find(".removeAggregator");
+	removeButton.button({
+		text: false,
+		icons: {
+			primary: 'ui-icon-close'
+		}
+	}).click(function () {
+			if (container.find(".aggregator").length > 0) {
+				if (!$aggregatorContainer.prev().hasClass('aggregatorArrow')) {
+					// remove arrow after top aggregator
+					$aggregatorContainer.next().remove();
+				}
+				else {
+					// remove arrow pointing to this aggregator
+					$aggregatorContainer.prev().remove();
+				}
+			}
+			$aggregatorContainer.remove();
+		});
+
 
 	// Add listener for aggregator change
 	$aggregatorContainer.find(".aggregatorName").change(function () {

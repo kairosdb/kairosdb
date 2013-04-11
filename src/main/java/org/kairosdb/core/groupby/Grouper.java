@@ -64,7 +64,6 @@ public class Grouper
 				// add to group
 				Group group = getGroup(groupIdsToGroup, dataPointGroup, groupIds, results);
 				group.addDataPoint(dataPoint);
-//				group.addTags(dataPointGroup); // todo what to do about tags. This causes the grouping to be very, very slow.
 			}
 
 			for (Group group : groupIdsToGroup.values())

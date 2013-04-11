@@ -520,8 +520,31 @@ function drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions) {
 }
 
 function showTooltip(x, y, contents) {
-	$('<div id="tooltip" class="graphTooltip">' + contents + '</div>').css({
-		top: y + 5,
-		left: x + 5
-	}).appendTo("body").fadeIn(200);
+	var tooltip = $('<div id="tooltip" class="graphTooltip">' + contents + '</div>');
+	tooltip.appendTo("body");
+
+	var $body = $('body');
+	var left = x + 5;
+	var top = y + 5;
+
+	// If off screen move back on screen
+	if ((left) < 0)
+		left = 0;
+	if (left + tooltip.outerWidth() > $body.width())
+		left = $body.width() - tooltip.outerWidth();
+	if (top + tooltip.height() > $body.height())
+		top = $body.height() - tooltip.outerHeight();
+
+	// If now over the cursor move out of the way - causes flashing of the tooltip otherwise
+	if ((x > left && x < (left + tooltip.outerWidth())) || (y < top && y > top + tooltip.outerHeight())) {
+		console.log("contains point x: " + x + " y:" + y + " top: " +top);
+		top = y - 5 - tooltip.outerHeight(); // move up
+		console.log("new top = " + top);
+	}
+
+	tooltip.css("left", left);
+	tooltip.css("top", top);
+
+	tooltip.fadeIn(200);
+
 }

@@ -32,6 +32,8 @@ backends are Cassandra and HBase.  An H2 implementation is provided
 for development work.
 KairosDB is a rewrite of OpenTSDB to support modular interfaces.
 """
+versionSourceDir = "build/src/org/kairosdb"
+versionSource = "$versionSourceDir/KairosVersion.java"
 
 saw = Tablesaw.getCurrentTablesaw()
 saw.includeDefinitionFile("definitions.xml")
@@ -253,4 +255,39 @@ def doGenorm(Rule rule)
 	genormDefinition.set("source", "src/main/conf/tables.xml");
 	cmd = genormDefinition.getCommand();
 	saw.exec(cmd);
+}
+
+
+//------------------------------------------------------------------------------
+//Generate version source file
+verSourceDirRule = new DirectoryRule(versionSourceDir)
+new SimpleRule().addTarget(versionSource)
+		.addDepend(verSourceDirRule)
+		.addDepend("build.groovy")
+		.setMakeAction("doGenVersion")
+
+def doGenVersion(Rule rule)
+{
+	gitRevisionFile= ".gitrevision"
+	println("Generating "+rule.getTarget())
+	dateFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
+	buildNumber = dateFormat.format(new Date())
+
+	new File(gitRevisionFile).text = ""
+	saw.exec(null, "git rev-parse HEAD", false, null, gitRevisionFile);
+
+	revision = new File(gitRevisionFile).text.trim()
+	new File(gitRevisionFile).delete()
+
+	def versionFile = """\
+package org.kairosdb;
+
+public class KairosVersion {
+	public static final String VERSION = "${version}";
+	public static final String BUILD = "${buildNumber}";
+	public static final String GIT_REVISION = "${revision}";
+}
+"""
+
+	new File(rule.getTarget()).write(versionFile)
 }

@@ -12,8 +12,8 @@ if [ ! -d "$KAIROSDB_LOG_DIR" ]; then
 	mkdir "$KAIROSDB_LOG_DIR"
 fi
 
-if [ "$KAIROSDB_PID_DIR" = "" ]; then
-	KAIROSDB_PID_DIR=/tmp
+if [ "$KAIROS_PID_FILE" = "" ]; then
+	KAIROS_PID_FILE=/var/run/kairosdb.pid
 fi
 
 
@@ -23,8 +23,6 @@ if [ -n "$JAVA_HOME" ]; then
 else
     JAVA=java
 fi
-
-pid=$KAIROSDB_PID_DIR/kairosdb.pid
 
 # Load up the classpath
 for jar in $KAIROSDB_LIB_DIR/*.jar; do
@@ -39,15 +37,15 @@ elif [ "$1" = "start" ] ; then
 	shift
 	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main \
 		-c run -p conf/kairosdb.properties >> "$KAIROSDB_LOG_DIR/kairosdb.log" 2>&1 &
-	echo $! > "$pid"
+	echo $! > "$KAIROS_PID_FILE"
 elif [ "$1" = "stop" ] ; then
 	shift
-	kill `cat $pid` > /dev/null 2>&1
-	while kill -0 `cat $pid` > /dev/null 2>&1; do
+	kill `cat $KAIROS_PID_FILE` > /dev/null 2>&1
+	while kill -0 `cat $KAIROS_PID_FILE` > /dev/null 2>&1; do
 		echo -n "."
 		sleep 1;
 	done
-	rm $pid
+	rm $KAIROS_PID_FILE
 elif [ "$1" = "export" ] ; then
 	shift
 	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main -c export -p conf/kairosdb.properties $*

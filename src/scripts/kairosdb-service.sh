@@ -10,21 +10,20 @@
 #Set JAVA_HOME if your java is not in the path already
 #export JAVA_HOME=/etc/alternatives/jre
 
+KAIROS_SCRIPT_PATH="/opt/kairosdb/bin/kairosdb.sh"
+export KAIROS_PID_FILE="/var/run/kairosdb.pid"
+
 start() {
-        initlog -c "echo -n Starting KairosDB server: "
-        /opt/kairosdb/bin/kairosdb.sh start
-        ### Create the lock file ###
-        touch /var/lock/subsys/KairosDB
+        printf "%-50s" "Starting KairosDB server: "
+        $KAIROS_SCRIPT_PATH start
         success $"KairosDB server startup"
         echo
 }
 
 # Restart the service KairosDB
 stop() {
-        initlog -c "echo -n Stopping KairosDB server: "
-        /opt/kairosdb/bin/kairosdb.sh stop
-        ### Now, delete the lock file ###
-        rm -f /var/lock/subsys/KairosDB
+        printf "%-50s" "Stopping KairosDB server: "
+        $KAIROS_SCRIPT_PATH stop
         echo
 }
 
@@ -37,7 +36,7 @@ case "$1" in
         stop
         ;;
   status)
-        status KairosDB
+        status kairosdb
         ;;
   restart|reload|condrestart)
         stop

@@ -22,12 +22,12 @@ import com.google.inject.name.Names;
 import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.http.rest.json.GsonParser;
+import org.kairosdb.core.reporting.KairosMetricRegistry;
 
 import java.util.Properties;
 
 public class CoreModule extends AbstractModule
 {
-	public static final String DATASTORE_CLASS_PROPERTY = "kairosdb.datastore.class";
 	private Properties m_props;
 
 	public CoreModule(Properties props)
@@ -39,20 +39,10 @@ public class CoreModule extends AbstractModule
 	@Override
 	protected void configure()
 	{
-		/*String dsClassName = m_props.getProperty(DATASTORE_CLASS_PROPERTY);
-		try
-		{
-			Class dsClass = Class.forName(dsClassName);
-			bind(Datastore.class).to(dsClass).in(Scopes.SINGLETON);
-		}
-		catch (ClassNotFoundException e)
-		{
-			throw new MissingResourceException("Unable to load Datastore class",
-					dsClassName, DATASTORE_CLASS_PROPERTY);
-		}*/
 		bind(AggregatorFactory.class).to(GuiceAggregatorFactory.class).in(Singleton.class);
 		bind(GroupByFactory.class).to(GuiceGroupByFactory.class).in(Singleton.class);
 		bind(GsonParser.class).in(Singleton.class);
+		bind(KairosMetricRegistry.class).in(Singleton.class);
 
 		bind(SumAggregator.class);
 		bind(MinAggregator.class);

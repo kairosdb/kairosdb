@@ -19,8 +19,8 @@ import com.google.inject.Scopes;
 import com.google.inject.servlet.GuiceFilter;
 import com.google.inject.servlet.ServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
-import org.kairosdb.core.http.rest.MetricsResource;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
+import org.kairosdb.core.http.rest.MetricsResource;
 
 import java.util.Properties;
 
@@ -43,6 +43,10 @@ public class WebServletModule extends ServletModule
 		bind(MetricsResource.class).in(Scopes.SINGLETON);
 
 		bind(GuiceContainer.class);
+
+		bind(ServletFilter.class).in(Scopes.SINGLETON);
+		filter("/*").through(ServletFilter.class);
+
 		// hook Jackson into Jersey as the POJO <-> JSON mapper
 		bind(JacksonJsonProvider.class).in(Scopes.SINGLETON);
 		serve("/*").with(GuiceContainer.class);

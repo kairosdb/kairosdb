@@ -10,3 +10,5 @@ out/*
 dependency.txt
 .tablesawcache
 .idea
+log/*
+kairosdb.properties

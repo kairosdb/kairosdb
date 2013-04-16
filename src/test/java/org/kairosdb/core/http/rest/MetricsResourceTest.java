@@ -45,6 +45,7 @@ import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.GsonParser;
+import org.kairosdb.core.reporting.KairosMetricRegistry;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.testing.TestingDataPointRowImpl;
 
@@ -87,6 +88,7 @@ public class MetricsResourceTest
 				bind(AggregatorFactory.class).to(TestAggregatorFactory.class);
 				bind(GroupByFactory.class).to(TestGroupByFactory.class);
 				bind(GsonParser.class).in(Singleton.class);
+				bind(KairosMetricRegistry.class).in(Singleton.class);
 			}
 		});
 		server = injector.getInstance(WebServer.class);

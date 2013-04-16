@@ -61,5 +61,8 @@
 		<!--<dependency org="com.proofpoint.platform" name="log" rev="0.66"/>-->
 		<dependency org="com.google.code.findbugs" name="jsr305" rev="1.3.9"/>
 
+		<!-- Yammer Metrics -->
+		<dependency org="com.yammer.metrics" name="metrics-core" rev="2.2.0" />
+
 	</dependencies>
 </ivy-module>

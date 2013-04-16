@@ -17,26 +17,35 @@
 package org.kairosdb.core.telnet;
 
 import com.google.inject.Inject;
+import com.yammer.metrics.core.Counter;
+import com.yammer.metrics.core.MetricName;
+import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.core.reporting.KairosMetricRegistry;
 import org.kairosdb.util.Util;
-import org.jboss.netty.channel.Channel;
+
+import static org.kairosdb.core.reporting.KairosMetricRegistry.Tag;
 
 public class PutCommand implements TelnetCommand
 {
 	private Datastore m_datastore;
+	private Counter m_counter;
 
 	@Inject
-	public PutCommand(Datastore datastore)
+	public PutCommand(Datastore datastore, KairosMetricRegistry metricRegistry)
 	{
 		m_datastore = datastore;
+		m_counter = metricRegistry.newCounter(new MetricName("kairosdb", "protocol", "telnet_request_count"),
+				new Tag("host", "server"), new Tag("method", "put"));
 	}
 
 	@Override
 	public void execute(Channel chan, String[] command) throws DatastoreException
 	{
+		m_counter.inc();
 		/*for (String cmd : command)
 			System.out.print(cmd + " ");
 		System.out.println();*/

@@ -160,14 +160,6 @@ public class MetricReporterService extends AbstractPollingReporter implements Me
 			tg = tg.getParent();
 		}
 
-		Thread[] t = new Thread[tg.activeCount()];
-		tg.enumerate(t);
-
-		for (Thread thread : t)
-		{
-			System.out.println(thread.getName());
-		}
-
 		return tg.activeCount();
 	}
 }

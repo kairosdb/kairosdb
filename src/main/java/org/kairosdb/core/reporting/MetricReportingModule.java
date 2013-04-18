@@ -15,14 +15,19 @@
  */
 package org.kairosdb.core.reporting;
 
-import com.google.inject.AbstractModule;
+import com.google.inject.Scopes;
 import com.google.inject.Singleton;
+import com.google.inject.servlet.ServletModule;
+import org.kairosdb.core.http.MonitorFilter;
 
-public class MetricReportingModule extends AbstractModule
+public class MetricReportingModule extends ServletModule
 {
 	@Override
-	protected void configure()
+	protected void configureServlets()
 	{
 		bind(MetricReporterService.class).in(Singleton.class);
+
+		bind(MonitorFilter.class).in(Scopes.SINGLETON);
+		filter("/*").through(MonitorFilter.class);
 	}
 }

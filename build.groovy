@@ -22,7 +22,7 @@ println("===============================================");
 
 
 programName = "kairosdb"
-version = "1.0.0-beta-1"
+version = "1.0.0-beta-2"
 release = "1" //package release number
 summary = "KairosDB"
 description = """\

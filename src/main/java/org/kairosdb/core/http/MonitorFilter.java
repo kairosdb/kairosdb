@@ -28,13 +28,13 @@ import java.util.Map;
 
 import static org.kairosdb.core.reporting.KairosMetricRegistry.Tag;
 
-public class ServletFilter implements Filter
+public class MonitorFilter implements Filter
 {
 	private KairosMetricRegistry metricsRegistry;
 	private Map<String, Counter> counterMap = new HashMap<String, Counter>();
 
 	@Inject
-	public ServletFilter(KairosMetricRegistry metricsRegistry)
+	public MonitorFilter(KairosMetricRegistry metricsRegistry)
 	{
 		this.metricsRegistry = metricsRegistry;
 	}

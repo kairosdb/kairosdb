@@ -2,13 +2,14 @@ package org.kairosdb.core.oauth;
 
 import com.google.inject.Inject;
 import com.sun.jersey.oauth.server.OAuthServerRequest;
-import com.sun.jersey.oauth.signature.OAuthParameters;
-import com.sun.jersey.oauth.signature.OAuthRequest;
-import com.sun.jersey.oauth.signature.OAuthSecrets;
-import com.sun.jersey.oauth.signature.OAuthSignature;
+import com.sun.jersey.oauth.signature.*;
+import org.kairosdb.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
 
@@ -21,6 +22,8 @@ import java.util.*;
  */
 public class OAuthFilter implements Filter
 {
+	public static final Logger logger = LoggerFactory.getLogger(OAuthFilter.class);
+
 	private ConsumerTokenStore m_tokenStore;
 
 	@Inject
@@ -37,33 +40,61 @@ public class OAuthFilter implements Filter
 	@Override
 	public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
 	{
-		if (servletRequest instanceof HttpServletRequest)
+		HttpServletRequest httpRequest = (HttpServletRequest)servletRequest;
+		HttpServletResponse httpResponse = (HttpServletResponse)servletResponse;
+
+		//Skip oauth for local connections
+		if (!"127.0.0.1".equals(servletRequest.getRemoteAddr()))
 		{
-			System.out.println("It is http, Yipee");
 			// Read the OAuth parameters from the request
-			OAuthServletRequest request = new OAuthServletRequest((HttpServletRequest)servletRequest);
+			OAuthServletRequest request = new OAuthServletRequest(httpRequest);
 			OAuthParameters params = new OAuthParameters();
 			params.readRequest(request);
 
+			String consumerKey = params.getConsumerKey();
+
 			// Set the secret(s), against which we will verify the request
 			OAuthSecrets secrets = new OAuthSecrets();
-			// ... secret setting code ...
+			secrets.setConsumerSecret(m_tokenStore.getToken(consumerKey));
 
 			// Check that the timestamp has not expired
 			String timestampStr = params.getTimestamp();
-			// ... timestamp checking code ...
+			if (timestampStr == null)
+			{
+				logger.warn("Missing OAuth headers");
+				httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing OAuth headers");
+				return;
+			}
+
+			long msgTime = Util.parseLong(timestampStr) * 1000L; //Message time is in seconds
+			long currentTime = System.currentTimeMillis();
+
+			//if the message is older than 5 min it is no good
+			if (Math.abs(msgTime - currentTime) > 300000)
+			{
+				logger.warn("OAuth message time out, msg time: "+msgTime+" current time: "+currentTime);
+				httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Message expired");
+				return;
+			}
 
 			// Verify the signature
-			/*try {
-				if(!OAuthSignature.verify(request, params, secrets)) {
-					throw new WebApplicationException(401);
-				}
-			} catch (OAuthSignatureException e) {
-				throw new WebApplicationException(e, 401);
-			}*/
+			try
+			{
+				if(!OAuthSignature.verify(request, params, secrets))
+				{
+					logger.warn("Invalid OAuth signature");
 
-			// Return the request
-			//return containerRequest;
+					httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid OAuth signature");
+					return;
+				}
+			}
+			catch (OAuthSignatureException e)
+			{
+				logger.warn("OAuth exception", e);
+
+				httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid OAuth request");
+				return;
+			}
 		}
 
 		filterChain.doFilter(servletRequest, servletResponse);

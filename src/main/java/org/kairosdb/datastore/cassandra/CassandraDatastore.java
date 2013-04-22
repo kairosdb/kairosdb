@@ -22,6 +22,7 @@ import com.google.inject.name.Named;
 import me.prettyprint.cassandra.serializers.ByteBufferSerializer;
 import me.prettyprint.cassandra.serializers.IntegerSerializer;
 import me.prettyprint.cassandra.serializers.StringSerializer;
+import me.prettyprint.cassandra.service.CassandraHostConfigurator;
 import me.prettyprint.cassandra.service.ColumnSliceIterator;
 import me.prettyprint.cassandra.service.ThriftKsDef;
 import me.prettyprint.hector.api.Cluster;
@@ -64,6 +65,8 @@ public class CassandraDatastore extends Datastore
 
 	public static final String HOST_NAME_PROPERTY = "kairosdb.datastore.cassandra.host_name";
 	public static final String PORT_PROPERTY = "kairosdb.datastore.cassandra.port";
+	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.host_list";
+	public static final String AUTHENTICATION_PROPERTY = "kairosdb.datastore.cassandra.authentication";
 	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
 	//public static final String ROW_WIDTH_PROPERTY = "kairosdb.datastore.cassandra.row_width";
 	public static final int ROW_WIDTH = 1814400000; //3 Weeks wide
@@ -97,8 +100,8 @@ public class CassandraDatastore extends Datastore
 
 
 	@Inject
-	public CassandraDatastore(@Named(HOST_NAME_PROPERTY)String cassandraHost,
-			@Named(PORT_PROPERTY)String cassandraPort,
+	public CassandraDatastore(@Named(HOST_LIST_PROPERTY)String cassandraHostList,
+			@Named(CassandraModule.CASSANDRA_AUTH_MAP)Map<String, String> cassandraAuthentication,
 			@Named(REPLICATION_FACTOR_PROPERTY)int replicationFactor,
 			@Named(SINGLE_ROW_READ_SIZE_PROPERTY)int singleRowReadSize,
 			@Named(MULTI_ROW_READ_SIZE_PROPERTY)int multiRowReadSize) throws DatastoreException
@@ -106,8 +109,11 @@ public class CassandraDatastore extends Datastore
 		m_singleRowReadSize = singleRowReadSize;
 		m_multiRowReadSize = multiRowReadSize;
 
-		m_cluster = HFactory.getOrCreateCluster("tsdb-cluster",
-				cassandraHost+":"+cassandraPort);
+		CassandraHostConfigurator hostConfig = new CassandraHostConfigurator(cassandraHostList);
+		//TODO: fine tune the hostConfig
+
+		m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
+				hostConfig, cassandraAuthentication);
 
 		KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(KEYSPACE);
 

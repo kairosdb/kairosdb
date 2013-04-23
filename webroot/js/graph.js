@@ -473,7 +473,8 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 			mode: "x"
 		},
 		xaxis: {
-			mode: "time"
+			mode: "time",
+			timezone: "browser"
 		},
 		legend: {
 			container: $("#graphLegend"),
@@ -519,11 +520,14 @@ function drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions) {
 				previousPoint = item.dataIndex;
 
 				$("#tooltip").remove();
-				var x = item.datapoint[0].toFixed(2);
+				var x = item.datapoint[0];
 				var y = item.datapoint[1].toFixed(2);
 
+				var timestamp = new Date(x);
+				var formattedDate = $.plot.formatDate(timestamp, "%b %e, %Y %H:%M:%S.millis %p");
+				formattedDate = formattedDate.replace("millis", timestamp.getMilliseconds());
 				showTooltip(item.pageX, item.pageY,
-					item.series.label + "<br>" + x + " : " + y);
+					item.series.label + "<br>" + formattedDate + "<br>" + y);
 			}
 		} else {
 			$("#tooltip").remove();
@@ -560,9 +564,7 @@ function showTooltip(x, y, contents) {
 
 	// If now over the cursor move out of the way - causes flashing of the tooltip otherwise
 	if ((x > left && x < (left + tooltip.outerWidth())) || (y < top && y > top + tooltip.outerHeight())) {
-		console.log("contains point x: " + x + " y:" + y + " top: " +top);
 		top = y - 5 - tooltip.outerHeight(); // move up
-		console.log("new top = " + top);
 	}
 
 	tooltip.css("left", left);

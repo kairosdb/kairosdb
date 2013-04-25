@@ -18,6 +18,7 @@ package org.kairosdb.core.datastore;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.TreeMultimap;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.exception.DatastoreException;
@@ -260,6 +261,7 @@ public abstract class Datastore
 
 	protected abstract List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException;
 
+
 	private String calculateFilenameHash(QueryMetric metric) throws NoSuchAlgorithmException, UnsupportedEncodingException
 	{
 		StringBuilder builder = new StringBuilder();
@@ -267,10 +269,14 @@ public abstract class Datastore
 		builder.append(metric.getStartTime());
 		builder.append(metric.getEndTime());
 
-		SortedMap<String, String> tags = metric.getTags();
-		for (String key : metric.getTags().keySet())
+		//put tags in an ordered collection
+		TreeMultimap<String, String> sortedTags = TreeMultimap.create(metric.getTags());
+		for (String key : sortedTags.keySet())
 		{
-			builder.append(key).append("=").append(tags.get(key));
+			for (String value : sortedTags.get(key))
+			{
+				builder.append(key).append("=").append(value);
+			}
 		}
 
 		byte[] digest = messageDigest.digest(builder.toString().getBytes("UTF-8"));

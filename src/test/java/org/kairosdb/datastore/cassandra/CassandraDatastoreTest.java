@@ -15,7 +15,9 @@
  */
 package org.kairosdb.datastore.cassandra;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.SetMultimap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -125,7 +127,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public void test_getKeysForQuery()
 	{
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
-				Collections.<String, String>emptyMap(), s_dataPointTime, s_dataPointTime);
+				HashMultimap.<String, String>create(), s_dataPointTime, s_dataPointTime);
 
 		ListMultimap<Long, DataPointsRowKey> keys = s_datastore.getKeysForQuery(query);
 
@@ -135,7 +137,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@Test
 	public void test_getKeysForQuery_withFilter()
 	{
-		Map<String, String> tagFilter = new HashMap<String, String>();
+		SetMultimap<String, String> tagFilter = HashMultimap.create();
 		tagFilter.put("client", "bar");
 
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,

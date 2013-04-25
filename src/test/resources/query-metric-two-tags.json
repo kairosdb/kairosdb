@@ -1,0 +1,12 @@
+{
+    "start_absolute": 784041330,
+    "end_absolute": 788879730,
+    "metrics": [
+        {
+            "name": "bob",
+            "tags": {
+                "host": ["bar","foo"]
+            }
+        }
+    ]
+}

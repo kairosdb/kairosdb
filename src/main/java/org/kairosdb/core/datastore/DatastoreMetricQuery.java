@@ -15,13 +15,15 @@
  */
 package org.kairosdb.core.datastore;
 
+import com.google.common.collect.SetMultimap;
+
 import java.util.Map;
 
 public interface DatastoreMetricQuery
 {
 	String getName();
 
-	Map<String, String> getTags();
+	SetMultimap<String, String> getTags();
 
 	long getStartTime();
 

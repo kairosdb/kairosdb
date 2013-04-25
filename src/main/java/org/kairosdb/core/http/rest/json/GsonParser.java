@@ -16,6 +16,8 @@
 
 package org.kairosdb.core.http.rest.json;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -78,6 +80,7 @@ public class GsonParser
 		GsonBuilder builder = new GsonBuilder();
 		builder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
 		builder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
+		builder.registerTypeAdapter(Metric.class, new MetricDeserializer());
 
 		m_gson = builder.create();
 	}
@@ -298,24 +301,29 @@ public class GsonParser
 		@SerializedName("name")
 		private String name;
 
-		@ValidMapRequired
 		@SerializedName("tags")
-		private Map<String, String> tags;
+		private SetMultimap<String, String> tags;
+
+		public Metric(String name, SetMultimap<String, String> tags)
+		{
+			this.name = name;
+			this.tags = tags;
+		}
 
 		public String getName()
 		{
 			return name;
 		}
 
-		public Map<String, String> getTags()
+		public SetMultimap<String, String> getTags()
 		{
 			if (tags != null)
 			{
-				return new HashMap<String, String>(tags);
+				return tags;
 			}
 			else
 			{
-				return Collections.emptyMap();
+				return HashMultimap.create();
 			}
 		}
 
@@ -452,4 +460,44 @@ public class GsonParser
 			return tu;
 		}
 	}
+
+	//===========================================================================
+	private class MetricDeserializer implements JsonDeserializer<Metric>
+	{
+		@Override
+		public Metric deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext)
+				throws JsonParseException
+		{
+			JsonObject jsonObject = jsonElement.getAsJsonObject();
+
+			String name = null;
+			if (jsonObject.get("name") != null)
+				name = jsonObject.get("name").getAsString();
+
+			HashMultimap<String, String> tags = HashMultimap.create();
+			JsonElement jeTags = jsonObject.get("tags");
+			if (jeTags != null)
+			{
+				JsonObject joTags = jeTags.getAsJsonObject();
+				for (Map.Entry<String, JsonElement> tagEntry : joTags.entrySet())
+				{
+					if (tagEntry.getValue().isJsonArray())
+					{
+						for (JsonElement element : tagEntry.getValue().getAsJsonArray())
+						{
+							tags.put(tagEntry.getKey(), element.getAsString());
+						}
+					}
+					else
+					{
+						tags.put(tagEntry.getKey(), tagEntry.getValue().getAsString());
+					}
+				}
+			}
+
+			Metric ret = new Metric(name, tags);
+			return (ret);
+		}
+	}
+
 }

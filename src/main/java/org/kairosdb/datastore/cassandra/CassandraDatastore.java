@@ -17,6 +17,7 @@ package org.kairosdb.datastore.cassandra;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import me.prettyprint.cassandra.serializers.ByteBufferSerializer;
@@ -63,8 +64,6 @@ public class CassandraDatastore extends Datastore
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 	public static final ValueSerializer LONG_OR_DOUBLE_SERIALIZER = new ValueSerializer();
 
-	public static final String HOST_NAME_PROPERTY = "kairosdb.datastore.cassandra.host_name";
-	public static final String PORT_PROPERTY = "kairosdb.datastore.cassandra.port";
 	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.host_list";
 	public static final String AUTHENTICATION_PROPERTY = "kairosdb.datastore.cassandra.authentication";
 	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
@@ -153,7 +152,7 @@ public class CassandraDatastore extends Datastore
 					@Override
 					public void saveWriteSize(int pendingWrites)
 					{
-						DataPointSet dps = new DataPointSet("kairosdb.datastore.key_write_size");
+						DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
 						dps.addTag("host", "server");
 						dps.addTag("buffer", CF_ROW_KEY_INDEX);
 						dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
@@ -418,7 +417,7 @@ public class CassandraDatastore extends Datastore
 				new ColumnSliceIterator<String, DataPointsRowKey, String>(sliceQuery,
 						startKey, endKey, false, m_singleRowReadSize);
 
-		Map<String, String> filterTags = query.getTags();
+		SetMultimap<String, String> filterTags = query.getTags();
 		outer: while (iterator.hasNext())
 		{
 			DataPointsRowKey rowKey = iterator.next().getName();
@@ -427,7 +426,7 @@ public class CassandraDatastore extends Datastore
 			for (String tag : filterTags.keySet())
 			{
 				String value = keyTags.get(tag);
-				if (!filterTags.get(tag).equals(value))
+				if (!filterTags.get(tag).contains(value))
 					continue outer; //Don't want this key
 			}
 

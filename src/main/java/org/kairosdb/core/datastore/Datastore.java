@@ -275,7 +275,11 @@ public abstract class Datastore
 
 	private String calculateFilenameHash(QueryMetric metric) throws NoSuchAlgorithmException, UnsupportedEncodingException
 	{
-		byte[] digest = messageDigest.digest(metric.getCacheString().getBytes("UTF-8"));
+		String hashString = metric.getCacheString();
+		if (hashString == null)
+			hashString = String.valueOf(System.currentTimeMillis());
+
+		byte[] digest = messageDigest.digest(hashString.getBytes("UTF-8"));
 
 		return new BigInteger(1, digest).toString(16);
 	}

@@ -34,6 +34,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	private SetMultimap<String, String> tags = HashMultimap.create();
 	private List<GroupBy> groupBys = new ArrayList<GroupBy>();
 	private List<Aggregator> aggregators;
+	private String cacheString;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
@@ -101,9 +102,10 @@ public class QueryMetric implements DatastoreMetricQuery
 	@Override
 	public long getEndTime()
 	{
-		if (endTime > -1)
-			return endTime;
-		return System.currentTimeMillis();
+		if (endTime == -1)
+			endTime = System.currentTimeMillis();
+
+		return endTime;
 	}
 
 	public int getCacheTime()
@@ -124,5 +126,15 @@ public class QueryMetric implements DatastoreMetricQuery
 	public void addGroupBy(GroupBy groupBy)
 	{
 		this.groupBys.add(groupBy);
+	}
+
+	public void setCacheString(String cacheString)
+	{
+		this.cacheString = cacheString;
+	}
+
+	public String getCacheString()
+	{
+		return (cacheString);
 	}
 }

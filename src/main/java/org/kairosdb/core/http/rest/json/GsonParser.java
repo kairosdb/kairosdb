@@ -18,6 +18,7 @@ package org.kairosdb.core.http.rest.json;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import com.google.common.collect.TreeMultimap;
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -153,6 +154,10 @@ public class GsonParser
 
 			QueryMetric queryMetric = new QueryMetric(getStartTime(query), query.getCacheTime(),
 					metric.getName());
+
+			StringBuilder sb = new StringBuilder();
+			sb.append(query.getCacheString()).append(metric.getCacheString());
+			queryMetric.setCacheString(sb.toString());
 
 			JsonObject jsMetric = metricsArray.get(I).getAsJsonObject();
 
@@ -304,7 +309,7 @@ public class GsonParser
 		@SerializedName("tags")
 		private SetMultimap<String, String> tags;
 
-		public Metric(String name, SetMultimap<String, String> tags)
+		public Metric(String name, TreeMultimap<String, String> tags)
 		{
 			this.name = name;
 			this.tags = tags;
@@ -313,6 +318,21 @@ public class GsonParser
 		public String getName()
 		{
 			return name;
+		}
+
+		public String getCacheString()
+		{
+			StringBuilder sb = new StringBuilder();
+
+			sb.append(name).append(":");
+
+			for (Map.Entry<String, String> tagEntry : tags.entries())
+			{
+				sb.append(tagEntry.getKey()).append("=");
+				sb.append(tagEntry.getValue()).append(":");
+			}
+
+			return (sb.toString());
 		}
 
 		public SetMultimap<String, String> getTags()
@@ -371,6 +391,24 @@ public class GsonParser
 		public RelativeTime getEndRelative()
 		{
 			return m_endRelative;
+		}
+
+		public String getCacheString()
+		{
+			StringBuilder sb = new StringBuilder();
+			if (m_startAbsolute != null)
+				sb.append(m_startAbsolute).append(":");
+
+			if (m_startRelative != null)
+				sb.append(m_startRelative.toString()).append(":");
+
+			if (m_endAbsolute != null)
+				sb.append(m_endAbsolute).append(":");
+
+			if (m_endRelative != null)
+				sb.append(m_endRelative.toString()).append(":");
+
+			return (sb.toString());
 		}
 
 		@Override
@@ -474,7 +512,7 @@ public class GsonParser
 			if (jsonObject.get("name") != null)
 				name = jsonObject.get("name").getAsString();
 
-			HashMultimap<String, String> tags = HashMultimap.create();
+			TreeMultimap<String, String> tags = TreeMultimap.create();
 			JsonElement jeTags = jsonObject.get("tags");
 			if (jeTags != null)
 			{

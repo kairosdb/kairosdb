@@ -26,7 +26,10 @@ import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.Grouper;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.groupby.TagGroupByResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -38,12 +41,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class Datastore
 {
+	public static final Logger logger = LoggerFactory.getLogger(Datastore.class);
+
 	private MessageDigest messageDigest;
+	private String cacheDir;
 
 	protected Datastore() throws DatastoreException
 	{
 		try
 		{
+			cacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
+			new File(cacheDir).mkdirs();
 			messageDigest = MessageDigest.getInstance("MD5");
 		}
 		catch (NoSuchAlgorithmException e)
@@ -81,7 +89,8 @@ public abstract class Datastore
 		try
 		{
 			String cacheFilename = calculateFilenameHash(metric);
-			String tempFile = System.getProperty("java.io.tmpdir") + "/" + cacheFilename;
+			String tempFile = cacheDir + cacheFilename;
+
 
 			if (metric.getCacheTime() > 0)
 			{
@@ -112,7 +121,7 @@ public abstract class Datastore
 		try
 		{
 			String cacheFilename = calculateFilenameHash(metric);
-			String tempFile = System.getProperty("java.io.tmpdir") + "/" + cacheFilename;
+			String tempFile = cacheDir + cacheFilename;
 
 			if (metric.getCacheTime() > 0)
 			{
@@ -120,11 +129,13 @@ public abstract class Datastore
 				if (cachedResults != null)
 				{
 					returnedRows = cachedResults.getRows();
+					logger.debug("Cache HIT!");
 				}
 			}
 
 			if (cachedResults == null)
 			{
+				logger.debug("Cache MISS!");
 				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile);
 				returnedRows = queryDatabase(metric, cachedResults);
 			}
@@ -264,22 +275,7 @@ public abstract class Datastore
 
 	private String calculateFilenameHash(QueryMetric metric) throws NoSuchAlgorithmException, UnsupportedEncodingException
 	{
-		StringBuilder builder = new StringBuilder();
-		builder.append(metric.getName());
-		builder.append(metric.getStartTime());
-		builder.append(metric.getEndTime());
-
-		//put tags in an ordered collection
-		TreeMultimap<String, String> sortedTags = TreeMultimap.create(metric.getTags());
-		for (String key : sortedTags.keySet())
-		{
-			for (String value : sortedTags.get(key))
-			{
-				builder.append(key).append("=").append(value);
-			}
-		}
-
-		byte[] digest = messageDigest.digest(builder.toString().getBytes("UTF-8"));
+		byte[] digest = messageDigest.digest(metric.getCacheString().getBytes("UTF-8"));
 
 		return new BigInteger(1, digest).toString(16);
 	}

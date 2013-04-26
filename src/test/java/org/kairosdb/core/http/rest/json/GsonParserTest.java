@@ -124,6 +124,7 @@ public class GsonParserTest
 
 		assertThat(results.size(), equalTo(1));
 		QueryMetric queryMetric = results.get(0);
+		assertThat(queryMetric.getCacheString(), equalTo("784041330:788879730:bob:host=bar:host=foo:"));
 		assertThat(queryMetric.getTags(), notNullValue());
 		assertThat(queryMetric.getTags().get("host").size(), equalTo(2));
 		assertThat(queryMetric.getTags().get("host"), hasItem("bar"));

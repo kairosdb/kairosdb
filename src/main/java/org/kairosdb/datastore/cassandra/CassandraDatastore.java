@@ -67,9 +67,9 @@ public class CassandraDatastore extends Datastore
 	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.host_list";
 	public static final String AUTHENTICATION_PROPERTY = "kairosdb.datastore.cassandra.authentication";
 	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
-	//public static final String ROW_WIDTH_PROPERTY = "kairosdb.datastore.cassandra.row_width";
 	public static final int ROW_WIDTH = 1814400000; //3 Weeks wide
-//	public static final String WRITE_DELAY_PROPERTY = "kairosdb.datastore.cassandra.write_delay";
+	public static final String WRITE_DELAY_PROPERTY = "kairosdb.datastore.cassandra.write_delay";
+	public static final String WRITE_BUFFER_SIZE = "kairosdb.datastore.cassandra.write_buffer_max_size";
 	public static final String SINGLE_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.single_row_read_size";
 	public static final String MULTI_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_read_size";
 
@@ -103,7 +103,9 @@ public class CassandraDatastore extends Datastore
 			@Named(CassandraModule.CASSANDRA_AUTH_MAP)Map<String, String> cassandraAuthentication,
 			@Named(REPLICATION_FACTOR_PROPERTY)int replicationFactor,
 			@Named(SINGLE_ROW_READ_SIZE_PROPERTY)int singleRowReadSize,
-			@Named(MULTI_ROW_READ_SIZE_PROPERTY)int multiRowReadSize) throws DatastoreException
+			@Named(MULTI_ROW_READ_SIZE_PROPERTY)int multiRowReadSize,
+			@Named(WRITE_DELAY_PROPERTY)int writeDelay,
+			@Named(WRITE_BUFFER_SIZE)int maxWriteSize) throws DatastoreException
 	{
 		m_singleRowReadSize = singleRowReadSize;
 		m_multiRowReadSize = multiRowReadSize;
@@ -125,7 +127,7 @@ public class CassandraDatastore extends Datastore
 		Condition lockCondition =mutatorLock.newCondition();
 
 		m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, ByteBuffer>(
-				m_keyspace, CF_DATA_POINTS, 1000,
+				m_keyspace, CF_DATA_POINTS, writeDelay, maxWriteSize,
 				DATA_POINTS_ROW_KEY_SERIALIZER,
 				IntegerSerializer.get(),
 				ByteBufferSerializer.get(),
@@ -143,7 +145,7 @@ public class CassandraDatastore extends Datastore
 				}, mutatorLock, lockCondition);
 
 		m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
-				m_keyspace, CF_ROW_KEY_INDEX, 1000,
+				m_keyspace, CF_ROW_KEY_INDEX, writeDelay, maxWriteSize,
 				StringSerializer.get(),
 				DATA_POINTS_ROW_KEY_SERIALIZER,
 				StringSerializer.get(),
@@ -161,7 +163,7 @@ public class CassandraDatastore extends Datastore
 				}, mutatorLock, lockCondition);
 
 		m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
-				m_keyspace, CF_STRING_INDEX, 1000,
+				m_keyspace, CF_STRING_INDEX, writeDelay, maxWriteSize,
 				StringSerializer.get(),
 				StringSerializer.get(),
 				StringSerializer.get(),

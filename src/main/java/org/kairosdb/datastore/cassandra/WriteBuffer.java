@@ -45,10 +45,11 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 	private Serializer<ColumnKeyType> m_columnKeySerializer;
 	private Serializer<ValueType> m_valueSerializer;
 	private WriteBufferStats m_writeStats;
-	private int m_maxBufferSize = 500000;
+	private int m_maxBufferSize;
+	private int m_initialMaxBufferSize;
 
 	public WriteBuffer(Keyspace keyspace, String cfName,
-			int writeDelay, Serializer<RowKeyType> keySerializer,
+			int writeDelay, int maxWriteSize, Serializer<RowKeyType> keySerializer,
 			Serializer<ColumnKeyType> columnKeySerializer,
 			Serializer<ValueType> valueSerializer,
 			WriteBufferStats stats,
@@ -58,6 +59,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		m_keyspace = keyspace;
 		m_cfName = cfName;
 		m_writeDelay = writeDelay;
+		m_initialMaxBufferSize = m_maxBufferSize = maxWriteSize;
 		m_rowKeySerializer = keySerializer;
 		m_columnKeySerializer = columnKeySerializer;
 		m_valueSerializer = valueSerializer;
@@ -102,6 +104,20 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		m_exit = true;
 		m_writeThread.interrupt();
 		m_writeThread.join();
+	}
+
+	/**
+	 This will slowly increase the max buffer size up to the initial size.
+	 The design is that this method is called periodically to correct 3/4
+	 throttling that occurs down below.
+	 */
+	public void increaseMaxBufferSize()
+	{
+		if (m_maxBufferSize < m_initialMaxBufferSize)
+		{
+			m_maxBufferSize += 1000;
+			logger.info("Increasing write buffers size to "+m_maxBufferSize);
+		}
 	}
 
 
@@ -149,7 +165,8 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 
 				m_maxBufferSize = m_maxBufferSize * 3 / 4;
 
-				logger.error("Reducing write buffer size to "+m_maxBufferSize);
+				logger.error("Reducing write buffer size to "+m_maxBufferSize+
+						".  You need to increase your cassandra capacity or change the kairosdb.datastore.cassandra.write_buffer_max_size property.");
 			}
 
 

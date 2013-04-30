@@ -75,7 +75,7 @@ public class MetricsResource
 	@Path("/version")
 	public Response getVersion()
 	{
-		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \"KairosDB2 Beta1\"}");
+		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \"KairosDB Beta1\"}");
 		return responseBuilder.build();
 	}
 

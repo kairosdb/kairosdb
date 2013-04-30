@@ -23,7 +23,7 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.exception.TsdbException;
+import org.kairosdb.core.exception.KariosDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +67,7 @@ public class MetricReporterService extends AbstractPollingReporter implements Me
 	}
 
 	@Override
-	public void start() throws TsdbException
+	public void start() throws KariosDBException
 	{
 		start(period, periodUnit);
 	}

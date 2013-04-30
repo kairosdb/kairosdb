@@ -66,5 +66,8 @@
 		<!-- Yammer Metrics -->
 		<dependency org="com.yammer.metrics" name="metrics-core" rev="2.2.0" />
 
+		<!-- Quartz -->
+		<dependency org="org.quartz-scheduler" name="quartz" rev="2.1.7" />
+
 	</dependencies>
 </ivy-module>

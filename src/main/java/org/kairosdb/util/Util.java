@@ -16,6 +16,11 @@
 package org.kairosdb.util;
 
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 public class Util
 {
 	public static int compareLong(long l1, long l2)
@@ -81,5 +86,46 @@ public class Util
 		}
 
 		return sign * num;
+	}
+
+	/**
+	 * Returns the host name. First tries to execute "hostname" on the machine. This should work for Linux, Windows,
+	 * and Mac. If, for some reason hostname fails, then get the name from InetAddress (which might change depending
+	 * on network setup)
+	 *
+	 * @return hostname
+	 */
+	public static String getHostName()
+	{
+		try
+		{
+			Runtime run = Runtime.getRuntime();
+			Process process = run.exec("hostname");
+			InputStreamReader isr = new InputStreamReader(process.getInputStream());
+			BufferedReader br = new BufferedReader(isr);
+
+			// Need to read all lines from the stream or the process could hang
+			StringBuilder buffer = new StringBuilder();
+			String line;
+			while ((line = br.readLine()) != null)
+				buffer.append(line);
+
+			int returnValue = process.waitFor();
+			if (returnValue == 0)
+				return buffer.toString();
+		}
+		catch (Exception e)
+		{
+			// ignore
+		}
+
+		try
+		{
+			return InetAddress.getLocalHost().getHostName();
+		}
+		catch (UnknownHostException e)
+		{
+			return "";
+		}
 	}
 }

@@ -25,6 +25,7 @@ import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.core.jobs.CacheFileCleaner;
 import org.kairosdb.core.reporting.KairosMetricRegistry;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
+import org.kairosdb.util.Util;
 
 import java.util.Properties;
 
@@ -48,17 +49,20 @@ public class CoreModule extends AbstractModule
 		bind(CacheFileCleaner.class).in(Singleton.class);
 		bind(KairosDBScheduler.class).in(Singleton.class);
 
-		bind(SumAggregator.class);
-		bind(MinAggregator.class);
-		bind(MaxAggregator.class);
-		bind(AvgAggregator.class);
-		bind(StdAggregator.class);
-		bind(RateAggregator.class);
+		bind(SumAggregator.class).in(Singleton.class);
+		bind(MinAggregator.class).in(Singleton.class);
+		bind(MaxAggregator.class).in(Singleton.class);
+		bind(AvgAggregator.class).in(Singleton.class);
+		bind(StdAggregator.class).in(Singleton.class);
+		bind(RateAggregator.class).in(Singleton.class);
 
-		bind(ValueGroupBy.class);
-		bind(TimeGroupBy.class);
-		bind(TagGroupBy.class);
+		bind(ValueGroupBy.class).in(Singleton.class);
+		bind(TimeGroupBy.class).in(Singleton.class);
+		bind(TagGroupBy.class).in(Singleton.class);
 
 		Names.bindProperties(binder(), m_props);
+
+		String hostname = m_props.getProperty("kairosdb.hostname");
+		bindConstant().annotatedWith(Names.named("HOSTNAME")).to(hostname != null ? hostname: Util.getHostName());
 	}
 }

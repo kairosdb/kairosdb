@@ -43,6 +43,7 @@ public class MetricReporterService extends AbstractPollingReporter implements Me
 
 	public static final String REPORTER_PERIOD = "kairosdb.reporter.period";
 	public static final String REPORTER_PERIOD_UNIT = "kairosdb.reporter.period_unit";
+	public static final String HOSTNAME = "HOSTNAME";
 
 	private Datastore datastore;
 	private KairosMetricRegistry registry;
@@ -50,11 +51,14 @@ public class MetricReporterService extends AbstractPollingReporter implements Me
 	private TimeUnit periodUnit;
 	private long timestamp;
 
+	private final String hostname;
+
 	@Inject
 	public MetricReporterService(Datastore datastore,
 	                             KairosMetricRegistry registry,
 	                             @Named(REPORTER_PERIOD) int period,
-	                             @Named(REPORTER_PERIOD_UNIT) String periodUnit)
+	                             @Named(REPORTER_PERIOD_UNIT) String periodUnit,
+	                             @Named(HOSTNAME) String hostname)
 	{
 		super(registry, "KairosReporter");
 		checkArgument(period > 0, "Reporting period must be greater than 0.");
@@ -64,6 +68,7 @@ public class MetricReporterService extends AbstractPollingReporter implements Me
 		this.registry = checkNotNull(registry);
 		this.period = period;
 		this.periodUnit = TimeUnit.valueOf(periodUnit.toUpperCase());
+		this.hostname = checkNotNullOrEmpty(hostname);
 	}
 
 	@Override
@@ -103,7 +108,7 @@ public class MetricReporterService extends AbstractPollingReporter implements Me
 
 			Runtime runtime = Runtime.getRuntime();
 			Map<String, String> tags = new HashMap<String, String>();
-			tags.put("host", "server");
+			tags.put("host", hostname);
 			datastore.putDataPoints(new DataPointSet("kairosdb.jvm.free_memory",
 					tags, Collections.singletonList(new DataPoint(timestamp, runtime.freeMemory()))));
 			datastore.putDataPoints(new DataPointSet("kairosdb.jvm.total_memory",

@@ -35,11 +35,11 @@ import me.prettyprint.hector.api.factory.HFactory;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datastore.CachedSearchResult;
+import org.kairosdb.core.datastore.DataPointRow;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.datastore.CachedSearchResult;
-import org.kairosdb.core.datastore.DataPointRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,10 +62,10 @@ public class CassandraDatastore extends Datastore
 	public static final int FLOAT_FLAG = 0x1;
 
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
-	public static final ValueSerializer LONG_OR_DOUBLE_SERIALIZER = new ValueSerializer();
+//	public static final ValueSerializer LONG_OR_DOUBLE_SERIALIZER = new ValueSerializer();
 
 	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.host_list";
-	public static final String AUTHENTICATION_PROPERTY = "kairosdb.datastore.cassandra.authentication";
+//	public static final String AUTHENTICATION_PROPERTY = "kairosdb.datastore.cassandra.authentication";
 	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
 	public static final int ROW_WIDTH = 1814400000; //3 Weeks wide
 	public static final String WRITE_DELAY_PROPERTY = "kairosdb.datastore.cassandra.write_delay";
@@ -81,7 +81,6 @@ public class CassandraDatastore extends Datastore
 	public static final String ROW_KEY_METRIC_NAMES = "metric_names";
 	public static final String ROW_KEY_TAG_NAMES = "tag_names";
 	public static final String ROW_KEY_TAG_VALUES = "tag_values";
-
 
 
 	private Cluster m_cluster;
@@ -105,7 +104,8 @@ public class CassandraDatastore extends Datastore
 			@Named(SINGLE_ROW_READ_SIZE_PROPERTY)int singleRowReadSize,
 			@Named(MULTI_ROW_READ_SIZE_PROPERTY)int multiRowReadSize,
 			@Named(WRITE_DELAY_PROPERTY)int writeDelay,
-			@Named(WRITE_BUFFER_SIZE)int maxWriteSize) throws DatastoreException
+			@Named(WRITE_BUFFER_SIZE)int maxWriteSize,
+			final @Named("HOSTNAME") String hostname) throws DatastoreException
 	{
 		m_singleRowReadSize = singleRowReadSize;
 		m_multiRowReadSize = multiRowReadSize;
@@ -137,7 +137,7 @@ public class CassandraDatastore extends Datastore
 					public void saveWriteSize(int pendingWrites)
 					{
 						DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
-						dps.addTag("host", "server");
+						dps.addTag("host", hostname);
 						dps.addTag("buffer", CF_DATA_POINTS);
 						dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
 						putDataPoints(dps);
@@ -155,7 +155,7 @@ public class CassandraDatastore extends Datastore
 					public void saveWriteSize(int pendingWrites)
 					{
 						DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
-						dps.addTag("host", "server");
+						dps.addTag("host", hostname);
 						dps.addTag("buffer", CF_ROW_KEY_INDEX);
 						dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
 						putDataPoints(dps);
@@ -173,7 +173,7 @@ public class CassandraDatastore extends Datastore
 					public void saveWriteSize(int pendingWrites)
 					{
 						DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
-						dps.addTag("host", "server");
+						dps.addTag("host", hostname);
 						dps.addTag("buffer", CF_STRING_INDEX);
 						dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
 						putDataPoints(dps);
@@ -388,8 +388,8 @@ public class CassandraDatastore extends Datastore
 
 	/**
 	 Returns the row keys for the query in tiers ie grouped by row key timestamp
-	 @param query
-	 @return
+	 @param query query
+	 @return row keys for the query
 	 */
 	/*package*/ ListMultimap<Long, DataPointsRowKey> getKeysForQuery(DatastoreMetricQuery query)
 	{
@@ -470,16 +470,16 @@ public class CassandraDatastore extends Datastore
 	}
 
 
-	private class WriteBufferStatsImpl implements WriteBufferStats
-	{
-		@Override
-		public void saveWriteSize(int pendingWrites)
-		{
-			DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
-			dps.addTag("host", "server");
-			dps.addTag("buffer", CF_DATA_POINTS);
-			dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
-			putDataPoints(dps);
-		}
-	}
+//	private class WriteBufferStatsImpl implements WriteBufferStats
+//	{
+//		@Override
+//		public void saveWriteSize(int pendingWrites)
+//		{
+//			DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
+//			dps.addTag("host", "server");
+//			dps.addTag("buffer", CF_DATA_POINTS);
+//			dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
+//			putDataPoints(dps);
+//		}
+//	}
 }

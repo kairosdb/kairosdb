@@ -17,21 +17,25 @@
 package org.kairosdb.core.telnet;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.yammer.metrics.core.Counter;
 import com.yammer.metrics.core.MetricName;
 import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricRegistry;
 
+import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+
 public class VersionCommand implements TelnetCommand
 {
 	private Counter counter;
 
 	@Inject
-	public VersionCommand(KairosMetricRegistry metricRegistry)
+	public VersionCommand(KairosMetricRegistry metricRegistry, @Named("HOSTNAME") String hostname)
 	{
+		checkNotNullOrEmpty(hostname);
 		counter = metricRegistry.newCounter(new MetricName("kairosdb", "protocol", "telnet_request_count"),
-				new KairosMetricRegistry.Tag("host", "server"), new KairosMetricRegistry.Tag("method", "version"));
+				new KairosMetricRegistry.Tag("host", hostname), new KairosMetricRegistry.Tag("method", "version"));
 	}
 
 	@Override

@@ -47,7 +47,7 @@ public class MetricReporterServiceTest
 		registry = new KairosMetricRegistry();
 		datastore = new TestDatastore();
 
-		service = new MetricReporterService(datastore, registry, 1, "milliseconds");
+		service = new MetricReporterService(datastore, registry, 1, "milliseconds", "hostname");
 	}
 
 	@Test

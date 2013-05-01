@@ -13,25 +13,29 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.kairosdb.core.exception;
+package org.kairosdb.core.scheduler;
 
-/**
- * Wraps exceptions from the data stores.
- */
-public class DatastoreException extends KariosDBException
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import org.quartz.Job;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.spi.JobFactory;
+import org.quartz.spi.TriggerFiredBundle;
+
+public class KairosDBJobFactory implements JobFactory
 {
-	public DatastoreException(String message)
+	private final Injector guice;
+
+	@Inject
+	public KairosDBJobFactory(Injector guice)
 	{
-		super(message);
+		this.guice = guice;
 	}
 
-	public DatastoreException(String message, Throwable cause)
+	@Override
+	public Job newJob(TriggerFiredBundle triggerFiredBundle, Scheduler scheduler) throws SchedulerException
 	{
-		super(message, cause);
-	}
-
-	public DatastoreException(Throwable cause)
-	{
-		super(cause);
+		return guice.getInstance(triggerFiredBundle.getJobDetail().getJobClass());
 	}
 }

@@ -13,13 +13,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+package org.kairosdb.core.scheduler;
 
-package org.kairosdb.core;
+import org.quartz.Job;
+import org.quartz.Trigger;
 
-import org.kairosdb.core.exception.KariosDBException;
-
-public interface KairosDBService
+public interface KairosDBJob extends Job
 {
-	public void start() throws KariosDBException;
-	public void stop();
+	Trigger getTrigger();
 }

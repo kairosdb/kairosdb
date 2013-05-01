@@ -25,6 +25,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReadWriteLock;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class CachedSearchResult
 {
@@ -36,6 +39,11 @@ public class CachedSearchResult
 
 	public static final byte LONG_FLAG = 0x1;
 	public static final byte DOUBLE_FLAG = 0x2;
+
+	/**
+	 * Lock that indicates cache files are being read or written so the cache cleaner does not delete files in use
+	 */
+	private final ReadWriteLock m_cacheDirectoryLock;
 
 	private String m_metricName;
 	private List<FilePositionMarker> m_dataPointSets;
@@ -59,7 +67,7 @@ public class CachedSearchResult
 		return (new File(dataFileName));
 	}
 
-	private CachedSearchResult(String metricName, File dataFile, File indexFile)
+	private CachedSearchResult(String metricName, File dataFile, File indexFile, ReadWriteLock cacheDirectoryLock)
 			throws FileNotFoundException
 	{
 		m_metricName = metricName;
@@ -67,6 +75,9 @@ public class CachedSearchResult
 		m_writeBuffer.clear();
 		m_indexFile = indexFile;
 		m_dataPointSets = new ArrayList<FilePositionMarker>();
+		m_cacheDirectoryLock = cacheDirectoryLock;
+
+		cacheDirectoryLock.readLock().lock();
 
 		RandomAccessFile rFile = new RandomAccessFile(dataFile, "rw");
 
@@ -114,13 +125,15 @@ public class CachedSearchResult
 	}
 
 	public static CachedSearchResult createCachedSearchResult(String metricName,
-			String baseFileName)
+	                                                          String baseFileName, ReadWriteLock cacheDirectoryLock)
 			throws IOException
 	{
+		checkNotNull(cacheDirectoryLock);
+
 		File dataFile = getDataFile(baseFileName);
 		File indexFile = getIndexFile(baseFileName);
 
-		CachedSearchResult ret = new CachedSearchResult(metricName, dataFile, indexFile);
+		CachedSearchResult ret = new CachedSearchResult(metricName, dataFile, indexFile, cacheDirectoryLock);
 
 		ret.clearDataFile();
 
@@ -129,13 +142,15 @@ public class CachedSearchResult
 
 	/**
 
-	 @param baseFileName
+	 @param baseFileName base name of file
 	 @param cacheTime The number of seconds to still open the file
 	 @return The CachedSearchResult if the file exists or null if it doesn't
 	 */
 	public static CachedSearchResult openCachedSearchResult(String metricName,
-			String baseFileName, int cacheTime) throws IOException
+			String baseFileName, int cacheTime, ReadWriteLock cacheDirectoryLock) throws IOException
 	{
+		checkNotNull(cacheDirectoryLock);
+
 		CachedSearchResult ret = null;
 		File dataFile = getDataFile(baseFileName);
 		File indexFile = getIndexFile(baseFileName);
@@ -144,7 +159,7 @@ public class CachedSearchResult
 		if (dataFile.exists() && indexFile.exists() && ((now - dataFile.lastModified()) < ((long)cacheTime * 1000)))
 		{
 
-			ret = new CachedSearchResult(metricName, dataFile, indexFile);
+			ret = new CachedSearchResult(metricName, dataFile, indexFile, cacheDirectoryLock);
 			try
 			{
 				ret.loadIndex();
@@ -168,12 +183,11 @@ public class CachedSearchResult
 
 		long curPosition = m_dataFileChannel.position();
 		if (m_dataPointSets.size() != 0)
-			((FilePositionMarker)m_dataPointSets.get(m_dataPointSets.size() -1)).setEndPosition(curPosition);
+			m_dataPointSets.get(m_dataPointSets.size() -1).setEndPosition(curPosition);
 	}
 
 	/**
 	 Closes the underling file handle
-	 @throws IOException
 	 */
 	public void close()
 	{
@@ -186,6 +200,10 @@ public class CachedSearchResult
 		catch (IOException e)
 		{
 			logger.error("Failure closing cache file", e);
+		}
+		finally
+		{
+			m_cacheDirectoryLock.readLock().unlock();
 		}
 	}
 

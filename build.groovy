@@ -14,16 +14,14 @@ import tablesaw.addons.java.*
 import tablesaw.addons.ivy.IvyAddon
 import tablesaw.addons.junit.JUnitRule
 
-import javax.swing.JLabel
-import javax.swing.JOptionPane
-import javax.swing.JPasswordField
+import javax.swing.*
 
 println("===============================================");
 
 
 programName = "kairosdb"
 version = "1.0.0-beta-2"
-release = "1" //package release number
+release = "4" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along

@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -71,6 +70,14 @@ public class MetricsResource
 		formatters.put("json", new JsonFormatter());
 	}
 
+	@GET
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/version")
+	public Response getVersion()
+	{
+		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \"KairosDB Beta1\"}");
+		return responseBuilder.build();
+	}
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")

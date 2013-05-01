@@ -17,15 +17,15 @@
 package org.kairosdb.core.telnet;
 
 import com.google.inject.Inject;
-import org.kairosdb.core.KairosDBService;
-import org.kairosdb.core.exception.TsdbException;
-import org.jboss.netty.channel.*;
 import com.google.inject.name.Named;
 import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.Delimiters;
 import org.jboss.netty.handler.codec.string.StringEncoder;
+import org.kairosdb.core.KairosDBService;
+import org.kairosdb.core.exception.KariosDBException;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -108,7 +108,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 	}
 
 	@Override
-	public void start() throws TsdbException
+	public void start() throws KariosDBException
 	{
 		// Configure the server.
 		ServerBootstrap bootstrap = new ServerBootstrap(

@@ -21,12 +21,15 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.exception.TsdbException;
+import org.kairosdb.core.exception.KariosDBException;
 import org.kairosdb.testing.TestingDataPointRowImpl;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -36,7 +39,7 @@ public class DatastoreTest
 	private AggregatorFactory aggFactory = new TestAggregatorFactory();
 
 	@Test(expected = NullPointerException.class)
-	public void test_query_nullMetricInvalid() throws TsdbException
+	public void test_query_nullMetricInvalid() throws KariosDBException
 	{
 		TestDatastore datastore = new TestDatastore();
 
@@ -44,7 +47,7 @@ public class DatastoreTest
 	}
 
 	@Test
-	public void test_query_sumAggregator() throws TsdbException
+	public void test_query_sumAggregator() throws KariosDBException
 	{
 		TestDatastore datastore = new TestDatastore();
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
@@ -68,7 +71,7 @@ public class DatastoreTest
 	}
 
 	@Test
-	public void test_query_noAggregator() throws TsdbException
+	public void test_query_noAggregator() throws KariosDBException
 	{
 		TestDatastore datastore = new TestDatastore();
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
@@ -133,6 +136,27 @@ public class DatastoreTest
 		dataPoint = group.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(3L));
 		assertThat(dataPoint.getLongValue(), equalTo(25L));
+	}
+
+	@SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions"})
+	@Test
+	public void test_cleanCacheDir() throws IOException, DatastoreException
+	{
+		// Create files in the cache directory
+		File cacheDir = new File(System.getProperty("java.io.tmpdir") + "/kairos_cache/");
+		File file1 = new File(cacheDir, "testFile1");
+		file1.createNewFile();
+		File file2 = new File(cacheDir, "testFile2");
+		file2.createNewFile();
+
+		File[] files = cacheDir.listFiles();
+		assertTrue(files.length > 0);
+
+		TestDatastore datastore = new TestDatastore();
+		datastore.cleanCacheDir();
+
+		files = cacheDir.listFiles();
+		assertThat(files.length, equalTo(0));
 	}
 
 	private class TestDatastore extends Datastore

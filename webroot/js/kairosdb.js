@@ -47,7 +47,11 @@ kairosdb.Metric = function (name) {
 	};
 
 	this.addTag = function (name, value) {
-		this.tags[name] = value;
+		if (!this.tags[name]){
+			this.tags[name] = [];
+		}
+
+		this.tags[name].push(value);
 	};
 
 	this.addAggregator = function (name, value, unit) {

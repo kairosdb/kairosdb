@@ -184,10 +184,8 @@ function addMetric() {
 			addTag(tagContainer)
 		});
 
-	// Add new tag
 	var tagContainer = $('<div id="' + tagContainerName + '"></div>');
 	tagContainer.appendTo($metricContainer);
-	addTag(tagContainer);
 
 	// Rename Aggregator Container
 	$metricContainer.find("#aggregatorContainer").attr('id', 'metric-' + metricCount + 'AggregatorContainer');
@@ -408,6 +406,17 @@ function addTag(tagContainer) {
 	newDiv.find("[name='tagValue']").autocomplete({
 		source: tagValues
 	});
+
+	// Add remove button
+	var removeButton = newDiv.find(".removeTag");
+	removeButton.button({
+		text: false,
+		icons: {
+			primary: 'ui-icon-close'
+		}
+	}).click(function () {
+			newDiv.remove();
+		});
 }
 
 function showChartForQuery(title, subTitle, yAxisTitle, query) {

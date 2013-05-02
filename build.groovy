@@ -21,7 +21,7 @@ println("===============================================");
 
 programName = "kairosdb"
 version = "1.0.0-beta-2"
-release = "4" //package release number
+release = "5" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along

@@ -57,6 +57,31 @@ additionalFiles = new RegExFileSet("src/main/java", ".*\\.sql").recurse()
 jp.getJarRule().addFileSet(additionalFiles)
 jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties",
 		"logback.xml")
+
+//Set information in the manifest file
+manifest = jp.getJarRule().getManifest().getMainAttributes()
+manifest.putValue("Manifest-Version", "1.0")
+manifest.putValue("Tablesaw-Version", saw.getVersion())
+manifest.putValue("Created-By", saw.getProperty("java.vm.version")+" ("+
+			saw.getProperty("java.vm.vendor")+")")
+manifest.putValue("Built-By", saw.getProperty("user.name"))
+buildDateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss z")
+manifest.putValue("Build-Date", buildDateFormat.format(new Date()))
+
+buildNumberFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
+buildNumber = buildNumberFormat.format(new Date())
+manifest.putValue("Implementation-Title", "KairosDB")
+manifest.putValue("Implementation-Vendor", "Proofpoint Inc.")
+manifest.putValue("Implementation-Version", "${version}.${buildNumber}")
+
+//Add git revision information
+gitRevisionFile= ".gitrevision"
+new File(gitRevisionFile).text = ""
+saw.exec(null, "git rev-parse HEAD", false, null, gitRevisionFile);
+revision = new File(gitRevisionFile).text.trim()
+new File(gitRevisionFile).delete()
+manifest.putValue("Git-Revision", revision);
+
 saw.setDefaultTarget("jar")
 
 
@@ -144,7 +169,7 @@ def doRPM(Rule rule)
 				url = "http://code.google.com/p/kairosdb/"
 				vendor = "Proofpoint Inc."
 				provides = programName
-				prefixes = rpmBaseInstallDir
+				//prefixes = rpmBaseInstallDir
 				buildHost = host
 				sourceRpm = srcRpmFile
 			}
@@ -153,6 +178,7 @@ def doRPM(Rule rule)
 		rpmBuilder.addDependencyMore("java", "1.6")
 
 	rpmBuilder.setPostInstallScript("chkconfig --add kairosdb\nchkconfig kairosdb on")
+	rpmBuilder.setPreUninstallScript("chkconfig kairosdb off\nchkconfig --del kairosdb")
 
 	for (AbstractFileSet fs in libFileSets)
 		addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/lib", fs)
@@ -256,36 +282,4 @@ def doGenorm(Rule rule)
 }
 
 
-//------------------------------------------------------------------------------
-//Generate version source file
-verSourceDirRule = new DirectoryRule(versionSourceDir)
-new SimpleRule().addTarget(versionSource)
-		.addDepend(verSourceDirRule)
-		.addDepend("build.groovy")
-		.setMakeAction("doGenVersion")
 
-def doGenVersion(Rule rule)
-{
-	gitRevisionFile= ".gitrevision"
-	println("Generating "+rule.getTarget())
-	dateFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
-	buildNumber = dateFormat.format(new Date())
-
-	new File(gitRevisionFile).text = ""
-	saw.exec(null, "git rev-parse HEAD", false, null, gitRevisionFile);
-
-	revision = new File(gitRevisionFile).text.trim()
-	new File(gitRevisionFile).delete()
-
-	def versionFile = """\
-package org.kairosdb;
-
-public class KairosVersion {
-	public static final String VERSION = "${version}";
-	public static final String BUILD = "${buildNumber}";
-	public static final String GIT_REVISION = "${revision}";
-}
-"""
-
-	new File(rule.getTarget()).write(versionFile)
-}

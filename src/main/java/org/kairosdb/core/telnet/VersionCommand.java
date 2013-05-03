@@ -44,8 +44,9 @@ public class VersionCommand implements TelnetCommand
 		counter.inc();
 		if (chan.isConnected())
 		{
-			//TODO fix this to return a real version
-			chan.write("KairosDB2\nBeta1\n");
+			Package thisPackage = getClass().getPackage();
+			String versionString = thisPackage.getImplementationTitle()+" "+thisPackage.getImplementationVersion();
+			chan.write(versionString+"\n");
 		}
 	}
 }

@@ -420,7 +420,6 @@ public class CassandraDatastore extends Datastore
 						startKey, endKey, false, m_singleRowReadSize);
 
 		SetMultimap<String, String> filterTags = query.getTags();
-		System.out.println("FilterTags: "+filterTags);
 		outer: while (iterator.hasNext())
 		{
 			DataPointsRowKey rowKey = iterator.next().getName();

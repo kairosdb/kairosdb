@@ -18,18 +18,19 @@ package org.kairosdb.core.http.rest.json;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import com.google.gson.JsonSyntaxException;
 import org.junit.Test;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
+import org.kairosdb.core.http.rest.QueryException;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 
 public class GsonParserTest
 {
@@ -131,4 +132,48 @@ public class GsonParserTest
 		assertThat(queryMetric.getTags().get("host"), hasItem("foo"));
 	}
 
+	@Test(expected = JsonSyntaxException.class)
+	public void test_nullTagValueInArray() throws IOException, QueryException
+	{
+		GsonParser parser = new GsonParser(new TestAggregatorFactory(), new TestGroupByFactory());
+		String json = Resources.toString(Resources.getResource("query-metric-null-tag-value-in-array.json"), Charsets.UTF_8);
+
+		parser.parseQueryMetric(json);
+	}
+
+	@Test(expected = JsonSyntaxException.class)
+	public void test_emptyTagValueInArray() throws IOException, QueryException
+	{
+		GsonParser parser = new GsonParser(new TestAggregatorFactory(), new TestGroupByFactory());
+		String json = Resources.toString(Resources.getResource("query-metric-empty-tag-value-in-array.json"), Charsets.UTF_8);
+
+		parser.parseQueryMetric(json);
+	}
+
+	@Test(expected = JsonSyntaxException.class)
+	public void test_nullTagValue() throws IOException, QueryException
+	{
+		GsonParser parser = new GsonParser(new TestAggregatorFactory(), new TestGroupByFactory());
+		String json = Resources.toString(Resources.getResource("query-metric-null-tag-value.json"), Charsets.UTF_8);
+
+		parser.parseQueryMetric(json);
+	}
+
+	@Test(expected = JsonSyntaxException.class)
+	public void test_emptyTagValue() throws IOException, QueryException
+	{
+		GsonParser parser = new GsonParser(new TestAggregatorFactory(), new TestGroupByFactory());
+		String json = Resources.toString(Resources.getResource("query-metric-empty-tag-value.json"), Charsets.UTF_8);
+
+		parser.parseQueryMetric(json);
+	}
+
+	@Test(expected = JsonSyntaxException.class)
+	public void test_emptyTagName() throws IOException, QueryException
+	{
+		GsonParser parser = new GsonParser(new TestAggregatorFactory(), new TestGroupByFactory());
+		String json = Resources.toString(Resources.getResource("query-metric-empty-tag-name.json"), Charsets.UTF_8);
+
+		parser.parseQueryMetric(json);
+	}
 }

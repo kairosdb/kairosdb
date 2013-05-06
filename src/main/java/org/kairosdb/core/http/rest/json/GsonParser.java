@@ -37,7 +37,6 @@ import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
-import org.kairosdb.core.http.rest.validation.ValidMapRequired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -519,15 +518,22 @@ public class GsonParser
 				JsonObject joTags = jeTags.getAsJsonObject();
 				for (Map.Entry<String, JsonElement> tagEntry : joTags.entrySet())
 				{
+					if (tagEntry.getKey().isEmpty())
+						throw new JsonSyntaxException("Tag names cannot be empty");
+
 					if (tagEntry.getValue().isJsonArray())
 					{
 						for (JsonElement element : tagEntry.getValue().getAsJsonArray())
 						{
+							if (element.isJsonNull() || element.getAsString().isEmpty())
+								throw new JsonSyntaxException("Value for tag " + tagEntry.getKey() + " cannot be null or empty.");
 							tags.put(tagEntry.getKey(), element.getAsString());
 						}
 					}
 					else
 					{
+						if (tagEntry.getValue().isJsonNull() || tagEntry.getValue().getAsString().isEmpty())
+							throw new JsonSyntaxException("Value for tag " + tagEntry.getKey() + " cannot be null or empty.");
 						tags.put(tagEntry.getKey(), tagEntry.getValue().getAsString());
 					}
 				}

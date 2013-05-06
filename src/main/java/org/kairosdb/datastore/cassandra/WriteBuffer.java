@@ -84,7 +84,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 				{
 					m_lockCondition.await();
 				}
-				catch (InterruptedException e) {}
+				catch (InterruptedException ignored) {}
 			}
 
 			m_bufferCount ++;
@@ -130,7 +130,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			{
 				Thread.sleep(m_writeDelay);
 			}
-			catch (InterruptedException e) {}
+			catch (InterruptedException ignored) {}
 
 			Mutator<RowKeyType> pendingMutations = null;
 
@@ -177,7 +177,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 				{
 					Thread.sleep(100);
 				}
-				catch (InterruptedException e){ }
+				catch (InterruptedException ignored){ }
 
 				try
 				{

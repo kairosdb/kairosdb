@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 import static org.quartz.JobBuilder.newJob;
 
@@ -42,7 +43,12 @@ public class KairosDBScheduler implements KairosDBService
 	public KairosDBScheduler(Injector guice) throws SchedulerException
 	{
 		this.guice = guice;
-		scheduler = StdSchedulerFactory.getDefaultScheduler();
+
+		Properties props = new Properties();
+		props.setProperty("org.quartz.threadPool.threadCount", "4");
+
+		StdSchedulerFactory factory = new StdSchedulerFactory(props);
+		scheduler = factory.getScheduler();
 		scheduler.setJobFactory(new KairosDBJobFactory(guice));
 	}
 

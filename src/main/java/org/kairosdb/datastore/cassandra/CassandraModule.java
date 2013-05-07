@@ -54,6 +54,7 @@ public class CassandraModule extends AbstractModule
 	protected void configure()
 	{
 		bind(Datastore.class).to(CassandraDatastore.class).in(Scopes.SINGLETON);
+		bind(IncreaseMaxBufferSizesJob.class).in(Scopes.SINGLETON);
 
 		bind(new TypeLiteral<Map<String, String>>(){}).annotatedWith(Names.named(CASSANDRA_AUTH_MAP))
 				.toInstance(m_authMap);

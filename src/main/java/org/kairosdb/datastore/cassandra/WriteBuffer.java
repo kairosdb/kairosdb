@@ -116,7 +116,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		if (m_maxBufferSize < m_initialMaxBufferSize)
 		{
 			m_maxBufferSize += 1000;
-			logger.info("Increasing write buffers size to "+m_maxBufferSize);
+			logger.info("Increasing write buffer " + m_cfName + " size to "+m_maxBufferSize);
 		}
 	}
 

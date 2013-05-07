@@ -201,6 +201,12 @@ public class CassandraDatastore extends Datastore
 		m_cluster.addKeyspace(newKeyspace, true);
 	}
 
+	public void increaseMaxBufferSizes()
+	{
+		m_dataPointWriteBuffer.increaseMaxBufferSize();
+		m_rowKeyWriteBuffer.increaseMaxBufferSize();
+		m_stringIndexWriteBuffer.increaseMaxBufferSize();
+	}
 
 	@Override
 	public void close() throws InterruptedException

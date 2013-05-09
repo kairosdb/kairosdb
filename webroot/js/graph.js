@@ -516,6 +516,19 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 	});
 }
 
+function getTimezone(date)
+{
+	// Just rips off the timezone string from date's toString method. Probably not the best way to get the timezone.
+	var dateString = date.toString();
+	var index = dateString.lastIndexOf(" ");
+	if (index >= 0)
+	{
+		return dateString.substring(index);
+	}
+
+	return "";
+}
+
 function drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions) {
 	$("#flotTitle").html(subTitle);
 
@@ -535,6 +548,7 @@ function drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions) {
 				var timestamp = new Date(x);
 				var formattedDate = $.plot.formatDate(timestamp, "%b %e, %Y %H:%M:%S.millis %p");
 				formattedDate = formattedDate.replace("millis", timestamp.getMilliseconds());
+				formattedDate += " " + getTimezone(timestamp);
 				showTooltip(item.pageX, item.pageY,
 					item.series.label + "<br>" + formattedDate + "<br>" + y);
 			}

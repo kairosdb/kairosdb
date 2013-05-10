@@ -152,7 +152,7 @@ def doRPM(Rule rule)
 			}
 
 	if ("on".equals(rule.getProperty("dependency")))
-		rpmBuilder.addDependencyMore("java", "1.6")
+		rpmBuilder.addDependencyMore("jre", "1.6")
 
 	rpmBuilder.setPostInstallScript("chkconfig --add kairosdb\nchkconfig kairosdb on")
 

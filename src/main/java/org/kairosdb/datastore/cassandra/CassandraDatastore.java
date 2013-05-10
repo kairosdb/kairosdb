@@ -73,6 +73,7 @@ public class CassandraDatastore extends Datastore
 	public static final String WRITE_BUFFER_SIZE = "kairosdb.datastore.cassandra.write_buffer_max_size";
 	public static final String SINGLE_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.single_row_read_size";
 	public static final String MULTI_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_read_size";
+	public static final String MULTI_ROW_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_size";
 
 	public static final String KEYSPACE = "kairosdb";
 	public static final String CF_DATA_POINTS = "data_points";
@@ -87,6 +88,7 @@ public class CassandraDatastore extends Datastore
 	private Cluster m_cluster;
 	private Keyspace m_keyspace;
 	private int m_singleRowReadSize;
+	private int m_multiRowSize;
 	private int m_multiRowReadSize;
 	private WriteBuffer<DataPointsRowKey, Integer, ByteBuffer> m_dataPointWriteBuffer;
 	private WriteBuffer<String, DataPointsRowKey, String> m_rowKeyWriteBuffer;
@@ -103,6 +105,7 @@ public class CassandraDatastore extends Datastore
 	                          @Named(CassandraModule.CASSANDRA_AUTH_MAP) Map<String, String> cassandraAuthentication,
 	                          @Named(REPLICATION_FACTOR_PROPERTY) int replicationFactor,
 	                          @Named(SINGLE_ROW_READ_SIZE_PROPERTY) int singleRowReadSize,
+	                          @Named(MULTI_ROW_SIZE_PROPERTY) int multiRowSize,
 	                          @Named(MULTI_ROW_READ_SIZE_PROPERTY) int multiRowReadSize,
 	                          @Named(WRITE_DELAY_PROPERTY) int writeDelay,
 	                          @Named(WRITE_BUFFER_SIZE) int maxWriteSize,
@@ -111,6 +114,7 @@ public class CassandraDatastore extends Datastore
 		try
 		{
 			m_singleRowReadSize = singleRowReadSize;
+			m_multiRowSize = multiRowSize;
 			m_multiRowReadSize = multiRowReadSize;
 
 			CassandraHostConfigurator hostConfig = new CassandraHostConfigurator(cassandraHostList);
@@ -373,11 +377,16 @@ public class CassandraDatastore extends Datastore
 		{
 			List<DataPointsRowKey> tierKeys = rowKeys.get(ts);
 
-			QueryRunner qRunner = new QueryRunner(m_keyspace, CF_DATA_POINTS, tierKeys,
-					query.getStartTime(), query.getEndTime(), cachedSearchResult, m_singleRowReadSize,
-					m_multiRowReadSize);
+			for (int keyChunk = 0; keyChunk < tierKeys.size(); keyChunk += m_multiRowSize)
+			{
+				int chunkEnd = (keyChunk + m_multiRowSize > tierKeys.size() ? tierKeys.size() : keyChunk + m_multiRowSize);
 
-			runners.add(qRunner);
+				QueryRunner qRunner = new QueryRunner(m_keyspace, CF_DATA_POINTS, tierKeys.subList(keyChunk, chunkEnd),
+						query.getStartTime(), query.getEndTime(), cachedSearchResult, m_singleRowReadSize,
+						m_multiRowReadSize);
+
+				runners.add(qRunner);
+			}
 		}
 
 

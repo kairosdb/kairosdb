@@ -31,6 +31,7 @@ import me.prettyprint.hector.api.Keyspace;
 import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
 import me.prettyprint.hector.api.ddl.ComparatorType;
 import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
+import me.prettyprint.hector.api.exceptions.HectorException;
 import me.prettyprint.hector.api.factory.HFactory;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
@@ -98,87 +99,94 @@ public class CassandraDatastore extends Datastore
 
 
 	@Inject
-	public CassandraDatastore(@Named(HOST_LIST_PROPERTY)String cassandraHostList,
-			@Named(CassandraModule.CASSANDRA_AUTH_MAP)Map<String, String> cassandraAuthentication,
-			@Named(REPLICATION_FACTOR_PROPERTY)int replicationFactor,
-			@Named(SINGLE_ROW_READ_SIZE_PROPERTY)int singleRowReadSize,
-			@Named(MULTI_ROW_READ_SIZE_PROPERTY)int multiRowReadSize,
-			@Named(WRITE_DELAY_PROPERTY)int writeDelay,
-			@Named(WRITE_BUFFER_SIZE)int maxWriteSize,
-			final @Named("HOSTNAME") String hostname) throws DatastoreException
+	public CassandraDatastore(@Named(HOST_LIST_PROPERTY) String cassandraHostList,
+	                          @Named(CassandraModule.CASSANDRA_AUTH_MAP) Map<String, String> cassandraAuthentication,
+	                          @Named(REPLICATION_FACTOR_PROPERTY) int replicationFactor,
+	                          @Named(SINGLE_ROW_READ_SIZE_PROPERTY) int singleRowReadSize,
+	                          @Named(MULTI_ROW_READ_SIZE_PROPERTY) int multiRowReadSize,
+	                          @Named(WRITE_DELAY_PROPERTY) int writeDelay,
+	                          @Named(WRITE_BUFFER_SIZE) int maxWriteSize,
+	                          final @Named("HOSTNAME") String hostname) throws DatastoreException
 	{
-		m_singleRowReadSize = singleRowReadSize;
-		m_multiRowReadSize = multiRowReadSize;
+		try
+		{
+			m_singleRowReadSize = singleRowReadSize;
+			m_multiRowReadSize = multiRowReadSize;
 
-		CassandraHostConfigurator hostConfig = new CassandraHostConfigurator(cassandraHostList);
-		//TODO: fine tune the hostConfig
+			CassandraHostConfigurator hostConfig = new CassandraHostConfigurator(cassandraHostList);
+			//TODO: fine tune the hostConfig
 
-		m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
-				hostConfig, cassandraAuthentication);
+			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
+					hostConfig, cassandraAuthentication);
 
-		KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(KEYSPACE);
+			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(KEYSPACE);
 
-		if (keyspaceDef == null)
-			createSchema(replicationFactor);
+			if (keyspaceDef == null)
+				createSchema(replicationFactor);
 
-		m_keyspace = HFactory.createKeyspace(KEYSPACE, m_cluster);
+			m_keyspace = HFactory.createKeyspace(KEYSPACE, m_cluster);
 
-		ReentrantLock mutatorLock = new ReentrantLock();
-		Condition lockCondition =mutatorLock.newCondition();
+			ReentrantLock mutatorLock = new ReentrantLock();
+			Condition lockCondition = mutatorLock.newCondition();
 
-		m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, ByteBuffer>(
-				m_keyspace, CF_DATA_POINTS, writeDelay, maxWriteSize,
-				DATA_POINTS_ROW_KEY_SERIALIZER,
-				IntegerSerializer.get(),
-				ByteBufferSerializer.get(),
-				new WriteBufferStats()
-				{
-					@Override
-					public void saveWriteSize(int pendingWrites)
+			m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, ByteBuffer>(
+					m_keyspace, CF_DATA_POINTS, writeDelay, maxWriteSize,
+					DATA_POINTS_ROW_KEY_SERIALIZER,
+					IntegerSerializer.get(),
+					ByteBufferSerializer.get(),
+					new WriteBufferStats()
 					{
-						DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
-						dps.addTag("host", hostname);
-						dps.addTag("buffer", CF_DATA_POINTS);
-						dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
-						putDataPoints(dps);
-					}
-				}, mutatorLock, lockCondition);
+						@Override
+						public void saveWriteSize(int pendingWrites)
+						{
+							DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
+							dps.addTag("host", hostname);
+							dps.addTag("buffer", CF_DATA_POINTS);
+							dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
+							putDataPoints(dps);
+						}
+					}, mutatorLock, lockCondition);
 
-		m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
-				m_keyspace, CF_ROW_KEY_INDEX, writeDelay, maxWriteSize,
-				StringSerializer.get(),
-				DATA_POINTS_ROW_KEY_SERIALIZER,
-				StringSerializer.get(),
-				new WriteBufferStats()
-				{
-					@Override
-					public void saveWriteSize(int pendingWrites)
+			m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
+					m_keyspace, CF_ROW_KEY_INDEX, writeDelay, maxWriteSize,
+					StringSerializer.get(),
+					DATA_POINTS_ROW_KEY_SERIALIZER,
+					StringSerializer.get(),
+					new WriteBufferStats()
 					{
-						DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
-						dps.addTag("host", hostname);
-						dps.addTag("buffer", CF_ROW_KEY_INDEX);
-						dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
-						putDataPoints(dps);
-					}
-				}, mutatorLock, lockCondition);
+						@Override
+						public void saveWriteSize(int pendingWrites)
+						{
+							DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
+							dps.addTag("host", hostname);
+							dps.addTag("buffer", CF_ROW_KEY_INDEX);
+							dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
+							putDataPoints(dps);
+						}
+					}, mutatorLock, lockCondition);
 
-		m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
-				m_keyspace, CF_STRING_INDEX, writeDelay, maxWriteSize,
-				StringSerializer.get(),
-				StringSerializer.get(),
-				StringSerializer.get(),
-				new WriteBufferStats()
-				{
-					@Override
-					public void saveWriteSize(int pendingWrites)
+			m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
+					m_keyspace, CF_STRING_INDEX, writeDelay, maxWriteSize,
+					StringSerializer.get(),
+					StringSerializer.get(),
+					StringSerializer.get(),
+					new WriteBufferStats()
 					{
-						DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
-						dps.addTag("host", hostname);
-						dps.addTag("buffer", CF_STRING_INDEX);
-						dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
-						putDataPoints(dps);
-					}
-				}, mutatorLock, lockCondition);
+						@Override
+						public void saveWriteSize(int pendingWrites)
+						{
+							DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
+							dps.addTag("host", hostname);
+							dps.addTag("buffer", CF_STRING_INDEX);
+							dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
+							putDataPoints(dps);
+						}
+					}, mutatorLock, lockCondition);
+		}
+		catch (HectorException e)
+		{
+			throw new DatastoreException(e);
+		}
 	}
 
 	private void createSchema(int replicationFactor)

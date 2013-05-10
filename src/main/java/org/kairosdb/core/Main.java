@@ -188,6 +188,10 @@ public class Main
 			{
 				main.startServices();
 
+				logger.info("------------------------------------------");
+				logger.info("     KairosDB service started");
+				logger.info("------------------------------------------");
+
 				Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
 				{
 					public void run()
@@ -215,6 +219,12 @@ public class Main
 				logger.error("Failed starting up services", e);
 				main.stopServices();
 				System.exit(1);
+			}
+			finally
+			{
+				logger.info("--------------------------------------");
+				logger.info("     KairosDB service is now down!");
+				logger.info("--------------------------------------");
 			}
 		}
 	}
@@ -350,7 +360,7 @@ public class Main
 
 	public void stopServices() throws DatastoreException, InterruptedException
 	{
-		System.err.println("Shutting down");
+		logger.info("Shutting down");
 		for (KairosDBService service : m_services)
 		{
 			service.stop();

@@ -16,6 +16,7 @@
 
 package org.kairosdb.datastore.h2;
 
+import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import genorm.runtime.GenOrmQueryResultSet;
@@ -223,8 +224,21 @@ public class H2Datastore extends Datastore
 				first = false;
 
 				sb.append(" (mt.\"tag_name\" = '").append(tag);
-				sb.append("' and mt.\"tag_value\" = '").append(query.getTags().get(tag));
-				sb.append("')");
+				sb.append("' and (");
+
+				Set<String> values = query.getTags().get(tag);
+				boolean firstValue = true;
+				for (String value : values)
+				{
+					if (!firstValue)
+						sb.append(" or ");
+					firstValue = false;
+
+					sb.append("mt.\"tag_value\" = '").append(value);
+					sb.append("' ");
+				}
+
+				sb.append(")) ");
 			}
 
 			sb.append(") ");

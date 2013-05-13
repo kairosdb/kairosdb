@@ -16,6 +16,7 @@
 
 package org.kairosdb.datastore;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 import org.junit.Test;
@@ -371,6 +372,41 @@ public abstract class DatastoreTestHelper
 		assertThat(results.size(), is(1));
 
 		assertValues(results.get(0), 9, 10, 11, 12);
+	}
+
+	@Test
+	public void test_queryWithMultipleHostTags() throws DatastoreException
+	{
+		SetMultimap<String, String> tags = HashMultimap.create();
+		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1");
+		query.setEndTime(s_startTime + 3000);
+
+		tags.put("host", "A");
+		tags.put("host", "B");
+		query.setTags(tags);
+
+		List<DataPointGroup> results = s_datastore.query(query);
+
+		assertThat(results.size(), equalTo(1));
+
+		DataPointGroup dpg = results.get(0);
+
+		assertThat(dpg.getName(), is("metric1"));
+		SetMultimap<String, String> resTags = extractTags(dpg);
+
+		assertThat(resTags.size(), is(5));
+		SetMultimap<String, String> expectedTags = TreeMultimap.create();
+		expectedTags.put("host", "A");
+		expectedTags.put("host", "B");
+		expectedTags.put("client", "foo");
+		expectedTags.put("client", "bar");
+		expectedTags.put("month", "April");
+
+		assertThat(resTags, is(expectedTags));
+
+		assertValues(dpg, 1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12);
+
+		dpg.close();
 	}
 
 	private void assertValues(DataPointGroup group, long... values)

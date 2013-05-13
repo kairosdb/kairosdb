@@ -16,6 +16,9 @@
 
 package org.kairosdb.core.http.rest.json;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.TreeMultimap;
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -34,7 +37,6 @@ import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
-import org.kairosdb.core.http.rest.validation.ValidMapRequired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,6 +80,7 @@ public class GsonParser
 		GsonBuilder builder = new GsonBuilder();
 		builder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
 		builder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
+		builder.registerTypeAdapter(Metric.class, new MetricDeserializer());
 
 		m_gson = builder.create();
 	}
@@ -150,6 +153,10 @@ public class GsonParser
 
 			QueryMetric queryMetric = new QueryMetric(getStartTime(query), query.getCacheTime(),
 					metric.getName());
+
+			StringBuilder sb = new StringBuilder();
+			sb.append(query.getCacheString()).append(metric.getCacheString());
+			queryMetric.setCacheString(sb.toString());
 
 			JsonObject jsMetric = metricsArray.get(I).getAsJsonObject();
 
@@ -298,24 +305,44 @@ public class GsonParser
 		@SerializedName("name")
 		private String name;
 
-		@ValidMapRequired
 		@SerializedName("tags")
-		private Map<String, String> tags;
+		private SetMultimap<String, String> tags;
+
+		public Metric(String name, TreeMultimap<String, String> tags)
+		{
+			this.name = name;
+			this.tags = tags;
+		}
 
 		public String getName()
 		{
 			return name;
 		}
 
-		public Map<String, String> getTags()
+		public String getCacheString()
+		{
+			StringBuilder sb = new StringBuilder();
+
+			sb.append(name).append(":");
+
+			for (Map.Entry<String, String> tagEntry : tags.entries())
+			{
+				sb.append(tagEntry.getKey()).append("=");
+				sb.append(tagEntry.getValue()).append(":");
+			}
+
+			return (sb.toString());
+		}
+
+		public SetMultimap<String, String> getTags()
 		{
 			if (tags != null)
 			{
-				return new HashMap<String, String>(tags);
+				return tags;
 			}
 			else
 			{
-				return Collections.emptyMap();
+				return HashMultimap.create();
 			}
 		}
 
@@ -363,6 +390,24 @@ public class GsonParser
 		public RelativeTime getEndRelative()
 		{
 			return m_endRelative;
+		}
+
+		public String getCacheString()
+		{
+			StringBuilder sb = new StringBuilder();
+			if (m_startAbsolute != null)
+				sb.append(m_startAbsolute).append(":");
+
+			if (m_startRelative != null)
+				sb.append(m_startRelative.toString()).append(":");
+
+			if (m_endAbsolute != null)
+				sb.append(m_endAbsolute).append(":");
+
+			if (m_endRelative != null)
+				sb.append(m_endRelative.toString()).append(":");
+
+			return (sb.toString());
 		}
 
 		@Override
@@ -452,4 +497,51 @@ public class GsonParser
 			return tu;
 		}
 	}
+
+	//===========================================================================
+	private class MetricDeserializer implements JsonDeserializer<Metric>
+	{
+		@Override
+		public Metric deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext)
+				throws JsonParseException
+		{
+			JsonObject jsonObject = jsonElement.getAsJsonObject();
+
+			String name = null;
+			if (jsonObject.get("name") != null)
+				name = jsonObject.get("name").getAsString();
+
+			TreeMultimap<String, String> tags = TreeMultimap.create();
+			JsonElement jeTags = jsonObject.get("tags");
+			if (jeTags != null)
+			{
+				JsonObject joTags = jeTags.getAsJsonObject();
+				for (Map.Entry<String, JsonElement> tagEntry : joTags.entrySet())
+				{
+					if (tagEntry.getKey().isEmpty())
+						throw new JsonSyntaxException("Tag names cannot be empty");
+
+					if (tagEntry.getValue().isJsonArray())
+					{
+						for (JsonElement element : tagEntry.getValue().getAsJsonArray())
+						{
+							if (element.isJsonNull() || element.getAsString().isEmpty())
+								throw new JsonSyntaxException("Value for tag " + tagEntry.getKey() + " cannot be null or empty.");
+							tags.put(tagEntry.getKey(), element.getAsString());
+						}
+					}
+					else
+					{
+						if (tagEntry.getValue().isJsonNull() || tagEntry.getValue().getAsString().isEmpty())
+							throw new JsonSyntaxException("Value for tag " + tagEntry.getKey() + " cannot be null or empty.");
+						tags.put(tagEntry.getKey(), tagEntry.getValue().getAsString());
+					}
+				}
+			}
+
+			Metric ret = new Metric(name, tags);
+			return (ret);
+		}
+	}
+
 }

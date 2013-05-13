@@ -16,18 +16,37 @@
 
 package org.kairosdb.core.telnet;
 
-import org.kairosdb.core.exception.DatastoreException;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.yammer.metrics.core.Counter;
+import com.yammer.metrics.core.MetricName;
 import org.jboss.netty.channel.Channel;
+import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.core.reporting.KairosMetricRegistry;
+
+import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 public class VersionCommand implements TelnetCommand
 {
+	private Counter counter;
+
+	@Inject
+	public VersionCommand(KairosMetricRegistry metricRegistry, @Named("HOSTNAME") String hostname)
+	{
+		checkNotNullOrEmpty(hostname);
+		counter = metricRegistry.newCounter(new MetricName("kairosdb", "protocol", "telnet_request_count"),
+				new KairosMetricRegistry.Tag("host", hostname), new KairosMetricRegistry.Tag("method", "version"));
+	}
+
 	@Override
 	public void execute(Channel chan, String[] command) throws DatastoreException
 	{
+		counter.inc();
 		if (chan.isConnected())
 		{
-			//TODO fix this to return a real version
-			chan.write("KairosDB2\nAlpha\n");
+			Package thisPackage = getClass().getPackage();
+			String versionString = thisPackage.getImplementationTitle()+" "+thisPackage.getImplementationVersion();
+			chan.write(versionString+"\n");
 		}
 	}
 }

@@ -15,10 +15,10 @@
  */
 package org.kairosdb.core.http.rest.json;
 
-import org.kairosdb.core.exception.TsdbException;
-import org.kairosdb.testing.BeanValidationHelper;
 import org.junit.Before;
 import org.junit.Test;
+import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.testing.BeanValidationHelper;
 
 import javax.validation.ConstraintViolation;
 import java.text.ParseException;
@@ -41,7 +41,7 @@ public class RelativeTimeTest
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void test_getTimeRelativeTo_invalidUnit() throws TsdbException
+	public void test_getTimeRelativeTo_invalidUnit() throws KariosDBException
 	{
 		RelativeTime time = new RelativeTime(5, "QUARTERS");
 

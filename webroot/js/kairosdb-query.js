@@ -6,9 +6,10 @@ if (kairosdb === undefined)
 kairosdb.dataPointsQuery = function (metricQuery, callback) {
 	var startTime = new Date();
 
+	var $status = $('#status');
 	var $queryTime = $("#queryTime");
-	$queryTime.html("");
-	$queryTime.html("<i>in progress...</i>");
+
+	$status.html("<i>Query in progress...</i>");
 
 	$.ajax({
 		type: "POST",
@@ -17,9 +18,11 @@ kairosdb.dataPointsQuery = function (metricQuery, callback) {
 		data: JSON.stringify(metricQuery),
 		dataType: 'json',
 		success: function (data, textStatus, jqXHR) {
-			$queryTime.html("");
-			$queryTime.append(new Date().getTime() - startTime.getTime() + " ms");
-			callback(data.queries);
+			$status.html("<i>Plotting in progress...</i>");
+			$queryTime.html(new Date().getTime() - startTime.getTime() + " ms");
+			setTimeout(function(){
+				callback(data.queries);
+			}, 0);
 		},
 		error: function (jqXHR, textStatus, errorThrown) {
 
@@ -30,8 +33,8 @@ kairosdb.dataPointsQuery = function (metricQuery, callback) {
 			$errorContainer.append("Status: " +  jqXHR.statusText + "<br>");
 			$errorContainer.append("Return Value: " +  jqXHR.responseText);
 
-			$queryTime.html("");
-			$queryTime.append(new Date().getTime() - startTime.getTime() + " ms");
+			$status.html("");
+			$queryTime.html(new Date().getTime() - startTime.getTime() + " ms");
 		}
 	});
 };

@@ -15,7 +15,9 @@
  */
 package org.kairosdb.datastore.cassandra;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.SetMultimap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,7 +30,6 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreMetricQueryImpl;
 import org.kairosdb.datastore.DatastoreTestHelper;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -104,8 +105,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@BeforeClass
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
-		s_datastore = new CassandraDatastore("localhost",
-				"9160", 1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE);
+		s_datastore = new CassandraDatastore("localhost:9160",
+				null, 1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, 1000, 50000, "hostname");
 
 		DatastoreTestHelper.s_datastore = s_datastore;
 
@@ -125,7 +126,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public void test_getKeysForQuery()
 	{
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
-				Collections.<String, String>emptyMap(), s_dataPointTime, s_dataPointTime);
+				HashMultimap.<String, String>create(), s_dataPointTime, s_dataPointTime);
 
 		ListMultimap<Long, DataPointsRowKey> keys = s_datastore.getKeysForQuery(query);
 
@@ -135,7 +136,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@Test
 	public void test_getKeysForQuery_withFilter()
 	{
-		Map<String, String> tagFilter = new HashMap<String, String>();
+		SetMultimap<String, String> tagFilter = HashMultimap.create();
 		tagFilter.put("client", "bar");
 
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,

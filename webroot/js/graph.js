@@ -2,6 +2,10 @@ function updateChart() {
 	$("#resetZoom").hide();
 	$("#errorContainer").hide();
 
+	$("#status").html("");
+	$("#queryTime").html("");
+	$("#numDataPoints").html("");
+
 	var query = new kairosdb.MetricQuery();
 
 	// todo cachetime
@@ -180,10 +184,8 @@ function addMetric() {
 			addTag(tagContainer)
 		});
 
-	// Add new tag
 	var tagContainer = $('<div id="' + tagContainerName + '"></div>');
 	tagContainer.appendTo($metricContainer);
-	addTag(tagContainer);
 
 	// Rename Aggregator Container
 	$metricContainer.find("#aggregatorContainer").attr('id', 'metric-' + metricCount + 'AggregatorContainer');
@@ -404,6 +406,17 @@ function addTag(tagContainer) {
 	newDiv.find("[name='tagValue']").autocomplete({
 		source: tagValues
 	});
+
+	// Add remove button
+	var removeButton = newDiv.find(".removeTag");
+	removeButton.button({
+		text: false,
+		icons: {
+			primary: 'ui-icon-close'
+		}
+	}).click(function () {
+			newDiv.remove();
+		});
 }
 
 function showChartForQuery(title, subTitle, yAxisTitle, query) {
@@ -417,6 +430,7 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 		return;
 	}
 
+	var dataPointCount = 0;
 	var data = [];
 	queries.forEach(function (resultSet) {
 
@@ -446,6 +460,8 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 			result.name = queryResult.name + groupByMessage;
 			result.label = queryResult.name + groupByMessage;
 			result.data = queryResult.values;
+
+			dataPointCount += queryResult.values.length;
 			data.push(result);
 		});
 	});
@@ -466,7 +482,8 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 			mode: "x"
 		},
 		xaxis: {
-			mode: "time"
+			mode: "time",
+			timezone: "browser"
 		},
 		legend: {
 			container: $("#graphLegend"),
@@ -475,12 +492,41 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 		colors: ["#4572a7", "#aa4643", "#89a54e", "#80699b", "#db843d"]
 	};
 
-	drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions);
+	$("#numDataPoints").html(dataPointCount);
+
+	if (dataPointCount > 20000)
+	{
+		var response = confirm("You are attempting to plot more than 20,000 data points.\nThis may take a long time." +
+			"\nYou may want to down sample your data.\n\nDo you want to continue?");
+		if (response != true)
+		{
+			$('#status').html("Plotting canceled");
+			return;
+		}
+	}
+
+	setTimeout(function(){
+		drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions);
+		$('#status').html("");
+	}, 0);
 
 	$("#resetZoom").click(function () {
-		drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions);
 		$("#resetZoom").hide();
+		drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions);
 	});
+}
+
+function getTimezone(date)
+{
+	// Just rips off the timezone string from date's toString method. Probably not the best way to get the timezone.
+	var dateString = date.toString();
+	var index = dateString.lastIndexOf(" ");
+	if (index >= 0)
+	{
+		return dateString.substring(index);
+	}
+
+	return "";
 }
 
 function drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions) {
@@ -496,11 +542,15 @@ function drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions) {
 				previousPoint = item.dataIndex;
 
 				$("#tooltip").remove();
-				var x = item.datapoint[0].toFixed(2);
+				var x = item.datapoint[0];
 				var y = item.datapoint[1].toFixed(2);
 
+				var timestamp = new Date(x);
+				var formattedDate = $.plot.formatDate(timestamp, "%b %e, %Y %H:%M:%S.millis %p");
+				formattedDate = formattedDate.replace("millis", timestamp.getMilliseconds());
+				formattedDate += " " + getTimezone(timestamp);
 				showTooltip(item.pageX, item.pageY,
-					item.series.label + "<br>" + x + " : " + y);
+					item.series.label + "<br>" + formattedDate + "<br>" + y);
 			}
 		} else {
 			$("#tooltip").remove();
@@ -537,9 +587,7 @@ function showTooltip(x, y, contents) {
 
 	// If now over the cursor move out of the way - causes flashing of the tooltip otherwise
 	if ((x > left && x < (left + tooltip.outerWidth())) || (y < top && y > top + tooltip.outerHeight())) {
-		console.log("contains point x: " + x + " y:" + y + " top: " +top);
 		top = y - 5 - tooltip.outerHeight(); // move up
-		console.log("new top = " + top);
 	}
 
 	tooltip.css("left", left);

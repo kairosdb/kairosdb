@@ -16,6 +16,7 @@
 
 package org.kairosdb.datastore;
 
+import com.google.common.collect.SetMultimap;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
 
 import java.util.Map;
@@ -23,12 +24,12 @@ import java.util.Map;
 public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 {
 	private String m_name;
-	private Map<String, String> m_tags;
+	private SetMultimap<String, String> m_tags;
 	private long m_startTime;
 	private long m_endTime;
 
 
-	public DatastoreMetricQueryImpl(String name, Map<String, String> tags,
+	public DatastoreMetricQueryImpl(String name, SetMultimap<String, String> tags,
 			long startTime, long endTime)
 	{
 		m_name = name;
@@ -44,7 +45,7 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 	}
 
 	@Override
-	public Map<String, String> getTags()
+	public SetMultimap<String, String> getTags()
 	{
 		return (m_tags);
 	}

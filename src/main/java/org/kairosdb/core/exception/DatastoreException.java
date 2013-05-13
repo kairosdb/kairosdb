@@ -18,7 +18,7 @@ package org.kairosdb.core.exception;
 /**
  * Wraps exceptions from the data stores.
  */
-public class DatastoreException extends TsdbException
+public class DatastoreException extends KariosDBException
 {
 	public DatastoreException(String message)
 	{

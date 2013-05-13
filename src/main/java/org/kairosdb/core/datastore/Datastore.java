@@ -25,29 +25,71 @@ import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.Grouper;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.groupby.TagGroupByResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 public abstract class Datastore
 {
-	private MessageDigest messageDigest;
+	public static final Logger logger = LoggerFactory.getLogger(Datastore.class);
 
+	private final ReentrantReadWriteLock cacheDirectoryLock = new ReentrantReadWriteLock(true);
+
+	private MessageDigest messageDigest;
+	private String cacheDir;
+
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	protected Datastore() throws DatastoreException
 	{
 		try
 		{
+			cacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
+			File cacheDirectory = new File(cacheDir);
+			cacheDirectory.mkdirs();
+			checkState(cacheDirectory.exists(), "Cache directory not created");
 			messageDigest = MessageDigest.getInstance("MD5");
 		}
 		catch (NoSuchAlgorithmException e)
 		{
 			throw new DatastoreException(e);
+		}
+	}
+
+	public void cleanCacheDir()
+	{
+		try
+		{
+			cacheDirectoryLock.writeLock().lock();
+			logger.debug("Executing job...");
+			File dir = new File(cacheDir);
+			logger.debug("Deleting cache files in " + dir.getAbsolutePath());
+
+			File[] files = dir.listFiles();
+			if (files != null)
+			{
+				for (File file : files)
+				{
+					if (logger.isDebugEnabled())
+						logger.debug("deleting file " + file.getAbsolutePath());
+					if (!file.delete())
+						logger.error("Could not delete cache file " + file.getAbsolutePath());
+				}
+			}
+		}
+		finally
+		{
+			cacheDirectoryLock.writeLock().unlock();
 		}
 	}
 
@@ -80,16 +122,17 @@ public abstract class Datastore
 		try
 		{
 			String cacheFilename = calculateFilenameHash(metric);
-			String tempFile = System.getProperty("java.io.tmpdir") + "/" + cacheFilename;
+			String tempFile = cacheDir + cacheFilename;
+
 
 			if (metric.getCacheTime() > 0)
 			{
-				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(), tempFile, metric.getCacheTime());
+				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(), tempFile, metric.getCacheTime(), cacheDirectoryLock);
 			}
 
 			if (cachedResults == null)
 			{
-				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile);
+				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile, cacheDirectoryLock);
 			}
 		}
 		catch (Exception e)
@@ -111,20 +154,22 @@ public abstract class Datastore
 		try
 		{
 			String cacheFilename = calculateFilenameHash(metric);
-			String tempFile = System.getProperty("java.io.tmpdir") + "/" + cacheFilename;
+			String tempFile = cacheDir + cacheFilename;
 
 			if (metric.getCacheTime() > 0)
 			{
-				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(), tempFile, metric.getCacheTime());
+				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(), tempFile, metric.getCacheTime(), cacheDirectoryLock);
 				if (cachedResults != null)
 				{
 					returnedRows = cachedResults.getRows();
+					logger.debug("Cache HIT!");
 				}
 			}
 
 			if (cachedResults == null)
 			{
-				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile);
+				logger.debug("Cache MISS!");
+				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile, cacheDirectoryLock);
 				returnedRows = queryDatabase(metric, cachedResults);
 			}
 		}
@@ -236,7 +281,7 @@ public abstract class Datastore
 		StringBuilder builder = new StringBuilder();
 		for (String name : tags.keySet())
 		{
-		 	builder.append(tags.get(name));
+			builder.append(tags.get(name));
 		}
 
 		return builder.toString();
@@ -260,20 +305,14 @@ public abstract class Datastore
 
 	protected abstract List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException;
 
+
 	private String calculateFilenameHash(QueryMetric metric) throws NoSuchAlgorithmException, UnsupportedEncodingException
 	{
-		StringBuilder builder = new StringBuilder();
-		builder.append(metric.getName());
-		builder.append(metric.getStartTime());
-		builder.append(metric.getEndTime());
+		String hashString = metric.getCacheString();
+		if (hashString == null)
+			hashString = String.valueOf(System.currentTimeMillis());
 
-		SortedMap<String, String> tags = metric.getTags();
-		for (String key : metric.getTags().keySet())
-		{
-			builder.append(key).append("=").append(tags.get(key));
-		}
-
-		byte[] digest = messageDigest.digest(builder.toString().getBytes("UTF-8"));
+		byte[] digest = messageDigest.digest(hashString.getBytes("UTF-8"));
 
 		return new BigInteger(1, digest).toString(16);
 	}

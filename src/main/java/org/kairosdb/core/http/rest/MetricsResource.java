@@ -18,28 +18,30 @@ package org.kairosdb.core.http.rest;
 
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
-import org.apache.bval.jsr303.ApacheValidationProvider;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
-import org.kairosdb.core.http.rest.json.*;
+import org.kairosdb.core.http.rest.json.ErrorResponse;
+import org.kairosdb.core.http.rest.json.GsonParser;
+import org.kairosdb.core.http.rest.json.JsonMetricParser;
+import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
 import org.kairosdb.core.http.rest.validation.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.validation.Validation;
-import javax.validation.Validator;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static javax.ws.rs.core.Response.ResponseBuilder;
@@ -56,11 +58,8 @@ public class MetricsResource
 {
 	private static final Logger log = LoggerFactory.getLogger(MetricsResource.class);
 
-	private static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
-
 	private final Datastore datastore;
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
-	private final ObjectMapper mapper;
 	private final GsonParser gsonParser;
 
 	@Inject
@@ -69,8 +68,17 @@ public class MetricsResource
 		this.datastore = checkNotNull(datastore);
 		this.gsonParser= checkNotNull(gsonParser);
 		formatters.put("json", new JsonFormatter());
+	}
 
-		mapper = new ObjectMapper();
+	@GET
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/version")
+	public Response getVersion()
+	{
+		Package thisPackage = getClass().getPackage();
+		String versionString = thisPackage.getImplementationTitle()+" "+thisPackage.getImplementationVersion();
+		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \""+versionString+"\"}");
+		return responseBuilder.build();
 	}
 
 	@GET

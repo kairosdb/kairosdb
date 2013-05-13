@@ -27,7 +27,7 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.kairosdb.core.KairosDBService;
-import org.kairosdb.core.exception.TsdbException;
+import org.kairosdb.core.exception.KariosDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +52,7 @@ public class WebServer implements KairosDBService
 	}
 
 	@Override
-	public void start() throws TsdbException
+	public void start() throws KariosDBException
 	{
 		try
 		{
@@ -76,7 +76,7 @@ public class WebServer implements KairosDBService
 		}
 		catch (Exception e)
 		{
-			throw new TsdbException(e);
+			throw new KariosDBException(e);
 		}
 	}
 

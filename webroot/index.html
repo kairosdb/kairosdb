@@ -198,7 +198,9 @@
 <textarea id="query-text" class="ui-widget" rows="5" style="margin-top: 5px;"></textarea>
 
 <p></p>
-<span class="header ui-widget">Query Time: </span><span id="queryTime" class="ui-widget"></span>
+<span class="header ui-widget">Query Time: </span><span id="queryTime" class="ui-widget"></span><br>
+<span class="header ui-widget">Data Points: </span><span id="numDataPoints" class="ui-widget"></span><br>
+<span id="status" class="ui-widget"></span>
 
 <table style="width: 100%;">
 	<tr>
@@ -253,7 +255,9 @@
 
 <!-- Hidden Tag div used for cloning -->
 <div id="tagTemplate" style="margin-top: 10px;">
-	<div name="tags" id="tagContainer">
+	<div name="tags" id="tagContainer" class="component-frame" style="margin-bottom: 5px; margin-left: 15px;">
+		<button class="removeTag"
+		        style="background:none; border: none; width:1px; float:right; margin-right: 5px; margin-top: 0;"></button>
 		<span class="ui-widget">Name</span>
 		<span><input id="tagName" name="tagName" class="ui-widget" type="text" style="margin-left: 4px;"/></span>
 		<span class="ui-widget" style="margin-left: 4px;">Value</span>

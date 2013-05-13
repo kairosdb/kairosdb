@@ -16,10 +16,10 @@
 
 package org.kairosdb.core;
 
-import org.kairosdb.core.exception.TsdbException;
+import org.kairosdb.core.exception.KariosDBException;
 
 public interface KairosDBService
 {
-	public void start() throws TsdbException;
+	public void start() throws KariosDBException;
 	public void stop();
 }

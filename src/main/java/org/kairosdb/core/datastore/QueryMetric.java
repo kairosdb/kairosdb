@@ -15,6 +15,8 @@
  */
 package org.kairosdb.core.datastore;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.util.Preconditions;
@@ -29,9 +31,10 @@ public class QueryMetric implements DatastoreMetricQuery
 	private long endTime = -1;
 	private int cacheTime;
 	private String name;
-	private Map<String, String> tags = new HashMap<String, String>();
+	private SetMultimap<String, String> tags = HashMultimap.create();
 	private List<GroupBy> groupBys = new ArrayList<GroupBy>();
 	private List<Aggregator> aggregators;
+	private String cacheString;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
@@ -49,10 +52,22 @@ public class QueryMetric implements DatastoreMetricQuery
 		return (this);
 	}
 
+	public QueryMetric setTags(SetMultimap<String, String> tags)
+	{
+		this.tags = tags;
+		return this;
+	}
+
 	public QueryMetric setTags(Map<String, String> tags)
 	{
-		this.tags = new HashMap<String, String>(tags);
-		return this;
+		this.tags.clear();
+
+		for (String s : tags.keySet())
+		{
+			this.tags.put(s, tags.get(s));
+		}
+
+	return this;
 	}
 
 	public QueryMetric addTag(String name, String value)
@@ -73,9 +88,9 @@ public class QueryMetric implements DatastoreMetricQuery
 	}
 
 	@Override
-	public SortedMap<String, String> getTags()
+	public SetMultimap<String, String> getTags()
 	{
-		return new TreeMap<String, String>(tags);
+		return (tags);
 	}
 
 	@Override
@@ -87,9 +102,10 @@ public class QueryMetric implements DatastoreMetricQuery
 	@Override
 	public long getEndTime()
 	{
-		if (endTime > -1)
-			return endTime;
-		return System.currentTimeMillis();
+		if (endTime == -1)
+			endTime = System.currentTimeMillis();
+
+		return endTime;
 	}
 
 	public int getCacheTime()
@@ -110,5 +126,15 @@ public class QueryMetric implements DatastoreMetricQuery
 	public void addGroupBy(GroupBy groupBy)
 	{
 		this.groupBys.add(groupBy);
+	}
+
+	public void setCacheString(String cacheString)
+	{
+		this.cacheString = cacheString;
+	}
+
+	public String getCacheString()
+	{
+		return (cacheString);
 	}
 }

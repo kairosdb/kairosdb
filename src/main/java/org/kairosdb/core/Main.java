@@ -21,13 +21,13 @@ import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import com.google.inject.*;
 import jcmdline.*;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.kairosdb.core.datastore.DataPointRow;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.exception.TsdbException;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.kairosdb.core.exception.KariosDBException;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -38,7 +38,7 @@ import java.util.*;
 
 public class Main
 {
-	public static final Logger logger = (Logger)LoggerFactory.getLogger(Main.class);
+	public static final Logger logger = (Logger) LoggerFactory.getLogger(Main.class);
 
 	public static final Charset UTF_8 = Charset.forName("UTF-8");
 	public static final String SERVICE_PREFIX = "kairosdb.service";
@@ -52,7 +52,7 @@ public class Main
 			FileParam.OPTIONAL);
 
 	private static StringParam s_operationCommand = new StringParam("c",
-			"command to run", new String[] {"run", "export", "import"});
+			"command to run", new String[]{"run", "export", "import"});
 
 	private static Object s_shutdownObject = new Object();
 
@@ -100,16 +100,16 @@ public class Main
 						 */
 						Module mod;
 						if (constructor != null)
-							mod = (Module)constructor.newInstance(props);
+							mod = (Module) constructor.newInstance(props);
 						else
-							mod = (Module)aClass.newInstance();
+							mod = (Module) aClass.newInstance();
 
 						moduleList.add(mod);
 					}
 				}
 				catch (Exception e)
 				{
-					logger.error("Unable to load service "+propName, e);
+					logger.error("Unable to load service " + propName, e);
 				}
 			}
 		}
@@ -122,7 +122,7 @@ public class Main
 	{
 		CmdLineHandler cl = new VersionCmdLineHandler("Version 1.0",
 				new HelpCmdLineHandler("KairosDB Help", "kairosdb", "Starts KairosDB",
-						new Parameter[] { s_operationCommand, s_propertiesFile, s_exportFile }, null));
+						new Parameter[]{s_operationCommand, s_propertiesFile, s_exportFile}, null));
 
 		cl.parse(args);
 
@@ -135,8 +135,9 @@ public class Main
 		if (!operation.equals("run"))
 		{
 			//Turn off console logging
-			Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-			root.getAppender("stdout").addFilter(new Filter<ILoggingEvent>(){
+			Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+			root.getAppender("stdout").addFilter(new Filter<ILoggingEvent>()
+			{
 				@Override
 				public FilterReply decide(ILoggingEvent iLoggingEvent)
 				{
@@ -183,29 +184,48 @@ public class Main
 		}
 		else if (operation.equals("run"))
 		{
-			main.startServices();
-
-			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
+			try
 			{
-				public void run()
-				{
-					try
-					{
-						main.stopServices();
+				main.startServices();
 
-						synchronized (s_shutdownObject)
+				logger.info("------------------------------------------");
+				logger.info("     KairosDB service started");
+				logger.info("------------------------------------------");
+
+				Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
+				{
+					public void run()
+					{
+						try
 						{
-							s_shutdownObject.notify();
+							main.stopServices();
+
+							synchronized (s_shutdownObject)
+							{
+								s_shutdownObject.notify();
+							}
+						}
+						catch (Exception e)
+						{
+							logger.error("Shutdown exception:", e);
 						}
 					}
-					catch (Exception e)
-					{
-						logger.error("Shutdown exception:", e);
-					}
-				}
-			}));
+				}));
 
-			waitForShutdown();
+				waitForShutdown();
+			}
+			catch (Exception e)
+			{
+				logger.error("Failed starting up services", e);
+				main.stopServices();
+				System.exit(1);
+			}
+			finally
+			{
+				logger.info("--------------------------------------");
+				logger.info("     KairosDB service is now down!");
+				logger.info("--------------------------------------");
+			}
 		}
 	}
 
@@ -214,6 +234,8 @@ public class Main
 		Datastore ds = m_injector.getInstance(Datastore.class);
 
 		Iterable<String> metrics = ds.getMetricNames();
+
+		//metrics = Arrays.asList("gov_status_responsetime", "gov_status_downtime");
 
 		try
 		{
@@ -282,7 +304,7 @@ public class Main
 			Iterator<Object> keys = tags.keys();
 			while (keys.hasNext())
 			{
-				String tagName = (String)keys.next();
+				String tagName = (String) keys.next();
 				String tagValue = tags.getString(tagName);
 
 				dps.addTag(tagName, tagValue);
@@ -301,7 +323,7 @@ public class Main
 	}
 
 	/**
-	 Simple technique to prevent the main thread from existing until we are done
+	 * Simple technique to prevent the main thread from existing until we are done
 	 */
 	private static void waitForShutdown()
 	{
@@ -318,7 +340,7 @@ public class Main
 	}
 
 
-	public void startServices() throws TsdbException
+	public void startServices() throws KariosDBException
 	{
 		Map<Key<?>, Binding<?>> bindings =
 				m_injector.getAllBindings();
@@ -328,10 +350,10 @@ public class Main
 			Class bindingClass = key.getTypeLiteral().getRawType();
 			if (KairosDBService.class.isAssignableFrom(bindingClass))
 			{
-				KairosDBService service = (KairosDBService)m_injector.getInstance(bindingClass);
+				KairosDBService service = (KairosDBService) m_injector.getInstance(bindingClass);
 				m_services.add(service);
 
-				logger.info("Starting service "+bindingClass);
+				logger.info("Starting service " + bindingClass);
 				service.start();
 			}
 		}
@@ -340,7 +362,7 @@ public class Main
 
 	public void stopServices() throws DatastoreException, InterruptedException
 	{
-		System.err.println("Shutting down");
+		logger.info("Shutting down");
 		for (KairosDBService service : m_services)
 		{
 			service.stop();

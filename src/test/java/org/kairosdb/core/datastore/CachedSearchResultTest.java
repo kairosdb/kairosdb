@@ -16,14 +16,15 @@
 
 package org.kairosdb.core.datastore;
 
-import org.kairosdb.core.DataPoint;
 import org.junit.Test;
+import org.kairosdb.core.DataPoint;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -34,9 +35,10 @@ public class CachedSearchResultTest
 	@Test
 	public void test_createCachedSearchResult() throws IOException
 	{
+
 		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
 		CachedSearchResult csResult =
-				CachedSearchResult.createCachedSearchResult("metric1", tempFile);
+				CachedSearchResult.createCachedSearchResult("metric1", tempFile, new ReentrantReadWriteLock());
 
 		long now = System.currentTimeMillis();
 
@@ -88,7 +90,7 @@ public class CachedSearchResultTest
 	public void test_AddLongsBeyondBufferSize() throws IOException
 	{
 		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
-		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult("metric2", tempFile);
+		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult("metric2", tempFile, new ReentrantReadWriteLock());
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
 		csResult.startDataPointSet(Collections.<String, String>emptyMap());
@@ -120,7 +122,7 @@ public class CachedSearchResultTest
 	public void test_AddDoublesBeyondBufferSize() throws IOException
 	{
 		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
-		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult("metric3", tempFile);
+		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult("metric3", tempFile, new ReentrantReadWriteLock());
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
 		csResult.startDataPointSet(Collections.<String, String>emptyMap());

@@ -1,0 +1,17 @@
+{
+    "start_absolute": 784041330,
+    "end_absolute": 788879730,
+    "metrics": [
+        {
+            "aggregators":[
+                {
+                    "name":"sum"
+                }
+            ],
+            "tags": {
+                "host": "foo",
+                "type": "bar"
+            }
+        }
+    ]
+}

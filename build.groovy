@@ -18,7 +18,6 @@ import javax.swing.*
 
 println("===============================================");
 
-
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
 version = "1.0.0_beta_2"

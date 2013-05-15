@@ -18,37 +18,38 @@ package org.kairosdb.core.telnet;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.yammer.metrics.core.Counter;
-import com.yammer.metrics.core.MetricName;
 import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.reporting.KairosMetricRegistry;
+import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.util.Util;
 
-import static org.kairosdb.core.reporting.KairosMetricRegistry.Tag;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
-public class PutCommand implements TelnetCommand
+public class PutCommand implements TelnetCommand, KairosMetricReporter
 {
 	private KairosDatastore m_datastore;
-	private Counter m_counter;
+	private AtomicInteger m_counter = new AtomicInteger();
+	private String m_hostName;
 
 	@Inject
-	public PutCommand(KairosDatastore datastore, KairosMetricRegistry metricRegistry, @Named("HOSTNAME") String hostname)
+	public PutCommand(KairosDatastore datastore, @Named("HOSTNAME") String hostname)
 	{
 		checkNotNullOrEmpty(hostname);
+		m_hostName = hostname;
 		m_datastore = datastore;
-		m_counter = metricRegistry.newCounter(new MetricName("kairosdb", "protocol", "telnet_request_count"),
-				new Tag("host", hostname), new Tag("method", "put"));
 	}
 
 	@Override
 	public void execute(Channel chan, String[] command) throws DatastoreException
 	{
-		m_counter.inc();
+		m_counter.incrementAndGet();
 
 		DataPointSet dps = new DataPointSet(command[1]);
 
@@ -73,5 +74,16 @@ public class PutCommand implements TelnetCommand
 		}
 
 		m_datastore.putDataPoints(dps);
+	}
+
+	@Override
+	public List<DataPointSet> getMetrics(long now)
+	{
+		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
+		dps.addTag("host", m_hostName);
+		dps.addTag("method", "put");
+		dps.addDataPoint(new DataPoint(now, m_counter.getAndSet(0)));
+
+		return (Collections.singletonList(dps));
 	}
 }

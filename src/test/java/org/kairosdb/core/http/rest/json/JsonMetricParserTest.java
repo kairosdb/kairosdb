@@ -20,16 +20,14 @@ import com.google.common.io.Resources;
 import com.google.gson.stream.MalformedJsonException;
 import org.junit.Test;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.datastore.CachedSearchResult;
-import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.http.rest.validation.ValidationException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -43,7 +41,8 @@ public class JsonMetricParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"datapoints\": [[1,2]]}, {\"datapoints\": [[1,2]]}]";
 
-		FakeDataStore datastore = new FakeDataStore();
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		try
@@ -62,7 +61,8 @@ public class JsonMetricParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234}]";
 
-		FakeDataStore datastore = new FakeDataStore();
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		try
@@ -81,7 +81,8 @@ public class JsonMetricParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"value\": 1234}]";
 
-		FakeDataStore datastore = new FakeDataStore();
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		try
@@ -100,7 +101,8 @@ public class JsonMetricParserTest
 	{
 		String json = "[{\"name\": \"\", \"datapoints\": [[1,2]]}]";
 
-		FakeDataStore datastore = new FakeDataStore();
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		try
@@ -119,12 +121,13 @@ public class JsonMetricParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 4321}]";
 
-		FakeDataStore datastore = new FakeDataStore();
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		parser.parse();
 
-		List<DataPointSet> dataPointSetList = datastore.getDataPointSetList();
+		List<DataPointSet> dataPointSetList = fakeds.getDataPointSetList();
 		assertThat(dataPointSetList.size(), equalTo(1));
 
 		assertThat(dataPointSetList.get(0).getName(), equalTo("metric1"));
@@ -139,12 +142,13 @@ public class JsonMetricParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": }]";
 
-		FakeDataStore datastore = new FakeDataStore();
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		parser.parse();
 
-		List<DataPointSet> dataPointSetList = datastore.getDataPointSetList();
+		List<DataPointSet> dataPointSetList = fakeds.getDataPointSetList();
 		assertThat(dataPointSetList.size(), equalTo(1));
 
 		assertThat(dataPointSetList.get(0).getName(), equalTo("metric1"));
@@ -159,12 +163,13 @@ public class JsonMetricParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 4321, \"datapoints\": [[456, 654]]}]";
 
-		FakeDataStore datastore = new FakeDataStore();
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		parser.parse();
 
-		List<DataPointSet> dataPointSetList = datastore.getDataPointSetList();
+		List<DataPointSet> dataPointSetList = fakeds.getDataPointSetList();
 		assertThat(dataPointSetList.size(), equalTo(1));
 
 		assertThat(dataPointSetList.get(0).getName(), equalTo("metric1"));
@@ -181,12 +186,13 @@ public class JsonMetricParserTest
 	{
 		String json = Resources.toString(Resources.getResource("json-metric-parser-multiple-metric.json"), Charsets.UTF_8);
 
-		FakeDataStore datastore = new FakeDataStore();
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		parser.parse();
 
-		List<DataPointSet> dataPointSetList = datastore.getDataPointSetList();
+		List<DataPointSet> dataPointSetList = fakeds.getDataPointSetList();
 		assertThat(dataPointSetList.size(), equalTo(2));
 
 		assertThat(dataPointSetList.get(0).getName(), equalTo("archive_file_tracked"));
@@ -209,7 +215,7 @@ public class JsonMetricParserTest
 		assertThat(dataPointSetList.get(1).getDataPoints().get(0).getLongValue(), equalTo(321L));
 	}
 
-	private static class FakeDataStore extends KairosDatastore
+	private static class FakeDataStore implements Datastore
 	{
 		List<DataPointSet> dataPointSetList = new ArrayList<DataPointSet>();
 
@@ -252,7 +258,7 @@ public class JsonMetricParserTest
 		}
 
 		@Override
-		protected List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException
+		public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException
 		{
 			return null;
 		}

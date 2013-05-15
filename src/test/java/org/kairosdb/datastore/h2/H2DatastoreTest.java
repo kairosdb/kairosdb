@@ -16,12 +16,14 @@
 package org.kairosdb.datastore.h2;
 
 
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.datastore.DatastoreTestHelper;
 import org.kairosdb.core.exception.DatastoreException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import java.io.File;
+import java.util.Collections;
 
 public class H2DatastoreTest extends DatastoreTestHelper
 {
@@ -50,7 +52,7 @@ public class H2DatastoreTest extends DatastoreTestHelper
 	@BeforeClass
 	public static void setupDatabase() throws DatastoreException
 	{
-		s_datastore = new H2Datastore(DB_PATH);
+		s_datastore = new KairosDatastore(new H2Datastore(DB_PATH), Collections.EMPTY_LIST);
 
 		loadData();
 	}

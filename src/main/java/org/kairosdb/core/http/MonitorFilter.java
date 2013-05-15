@@ -17,30 +17,29 @@ package org.kairosdb.core.http;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.yammer.metrics.core.Counter;
-import com.yammer.metrics.core.MetricName;
-import org.kairosdb.core.reporting.KairosMetricRegistry;
+import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.reporting.KairosMetricReporter;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.core.reporting.KairosMetricRegistry.Tag;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
-public class MonitorFilter implements Filter
+public class MonitorFilter implements Filter, KairosMetricReporter
 {
-	private final KairosMetricRegistry metricsRegistry;
-	private final Map<String, Counter> counterMap = new HashMap<String, Counter>();
 	private final String hostname;
+	private final ConcurrentMap<String, AtomicInteger> counterMap = new ConcurrentHashMap<String, AtomicInteger>();
 
 	@Inject
-	public MonitorFilter(KairosMetricRegistry metricsRegistry, @Named("HOSTNAME")String hostname)
+	public MonitorFilter(@Named("HOSTNAME")String hostname)
 	{
-		this.metricsRegistry = checkNotNull(metricsRegistry);
 		this.hostname = checkNotNullOrEmpty(hostname);
 	}
 
@@ -57,15 +56,14 @@ public class MonitorFilter implements Filter
 		if (index > -1)
 		{
 			String resourceName = path.substring(index + 1);
-			Counter counter = counterMap.get(resourceName);
+			AtomicInteger counter = counterMap.get(resourceName);
 			if (counter == null)
 			{
-				counter = metricsRegistry.newCounter(new MetricName("kairosdb", "protocol", "http_request_count", resourceName),
-						new Tag("host", hostname),
-						new Tag("method", resourceName));
-				counterMap.put(resourceName, counter);
+				counter = new AtomicInteger();
+				AtomicInteger mapValue = counterMap.putIfAbsent(resourceName, counter);
+				counter = (mapValue != null ? mapValue : counter);
 			}
-			counter.inc();
+			counter.incrementAndGet();
 		}
 
 		filterChain.doFilter(servletRequest, servletResponse);
@@ -74,5 +72,22 @@ public class MonitorFilter implements Filter
 	@Override
 	public void destroy()
 	{
+	}
+
+	@Override
+	public List<DataPointSet> getMetrics(long now)
+	{
+		List<DataPointSet> ret = new ArrayList<DataPointSet>();
+		for (String resource : counterMap.keySet())
+		{
+			DataPointSet dps = new DataPointSet("kairosdb.protocol.http_request_count");
+			dps.addTag("host", hostname);
+			dps.addTag("method", resource);
+			dps.addDataPoint(new DataPoint(now, (long)counterMap.get(resource).getAndSet(0)));
+
+			ret.add(dps);
+		}
+
+		return (ret);
 	}
 }

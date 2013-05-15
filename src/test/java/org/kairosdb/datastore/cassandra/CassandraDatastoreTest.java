@@ -25,11 +25,13 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreMetricQueryImpl;
 import org.kairosdb.datastore.DatastoreTestHelper;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -108,7 +110,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		s_datastore = new CassandraDatastore("localhost:9160",
 				null, 1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, 1000, 50000, "hostname");
 
-		DatastoreTestHelper.s_datastore = s_datastore;
+		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
+				Collections.EMPTY_LIST);
 
 		loadCassandraData();
 		loadData();
@@ -157,7 +160,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		query.setEndTime(s_dataPointTime);
 		query.setTags(tagFilter);
 
-		List<DataPointGroup> results = s_datastore.query(query);
+		KairosDatastore kds = new KairosDatastore(s_datastore, Collections.EMPTY_LIST);
+		List<DataPointGroup> results = kds.query(query);
 
 		DataPointGroup dataPointGroup = results.get(0);
 		int counter = 0;

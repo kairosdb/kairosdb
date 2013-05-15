@@ -17,10 +17,7 @@ package org.kairosdb.core.http.rest;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.google.inject.name.Names;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -32,20 +29,18 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointListener;
+import org.kairosdb.core.DataPointListenerProvider;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
-import org.kairosdb.core.datastore.CachedSearchResult;
-import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.GsonParser;
-import org.kairosdb.core.reporting.KairosMetricRegistry;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.testing.TestingDataPointRowImpl;
 
@@ -77,18 +72,19 @@ public class MetricsResourceTest
 	{
 		Injector injector = Guice.createInjector(new WebServletModule(new Properties()), new AbstractModule()
 		{
-			private KairosDatastore datastore = new TestDatastore();
+			private Datastore datastore = new TestDatastore();
 
 			@Override
 			protected void configure()
 			{
 				bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9000);
 				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
-				bind(KairosDatastore.class).toInstance(datastore);
+				bind(Datastore.class).toInstance(datastore);
+				bind(KairosDatastore.class).in(Singleton.class);
 				bind(AggregatorFactory.class).to(TestAggregatorFactory.class);
 				bind(GroupByFactory.class).to(TestGroupByFactory.class);
 				bind(GsonParser.class).in(Singleton.class);
-				bind(KairosMetricRegistry.class).in(Singleton.class);
+				bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
 			}
 		});
 		server = injector.getInstance(WebServer.class);
@@ -265,7 +261,7 @@ public class MetricsResourceTest
 		return new JsonResponse(response);
 	}
 
-	public static class TestDatastore extends KairosDatastore
+	public static class TestDatastore implements Datastore
 	{
 
 		protected TestDatastore() throws DatastoreException
@@ -302,7 +298,7 @@ public class MetricsResourceTest
 		}
 
 		@Override
-		protected List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+		public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
 		{
 			List<DataPointRow> groups = new ArrayList<DataPointRow>();
 

@@ -18,35 +18,50 @@ package org.kairosdb.core.telnet;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.yammer.metrics.core.Counter;
-import com.yammer.metrics.core.MetricName;
 import org.jboss.netty.channel.Channel;
+import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.reporting.KairosMetricRegistry;
+import org.kairosdb.core.reporting.KairosMetricReporter;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
-public class VersionCommand implements TelnetCommand
+public class VersionCommand implements TelnetCommand, KairosMetricReporter
 {
-	private Counter counter;
+	private AtomicInteger m_counter = new AtomicInteger();
+	private String m_hostName;
 
 	@Inject
-	public VersionCommand(KairosMetricRegistry metricRegistry, @Named("HOSTNAME") String hostname)
+	public VersionCommand(@Named("HOSTNAME") String hostname)
 	{
 		checkNotNullOrEmpty(hostname);
-		counter = metricRegistry.newCounter(new MetricName("kairosdb", "protocol", "telnet_request_count"),
-				new KairosMetricRegistry.Tag("host", hostname), new KairosMetricRegistry.Tag("method", "version"));
+		m_hostName = hostname;
 	}
 
 	@Override
 	public void execute(Channel chan, String[] command) throws DatastoreException
 	{
-		counter.inc();
+		m_counter.incrementAndGet();
 		if (chan.isConnected())
 		{
 			Package thisPackage = getClass().getPackage();
 			String versionString = thisPackage.getImplementationTitle()+" "+thisPackage.getImplementationVersion();
 			chan.write(versionString+"\n");
 		}
+	}
+
+	@Override
+	public List<DataPointSet> getMetrics(long now)
+	{
+		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
+		dps.addTag("host", m_hostName);
+		dps.addTag("method", "version");
+		dps.addDataPoint(new DataPoint(now, m_counter.getAndSet(0)));
+
+		return (Collections.singletonList(dps));
 	}
 }

@@ -17,145 +17,45 @@ package org.kairosdb.core.reporting;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.yammer.metrics.core.*;
-import com.yammer.metrics.reporting.AbstractPollingReporter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.core.scheduler.KairosDBJob;
+import org.quartz.CronScheduleBuilder;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.quartz.TriggerBuilder.newTrigger;
 
-public class MetricReporterService extends AbstractPollingReporter implements MetricProcessor<KairosDatastore>, KairosDBService
+public class MetricReporterService implements KairosDBJob
 {
 	public static final Logger logger = LoggerFactory.getLogger(MetricReporterService.class);
 
-	public static final String REPORTER_PERIOD = "kairosdb.reporter.period";
-	public static final String REPORTER_PERIOD_UNIT = "kairosdb.reporter.period_unit";
 	public static final String HOSTNAME = "HOSTNAME";
 
-	private KairosDatastore datastore;
-	private KairosMetricRegistry registry;
-	private int period;
-	private TimeUnit periodUnit;
-	private long timestamp;
+	private KairosDatastore m_datastore;
+	private List<KairosMetricReporter> m_reporters;
+	private final String m_hostname;
 
-	private final String hostname;
 
 	@Inject
 	public MetricReporterService(KairosDatastore datastore,
-	                             KairosMetricRegistry registry,
-	                             @Named(REPORTER_PERIOD) int period,
-	                             @Named(REPORTER_PERIOD_UNIT) String periodUnit,
-	                             @Named(HOSTNAME) String hostname)
+			List<KairosMetricReporter> reporters,
+			@Named(HOSTNAME) String hostname)
 	{
-		super(registry, "KairosReporter");
-		checkArgument(period > 0, "Reporting period must be greater than 0.");
-		checkNotNullOrEmpty(periodUnit, "Reporting period unit is not defined.");
-
-		this.datastore = checkNotNull(datastore);
-		this.registry = checkNotNull(registry);
-		this.period = period;
-		this.periodUnit = TimeUnit.valueOf(periodUnit.toUpperCase());
-		this.hostname = checkNotNullOrEmpty(hostname);
+		m_datastore = checkNotNull(datastore);
+		m_hostname = checkNotNullOrEmpty(hostname);
+		m_reporters = reporters;
 	}
 
-	@Override
-	public void start() throws KariosDBException
-	{
-		start(period, periodUnit);
-	}
-
-	@Override
-	public void stop()
-	{
-		shutdown();
-	}
-
-	@Override
-	public void run()
-	{
-		logger.debug("Reporting metrics");
-		timestamp = System.currentTimeMillis();
-		try
-		{
-			for (Map.Entry<String, SortedMap<MetricName, Metric>> entry : registry.groupedMetrics(
-					MetricPredicate.ALL).entrySet())
-			{
-				for (Map.Entry<MetricName, Metric> subEntry : entry.getValue().entrySet())
-				{
-					try
-					{
-						subEntry.getValue().processWith(this, subEntry.getKey(), datastore);
-					}
-					catch (Exception e)
-					{
-						logger.error("Could not report metrics", e);
-					}
-				}
-			}
-
-			Runtime runtime = Runtime.getRuntime();
-			Map<String, String> tags = new HashMap<String, String>();
-			tags.put("host", hostname);
-			datastore.putDataPoints(new DataPointSet("kairosdb.jvm.free_memory",
-					tags, Collections.singletonList(new DataPoint(timestamp, runtime.freeMemory()))));
-			datastore.putDataPoints(new DataPointSet("kairosdb.jvm.total_memory",
-					tags, Collections.singletonList(new DataPoint(timestamp, runtime.totalMemory()))));
-			datastore.putDataPoints(new DataPointSet("kairosdb.jvm.max_memory",
-					tags, Collections.singletonList(new DataPoint(timestamp, runtime.maxMemory()))));
-			datastore.putDataPoints(new DataPointSet("kairosdb.jvm.thread_count",
-					tags, Collections.singletonList(new DataPoint(timestamp, getThreadCount()))));
-		}
-		catch (Throwable e)
-		{
-			// prevent the thread from dying
-			logger.error("Reporter service error", e);
-		}
-	}
-
-	@Override
-	public void processMeter(MetricName metricName, Metered metered, KairosDatastore datastore) throws Exception
-	{
-		//todo
-	}
-
-	@Override
-	public void processCounter(MetricName metricName, Counter counter, KairosDatastore datastore) throws Exception
-	{
-		datastore.putDataPoints(new DataPointSet(registry.getKairosName(metricName),
-				registry.getTags(metricName),
-				Collections.singletonList(new DataPoint(timestamp, counter.count()))));
-	}
-
-	@Override
-	public void processHistogram(MetricName metricName, Histogram histogram, KairosDatastore datastore) throws Exception
-	{
-		//todo
-	}
-
-	@Override
-	public void processTimer(MetricName metricName, Timer timer, KairosDatastore datastore) throws Exception
-	{
-		//todo
-	}
-
-	@Override
-	public void processGauge(MetricName metricName, Gauge<?> gauge, KairosDatastore datastore) throws Exception
-	{
-		// todo what kind of gauges do we want to support?
-	}
 
 	private int getThreadCount()
 	{
@@ -166,5 +66,50 @@ public class MetricReporterService extends AbstractPollingReporter implements Me
 		}
 
 		return tg.activeCount();
+	}
+
+	@Override
+	public Trigger getTrigger()
+	{
+		return (newTrigger()
+				.withIdentity(this.getClass().getSimpleName())
+				.withSchedule(CronScheduleBuilder.cronSchedule("0 *//*1 * * * ?")) //Schedule to run every minute
+				.build());
+	}
+
+	@Override
+	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
+	{
+		logger.debug("Reporting metrics");
+		long timestamp = System.currentTimeMillis();
+		try
+		{
+			for (KairosMetricReporter reporter : m_reporters)
+			{
+				List<DataPointSet> dpList = reporter.getMetrics(timestamp);
+				for (DataPointSet dataPointSet : dpList)
+				{
+					m_datastore.putDataPoints(dataPointSet);
+				}
+			}
+
+
+			Runtime runtime = Runtime.getRuntime();
+			Map<String, String> tags = new HashMap<String, String>();
+			tags.put("host", m_hostname);
+			m_datastore.putDataPoints(new DataPointSet("kairosdb.jvm.free_memory",
+					tags, Collections.singletonList(new DataPoint(timestamp, runtime.freeMemory()))));
+			m_datastore.putDataPoints(new DataPointSet("kairosdb.jvm.total_memory",
+					tags, Collections.singletonList(new DataPoint(timestamp, runtime.totalMemory()))));
+			m_datastore.putDataPoints(new DataPointSet("kairosdb.jvm.max_memory",
+					tags, Collections.singletonList(new DataPoint(timestamp, runtime.maxMemory()))));
+			m_datastore.putDataPoints(new DataPointSet("kairosdb.jvm.thread_count",
+					tags, Collections.singletonList(new DataPoint(timestamp, getThreadCount()))));
+		}
+		catch (Throwable e)
+		{
+			// prevent the thread from dying
+			logger.error("Reporter service error", e);
+		}
 	}
 }

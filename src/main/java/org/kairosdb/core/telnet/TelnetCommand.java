@@ -21,5 +21,7 @@ import org.jboss.netty.channel.Channel;
 
 public interface TelnetCommand
 {
+	public static final String REPORTING_METRIC_NAME = "kairosdb.protocol.telnet_request_count";
+
 	public void execute(Channel chan, String[] command) throws DatastoreException;
 }

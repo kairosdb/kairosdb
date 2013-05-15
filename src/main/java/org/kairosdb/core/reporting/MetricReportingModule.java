@@ -17,8 +17,11 @@ package org.kairosdb.core.reporting;
 
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.servlet.ServletModule;
 import org.kairosdb.core.http.MonitorFilter;
+
+import java.util.List;
 
 public class MetricReportingModule extends ServletModule
 {
@@ -31,5 +34,7 @@ public class MetricReportingModule extends ServletModule
 		filter("/*").through(MonitorFilter.class);
 
 		bind(DataPointsMonitor.class).in(Scopes.SINGLETON);
+
+		bind(new TypeLiteral<List<KairosMetricReporter>>(){}).toProvider(KairosMetricReporterListProvider.class);
 	}
 }

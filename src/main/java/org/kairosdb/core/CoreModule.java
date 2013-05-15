@@ -25,7 +25,6 @@ import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.core.jobs.CacheFileCleaner;
-import org.kairosdb.core.reporting.KairosMetricRegistry;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.util.Util;
 
@@ -49,7 +48,6 @@ public class CoreModule extends AbstractModule
 		bind(AggregatorFactory.class).to(GuiceAggregatorFactory.class).in(Singleton.class);
 		bind(GroupByFactory.class).to(GuiceGroupByFactory.class).in(Singleton.class);
 		bind(GsonParser.class).in(Singleton.class);
-		bind(KairosMetricRegistry.class).in(Singleton.class);
 		bind(CacheFileCleaner.class).in(Singleton.class);
 		bind(KairosDBScheduler.class).in(Singleton.class);
 

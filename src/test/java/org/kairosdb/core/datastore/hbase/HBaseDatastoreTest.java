@@ -17,12 +17,15 @@
 package org.kairosdb.core.datastore.hbase;
 
 
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreTestHelper;
 import net.opentsdb.kairosdb.HBaseDatastore;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
+
+import java.util.Collections;
 
 interface HBaseTests{}
 interface IntegrationTests{}
@@ -33,7 +36,8 @@ public class HBaseDatastoreTest extends DatastoreTestHelper
 	@BeforeClass
 	public static void setupDatabase() throws DatastoreException
 	{
-		s_datastore = new HBaseDatastore("tsdb", "tsdb-uid", "localhost", "", true);
+		s_datastore = new KairosDatastore(new HBaseDatastore("tsdb", "tsdb-uid", "localhost", "", true),
+				Collections.EMPTY_LIST);
 
 		loadData();
 

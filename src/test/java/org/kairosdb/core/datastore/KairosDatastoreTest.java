@@ -27,6 +27,7 @@ import org.kairosdb.testing.TestingDataPointRowImpl;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static junit.framework.TestCase.assertTrue;
@@ -41,7 +42,8 @@ public class KairosDatastoreTest
 	@Test(expected = NullPointerException.class)
 	public void test_query_nullMetricInvalid() throws KariosDBException
 	{
-		TestDatastore datastore = new TestDatastore();
+		TestDatastore testds = new TestDatastore();
+		KairosDatastore datastore = new KairosDatastore(testds, Collections.EMPTY_LIST);
 
 		datastore.query(null);
 	}
@@ -49,7 +51,8 @@ public class KairosDatastoreTest
 	@Test
 	public void test_query_sumAggregator() throws KariosDBException
 	{
-		TestDatastore datastore = new TestDatastore();
+		TestDatastore testds = new TestDatastore();
+		KairosDatastore datastore = new KairosDatastore(testds, Collections.EMPTY_LIST);
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 		metric.addAggregator(aggFactory.createAggregator("sum"));
 
@@ -73,7 +76,8 @@ public class KairosDatastoreTest
 	@Test
 	public void test_query_noAggregator() throws KariosDBException
 	{
-		TestDatastore datastore = new TestDatastore();
+		TestDatastore testds = new TestDatastore();
+		KairosDatastore datastore = new KairosDatastore(testds, Collections.EMPTY_LIST);
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 
 		List<DataPointGroup> results = datastore.query(metric);
@@ -152,14 +156,15 @@ public class KairosDatastoreTest
 		File[] files = cacheDir.listFiles();
 		assertTrue(files.length > 0);
 
-		TestDatastore datastore = new TestDatastore();
+		TestDatastore testds = new TestDatastore();
+		KairosDatastore datastore = new KairosDatastore(testds, Collections.EMPTY_LIST);
 		datastore.cleanCacheDir();
 
 		files = cacheDir.listFiles();
 		assertThat(files.length, equalTo(0));
 	}
 
-	private class TestDatastore extends KairosDatastore
+	private class TestDatastore implements Datastore
 	{
 
 		protected TestDatastore() throws DatastoreException
@@ -195,7 +200,7 @@ public class KairosDatastoreTest
 		}
 
 		@Override
-		protected List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+		public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
 		{
 			List<DataPointRow> groups = new ArrayList<DataPointRow>();
 

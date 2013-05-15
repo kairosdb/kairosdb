@@ -23,7 +23,7 @@ import com.yammer.metrics.core.MetricName;
 import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricRegistry;
 import org.kairosdb.util.Util;
@@ -33,11 +33,11 @@ import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 public class PutCommand implements TelnetCommand
 {
-	private Datastore m_datastore;
+	private KairosDatastore m_datastore;
 	private Counter m_counter;
 
 	@Inject
-	public PutCommand(Datastore datastore, KairosMetricRegistry metricRegistry, @Named("HOSTNAME") String hostname)
+	public PutCommand(KairosDatastore datastore, KairosMetricRegistry metricRegistry, @Named("HOSTNAME") String hostname)
 	{
 		checkNotNullOrEmpty(hostname);
 		m_datastore = datastore;

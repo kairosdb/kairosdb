@@ -22,7 +22,7 @@ import com.yammer.metrics.reporting.AbstractPollingReporter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDBService;
-import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.KariosDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +37,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
-public class MetricReporterService extends AbstractPollingReporter implements MetricProcessor<Datastore>, KairosDBService
+public class MetricReporterService extends AbstractPollingReporter implements MetricProcessor<KairosDatastore>, KairosDBService
 {
 	public static final Logger logger = LoggerFactory.getLogger(MetricReporterService.class);
 
@@ -45,7 +45,7 @@ public class MetricReporterService extends AbstractPollingReporter implements Me
 	public static final String REPORTER_PERIOD_UNIT = "kairosdb.reporter.period_unit";
 	public static final String HOSTNAME = "HOSTNAME";
 
-	private Datastore datastore;
+	private KairosDatastore datastore;
 	private KairosMetricRegistry registry;
 	private int period;
 	private TimeUnit periodUnit;
@@ -54,7 +54,7 @@ public class MetricReporterService extends AbstractPollingReporter implements Me
 	private final String hostname;
 
 	@Inject
-	public MetricReporterService(Datastore datastore,
+	public MetricReporterService(KairosDatastore datastore,
 	                             KairosMetricRegistry registry,
 	                             @Named(REPORTER_PERIOD) int period,
 	                             @Named(REPORTER_PERIOD_UNIT) String periodUnit,
@@ -126,13 +126,13 @@ public class MetricReporterService extends AbstractPollingReporter implements Me
 	}
 
 	@Override
-	public void processMeter(MetricName metricName, Metered metered, Datastore datastore) throws Exception
+	public void processMeter(MetricName metricName, Metered metered, KairosDatastore datastore) throws Exception
 	{
 		//todo
 	}
 
 	@Override
-	public void processCounter(MetricName metricName, Counter counter, Datastore datastore) throws Exception
+	public void processCounter(MetricName metricName, Counter counter, KairosDatastore datastore) throws Exception
 	{
 		datastore.putDataPoints(new DataPointSet(registry.getKairosName(metricName),
 				registry.getTags(metricName),
@@ -140,19 +140,19 @@ public class MetricReporterService extends AbstractPollingReporter implements Me
 	}
 
 	@Override
-	public void processHistogram(MetricName metricName, Histogram histogram, Datastore datastore) throws Exception
+	public void processHistogram(MetricName metricName, Histogram histogram, KairosDatastore datastore) throws Exception
 	{
 		//todo
 	}
 
 	@Override
-	public void processTimer(MetricName metricName, Timer timer, Datastore datastore) throws Exception
+	public void processTimer(MetricName metricName, Timer timer, KairosDatastore datastore) throws Exception
 	{
 		//todo
 	}
 
 	@Override
-	public void processGauge(MetricName metricName, Gauge<?> gauge, Datastore datastore) throws Exception
+	public void processGauge(MetricName metricName, Gauge<?> gauge, KairosDatastore datastore) throws Exception
 	{
 		// todo what kind of gauges do we want to support?
 	}

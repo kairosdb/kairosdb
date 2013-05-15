@@ -21,6 +21,7 @@ import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 
 import java.util.HashMap;
 import java.util.Map;

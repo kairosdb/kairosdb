@@ -36,7 +36,7 @@ if [ "$1" = "run" ] ; then
 elif [ "$1" = "start" ] ; then
 	shift
 	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main \
-		-c run -p conf/kairosdb.properties >> "$KAIROSDB_LOG_DIR/kairosdb.log" 2>&1 &
+		-c start -p conf/kairosdb.properties >> "$KAIROSDB_LOG_DIR/kairosdb.log" 2>&1 &
 	echo $! > "$KAIROS_PID_FILE"
 elif [ "$1" = "stop" ] ; then
 	shift

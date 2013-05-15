@@ -36,10 +36,7 @@ import me.prettyprint.hector.api.factory.HFactory;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.datastore.CachedSearchResult;
-import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +49,7 @@ import java.util.Map;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class CassandraDatastore extends Datastore
+public class CassandraDatastore implements Datastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
 
@@ -367,7 +364,7 @@ public class CassandraDatastore extends Datastore
 	}
 
 	@Override
-	protected List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+	public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
 	{
 		ListMultimap<Long, DataPointsRowKey> rowKeys = getKeysForQuery(query);
 

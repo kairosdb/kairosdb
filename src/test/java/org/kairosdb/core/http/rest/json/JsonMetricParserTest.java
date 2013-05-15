@@ -22,7 +22,7 @@ import org.junit.Test;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.http.rest.validation.ValidationException;
@@ -209,7 +209,7 @@ public class JsonMetricParserTest
 		assertThat(dataPointSetList.get(1).getDataPoints().get(0).getLongValue(), equalTo(321L));
 	}
 
-	private static class FakeDataStore extends Datastore
+	private static class FakeDataStore extends KairosDatastore
 	{
 		List<DataPointSet> dataPointSetList = new ArrayList<DataPointSet>();
 

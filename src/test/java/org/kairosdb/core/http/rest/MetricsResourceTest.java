@@ -37,7 +37,7 @@ import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupByFactory;
@@ -77,14 +77,14 @@ public class MetricsResourceTest
 	{
 		Injector injector = Guice.createInjector(new WebServletModule(new Properties()), new AbstractModule()
 		{
-			private Datastore datastore = new TestDatastore();
+			private KairosDatastore datastore = new TestDatastore();
 
 			@Override
 			protected void configure()
 			{
 				bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9000);
 				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
-				bind(Datastore.class).toInstance(datastore);
+				bind(KairosDatastore.class).toInstance(datastore);
 				bind(AggregatorFactory.class).to(TestAggregatorFactory.class);
 				bind(GroupByFactory.class).to(TestGroupByFactory.class);
 				bind(GsonParser.class).in(Singleton.class);
@@ -265,7 +265,7 @@ public class MetricsResourceTest
 		return new JsonResponse(response);
 	}
 
-	public static class TestDatastore extends Datastore
+	public static class TestDatastore extends KairosDatastore
 	{
 
 		protected TestDatastore() throws DatastoreException

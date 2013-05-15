@@ -29,5 +29,7 @@ public class MetricReportingModule extends ServletModule
 
 		bind(MonitorFilter.class).in(Scopes.SINGLETON);
 		filter("/*").through(MonitorFilter.class);
+
+		bind(DataPointsMonitor.class).in(Scopes.SINGLETON);
 	}
 }

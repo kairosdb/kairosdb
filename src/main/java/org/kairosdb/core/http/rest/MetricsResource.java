@@ -19,7 +19,7 @@ package org.kairosdb.core.http.rest;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
@@ -58,12 +58,12 @@ public class MetricsResource
 {
 	private static final Logger log = LoggerFactory.getLogger(MetricsResource.class);
 
-	private final Datastore datastore;
+	private final KairosDatastore datastore;
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
 	private final GsonParser gsonParser;
 
 	@Inject
-	public MetricsResource(Datastore datastore, GsonParser gsonParser)
+	public MetricsResource(KairosDatastore datastore, GsonParser gsonParser)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.gsonParser= checkNotNull(gsonParser);

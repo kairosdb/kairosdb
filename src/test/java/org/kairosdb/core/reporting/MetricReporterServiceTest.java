@@ -23,7 +23,7 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.exception.DatastoreException;
 
@@ -72,7 +72,7 @@ public class MetricReporterServiceTest
 		assertThat(dataPoints.get(0).getLongValue(), equalTo(4L));
 	}
 
-	private class TestDatastore extends Datastore
+	private class TestDatastore extends KairosDatastore
 	{
 		Map<String, List<DataPoint>> dataPoints = new HashMap<String, List<DataPoint>>();
 

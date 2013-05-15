@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.TagGroupBy;
@@ -38,7 +38,7 @@ import static org.hamcrest.core.Is.is;
 
 public abstract class DatastoreTestHelper
 {
-	protected static Datastore s_datastore;
+	protected static KairosDatastore s_datastore;
 	private static long s_startTime;
 
 	private static List<String> listFromIterable(Iterable<String> iterable)

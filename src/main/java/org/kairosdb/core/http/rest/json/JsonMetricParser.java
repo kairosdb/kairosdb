@@ -19,7 +19,7 @@ package org.kairosdb.core.http.rest.json;
 import com.google.gson.stream.JsonReader;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.http.rest.validation.JsonValidator;
 import org.kairosdb.core.http.rest.validation.ValidationException;
@@ -42,10 +42,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class JsonMetricParser
 {
-	private Datastore datastore;
+	private KairosDatastore datastore;
 	private InputStream inputStream;
 
-	public JsonMetricParser(Datastore datastore, InputStream stream)
+	public JsonMetricParser(KairosDatastore datastore, InputStream stream)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.inputStream = checkNotNull(stream);

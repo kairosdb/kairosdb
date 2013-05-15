@@ -34,7 +34,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-public class DatastoreTest
+public class KairosDatastoreTest
 {
 	private AggregatorFactory aggFactory = new TestAggregatorFactory();
 
@@ -159,7 +159,7 @@ public class DatastoreTest
 		assertThat(files.length, equalTo(0));
 	}
 
-	private class TestDatastore extends Datastore
+	private class TestDatastore extends KairosDatastore
 	{
 
 		protected TestDatastore() throws DatastoreException

@@ -18,8 +18,10 @@ package org.kairosdb.core;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import org.kairosdb.core.aggregator.*;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.core.jobs.CacheFileCleaner;
@@ -27,6 +29,7 @@ import org.kairosdb.core.reporting.KairosMetricRegistry;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.util.Util;
 
+import java.util.List;
 import java.util.Properties;
 
 public class CoreModule extends AbstractModule
@@ -42,6 +45,7 @@ public class CoreModule extends AbstractModule
 	@Override
 	protected void configure()
 	{
+		bind(KairosDatastore.class).in(Singleton.class);
 		bind(AggregatorFactory.class).to(GuiceAggregatorFactory.class).in(Singleton.class);
 		bind(GroupByFactory.class).to(GuiceGroupByFactory.class).in(Singleton.class);
 		bind(GsonParser.class).in(Singleton.class);
@@ -64,5 +68,7 @@ public class CoreModule extends AbstractModule
 
 		String hostname = m_props.getProperty("kairosdb.hostname");
 		bindConstant().annotatedWith(Names.named("HOSTNAME")).to(hostname != null ? hostname: Util.getHostName());
+
+		bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
 	}
 }

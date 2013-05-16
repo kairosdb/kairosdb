@@ -199,8 +199,7 @@ public class H2Datastore implements Datastore
 		return (tagValues);
 	}
 
-	@Override
-	public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+	private GenOrmQueryResultSet<? extends MetricIdResults> getMetricIdsForQuery(DatastoreMetricQuery query)
 	{
 		StringBuilder sb = new StringBuilder();
 
@@ -247,7 +246,13 @@ public class H2Datastore implements Datastore
 			idQuery = new MetricIdsQuery(query.getName()).runQuery();
 		}
 
+		return (idQuery);
+	}
 
+	@Override
+	public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+	{
+		GenOrmQueryResultSet<? extends MetricIdResults> idQuery = getMetricIdsForQuery(query);
 
 		List<DataPointRow> retList = new ArrayList<DataPointRow>();
 		while (idQuery.next())
@@ -274,6 +279,22 @@ public class H2Datastore implements Datastore
 
 		return (retList);
 
+	}
+
+	@Override
+	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
+	{
+		GenOrmQueryResultSet<? extends MetricIdResults> idQuery =
+				getMetricIdsForQuery(deleteQuery);
+
+		while (idQuery.next())
+		{
+			String metricId = idQuery.getRecord().getMetricId();
+
+			new DeleteMetricsQuery(metricId,
+					new Timestamp(deleteQuery.getStartTime()),
+					new Timestamp(deleteQuery.getEndTime())).runUpdate();
+		}
 	}
 
 	private String createMetricKey(DataPointSet dps)

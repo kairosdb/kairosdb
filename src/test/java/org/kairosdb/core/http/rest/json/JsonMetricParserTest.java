@@ -262,5 +262,11 @@ public class JsonMetricParserTest
 		{
 			return null;
 		}
+
+		@Override
+		public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
+		{
+			//To change body of implemented methods use File | Settings | File Templates.
+		}
 	}
 }

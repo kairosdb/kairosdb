@@ -25,4 +25,6 @@ public interface Datastore
 
 	public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException;
 
+	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException;
+
 }

@@ -154,5 +154,21 @@
 				group by m."id" having count(0) = ?
 			</sql>
 		</query>
+
+		<query name="delete_metrics">
+			<comment></comment>
+			<input>
+				<param name="metric_id" type="string" test="foo"/>
+				<param name="start_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
+				<param name="end_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
+			</input>
+			<sql>
+				delete from data_point this
+				where
+				this."metric_id" = ?
+				and this."timestamp" &gt;= ?
+				and this."timestamp" &lt;= ?
+			</sql>
+		</query>
 	</queries>
 </tables>

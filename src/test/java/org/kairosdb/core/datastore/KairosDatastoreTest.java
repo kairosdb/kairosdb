@@ -229,6 +229,12 @@ public class KairosDatastoreTest
 			return groups;
 		}
 
+		@Override
+		public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
+		{
+			//To change body of implemented methods use File | Settings | File Templates.
+		}
+
 
 	}
 }

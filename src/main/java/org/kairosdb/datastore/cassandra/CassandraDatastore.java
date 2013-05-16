@@ -406,6 +406,12 @@ public class CassandraDatastore implements Datastore
 		return cachedSearchResult.getRows();
 	}
 
+	@Override
+	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
+	{
+		//To change body of implemented methods use File | Settings | File Templates.
+	}
+
 	/**
 	 Returns the row keys for the query in tiers ie grouped by row key timestamp
 	 @param query query

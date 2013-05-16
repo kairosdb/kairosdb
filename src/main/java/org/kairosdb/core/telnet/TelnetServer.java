@@ -37,24 +37,15 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 		KairosDBService
 {
 	private int m_port;
-	private Map<String, TelnetCommand> m_commands;
+	private CommandProvider m_commands;
 	private UnknownCommand m_unknownCommand;
 
 	@Inject
 	public TelnetServer(@Named("kairosdb.telnetserver.port")int port,
-			@Named("kairosdb.telnetserver.commands")String commands,
 			CommandProvider commandProvider)
 	{
-		m_commands = new HashMap<String, TelnetCommand>();
+		m_commands = commandProvider;
 		m_port = port;
-		String[] splitCommands = commands.split(",");
-
-		for (String cmd : splitCommands)
-		{
-			TelnetCommand telnetCommand = commandProvider.getCommand(cmd);
-			if (telnetCommand != null)
-				m_commands.put(cmd, telnetCommand);
-		}
 	}
 
 
@@ -79,25 +70,31 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 	@Override
 	public void messageReceived(final ChannelHandlerContext ctx,
 			final MessageEvent msgevent) {
-		try {
+		try
+		{
 			final Object message = msgevent.getMessage();
 			if (message instanceof String[])
 			{
 				String[] command = (String[])message;
-				TelnetCommand telnetCommand = m_commands.get(command[0]);
+				TelnetCommand telnetCommand = m_commands.getCommand(command[0]);
 				if (telnetCommand == null)
 					telnetCommand = m_unknownCommand;
 
 				telnetCommand.execute(msgevent.getChannel(), command);
-			} else {
+			}
+			else
+			{
 				//TODO
 				/*logError(msgevent.getChannel(), "Unexpected message type "
 						+ message.getClass() + ": " + message);
 				exceptions_caught.incrementAndGet();*/
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e)
+		{
 			Object pretty_message = msgevent.getMessage();
-			if (pretty_message instanceof String[]) {
+			if (pretty_message instanceof String[])
+			{
 				pretty_message = Arrays.toString((String[]) pretty_message);
 			}
 			//TODO

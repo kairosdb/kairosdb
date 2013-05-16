@@ -55,8 +55,8 @@ public class DataPointsMonitor implements DataPointListener, KairosMetricReporte
 	public void dataPoints(DataPointSet pds)
 	{
 		String metricName = pds.getName();
-		if (metricName.equals(METRIC_NAME))
-			return; //Skip our own metric.
+		if (metricName.startsWith("kairosdb"))
+			return; //Skip our own metrics.
 
 		int count = pds.getDataPoints().size();
 

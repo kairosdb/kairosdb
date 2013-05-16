@@ -40,20 +40,24 @@ public class MetricReporterService implements KairosDBJob
 	public static final Logger logger = LoggerFactory.getLogger(MetricReporterService.class);
 
 	public static final String HOSTNAME = "HOSTNAME";
+	public static final String SCHEDULE_PROPERTY = "kairosdb.reporter.schedule";
 
 	private KairosDatastore m_datastore;
 	private List<KairosMetricReporter> m_reporters;
 	private final String m_hostname;
+	private final String m_schedule;
 
 
 	@Inject
 	public MetricReporterService(KairosDatastore datastore,
 			List<KairosMetricReporter> reporters,
+			@Named(SCHEDULE_PROPERTY) String schedule,
 			@Named(HOSTNAME) String hostname)
 	{
 		m_datastore = checkNotNull(datastore);
 		m_hostname = checkNotNullOrEmpty(hostname);
 		m_reporters = reporters;
+		m_schedule = schedule;
 	}
 
 
@@ -73,7 +77,7 @@ public class MetricReporterService implements KairosDBJob
 	{
 		return (newTrigger()
 				.withIdentity(this.getClass().getSimpleName())
-				.withSchedule(CronScheduleBuilder.cronSchedule("0 *//*1 * * * ?")) //Schedule to run every minute
+				.withSchedule(CronScheduleBuilder.cronSchedule(m_schedule)) //Schedule to run every minute
 				.build());
 	}
 

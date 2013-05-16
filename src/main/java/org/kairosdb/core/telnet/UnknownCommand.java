@@ -26,4 +26,10 @@ public class UnknownCommand implements TelnetCommand
 		//logWarn(chan, "unknown command : " + Arrays.toString(cmd));
 		chan.write("unknown command: " + command[0] + ".  Try `help'.\n");
 	}
+
+	@Override
+	public String getCommand()
+	{
+		return null;
+	}
 }

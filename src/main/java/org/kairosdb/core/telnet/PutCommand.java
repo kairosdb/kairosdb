@@ -77,6 +77,12 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 	}
 
 	@Override
+	public String getCommand()
+	{
+		return ("put");
+	}
+
+	@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
 		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);

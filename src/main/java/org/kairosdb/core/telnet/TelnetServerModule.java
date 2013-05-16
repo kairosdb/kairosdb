@@ -42,8 +42,8 @@ public class TelnetServerModule extends AbstractModule
 		logger.info("Configuring module TelnetServerModule");
 
 		bind(TelnetServer.class).in(Singleton.class);
-		bind(TelnetCommand.class).annotatedWith(Names.named("put")).to(PutCommand.class);
-		bind(TelnetCommand.class).annotatedWith(Names.named("version")).to(VersionCommand.class);
+		bind(PutCommand.class).in(Singleton.class);
+		bind(VersionCommand.class).in(Singleton.class);
 		bind(CommandProvider.class).to(GuiceCommandProvider.class);
 	}
 }

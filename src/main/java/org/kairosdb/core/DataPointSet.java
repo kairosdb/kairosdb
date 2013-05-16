@@ -43,6 +43,16 @@ public class DataPointSet
 		m_tags.put(name, value);
 	}
 
+	@Override
+	public String toString()
+	{
+		return "DataPointSet{" +
+				"m_name='" + m_name + '\'' +
+				", m_tags=" + m_tags +
+				", m_dataPoints=" + m_dataPoints +
+				'}';
+	}
+
 	public void addDataPoint(DataPoint dp)
 	{
 		m_dataPoints.add(dp);

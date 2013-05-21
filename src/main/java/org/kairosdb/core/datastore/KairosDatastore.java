@@ -79,6 +79,8 @@ public class KairosDatastore
 	private void newCacheDirectory()
 	{
 		m_cacheDir = m_baseCacheDir + "/" + System.currentTimeMillis() + "/";
+		File cacheDirectory = new File(m_cacheDir);
+		cacheDirectory.mkdirs();
 	}
 
 	private void cleanDirectory(File directory)

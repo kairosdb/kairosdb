@@ -46,10 +46,10 @@ public class KairosDatastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(KairosDatastore.class);
 
-	private final ReentrantReadWriteLock m_cacheDirectoryLock = new ReentrantReadWriteLock(true);
 
 	private MessageDigest m_messageDigest;
-	private String m_cacheDir;
+	private String m_baseCacheDir;
+	private volatile String m_cacheDir;
 	private Datastore m_datastore;
 	private List<DataPointListener> m_dataPointListeners;
 
@@ -62,7 +62,9 @@ public class KairosDatastore
 
 		try
 		{
-			m_cacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
+			m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
+			cleanDirectory(new File(m_baseCacheDir));
+			newCacheDirectory();
 			File cacheDirectory = new File(m_cacheDir);
 			cacheDirectory.mkdirs();
 			checkState(cacheDirectory.exists(), "Cache directory not created");
@@ -74,31 +76,50 @@ public class KairosDatastore
 		}
 	}
 
-	public void cleanCacheDir()
+	private void newCacheDirectory()
 	{
-		try
-		{
-			m_cacheDirectoryLock.writeLock().lock();
-			logger.debug("Executing job...");
-			File dir = new File(m_cacheDir);
-			logger.debug("Deleting cache files in " + dir.getAbsolutePath());
+		m_cacheDir = m_baseCacheDir + "/" + System.currentTimeMillis() + "/";
+	}
 
-			File[] files = dir.listFiles();
-			if (files != null)
+	private void cleanDirectory(File directory)
+	{
+		if (!directory.exists())
+			return;
+		File[] list = directory.listFiles();
+
+		if (list.length > 0)
+		{
+			for (File aList : list)
 			{
-				for (File file : files)
-				{
-					if (logger.isDebugEnabled())
-						logger.debug("deleting file " + file.getAbsolutePath());
-					if (!file.delete())
-						logger.error("Could not delete cache file " + file.getAbsolutePath());
-				}
+				if (aList.isDirectory())
+					cleanDirectory(aList);
+
+				aList.delete();
 			}
 		}
-		finally
+
+		directory.delete();
+	}
+
+	public void cleanCacheDir()
+	{
+		String oldCacheDir = m_cacheDir;
+		newCacheDirectory();
+
+		try
 		{
-			m_cacheDirectoryLock.writeLock().unlock();
+			Thread.sleep(60000);
 		}
+		catch (InterruptedException e)
+		{
+			logger.error("Sleep interrupted:", e);
+		}
+
+		logger.debug("Executing job...");
+		File dir = new File(oldCacheDir);
+		logger.debug("Deleting cache files in " + dir.getAbsolutePath());
+
+		cleanDirectory(dir);
 	}
 
 	/**
@@ -156,12 +177,13 @@ public class KairosDatastore
 
 			if (metric.getCacheTime() > 0)
 			{
-				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(), tempFile, metric.getCacheTime(), m_cacheDirectoryLock);
+				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(),
+						tempFile, metric.getCacheTime());
 			}
 
 			if (cachedResults == null)
 			{
-				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile, m_cacheDirectoryLock);
+				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile);
 			}
 		}
 		catch (Exception e)
@@ -187,7 +209,8 @@ public class KairosDatastore
 
 			if (metric.getCacheTime() > 0)
 			{
-				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(), tempFile, metric.getCacheTime(), m_cacheDirectoryLock);
+				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(),
+						tempFile, metric.getCacheTime());
 				if (cachedResults != null)
 				{
 					returnedRows = cachedResults.getRows();
@@ -198,7 +221,8 @@ public class KairosDatastore
 			if (cachedResults == null)
 			{
 				logger.debug("Cache MISS!");
-				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile, m_cacheDirectoryLock);
+				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(),
+						tempFile);
 				returnedRows = m_datastore.queryDatabase(metric, cachedResults);
 			}
 		}

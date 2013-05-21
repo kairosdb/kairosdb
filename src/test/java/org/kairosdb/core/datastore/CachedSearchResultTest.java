@@ -38,7 +38,7 @@ public class CachedSearchResultTest
 
 		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
 		CachedSearchResult csResult =
-				CachedSearchResult.createCachedSearchResult("metric1", tempFile, new ReentrantReadWriteLock());
+				CachedSearchResult.createCachedSearchResult("metric1", tempFile);
 
 		long now = System.currentTimeMillis();
 
@@ -90,7 +90,7 @@ public class CachedSearchResultTest
 	public void test_AddLongsBeyondBufferSize() throws IOException
 	{
 		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
-		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult("metric2", tempFile, new ReentrantReadWriteLock());
+		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult("metric2", tempFile);
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
 		csResult.startDataPointSet(Collections.<String, String>emptyMap());
@@ -122,7 +122,7 @@ public class CachedSearchResultTest
 	public void test_AddDoublesBeyondBufferSize() throws IOException
 	{
 		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
-		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult("metric3", tempFile, new ReentrantReadWriteLock());
+		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult("metric3", tempFile);
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
 		csResult.startDataPointSet(Collections.<String, String>emptyMap());

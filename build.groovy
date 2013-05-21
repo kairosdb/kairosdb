@@ -20,7 +20,7 @@ println("===============================================");
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "1.0.0_beta_3"
+version = "1.0.0_beta_2a"
 release = "1" //package release number
 summary = "KairosDB"
 description = """\

@@ -134,6 +134,17 @@ public class MetricsResource
 		}
 	}
 
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/query")
+	public Response corsPreflight()
+	{
+		//TODO: need to add the following headers
+		//Access-Control-Allow-Origin
+		//Access-Control-Allow-Headers
+		return (Response.status(200).build());
+	}
+
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/query")
@@ -157,6 +168,8 @@ public class MetricsResource
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new DataPointsStreamingOutput(formatter, aggregatedResults));
+
+			responseBuilder.header("Access-Control-Allow-Origin", "*");
 			return responseBuilder.build();
 		}
 		catch (JsonSyntaxException e)

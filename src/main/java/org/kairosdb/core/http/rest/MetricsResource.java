@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static javax.ws.rs.core.Response.ResponseBuilder;
@@ -104,6 +105,25 @@ public class MetricsResource
 	public Response getTagValues()
 	{
 		return executeNameQuery(NameType.TAG_VALUES);
+	}
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Consumes("application/gzip")
+	@Path("/datapoints")
+	public Response addGzip(InputStream gzip)
+	{
+		GZIPInputStream gzipInputStream = null;
+		try
+		{
+			gzipInputStream = new GZIPInputStream(gzip);
+		}
+		catch (IOException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addError(e.getMessage()).build();
+		}
+		return (add(gzipInputStream));
 	}
 
 	@POST

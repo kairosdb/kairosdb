@@ -78,6 +78,7 @@ public class MetricsResource
 		Package thisPackage = getClass().getPackage();
 		String versionString = thisPackage.getImplementationTitle()+" "+thisPackage.getImplementationVersion();
 		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \""+versionString+"\"}");
+		responseBuilder.header("Access-Control-Allow-Origin", "*");
 		return responseBuilder.build();
 	}
 
@@ -134,16 +135,6 @@ public class MetricsResource
 		}
 	}
 
-	@OPTIONS
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/datapoints/query")
-	public Response corsPreflight()
-	{
-		//TODO: need to add the following headers
-		//Access-Control-Allow-Origin
-		//Access-Control-Allow-Headers
-		return (Response.status(200).build());
-	}
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
@@ -194,6 +185,36 @@ public class MetricsResource
 		}
 	}
 
+	/**
+	 Information for this endpoint was taken from
+	 https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS
+
+	 Response to a cors preflight request to access data.
+	 */
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/query")
+	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers")String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method")String requestMethod)
+	{
+		ResponseBuilder responseBuilder = Response.status(Response.Status.OK);
+		responseBuilder.header("Access-Control-Allow-Origin", "*");
+		responseBuilder.header("Access-Control-Max-Age", "86400"); //Cache for one day
+		responseBuilder.header("Access-Control-Allow-Headers", requestHeaders);
+		if (requestMethod != null)
+			responseBuilder.header("Access-Control-Allow_Method", requestMethod);
+		return (responseBuilder.build());
+	}
+
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints")
+	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers")String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method")String requestMethod)
+	{
+		return (corsPreflightQuery(requestHeaders, requestMethod));
+	}
+
 
 	private Response executeNameQuery(NameType type)
 	{
@@ -217,6 +238,7 @@ public class MetricsResource
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new ValuesStreamingOutput(formatter, values));
+			responseBuilder.header("Access-Control-Allow-Origin", "*");
 			return responseBuilder.build();
 		}
 		catch (Exception e)

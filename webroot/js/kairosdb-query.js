@@ -13,7 +13,7 @@ kairosdb.dataPointsQuery = function (metricQuery, callback) {
 
 	$.ajax({
 		type: "POST",
-		url: "/api/v1/datapoints/query",
+		url: kairosHost+"/api/v1/datapoints/query",
 		headers: { 'Content-Type': ['application/json']},
 		data: JSON.stringify(metricQuery),
 		dataType: 'json',

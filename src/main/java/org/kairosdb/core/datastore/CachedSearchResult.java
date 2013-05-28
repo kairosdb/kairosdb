@@ -176,7 +176,7 @@ public class CachedSearchResult
 	/**
 	 Closes the underling file handle
 	 */
-	public void close()
+	private void close()
 	{
 		try
 		{

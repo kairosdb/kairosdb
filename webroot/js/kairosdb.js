@@ -44,6 +44,7 @@ kairosdb.Metric = function (name) {
 		}
 
 		this.group_by.push(groupBy);
+		return this;
 	};
 
 	this.addTag = function (name, value) {
@@ -52,6 +53,7 @@ kairosdb.Metric = function (name) {
 		}
 
 		this.tags[name].push(value);
+		return this;
 	};
 
 	this.addAggregator = function (name, value, unit) {
@@ -68,6 +70,7 @@ kairosdb.Metric = function (name) {
 		}
 
 		this.aggregators.push(aggregator);
+		return this;
 	}
 };
 

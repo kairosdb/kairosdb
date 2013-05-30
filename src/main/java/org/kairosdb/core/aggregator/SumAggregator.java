@@ -20,6 +20,7 @@ import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.Iterator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -43,7 +44,7 @@ public class SumAggregator extends RangeAggregator
 	{
 
 		@Override
-		public DataPoint getNextDataPoint(long returnTime, Iterator<DataPoint> dataPointRange)
+		public Iterable<DataPoint> getNextDataPoints(long returnTime, Iterator<DataPoint> dataPointRange)
 		{
 			double sum = 0;
 			int counter = 0;
@@ -58,7 +59,7 @@ public class SumAggregator extends RangeAggregator
 				logger.debug("Aggregating "+counter+" values");
 			}
 
-			return new DataPoint(returnTime, sum);
+			return Collections.singletonList(new DataPoint(returnTime, sum));
 		}
 	}
 }

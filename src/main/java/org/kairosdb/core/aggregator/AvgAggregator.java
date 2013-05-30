@@ -18,6 +18,7 @@ package org.kairosdb.core.aggregator;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 
+import java.util.Collections;
 import java.util.Iterator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -38,7 +39,7 @@ public class AvgAggregator extends RangeAggregator
 	{
 
 		@Override
-		public DataPoint getNextDataPoint(long returnTime, Iterator<DataPoint> dataPointRange)
+		public Iterable<DataPoint> getNextDataPoints(long returnTime, Iterator<DataPoint> dataPointRange)
 		{
 			int count = 0;
 			double sum = 0;
@@ -48,7 +49,7 @@ public class AvgAggregator extends RangeAggregator
 				count++;
 			}
 
-			return new DataPoint(returnTime, sum / count);
+			return Collections.singletonList(new DataPoint(returnTime, sum / count));
 		}
 	}
 

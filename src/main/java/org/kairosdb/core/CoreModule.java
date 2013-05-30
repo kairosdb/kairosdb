@@ -57,6 +57,7 @@ public class CoreModule extends AbstractModule
 		bind(AvgAggregator.class).in(Singleton.class);
 		bind(StdAggregator.class).in(Singleton.class);
 		bind(RateAggregator.class).in(Singleton.class);
+		bind(LeastSquaresAggregator.class).in(Singleton.class);
 
 		bind(ValueGroupBy.class).in(Singleton.class);
 		bind(TimeGroupBy.class).in(Singleton.class);

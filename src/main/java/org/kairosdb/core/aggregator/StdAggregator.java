@@ -18,6 +18,7 @@ package org.kairosdb.core.aggregator;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 
+import java.util.Collections;
 import java.util.Iterator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -45,7 +46,7 @@ public class StdAggregator extends RangeAggregator
 	private class StdDataPointAggregator implements RangeSubAggregator
 	{
 		@Override
-		public DataPoint getNextDataPoint(long returnTime, Iterator<DataPoint> dataPointRange)
+		public Iterable<DataPoint> getNextDataPoints(long returnTime, Iterator<DataPoint> dataPointRange)
 		{
 			int count = 0;
 			double average = 0;
@@ -61,7 +62,7 @@ public class StdAggregator extends RangeAggregator
 				stdDev = Math.sqrt((pwrSumAvg * count - count * average * average) / (count - 1));
 			}
 
-			return new DataPoint(returnTime, Double.isNaN(stdDev) ? 0 : stdDev);
+			return Collections.singletonList(new DataPoint(returnTime, Double.isNaN(stdDev) ? 0 : stdDev));
 		}
 	}
 

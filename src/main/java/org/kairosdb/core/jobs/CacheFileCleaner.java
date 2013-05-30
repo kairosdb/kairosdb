@@ -47,7 +47,7 @@ public class CacheFileCleaner implements KairosDBJob
 	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
 	{
 		logger.debug("Executing job...");
-		datastore.cleanCacheDir();
+		datastore.cleanCacheDir(true);
 		logger.debug("Job Completed");
 	}
 

@@ -21,6 +21,7 @@ import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.TimeZone;
@@ -88,12 +89,15 @@ public abstract class RangeAggregator implements Aggregator
 	{
 		private RangeSubAggregator m_subAggregator;
 		private Calendar m_calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		private Iterator<DataPoint> m_dpIterator;
+
 
 		public RangeDataPointAggregator(DataPointGroup innerDataPointGroup,
 				RangeSubAggregator subAggregator)
 		{
 			super(innerDataPointGroup);
 			m_subAggregator = subAggregator;
+			m_dpIterator = new ArrayList<DataPoint>().iterator();
 		}
 
 		/**
@@ -122,13 +126,22 @@ public abstract class RangeAggregator implements Aggregator
 		@Override
 		public DataPoint next()
 		{
-			SubRangeIterator subIterator = new SubRangeIterator(
-					getRange(currentDataPoint.getTimestamp()));
+			if (!m_dpIterator.hasNext())
+			{
+				SubRangeIterator subIterator = new SubRangeIterator(
+						getRange(currentDataPoint.getTimestamp()));
 
-			DataPoint ret = m_subAggregator.getNextDataPoint(currentDataPoint.getTimestamp(),
-					subIterator);
+				m_dpIterator = m_subAggregator.getNextDataPoints(currentDataPoint.getTimestamp(),
+						subIterator).iterator();
+			}
 
-			return (ret);
+			return (m_dpIterator.next());
+		}
+
+		@Override
+		public boolean hasNext()
+		{
+			return (m_dpIterator.hasNext() || super.hasNext());
 		}
 
 		//========================================================================
@@ -177,11 +190,14 @@ public abstract class RangeAggregator implements Aggregator
 		/**
 		 Returns an aggregated data point from a ragne that is passed in
 		 as dataPointRange.
-		 @param returnTime Timestamp to use on return data point.  This is currently
-		                   passing the timestamp of the first data point in the range.
-		 @param dataPointRange Range to aggregate over.
 		 @return
+
+		 @param
+			returnTime Timestamp to use on return data point.  This is currently
+		                   passing the timestamp of the first data point in the range.
+		@param
+			dataPointRange Range to aggregate over.
 		 */
-		public DataPoint getNextDataPoint(long returnTime, Iterator<DataPoint> dataPointRange);
+		public Iterable<DataPoint> getNextDataPoints(long returnTime, Iterator<DataPoint> dataPointRange);
 	}
 }

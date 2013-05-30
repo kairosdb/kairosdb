@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -146,8 +147,11 @@ public class KairosDatastoreTest
 	@Test
 	public void test_cleanCacheDir() throws IOException, DatastoreException
 	{
+		TestDatastore testds = new TestDatastore();
+		KairosDatastore datastore = new KairosDatastore(testds, Collections.EMPTY_LIST);
+
 		// Create files in the cache directory
-		File cacheDir = new File(System.getProperty("java.io.tmpdir") + "/kairos_cache/");
+		File cacheDir = new File(datastore.getCacheDir());
 		File file1 = new File(cacheDir, "testFile1");
 		file1.createNewFile();
 		File file2 = new File(cacheDir, "testFile2");
@@ -156,12 +160,10 @@ public class KairosDatastoreTest
 		File[] files = cacheDir.listFiles();
 		assertTrue(files.length > 0);
 
-		TestDatastore testds = new TestDatastore();
-		KairosDatastore datastore = new KairosDatastore(testds, Collections.EMPTY_LIST);
-		datastore.cleanCacheDir();
+		datastore.cleanCacheDir(false);
 
-		files = cacheDir.listFiles();
-		assertThat(files.length, equalTo(0));
+		assertFalse(file1.exists());
+		assertFalse(file2.exists());
 	}
 
 	private class TestDatastore implements Datastore

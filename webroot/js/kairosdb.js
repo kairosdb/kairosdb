@@ -14,7 +14,8 @@ kairosdb.Aggregators =
 	MIN: "min",
 	RATE: "rate",
 	SORT: "sort",
-	SUM: "sum"
+	SUM: "sum",
+	LEAST_SQUARES: "least_squares"
 };
 
 kairosdb.Unit =  //Values used for Aggregator sampling and Relative time

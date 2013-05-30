@@ -76,6 +76,11 @@ public class KairosDatastore
 		}
 	}
 
+	public String getCacheDir()
+	{
+		return (m_cacheDir);
+	}
+
 	private void newCacheDirectory()
 	{
 		m_cacheDir = m_baseCacheDir + "/" + System.currentTimeMillis() + "/";
@@ -103,18 +108,21 @@ public class KairosDatastore
 		directory.delete();
 	}
 
-	public void cleanCacheDir()
+	public void cleanCacheDir(boolean wait)
 	{
 		String oldCacheDir = m_cacheDir;
 		newCacheDirectory();
 
-		try
+		if (wait)
 		{
-			Thread.sleep(60000);
-		}
-		catch (InterruptedException e)
-		{
-			logger.error("Sleep interrupted:", e);
+			try
+			{
+				Thread.sleep(60000);
+			}
+			catch (InterruptedException e)
+			{
+				logger.error("Sleep interrupted:", e);
+			}
 		}
 
 		logger.debug("Executing job...");

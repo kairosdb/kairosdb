@@ -18,6 +18,7 @@ package org.kairosdb.core.aggregator;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 
+import java.util.Collections;
 import java.util.Iterator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -38,7 +39,7 @@ public class MinAggregator extends RangeAggregator
 	{
 
 		@Override
-		public DataPoint getNextDataPoint(long returnTime, Iterator<DataPoint> dataPointRange)
+		public Iterable<DataPoint> getNextDataPoints(long returnTime, Iterator<DataPoint> dataPointRange)
 		{
 			double min = Double.MAX_VALUE;
 			while (dataPointRange.hasNext())
@@ -48,7 +49,7 @@ public class MinAggregator extends RangeAggregator
 				min = Math.min(min, dp.getDoubleValue());
 			}
 
-			return new DataPoint(returnTime, min);
+			return Collections.singletonList(new DataPoint(returnTime, min));
 		}
 	}
 }

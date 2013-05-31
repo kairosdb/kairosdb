@@ -23,6 +23,7 @@
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2" />
 		<dependency org="org.slf4j" name="jul-to-slf4j" rev="1.7.2" />
 		<dependency org="org.apache.commons" name="commons-math3" rev="3.2" />
+		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.2.5" />
 
 		<dependency org="ch.qos.logback" name="logback-core" rev="1.0.9" />
 		<dependency org="ch.qos.logback" name="logback-classic" rev="1.0.9" />

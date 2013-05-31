@@ -13,7 +13,7 @@
 }
 
 .header {
-	color: #2779aa;;
+	color: #2779aa;
 }
 
 .wire-frame {
@@ -64,4 +64,9 @@ button {
 
 .tagDialog {
 	display:none;
+}
+
+a
+{
+    color: #2779aa;
 }

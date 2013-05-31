@@ -1,0 +1,86 @@
+<html xmlns="http://www.w3.org/1999/html">
+
+<head>
+	<link href="css/cupertino/jquery-ui-1.10.0.custom.css" rel="stylesheet">
+	<link href="css/style.css" rel="stylesheet">
+
+	<script src="js/jquery.1.9.0.min.js"></script>
+	<script src="js/jquery-url.js"></script>
+	<script src="js/kairosdb.js"></script>
+	<script src="js/kairosdb-query.js"></script>
+	<script src="js/jquery-ui-1.10.0.custom.min.js"></script>
+	<script src="js/graph.js"></script>
+	<script src="js/jquery.flot.js"></script>
+	<script src="js/jquery.flot.time.js"></script>
+	<script src="js/jquery.flot.selection.js"></script>
+	<script src="js/jquery.flot.resize.js"></script>
+
+	<script>
+		var kairosHost = '';
+		var metricNames = [];
+		var tagNames = [];
+		var tagValues = [];
+
+		function loadChart()
+		{
+			try
+			{
+				var query = decodeURI($.url("?q"));
+				var queryObj = JSON.parse(query);
+
+				showChartForQuery("", "(Click and drag to zoom)", "", queryObj)
+			}
+			catch (e)
+			{
+				showErrorMessage(e);
+			}
+		}
+
+		$(document).ready(function()
+		{
+			$("#errorContainer").hide();
+
+			loadChart();
+		});
+
+
+	</script>
+
+</head>
+
+<body>
+
+
+
+<div class="ui-widget" style="padding-bottom: 10px;">
+	<div id="errorContainer" class="ui-state-error ui-corner-all" style="padding:5px; width: 500px;"></div>
+</div>
+
+<span class="header ui-widget">Query Time: </span><span id="queryTime" class="ui-widget"></span><br>
+<span class="header ui-widget">Data Points: </span><span id="numDataPoints" class="ui-widget"></span><br>
+<span id="status" class="ui-widget"></span>
+
+<table style="width: 100%;">
+	<tr>
+		<td align="right">
+			<div id="graphLegend"></div>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<div id="flotTitle" class="graphSubtitle"></div>
+		</td>
+		<td></td>
+	</tr>
+	<tr>
+		<td style="width: 100%;">
+			<div id="flotcontainer" style="width: 100%; height:300px;"></div>
+		</td>
+	</tr>
+</table>
+
+<button id="resetZoom" class=ui-widget>Reset Zoom</button>
+<button id="refreshGraph" class="ui-widget" onclick="loadChart()">Refresh Graph</button>
+
+</body>
+</html>

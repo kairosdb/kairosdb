@@ -104,6 +104,8 @@ function updateChart() {
 	}
 
 	$("#query-text").val(JSON.stringify(query, null, 2));
+	$("#graph_link").attr("href", "view.html?q="+encodeURI(JSON.stringify(query, null, 0)));
+	$("#graph_link").show();
 	showChartForQuery("", "(Click and drag to zoom)", "", query);
 }
 

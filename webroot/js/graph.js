@@ -479,7 +479,7 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 			hoverable: true
 		},
 		selection: {
-			mode: "x"
+			mode: "xy"
 		},
 		xaxis: {
 			mode: "time",

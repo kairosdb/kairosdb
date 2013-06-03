@@ -1,4 +1,8 @@
+var scaleMetricArray;
+
 function updateChart() {
+	scaleMetricArray = [];
+
 	$("#resetZoom").hide();
 	$("#errorContainer").hide();
 
@@ -74,6 +78,10 @@ function updateChart() {
 			if (name && value)
 				metric.addTag(name, value);
 		});
+
+		// Scale metric
+		var scale = $metricContainer.find(".scale");
+		scaleMetricArray.push(scale.is(':checked'));
 
 		query.addMetric(metric);
 	});
@@ -223,6 +231,11 @@ function addMetric() {
 	}).click(function () {
 			addGroupBy($groupByContainer)
 		});
+
+	// Add scale checkbox
+	if (metricCount < 1){
+		$metricContainer.find(".checkbox").hide();
+	}
 
 	// Tell tabs object to update changes
 	$("#tabs").tabs("refresh");
@@ -432,11 +445,40 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 		return;
 	}
 
+	var flotOptions = {
+		series: {
+			lines: {
+				show: true
+			},
+			points: {
+				show: true
+			}
+		},
+		grid: {
+			hoverable: true
+		},
+		selection: {
+			mode: "xy"
+		},
+		xaxis: {
+			mode: "time",
+			timezone: "browser"
+		},
+		legend: {
+			container: $("#graphLegend"),
+			noColumns: 5
+		},
+		colors: ["#4572a7", "#aa4643", "#89a54e", "#80699b", "#db843d"]
+	};
+
+	flotOptions.yaxes = [];
+
 	var dataPointCount = 0;
 	var data = [];
+	var axis = 1;
+	var metricCount = 0;
 	queries.forEach(function (resultSet) {
 
-		var metricCount = 0;
 		resultSet.results.forEach(function (queryResult) {
 
 			var groupByMessage = "";
@@ -463,36 +505,26 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 			result.label = queryResult.name + groupByMessage;
 			result.data = queryResult.values;
 
+			var yaxis = {};
+			if (metricCount == 0){
+				yaxis.color = flotOptions.colors[metricCount];// Note this is broken in version 0.8.1.
+				flotOptions.yaxes.push(yaxis);
+				result.yaxis = axis;
+				axis++;
+			}
+			else if (scaleMetricArray[metricCount]) {
+				yaxis.position = 'right';
+				yaxis.color = flotOptions.colors[metricCount];// Note this is broken in version 0.8.1.
+				flotOptions.yaxes.push(yaxis);
+				result.yaxis = axis;
+				axis++;
+			}
+
 			dataPointCount += queryResult.values.length;
 			data.push(result);
+			metricCount++;
 		});
 	});
-
-	var flotOptions = {
-		series: {
-			lines: {
-				show: true
-			},
-			points: {
-				show: true
-			}
-		},
-		grid: {
-			hoverable: true
-		},
-		selection: {
-			mode: "xy"
-		},
-		xaxis: {
-			mode: "time",
-			timezone: "browser"
-		},
-		legend: {
-			container: $("#graphLegend"),
-			noColumns: 5
-		},
-		colors: ["#4572a7", "#aa4643", "#89a54e", "#80699b", "#db843d"]
-	};
 
 	$("#numDataPoints").html(dataPointCount);
 

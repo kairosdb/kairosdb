@@ -1,8 +1,4 @@
-var scaleMetricArray;
-
 function updateChart() {
-	scaleMetricArray = [];
-
 	$("#resetZoom").hide();
 	$("#errorContainer").hide();
 
@@ -79,10 +75,6 @@ function updateChart() {
 				metric.addTag(name, value);
 		});
 
-		// Scale metric
-		var scale = $metricContainer.find(".scale");
-		scaleMetricArray.push(scale.is(':checked'));
-
 		query.addMetric(metric);
 	});
 
@@ -111,10 +103,28 @@ function updateChart() {
 		}
 	}
 
+	var metricData = getAdditionalChartData();
 	$("#query-text").val(JSON.stringify(query, null, 2));
-	$("#graph_link").attr("href", "view.html?q="+encodeURI(JSON.stringify(query, null, 0)));
+	$("#graph_link").attr("href", "view.html?q="+encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
 	$("#graph_link").show();
-	showChartForQuery("", "(Click and drag to zoom)", "", query);
+	showChartForQuery("", "(Click and drag to zoom)", "", query, metricData);
+}
+
+/**
+ * Returns additional data in a JSON object of the form
+ * metrics: [{scale:true}, {scale:false}]
+ */
+function getAdditionalChartData()
+{
+	var metricDataArray = [];
+
+	$('.metricContainer').each(function (index, element){
+		var metric = {};
+		metric.scale = $(element).find(".scale").is(':checked');
+		metricDataArray.push(metric);
+	});
+
+	return metricDataArray;
 }
 
 function showErrorMessage(message) {
@@ -434,13 +444,13 @@ function addTag(tagContainer) {
 		});
 }
 
-function showChartForQuery(title, subTitle, yAxisTitle, query) {
+function showChartForQuery(title, subTitle, yAxisTitle, query, metricData) {
 	kairosdb.dataPointsQuery(query, function (queries) {
-		showChart(title, subTitle, yAxisTitle, query, queries);
+		showChart(title, subTitle, yAxisTitle, queries, metricData);
 	});
 }
 
-function showChart(title, subTitle, yAxisTitle, query, queries) {
+function showChart(title, subTitle, yAxisTitle, queries, metricData) {
 	if (queries.length == 0) {
 		return;
 	}
@@ -479,6 +489,19 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 	var metricCount = 0;
 	queries.forEach(function (resultSet) {
 
+		var yaxis = {};
+		if (metricCount == 0){
+			yaxis.color = flotOptions.colors[metricCount];// Note this is broken in version 0.8.1.
+			flotOptions.yaxes.push(yaxis);
+			axis++;
+		}
+		else if (metricData[metricCount].scale) {
+			yaxis.position = 'right';
+			yaxis.color = flotOptions.colors[metricCount];// Note this is broken in version 0.8.1.
+			flotOptions.yaxes.push(yaxis);
+			axis++;
+		}
+
 		resultSet.results.forEach(function (queryResult) {
 
 			var groupByMessage = "";
@@ -504,26 +527,12 @@ function showChart(title, subTitle, yAxisTitle, query, queries) {
 			result.name = queryResult.name + groupByMessage;
 			result.label = queryResult.name + groupByMessage;
 			result.data = queryResult.values;
-
-			var yaxis = {};
-			if (metricCount == 0){
-				yaxis.color = flotOptions.colors[metricCount];// Note this is broken in version 0.8.1.
-				flotOptions.yaxes.push(yaxis);
-				result.yaxis = axis;
-				axis++;
-			}
-			else if (scaleMetricArray[metricCount]) {
-				yaxis.position = 'right';
-				yaxis.color = flotOptions.colors[metricCount];// Note this is broken in version 0.8.1.
-				flotOptions.yaxes.push(yaxis);
-				result.yaxis = axis;
-				axis++;
-			}
+			result.yaxis = axis;
 
 			dataPointCount += queryResult.values.length;
 			data.push(result);
-			metricCount++;
 		});
+		metricCount++;
 	});
 
 	$("#numDataPoints").html(dataPointCount);

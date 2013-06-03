@@ -2,6 +2,12 @@ package org.kairosdb.datastore.remote;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
@@ -15,6 +21,7 @@ import org.kairosdb.core.exception.DatastoreException;
 import java.io.*;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 /**
  Created with IntelliJ IDEA.
@@ -25,21 +32,41 @@ import java.util.Map;
  */
 public class RemoteDatastore implements Datastore
 {
-	public static final String TEMP_DIR_PROP = "kairosdb.datastore.remote.tmp_dir";
+	public static final String DATA_DIR_PROP = "kairosdb.datastore.remote.data_dir";
+	public static final String REMOTE_URL_PROP = "kairosdb.datastore.remote.remote_url";
 
-	private Object m_cacheFileLock = new Object();
-	private BufferedWriter m_cacheWriter;
-	private String m_cacheFileName;
+	private Object m_dataFileLock = new Object();
+	private BufferedWriter m_dataWriter;
+	private String m_dataFileName;
 	private volatile boolean m_firstDataPoint = true;
+	private String m_dataDirectory;
+	private String m_remoteUrl;
 
 
 	@Inject
-	public RemoteDatastore(@Named(TEMP_DIR_PROP) String tempDir) throws IOException
+	public RemoteDatastore(@Named(DATA_DIR_PROP) String dataDir,
+			@Named(REMOTE_URL_PROP) String remoteUrl) throws IOException
 	{
-		m_cacheFileName = tempDir+"/"+System.currentTimeMillis();
+		m_dataDirectory = dataDir;
+		m_remoteUrl = remoteUrl;
 
-		m_cacheWriter = new BufferedWriter(new FileWriter(m_cacheFileName));
-		m_cacheWriter.write("[\n");
+		//TODO: send any data in directory before starting
+		openDataFile();
+	}
+
+	private void openDataFile() throws IOException
+	{
+		m_dataFileName = m_dataDirectory+"/"+System.currentTimeMillis();
+
+		m_dataWriter = new BufferedWriter(new FileWriter(m_dataFileName));
+		m_dataWriter.write("[\n");
+	}
+
+	private void closeDataFile() throws IOException
+	{
+		m_dataWriter.write("]");
+		m_dataWriter.flush();
+		m_dataWriter.close();
 	}
 
 	@Override
@@ -47,9 +74,10 @@ public class RemoteDatastore implements Datastore
 	{
 		try
 		{
-			m_cacheWriter.write("]");
-			m_cacheWriter.flush();
-			m_cacheWriter.close();
+			synchronized (m_dataFileLock)
+			{
+				closeDataFile();
+			}
 		}
 		catch (IOException e)
 		{
@@ -96,17 +124,17 @@ public class RemoteDatastore implements Datastore
 			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
 		}
 
-		synchronized (m_cacheFileLock)
+		synchronized (m_dataFileLock)
 		{
 			try
 			{
 				if (!m_firstDataPoint)
 				{
-					m_cacheWriter.write(",\n");
+					m_dataWriter.write(",\n");
 				}
 				m_firstDataPoint = false;
 
-				caw.writeTo(m_cacheWriter);
+				caw.writeTo(m_dataWriter);
 			}
 			catch (IOException e)
 			{
@@ -114,6 +142,30 @@ public class RemoteDatastore implements Datastore
 			}
 		}
 
+	}
+
+	public void sendData() throws IOException
+	{
+		String oldDataFile = m_dataFileName;
+
+		synchronized (m_dataFileLock)
+		{
+			closeDataFile();
+			openDataFile();
+		}
+
+		HttpClient client = new DefaultHttpClient();
+		HttpPost post = new HttpPost(m_remoteUrl+"/api/v1/datapoints");
+
+		GZIPInputStream zipStream = new GZIPInputStream(new FileInputStream(oldDataFile));
+		post.setHeader("Content-Type", "application/gzip");
+		post.setEntity(new InputStreamEntity(zipStream, -1));
+		HttpResponse response = client.execute(post);
+
+		if (response.getStatusLine().getStatusCode() == 200)
+		{
+			new File(oldDataFile).delete();
+		}
 	}
 
 	@Override

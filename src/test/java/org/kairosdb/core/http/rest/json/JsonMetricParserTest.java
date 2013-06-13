@@ -43,6 +43,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
+
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		try

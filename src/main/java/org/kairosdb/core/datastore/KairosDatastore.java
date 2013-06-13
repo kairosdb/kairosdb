@@ -19,6 +19,7 @@ package org.kairosdb.core.datastore;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.Aggregator;
@@ -45,7 +46,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class KairosDatastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(KairosDatastore.class);
-
+	public static final String QUERY_CACHE_DIR = "kairosdb.query_cache.cache_dir";
 
 	private MessageDigest m_messageDigest;
 	private String m_baseCacheDir;
@@ -63,6 +64,7 @@ public class KairosDatastore
 		try
 		{
 			m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
+
 			cleanDirectory(new File(m_baseCacheDir));
 			newCacheDirectory();
 			File cacheDirectory = new File(m_cacheDir);
@@ -74,6 +76,13 @@ public class KairosDatastore
 		{
 			throw new DatastoreException(e);
 		}
+	}
+
+	@Inject(optional = true)
+	public void setBaseCacheDir(@Named(QUERY_CACHE_DIR) String cacheTempDir)
+	{
+		if (cacheTempDir != null && !cacheTempDir.equals(""))
+			m_baseCacheDir = cacheTempDir;
 	}
 
 	public String getCacheDir()

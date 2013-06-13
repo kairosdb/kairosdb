@@ -39,9 +39,9 @@ public class IncreaseMaxBufferSizesJob implements KairosDBJob
 	private String schedule;
 
 	@Inject
-	public IncreaseMaxBufferSizesJob(@Named(SCHEDULE) String schedule, Datastore datastore)
+	public IncreaseMaxBufferSizesJob(@Named(SCHEDULE) String schedule, CassandraDatastore datastore)
 	{
-		this.datastore = (CassandraDatastore) datastore;
+		this.datastore = datastore;
 		this.schedule = schedule;
 	}
 

@@ -31,7 +31,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
 public class CacheFileCleaner implements KairosDBJob
 {
 	public static final Logger logger = LoggerFactory.getLogger(CacheFileCleaner.class);
-	public static final String CLEANING_SCHEDULE = "kairosdb.job.cache_file_cleaner_schedule";
+	public static final String CLEANING_SCHEDULE = "kairosdb.query_cache.cache_file_cleaner_schedule";
 
 	private final KairosDatastore datastore;
 	private String schedule;

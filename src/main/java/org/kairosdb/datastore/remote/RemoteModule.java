@@ -17,5 +17,7 @@ public class RemoteModule extends AbstractModule
 	protected void configure()
 	{
 		bind(Datastore.class).to(RemoteDatastore.class).in(Scopes.SINGLETON);
+		bind(RemoteDatastore.class).in(Scopes.SINGLETON);
+		bind(RemoteSendJob.class).in(Scopes.SINGLETON);
 	}
 }

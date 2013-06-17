@@ -19,6 +19,11 @@ package org.kairosdb.core.http;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.inject.servlet.GuiceFilter;
+import org.eclipse.jetty.security.ConstraintMapping;
+import org.eclipse.jetty.security.ConstraintSecurityHandler;
+import org.eclipse.jetty.security.HashLoginService;
+import org.eclipse.jetty.security.SecurityHandler;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.DefaultHandler;
@@ -26,6 +31,8 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.util.security.Credential;
 import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.exception.KariosDBException;
 import org.slf4j.Logger;
@@ -38,10 +45,15 @@ public class WebServer implements KairosDBService
 
 	public static final String JETTY_PORT_PROPERTY = "kairosdb.jetty.port";
 	public static final String JETTY_WEB_ROOT_PROPERTY = "kairosdb.jetty.static_web_root";
+	public static final String JETTY_AUTH_USER_PROPERTY = "kairosdb.jetty.basic_auth.user";
+	public static final String JETTY_AUTH_PASSWORD_PROPERTY = "kairosdb.jetty.basic_auth.password";
 
 	private int m_port;
 	private String m_webRoot;
 	private Server m_server;
+	private String m_authUser = null;
+	private String m_authPassword = null;
+
 
 	@Inject
 	public WebServer(@Named(JETTY_PORT_PROPERTY)int port,
@@ -49,6 +61,14 @@ public class WebServer implements KairosDBService
 	{
 		m_port = port;
 		m_webRoot = webRoot;
+	}
+
+	@Inject(optional = true)
+	public void setAuthCredentials(@Named(JETTY_AUTH_USER_PROPERTY)String user,
+			@Named(JETTY_AUTH_PASSWORD_PROPERTY)String password)
+	{
+		m_authUser = user;
+		m_authPassword = password;
 	}
 
 	@Override
@@ -59,6 +79,13 @@ public class WebServer implements KairosDBService
 			m_server = new Server(m_port);
 			ServletContextHandler servletContextHandler =
 					new ServletContextHandler();
+
+			//Turn on basic auth if the user was specified
+			if (m_authUser != null)
+			{
+				servletContextHandler.setSecurityHandler(basicAuth(m_authUser, m_authPassword, "kairos"));
+				servletContextHandler.setContextPath("/");
+			}
 
 			servletContextHandler.addFilter(GuiceFilter.class, "/api/*", null);
 			servletContextHandler.addServlet(DefaultServlet.class, "/api/*");
@@ -92,5 +119,30 @@ public class WebServer implements KairosDBService
 		{
 			logger.error("Error stopping web server", e);
 		}
+	}
+
+	private static final SecurityHandler basicAuth(String username, String password, String realm) {
+
+		HashLoginService l = new HashLoginService();
+		l.putUser(username, Credential.getCredential(password), new String[] {"user"});
+		l.setName(realm);
+
+		Constraint constraint = new Constraint();
+		constraint.setName(Constraint.__BASIC_AUTH);
+		constraint.setRoles(new String[]{"user"});
+		constraint.setAuthenticate(true);
+
+		ConstraintMapping cm = new ConstraintMapping();
+		cm.setConstraint(constraint);
+		cm.setPathSpec("/*");
+
+		ConstraintSecurityHandler csh = new ConstraintSecurityHandler();
+		csh.setAuthenticator(new BasicAuthenticator());
+		csh.setRealmName("myrealm");
+		csh.addConstraintMapping(cm);
+		csh.setLoginService(l);
+
+		return csh;
+
 	}
 }

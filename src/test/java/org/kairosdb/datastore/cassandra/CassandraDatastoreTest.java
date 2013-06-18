@@ -22,6 +22,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
@@ -111,7 +112,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				null, 1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, 1000, 50000, "hostname");
 
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
-				Collections.EMPTY_LIST);
+				Collections.<DataPointListener>emptyList());
 
 		loadCassandraData();
 		loadData();
@@ -160,8 +161,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		query.setEndTime(s_dataPointTime);
 		query.setTags(tagFilter);
 
-		KairosDatastore kds = new KairosDatastore(s_datastore, Collections.EMPTY_LIST);
-		List<DataPointGroup> results = kds.query(query);
+		List<DataPointGroup> results = DatastoreTestHelper.s_datastore.query(query);
 
 		DataPointGroup dataPointGroup = results.get(0);
 		int counter = 0;

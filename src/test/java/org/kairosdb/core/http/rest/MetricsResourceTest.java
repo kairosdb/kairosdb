@@ -19,12 +19,6 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.inject.*;
 import com.google.inject.name.Names;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,6 +35,7 @@ import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.GsonParser;
+import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.testing.TestingDataPointRowImpl;
 
@@ -50,8 +45,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertThat;
@@ -64,7 +57,7 @@ public class MetricsResourceTest
 	private static final String TAG_NAMES_URL = "http://localhost:9000/api/v1/tagnames";
 	private static final String TAG_VALUES_URL = "http://localhost:9000/api/v1/tagvalues";
 
-	private static HttpClient client;
+	private static Client client;
 	private static WebServer server;
 
 	@BeforeClass
@@ -90,7 +83,7 @@ public class MetricsResourceTest
 		server = injector.getInstance(WebServer.class);
 		server.start();
 
-		client = new DefaultHttpClient();
+		client = new Client();
 	}
 
 	@AfterClass
@@ -105,7 +98,7 @@ public class MetricsResourceTest
 	@Test
 	public void testAddEmptyBody() throws Exception
 	{
-		JsonResponse response = post("", ADD_METRIC_URL);
+		JsonResponse response = client.post("", ADD_METRIC_URL);
 
 		assertResponse(response, 400, "{\"errors\":[\"Invalid json. No content due to end of input.\"]}");
 	}
@@ -115,7 +108,7 @@ public class MetricsResourceTest
 	{
 		String json = Resources.toString(Resources.getResource("single-metric-long.json"), Charsets.UTF_8);
 
-		JsonResponse response = post(json, ADD_METRIC_URL);
+		JsonResponse response = client.post(json, ADD_METRIC_URL);
 
 		assertResponse(response, 204);
 	}
@@ -125,7 +118,7 @@ public class MetricsResourceTest
 	{
 		String json = Resources.toString(Resources.getResource("single-metric-double.json"), Charsets.UTF_8);
 
-		JsonResponse response = post(json, ADD_METRIC_URL);
+		JsonResponse response = client.post(json, ADD_METRIC_URL);
 
 		assertResponse(response, 204);
 	}
@@ -135,7 +128,7 @@ public class MetricsResourceTest
 	{
 		String json = Resources.toString(Resources.getResource("multiple-datapoints-metric.json"), Charsets.UTF_8);
 
-		JsonResponse response = post(json, ADD_METRIC_URL);
+		JsonResponse response = client.post(json, ADD_METRIC_URL);
 
 		assertResponse(response, 204);
 	}
@@ -145,7 +138,7 @@ public class MetricsResourceTest
 	{
 		String json = Resources.toString(Resources.getResource("multi-metric-long.json"), Charsets.UTF_8);
 
-		JsonResponse response = post(json, ADD_METRIC_URL);
+		JsonResponse response = client.post(json, ADD_METRIC_URL);
 
 		assertThat(response.getStatusCode(), equalTo(204));
 	}
@@ -155,7 +148,7 @@ public class MetricsResourceTest
 	{
 		String json = Resources.toString(Resources.getResource("single-metric-missing-name.json"), Charsets.UTF_8);
 
-		JsonResponse response = post(json, ADD_METRIC_URL);
+		JsonResponse response = client.post(json, ADD_METRIC_URL);
 
 		assertResponse(response, 400, "{\"errors\":[\"metric[0].name may not be empty.\"]}");
 	}
@@ -165,7 +158,7 @@ public class MetricsResourceTest
 	{
 		String json = Resources.toString(Resources.getResource("multi-metric-invalid-timestamp.json"), Charsets.UTF_8);
 
-		JsonResponse response = post(json, ADD_METRIC_URL);
+		JsonResponse response = client.post(json, ADD_METRIC_URL);
 
 		assertResponse(response, 400, "{\"errors\":[\"datapoints.timestamp must be greater than or equal to 1\"]}");
 	}
@@ -175,7 +168,7 @@ public class MetricsResourceTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
 
-		JsonResponse response = post(json, GET_METRIC_URL);
+		JsonResponse response = client.post(json, GET_METRIC_URL);
 
 		assertResponse(response, 200,
 				"{\"queries\":" +
@@ -188,7 +181,7 @@ public class MetricsResourceTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-invalid-relative-unit.json"), Charsets.UTF_8);
 
-		JsonResponse response = post(json, GET_METRIC_URL);
+		JsonResponse response = client.post(json, GET_METRIC_URL);
 
 		assertResponse(response, 400,
 				"{\"errors\":[\"\\\"bogus\\\" is not a valid time unit, must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS\"]}");
@@ -199,7 +192,7 @@ public class MetricsResourceTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-invalid-json.json"), Charsets.UTF_8);
 
-		JsonResponse response = post(json, GET_METRIC_URL);
+		JsonResponse response = client.post(json, GET_METRIC_URL);
 
 		assertResponse(response, 400,
 				"{\"errors\":[\"com.google.gson.stream.MalformedJsonException: Expected EOF at line 2 column 21\"]}");
@@ -208,7 +201,7 @@ public class MetricsResourceTest
 	@Test
 	public void testMetricNames() throws IOException
 	{
-		JsonResponse response = get(METRIC_NAMES_URL);
+		JsonResponse response = client.get(METRIC_NAMES_URL);
 
 		assertResponse(response, 200, "{\"results\":[\"cpu\",\"memory\",\"disk\",\"network\"]}");
 	}
@@ -216,7 +209,7 @@ public class MetricsResourceTest
 	@Test
 	public void testTagNames() throws IOException
 	{
-		JsonResponse response = get(TAG_NAMES_URL);
+		JsonResponse response = client.get(TAG_NAMES_URL);
 
 		assertResponse(response, 200, "{\"results\":[\"server1\",\"server2\",\"server3\"]}");
 	}
@@ -224,7 +217,7 @@ public class MetricsResourceTest
 	@Test
 	public void testTagValues() throws IOException
 	{
-		JsonResponse response = get(TAG_VALUES_URL);
+		JsonResponse response = client.get(TAG_VALUES_URL);
 
 		assertResponse(response, 200, "{\"results\":[\"larry\",\"moe\",\"curly\"]}");
 	}
@@ -241,24 +234,6 @@ public class MetricsResourceTest
 		assertThat(response.getStatusCode(), equalTo(responseCode));
 		assertThat(response.getHeader("Content-Type"), startsWith("application/json"));
 		assertThat(response.getStatusString(), equalTo("No Content"));
-	}
-
-	private JsonResponse post(String json, String url) throws IOException
-	{
-		HttpPost post = new HttpPost(url);
-		post.setHeader(CONTENT_TYPE, APPLICATION_JSON);
-		post.setEntity(new StringEntity(json));
-
-
-		HttpResponse response = client.execute(post);
-		return new JsonResponse(response);
-	}
-
-	private JsonResponse get(String url) throws IOException
-	{
-		HttpGet get = new HttpGet(url);
-		HttpResponse response = client.execute(get);
-		return new JsonResponse(response);
 	}
 
 	public static class TestDatastore implements Datastore
@@ -332,7 +307,6 @@ public class MetricsResourceTest
 		@Override
 		public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 		{
-			//To change body of implemented methods use File | Settings | File Templates.
 		}
 	}
 

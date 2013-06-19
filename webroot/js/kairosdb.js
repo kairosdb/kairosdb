@@ -57,6 +57,22 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
+	this.addRate = function(unit)
+	{
+		if (!this.aggregators)
+			this.aggregators = [];
+
+		var rate = {};
+		rate.name = "rate";
+		if (unit)
+		{
+			rate.unit = unit;
+		}
+
+		this.aggregators.push(rate);
+		return this;
+	};
+
 	this.addAggregator = function (name, value, unit) {
 		if (!this.aggregators)
 			this.aggregators = [];

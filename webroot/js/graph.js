@@ -60,10 +60,19 @@ function updateChart() {
 		// Add aggregators
 		$metricContainer.find(".aggregator").each(function (index, aggregator) {
 			var name = $(aggregator).find(".aggregatorName").val();
-			var value = $(aggregator).find(".aggregatorSamplingValue").val();
-			var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 
-			metric.addAggregator(name, value, unit);
+			if (name == 'rate')
+			{
+				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				metric.addRate(unit);
+			}
+			else
+			{
+				var value = $(aggregator).find(".aggregatorSamplingValue").val();
+				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+
+				metric.addAggregator(name, value, unit);
+			}
 		});
 
 		// Add Tags
@@ -387,7 +396,7 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 
 			// clear values
-			$aggregatorContainer.find(".aggregatorSamplingValue").val("")
+			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
 		else
 			$aggregatorContainer.find(".aggregatorSampling").show();

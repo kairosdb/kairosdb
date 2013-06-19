@@ -38,10 +38,21 @@ public class LeastSquaresAggregator extends RangeAggregator
 		{
 			long start = -1L;
 			long stop = -1L;
+			DataPoint first = null;
+			DataPoint second = null;
+			int count = 0;
 
 			while (dataPointRange.hasNext())
 			{
+				count ++;
 				DataPoint dp = dataPointRange.next();
+				if (second == null)
+				{
+					if (first == null)
+						first = dp;
+					else
+						second = dp;
+				}
 
 				stop = dp.getTimestamp();
 				if (start == -1L)
@@ -51,8 +62,21 @@ public class LeastSquaresAggregator extends RangeAggregator
 			}
 
 			List<DataPoint> ret = new ArrayList<DataPoint>();
-			ret.add(new DataPoint(start, m_simpleRegression.predict(start)));
-			ret.add(new DataPoint(stop, m_simpleRegression.predict(stop)));
+
+			if (count == 1)
+			{
+				ret.add(first);
+			}
+			else if (count == 2)
+			{
+				ret.add(first);
+				ret.add(second);
+			}
+			else if (count != 0)
+			{
+				ret.add(new DataPoint(start, m_simpleRegression.predict(start)));
+				ret.add(new DataPoint(stop, m_simpleRegression.predict(stop)));
+			}
 
 			return (ret);
 		}

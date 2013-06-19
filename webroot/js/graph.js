@@ -495,7 +495,7 @@ function showChart(title, subTitle, yAxisTitle, queries, metricData) {
 			flotOptions.yaxes.push(yaxis);
 			axis++;
 		}
-		else if (metricData[metricCount].scale) {
+		else if ((metricData != null) && (metricData[metricCount].scale)) {
 			yaxis.position = 'right';
 			yaxis.color = flotOptions.colors[metricCount];// Note this is broken in version 0.8.1.
 			flotOptions.yaxes.push(yaxis);

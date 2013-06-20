@@ -485,7 +485,7 @@ function showChart(title, subTitle, yAxisTitle, queries, metricData) {
 
 	var dataPointCount = 0;
 	var data = [];
-	var axis = 1;
+	var axis = 0;
 	var metricCount = 0;
 	queries.forEach(function (resultSet) {
 
@@ -602,12 +602,28 @@ function drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions) {
 	});
 
 	$flotcontainer.bind("plotselected", function (event, ranges) {
-		$.plot($flotcontainer, data, $.extend(true, {}, flotOptions, {
-			xaxis: {
-				min: ranges.xaxis.from,
-				max: ranges.xaxis.to
+		if (flotOptions.yaxes.length != (Object.keys(ranges).length - 1))
+			return;
+
+		var axes = {};
+		axes.yaxes = [];
+
+		$.each(ranges, function(key, value) {
+			if (key == "xaxis")
+			{
+				axes.xaxis = {};
+				axes.xaxis.min = value.from;
+				axes.xaxis.max = value.to;
 			}
-		}));
+			else {
+				var axis = {};
+				axis.min = value.from;
+				axis.max = value.to;
+				axes.yaxes.push(axis);
+			}
+		});
+
+		$.plot($flotcontainer, data, $.extend(true, {}, flotOptions, axes));
 		$("#resetZoom").show();
 	});
 }

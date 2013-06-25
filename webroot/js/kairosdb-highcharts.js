@@ -43,9 +43,7 @@ function drawChart(subTitle, yaxis, data) {
 		legend: {
 			layout: 'horizontal',
 			align: 'center',
-			verticalAlign: 'top',
-			x: -10,
-			y: 50
+			verticalAlign: 'bottom'
 		},
 		series: data
 	};

@@ -1,3 +1,12 @@
+function displayQuery()
+{
+	var queryString = $('#query-hidden-text').val();
+	if ($('#query-type-json').is(':checked'))
+		$("#query-text").val(queryString);
+	else
+		$("#query-text").val(queryString.replace(/\"(\w*)\":/g,"$1:"));
+}
+
 function updateChart() {
 	$("#resetZoom").hide();
 	$("#errorContainer").hide();
@@ -60,10 +69,19 @@ function updateChart() {
 		// Add aggregators
 		$metricContainer.find(".aggregator").each(function (index, aggregator) {
 			var name = $(aggregator).find(".aggregatorName").val();
-			var value = $(aggregator).find(".aggregatorSamplingValue").val();
-			var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 
-			metric.addAggregator(name, value, unit);
+			if (name == 'rate')
+			{
+				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				metric.addRate(unit);
+			}
+			else
+			{
+				var value = $(aggregator).find(".aggregatorSamplingValue").val();
+				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+
+				metric.addAggregator(name, value, unit);
+			}
 		});
 
 		// Add Tags
@@ -104,7 +122,9 @@ function updateChart() {
 	}
 
 	var metricData = getAdditionalChartData();
-	$("#query-text").val(JSON.stringify(query, null, 2));
+	$('#query-hidden-text').val(JSON.stringify(query, null, 2));
+	displayQuery();
+
 	$("#graph_link").attr("href", "view.html?q="+encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
 	$("#graph_link").show();
 	showChartForQuery("(Click and drag to zoom)", query, metricData);
@@ -387,7 +407,7 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 
 			// clear values
-			$aggregatorContainer.find(".aggregatorSamplingValue").val("")
+			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
 		else
 			$aggregatorContainer.find(".aggregatorSampling").show();

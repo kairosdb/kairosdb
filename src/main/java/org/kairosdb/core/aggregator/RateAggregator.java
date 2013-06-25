@@ -19,13 +19,27 @@ package org.kairosdb.core.aggregator;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.core.datastore.Sampling;
+import org.kairosdb.core.datastore.TimeUnit;
 
 @AggregatorName(name = "rate", description = "Computes the rate of change for the data points.")
 public class RateAggregator implements Aggregator
 {
+	private long m_sampling;
+
+	public RateAggregator()
+	{
+		m_sampling = 1L;
+	}
+
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
 		return (new RateDataPointAggregator(dataPointGroup));
+	}
+
+	public void setUnit(TimeUnit timeUnit)
+	{
+		m_sampling = new Sampling(1, timeUnit).getSampling();
 	}
 
 
@@ -61,9 +75,9 @@ public class RateAggregator implements Aggregator
 				}
 			}
 
-			double rate = (x1 - x0)/(y1 - y0);
+			double rate = (x1 - x0)/(y1 - y0) * m_sampling;
 
-			return (new DataPoint(y0, rate));
+			return (new DataPoint(y1, rate));
 		}
 	}
 }

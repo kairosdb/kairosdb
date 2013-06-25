@@ -70,3 +70,8 @@ a
 {
     color: #2779aa;
 }
+
+.flotChartSize{
+	width: 100%;
+	height:300px;
+}

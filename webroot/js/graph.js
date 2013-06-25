@@ -107,7 +107,7 @@ function updateChart() {
 	$("#query-text").val(JSON.stringify(query, null, 2));
 	$("#graph_link").attr("href", "view.html?q="+encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
 	$("#graph_link").show();
-	showChartForQuery("", "(Click and drag to zoom)", "", query, metricData);
+	showChartForQuery("(Click and drag to zoom)", query, metricData);
 }
 
 /**
@@ -444,62 +444,33 @@ function addTag(tagContainer) {
 		});
 }
 
-function showChartForQuery(title, subTitle, yAxisTitle, query, metricData) {
+function showChartForQuery(subTitle, query, metricData) {
 	kairosdb.dataPointsQuery(query, function (queries) {
-		showChart(title, subTitle, yAxisTitle, queries, metricData);
+		showChart(subTitle, queries, metricData);
 	});
 }
 
-function showChart(title, subTitle, yAxisTitle, queries, metricData) {
+function showChart(subTitle, queries, metricData) {
 	if (queries.length == 0) {
 		return;
 	}
 
-	var flotOptions = {
-		series: {
-			lines: {
-				show: true
-			},
-			points: {
-				show: true
-			}
-		},
-		grid: {
-			hoverable: true
-		},
-		selection: {
-			mode: "xy"
-		},
-		xaxis: {
-			mode: "time",
-			timezone: "browser"
-		},
-		legend: {
-			container: $("#graphLegend"),
-			noColumns: 5
-		},
-		colors: ["#4572a7", "#aa4643", "#89a54e", "#80699b", "#db843d"]
-	};
-
-	flotOptions.yaxes = [];
-
+	yaxis = [];
 	var dataPointCount = 0;
 	var data = [];
-	var axis = 0;
+	var axisCount = 0;
 	var metricCount = 0;
 	queries.forEach(function (resultSet) {
-
-		var yaxis = {};
+		var axis = {};
 		if (metricCount == 0){
-			yaxis.color = flotOptions.colors[metricCount];// Note this is broken in version 0.8.1.
-			flotOptions.yaxes.push(yaxis);
-			axis++;
+			yaxis.push(axis);
+			axisCount++;
 		}
 		else if ((metricData != null) && (metricData[metricCount].scale)) {
-			yaxis.position = 'right';
-			yaxis.color = flotOptions.colors[metricCount];// Note this is broken in version 0.8.1.
-			flotOptions.yaxes.push(yaxis);
-			axis++;
+			axis.position = 'right'; // Flot
+			axis.opposite = 'true'; // Highcharts
+			yaxis.push(axis);
+			axisCount++;
 		}
 
 		resultSet.results.forEach(function (queryResult) {
@@ -527,7 +498,8 @@ function showChart(title, subTitle, yAxisTitle, queries, metricData) {
 			result.name = queryResult.name + groupByMessage;
 			result.label = queryResult.name + groupByMessage;
 			result.data = queryResult.values;
-			result.yaxis = axis;
+			result.yaxis = axisCount; // Flot
+			result.yAxis = axisCount - 1; // Highcharts
 
 			dataPointCount += queryResult.values.length;
 			data.push(result);
@@ -537,121 +509,33 @@ function showChart(title, subTitle, yAxisTitle, queries, metricData) {
 
 	$("#numDataPoints").html(dataPointCount);
 
+	var $status = $('#status');
 	if (dataPointCount > 20000)
 	{
 		var response = confirm("You are attempting to plot more than 20,000 data points.\nThis may take a long time." +
 			"\nYou may want to down sample your data.\n\nDo you want to continue?");
 		if (response != true)
 		{
-			$('#status').html("Plotting canceled");
+			$status.html("Plotting canceled");
 			return;
 		}
 	}
 
-	setTimeout(function(){
-		drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions);
-		$('#status').html("");
-	}, 0);
-
-	$("#resetZoom").click(function () {
-		$("#resetZoom").hide();
-		drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions);
-	});
+	if (isHighChartsLoaded())
+		showHighChartsChart(subTitle, yaxis, data);
+	else
+		showFlotChart(subTitle, yaxis, data);
+	$status.html("");
 }
 
-function getTimezone(date)
+function isHighChartsLoaded()
 {
-	// Just rips off the timezone string from date's toString method. Probably not the best way to get the timezone.
-	var dateString = date.toString();
-	var index = dateString.lastIndexOf(" ");
-	if (index >= 0)
-	{
-		return dateString.substring(index);
+	try{
+	 	Highcharts.charts;
+		return true;
 	}
-
-	return "";
-}
-
-function drawSingleSeriesChart(title, subTitle, yAxisTitle, data, flotOptions) {
-	$("#flotTitle").html(subTitle);
-
-	var $flotcontainer = $("#flotcontainer");
-
-	$.plot($flotcontainer, data, flotOptions);
-
-	$flotcontainer.bind("plothover", function (event, pos, item) {
-		if (item) {
-			if (previousPoint != item.dataIndex) {
-				previousPoint = item.dataIndex;
-
-				$("#tooltip").remove();
-				var x = item.datapoint[0];
-				var y = item.datapoint[1].toFixed(2);
-
-				var timestamp = new Date(x);
-				var formattedDate = $.plot.formatDate(timestamp, "%b %e, %Y %H:%M:%S.millis %p");
-				formattedDate = formattedDate.replace("millis", timestamp.getMilliseconds());
-				formattedDate += " " + getTimezone(timestamp);
-				showTooltip(item.pageX, item.pageY,
-					item.series.label + "<br>" + formattedDate + "<br>" + y);
-			}
-		} else {
-			$("#tooltip").remove();
-			previousPoint = null;
-		}
-	});
-
-	$flotcontainer.bind("plotselected", function (event, ranges) {
-		if (flotOptions.yaxes.length != (Object.keys(ranges).length - 1))
-			return;
-
-		var axes = {};
-		axes.yaxes = [];
-
-		$.each(ranges, function(key, value) {
-			if (key == "xaxis")
-			{
-				axes.xaxis = {};
-				axes.xaxis.min = value.from;
-				axes.xaxis.max = value.to;
-			}
-			else {
-				var axis = {};
-				axis.min = value.from;
-				axis.max = value.to;
-				axes.yaxes.push(axis);
-			}
-		});
-
-		$.plot($flotcontainer, data, $.extend(true, {}, flotOptions, axes));
-		$("#resetZoom").show();
-	});
-}
-
-function showTooltip(x, y, contents) {
-	var tooltip = $('<div id="tooltip" class="graphTooltip">' + contents + '</div>');
-	tooltip.appendTo("body");
-
-	var $body = $('body');
-	var left = x + 5;
-	var top = y + 5;
-
-	// If off screen move back on screen
-	if ((left) < 0)
-		left = 0;
-	if (left + tooltip.outerWidth() > $body.width())
-		left = $body.width() - tooltip.outerWidth();
-	if (top + tooltip.height() > $body.height())
-		top = $body.height() - tooltip.outerHeight();
-
-	// If now over the cursor move out of the way - causes flashing of the tooltip otherwise
-	if ((x > left && x < (left + tooltip.outerWidth())) || (y < top && y > top + tooltip.outerHeight())) {
-		top = y - 5 - tooltip.outerHeight(); // move up
+	catch(err){
+		return false;
 	}
-
-	tooltip.css("left", left);
-	tooltip.css("top", top);
-
-	tooltip.fadeIn(200);
-
 }
+

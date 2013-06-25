@@ -7,6 +7,7 @@
 	<script src="js/jquery.1.9.0.min.js"></script>
 	<script src="js/kairosdb.js"></script>
 	<script src="js/kairosdb-query.js"></script>
+	<script src="js/kairosdb-flot.js"></script>
 	<script src="js/jquery-ui-1.10.0.custom.min.js"></script>
 	<script src="js/graph.js"></script>
 	<script src="js/jquery.flot.min.js"></script>
@@ -15,7 +16,6 @@
 	<script src="js/jquery.flot.resize.js"></script>
 
 	<script>
-		var kairosHost = '';
 		var metricNames = [];
 		var tagNames = [];
 		var tagValues = [];
@@ -91,7 +91,7 @@
 
 			// todo Timing issue for the first tab (metric). Can't add autocomplete until we have retrieved the
 			// todo metric names, tag names and tag values. Find a more elegant solution than to add to the first metric here.
-			$.getJSON(kairosHost+"/api/v1/metricnames", function (json) {
+			$.getJSON("api/v1/metricnames", function (json) {
 				metricNames = json.results;
 				$(".metricName")
 						.autocomplete({
@@ -99,7 +99,7 @@
 						});
 			});
 
-			$.getJSON(kairosHost+"/api/v1/tagnames", function (json) {
+			$.getJSON("api/v1/tagnames", function (json) {
 				tagNames = json.results;
 				$("[name='tagName']")
 						.autocomplete({
@@ -111,7 +111,7 @@
 						});
 			});
 
-			$.getJSON(kairosHost+"/api/v1/tagvalues", function (json) {
+			$.getJSON("api/v1/tagvalues", function (json) {
 				tagValues = json.results;
 				$("[name='tagValue']")
 						.autocomplete({

@@ -1,3 +1,12 @@
+function displayQuery()
+{
+	var queryString = $('#query-hidden-text').val();
+	if ($('#query-type-json').is(':checked'))
+		$("#query-text").val(queryString);
+	else
+		$("#query-text").val(queryString.replace(/\"(\w*)\":/g,"$1:"));
+}
+
 function updateChart() {
 	$("#resetZoom").hide();
 	$("#errorContainer").hide();
@@ -113,7 +122,9 @@ function updateChart() {
 	}
 
 	var metricData = getAdditionalChartData();
-	$("#query-text").val(JSON.stringify(query, null, 2));
+	$('#query-hidden-text').val(JSON.stringify(query, null, 2));
+	displayQuery();
+
 	$("#graph_link").attr("href", "view.html?q="+encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
 	$("#graph_link").show();
 	showChartForQuery("", "(Click and drag to zoom)", "", query, metricData);

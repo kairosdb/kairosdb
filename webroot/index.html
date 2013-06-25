@@ -195,7 +195,10 @@
 	<p>
 </div>
 
-<span class="header ui-widget">Query JSON</span> <br>
+<span class="header ui-widget">Query in
+	<input class="ui-widget" type="radio" name="query-type" id="query-type-json" checked onclick="displayQuery()"/><label for="query-type-json">JSON</label> or
+	<input type="radio" name="query-type" id="query-type-js-object" onclick="displayQuery()"/><label for="query-type-js-object">JS Object</label></span> <br>
+<input type="hidden" id="query-hidden-text"/>
 <textarea id="query-text" class="ui-widget" rows="5" style="margin-top: 5px;"></textarea>
 
 <p>

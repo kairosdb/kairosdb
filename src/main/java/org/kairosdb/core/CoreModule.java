@@ -51,17 +51,17 @@ public class CoreModule extends AbstractModule
 		bind(CacheFileCleaner.class).in(Singleton.class);
 		bind(KairosDBScheduler.class).in(Singleton.class);
 
-		bind(SumAggregator.class).in(Singleton.class);
-		bind(MinAggregator.class).in(Singleton.class);
-		bind(MaxAggregator.class).in(Singleton.class);
-		bind(AvgAggregator.class).in(Singleton.class);
-		bind(StdAggregator.class).in(Singleton.class);
-		bind(RateAggregator.class).in(Singleton.class);
-		bind(LeastSquaresAggregator.class).in(Singleton.class);
+		bind(SumAggregator.class);
+		bind(MinAggregator.class);
+		bind(MaxAggregator.class);
+		bind(AvgAggregator.class);
+		bind(StdAggregator.class);
+		bind(RateAggregator.class);
+		bind(LeastSquaresAggregator.class);
 
-		bind(ValueGroupBy.class).in(Singleton.class);
-		bind(TimeGroupBy.class).in(Singleton.class);
-		bind(TagGroupBy.class).in(Singleton.class);
+		bind(ValueGroupBy.class);
+		bind(TimeGroupBy.class);
+		bind(TagGroupBy.class);
 
 		Names.bindProperties(binder(), m_props);
 

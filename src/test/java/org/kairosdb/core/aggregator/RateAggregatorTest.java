@@ -16,10 +16,10 @@
 
 package org.kairosdb.core.aggregator;
 
+import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.testing.ListDataPointGroup;
-import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -45,10 +45,6 @@ public class RateAggregatorTest
 		DataPointGroup results = rateAggregator.aggregate(group);
 
 		DataPoint dp = results.next();
-		assertThat(dp.getTimestamp(), equalTo(1L));
-		assertThat(dp.getDoubleValue(), equalTo(10.0));
-
-		dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(2L));
 		assertThat(dp.getDoubleValue(), equalTo(10.0));
 
@@ -58,7 +54,7 @@ public class RateAggregatorTest
 
 		dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(4L));
-		assertThat(dp.getDoubleValue(), equalTo(0.0));
+		assertThat(dp.getDoubleValue(), equalTo(10.0));
 	}
 
 	@Test
@@ -74,20 +70,16 @@ public class RateAggregatorTest
 		DataPointGroup results = rateAggregator.aggregate(group);
 
 		DataPoint dp = results.next();
-		assertThat(dp.getTimestamp(), equalTo(1L));
-		assertThat(dp.getDoubleValue(), equalTo(0.0));
-
-		dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(2L));
-		assertThat(dp.getDoubleValue(), equalTo(-5.0));
+		assertThat(dp.getDoubleValue(), equalTo(0.0));
 
 		dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(3L));
-		assertThat(dp.getDoubleValue(), equalTo(15.0));
+		assertThat(dp.getDoubleValue(), equalTo(-5.0));
 
 		dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(4L));
-		assertThat(dp.getDoubleValue(), equalTo(0.0));
+		assertThat(dp.getDoubleValue(), equalTo(15.0));
 	}
 
 

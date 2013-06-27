@@ -168,14 +168,20 @@ public class MetricsResource
 		{
 			List<List<DataPointGroup>> aggregatedResults = new ArrayList<List<DataPointGroup>>();
 
+			DataFormatter formatter = formatters.get("json");
+
+			//Call formatter.begin(); passing the file writer
+
 			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
 
 			for (QueryMetric query : queries)
 			{
 				aggregatedResults.add(datastore.query(query));
+
+				//Write results to file
 			}
 
-			DataFormatter formatter = formatters.get("json");
+			//Call formatter.end(); passing file writer
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new DataPointsStreamingOutput(formatter, aggregatedResults));

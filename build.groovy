@@ -21,7 +21,7 @@ println("===============================================");
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
 version = "1.0.0_beta_3"
-release = "1" //package release number
+release = "2" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along

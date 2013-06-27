@@ -22,7 +22,7 @@ import java.util.List;
 
 public interface DataFormatter
 {
-    void format(Writer writer, List<List<DataPointGroup>> data) throws FormatterException;
+	void format(Writer writer, List<List<DataPointGroup>> data) throws FormatterException;
 
 	void format(Writer writer, Iterable<String> iterable) throws FormatterException;
 }

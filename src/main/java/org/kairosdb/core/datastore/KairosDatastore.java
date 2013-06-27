@@ -48,7 +48,6 @@ public class KairosDatastore
 	public static final Logger logger = LoggerFactory.getLogger(KairosDatastore.class);
 	public static final String QUERY_CACHE_DIR = "kairosdb.query_cache.cache_dir";
 
-	private MessageDigest m_messageDigest;
 	private String m_baseCacheDir;
 	private volatile String m_cacheDir;
 	private Datastore m_datastore;
@@ -61,21 +60,13 @@ public class KairosDatastore
 		m_datastore = datastore;
 		m_dataPointListeners = dataPointListeners;
 
-		try
-		{
-			m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
+		m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
 
-			cleanDirectory(new File(m_baseCacheDir));
-			newCacheDirectory();
-			File cacheDirectory = new File(m_cacheDir);
-			cacheDirectory.mkdirs();
-			checkState(cacheDirectory.exists(), "Cache directory not created");
-			m_messageDigest = MessageDigest.getInstance("MD5");
-		}
-		catch (NoSuchAlgorithmException e)
-		{
-			throw new DatastoreException(e);
-		}
+		cleanDirectory(new File(m_baseCacheDir));
+		newCacheDirectory();
+		File cacheDirectory = new File(m_cacheDir);
+		cacheDirectory.mkdirs();
+		checkState(cacheDirectory.exists(), "Cache directory not created");
 	}
 
 	@Inject(optional = true)
@@ -382,7 +373,8 @@ public class KairosDatastore
 		if (hashString == null)
 			hashString = String.valueOf(System.currentTimeMillis());
 
-		byte[] digest = m_messageDigest.digest(hashString.getBytes("UTF-8"));
+		MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+		byte[] digest = messageDigest.digest(hashString.getBytes("UTF-8"));
 
 		return new BigInteger(1, digest).toString(16);
 	}

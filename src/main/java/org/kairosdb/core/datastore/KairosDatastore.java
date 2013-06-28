@@ -205,7 +205,7 @@ public class KairosDatastore
 	}
 
 
-	public List<DataPointGroup> query(QueryMetric metric) throws DatastoreException
+	public QueryResults query(QueryMetric metric) throws DatastoreException
 	{
 		checkNotNull(metric);
 
@@ -271,7 +271,7 @@ public class KairosDatastore
 			aggregatedResults.add(aggregatedGroup);
 		}
 
-		return aggregatedResults;
+		return new QueryResults(aggregatedResults);
 	}
 
 	private List<GroupBy> removeTagGroupBy(List<GroupBy> groupBys)

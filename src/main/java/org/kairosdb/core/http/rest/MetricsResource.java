@@ -176,7 +176,7 @@ public class MetricsResource
 
 			for (QueryMetric query : queries)
 			{
-				aggregatedResults.add(datastore.query(query));
+				aggregatedResults.add(datastore.query(query).getDataPoints());
 
 				//Write results to file
 			}

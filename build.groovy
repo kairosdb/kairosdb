@@ -91,6 +91,7 @@ testClasspath.addPath(jp.getJarRule().getTarget())
 
 testSources = new RegExFileSet("src/test/java", ".*Test\\.java").recurse()
 		.addExcludeFiles("CassandraDatastoreTest.java", "HBaseDatastoreTest.java")
+		//.addExcludeFiles("HBaseDatastoreTest.java")
 		.getFilePaths()
 testCompileRule = jp.getTestCompileRule()
 

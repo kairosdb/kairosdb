@@ -25,6 +25,8 @@ import java.util.Map;
  */
 public class DataCache<T>
 {
+	private Object m_lock = new Object();
+
 	private class InternalCache extends LinkedHashMap<T, String>
 	{
 		private int m_cacheSize;
@@ -56,7 +58,12 @@ public class DataCache<T>
 	 */
 	public boolean isCached(T cacheData)
 	{
-		String ret = m_cache.put(cacheData, "");
+		String ret;
+
+		synchronized (m_lock)
+		{
+			ret = m_cache.put(cacheData, "");
+		}
 
 		return (ret != null);
 	}

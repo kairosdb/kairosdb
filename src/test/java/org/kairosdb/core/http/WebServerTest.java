@@ -65,7 +65,7 @@ public class WebServerTest
 
 	@Test
 	public void test_SSL_success() throws KariosDBException, IOException, UnrecoverableKeyException,
-			CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException
+			CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, InterruptedException
 	{
 		String keyStorePath = Resources.getResource("keystore.jks").getPath();
 		String keyStorePassword = "testing";
@@ -82,7 +82,7 @@ public class WebServerTest
 
 	@Test(expected = HttpHostConnectException.class)
 	public void test_noSSL() throws KariosDBException, IOException, UnrecoverableKeyException,
-			CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException
+			CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, InterruptedException
 	{
 		String keyStorePath = Resources.getResource("keystore.jks").getPath();
 		String keyStorePassword = "testing";
@@ -96,11 +96,11 @@ public class WebServerTest
 
 	@Test
 	public void test_SSL_and_HTTP_success() throws KariosDBException, IOException, UnrecoverableKeyException,
-			CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException
+			CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, InterruptedException
 	{
 		String keyStorePath = Resources.getResource("keystore.jks").getPath();
 		String keyStorePassword = "testing";
-		server = new WebServer(9000, ".");
+		server = new WebServer(9001, ".");
 		server.setSSLSettings(8443, keyStorePath, keyStorePassword);
 		server.start();
 
@@ -110,35 +110,35 @@ public class WebServerTest
 		assertThat(response.getStatusCode(), equalTo(200));
 		assertThat(response.getJson().length(), greaterThan(0));
 
-		response = client.get("http://localhost:9000/");
+		response = client.get("http://localhost:9001/");
 		assertThat(response.getStatusCode(), equalTo(200));
 		assertThat(response.getJson().length(), greaterThan(0));
 	}
 
 	@Test
-	public void test_basicAuth_unauthorized() throws KariosDBException, IOException
+	public void test_basicAuth_unauthorized() throws KariosDBException, IOException, InterruptedException
 	{
-		server = new WebServer(9000, ".");
+		server = new WebServer(9001, ".");
 		server.setAuthCredentials("bob", "bobPassword");
 		server.start();
 
 		client = new Client();
 
-		JsonResponse response = client.get("http://localhost:9000/");
+		JsonResponse response = client.get("http://localhost:9001/");
 		assertThat(response.getStatusCode(), equalTo(401));
 	}
 
 	@Test
-	public void test_basicAuth_authorized() throws KariosDBException, IOException
+	public void test_basicAuth_authorized() throws KariosDBException, IOException, InterruptedException
 	{
-		server = new WebServer(9000, ".");
+		server = new WebServer(9001, ".");
 		server.setAuthCredentials("bob", "bobPassword");
 		server.start();
 
 		client = new Client();
 		client.setAuthentication("bob", "bobPassword");
 
-		JsonResponse response = client.get("http://localhost:9000/");
+		JsonResponse response = client.get("http://localhost:9001/");
 		assertThat(response.getStatusCode(), equalTo(200));
 		assertThat(response.getJson().length(), greaterThan(0));
 	}

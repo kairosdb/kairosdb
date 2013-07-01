@@ -51,11 +51,11 @@ import static org.junit.Assert.assertThat;
 
 public class MetricsResourceTest
 {
-	private static final String ADD_METRIC_URL = "http://localhost:9000/api/v1/datapoints";
-	private static final String GET_METRIC_URL = "http://localhost:9000/api/v1/datapoints/query";
-	private static final String METRIC_NAMES_URL = "http://localhost:9000/api/v1/metricnames";
-	private static final String TAG_NAMES_URL = "http://localhost:9000/api/v1/tagnames";
-	private static final String TAG_VALUES_URL = "http://localhost:9000/api/v1/tagvalues";
+	private static final String ADD_METRIC_URL = "http://localhost:9001/api/v1/datapoints";
+	private static final String GET_METRIC_URL = "http://localhost:9001/api/v1/datapoints/query";
+	private static final String METRIC_NAMES_URL = "http://localhost:9001/api/v1/metricnames";
+	private static final String TAG_NAMES_URL = "http://localhost:9001/api/v1/tagnames";
+	private static final String TAG_VALUES_URL = "http://localhost:9001/api/v1/tagvalues";
 
 	private static Client client;
 	private static WebServer server;
@@ -70,7 +70,7 @@ public class MetricsResourceTest
 			@Override
 			protected void configure()
 			{
-				bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9000);
+				bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9001);
 				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
 				bind(Datastore.class).toInstance(datastore);
 				bind(KairosDatastore.class).in(Singleton.class);

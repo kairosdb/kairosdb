@@ -120,4 +120,32 @@ public class MaxAggregatorTest
 		assertThat(dataPoint.getTimestamp(), equalTo(3L));
 		assertThat(dataPoint.getDoubleValue(), equalTo(25.1));
 	}
+
+	@Test
+	public void test_withNegativeValues()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new DataPoint(1, -10.0));
+		group.addDataPoint(new DataPoint(1, -20.3));
+		group.addDataPoint(new DataPoint(1, -3));
+		group.addDataPoint(new DataPoint(2, 1.0));
+		group.addDataPoint(new DataPoint(2, -3.2));
+		group.addDataPoint(new DataPoint(2, -5.0));
+		group.addDataPoint(new DataPoint(3, -25.1));
+		group.addDataPoint(new DataPoint(3, -10.1));
+
+		DataPointGroup results = aggregator.aggregate(group);
+
+		DataPoint dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(1L));
+		assertThat(dataPoint.getDoubleValue(), equalTo(-3.));
+
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(2L));
+		assertThat(dataPoint.getDoubleValue(), equalTo(1.0));
+
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(3L));
+		assertThat(dataPoint.getDoubleValue(), equalTo(-10.1));
+	}
 }

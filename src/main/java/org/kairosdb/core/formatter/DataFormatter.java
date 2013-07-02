@@ -26,14 +26,4 @@ public interface DataFormatter
 	void format(Writer writer, List<List<DataPointGroup>> data) throws FormatterException;
 
 	void format(Writer writer, Iterable<String> iterable) throws FormatterException;
-
-	void begin(Writer writer) throws FormatterException;
-
-	void startQueries(Writer writer) throws FormatterException;
-
-	void formatQuery(Writer writer, QueryResults queryResults) throws FormatterException;
-
-	void endQueries(Writer writer) throws FormatterException;
-
-	void end(Writer writer) throws FormatterException;
 }

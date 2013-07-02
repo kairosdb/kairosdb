@@ -31,7 +31,7 @@ public class JsonResponse
 	}
 
 
-	void begin() throws FormatterException
+	public void begin() throws FormatterException
 	{
 		try
 		{
@@ -45,7 +45,7 @@ public class JsonResponse
 	}
 
 
-	void startQueries() throws FormatterException
+	public void startQueries() throws FormatterException
 	{
 		try
 		{
@@ -60,7 +60,7 @@ public class JsonResponse
 	}
 
 
-	void formatQuery(QueryResults queryResults) throws FormatterException
+	public void formatQuery(QueryResults queryResults) throws FormatterException
 	{
 		try
 		{
@@ -123,6 +123,8 @@ public class JsonResponse
 
 				group.close();
 			}
+
+			m_jsonWriter.endArray().endObject();
 		}
 		catch (JSONException e)
 		{
@@ -135,7 +137,7 @@ public class JsonResponse
 	}
 
 
-	void endQueries() throws FormatterException
+	public void endQueries() throws FormatterException
 	{
 		try
 		{
@@ -155,7 +157,7 @@ public class JsonResponse
 	}
 
 
-	void end() throws FormatterException
+	public void end() throws FormatterException
 	{
 		try
 		{

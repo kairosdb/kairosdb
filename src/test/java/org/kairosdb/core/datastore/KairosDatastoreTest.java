@@ -57,7 +57,8 @@ public class KairosDatastoreTest
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 		metric.addAggregator(aggFactory.createAggregator("sum"));
 
-		List<DataPointGroup> results = datastore.query(metric);
+		QueryResults queryResults = datastore.query(metric);
+		List<DataPointGroup> results = queryResults.getDataPoints();
 
 		DataPointGroup group = results.get(0);
 
@@ -72,6 +73,8 @@ public class KairosDatastoreTest
 		dataPoint = group.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(3L));
 		assertThat(dataPoint.getLongValue(), equalTo(32L));
+
+		queryResults.close();
 	}
 
 	@Test
@@ -81,7 +84,8 @@ public class KairosDatastoreTest
 		KairosDatastore datastore = new KairosDatastore(testds, Collections.EMPTY_LIST);
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 
-		List<DataPointGroup> results = datastore.query(metric);
+		QueryResults queryResults = datastore.query(metric);
+		List<DataPointGroup> results = queryResults.getDataPoints();
 
 		assertThat(results.size(), is(1));
 		DataPointGroup group = results.get(0);
@@ -141,6 +145,8 @@ public class KairosDatastoreTest
 		dataPoint = group.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(3L));
 		assertThat(dataPoint.getLongValue(), equalTo(25L));
+
+		queryResults.close();
 	}
 
 	@SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions"})

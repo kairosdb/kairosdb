@@ -18,12 +18,13 @@ package org.kairosdb.core.http.rest;
 
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
-import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.datastore.QueryResults;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
+import org.kairosdb.core.formatter.JsonResponse;
 import org.kairosdb.core.http.rest.json.ErrorResponse;
 import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.core.http.rest.json.JsonMetricParser;
@@ -38,7 +39,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +71,14 @@ public class MetricsResource
 		formatters.put("json", new JsonFormatter());
 	}
 
+	private void setHeaders(ResponseBuilder responseBuilder)
+	{
+		responseBuilder.header("Access-Control-Allow-Origin", "*");
+		responseBuilder.header("Pragma", "no-cache");
+		responseBuilder.header("Cache-Control", "no-cache");
+		responseBuilder.header("Expires", 0);
+	}
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/version")
@@ -79,7 +87,7 @@ public class MetricsResource
 		Package thisPackage = getClass().getPackage();
 		String versionString = thisPackage.getImplementationTitle()+" "+thisPackage.getImplementationVersion();
 		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \""+versionString+"\"}");
-		responseBuilder.header("Access-Control-Allow-Origin", "*");
+		setHeaders(responseBuilder);
 		return responseBuilder.build();
 	}
 
@@ -166,27 +174,40 @@ public class MetricsResource
 
 		try
 		{
-			List<List<DataPointGroup>> aggregatedResults = new ArrayList<List<DataPointGroup>>();
+			File respFile = File.createTempFile("kairos", ".json");
+			BufferedWriter writer = new BufferedWriter(new FileWriter(respFile));
 
-			DataFormatter formatter = formatters.get("json");
+			JsonResponse jsonResponse = new JsonResponse(writer);
 
-			//Call formatter.begin(); passing the file writer
+			jsonResponse.begin();
+			jsonResponse.startQueries();
 
 			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
 
 			for (QueryMetric query : queries)
 			{
-				aggregatedResults.add(datastore.query(query).getDataPoints());
+				QueryResults qr = datastore.query(query);
 
-				//Write results to file
+				try
+				{
+					jsonResponse.formatQuery(qr);
+				}
+				finally
+				{
+					qr.close();
+				}
 			}
 
-			//Call formatter.end(); passing file writer
+			jsonResponse.endQueries();
+
+			jsonResponse.end();
+			writer.flush();
+			writer.close();
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
-					new DataPointsStreamingOutput(formatter, aggregatedResults));
+					new FileStreamingOutput(respFile));
 
-			responseBuilder.header("Access-Control-Allow-Origin", "*");
+			setHeaders(responseBuilder);
 			return responseBuilder.build();
 		}
 		catch (JsonSyntaxException e)
@@ -264,7 +285,7 @@ public class MetricsResource
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new ValuesStreamingOutput(formatter, values));
-			responseBuilder.header("Access-Control-Allow-Origin", "*");
+			setHeaders(responseBuilder);
 			return responseBuilder.build();
 		}
 		catch (Exception e)
@@ -304,32 +325,31 @@ public class MetricsResource
 		}
 	}
 
-	public class DataPointsStreamingOutput implements StreamingOutput
+	public class FileStreamingOutput implements StreamingOutput
 	{
-		private DataFormatter m_formatter;
-		private List<List<DataPointGroup>> m_data;
+		private File m_responseFile;
 
-		public DataPointsStreamingOutput(DataFormatter formatter, List<List<DataPointGroup>> data)
+		public FileStreamingOutput(File responseFile)
 		{
-			m_formatter = formatter;
-			m_data = data;
+			m_responseFile = responseFile;
 		}
 
-		@SuppressWarnings("ResultOfMethodCallIgnored")
+		@Override
 		public void write(OutputStream output) throws IOException, WebApplicationException
 		{
-			Writer writer = new OutputStreamWriter(output,  "UTF-8");
+			InputStream reader = new FileInputStream(m_responseFile);
 
-			try
+			byte[] buffer = new byte[1024];
+			int size = 0;
+
+			while ((size = reader.read(buffer)) != -1)
 			{
-				m_formatter.format(writer, m_data);
-			}
-			catch (FormatterException e)
-			{
-				log.error("Description of what failed:", e);
+				output.write(buffer, 0, size);
 			}
 
-			writer.flush();
+			reader.close();
+			output.flush();
+			m_responseFile.delete();
 		}
 	}
 }

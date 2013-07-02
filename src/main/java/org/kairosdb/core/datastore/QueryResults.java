@@ -22,4 +22,12 @@ public class QueryResults
 	{
 		return (m_dataPoints);
 	}
+
+	public void close()
+	{
+		for (DataPointGroup dataPoint : m_dataPoints)
+		{
+			dataPoint.close();
+		}
+	}
 }

@@ -196,7 +196,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		query.setEndTime(s_dataPointTime);
 		query.setTags(tagFilter);
 
-		List<DataPointGroup> results = DatastoreTestHelper.s_datastore.query(query);
+		List<DataPointGroup> results = DatastoreTestHelper.s_datastore.query(query).getDataPoints();
 
 		DataPointGroup dataPointGroup = results.get(0);
 		int counter = 0;
@@ -208,6 +208,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 			counter++;
 		}
 
+		dataPointGroup.close();
 		assertThat(total, equalTo(counter * 42));
 		assertEquals(OVERFLOW_SIZE, counter);
 	}

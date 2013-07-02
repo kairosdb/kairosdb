@@ -163,7 +163,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query);
+		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
 
 		assertThat(results.size(), equalTo(1));
 
@@ -198,7 +198,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query);
+		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
 
 		assertThat(results.size(), is(1));
 
@@ -231,7 +231,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query);
+		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
 
 		assertThat(results.size(), is(2));
 
@@ -277,7 +277,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query);
+		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
 
 		assertThat(results.size(), is(3));
 
@@ -334,7 +334,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query);
+		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
 
 		assertThat(results.size(), is(1));
 
@@ -367,7 +367,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query);
+		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
 
 		assertThat(results.size(), is(1));
 
@@ -385,7 +385,7 @@ public abstract class DatastoreTestHelper
 		tags.put("host", "B");
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query);
+		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
 
 		assertThat(results.size(), equalTo(1));
 

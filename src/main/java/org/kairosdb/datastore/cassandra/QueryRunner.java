@@ -37,12 +37,10 @@ import static org.kairosdb.datastore.cassandra.CassandraDatastore.*;
 public class QueryRunner
 {
 	public static final DataPointsRowKeySerializer ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
-	public static final ValueSerializer LONG_OR_DOUBLE_SERIALIZER = new ValueSerializer();
 
 	private Keyspace m_keyspace;
 	private String m_columnFamily;
 	private List<DataPointsRowKey> m_rowKeys;
-	private long m_tierRowTime; //Start of the row time for this tier
 	private int m_startTime; //relative row time
 	private int m_endTime; //relative row time
 	private CachedSearchResult m_cachedResults;
@@ -57,7 +55,7 @@ public class QueryRunner
 		m_keyspace = keyspace;
 		m_columnFamily = columnFamily;
 		m_rowKeys = rowKeys;
-		m_tierRowTime = rowKeys.get(0).getTimestamp(); //Todo pass this value in??
+		long m_tierRowTime = rowKeys.get(0).getTimestamp();
 		if (startTime < m_tierRowTime)
 			m_startTime = 0;
 		else
@@ -125,11 +123,8 @@ public class QueryRunner
 
 				columns = sliceQuery.execute().get().getColumns();
 				writeColumns(key, columns);
-
 			} while (columns.size() == m_singleRowReadSize);
 		}
-
-		//m_cachedResults.endDataPoints();
 	}
 
 

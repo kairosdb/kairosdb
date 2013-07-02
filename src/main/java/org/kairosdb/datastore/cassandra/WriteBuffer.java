@@ -78,14 +78,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		m_mutatorLock.lock();
 		try
 		{
-			if ((m_bufferCount > m_maxBufferSize) && (m_mutatorLock.getHoldCount() == 1))
-			{
-				try
-				{
-					m_lockCondition.await();
-				}
-				catch (InterruptedException ignored) {}
-			}
+			waitOnBufferFull();
 
 			m_bufferCount ++;
 			m_mutator.addInsertion(rowKey, m_cfName,
@@ -98,6 +91,50 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		}
 	}
 
+	public void deleteRow(RowKeyType rowKey, long timestamp)
+	{
+		m_mutatorLock.lock();
+		try
+		{
+			waitOnBufferFull();
+
+			m_bufferCount ++;
+			m_mutator.addDeletion(rowKey, m_cfName, timestamp);
+		}
+		finally
+		{
+			m_mutatorLock.unlock();
+		}
+	}
+
+	public void deleteColumn(RowKeyType rowKey, ColumnKeyType columnKey, long timestamp)
+	{
+		m_mutatorLock.lock();
+		try
+		{
+			waitOnBufferFull();
+
+			m_bufferCount ++;
+			m_mutator.addDeletion(rowKey, m_cfName, columnKey, m_columnKeySerializer, timestamp);
+//			m_mutator.delete(rowKey, m_cfName, columnKey, m_columnKeySerializer, timestamp);
+		}
+		finally
+		{
+			m_mutatorLock.unlock();
+		}
+	}
+
+	private void waitOnBufferFull()
+	{
+		if ((m_bufferCount > m_maxBufferSize) && (m_mutatorLock.getHoldCount() == 1))
+		{
+			try
+			{
+				m_lockCondition.await();
+			}
+			catch (InterruptedException ignored) {}
+		}
+	}
 
 	public void close() throws InterruptedException
 	{

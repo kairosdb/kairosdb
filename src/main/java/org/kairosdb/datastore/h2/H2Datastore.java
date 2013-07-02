@@ -19,12 +19,14 @@ package org.kairosdb.datastore.h2;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import genorm.runtime.GenOrmQueryResultSet;
-import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.datastore.*;
-import org.kairosdb.core.exception.DatastoreException;
 import org.h2.jdbcx.JdbcDataSource;
+import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datastore.CachedSearchResult;
+import org.kairosdb.core.datastore.DataPointRow;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.h2.orm.*;
-import org.kairosdb.datastore.h2.orm.DataPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -282,7 +284,7 @@ public class H2Datastore implements Datastore
 	}
 
 	@Override
-	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
+	public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
 	{
 		GenOrmQueryResultSet<? extends MetricIdResults> idQuery =
 				getMetricIdsForQuery(deleteQuery);

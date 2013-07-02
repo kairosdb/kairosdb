@@ -26,8 +26,6 @@ import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 public class CachedSearchResult
 {
 	public static final Logger logger = LoggerFactory.getLogger(CachedSearchResult.class);
@@ -419,6 +417,15 @@ public class CachedSearchResult
 		public void close()
 		{
 			decrementClose();
+		}
+
+		@Override
+		public String toString()
+		{
+			return "CachedDataPointRow{" +
+					"m_metricName='" + m_metricName + '\'' +
+					", m_tags=" + m_tags +
+					'}';
 		}
 	}
 }

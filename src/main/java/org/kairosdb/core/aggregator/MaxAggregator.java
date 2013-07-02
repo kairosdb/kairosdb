@@ -40,7 +40,7 @@ public class MaxAggregator extends RangeAggregator
 		@Override
 		public DataPoint getNextDataPoint(long returnTime, Iterator<DataPoint> dataPointRange)
 		{
-			double max = Double.MIN_VALUE;
+			double max = -Double.MAX_VALUE;
 			while (dataPointRange.hasNext())
 			{
 				max = Math.max(max, dataPointRange.next().getDoubleValue());

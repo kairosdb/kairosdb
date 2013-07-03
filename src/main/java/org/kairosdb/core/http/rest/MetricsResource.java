@@ -121,7 +121,7 @@ public class MetricsResource
 	@Path("/datapoints")
 	public Response addGzip(InputStream gzip)
 	{
-		GZIPInputStream gzipInputStream = null;
+		GZIPInputStream gzipInputStream;
 		try
 		{
 			gzipInputStream = new GZIPInputStream(gzip);
@@ -144,7 +144,7 @@ public class MetricsResource
 			JsonMetricParser parser = new JsonMetricParser(datastore, json);
 			parser.parse();
 
-			return Response.status(204).build();
+			return Response.status(Response.Status.NO_CONTENT).build();
 		}
 		catch (ValidationException e)
 		{
@@ -228,6 +228,48 @@ public class MetricsResource
 		catch (Exception e)
 		{
 			log.error("Query failed.", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
+		}
+	}
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/delete")
+	public Response delete(String json) throws Exception
+	{
+		checkNotNull(json);
+
+		try
+		{
+			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
+
+			for (QueryMetric query : queries)
+			{
+				datastore.delete(query);
+			}
+
+			ResponseBuilder responseBuilder = Response.status(Response.Status.NO_CONTENT);
+			responseBuilder.header("Access-Control-Allow-Origin", "*");
+			return responseBuilder.build();
+		}
+		catch (JsonSyntaxException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addError(e.getMessage()).build();
+		}
+		catch (QueryException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addError(e.getMessage()).build();
+		}
+		catch (BeanValidationException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addErrors(e.getErrorMessages()).build();
+		}
+		catch (Exception e)
+		{
+			log.error("Delete failed.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
 		}
 	}

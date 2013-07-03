@@ -38,3 +38,35 @@ kairosdb.dataPointsQuery = function (metricQuery, callback) {
 		}
 	});
 };
+
+kairosdb.deleteDataPoints = function (deleteQuery, callback) {
+	var startTime = new Date();
+
+	var $status = $('#status');
+	var $queryTime = $("#queryTime");
+
+	$status.html("<i>Delete in progress...</i>");
+
+	$.ajax({
+		type: "POST",
+		url: "api/v1/datapoints/delete",
+		headers: { 'Content-Type': ['application/json']},
+		data: deleteQuery,
+		dataType: 'text',
+		success: function (data, textStatus, jqXHR) {
+			setTimeout(function () {
+				callback(data.queries);
+			}, 0);
+		},
+		error: function (jqXHR, textStatus, errorThrown) {
+			var $errorContainer = $("#errorContainer");
+			$errorContainer.show();
+			$errorContainer.html("");
+			$errorContainer.append("Status Code: " + jqXHR.status + "</br>");
+			$errorContainer.append("Status: " + jqXHR.statusText + "<br>");
+			$errorContainer.append("Return Value: " + jqXHR.responseText);
+
+			$status.html("");
+		}
+	});
+};

@@ -467,6 +467,7 @@ function addTag(tagContainer) {
 function showChartForQuery(subTitle, query, metricData) {
 	kairosdb.dataPointsQuery(query, function (queries) {
 		showChart(subTitle, queries, metricData);
+		$("#deleteButton").button("enable");
 	});
 }
 
@@ -556,6 +557,17 @@ function isHighChartsLoaded()
 	}
 	catch(err){
 		return false;
+	}
+}
+
+function deleteDataPoints() {
+	if (confirm("Are you sure you want to delete all data points returned from the last query?")) {
+		var query = $("#query-hidden-text").val();
+		kairosdb.deleteDataPoints(query, function (queries) {
+			if (confirm("Data was deleted. It may take up 30 seconds are more to update. Do you want to refresh the graph?")) {
+				updateChart();
+			}
+		});
 	}
 }
 

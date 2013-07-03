@@ -21,7 +21,7 @@
 	<script src="js/jquery.flot.time.js"></script>
 	<script src="js/jquery.flot.selection.js"></script>
 	<script src="js/jquery.flot.resize.js"></script>
-	<!--<script src="js/highcharts.js"></script>-->
+	<script src="js/highcharts.js"></script>
 
 	<script>
 		var metricNames = [];
@@ -33,6 +33,7 @@
 			var $endTime = $("#endTime");
 
 			$("#submitButton").button().click(updateChart);
+			$("#deleteButton").button().click(deleteDataPoints).button("disable");
 			$startTime.datepicker();
 			$endTime.datepicker();
 			$("#resetZoom").hide();
@@ -195,6 +196,7 @@
 
 <p>
 	<button id="submitButton" style="margin-top: 10px;">Load Graph</button>
+	<button id="deleteButton" style="margin-top: 10px;">Delete Data</button>
 
 <div class="ui-widget">
 	<div id="errorContainer" class="ui-state-error ui-corner-all" style="padding:5px; width: 500px;"></div>

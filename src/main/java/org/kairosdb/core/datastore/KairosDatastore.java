@@ -38,7 +38,6 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -272,6 +271,23 @@ public class KairosDatastore
 		}
 
 		return new QueryResults(aggregatedResults);
+	}
+
+	public void delete(QueryMetric metric) throws DatastoreException
+	{
+		checkNotNull(metric);
+
+		try
+		{
+			String cacheFilename = calculateFilenameHash(metric);
+			String tempFile = m_cacheDir + cacheFilename + "_delete";
+			CachedSearchResult cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile);
+			m_datastore.deleteDataPoints(metric, cachedResults);
+		}
+		catch (Exception e)
+		{
+			throw new DatastoreException(e);
+		}
 	}
 
 	private List<GroupBy> removeTagGroupBy(List<GroupBy> groupBys)

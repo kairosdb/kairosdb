@@ -147,6 +147,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				null, 1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, 1000, 50000, "hostname");
 
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
+				new QueryQueuingManager(1, "hostname"),
 				Collections.<DataPointListener>emptyList());
 
 		loadCassandraData();

@@ -19,6 +19,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.gson.stream.MalformedJsonException;
 import org.junit.Test;
+import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
@@ -42,7 +43,7 @@ public class JsonMetricParserTest
 		String json = "[{\"name\": \"metric1\", \"datapoints\": [[1,2]]}, {\"datapoints\": [[1,2]]}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"), Collections.<DataPointListener>emptyList());
 
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
@@ -63,7 +64,7 @@ public class JsonMetricParserTest
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"), Collections.<DataPointListener>emptyList());
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		try
@@ -83,7 +84,7 @@ public class JsonMetricParserTest
 		String json = "[{\"name\": \"metric1\", \"value\": 1234}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"), Collections.<DataPointListener>emptyList());
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		try
@@ -103,7 +104,7 @@ public class JsonMetricParserTest
 		String json = "[{\"name\": \"\", \"datapoints\": [[1,2]]}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"), Collections.<DataPointListener>emptyList());
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		try
@@ -123,7 +124,7 @@ public class JsonMetricParserTest
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 4321}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"), Collections.<DataPointListener>emptyList());
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		parser.parse();
@@ -144,7 +145,7 @@ public class JsonMetricParserTest
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": }]";
 
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"), Collections.<DataPointListener>emptyList());
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		parser.parse();
@@ -165,7 +166,7 @@ public class JsonMetricParserTest
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 4321, \"datapoints\": [[456, 654]]}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"), Collections.<DataPointListener>emptyList());
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		parser.parse();
@@ -188,7 +189,7 @@ public class JsonMetricParserTest
 		String json = Resources.toString(Resources.getResource("json-metric-parser-multiple-metric.json"), Charsets.UTF_8);
 
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, Collections.EMPTY_LIST);
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"), Collections.<DataPointListener>emptyList());
 		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
 
 		parser.parse();

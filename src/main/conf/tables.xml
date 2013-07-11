@@ -38,11 +38,11 @@
 
 	<table name="data_point">
 		<property key="hsqldb_tableType" value="CACHED"/>
-		<col name="id" type="integer" primary_key="true"/>
-		<col name="metric_id" type="string">
+		<!--<col name="id" type="integer" primary_key="true"/>-->
+		<col name="metric_id" type="string" primary_key="true">
 			<reference table="metric" column="id"/>
 		</col>
-		<col name="timestamp" type="timestamp"/>
+		<col name="timestamp" type="timestamp" primary_key="true"/>
 		<col name="long_value" type="long"/>
 		<col name="double_value" type="double"/>
 
@@ -168,6 +168,34 @@
 				this."metric_id" = ?
 				and this."timestamp" &gt;= ?
 				and this."timestamp" &lt;= ?
+			</sql>
+		</query>
+
+		<query name="insert_long_data_point">
+			<comment>
+				Inserts or updates data point
+			</comment>
+			<input>
+				<param name="metric_id" type="string" test="test_metric"/>
+				<param name="timestamp" type="timestamp" test=""/>
+				<param name="value" type="long" test="123"/>
+			</input>
+			<sql>
+				MERGE INTO data_point ("metric_id", "timestamp", "long_value") VALUES(?, ?, ?)
+			</sql>
+		</query>
+
+		<query name="insert_double_data_point">
+			<comment>
+				Inserts or updates data point
+			</comment>
+			<input>
+				<param name="metric_id" type="string" test="test_metric"/>
+				<param name="timestamp" type="timestamp" test=""/>
+				<param name="value" type="double" test="123.123"/>
+			</input>
+			<sql>
+				MERGE INTO data_point ("metric_id", "timestamp", "double_value") VALUES(?, ?, ?)
 			</sql>
 		</query>
 	</queries>

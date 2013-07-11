@@ -11,12 +11,11 @@ CREATE CACHED TABLE tag (
 	);
 
 CREATE CACHED TABLE data_point (
-	"id" INT  NOT NULL,
-	"metric_id" VARCHAR  NULL,
-	"timestamp" TIMESTAMP  NULL,
+	"metric_id" VARCHAR  NOT NULL,
+	"timestamp" TIMESTAMP  NOT NULL,
 	"long_value" BIGINT  NULL,
 	"double_value" DOUBLE  NULL,
-	PRIMARY KEY ("id"),
+	PRIMARY KEY ("metric_id", "timestamp"),
 	CONSTRAINT data_point_metric_id_fkey FOREIGN KEY ("metric_id")
 		REFERENCES metric ("id") 
 	);

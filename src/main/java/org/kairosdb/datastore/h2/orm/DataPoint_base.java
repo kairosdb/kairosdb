@@ -12,7 +12,6 @@ public class DataPoint_base extends GenOrmRecord
 	{
 	protected static final Logger s_logger = LoggerFactory.getLogger(DataPoint.class.getName());
 
-	public static final String COL_ID = "id";
 	public static final String COL_METRIC_ID = "metric_id";
 	public static final String COL_TIMESTAMP = "timestamp";
 	public static final String COL_LONG_VALUE = "long_value";
@@ -20,124 +19,32 @@ public class DataPoint_base extends GenOrmRecord
 
 	//Change this value to true to turn on warning messages
 	private static final boolean WARNINGS = false;
-	private static final String SELECT = "SELECT this.\"id\", this.\"metric_id\", this.\"timestamp\", this.\"long_value\", this.\"double_value\" ";
+	private static final String SELECT = "SELECT this.\"metric_id\", this.\"timestamp\", this.\"long_value\", this.\"double_value\" ";
 	private static final String FROM = "FROM data_point this ";
 	private static final String WHERE = "WHERE ";
-	private static final String KEY_WHERE = "WHERE \"id\" = ?";
+	private static final String KEY_WHERE = "WHERE \"metric_id\" = ? AND \"timestamp\" = ?";
 	
 	public static final String TABLE_NAME = "data_point";
-	public static final int NUMBER_OF_COLUMNS = 5;
+	public static final int NUMBER_OF_COLUMNS = 4;
 	
 	
 	private static final String s_fieldEscapeString = "\""; 
 	
-	public static final GenOrmFieldMeta ID_FIELD_META = new GenOrmFieldMeta("id", "integer", 0, true, false);
-	public static final GenOrmFieldMeta METRIC_ID_FIELD_META = new GenOrmFieldMeta("metric_id", "string", 1, false, true);
-	public static final GenOrmFieldMeta TIMESTAMP_FIELD_META = new GenOrmFieldMeta("timestamp", "timestamp", 2, false, false);
-	public static final GenOrmFieldMeta LONG_VALUE_FIELD_META = new GenOrmFieldMeta("long_value", "long", 3, false, false);
-	public static final GenOrmFieldMeta DOUBLE_VALUE_FIELD_META = new GenOrmFieldMeta("double_value", "double", 4, false, false);
+	public static final GenOrmFieldMeta METRIC_ID_FIELD_META = new GenOrmFieldMeta("metric_id", "string", 0, true, true);
+	public static final GenOrmFieldMeta TIMESTAMP_FIELD_META = new GenOrmFieldMeta("timestamp", "timestamp", 1, true, false);
+	public static final GenOrmFieldMeta LONG_VALUE_FIELD_META = new GenOrmFieldMeta("long_value", "long", 2, false, false);
+	public static final GenOrmFieldMeta DOUBLE_VALUE_FIELD_META = new GenOrmFieldMeta("double_value", "double", 3, false, false);
 
 	
-	//===========================================================================
-	public static class DataPointKeyGenerator
-			implements GenOrmKeyGenerator
-		{
-		private static final String MAX_QUERY = "SELECT MAX(\"id\") FROM data_point";
-		
-		private volatile int m_nextKey;
-		
-		public DataPointKeyGenerator(javax.sql.DataSource ds)
-			{
-			m_nextKey = 0;
-			java.sql.Connection con = null;
-			java.sql.Statement stmnt = null;
-			try
-				{
-				con = ds.getConnection();
-				con.setAutoCommit(true);
-				stmnt = con.createStatement();
-				java.sql.ResultSet rs = stmnt.executeQuery(MAX_QUERY);
-				if (rs.next())
-					m_nextKey = rs.getInt(1);
-				
-				rs.close();
-				}
-			catch (java.sql.SQLException sqle)
-				{
-				//The exception may occur if the table does not yet exist
-				if (WARNINGS)
-					System.out.println(sqle);
-				}
-			finally
-				{
-				try
-					{
-					if (stmnt != null)
-						stmnt.close();
-						
-					if (con != null)
-						con.close();
-					}
-				catch (java.sql.SQLException sqle) {}
-				}
-			}
-			
-		/**
-		This resets the key generator from the values in the database
-		Usefull if the generated key has been modified via some other means
-		Connection must be open before calling this
-		*/
-		public synchronized void reset()
-			{
-			m_nextKey = 0;
-			java.sql.Statement stmnt = null;
-			java.sql.ResultSet rs = null;
-			try
-				{
-				stmnt = GenOrmDataSource.createStatement();
-				rs = stmnt.executeQuery(MAX_QUERY);
-				
-				if (rs.next())
-					m_nextKey = rs.getInt(1);
-				}
-			catch (java.sql.SQLException sqle)
-				{
-				//The exception may occur if the table does not yet exist
-				if (WARNINGS)
-					System.out.println(sqle);
-				}
-			finally
-				{
-				try
-					{
-					if (rs != null)
-						rs.close();
-						
-					if (stmnt != null)
-						stmnt.close();
-					}
-				catch (java.sql.SQLException sqle2)
-					{
-					throw new GenOrmException(sqle2);
-					}
-				}
-			}
-			
-		public synchronized Object generateKey()
-			{
-			m_nextKey++;
-			return (m_nextKey);
-			}
-		}
 		
 	//===========================================================================
 	public static DataPointFactoryImpl factory = new DataPointFactoryImpl();
 	
 	public static interface DataPointFactory extends GenOrmRecordFactory
 		{
-		public boolean delete(int id);
-		public DataPoint find(int id);
-		public DataPoint findOrCreate(int id);
+		public boolean delete(String metricId, java.sql.Timestamp timestamp);
+		public DataPoint find(String metricId, java.sql.Timestamp timestamp);
+		public DataPoint findOrCreate(String metricId, java.sql.Timestamp timestamp);
 		/**
 		*/
 		public ResultSet getForMetricId(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime);/**
@@ -148,7 +55,7 @@ public class DataPoint_base extends GenOrmRecord
 	public static class DataPointFactoryImpl //Inherit interfaces
 			implements DataPointFactory 
 		{
-		public static final String CREATE_SQL = "CREATE CACHED TABLE data_point (\n	\"id\" INT  NOT NULL,\n	\"metric_id\" VARCHAR  NULL,\n	\"timestamp\" TIMESTAMP  NULL,\n	\"long_value\" BIGINT  NULL,\n	\"double_value\" DOUBLE  NULL,\n	PRIMARY KEY (\"id\"),\n	CONSTRAINT data_point_metric_id_fkey FOREIGN KEY (\"metric_id\")\n		REFERENCES metric (\"id\") \n	)";
+		public static final String CREATE_SQL = "CREATE CACHED TABLE data_point (\n	\"metric_id\" VARCHAR  NOT NULL,\n	\"timestamp\" TIMESTAMP  NOT NULL,\n	\"long_value\" BIGINT  NULL,\n	\"double_value\" DOUBLE  NULL,\n	PRIMARY KEY (\"metric_id\", \"timestamp\"),\n	CONSTRAINT data_point_metric_id_fkey FOREIGN KEY (\"metric_id\")\n		REFERENCES metric (\"id\") \n	)";
 
 		private ArrayList<GenOrmFieldMeta> m_fieldMeta;
 		private ArrayList<GenOrmConstraint> m_foreignKeyConstraints;
@@ -156,7 +63,6 @@ public class DataPoint_base extends GenOrmRecord
 		protected DataPointFactoryImpl()
 			{
 			m_fieldMeta = new ArrayList<GenOrmFieldMeta>();
-			m_fieldMeta.add(ID_FIELD_META);
 			m_fieldMeta.add(METRIC_ID_FIELD_META);
 			m_fieldMeta.add(TIMESTAMP_FIELD_META);
 			m_fieldMeta.add(LONG_VALUE_FIELD_META);
@@ -205,12 +111,13 @@ public class DataPoint_base extends GenOrmRecord
 		/**
 			Creates a new entry with the specified primary keys.
 		*/
-		public DataPoint create(int id)
+		public DataPoint create(String metricId, java.sql.Timestamp timestamp)
 			{
 			DataPoint rec = new DataPoint();
 			rec.m_isNewRecord = true;
 			
-			((DataPoint_base)rec).setId(id);
+			((DataPoint_base)rec).setMetricId(metricId);
+			((DataPoint_base)rec).setTimestamp(timestamp);
 
 			
 			return ((DataPoint)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
@@ -235,18 +142,7 @@ public class DataPoint_base extends GenOrmRecord
 		*/
 		public DataPoint createWithGeneratedKey()
 			{
-			DataPoint rec = new DataPoint();
-			
-			rec.m_isNewRecord = true;
-			
-			GenOrmKeyGenerator keyGen = GenOrmDataSource.getKeyGenerator("data_point");
-			if (keyGen != null)
-				{
-				rec.setId(
-						(Integer)keyGen.generateKey());
-				}
-			
-			return ((DataPoint)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
+			throw new UnsupportedOperationException("DataPoint does not support a generated primary key");
 			}
 			
 		//---------------------------------------------------------------------------
@@ -259,7 +155,8 @@ public class DataPoint_base extends GenOrmRecord
 		*/
 		public DataPoint findRecord(Object keys)
 			{
-			return (find((Integer)keys));
+			Object[] kArr = (Object[])keys;
+			return (find((String)kArr[0], (java.sql.Timestamp)kArr[1]));
 			}
 			
 		//---------------------------------------------------------------------------
@@ -272,12 +169,12 @@ public class DataPoint_base extends GenOrmRecord
 			@return Returns true if the record was previous created and existed
 			either in the transaction cache or the db.
 		*/
-		public boolean delete(int id)
+		public boolean delete(String metricId, java.sql.Timestamp timestamp)
 			{
 			boolean ret = false;
 			DataPoint rec = new DataPoint();
 			
-			((DataPoint_base)rec).initialize(id);
+			((DataPoint_base)rec).initialize(metricId, timestamp);
 			GenOrmConnection con = GenOrmDataSource.getGenOrmConnection();
 			DataPoint cachedRec = (DataPoint)con.getCachedRecord(rec.getRecordKey());
 			
@@ -302,12 +199,12 @@ public class DataPoint_base extends GenOrmRecord
 		Find the record with the specified primary keys
 		@return DataPoint or null if no record is found
 		*/
-		public DataPoint find(int id)
+		public DataPoint find(String metricId, java.sql.Timestamp timestamp)
 			{
 			DataPoint rec = new DataPoint();
 			
 			//Create temp object and look in cache for it
-			((DataPoint_base)rec).initialize(id);
+			((DataPoint_base)rec).initialize(metricId, timestamp);
 			rec = (DataPoint)GenOrmDataSource.getGenOrmConnection().getCachedRecord(rec.getRecordKey());
 			
 			java.sql.PreparedStatement genorm_statement = null;
@@ -319,7 +216,8 @@ public class DataPoint_base extends GenOrmRecord
 					{
 					//No cached object so look in db
 					genorm_statement = GenOrmDataSource.prepareStatement(SELECT+FROM+KEY_WHERE);
-					genorm_statement.setInt(1, id);
+					genorm_statement.setString(1, metricId);
+					genorm_statement.setTimestamp(2, timestamp);
 
 					s_logger.debug(genorm_statement.toString());
 						
@@ -357,11 +255,11 @@ public class DataPoint_base extends GenOrmRecord
 		is created with the specified primary keys
 		@return A new or existing record.  
 		*/
-		public DataPoint findOrCreate(int id)
+		public DataPoint findOrCreate(String metricId, java.sql.Timestamp timestamp)
 			{
-			DataPoint rec = find(id);
+			DataPoint rec = find(metricId, timestamp);
 			if (rec == null)
-				rec = create(id);
+				rec = create(metricId, timestamp);
 				
 			return (rec);
 			}
@@ -690,7 +588,6 @@ public class DataPoint_base extends GenOrmRecord
 		
 	//===========================================================================
 		
-	private GenOrmInt m_id;
 	private GenOrmString m_metricId;
 	private GenOrmTimestamp m_timestamp;
 	private GenOrmLong m_longValue;
@@ -701,30 +598,6 @@ public class DataPoint_base extends GenOrmRecord
 	
 	public List<GenOrmRecordKey> getForeignKeys() { return (m_foreignKeys); }
 
-
-	//---------------------------------------------------------------------------
-	/**
-	*/
-	public int getId() { return (m_id.getValue()); }
-	public DataPoint setId(int data)
-		{
-		boolean changed = m_id.setValue(data);
-		
-		//Add the now dirty record to the transaction only if it is not previously dirty
-		if (changed)
-			{
-			if (m_dirtyFlags.isEmpty())
-				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
-				
-			m_dirtyFlags.set(ID_FIELD_META.getDirtyFlag());
-			
-			if (m_isNewRecord) //Force set the prev value
-				m_id.setPrevValue(data);
-			}
-			
-		return ((DataPoint)this);
-		}
-		
 
 	//---------------------------------------------------------------------------
 	/**
@@ -749,25 +622,6 @@ public class DataPoint_base extends GenOrmRecord
 		return ((DataPoint)this);
 		}
 		
-	public boolean isMetricIdNull()
-		{
-		return (m_metricId.isNull());
-		}
-		
-	public DataPoint setMetricIdNull()
-		{
-		boolean changed = m_metricId.setNull();
-		
-		if (changed)
-			{
-			if (m_dirtyFlags.isEmpty())
-				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
-				
-			m_dirtyFlags.set(METRIC_ID_FIELD_META.getDirtyFlag());
-			}
-		
-		return ((DataPoint)this);
-		}
 
 	//---------------------------------------------------------------------------
 	/**
@@ -792,25 +646,6 @@ public class DataPoint_base extends GenOrmRecord
 		return ((DataPoint)this);
 		}
 		
-	public boolean isTimestampNull()
-		{
-		return (m_timestamp.isNull());
-		}
-		
-	public DataPoint setTimestampNull()
-		{
-		boolean changed = m_timestamp.setNull();
-		
-		if (changed)
-			{
-			if (m_dirtyFlags.isEmpty())
-				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
-				
-			m_dirtyFlags.set(TIMESTAMP_FIELD_META.getDirtyFlag());
-			}
-		
-		return ((DataPoint)this);
-		}
 
 	//---------------------------------------------------------------------------
 	/**
@@ -926,10 +761,12 @@ public class DataPoint_base extends GenOrmRecord
 	
 	
 	//---------------------------------------------------------------------------
-	protected void initialize(int id)
+	protected void initialize(String metricId, java.sql.Timestamp timestamp)
 		{
-		m_id.setValue(id);
-		m_id.setPrevValue(id);
+		m_metricId.setValue(metricId);
+		m_metricId.setPrevValue(metricId);
+		m_timestamp.setValue(timestamp);
+		m_timestamp.setPrevValue(timestamp);
 
 		}
 		
@@ -946,11 +783,10 @@ public class DataPoint_base extends GenOrmRecord
 					s_logger.debug("Reading - "+meta.getColumnName(I) +" : "+rs.getString(I));
 					}
 				}
-			m_id.setValue(rs, 1);
-			m_metricId.setValue(rs, 2);
-			m_timestamp.setValue(rs, 3);
-			m_longValue.setValue(rs, 4);
-			m_doubleValue.setValue(rs, 5);
+			m_metricId.setValue(rs, 1);
+			m_timestamp.setValue(rs, 2);
+			m_longValue.setValue(rs, 3);
+			m_doubleValue.setValue(rs, 4);
 
 			}
 		catch (java.sql.SQLException sqle)
@@ -967,9 +803,6 @@ public class DataPoint_base extends GenOrmRecord
 		m_foreignKeys = new ArrayList<GenOrmRecordKey>();
 		m_dirtyFlags = new java.util.BitSet(NUMBER_OF_COLUMNS);
 		
-
-		m_id = new GenOrmInt(ID_FIELD_META);
-		addField(m_id);
 
 		m_metricId = new GenOrmString(METRIC_ID_FIELD_META);
 		addField(m_metricId);
@@ -1022,9 +855,6 @@ public class DataPoint_base extends GenOrmRecord
 		{
 		StringBuilder sb = new StringBuilder();
 		
-		sb.append("id=\"");
-		sb.append(m_id.getValue());
-		sb.append("\" ");
 		sb.append("metric_id=\"");
 		sb.append(m_metricId.getValue());
 		sb.append("\" ");

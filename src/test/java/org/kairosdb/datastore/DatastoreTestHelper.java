@@ -120,6 +120,18 @@ public abstract class DatastoreTestHelper
 		dpSet.addDataPoint(new DataPoint(s_startTime + 3000, 16));
 
 		s_datastore.putDataPoints(dpSet);
+
+		dpSet = new DataPointSet("duplicates");
+		dpSet.addTag("host", "A");
+		dpSet.addDataPoint(new DataPoint(s_startTime, 4));
+
+		s_datastore.putDataPoints(dpSet);
+
+		dpSet = new DataPointSet("duplicates");
+		dpSet.addTag("host", "A");
+		dpSet.addDataPoint(new DataPoint(s_startTime, 42));
+
+		s_datastore.putDataPoints(dpSet);
 	}
 
 	@Test
@@ -405,6 +417,35 @@ public abstract class DatastoreTestHelper
 		assertThat(resTags, is(expectedTags));
 
 		assertValues(dpg, 1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12);
+
+		dpg.close();
+	}
+
+	@Test
+	public void test_duplicateDataPoints() throws DatastoreException
+	{
+		SetMultimap<String, String> tags = HashMultimap.create();
+		QueryMetric query = new QueryMetric(s_startTime, 0, "duplicates");
+		query.setEndTime(s_startTime + 3000);
+
+		query.setTags(tags);
+
+		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
+
+		assertThat(results.size(), equalTo(1));
+
+		DataPointGroup dpg = results.get(0);
+
+		assertThat(dpg.getName(), is("duplicates"));
+		SetMultimap<String, String> resTags = extractTags(dpg);
+
+		assertThat(resTags.size(), is(1));
+		SetMultimap<String, String> expectedTags = TreeMultimap.create();
+		expectedTags.put("host", "A");
+
+		assertThat(resTags, is(expectedTags));
+
+		assertValues(dpg, 42);
 
 		dpg.close();
 	}

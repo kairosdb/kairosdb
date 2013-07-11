@@ -136,15 +136,20 @@ public class H2Datastore implements Datastore
 				MetricTag.factory.findOrCreate(key, name, value);
 			}
 
+			GenOrmDataSource.flush();
+
 			for (org.kairosdb.core.DataPoint dataPoint : dps.getDataPoints())
 			{
-				DataPoint dbDataPoint = DataPoint.factory.createWithGeneratedKey();
-				dbDataPoint.setMetricRef(m);
-				dbDataPoint.setTimestamp(new Timestamp(dataPoint.getTimestamp()));
-				if (dataPoint.isInteger())
-					dbDataPoint.setLongValue(dataPoint.getLongValue());
+				if ( dataPoint.isInteger())
+				{
+					new InsertLongDataPointQuery(m.getId(), new Timestamp(dataPoint.getTimestamp()),
+							dataPoint.getLongValue()).runUpdate();
+				}
 				else
-					dbDataPoint.setDoubleValue(dataPoint.getDoubleValue());
+				{
+					new InsertDoubleDataPointQuery(m.getId(), new Timestamp(dataPoint.getTimestamp()),
+							dataPoint.getDoubleValue()).runUpdate();
+				}
 			}
 
 			GenOrmDataSource.commit();

@@ -14,8 +14,6 @@ public class DSEnvelope implements GenOrmDSEnvelope
 		{
 		m_dataSource = ds;
 		m_keyGenMap = new HashMap<String, GenOrmKeyGenerator>();
-		m_keyGenMap.put("data_point", new org.kairosdb.datastore.h2.orm.DataPoint_base.DataPointKeyGenerator(ds));
-
 		}
 		
 	public DataSource getDataSource()

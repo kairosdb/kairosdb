@@ -4,7 +4,6 @@
 # description: KairosDB server
 #
 # Get function from functions library
-. /etc/init.d/functions
 # Start the service KairosDB
 
 #Set JAVA_HOME if your java is not in the path already
@@ -16,7 +15,6 @@ export KAIROS_PID_FILE="/var/run/kairosdb.pid"
 start() {
         printf "%-50s" "Starting KairosDB server: "
         $KAIROS_SCRIPT_PATH start
-        success $"KairosDB server startup"
         echo
 }
 

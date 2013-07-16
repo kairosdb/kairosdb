@@ -147,7 +147,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				null, 1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, 1000, 50000, "hostname");
 
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
-				Collections.<DataPointListener>emptyList());
+				new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
 
 		loadCassandraData();
 		loadData();
@@ -196,7 +197,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		query.setEndTime(s_dataPointTime);
 		query.setTags(tagFilter);
 
-		List<DataPointGroup> results = DatastoreTestHelper.s_datastore.query(query).getDataPoints();
+		QueryResults queryResults = DatastoreTestHelper.s_datastore.query(query);
+		List<DataPointGroup> results = queryResults.getDataPoints();
 
 		DataPointGroup dataPointGroup = results.get(0);
 		int counter = 0;
@@ -211,6 +213,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dataPointGroup.close();
 		assertThat(total, equalTo(counter * 42));
 		assertEquals(OVERFLOW_SIZE, counter);
+		queryResults.close();
 	}
 
 	@Test (expected = NullPointerException.class)
@@ -275,8 +278,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		while(row.hasNext())
 		{
 			DataPoint next = row.next();
-			System.out.println(next.getLongValue());
-//			assertThat(next.getLongValue(), equalTo(16L));
+			assertThat(next.getLongValue(), equalTo(16L));
 			count++;
 		}
 

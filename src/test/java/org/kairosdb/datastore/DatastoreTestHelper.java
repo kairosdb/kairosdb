@@ -25,6 +25,7 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.datastore.QueryResults;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.TagGroupBy;
 
@@ -175,7 +176,8 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
+		QueryResults queryResults = s_datastore.query(query);
+		List<DataPointGroup> results = queryResults.getDataPoints();
 
 		assertThat(results.size(), equalTo(1));
 
@@ -196,7 +198,7 @@ public abstract class DatastoreTestHelper
 
 		assertValues(dpg, 1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12);
 
-		dpg.close();
+		queryResults.close();
 	}
 
 	@Test
@@ -210,7 +212,8 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
+		QueryResults queryResults = s_datastore.query(query);
+		List<DataPointGroup> results = queryResults.getDataPoints();
 
 		assertThat(results.size(), is(1));
 
@@ -230,7 +233,7 @@ public abstract class DatastoreTestHelper
 
 		assertValues(dpg, 1, 5, 2, 6, 3, 7, 4, 8);
 
-		dpg.close();
+		queryResults.close();
 	}
 
 	@Test
@@ -243,7 +246,8 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
+		QueryResults queryResults = s_datastore.query(query);
+		List<DataPointGroup> results = queryResults.getDataPoints();
 
 		assertThat(results.size(), is(2));
 
@@ -276,7 +280,7 @@ public abstract class DatastoreTestHelper
 
 		assertValues(dpg, 5, 6, 7, 8);
 
-		dpg.close();
+		queryResults.close();
 	}
 
 	@Test
@@ -289,7 +293,8 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
+		QueryResults queryResults = s_datastore.query(query);
+		List<DataPointGroup> results = queryResults.getDataPoints();
 
 		assertThat(results.size(), is(3));
 
@@ -333,7 +338,7 @@ public abstract class DatastoreTestHelper
 
 		assertValues(dpg, 5, 6, 7, 8);
 
-		dpg.close();
+		queryResults.close();
 	}
 
 	@Test
@@ -346,7 +351,8 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
+		QueryResults queryResults = s_datastore.query(query);
+		List<DataPointGroup> results = queryResults.getDataPoints();
 
 		assertThat(results.size(), is(1));
 
@@ -364,7 +370,7 @@ public abstract class DatastoreTestHelper
 		assertThat(resTags, is(resTags));
 		assertValues(dpg, 1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12);
 
-		dpg.close();
+		queryResults.close();
 	}
 
 	@Test
@@ -379,11 +385,14 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
+		QueryResults queryResults = s_datastore.query(query);
+		List<DataPointGroup> results = queryResults.getDataPoints();
 
 		assertThat(results.size(), is(1));
 
 		assertValues(results.get(0), 9, 10, 11, 12);
+
+		queryResults.close();
 	}
 
 	@Test
@@ -397,7 +406,8 @@ public abstract class DatastoreTestHelper
 		tags.put("host", "B");
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
+		QueryResults queryResults = s_datastore.query(query);
+		List<DataPointGroup> results = queryResults.getDataPoints();
 
 		assertThat(results.size(), equalTo(1));
 
@@ -418,7 +428,7 @@ public abstract class DatastoreTestHelper
 
 		assertValues(dpg, 1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12);
 
-		dpg.close();
+		queryResults.close();
 	}
 
 	@Test

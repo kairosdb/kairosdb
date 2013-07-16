@@ -17,6 +17,7 @@ package org.kairosdb.core.datastore;
 
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
@@ -44,7 +45,8 @@ public class KairosDatastoreTest
 	public void test_query_nullMetricInvalid() throws KariosDBException
 	{
 		TestDatastore testds = new TestDatastore();
-		KairosDatastore datastore = new KairosDatastore(testds, Collections.EMPTY_LIST);
+		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
 
 		datastore.query(null);
 	}
@@ -53,7 +55,8 @@ public class KairosDatastoreTest
 	public void test_query_sumAggregator() throws KariosDBException
 	{
 		TestDatastore testds = new TestDatastore();
-		KairosDatastore datastore = new KairosDatastore(testds, Collections.EMPTY_LIST);
+		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 		metric.addAggregator(aggFactory.createAggregator("sum"));
 
@@ -81,7 +84,8 @@ public class KairosDatastoreTest
 	public void test_query_noAggregator() throws KariosDBException
 	{
 		TestDatastore testds = new TestDatastore();
-		KairosDatastore datastore = new KairosDatastore(testds, Collections.EMPTY_LIST);
+		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 
 		QueryResults queryResults = datastore.query(metric);
@@ -154,7 +158,8 @@ public class KairosDatastoreTest
 	public void test_cleanCacheDir() throws IOException, DatastoreException
 	{
 		TestDatastore testds = new TestDatastore();
-		KairosDatastore datastore = new KairosDatastore(testds, Collections.EMPTY_LIST);
+		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
 
 		// Create files in the cache directory
 		File cacheDir = new File(datastore.getCacheDir());

@@ -303,8 +303,8 @@ public class KairosDatastore
 
 		try
 		{
-			String cacheFilename = calculateFilenameHash(metric);
-			String tempFile = m_cacheDir + cacheFilename + "_delete";
+			String cacheFilename = UUID.randomUUID().toString();
+			String tempFile = m_cacheDir + cacheFilename;
 			CachedSearchResult cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile);
 			m_datastore.deleteDataPoints(metric, cachedResults);
 		}

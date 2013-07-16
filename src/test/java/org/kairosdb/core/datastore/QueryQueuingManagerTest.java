@@ -5,25 +5,37 @@
 //        
 package org.kairosdb.core.datastore;
 
+import org.junit.Before;
 import org.junit.Test;
+import org.kairosdb.core.DataPointSet;
 
-import static org.hamcrest.Matchers.greaterThan;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 public class QueryQueuingManagerTest
 {
+	private AtomicInteger runningCount;
+
+	@Before
+	public void setup()
+	{
+		runningCount = new AtomicInteger();
+	}
+
 	@Test(timeout = 3000)
 	public void test_onePermit() throws InterruptedException
 	{
 		QueryQueuingManager manager = new QueryQueuingManager(1, "hostname");
 
-		Query query1 = new Query(manager, "1");
-		Query query2 = new Query(manager, "2");
-		Query query3 = new Query(manager, "3");
-		Query query4 = new Query(manager, "4");
-		Query query5 = new Query(manager, "5");
+		Query query1 = new Query(manager, "1", 5);
+		Query query2 = new Query(manager, "2", 5);
+		Query query3 = new Query(manager, "3", 5);
+		Query query4 = new Query(manager, "4", 5);
+		Query query5 = new Query(manager, "5", 5);
 
 		query1.start();
 		query2.start();
@@ -43,11 +55,11 @@ public class QueryQueuingManagerTest
 		assertThat(query4.didRun, equalTo(true));
 		assertThat(query5.didRun, equalTo(true));
 
-		// Assume that at least 1 had to wait
-		long queryWaits = manager.getMetrics(System.currentTimeMillis()).get(0).getDataPoints().get(0).getLongValue();
-		assertThat(queryWaits, greaterThan(1L));
-
-		System.out.println(queryWaits);
+		assertThat(query1.queriesWatiting, equalTo(4L));
+		assertThat(query2.queriesWatiting, equalTo(3L));
+		assertThat(query3.queriesWatiting, equalTo(2L));
+		assertThat(query4.queriesWatiting, equalTo(1L));
+		assertThat(query5.queriesWatiting, equalTo(0L));
 	}
 
 	@Test(timeout = 3000)
@@ -55,11 +67,11 @@ public class QueryQueuingManagerTest
 	{
 		QueryQueuingManager manager = new QueryQueuingManager(3, "hostname");
 
-		Query query1 = new Query(manager, "1");
-		Query query2 = new Query(manager, "1");
-		Query query3 = new Query(manager, "1");
-		Query query4 = new Query(manager, "1");
-		Query query5 = new Query(manager, "1");
+		Query query1 = new Query(manager, "1", 5);
+		Query query2 = new Query(manager, "1", 5);
+		Query query3 = new Query(manager, "1", 5);
+		Query query4 = new Query(manager, "1", 5);
+		Query query5 = new Query(manager, "1", 5);
 
 		query1.start();
 		query2.start();
@@ -79,7 +91,8 @@ public class QueryQueuingManagerTest
 		assertThat(query4.didRun, equalTo(true));
 		assertThat(query5.didRun, equalTo(true));
 
-		assertThat(manager.getMetrics(System.currentTimeMillis()).get(0).getDataPoints().get(0).getLongValue(), greaterThan(1L));
+		//Number of collisions
+		assertThat(manager.getMetrics(System.currentTimeMillis()).get(1).getDataPoints().get(0).getLongValue(), equalTo(4L));
 	}
 
 	@Test(timeout = 3000)
@@ -87,9 +100,9 @@ public class QueryQueuingManagerTest
 	{
 		QueryQueuingManager manager = new QueryQueuingManager(3, "hostname");
 
-		Query query1 = new Query(manager, "1");
-		Query query2 = new Query(manager, "2");
-		Query query3 = new Query(manager, "3");
+		Query query1 = new Query(manager, "1", 3);
+		Query query2 = new Query(manager, "2", 3);
+		Query query3 = new Query(manager, "3", 3);
 
 		query1.start();
 		query2.start();
@@ -103,19 +116,24 @@ public class QueryQueuingManagerTest
 		assertThat(query2.didRun, equalTo(true));
 		assertThat(query3.didRun, equalTo(true));
 
-		assertThat(manager.getMetrics(System.currentTimeMillis()).get(0).getDataPoints().get(0).getLongValue(), equalTo(0L));
+		List<DataPointSet> metrics = manager.getMetrics(System.currentTimeMillis());
+		assertThat(metrics.get(0).getDataPoints().get(0).getLongValue(), equalTo(0L));
+		assertThat(metrics.get(1).getDataPoints().get(0).getLongValue(), equalTo(0L));
 	}
 
 	private class Query extends Thread
 	{
 		private QueryQueuingManager manager;
 		private String hash;
+		private int waitCount;
 		private boolean didRun = false;
+		private long queriesWatiting;
 
-		private Query(QueryQueuingManager manager, String hash)
+		private Query(QueryQueuingManager manager, String hash, int waitCount)
 		{
 			this.manager = manager;
 			this.hash = hash;
+			this.waitCount = waitCount;
 		}
 
 		@Override
@@ -123,8 +141,13 @@ public class QueryQueuingManagerTest
 		{
 			try
 			{
+				runningCount.incrementAndGet();
 				manager.waitForTimeToRun(hash);
-				Thread.sleep(100);
+				while(runningCount.get() < waitCount)
+				{
+					Thread.sleep(100);
+				}
+				queriesWatiting = manager.getQueryWaitingCount();
 			}
 			catch (InterruptedException e)
 			{

@@ -78,6 +78,9 @@ public class MetricsResourceTest
 				bind(GroupByFactory.class).to(TestGroupByFactory.class);
 				bind(GsonParser.class).in(Singleton.class);
 				bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
+				bind(QueryQueuingManager.class).in(Singleton.class);
+				bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
+				bindConstant().annotatedWith(Names.named("kairosdb.datastore.concurrentQueryThreads")).to(1);
 			}
 		});
 		server = injector.getInstance(WebServer.class);

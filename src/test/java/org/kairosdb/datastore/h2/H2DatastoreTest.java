@@ -54,7 +54,8 @@ public class H2DatastoreTest extends DatastoreTestHelper
 	@BeforeClass
 	public static void setupDatabase() throws DatastoreException
 	{
-		s_datastore = new KairosDatastore(new H2Datastore(DB_PATH), new QueryQueuingManager(1, "hostname"), Collections.<DataPointListener>emptyList());
+		s_datastore = new KairosDatastore(new H2Datastore(DB_PATH), new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
 
 		loadData();
 	}

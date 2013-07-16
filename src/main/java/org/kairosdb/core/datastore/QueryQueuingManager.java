@@ -23,7 +23,7 @@ import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,26 +38,36 @@ public class QueryQueuingManager implements KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(QueryQueuingManager.class);
 	public static final String CONCURRENT_QUERY_THREAD = "kairosdb.datastore.concurrentQueryThreads";
-	public static final String REPORTING_METRIC_NAME = "kairosdb.datastore.queries_waiting";
+	public static final String QUERIES_WAITING_METRIC_NAME = "kairosdb.datastore.queries_waiting";
+	public static final String QUERY_COLLISIONS_METRIC_NAME = "kairosdb.datastore.query_collisions";
 
 	private final Map<String, Thread> runningQueries = new HashMap<String, Thread>();
 	private final ReentrantLock lock = new ReentrantLock();
 	private final Semaphore semaphore;
 	private final String hostname;
 
-	private AtomicInteger queriesWaiting = new AtomicInteger();
+	private AtomicInteger collisions = new AtomicInteger();
 
 	@Inject
 	public QueryQueuingManager(@Named(CONCURRENT_QUERY_THREAD) int concurrentQueryThreads, @Named("HOSTNAME") String hostname)
 	{
 		checkArgument(concurrentQueryThreads > 0);
-		semaphore = new Semaphore(concurrentQueryThreads, true);
 		this.hostname = checkNotNullOrEmpty(hostname);
+		semaphore = new Semaphore(concurrentQueryThreads, true);
 	}
 
 	public void waitForTimeToRun(String queryHash) throws InterruptedException
 	{
-		acquireLock(queryHash);
+		boolean firstTime = true;
+		while(!acquireSemaphore(queryHash))
+		{
+			if (firstTime)
+			{
+				collisions.incrementAndGet();
+				firstTime = false;
+			}
+			Thread.sleep(100);
+		}
 	}
 
 	public void done(String queryHash)
@@ -74,14 +84,8 @@ public class QueryQueuingManager implements KairosMetricReporter
 		semaphore.release();
 	}
 
-	private void acquireLock(String queryHash) throws InterruptedException
+	private boolean acquireSemaphore(String queryHash) throws InterruptedException
 	{
-		if (semaphore.availablePermits() < 1)
-		{
-			// assume we won't be able to acquire the permit
-			queriesWaiting.incrementAndGet();
-		}
-
 		semaphore.acquire();
 
 		boolean hashConflict = false;
@@ -102,34 +106,31 @@ public class QueryQueuingManager implements KairosMetricReporter
 		if (hashConflict)
 		{
 			semaphore.release();
-			queriesWaiting.incrementAndGet();
-
-			while (hashConflict)
-			{
-				Thread.sleep(100);
-
-				lock.lock();
-				try
-				{
-					hashConflict = runningQueries.containsKey(queryHash);
-				}
-				finally
-				{
-					lock.unlock();
-				}
-			}
-			acquireLock(queryHash);
+			return false;
 		}
+		else
+			return true;
+	}
+
+	public int getQueryWaitingCount()
+	{
+		return semaphore.getQueueLength();
 	}
 
 	@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
-		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
-		dps.addTag("host", hostname);
-		dps.addTag("method", "put");
-		dps.addDataPoint(new DataPoint(now, queriesWaiting.getAndSet(0)));
+		List<DataPointSet> dataPointSets = new ArrayList<DataPointSet>();
+		DataPointSet waitingSet = new DataPointSet(QUERIES_WAITING_METRIC_NAME);
+		waitingSet.addTag("host", hostname);
+		waitingSet.addDataPoint(new DataPoint(System.currentTimeMillis(), semaphore.getQueueLength()));
+		dataPointSets.add(waitingSet);
 
-		return (Collections.singletonList(dps));
+		DataPointSet collisionSet = new DataPointSet(QUERY_COLLISIONS_METRIC_NAME);
+		collisionSet.addTag("host", hostname);
+		collisionSet.addDataPoint(new DataPoint(System.currentTimeMillis(), collisions.getAndSet(0)));
+		dataPointSets.add(collisionSet);
+
+		return dataPointSets;
 	}
 }

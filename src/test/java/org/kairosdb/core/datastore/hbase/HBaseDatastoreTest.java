@@ -40,7 +40,7 @@ public class HBaseDatastoreTest extends DatastoreTestHelper
 	{
 		s_datastore = new KairosDatastore(new HBaseDatastore("tsdb", "tsdb-uid", "localhost", "", true),
 				new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList());
+				Collections.<DataPointListener>emptyList(), "hostname");
 
 		loadData();
 

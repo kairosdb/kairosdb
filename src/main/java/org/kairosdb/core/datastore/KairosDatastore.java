@@ -20,6 +20,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.Aggregator;
@@ -41,26 +42,32 @@ import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 public class KairosDatastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(KairosDatastore.class);
 	public static final String QUERY_CACHE_DIR = "kairosdb.query_cache.cache_dir";
+	public static final String QUERY_METRIC_TIME = "kairosdb.datastore.query_time";
 
 	private final Datastore m_datastore;
 	private final QueryQueuingManager m_queuingManager;
 	private final List<DataPointListener> m_dataPointListeners;
+	private final String m_hostname;
 
 	private String m_baseCacheDir;
 	private volatile String m_cacheDir;
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
-	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager, List<DataPointListener> dataPointListeners) throws DatastoreException
+	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
+	                       List<DataPointListener> dataPointListeners, @Named("HOSTNAME") String hostname)
+			throws DatastoreException
 	{
 		m_datastore = checkNotNull(datastore);
 		m_dataPointListeners = checkNotNull(dataPointListeners);
 		m_queuingManager = checkNotNull(queuingManager);
+		m_hostname = checkNotNullOrEmpty(hostname);
 
 		m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
 
@@ -211,6 +218,8 @@ public class KairosDatastore
 	{
 		checkNotNull(metric);
 
+		long queryStartTime = System.currentTimeMillis();
+
 		QueryResults results;
 		CachedSearchResult cachedResults = null;
 
@@ -278,6 +287,13 @@ public class KairosDatastore
 		}
 
 		results.addDataPoints(aggregatedResults);
+
+		DataPointSet dps = new DataPointSet(QUERY_METRIC_TIME);
+		dps.addTag("host", m_hostname);
+		dps.addTag("metric_name", metric.getName());
+		dps.addDataPoint(new DataPoint(queryStartTime, System.currentTimeMillis() - queryStartTime));
+		putDataPoints(dps);
+
 		return results;
 	}
 

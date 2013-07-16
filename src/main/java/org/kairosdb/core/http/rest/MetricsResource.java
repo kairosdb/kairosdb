@@ -194,7 +194,8 @@ public class MetricsResource
 				}
 				finally
 				{
-					qr.close();
+					if (qr != null)
+						qr.close();
 				}
 			}
 
@@ -382,7 +383,7 @@ public class MetricsResource
 			InputStream reader = new FileInputStream(m_responseFile);
 
 			byte[] buffer = new byte[1024];
-			int size = 0;
+			int size;
 
 			while ((size = reader.read(buffer)) != -1)
 			{

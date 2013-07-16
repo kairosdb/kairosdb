@@ -45,11 +45,16 @@ public class QueryResults
 
 	public void close()
 	{
-		for (DataPointGroup dataPoint : m_dataPoints)
+		try
 		{
-			dataPoint.close();
+			for (DataPointGroup dataPoint : m_dataPoints)
+			{
+				dataPoint.close();
+			}
 		}
-
-		m_queuingManager.done(m_queryHash);
+		finally
+		{
+			m_queuingManager.done(m_queryHash);
+		}
 	}
 }

@@ -92,7 +92,7 @@ public class QueryQueuingManagerTest
 		assertThat(query5.didRun, equalTo(true));
 
 		//Number of collisions
-		assertThat(manager.getMetrics(System.currentTimeMillis()).get(1).getDataPoints().get(0).getLongValue(), equalTo(4L));
+		assertThat(manager.getMetrics(System.currentTimeMillis()).get(0).getDataPoints().get(0).getLongValue(), equalTo(4L));
 	}
 
 	@Test(timeout = 3000)
@@ -118,7 +118,7 @@ public class QueryQueuingManagerTest
 
 		List<DataPointSet> metrics = manager.getMetrics(System.currentTimeMillis());
 		assertThat(metrics.get(0).getDataPoints().get(0).getLongValue(), equalTo(0L));
-		assertThat(metrics.get(1).getDataPoints().get(0).getLongValue(), equalTo(0L));
+		assertThat(manager.getQueryWaitingCount(), equalTo(0));
 	}
 
 	private class Query extends Thread

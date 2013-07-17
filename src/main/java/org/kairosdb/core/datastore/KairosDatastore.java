@@ -49,6 +49,7 @@ public class KairosDatastore
 	public static final Logger logger = LoggerFactory.getLogger(KairosDatastore.class);
 	public static final String QUERY_CACHE_DIR = "kairosdb.query_cache.cache_dir";
 	public static final String QUERY_METRIC_TIME = "kairosdb.datastore.query_time";
+	public static final String QUERIES_WAITING_METRIC_NAME = "kairosdb.datastore.queries_waiting";
 
 	private final Datastore m_datastore;
 	private final QueryQueuingManager m_queuingManager;
@@ -293,6 +294,11 @@ public class KairosDatastore
 		dps.addTag("metric_name", metric.getName());
 		dps.addDataPoint(new DataPoint(queryStartTime, System.currentTimeMillis() - queryStartTime));
 		putDataPoints(dps);
+
+		DataPointSet waitingSet = new DataPointSet(QUERIES_WAITING_METRIC_NAME);
+		waitingSet.addTag("host", m_hostname);
+		waitingSet.addDataPoint(new DataPoint(queryStartTime, m_queuingManager.getQueryWaitingCount()));
+		putDataPoints(waitingSet);
 
 		return results;
 	}

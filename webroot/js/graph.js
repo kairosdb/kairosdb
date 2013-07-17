@@ -4,7 +4,7 @@ function displayQuery()
 	if ($('#query-type-json').is(':checked'))
 		$("#query-text").val(queryString);
 	else
-		$("#query-text").val(queryString.replace(/\"(\w*)\":/g,"$1:"));
+		$("#query-text").val('var query = '+queryString.replace(/\"(\w*)\":/g,"$1:")+';');
 }
 
 function updateChart() {

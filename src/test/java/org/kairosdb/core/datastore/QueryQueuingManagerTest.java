@@ -9,9 +9,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPointSet;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -31,35 +35,38 @@ public class QueryQueuingManagerTest
 	{
 		QueryQueuingManager manager = new QueryQueuingManager(1, "hostname");
 
-		Query query1 = new Query(manager, "1", 5);
-		Query query2 = new Query(manager, "2", 5);
-		Query query3 = new Query(manager, "3", 5);
-		Query query4 = new Query(manager, "4", 5);
-		Query query5 = new Query(manager, "5", 5);
+		List<Query> queries = new ArrayList<Query>();
+		queries.add(new Query(manager, "1", 5));
+		queries.add(new Query(manager, "2", 5));
+		queries.add(new Query(manager, "3", 5));
+		queries.add(new Query(manager, "4", 5));
+		queries.add(new Query(manager, "5", 5));
 
-		query1.start();
-		query2.start();
-		query3.start();
-		query4.start();
-		query5.start();
+		for (Query query : queries)
+		{
+			query.start();
+		}
 
-		query1.join();
-		query2.join();
-		query3.join();
-		query4.join();
-		query5.join();
+		for (Query query : queries)
+		{
+			query.join();
+		}
 
-		assertThat(query1.didRun, equalTo(true));
-		assertThat(query2.didRun, equalTo(true));
-		assertThat(query3.didRun, equalTo(true));
-		assertThat(query4.didRun, equalTo(true));
-		assertThat(query5.didRun, equalTo(true));
+		Map<Long, Query> map = new HashMap<Long, Query>();
+		for (Query query : queries)
+		{
+			assertThat(query.didRun, equalTo(true));
+			map.put(query.queriesWatiting, query);
+		}
 
-		assertThat(query1.queriesWatiting, equalTo(4L));
-		assertThat(query2.queriesWatiting, equalTo(3L));
-		assertThat(query3.queriesWatiting, equalTo(2L));
-		assertThat(query4.queriesWatiting, equalTo(1L));
-		assertThat(query5.queriesWatiting, equalTo(0L));
+		// Not sure which thread gets the semaphore first  so we add them to a map and verify that some thread
+		// had 4 threads waiting, 3 threads, etc.
+		assertThat(map.size(), equalTo(5));
+		assertThat(map, hasKey(4L));
+		assertThat(map, hasKey(3L));
+		assertThat(map, hasKey(2L));
+		assertThat(map, hasKey(1L));
+		assertThat(map, hasKey(0L));
 	}
 
 	@Test(timeout = 3000)

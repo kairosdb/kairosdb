@@ -38,6 +38,7 @@ import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.testing.TestingDataPointRowImpl;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,6 +64,10 @@ public class MetricsResourceTest
 	@BeforeClass
 	public static void startup() throws Exception
 	{
+		//This sends jersey java util logging to logback
+		SLF4JBridgeHandler.removeHandlersForRootLogger();
+		SLF4JBridgeHandler.install();
+
 		Injector injector = Guice.createInjector(new WebServletModule(new Properties()), new AbstractModule()
 		{
 			private Datastore datastore = new TestDatastore();

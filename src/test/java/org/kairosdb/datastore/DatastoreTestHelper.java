@@ -440,7 +440,8 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		List<DataPointGroup> results = s_datastore.query(query).getDataPoints();
+		QueryResults queryResults = s_datastore.query(query);
+		List<DataPointGroup> results = queryResults.getDataPoints();
 
 		assertThat(results.size(), equalTo(1));
 
@@ -457,7 +458,7 @@ public abstract class DatastoreTestHelper
 
 		assertValues(dpg, 42);
 
-		dpg.close();
+		queryResults.close();
 	}
 
 	private void assertValues(DataPointGroup group, long... values)

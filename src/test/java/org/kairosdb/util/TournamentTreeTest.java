@@ -16,15 +16,15 @@
 package org.kairosdb.util;
 
 
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import org.junit.Test;
-
 import static org.junit.Assert.*;
 
-public class TestTournamentTree
+public class TournamentTreeTest
 {
 	private class RowData
 	{

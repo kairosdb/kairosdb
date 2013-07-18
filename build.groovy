@@ -4,16 +4,18 @@ import org.freecompany.redline.header.Os
 import org.freecompany.redline.header.RpmType
 import org.freecompany.redline.payload.Directive
 import tablesaw.AbstractFileSet
-import tablesaw.Tablesaw
 import tablesaw.RegExFileSet
+import tablesaw.Tablesaw
 import tablesaw.TablesawException
 import tablesaw.addons.GZipRule
-import tablesaw.addons.ZipRule
 import tablesaw.addons.TarRule
-import tablesaw.rules.*
-import tablesaw.addons.java.*
 import tablesaw.addons.ivy.IvyAddon
+import tablesaw.addons.java.Classpath
+import tablesaw.addons.java.JavaProgram
 import tablesaw.addons.junit.JUnitRule
+import tablesaw.rules.DirectoryRule
+import tablesaw.rules.Rule
+import tablesaw.rules.SimpleRule
 
 import javax.swing.*
 
@@ -92,7 +94,6 @@ testClasspath.addPath(jp.getJarRule().getTarget())
 
 testSources = new RegExFileSet("src/test/java", ".*Test\\.java").recurse()
 		.addExcludeFiles("CassandraDatastoreTest.java", "HBaseDatastoreTest.java")
-		//.addExcludeFiles("HBaseDatastoreTest.java")
 		.getFilePaths()
 testCompileRule = jp.getTestCompileRule()
 
@@ -101,12 +102,21 @@ junitClasspath.addPaths(testClasspath)
 junitClasspath.addPath("src/main/java")
 junitClasspath.addPath("src/test/resources")
 junitClasspath.addPath("src/main/resources")
+
 junit = new JUnitRule().addSources(testSources)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
 
 if (saw.getProperty("jacoco", "false").equals("true"))
 	junit.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
+
+testSourcesAll = new RegExFileSet("src/test/java", ".*Test\\.java").recurse().getFilePaths()
+junitAll = new JUnitRule("junit-test-all").addSources(testSourcesAll)
+		.setClasspath(junitClasspath)
+		.addDepends(testCompileRule)
+
+if (saw.getProperty("jacoco", "false").equals("true"))
+	junitAll.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
 
 //------------------------------------------------------------------------------
 //Build zip deployable application

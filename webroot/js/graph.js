@@ -75,14 +75,58 @@ function updateChart() {
 				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				metric.addRate(unit);
 			}
+			else if (name == 'histogram')
+			{
+				var value = $(aggregator).find(".aggregatorSamplingValue").val();
+				if(!isValidInteger(value))
+                {
+                    return true;
+                }
+                var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+                var percentile =  $(aggregator).find(".aggregatorPercentileValue").val();
+                if(!isValidPercentile(percentile))
+                {
+                    return true;
+                }
+                metric.addHistogram(value, unit, percentile);
+			}
 			else
 			{
 				var value = $(aggregator).find(".aggregatorSamplingValue").val();
+				if(!isValidInteger(value))
+				{
+					return true;
+				}
 				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-
 				metric.addAggregator(name, value, unit);
 			}
 		});
+
+		function isValidPercentile(percentile)
+        {
+            var intRegex = /^(0*\.\d*|(0*1(\.0*|))|0+)$/;
+            if(!intRegex.test(percentile)) {
+               showErrorMessage("percentile value must be between [0-1]")
+               return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+		function isValidInteger(value)
+		{
+			var intRegex = /^\d+$/;
+	        if(!intRegex.test(value)) {
+	           showErrorMessage("sampling value must be an integer greater than 0.")
+	           return false;
+	        }
+	        else
+	        {
+	            return true;
+	        }
+		}
 
 		// Add Tags
 		$metricContainer.find("[name='tags']").each(function (index, tagContainer) {
@@ -405,12 +449,19 @@ function addAggregator(container) {
 		var name = $aggregatorContainer.find(".aggregatorName").val();
 		if (name == "rate") {
 			$aggregatorContainer.find(".aggregatorSampling").hide();
+			$aggregatorContainer.find(".aggregatorPercentile").hide();
 
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
-		else
+		else if(name == "histogram"){
+			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
 			$aggregatorContainer.find(".aggregatorSampling").show();
+		}
+		else{
+			$aggregatorContainer.find(".aggregatorSampling").show();
+            $aggregatorContainer.find(".aggregatorPercentile").hide();
+		}
 	});
 }
 

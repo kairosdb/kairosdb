@@ -15,7 +15,8 @@ kairosdb.Aggregators =
 	RATE: "rate",
 	SORT: "sort",
 	SUM: "sum",
-	LEAST_SQUARES: "least_squares"
+	LEAST_SQUARES: "least_squares",
+	HISTOGRAM: "histogram"
 };
 
 kairosdb.Unit =  //Values used for Aggregator sampling and Relative time
@@ -72,6 +73,25 @@ kairosdb.Metric = function (name) {
 		this.aggregators.push(rate);
 		return this;
 	};
+
+	this.addHistogram = function(value, unit, percentile)
+	{
+		if (!this.aggregators)
+            this.aggregators = [];
+
+        var histogram = {};
+        histogram.name = "histogram";
+        histogram.percentile = percentile;
+        if (unit)
+        {
+            histogram.sampling = {};
+            histogram.sampling.unit = unit;
+            histogram.sampling.value = value;
+        }
+
+        this.aggregators.push(histogram);
+        return this;
+}
 
 	this.addAggregator = function (name, value, unit) {
 		if (!this.aggregators)

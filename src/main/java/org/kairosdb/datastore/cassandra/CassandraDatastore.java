@@ -240,7 +240,7 @@ public class CassandraDatastore implements Datastore
 			for (DataPoint dp : dps.getDataPoints())
 			{
 				long newRowTime = calculateRowTime(dp.getTimestamp());
-				if (newRowTime != rowTime)
+				if (newRowTime != rowTime || rowKey == null)
 				{
 					rowTime = newRowTime;
 					rowKey = new DataPointsRowKey(dps.getName(), rowTime, dps.getTags());

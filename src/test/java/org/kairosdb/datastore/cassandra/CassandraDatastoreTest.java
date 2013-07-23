@@ -50,7 +50,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	private static long s_dataPointTime;
 	public static final HashMultimap<String,String> EMPTY_MAP = HashMultimap.create();
 
-	private static void loadCassandraData()
+	private static void loadCassandraData() throws DatastoreException
 	{
 		s_dataPointTime = System.currentTimeMillis();
 
@@ -283,6 +283,27 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		}
 
 		assertThat(count, equalTo(0));
+	}
+
+	@Test
+	public void test_TimestampsCloseToZero() throws DatastoreException
+	{
+		DataPointSet set = new DataPointSet("testMetric");
+		set.addDataPoint(new DataPoint(1, 1L));
+		set.addDataPoint(new DataPoint(2, 2L));
+		set.addDataPoint(new DataPoint(0, 3L));
+		set.addDataPoint(new DataPoint(3, 4L));
+		set.addDataPoint(new DataPoint(4, 5L));
+		set.addDataPoint(new DataPoint(5, 6L));
+		s_datastore.putDataPoints(set);
+	}
+
+	@Test(expected = DatastoreException.class)
+	public void test_TimestampsNegative() throws DatastoreException
+	{
+		DataPointSet set = new DataPointSet("testMetric");
+		set.addDataPoint(new DataPoint(-1, 1L));
+		s_datastore.putDataPoints(set);
 	}
 
 	private CachedSearchResult createCache(String metricName) throws IOException

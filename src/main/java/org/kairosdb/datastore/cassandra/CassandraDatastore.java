@@ -145,7 +145,7 @@ public class CassandraDatastore implements Datastore
 							dps.addTag("host", hostname);
 							dps.addTag("buffer", CF_DATA_POINTS);
 							dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
-							putDataPoints(dps);
+							putInternalDataPoints(dps);
 						}
 					}, mutatorLock, lockCondition);
 
@@ -163,7 +163,7 @@ public class CassandraDatastore implements Datastore
 							dps.addTag("host", hostname);
 							dps.addTag("buffer", CF_ROW_KEY_INDEX);
 							dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
-							putDataPoints(dps);
+							putInternalDataPoints(dps);
 						}
 					}, mutatorLock, lockCondition);
 
@@ -181,13 +181,25 @@ public class CassandraDatastore implements Datastore
 							dps.addTag("host", hostname);
 							dps.addTag("buffer", CF_STRING_INDEX);
 							dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
-							putDataPoints(dps);
+							putInternalDataPoints(dps);
 						}
 					}, mutatorLock, lockCondition);
 		}
 		catch (HectorException e)
 		{
 			throw new DatastoreException(e);
+		}
+	}
+
+	private void putInternalDataPoints(DataPointSet dps)
+	{
+		try
+		{
+			putDataPoints(dps);
+		}
+		catch (DatastoreException e)
+		{
+			logger.error("", e);
 		}
 	}
 
@@ -228,17 +240,19 @@ public class CassandraDatastore implements Datastore
 
 
 	@Override
-	public void putDataPoints(DataPointSet dps)
+	public void putDataPoints(DataPointSet dps) throws DatastoreException
 	{
 		try
 		{
-			long rowTime = 0L;
+			long rowTime = -1L;
 			DataPointsRowKey rowKey = null;
 			//time the data is written.
 			long writeTime = System.currentTimeMillis();
 
 			for (DataPoint dp : dps.getDataPoints())
 			{
+				if (dp.getTimestamp() < 0)
+					throw new DatastoreException("Timestamp must be greater than or equal to zero.");
 				long newRowTime = calculateRowTime(dp.getTimestamp());
 				if (newRowTime != rowTime)
 				{
@@ -289,9 +303,13 @@ public class CassandraDatastore implements Datastore
 				}
 			}
 		}
+		catch (DatastoreException e)
+		{
+			throw e;
+		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
+			throw new DatastoreException(e);
 		}
 	}
 

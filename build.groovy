@@ -23,7 +23,7 @@ println("===============================================");
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "0.9.0"
+version = "0.9.1"
 release = "1" //package release number
 summary = "KairosDB"
 description = """\
@@ -39,7 +39,7 @@ versionSource = "$versionSourceDir/KairosVersion.java"
 saw = Tablesaw.getCurrentTablesaw()
 saw.includeDefinitionFile("definitions.xml")
 
-ivyConfig = ["default"]
+ivyConfig = ["default", "integration"]
 
 
 rpmDir = "build/rpm"
@@ -111,7 +111,8 @@ if (saw.getProperty("jacoco", "false").equals("true"))
 	junit.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
 
 testSourcesAll = new RegExFileSet("src/test/java", ".*Test\\.java").recurse().getFilePaths()
-junitAll = new JUnitRule("junit-test-all").addSources(testSourcesAll)
+junitAll = new JUnitRule("junit-test-all").setDescription("Run unit tests including Cassandra and HBase tests")
+		.addSources(testSourcesAll)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
 
@@ -151,6 +152,8 @@ gzipRule = new GZipRule("package").setSource(tarRule.getTarget())
 		.setTarget("build/${programName}-${version}.tar.gz")
 		.addDepend(tarRule)
 
+//------------------------------------------------------------------------------
+//Build rpm file
 rpmBaseInstallDir = "/opt/$programName"
 rpmRule = new SimpleRule("package-rpm").setDescription("Build RPM Package")
 		.addDepend(jp.getJarRule())
@@ -167,6 +170,7 @@ new SimpleRule("package-rpm-nodep").setDescription("Build RPM Package with no de
 
 def doRPM(Rule rule)
 {
+	//Build rpm using redline rpm library
 	host = InetAddress.getLocalHost().getHostName()
 	rpmBuilder = new Builder()
 	rpmBuilder.with
@@ -292,6 +296,17 @@ def doGenorm(Rule rule)
 	genormDefinition.set("source", "src/main/conf/tables.xml");
 	cmd = genormDefinition.getCommand();
 	saw.exec(cmd);
+}
+
+
+//------------------------------------------------------------------------------
+//Build Integration tests
+new SimpleRule("integration")
+		.setMakeAction("doIntegration")
+
+def doIntegration(Rule rule)
+{
+
 }
 
 

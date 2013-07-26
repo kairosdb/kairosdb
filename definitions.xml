@@ -13,6 +13,10 @@
 		<option name="source" pattern="(.+)">-s $1</option>
 	</definition>
 
+	<!-- ======================================================================= -->
+	<definition name="testng" command="java">
+		<option name="classpath" pattern="(.+)">-cp $1</option>
+	</definition>
 
 	<!-- ======================================================================= -->
 	<definition name="linux-notify" command="notify-send">

@@ -40,6 +40,7 @@ public class CachedSearchResult
 	private String m_metricName;
 	private List<FilePositionMarker> m_dataPointSets;
 	private ByteBuffer m_writeBuffer;
+	private File m_dataFile;
 	private FileChannel m_dataFileChannel;
 	private File m_indexFile;
 	private AtomicInteger m_closeCounter = new AtomicInteger();
@@ -67,8 +68,14 @@ public class CachedSearchResult
 		m_writeBuffer.clear();
 		m_indexFile = indexFile;
 		m_dataPointSets = new ArrayList<FilePositionMarker>();
+		m_dataFile = dataFile;
+	}
 
-		RandomAccessFile rFile = new RandomAccessFile(dataFile, "rw");
+	private void openCacheFile() throws FileNotFoundException
+	{
+		//Cache cleanup could have removed the folders
+		m_dataFile.getParentFile().mkdirs();
+		RandomAccessFile rFile = new RandomAccessFile(m_dataFile, "rw");
 
 		m_dataFileChannel = rFile.getChannel();
 	}
@@ -83,6 +90,10 @@ public class CachedSearchResult
 		int size = in.readInt();
 		for (int I = 0; I < size; I++)
 		{
+			//open the cache file only if there will be data point groups returned
+			if (m_dataFileChannel == null)
+				openCacheFile();
+
 			FilePositionMarker marker = new FilePositionMarker();
 			marker.readExternal(in);
 			m_dataPointSets.add(marker);
@@ -110,7 +121,8 @@ public class CachedSearchResult
 
 	private void clearDataFile() throws IOException
 	{
-		m_dataFileChannel.truncate(0);
+		if (m_dataFileChannel != null)
+			m_dataFileChannel.truncate(0);
 	}
 
 	public static CachedSearchResult createCachedSearchResult(String metricName,
@@ -164,6 +176,9 @@ public class CachedSearchResult
 	 */
 	public void endDataPoints() throws IOException
 	{
+		if (m_dataFileChannel == null)
+			return;
+
 		flushWriteBuffer();
 
 		long curPosition = m_dataFileChannel.position();
@@ -178,7 +193,8 @@ public class CachedSearchResult
 	{
 		try
 		{
-			m_dataFileChannel.close();
+			if (m_dataFileChannel != null)
+				m_dataFileChannel.close();
 
 			saveIndex();
 		}
@@ -202,6 +218,9 @@ public class CachedSearchResult
 	 */
 	public void startDataPointSet(Map<String, String> tags) throws IOException
 	{
+		if (m_dataFileChannel == null)
+			openCacheFile();
+
 		endDataPoints();
 
 		long curPosition = m_dataFileChannel.position();

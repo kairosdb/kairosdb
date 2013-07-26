@@ -1,0 +1,26 @@
+{
+	"metrics": [
+		{
+			"tags": {},
+			"name": "name",
+			"aggregators": [
+				{
+					"name": "sum",
+					"sampling": {
+						"value": "1",
+						"unit": "milliseconds"
+					}
+				}
+			]
+		}
+	],
+	"cache_time": 0,
+	"start_relative": {
+		"value": "10",
+		"unit": "years"
+	},
+	"end_relative": {
+		"value": "9",
+		"unit": "years"
+	}
+}

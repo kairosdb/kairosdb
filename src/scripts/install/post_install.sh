@@ -6,3 +6,5 @@ else
 	chkconfig --add kairosdb
 	chkconfig kairosdb on
 fi
+
+/etc/init.d/kairosdb start

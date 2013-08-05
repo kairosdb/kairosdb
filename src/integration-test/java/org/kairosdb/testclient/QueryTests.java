@@ -26,6 +26,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -46,6 +47,15 @@ List of tests we need to perform
 public class QueryTests
 {
 	private JsonParser m_parser = new JsonParser();
+	private String m_host = "127.0.0.1";
+	private String m_port = "8080";
+
+	@Parameters({"host", "port"})
+	public QueryTests(String m_host, String m_port)
+	{
+		this.m_host = m_host;
+		this.m_port = m_port;
+	}
 
 	private JsonElement readJsonFromStream(String path) throws IOException, JSONException
 	{
@@ -60,7 +70,7 @@ public class QueryTests
 	private JsonElement postQuery(JsonElement query) throws IOException, JSONException
 	{
 		HttpClient client = new DefaultHttpClient();
-		HttpPost post = new HttpPost("http://localhost:" + System.getProperty("port") + "/api/v1/datapoints/query");
+		HttpPost post = new HttpPost("http://"+m_host+":" + m_port + "/api/v1/datapoints/query");
 		post.setHeader("Content-Type", "application/json");
 
 		post.setEntity(new StringEntity(query.toString()));

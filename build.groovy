@@ -11,6 +11,7 @@ import tablesaw.addons.GZipRule
 import tablesaw.addons.TarRule
 import tablesaw.addons.ivy.IvyAddon
 import tablesaw.addons.java.Classpath
+import tablesaw.addons.java.JavaCRule
 import tablesaw.addons.java.JavaProgram
 import tablesaw.addons.junit.JUnitRule
 import tablesaw.rules.DirectoryRule
@@ -20,6 +21,8 @@ import tablesaw.rules.SimpleRule
 import javax.swing.*
 
 println("===============================================");
+
+saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
@@ -50,7 +53,12 @@ rpmNoDepDirRule = new DirectoryRule(rpmNoDepDir)
 
 ivy = new IvyAddon().setup()
 
+buildLibraries = new RegExFileSet("lib", ".*\\.jar").recurse()
+		.addExcludeDir("integration")
+		.getFullFilePaths()
+
 jp = new JavaProgram().setProgramName(programName)
+		.setLibraryJars(buildLibraries)
 		.setup()
 
 jp.getCompileRule().getDefinition().set("target", "1.6")
@@ -253,7 +261,7 @@ def doDeb(Rule rule)
 
 
 //------------------------------------------------------------------------------
-//Run the tsd application
+//Run the Kairos application
 new SimpleRule("run-debug").setDescription("Runs kairosdb so a debugger can attach to port 5005")
 		.addDepends(jp.getJarRule())
 		.setMakeAction("doRun")
@@ -301,12 +309,23 @@ def doGenorm(Rule rule)
 
 //------------------------------------------------------------------------------
 //Build Integration tests
+integrationClassPath = new Classpath(jp.getLibraryJars())
+		.addPaths(new RegExFileSet("lib/ivy/integration", ".*\\.jar").getFullFilePaths())
+		.addPath("src/integration-test/resources")
+
+integrationBuildRule = new JavaCRule("build/integration")
+		.addSourceDir("src/integration-test/java")
+		.addClasspath(integrationClassPath)
+
 new SimpleRule("integration")
 		.setMakeAction("doIntegration")
+		.addDepend(integrationBuildRule)
 
 def doIntegration(Rule rule)
 {
-
+	host = saw.getProperty("host", "127.0.0.1")
+	port = saw.getProperty("port", "8080")
+	saw.exec("java  -Dhost=${host} -Dport=${port} -cp ${integrationBuildRule.classpath} org.testng.TestNG src/integration-test/testng.xml")
 }
 
 

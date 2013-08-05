@@ -1,0 +1,109 @@
+{
+	"metrics": [
+		{
+			"name": "<metric_name>",
+			"aggregators":[
+				{
+					"name":"sum",
+					"sampling": {
+						"value":10,
+						"unit": "years"
+					}
+				}
+			]
+		},
+		{
+			"name": "<metric_name>",
+			"aggregators":[
+				{
+					"name":"max",
+					"sampling": {
+						"value":10,
+						"unit": "years"
+					}
+				}
+			]
+		},
+		{
+			"name": "<metric_name>",
+			"aggregators":[
+				{
+					"name":"min",
+					"sampling": {
+						"value":10,
+						"unit": "years"
+					}
+				}
+			]
+		},
+		{
+			"name": "<metric_name>",
+			"aggregators":[
+				{
+					"name":"avg",
+					"sampling": {
+						"value":10,
+						"unit": "years"
+					}
+				}
+			]
+		},
+		{
+			"name": "<metric_name>",
+			"aggregators":[
+				{
+					"name":"dev",
+					"sampling": {
+						"value":10,
+						"unit": "years"
+					}
+				}
+			]
+		},
+		{
+			"name": "<metric_name>",
+			"aggregators":[
+				{
+					"name":"least_squares",
+					"sampling": {
+						"value":10,
+						"unit": "years"
+					}
+				}
+			]
+		},
+		{
+			"name": "<metric_name>",
+			"aggregators":[
+				{
+					"name":"rate",
+					"unit": "milliseconds"
+				}
+			]
+		},
+		{
+			"name": "<metric_name>",
+			"aggregators":[
+				{
+					"name":"sum",
+					"sampling": {
+						"value":4,
+						"unit": "milliseconds"
+					}
+				},
+				{
+					"name":"avg",
+					"sampling": {
+						"value":1,
+						"unit": "years"
+					}
+				}
+			]
+		}
+	],
+	"cache_time": 0,
+	"start_relative": {
+		"value": "10",
+		"unit": "years"
+	}
+}

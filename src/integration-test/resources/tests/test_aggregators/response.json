@@ -1,0 +1,123 @@
+{"queries": [
+	{
+		// Sum
+		"results": [
+			{
+				"name": "<metric_name>",
+				"tags": {
+					"host": ["test"]
+				},
+				"values": [
+					[1375202962764, 55]
+				]
+			}
+		]
+	},
+	{
+		// Max
+		"results": [
+			{
+				"name": "<metric_name>",
+				"tags": {
+					"host": ["test"]
+				},
+				"values": [
+					[1375202962764, 10]
+				]
+			}
+		]
+	},
+	{
+		// Min
+		"results": [
+			{
+				"name": "<metric_name>",
+				"tags": {
+					"host": ["test"]
+				},
+				"values": [
+					[1375202962764, 1]
+				]
+			}
+		]
+	},
+	{
+		// Avg
+		"results": [
+			{
+				"name": "<metric_name>",
+				"tags": {
+					"host": ["test"]
+				},
+				"values": [
+					[1375202962764, 5.5]
+				]
+			}
+		]
+	},
+	{
+		// StdDev
+		"results": [
+			{
+				"name": "<metric_name>",
+				"tags": {
+					"host": ["test"]
+				},
+				"values": [
+					[1375202962764, 3.02765]
+				]
+			}
+		]
+	},{
+		// Least Squares
+		"results": [
+			{
+				"name": "<metric_name>",
+				"tags": {
+					"host": ["test"]
+				},
+				"values": [
+					[1375202962764, 1],
+					[1375202962782, 10]
+				]
+			}
+		]
+	},
+	{
+		// Rate
+		"results": [
+			{
+				"name": "<metric_name>",
+				"tags": {
+					"host": ["test"]
+				},
+				"values": [
+					[1375202962766, 0.5],
+					[1375202962768, 0.5],
+					[1375202962770, 0.5],
+					[1375202962772, 0.5],
+					[1375202962774, 0.5],
+					[1375202962776, 0.5],
+					[1375202962778, 0.5],
+					[1375202962780, 0.5],
+					[1375202962782, 0.5],
+					[1375202962783, 0]
+				]
+			}
+		]
+	},
+	{
+		// Multiple aggregators: sum -> avg
+		"results": [
+			{
+				"name": "<metric_name>",
+				"tags": {
+					"host": ["test"]
+				},
+				"values": [
+					[1375202962764, 11]
+				]
+			}
+		]
+	}
+]}

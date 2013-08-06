@@ -120,8 +120,6 @@ public class JsonResponse
 				}
 				m_jsonWriter.endArray();
 				m_jsonWriter.endObject();
-
-				group.close();
 			}
 
 			m_jsonWriter.endArray().endObject();

@@ -98,6 +98,8 @@ public class QueryTests
 			return (null);
 		}
 
+		client.getConnectionManager().shutdown();
+
 		return (m_parser.parse(IOUtils.toString(httpResponse.getEntity().getContent())));
 	}
 
@@ -110,6 +112,8 @@ public class QueryTests
 		post.setEntity(new StringEntity(dataPoints.toString()));
 		HttpResponse httpResponse = client.execute(post);
 
+		client.getConnectionManager().shutdown();
+
 		return httpResponse.getStatusLine().getStatusCode();
 	}
 
@@ -121,6 +125,8 @@ public class QueryTests
 
 		post.setEntity(new StringEntity(query.toString()));
 		HttpResponse httpResponse = client.execute(post);
+
+		client.getConnectionManager().shutdown();
 
 		return httpResponse.getStatusLine().getStatusCode();
 	}
@@ -184,7 +190,34 @@ public class QueryTests
 
 			assertThat(status, equalTo(204));
 
-			// todo verify that data points are gone
+			retryCount = 3;
+			do
+			{
+				try
+				{
+					// Assert that data points are gone
+					JsonElement serverResponse = postQuery(query);
+					JsonArray queries = serverResponse.getAsJsonObject().get("queries").getAsJsonArray();
+					for (JsonElement responseQuery : queries)
+					{
+						JsonArray results = responseQuery.getAsJsonObject().get("results").getAsJsonArray();
+						for (JsonElement result : results)
+						{
+							assertThat(result.getAsJsonObject().get("values").getAsJsonArray().size(), equalTo(0));
+						}
+					}
+
+					break;
+				}
+				catch (AssertionError e)
+				{
+					if (retryCount == 0)
+						throw e;
+
+					retryCount--;
+					Thread.sleep(500); // Need to wait until datapoints are available in the data store
+				}
+			} while (true);
 		}
 	}
 
@@ -208,22 +241,28 @@ public class QueryTests
 				JsonObject expectedMetric = expectedResult.get(j).getAsJsonObject();
 
 				assertThat("Metric name is different for test: " + testName, actualMetric.get("name"), equalTo(expectedMetric.get("name")));
-				assertTags(testName, actualMetric, expectedMetric);
+				assertTags(testName, i, j, actualMetric, expectedMetric);
 				assertDataPoints(testName, i, j, actualMetric, expectedMetric);
 			}
 		}
 	}
 
-	private void assertTags(String testName, JsonObject actual, JsonObject expected)
+	private void assertTags(String testName, int queryCount, int resultCount, JsonObject actual, JsonObject expected)
 	{
 		JsonObject actualTags = actual.getAsJsonObject("tags");
 		JsonObject expectedTags = expected.getAsJsonObject("tags");
 
+		assertThat(String.format("Number of tags is different for test %s, query[%d], result[%d]", testName, queryCount, resultCount),
+				actualTags.entrySet().size(), equalTo(expectedTags.entrySet().size()));
 		for (Map.Entry<String, JsonElement> tag : expectedTags.entrySet())
 		{
 			String tagName = tag.getKey();
-			assertThat("Missing tag: " + tagName + " for test " + testName, actualTags.has(tagName), equalTo(true));
-			assertThat("Tag value different for key: " + tagName + " for test:" + testName, actualTags.get(tagName), equalTo(tag.getValue()));
+			assertThat(String.format("Missing tag: %s for test %s, query[%d], result[%d]",
+					tagName, testName, queryCount, resultCount),
+					actualTags.has(tagName), equalTo(true));
+			assertThat(String.format("Tag value different for key: %S for test %s, query[%d], result[%d]",
+					tagName, testName, queryCount, resultCount),
+					actualTags.get(tagName), equalTo(tag.getValue()));
 		}
 	}
 
@@ -232,24 +271,24 @@ public class QueryTests
 		JsonArray actualValues = actual.getAsJsonArray("values");
 		JsonArray expectedValues = expected.getAsJsonArray("values");
 
-		assertThat(String.format("Number of datapoints is different for test %s, query: %d, result: %d",
+		assertThat(String.format("Number of datapoints is different for test %s, query[%d], result[%d]",
 				testName, queryCount, resultCount),
 				actualValues.size(), equalTo(expectedValues.size()));
 
 		for (int i = 0; i < expectedValues.size(); i++)
 		{
-			assertThat(String.format("Timestamps different for data point %d for test %s, query: %d, result: %d",
+			assertThat(String.format("Timestamps different for data point %d for test %s, query[%d], result[%d]",
 					i, testName, queryCount, resultCount),
 					actualValues.get(i).getAsJsonArray().get(0), equalTo(expectedValues.get(i).getAsJsonArray().get(0)));
 
 
 			if (isDouble(actualValues.get(i).getAsJsonArray().get(1)))
-				assertThat(String.format("Values different for data point: %d for test %s, query: %d, result: %d",
+				assertThat(String.format("Values different for data point: %d for test %s, query[%d], result[%d]",
 						i, testName, queryCount, resultCount),
 						actualValues.get(i).getAsJsonArray().get(1).getAsDouble(),
 						closeTo(expectedValues.get(i).getAsJsonArray().get(1).getAsDouble(), .01));
 			else
-				assertThat(String.format("Values different for data point: %d for test: %s, query: %d, result: %d",
+				assertThat(String.format("Values different for data point: %d for test: %s, query[%d], result[%d]",
 						i, testName, queryCount, resultCount),
 						actualValues.get(i).getAsJsonArray().get(1), equalTo(expectedValues.get(i).getAsJsonArray().get(1)));
 		}

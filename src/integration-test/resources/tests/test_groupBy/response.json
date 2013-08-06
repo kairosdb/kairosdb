@@ -1,0 +1,180 @@
+{
+	"queries": [
+		{
+			"results": [
+				{
+					"name": "<metric_name>",
+					"group_by": [
+						{
+							"name": "time",
+							"range_size": {
+								"value": 2,
+								"unit": "MILLISECONDS"
+							},
+							"group_count": 2,
+							"group": {
+								"group_number": 0
+							}
+						}
+					],
+					"tags": {
+						"host": ["test2","test1"],
+						"server": ["server1", "server2"]
+					},
+					"values": [
+						[1375202962764,1],
+						[1375202962768,3],
+						[1375202962772,5],
+						[1375202962776,7],
+						[1375202962780,9]
+					]
+				},
+				{
+					"name": "<metric_name>",
+					"group_by": [
+						{
+							"name": "time",
+							"range_size": {
+								"value": 2,
+								"unit": "MILLISECONDS"
+							},
+							"group_count": 2,
+							"group": {
+								"group_number": 1
+							}
+						}
+					],
+					"tags": {
+						"host": ["test2","test1"],
+						"server": ["server1", "server2"]
+					},
+					"values": [
+						[1375202962766,2],
+						[1375202962770,4],
+						[1375202962774,6],
+						[1375202962778,8],
+						[1375202962782,10]
+					]
+				}
+			]
+		},
+		{
+			"results": [
+				{
+					"name": "<metric_name>",
+					"group_by": [
+						{
+							"name": "value",
+							"range_size": 5,
+							"group": {
+								"group_number": 0
+							}
+						}
+					],
+					"tags": {
+						"host": ["test2","test1"],
+						"server": ["server1", "server2"]
+					},
+					"values": [
+						[1375202962764,1],
+						[1375202962766,2],
+						[1375202962768,3],
+						[1375202962770,4]
+					]
+				},
+				{
+					"name": "<metric_name>",
+					"group_by": [
+						{
+							"name": "value",
+							"range_size": 5,
+							"group": {
+								"group_number": 1
+							}
+						}
+					],
+					"tags": {
+						"host": ["test2","test1"],
+						"server": ["server1", "server2"]
+					},
+					"values": [
+						[1375202962772,5],
+						[1375202962774,6],
+						[1375202962776,7],
+						[1375202962778,8],
+						[1375202962780,9]
+					]
+				},
+				{
+					"name": "<metric_name>",
+					"group_by": [
+						{
+							"name": "value",
+							"range_size": 5,
+							"group": {
+								"group_number": 2
+							}
+						}
+					],
+					"tags": {
+						"host": ["test2","test1"],
+						"server": ["server1", "server2"]
+					},
+					"values": [
+						[1375202962782,10]
+					]
+				}
+			]
+		} ,
+		{
+			"results": [
+				{
+					"name": "<metric_name>",
+					"group_by": [
+						{
+							"name": "tag",
+							"tags": ["host"],
+							"group": {
+								"host": "test1"
+							}
+						}
+					],
+					"tags": {
+						"host": ["test1"],
+						"server": ["server1"]
+					},
+					"values": [
+						[1375202962764,1],
+						[1375202962766,2],
+						[1375202962768,3],
+						[1375202962770,4],
+						[1375202962772,5]
+					]
+				},
+				{
+					"name": "<metric_name>",
+					"group_by": [
+						{
+							"name": "tag",
+							"tags": ["host"],
+							"group": {
+								"host": "test2"
+							}
+						}
+					],
+					"tags": {
+						"host": ["test2"],
+						"server": ["server2"]
+					},
+					"values": [
+						[1375202962774,6],
+						[1375202962776,7],
+						[1375202962778,8],
+						[1375202962780,9],
+						[1375202962782,10]
+					]
+				}
+			]
+		}
+	]
+}

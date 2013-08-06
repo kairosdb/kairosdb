@@ -1,0 +1,38 @@
+{
+	"metrics": [
+		{
+			"name": "<metric_name>",
+			"group_by": [
+				{
+					"name": "time",
+					"group_count": "2",
+					"range_size": {
+						"value": "2",
+						"unit": "milliseconds"
+					}
+				}
+			]
+		},
+		{
+			"name": "<metric_name>",
+			"group_by": [
+				{
+					"name": "value",
+					"range_size": 5
+				}
+			]
+		},
+		{
+			"name": "<metric_name>",
+			"group_by": [
+				{
+					"name": "tag",
+					"tags": ["host"]
+				}
+			]
+		}
+	],
+	"cache_time": 0,
+	"start_absolute": 1375202962764,
+	"end_absolute": 1375202962782
+}

@@ -40,7 +40,7 @@ public class JsonMetricParserTest
 	@Test
 	public void test_nullMetricName_Invalid() throws DatastoreException, IOException
 	{
-		String json = "[{\"name\": \"metric1\", \"datapoints\": [[1,2]]}, {\"datapoints\": [[1,2]]}]";
+		String json = "[{\"name\": \"metric1\", \"datapoints\": [[1,2]], \"tags\":{\"foo\":\"bar\"}}, {\"datapoints\": [[1,2]], \"tags\":{\"foo\":\"bar\"}}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
@@ -104,7 +104,7 @@ public class JsonMetricParserTest
 	@Test
 	public void test_emptyMetricName_Invalid() throws DatastoreException, IOException
 	{
-		String json = "[{\"name\": \"\", \"datapoints\": [[1,2]]}]";
+		String json = "[{\"name\": \"\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[1,2]]}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
@@ -123,9 +123,30 @@ public class JsonMetricParserTest
 	}
 
 	@Test
+	public void test_emptyTags_Invalid() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metricName\", \"datapoints\": [[1,2]]}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
+		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
+
+		try
+		{
+			parser.parse();
+			fail("Should throw ValidationException");
+		}
+		catch (ValidationException e)
+		{
+			assertThat(e.getMessage(), equalTo("metric[0].tags cannot be null or empty."));
+		}
+	}
+
+	@Test
 	public void test_validJsonWithTimestampValue() throws DatastoreException, IOException, ValidationException
 	{
-		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 4321}]";
+		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 4321, \"tags\":{\"foo\":\"bar\"}}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
@@ -138,7 +159,8 @@ public class JsonMetricParserTest
 		assertThat(dataPointSetList.size(), equalTo(1));
 
 		assertThat(dataPointSetList.get(0).getName(), equalTo("metric1"));
-		assertThat(dataPointSetList.get(0).getTags().size(), equalTo(0));
+		assertThat(dataPointSetList.get(0).getTags().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getTags().get("foo"), equalTo("bar"));
 		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(1));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getLongValue(), equalTo(4321L));
@@ -169,7 +191,7 @@ public class JsonMetricParserTest
 	@Test
 	public void test_validJsonWithTimestampValueAndDataPoints() throws DatastoreException, IOException, ValidationException
 	{
-		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 4321, \"datapoints\": [[456, 654]]}]";
+		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 4321, \"datapoints\": [[456, 654]], \"tags\":{\"foo\":\"bar\"}}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
@@ -182,7 +204,8 @@ public class JsonMetricParserTest
 		assertThat(dataPointSetList.size(), equalTo(1));
 
 		assertThat(dataPointSetList.get(0).getName(), equalTo("metric1"));
-		assertThat(dataPointSetList.get(0).getTags().size(), equalTo(0));
+		assertThat(dataPointSetList.get(0).getTags().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getTags().get("foo"), equalTo("bar"));
 		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(2));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(456L));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getLongValue(), equalTo(654L));

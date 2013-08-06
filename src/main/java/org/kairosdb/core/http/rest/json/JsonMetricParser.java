@@ -120,6 +120,8 @@ public class JsonMetricParser
 			throw new ValidationException("metric[" + count + "].value cannot be null or empty.");
 		if (value != null && timestamp < 1)
 			throw new ValidationException("metric[" + count + "].timestamp must be greater than 0.");
+		if (tags.size() < 1)
+			throw new ValidationException("metric[" + count + "].tags cannot be null or empty.");
 
 
 		if (timestamp > 0 && value != null)

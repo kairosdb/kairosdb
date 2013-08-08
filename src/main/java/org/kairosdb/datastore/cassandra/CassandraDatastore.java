@@ -300,7 +300,7 @@ public class CassandraDatastore implements Datastore
 				else
 				{
 					m_dataPointWriteBuffer.addData(rowKey, columnTime,
-							ValueSerializer.toByteBuffer((float)dp.getDoubleValue()), writeTime);
+							ValueSerializer.toByteBuffer((float) dp.getDoubleValue()), writeTime);
 				}
 			}
 		}
@@ -319,13 +319,13 @@ public class CassandraDatastore implements Datastore
 	{
 		SliceQuery<String, String, String> sliceQuery =
 				HFactory.createSliceQuery(m_keyspace, StringSerializer.get(), StringSerializer.get(),
-				StringSerializer.get());
+						StringSerializer.get());
 
 		sliceQuery.setColumnFamily(CF_STRING_INDEX);
 		sliceQuery.setKey(ROW_KEY_METRIC_NAMES);
 
 		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String)null, false, m_singleRowReadSize);
+				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String) null, false, m_singleRowReadSize);
 
 		List<String> ret = new ArrayList<String>();
 
@@ -346,7 +346,7 @@ public class CassandraDatastore implements Datastore
 		sliceQuery.setKey(ROW_KEY_TAG_NAMES);
 
 		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String)null, false, m_singleRowReadSize);
+				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String) null, false, m_singleRowReadSize);
 
 		List<String> ret = new ArrayList<String>();
 
@@ -367,7 +367,7 @@ public class CassandraDatastore implements Datastore
 		sliceQuery.setKey(ROW_KEY_TAG_VALUES);
 
 		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String)null, false, m_singleRowReadSize);
+				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String) null, false, m_singleRowReadSize);
 
 		List<String> ret = new ArrayList<String>();
 
@@ -385,7 +385,7 @@ public class CassandraDatastore implements Datastore
 
 	private List<DataPointRow> queryWithRowKeys(DatastoreMetricQuery query,
 	                                            CachedSearchResult cachedSearchResult,
-	                                            ListMultimap<Long, DataPointsRowKey> rowKeys )
+	                                            ListMultimap<Long, DataPointsRowKey> rowKeys)
 	{
 		List<QueryRunner> runners = new ArrayList<QueryRunner>();
 
@@ -441,7 +441,7 @@ public class CassandraDatastore implements Datastore
 		ListMultimap<Long, DataPointsRowKey> rowKeys = getKeysForQuery(deleteQuery);
 
 		Iterator<DataPointsRowKey> rowKeyIterator = rowKeys.values().iterator();
-		while(rowKeyIterator.hasNext())
+		while (rowKeyIterator.hasNext())
 		{
 			DataPointsRowKey rowKey = rowKeyIterator.next();
 			long rowKeyTimestamp = rowKey.getTimestamp();
@@ -458,7 +458,7 @@ public class CassandraDatastore implements Datastore
 		for (DataPointRow row : dataPointRows)
 		{
 			SortedMap<String, String> tags = getTags(row);
-			while(row.hasNext())
+			while (row.hasNext())
 			{
 				// Delete remaining partial rows
 				DataPoint column = row.next();
@@ -489,9 +489,10 @@ public class CassandraDatastore implements Datastore
 	}
 
 	/**
-	 Returns the row keys for the query in tiers ie grouped by row key timestamp
-	 @param query query
-	 @return row keys for the query
+	 * Returns the row keys for the query in tiers ie grouped by row key timestamp
+	 *
+	 * @param query query
+	 * @return row keys for the query
 	 */
 	/*package*/ ListMultimap<Long, DataPointsRowKey> getKeysForQuery(DatastoreMetricQuery query)
 	{
@@ -520,7 +521,8 @@ public class CassandraDatastore implements Datastore
 						startKey, endKey, false, m_singleRowReadSize);
 
 		SetMultimap<String, String> filterTags = query.getTags();
-		outer: while (iterator.hasNext())
+		outer:
+		while (iterator.hasNext())
 		{
 			DataPointsRowKey rowKey = iterator.next().getName();
 
@@ -551,7 +553,7 @@ public class CassandraDatastore implements Datastore
 	@SuppressWarnings("PointlessBitwiseExpression")
 	public static int getColumnName(long rowTime, long timestamp, boolean isInteger)
 	{
-		int ret = (int)(timestamp - rowTime);
+		int ret = (int) (timestamp - rowTime);
 
 		if (isInteger)
 			return ((ret << 1) | LONG_FLAG);
@@ -562,7 +564,7 @@ public class CassandraDatastore implements Datastore
 
 	public static long getColumnTimestamp(long rowTime, int columnName)
 	{
-		return (rowTime + (long)(columnName >>> 1));
+		return (rowTime + (long) (columnName >>> 1));
 	}
 
 	public static boolean isLongValue(int columnName)

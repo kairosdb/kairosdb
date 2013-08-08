@@ -33,6 +33,7 @@ import me.prettyprint.hector.api.ddl.ComparatorType;
 import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
 import me.prettyprint.hector.api.exceptions.HectorException;
 import me.prettyprint.hector.api.factory.HFactory;
+import me.prettyprint.hector.api.query.CountQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
@@ -430,6 +431,13 @@ public class CassandraDatastore implements Datastore
 
 		long now = System.currentTimeMillis();
 
+		// Get number of columns in the row key
+		CountQuery<String, DataPointsRowKey> countQuery = HFactory.createCountQuery(m_keyspace, StringSerializer.get(), DATA_POINTS_ROW_KEY_SERIALIZER);
+		countQuery.setColumnFamily(CF_ROW_KEY_INDEX).
+				setKey(deleteQuery.getName()).
+				setRange(new DataPointsRowKey(deleteQuery.getName(), 0L), new DataPointsRowKey(deleteQuery.getName(), Long.MAX_VALUE), Integer.MAX_VALUE);
+		int rowKeyColumnCount = countQuery.execute().get();
+
 		ListMultimap<Long, DataPointsRowKey> rowKeys = getKeysForQuery(deleteQuery);
 
 		Iterator<DataPointsRowKey> rowKeyIterator = rowKeys.values().iterator();
@@ -440,8 +448,9 @@ public class CassandraDatastore implements Datastore
 			if (deleteQuery.getStartTime() <= rowKeyTimestamp && (deleteQuery.getEndTime() >= rowKeyTimestamp + ROW_WIDTH - 1))
 			{
 				m_dataPointWriteBuffer.deleteRow(rowKey, now);  // delete the whole row
-				m_rowKeyWriteBuffer.deleteRow(rowKey.getMetricName(), now); // Delete the index
+				m_rowKeyWriteBuffer.deleteColumn(rowKey.getMetricName(), rowKey, now); // Delete the index
 				rowKeyIterator.remove();
+				rowKeyColumnCount--;
 			}
 		}
 
@@ -458,6 +467,13 @@ public class CassandraDatastore implements Datastore
 				int columnName = getColumnName(rowTime, column.getTimestamp(), column.isInteger());
 				m_dataPointWriteBuffer.deleteColumn(rowKey, columnName, now);
 			}
+		}
+
+		// If index is gone, delete metric name from Strings column family
+		if (rowKeyColumnCount < 1)
+		{
+			m_rowKeyWriteBuffer.deleteRow(deleteQuery.getName(), now);
+			m_stringIndexWriteBuffer.deleteColumn(ROW_KEY_METRIC_NAMES, deleteQuery.getName(), now);
 		}
 	}
 

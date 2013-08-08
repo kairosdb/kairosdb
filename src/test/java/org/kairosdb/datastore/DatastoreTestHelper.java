@@ -40,6 +40,7 @@ import static org.hamcrest.core.Is.is;
 public abstract class DatastoreTestHelper
 {
 	protected static KairosDatastore s_datastore;
+	protected static final List<String> metricNames = new ArrayList<String>();
 	private static long s_startTime;
 
 	private static List<String> listFromIterable(Iterable<String> iterable)
@@ -73,6 +74,7 @@ public abstract class DatastoreTestHelper
 	 */
 	protected static void loadData() throws DatastoreException
 	{
+		metricNames.add("metric1");
 		DataPointSet dpSet = new DataPointSet("metric1");
 		dpSet.addTag("host", "A");
 		dpSet.addTag("client", "foo");
@@ -110,6 +112,7 @@ public abstract class DatastoreTestHelper
 
 		s_datastore.putDataPoints(dpSet);
 
+		metricNames.add("metric2");
 		dpSet = new DataPointSet("metric2");
 		dpSet.addTag("host", "B");
 		dpSet.addTag("client", "bar");
@@ -122,6 +125,7 @@ public abstract class DatastoreTestHelper
 
 		s_datastore.putDataPoints(dpSet);
 
+		metricNames.add("duplicates");
 		dpSet = new DataPointSet("duplicates");
 		dpSet.addTag("host", "A");
 		dpSet.addDataPoint(new DataPoint(s_startTime, 4));

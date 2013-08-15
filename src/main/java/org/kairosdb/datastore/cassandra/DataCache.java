@@ -68,5 +68,11 @@ public class DataCache<T>
 		return (ret != null);
 	}
 
-
+	/**
+	 * Remove everything in the cache.
+	 */
+	public void clear()
+	{
+		m_cache.clear();
+	}
 }

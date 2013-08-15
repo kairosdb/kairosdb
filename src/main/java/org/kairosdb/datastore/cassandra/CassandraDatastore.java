@@ -449,6 +449,7 @@ public class CassandraDatastore implements Datastore
 			{
 				m_dataPointWriteBuffer.deleteRow(rowKey, now);  // delete the whole row
 				m_rowKeyWriteBuffer.deleteColumn(rowKey.getMetricName(), rowKey, now); // Delete the index
+				m_rowKeyCache.clear();
 				rowKeyIterator.remove();
 				rowKeyColumnCount--;
 			}
@@ -474,6 +475,8 @@ public class CassandraDatastore implements Datastore
 		{
 			m_rowKeyWriteBuffer.deleteRow(deleteQuery.getName(), now);
 			m_stringIndexWriteBuffer.deleteColumn(ROW_KEY_METRIC_NAMES, deleteQuery.getName(), now);
+			m_rowKeyCache.clear();
+			m_metricNameCache.clear();
 		}
 	}
 

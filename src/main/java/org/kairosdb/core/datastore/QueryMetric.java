@@ -21,7 +21,10 @@ import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.util.Preconditions;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -40,6 +43,15 @@ public class QueryMetric implements DatastoreMetricQuery
 	{
 		this.aggregators = new ArrayList<Aggregator>();
 		this.startTime = start_time;
+		this.cacheTime = cacheTime;
+		this.name = Preconditions.checkNotNullOrEmpty(name);
+	}
+
+	public QueryMetric(long start_time, long end_time, int cacheTime, String name)
+	{
+		this.aggregators = new ArrayList<Aggregator>();
+		this.startTime = start_time;
+		this.endTime = end_time;
 		this.cacheTime = cacheTime;
 		this.name = Preconditions.checkNotNullOrEmpty(name);
 	}

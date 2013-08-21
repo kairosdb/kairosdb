@@ -31,6 +31,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -98,9 +99,11 @@ public class QueryTests
 			return (null);
 		}
 
-		client.getConnectionManager().shutdown();
+		ByteArrayOutputStream output = new ByteArrayOutputStream(1024);
+		httpResponse.getEntity().writeTo(output);
 
-		return (m_parser.parse(IOUtils.toString(httpResponse.getEntity().getContent())));
+		client.getConnectionManager().shutdown();
+		return (m_parser.parse(output.toString("UTF-8")));
 	}
 
 	private int putDataPoints(JsonElement dataPoints) throws IOException, JSONException

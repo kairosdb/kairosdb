@@ -45,6 +45,7 @@
 			$("#groupByTagsTemplate").hide();
 			$("#groupByTimeTemplate").hide();
 			$("#groupByValueTemplate").hide();
+            $(".aggregatorPercentile").hide();
 			$("#tabs").tabs({'active': 0});
 
 			$startTime.bind("change paste keyup", function(){
@@ -389,14 +390,15 @@
 				<option value="rate">RATE</option>
 				<option value="sum" selected="selected">SUM</option>
                 <option value="least_squares">LEAST SQUARES</option>
+                <option value="histogram">HISTOGRAM</option>
 			</select>
 		</div>
 		<div>
 			<div style="display: table-cell" class="aggregatorSampling"> 
-				<span class="header" style="margin-left: 30px; vertical-align: top;">Sampling</span>
+				<span class="header" style="margin-left: 10px; vertical-align: top;">Sampling</span>
 			</div>
 			<div style="display: table-cell" class="aggregatorSampling">
-				<input class="ui-widget aggregatorSamplingValue" style="width: 30px; margin-left: 10px;" type="text"
+				<input class="ui-widget aggregatorSamplingValue" style="width: 20px; margin-left: 10px;" type="text"
 				       value="1">
 			</div>
 			<div style="display: table-cell;">
@@ -411,6 +413,13 @@
 					<option value="milliseconds" selected="selected">Milliseconds</option>
 				</select>
 			</div>
+            <div style="display: table-cell" class="aggregatorPercentile">
+                <span class="header" style="margin-left: 10px; vertical-align: top;">Percentile</span>
+            </div>
+            <div style="display: table-cell" class="aggregatorPercentile">
+                <input class="ui-widget aggregatorPercentileValue" style="width: 40px; margin-left: 10px;" type="text"
+                       value="0.75">
+            </div>
 		</div>
 	</div>
 </div>

@@ -107,7 +107,7 @@ public class JsonMetricParser
 			}
 			else if (token.equals("datapoints"))
 			{
-				dataPoints = parseDataPoints(reader);
+				parseDataPoints(reader, dataPoints);
 			}
 			else if (token.equals("tags"))
 			{
@@ -150,9 +150,8 @@ public class JsonMetricParser
 		return tags;
 	}
 
-	private List<DataPoint> parseDataPoints(JsonReader reader) throws IOException, ValidationException
+	private void parseDataPoints(JsonReader reader, List<DataPoint> dataPoints) throws IOException, ValidationException
 	{
-		List<DataPoint> dataPoints = new ArrayList<DataPoint>();
 		reader.beginArray();
 		while(reader.hasNext())
 		{
@@ -170,7 +169,5 @@ public class JsonMetricParser
 			reader.endArray();
 		}
 		reader.endArray();
-
-		return dataPoints;
 	}
 }

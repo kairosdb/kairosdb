@@ -20,7 +20,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
-import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.*;
 import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.DataPointRow;
 import org.kairosdb.core.datastore.Datastore;
@@ -275,7 +275,7 @@ public class H2Datastore implements Datastore
 				tagMap.put(mtag.getTagName(), mtag.getTagValue());
 			}
 
-			DataPoint.ResultSet resultSet = DataPoint.factory.getForMetricId(metricId,
+			org.kairosdb.datastore.h2.orm.DataPoint.ResultSet resultSet = org.kairosdb.datastore.h2.orm.DataPoint.factory.getForMetricId(metricId,
 					new Timestamp(query.getStartTime()),
 					new Timestamp(query.getEndTime()));
 

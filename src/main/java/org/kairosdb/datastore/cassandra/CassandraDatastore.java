@@ -378,6 +378,15 @@ public class CassandraDatastore implements Datastore
 	}
 
 	@Override
+	public List<DataPointRow> queryDatabase(DatastoreMetricQuery query)
+	{
+		List<DataPointRow> rows = new ArrayList<DataPointRow>();
+		ListMultimap<Long, DataPointsRowKey> rowKeys = getKeysForQuery(query);
+
+		
+	}
+
+	@Override
 	public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
 	{
 		return queryWithRowKeys(query, cachedSearchResult, getKeysForQuery(query));

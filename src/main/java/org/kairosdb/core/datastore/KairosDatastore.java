@@ -214,6 +214,11 @@ public class KairosDatastore
 		return (m_datastore.queryDatabase(metric, cachedResults));
 	}
 
+	public QueryResults queryTags(QueryMetric metric) throws DatastoreException
+	{
+
+	}
+
 
 	public QueryResults query(QueryMetric metric) throws DatastoreException
 	{

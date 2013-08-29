@@ -13,14 +13,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.kairosdb.testing;
+package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointRow;
 
 import java.util.*;
 
-public class TestingDataPointRowImpl implements DataPointRow
+public class DataPointRowImpl implements DataPointRow
 {
 	private List<DataPoint> dataPoints = new ArrayList<DataPoint>();
 	private Iterator<DataPoint> iterator;

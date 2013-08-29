@@ -27,6 +27,12 @@ public class QueryResults
 
 	private List<DataPointGroup> m_dataPoints;
 
+	public QueryResults()
+	{
+		m_queuingManager = null;
+		m_queryHash = null;
+	}
+
 	public QueryResults(QueryQueuingManager queuingManager, String queryHash)
 	{
 		m_queuingManager = checkNotNull(queuingManager);
@@ -54,7 +60,8 @@ public class QueryResults
 		}
 		finally
 		{
-			m_queuingManager.done(m_queryHash);
+			if (m_queuingManager != null)
+				m_queuingManager.done(m_queryHash);
 		}
 	}
 }

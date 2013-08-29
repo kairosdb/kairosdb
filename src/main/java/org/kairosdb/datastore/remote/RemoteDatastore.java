@@ -27,10 +27,7 @@ import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.datastore.CachedSearchResult;
-import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -291,5 +288,11 @@ public class RemoteDatastore implements Datastore
 	public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
 	{
 		throw new DatastoreException("Method not implemented.");
+	}
+
+	@Override
+	public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
+	{
+		return null;  //To change body of implemented methods use File | Settings | File Templates.
 	}
 }

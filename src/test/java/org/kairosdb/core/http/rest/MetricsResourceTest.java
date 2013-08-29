@@ -37,7 +37,7 @@ import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
-import org.kairosdb.testing.TestingDataPointRowImpl;
+import org.kairosdb.core.datastore.DataPointRowImpl;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
@@ -285,7 +285,7 @@ public class MetricsResourceTest
 		{
 			List<DataPointRow> groups = new ArrayList<DataPointRow>();
 
-			TestingDataPointRowImpl group1 = new TestingDataPointRowImpl();
+			DataPointRowImpl group1 = new DataPointRowImpl();
 			group1.setName(query.getName());
 			group1.addDataPoint(new DataPoint(1, 10));
 			group1.addDataPoint(new DataPoint(1, 20));
@@ -297,7 +297,7 @@ public class MetricsResourceTest
 
 			groups.add(group1);
 
-			TestingDataPointRowImpl group2 = new TestingDataPointRowImpl();
+			DataPointRowImpl group2 = new DataPointRowImpl();
 			group2.setName(query.getName());
 			group2.addDataPoint(new DataPoint(1, 10.1));
 			group2.addDataPoint(new DataPoint(1, 20.1));

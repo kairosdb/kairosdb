@@ -23,7 +23,6 @@ import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KariosDBException;
-import org.kairosdb.testing.TestingDataPointRowImpl;
 
 import java.io.File;
 import java.io.IOException;
@@ -217,7 +216,7 @@ public class KairosDatastoreTest
 		{
 			List<DataPointRow> groups = new ArrayList<DataPointRow>();
 
-			TestingDataPointRowImpl group1 = new TestingDataPointRowImpl();
+			DataPointRowImpl group1 = new DataPointRowImpl();
 			group1.setName(query.getName());
 			group1.addDataPoint(new DataPoint(1, 3));
 			group1.addDataPoint(new DataPoint(1, 10));
@@ -228,7 +227,7 @@ public class KairosDatastoreTest
 			group1.addDataPoint(new DataPoint(3, 25));
 			groups.add(group1);
 
-			TestingDataPointRowImpl group2 = new TestingDataPointRowImpl();
+			DataPointRowImpl group2 = new DataPointRowImpl();
 			group2.setName(query.getName());
 			group2.addDataPoint(new DataPoint(1, 5));
 			group2.addDataPoint(new DataPoint(1, 14));

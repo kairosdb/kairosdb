@@ -170,6 +170,7 @@ public class MetricsResource
 	public Response getMeta(String json)
 	{
 		checkNotNull(json);
+		log.debug(json);
 		try
 		{
 			File respFile = File.createTempFile("kairos", ".json");

@@ -166,6 +166,74 @@ public class MetricsResource
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/query/tags")
+	public Response getMeta(String json)
+	{
+		checkNotNull(json);
+		log.debug(json);
+		try
+		{
+			File respFile = File.createTempFile("kairos", ".json");
+			BufferedWriter writer = new BufferedWriter(new FileWriter(respFile));
+
+			JsonResponse jsonResponse = new JsonResponse(writer);
+
+			jsonResponse.begin();
+			jsonResponse.startQueries();
+
+			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
+
+			for (QueryMetric query : queries)
+			{
+				QueryResults qr = datastore.queryTags(query);
+
+				try
+				{
+					jsonResponse.formatQuery(qr);
+				}
+				finally
+				{
+					if (qr != null)
+						qr.close();
+				}
+			}
+
+			jsonResponse.endQueries();
+
+			jsonResponse.end();
+			writer.flush();
+			writer.close();
+
+			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
+					new FileStreamingOutput(respFile));
+
+			setHeaders(responseBuilder);
+			return responseBuilder.build();
+		}
+		catch (JsonSyntaxException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addError(e.getMessage()).build();
+		}
+		catch (QueryException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addError(e.getMessage()).build();
+		}
+		catch (BeanValidationException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addErrors(e.getErrorMessages()).build();
+		}
+		catch (Exception e)
+		{
+			log.error("Query failed.", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
+		}
+	}
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/query")
 	public Response get(String json) throws Exception
 	{

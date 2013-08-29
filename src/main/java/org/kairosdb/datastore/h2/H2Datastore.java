@@ -21,10 +21,7 @@ import com.google.inject.name.Named;
 import genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.datastore.CachedSearchResult;
-import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.h2.orm.*;
 import org.slf4j.Logger;
@@ -302,6 +299,12 @@ public class H2Datastore implements Datastore
 					new Timestamp(deleteQuery.getStartTime()),
 					new Timestamp(deleteQuery.getEndTime())).runUpdate();
 		}
+	}
+
+	@Override
+	public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
+	{
+		return null;  //To change body of implemented methods use File | Settings | File Templates.
 	}
 
 	private String createMetricKey(DataPointSet dps)

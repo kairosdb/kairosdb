@@ -23,27 +23,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-public interface DataPointGroup extends Iterator<DataPoint>
+public interface DataPointGroup extends Iterator<DataPoint>, TagSet
 {
 	/**
 	 Returns the metric name for this group
 	 @return Metric name
 	 */
 	public String getName();
-
-	/**
-	 Returns a set of tag names associated with this group of data points
-	 @return Set of tag names
-	 */
-	public Set<String> getTagNames();
-
-	/**
-	 Returns the tag values for the given tag name.  After a grouping or aggregation
-	 occurs a tag could have multiple values.
-	 @param tag Tag to get the value for
-	 @return A set of tag values
-	 */
-	public Set<String> getTagValues(String tag);
 
 	/**
 	 * Returns the list of group by results or an empty list if the results are not grouped.

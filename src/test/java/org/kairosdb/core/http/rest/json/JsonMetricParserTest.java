@@ -300,5 +300,11 @@ public class JsonMetricParserTest
 		public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
 		{
 		}
+
+		@Override
+		public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
+		{
+			return null;  //To change body of implemented methods use File | Settings | File Templates.
+		}
 	}
 }

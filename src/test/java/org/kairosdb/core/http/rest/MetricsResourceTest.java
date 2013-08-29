@@ -246,9 +246,15 @@ public class MetricsResourceTest
 
 	public static class TestDatastore implements Datastore
 	{
+		private DatastoreException m_toThrow = null;
 
 		protected TestDatastore() throws DatastoreException
 		{
+		}
+
+		public void throwQueryException(DatastoreException toThrow)
+		{
+			m_toThrow = toThrow;
 		}
 
 		@Override
@@ -281,8 +287,11 @@ public class MetricsResourceTest
 		}
 
 		@Override
-		public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+		public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException
 		{
+			if (m_toThrow != null)
+				throw m_toThrow;
+
 			List<DataPointRow> groups = new ArrayList<DataPointRow>();
 
 			DataPointRowImpl group1 = new DataPointRowImpl();
@@ -315,6 +324,12 @@ public class MetricsResourceTest
 		@Override
 		public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
 		{
+		}
+
+		@Override
+		public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
+		{
+			return null;  //To change body of implemented methods use File | Settings | File Templates.
 		}
 	}
 

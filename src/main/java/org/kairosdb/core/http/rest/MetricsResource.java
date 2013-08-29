@@ -171,6 +171,7 @@ public class MetricsResource
 	{
 		// todo verify that end time is not before start time.
 		checkNotNull(json);
+		log.debug(json);
 
 		try
 		{
@@ -239,6 +240,7 @@ public class MetricsResource
 	public Response delete(String json) throws Exception
 	{
 		checkNotNull(json);
+		log.debug(json);
 
 		try
 		{

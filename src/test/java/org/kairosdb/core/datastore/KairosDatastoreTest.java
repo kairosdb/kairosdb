@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.fail;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -177,8 +179,32 @@ public class KairosDatastoreTest
 		assertFalse(file2.exists());
 	}
 
+	//@Test
+	public void test_datastoreThrowsException() throws DatastoreException
+	{
+		TestDatastore testds = new TestDatastore();
+		testds.throwQueryException(new DatastoreException("I hate you"));
+		QueryQueuingManager queuingManager = new QueryQueuingManager(1, "hostname");
+		KairosDatastore datastore = new KairosDatastore(testds, queuingManager,
+				Collections.<DataPointListener>emptyList(), "hostname");
+
+		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
+
+		try
+		{
+			datastore.query(metric);
+			fail();
+		}
+		catch (DatastoreException e)
+		{
+		}
+
+		assertEquals(1, queuingManager.getAvailableThreads());
+	}
+
 	private class TestDatastore implements Datastore
 	{
+		private DatastoreException m_toThrow = null;
 
 		protected TestDatastore() throws DatastoreException
 		{
@@ -212,9 +238,18 @@ public class KairosDatastoreTest
 			return null;
 		}
 
+		public void throwQueryException(DatastoreException toThrow)
+		{
+			m_toThrow = toThrow;
+		}
+
 		@Override
 		public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+				throws DatastoreException
 		{
+			if (m_toThrow != null)
+				throw m_toThrow;
+
 			List<DataPointRow> groups = new ArrayList<DataPointRow>();
 
 			TestingDataPointRowImpl group1 = new TestingDataPointRowImpl();

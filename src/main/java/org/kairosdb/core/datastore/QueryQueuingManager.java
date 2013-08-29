@@ -116,6 +116,11 @@ public class QueryQueuingManager implements KairosMetricReporter
 		return semaphore.getQueueLength();
 	}
 
+	public int getAvailableThreads()
+	{
+		return semaphore.availablePermits();
+	}
+
 	@Override
 	public List<DataPointSet> getMetrics(long now)
 	{

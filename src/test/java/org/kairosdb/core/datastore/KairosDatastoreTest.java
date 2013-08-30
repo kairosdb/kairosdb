@@ -49,7 +49,7 @@ public class KairosDatastoreTest
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
 				Collections.<DataPointListener>emptyList(), "hostname");
 
-		datastore.query(null);
+		datastore.createQuery(null);
 	}
 
 	@Test
@@ -61,8 +61,8 @@ public class KairosDatastoreTest
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 		metric.addAggregator(aggFactory.createAggregator("sum"));
 
-		QueryResults queryResults = datastore.query(metric);
-		List<DataPointGroup> results = queryResults.getDataPoints();
+		DatastoreQuery dq = datastore.createQuery(metric);
+		List<DataPointGroup> results = dq.execute();
 
 		DataPointGroup group = results.get(0);
 
@@ -78,7 +78,7 @@ public class KairosDatastoreTest
 		assertThat(dataPoint.getTimestamp(), equalTo(3L));
 		assertThat(dataPoint.getLongValue(), equalTo(32L));
 
-		queryResults.close();
+		dq.close();
 	}
 
 	@Test
@@ -89,8 +89,8 @@ public class KairosDatastoreTest
 				Collections.<DataPointListener>emptyList(), "hostname");
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 
-		QueryResults queryResults = datastore.query(metric);
-		List<DataPointGroup> results = queryResults.getDataPoints();
+		DatastoreQuery dq = datastore.createQuery(metric);
+		List<DataPointGroup> results = dq.execute();
 
 		assertThat(results.size(), is(1));
 		DataPointGroup group = results.get(0);
@@ -151,7 +151,7 @@ public class KairosDatastoreTest
 		assertThat(dataPoint.getTimestamp(), equalTo(3L));
 		assertThat(dataPoint.getLongValue(), equalTo(25L));
 
-		queryResults.close();
+		dq.close();
 	}
 
 	@SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions"})
@@ -176,29 +176,6 @@ public class KairosDatastoreTest
 
 		assertFalse(file1.exists());
 		assertFalse(file2.exists());
-	}
-
-	//@Test
-	public void test_datastoreThrowsException() throws DatastoreException
-	{
-		TestDatastore testds = new TestDatastore();
-		testds.throwQueryException(new DatastoreException("I hate you"));
-		QueryQueuingManager queuingManager = new QueryQueuingManager(1, "hostname");
-		KairosDatastore datastore = new KairosDatastore(testds, queuingManager,
-				Collections.<DataPointListener>emptyList(), "hostname");
-
-		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
-
-		try
-		{
-			datastore.query(metric);
-			fail();
-		}
-		catch (DatastoreException e)
-		{
-		}
-
-		assertEquals(1, queuingManager.getAvailableThreads());
 	}
 
 	private class TestDatastore implements Datastore

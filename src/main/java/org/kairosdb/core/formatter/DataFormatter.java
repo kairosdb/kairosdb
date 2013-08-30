@@ -16,7 +16,6 @@
 package org.kairosdb.core.formatter;
 
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.QueryResults;
 
 import java.io.Writer;
 import java.util.List;

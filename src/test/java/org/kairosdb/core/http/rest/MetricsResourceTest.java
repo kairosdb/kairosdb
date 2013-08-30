@@ -38,26 +38,31 @@ import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.core.datastore.DataPointRowImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.fail;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertThat;
 
 public class MetricsResourceTest
 {
+	public static final Logger logger = LoggerFactory.getLogger(MetricsResourceTest.class);
+
 	private static final String ADD_METRIC_URL = "http://localhost:9001/api/v1/datapoints";
 	private static final String GET_METRIC_URL = "http://localhost:9001/api/v1/datapoints/query";
 	private static final String METRIC_NAMES_URL = "http://localhost:9001/api/v1/metricnames";
 	private static final String TAG_NAMES_URL = "http://localhost:9001/api/v1/tagnames";
 	private static final String TAG_VALUES_URL = "http://localhost:9001/api/v1/tagvalues";
 
+	private static TestDatastore datastore;
+	private static QueryQueuingManager queuingManager;
 	private static Client client;
 	private static WebServer server;
 
@@ -68,10 +73,11 @@ public class MetricsResourceTest
 		SLF4JBridgeHandler.removeHandlersForRootLogger();
 		SLF4JBridgeHandler.install();
 
+		datastore = new TestDatastore();
+		queuingManager = new QueryQueuingManager(3, "localhost");
+
 		Injector injector = Guice.createInjector(new WebServletModule(new Properties()), new AbstractModule()
 		{
-			private Datastore datastore = new TestDatastore();
-
 			@Override
 			protected void configure()
 			{
@@ -83,7 +89,7 @@ public class MetricsResourceTest
 				bind(GroupByFactory.class).to(TestGroupByFactory.class);
 				bind(GsonParser.class).in(Singleton.class);
 				bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
-				bind(QueryQueuingManager.class).in(Singleton.class);
+				bind(QueryQueuingManager.class).toInstance(queuingManager);
 				bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
 				bindConstant().annotatedWith(Names.named("kairosdb.datastore.concurrentQueryThreads")).to(1);
 			}
@@ -228,6 +234,20 @@ public class MetricsResourceTest
 		JsonResponse response = client.get(TAG_VALUES_URL);
 
 		assertResponse(response, 200, "{\"results\":[\"larry\",\"moe\",\"curly\"]}");
+	}
+
+	@Test
+	public void test_datastoreThrowsException() throws DatastoreException, IOException
+	{
+		datastore.throwQueryException(new DatastoreException("Hide Me"));
+
+		String json = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
+
+		JsonResponse response = client.post(json, GET_METRIC_URL);
+
+		datastore.throwQueryException(null);
+
+		assertEquals(3, queuingManager.getAvailableThreads());
 	}
 
 	private void assertResponse(JsonResponse response, int responseCode, String expectedContent)

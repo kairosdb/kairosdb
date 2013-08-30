@@ -18,9 +18,10 @@ package org.kairosdb.core.http.rest;
 
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
+import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.datastore.QueryResults;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
@@ -57,7 +58,7 @@ enum NameType
 @Path("/api/v1")
 public class MetricsResource
 {
-	private static final Logger log = LoggerFactory.getLogger(MetricsResource.class);
+	public static final Logger logger = LoggerFactory.getLogger(MetricsResource.class);
 
 	private final KairosDatastore datastore;
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
@@ -158,7 +159,7 @@ public class MetricsResource
 		}
 		catch (Exception e)
 		{
-			log.error("Failed to add metric.", e);
+			logger.error("Failed to add metric.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
 		}
 	}
@@ -170,7 +171,7 @@ public class MetricsResource
 	public Response getMeta(String json)
 	{
 		checkNotNull(json);
-		log.debug(json);
+		logger.debug(json);
 		try
 		{
 			File respFile = File.createTempFile("kairos", ".json");
@@ -185,16 +186,18 @@ public class MetricsResource
 
 			for (QueryMetric query : queries)
 			{
-				QueryResults qr = datastore.queryTags(query);
+				List<DataPointGroup> result = datastore.queryTags(query);
 
 				try
 				{
-					jsonResponse.formatQuery(qr);
+					jsonResponse.formatQuery(result);
 				}
 				finally
 				{
-					if (qr != null)
-						qr.close();
+					for (DataPointGroup dataPointGroup : result)
+					{
+						dataPointGroup.close();
+					}
 				}
 			}
 
@@ -227,7 +230,7 @@ public class MetricsResource
 		}
 		catch (Exception e)
 		{
-			log.error("Query failed.", e);
+			logger.error("Query failed.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
 		}
 	}
@@ -239,7 +242,7 @@ public class MetricsResource
 	{
 		// todo verify that end time is not before start time.
 		checkNotNull(json);
-		log.debug(json);
+		logger.debug(json);
 
 		try
 		{
@@ -255,16 +258,16 @@ public class MetricsResource
 
 			for (QueryMetric query : queries)
 			{
-				QueryResults qr = datastore.query(query);
+				DatastoreQuery dq = datastore.createQuery(query);
 
 				try
 				{
-					jsonResponse.formatQuery(qr);
+					List<DataPointGroup> results = dq.execute();
+					jsonResponse.formatQuery(results);
 				}
 				finally
 				{
-					if (qr != null)
-						qr.close();
+					dq.close();
 				}
 			}
 
@@ -297,7 +300,8 @@ public class MetricsResource
 		}
 		catch (Exception e)
 		{
-			log.error("Query failed.", e);
+			if (!"org.kairosdb.core.exception.DatastoreException: Hide Me".equals(e.getMessage()))
+				logger.error("Query failed.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
 		}
 	}
@@ -308,7 +312,7 @@ public class MetricsResource
 	public Response delete(String json) throws Exception
 	{
 		checkNotNull(json);
-		log.debug(json);
+		logger.debug(json);
 
 		try
 		{
@@ -340,7 +344,7 @@ public class MetricsResource
 		}
 		catch (Exception e)
 		{
-			log.error("Delete failed.", e);
+			logger.error("Delete failed.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
 		}
 	}
@@ -391,7 +395,7 @@ public class MetricsResource
 		}
 		catch (Exception e)
 		{
-			log.error("Delete failed.", e);
+			logger.error("Delete failed.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
 		}
 	}
@@ -423,7 +427,7 @@ public class MetricsResource
 		}
 		catch (Exception e)
 		{
-			log.error("Failed to get " + type, e);
+			logger.error("Failed to get " + type, e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
 					new ErrorResponse(e.getMessage())).build();
 		}
@@ -451,7 +455,7 @@ public class MetricsResource
 			}
 			catch (FormatterException e)
 			{
-				log.error("Description of what failed:", e);
+				logger.error("Description of what failed:", e);
 			}
 
 			writer.flush();

@@ -4,11 +4,11 @@ import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.QueryResults;
 import org.kairosdb.core.groupby.GroupByResult;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
 
 /**
  Created with IntelliJ IDEA.
@@ -60,13 +60,13 @@ public class JsonResponse
 	}
 
 
-	public void formatQuery(QueryResults queryResults) throws FormatterException
+	public void formatQuery(List<DataPointGroup> queryResults) throws FormatterException
 	{
 		try
 		{
 			m_jsonWriter.object().key("results").array();
 
-			for (DataPointGroup group : queryResults.getDataPoints())
+			for (DataPointGroup group : queryResults)
 			{
 				final String metric = group.getName();
 

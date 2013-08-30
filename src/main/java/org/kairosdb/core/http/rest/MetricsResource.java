@@ -300,8 +300,7 @@ public class MetricsResource
 		}
 		catch (Exception e)
 		{
-			if (!"org.kairosdb.core.exception.DatastoreException: Hide Me".equals(e.getMessage()))
-				logger.error("Query failed.", e);
+			logger.error("Query failed.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
 		}
 	}

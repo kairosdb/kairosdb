@@ -15,6 +15,7 @@
  */
 package org.kairosdb.core.http.rest;
 
+import ch.qos.logback.classic.Level;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.inject.*;
@@ -37,16 +38,18 @@ import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
-import org.kairosdb.core.datastore.DataPointRowImpl;
+import org.kairosdb.util.LoggingUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.fail;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertThat;
@@ -239,15 +242,26 @@ public class MetricsResourceTest
 	@Test
 	public void test_datastoreThrowsException() throws DatastoreException, IOException
 	{
-		datastore.throwQueryException(new DatastoreException("Hide Me"));
+		Level previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);
 
-		String json = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
+		try
+		{
+			datastore.throwQueryException(new DatastoreException("bogus"));
 
-		JsonResponse response = client.post(json, GET_METRIC_URL);
+			String json = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
 
-		datastore.throwQueryException(null);
+			JsonResponse response = client.post(json, GET_METRIC_URL);
 
-		assertEquals(3, queuingManager.getAvailableThreads());
+			datastore.throwQueryException(null);
+
+			assertThat(response.getStatusCode(), equalTo(500));
+			assertThat(response.getJson(), equalTo("{\"errors\":[\"org.kairosdb.core.exception.DatastoreException: bogus\"]}"));
+			assertEquals(3, queuingManager.getAvailableThreads());
+		}
+		finally
+		{
+			LoggingUtils.setLogLevel(previousLogLevel);
+		}
 	}
 
 	private void assertResponse(JsonResponse response, int responseCode, String expectedContent)
@@ -349,7 +363,7 @@ public class MetricsResourceTest
 		@Override
 		public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
 		{
-			return null;  //To change body of implemented methods use File | Settings | File Templates.
+			return null;
 		}
 	}
 

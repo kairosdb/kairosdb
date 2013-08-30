@@ -46,6 +46,7 @@
 			$("#groupByTimeTemplate").hide();
 			$("#groupByValueTemplate").hide();
             $(".aggregatorPercentile").hide();
+            $(".divisor").hide();
 			$("#tabs").tabs({'active': 0});
 
 			$startTime.bind("change paste keyup", function(){
@@ -385,6 +386,7 @@
 			<select class="ui-widget aggregatorName">
 				<option value="avg">AVG</option>
 				<option value="dev">DEV</option>
+				<option value="div">DIV</option>
 				<option value="min">MIN</option>
 				<option value="max">MAX</option>
 				<option value="rate">RATE</option>
@@ -420,6 +422,10 @@
                 <input class="ui-widget aggregatorPercentileValue" style="width: 40px; margin-left: 10px;" type="text"
                        value="0.75">
             </div>
+			<div class="divisor">
+				<span class="header" style="margin-left: 10px; vertical-align: top;">Divisor</span>
+				<input class="ui-widget divisorValue" style="width: 60px; margin-left: 10px;" type="text">
+			</div>
 		</div>
 	</div>
 </div>

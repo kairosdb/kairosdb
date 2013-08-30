@@ -50,7 +50,7 @@ kairosdb.Metric = function (name) {
 	};
 
 	this.addTag = function (name, value) {
-		if (!this.tags[name]){
+		if (!this.tags[name]) {
 			this.tags[name] = [];
 		}
 
@@ -58,15 +58,13 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
-	this.addRate = function(unit)
-	{
+	this.addRate = function (unit) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
 		var rate = {};
 		rate.name = "rate";
-		if (unit)
-		{
+		if (unit) {
 			rate.unit = unit;
 		}
 
@@ -74,24 +72,36 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
-	this.addHistogram = function(value, unit, percentile)
-	{
+	this.addHistogram = function (value, unit, percentile) {
 		if (!this.aggregators)
-            this.aggregators = [];
+			this.aggregators = [];
 
-        var histogram = {};
-        histogram.name = "histogram";
-        histogram.percentile = percentile;
-        if (unit)
-        {
-            histogram.sampling = {};
-            histogram.sampling.unit = unit;
-            histogram.sampling.value = value;
-        }
+		var histogram = {};
+		histogram.name = "histogram";
+		histogram.percentile = percentile;
+		if (unit) {
+			histogram.sampling = {};
+			histogram.sampling.unit = unit;
+			histogram.sampling.value = value;
+		}
 
-        this.aggregators.push(histogram);
-        return this;
-}
+		this.aggregators.push(histogram);
+		return this;
+	};
+
+	this.addDivideAggregator = function (divisor) {
+		if (!this.aggregators)
+			this.aggregators = [];
+
+		var aggregator = {};
+		aggregator.name = "div";
+		if (divisor) {
+			aggregator.divisor= divisor;
+		}
+
+		this.aggregators.push(aggregator);
+		return this;
+	};
 
 	this.addAggregator = function (name, value, unit) {
 		if (!this.aggregators)
@@ -139,8 +149,7 @@ kairosdb.ValueGroupBy = function (groupSize) {
  * @param groupSizeUnit group size unit: milliseconds, seconds, minutes, hours, days, months, years
  * @param groupCount group count
  */
-kairosdb.TimeGroupBy = function (groupSizeValue, groupSizeUnit, groupCount)
-{
+kairosdb.TimeGroupBy = function (groupSizeValue, groupSizeUnit, groupCount) {
 	this.name = "time";
 	this.group_count = groupCount;
 	this.range_size = {};

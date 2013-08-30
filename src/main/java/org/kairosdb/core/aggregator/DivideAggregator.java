@@ -18,6 +18,7 @@ package org.kairosdb.core.aggregator;
 
 
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
 
@@ -26,6 +27,7 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
+@AggregatorName(name = "div", description = "Divides each data point by a divisor.")
 public class DivideAggregator implements Aggregator
 {
 	private double m_divisor;

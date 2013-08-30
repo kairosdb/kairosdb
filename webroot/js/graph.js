@@ -78,17 +78,20 @@ function updateChart() {
 			else if (name == 'histogram')
 			{
 				var value = $(aggregator).find(".aggregatorSamplingValue").val();
-				if(!isValidInteger(value))
-                {
-                    return true;
-                }
-                var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-                var percentile =  $(aggregator).find(".aggregatorPercentileValue").val();
-                if(!isValidPercentile(percentile))
-                {
-                    return true;
-                }
-                metric.addHistogram(value, unit, percentile);
+				if(!isValidInteger(value)) {
+					return true;
+				}
+				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				var percentile = $(aggregator).find(".aggregatorPercentileValue").val();
+				if (!isValidPercentile(percentile)) {
+					return true;
+				}
+				metric.addHistogram(value, unit, percentile);
+			}
+			else if (name == 'div')
+			{
+				var divisor = $(aggregator).find(".divisorValue").val();
+				metric.addDivideAggregator(divisor);
 			}
 			else
 			{
@@ -447,9 +450,12 @@ function addAggregator(container) {
 	// Add listener for aggregator change
 	$aggregatorContainer.find(".aggregatorName").change(function () {
 		var name = $aggregatorContainer.find(".aggregatorName").val();
+
 		if (name == "rate") {
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".divisor").hide();
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
@@ -458,9 +464,18 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
 			$aggregatorContainer.find(".aggregatorSampling").show();
 		}
+		else if (name == "div"){
+			$aggregatorContainer.find(".aggregatorSampling").hide();
+			$aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
+
+			$aggregatorContainer.find(".divisor").show();
+		}
 		else{
 			$aggregatorContainer.find(".aggregatorSampling").show();
-            $aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
+			$aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".divisor").hide();
 		}
 	});
 }

@@ -266,7 +266,7 @@ public class KairosDatastore
 		}
 	}
 
-	private List<GroupBy> removeTagGroupBy(List<GroupBy> groupBys)
+	private static List<GroupBy> removeTagGroupBy(List<GroupBy> groupBys)
 	{
 		List<GroupBy> modifiedGroupBys = new ArrayList<GroupBy>();
 		for (GroupBy groupBy : groupBys)
@@ -277,7 +277,7 @@ public class KairosDatastore
 		return modifiedGroupBys;
 	}
 
-	private TagGroupBy getTagGroupBy(List<GroupBy> groupBys)
+	private static TagGroupBy getTagGroupBy(List<GroupBy> groupBys)
 	{
 		for (GroupBy groupBy : groupBys)
 		{
@@ -287,7 +287,7 @@ public class KairosDatastore
 		return null;
 	}
 
-	private List<DataPointGroup> wrapRows(List<DataPointRow> rows)
+	private static List<DataPointGroup> wrapRows(List<DataPointRow> rows)
 	{
 		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
 
@@ -299,7 +299,7 @@ public class KairosDatastore
 		return (ret);
 	}
 
-	private List<DataPointGroup> groupByTags(List<DataPointGroup> dataPointsList, TagGroupBy tagGroupBy)
+	private static List<DataPointGroup> groupByTags(List<DataPointGroup> dataPointsList, TagGroupBy tagGroupBy)
 	{
 		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
 
@@ -331,7 +331,7 @@ public class KairosDatastore
 		return ret;
 	}
 
-	private String getTagsKey(LinkedHashMap<String, String> tags)
+	private static String getTagsKey(LinkedHashMap<String, String> tags)
 	{
 		StringBuilder builder = new StringBuilder();
 		for (String name : tags.keySet())
@@ -342,7 +342,7 @@ public class KairosDatastore
 		return builder.toString();
 	}
 
-	private LinkedHashMap<String, String> getMatchingTags(DataPointGroup datapointGroup, List<String> tagNames)
+	private static LinkedHashMap<String, String> getMatchingTags(DataPointGroup datapointGroup, List<String> tagNames)
 	{
 		LinkedHashMap<String, String> matchingTags = new LinkedHashMap<String, String>();
 		for (String tagName : tagNames)
@@ -359,7 +359,7 @@ public class KairosDatastore
 	}
 
 
-	private String calculateFilenameHash(QueryMetric metric) throws NoSuchAlgorithmException, UnsupportedEncodingException
+	private static String calculateFilenameHash(QueryMetric metric) throws NoSuchAlgorithmException, UnsupportedEncodingException
 	{
 		String hashString = metric.getCacheString();
 		if (hashString == null)
@@ -406,11 +406,10 @@ public class KairosDatastore
 			CachedSearchResult cachedResults = null;
 
 			List<DataPointRow> returnedRows = null;
-			String cacheFilename = null;
-			
+
 			try
 			{
-				String tempFile = m_cacheDir + cacheFilename;
+				String tempFile = m_cacheDir + m_cacheFilename;
 
 				if (m_metric.getCacheTime() > 0)
 				{

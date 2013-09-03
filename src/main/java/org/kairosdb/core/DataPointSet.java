@@ -23,6 +23,7 @@ public class DataPointSet
 	private String m_name;
 	private SortedMap<String, String> m_tags;
 	private List<DataPoint> m_dataPoints;
+	private String m_dataType;
 
 	public DataPointSet(String name)
 	{
@@ -36,6 +37,11 @@ public class DataPointSet
 		this.m_name = mName;
 		this.m_tags = new TreeMap<String, String>(tags);
 		this.m_dataPoints = new ArrayList<DataPoint>(dataPoints);
+	}
+
+	public void setDataStoreDataType(String dataType)
+	{
+		m_dataType = dataType;
 	}
 
 	public void addTag(String name, String value)
@@ -68,5 +74,10 @@ public class DataPointSet
 	public List<DataPoint> getDataPoints()
 	{
 		return (Collections.unmodifiableList(m_dataPoints));
+	}
+
+	public String getDataStoreDataType()
+	{
+		return (m_dataType);
 	}
 }

@@ -17,6 +17,7 @@
 package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.datapoints.DataPointFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +46,7 @@ public class CachedSearchResult
 	private File m_indexFile;
 	private AtomicInteger m_closeCounter = new AtomicInteger();
 	private boolean m_readFromCache = false;
+	private DataPointFactory m_dataPointFactory;
 
 	private static File getIndexFile(String baseFileName)
 	{
@@ -60,7 +62,8 @@ public class CachedSearchResult
 		return (new File(dataFileName));
 	}
 
-	private CachedSearchResult(String metricName, File dataFile, File indexFile)
+	private CachedSearchResult(String metricName, File dataFile, File indexFile,
+			DataPointFactory datatPointFactory)
 			throws FileNotFoundException
 	{
 		m_metricName = metricName;
@@ -69,6 +72,7 @@ public class CachedSearchResult
 		m_indexFile = indexFile;
 		m_dataPointSets = new ArrayList<FilePositionMarker>();
 		m_dataFile = dataFile;
+		m_dataPointFactory = datatPointFactory;
 	}
 
 	private void openCacheFile() throws FileNotFoundException
@@ -126,13 +130,14 @@ public class CachedSearchResult
 	}
 
 	public static CachedSearchResult createCachedSearchResult(String metricName,
-	                                                          String baseFileName)
+			String baseFileName, DataPointFactory dataPointFactory)
 			throws IOException
 	{
 		File dataFile = getDataFile(baseFileName);
 		File indexFile = getIndexFile(baseFileName);
 
-		CachedSearchResult ret = new CachedSearchResult(metricName, dataFile, indexFile);
+		CachedSearchResult ret = new CachedSearchResult(metricName, dataFile,
+				indexFile, dataPointFactory);
 
 		ret.clearDataFile();
 
@@ -146,7 +151,7 @@ public class CachedSearchResult
 	 @return The CachedSearchResult if the file exists or null if it doesn't
 	 */
 	public static CachedSearchResult openCachedSearchResult(String metricName,
-			String baseFileName, int cacheTime) throws IOException
+			String baseFileName, int cacheTime, DataPointFactory dataPointFactory) throws IOException
 	{
 		CachedSearchResult ret = null;
 		File dataFile = getDataFile(baseFileName);
@@ -156,7 +161,7 @@ public class CachedSearchResult
 		if (dataFile.exists() && indexFile.exists() && ((now - dataFile.lastModified()) < ((long)cacheTime * 1000)))
 		{
 
-			ret = new CachedSearchResult(metricName, dataFile, indexFile);
+			ret = new CachedSearchResult(metricName, dataFile, indexFile, dataPointFactory);
 			try
 			{
 				ret.loadIndex();
@@ -216,7 +221,7 @@ public class CachedSearchResult
 	 of the set to be saved.  All inserted datapoints after this call are
 	 expected to be in ascending time order and have the same tags.
 	 */
-	public void startDataPointSet(Map<String, String> tags) throws IOException
+	public void startDataPointSet(Map<String, String> tags, String type) throws IOException
 	{
 		if (m_dataFileChannel == null)
 			openCacheFile();
@@ -224,7 +229,7 @@ public class CachedSearchResult
 		endDataPoints();
 
 		long curPosition = m_dataFileChannel.position();
-		m_dataPointSets.add(new FilePositionMarker(curPosition, tags));
+		m_dataPointSets.add(new FilePositionMarker(curPosition, tags, type));
 	}
 
 	private void flushWriteBuffer() throws IOException
@@ -240,7 +245,7 @@ public class CachedSearchResult
 		}
 	}
 
-	public void addDataPoint(long timestamp, long value) throws IOException
+	/*public void addDataPoint(long timestamp, long value) throws IOException
 	{
 		if (!m_writeBuffer.hasRemaining())
 		{
@@ -260,7 +265,7 @@ public class CachedSearchResult
 		m_writeBuffer.putLong(timestamp);
 		m_writeBuffer.put(DOUBLE_FLAG);
 		m_writeBuffer.putDouble(value);
-	}
+	}*/
 
 	public List<DataPointRow> getRows()
 	{
@@ -280,6 +285,7 @@ public class CachedSearchResult
 		private long m_startPosition;
 		private long m_endPosition;
 		private Map<String, String> m_tags;
+		private String m_dataType;
 
 
 		public FilePositionMarker()
@@ -287,12 +293,15 @@ public class CachedSearchResult
 			m_startPosition = 0L;
 			m_endPosition = 0L;
 			m_tags = new HashMap<String, String>();
+			m_dataType = null;
 		}
 
-		public FilePositionMarker(long startPosition, Map<String, String> tags)
+		public FilePositionMarker(long startPosition, Map<String, String> tags,
+				String dataType)
 		{
 			m_startPosition = startPosition;
 			m_tags = tags;
+			m_dataType = dataType;
 		}
 
 		public void setEndPosition(long endPosition)
@@ -308,7 +317,7 @@ public class CachedSearchResult
 		@Override
 		public CachedDataPointRow iterator()
 		{
-			return (new CachedDataPointRow(m_tags, m_startPosition, m_endPosition));
+			return (new CachedDataPointRow(m_tags, m_startPosition, m_endPosition, m_dataType));
 		}
 
 		@Override
@@ -316,6 +325,7 @@ public class CachedSearchResult
 		{
 			out.writeLong(m_startPosition);
 			out.writeLong(m_endPosition);
+			out.writeObject(m_dataType);
 			out.writeInt(m_tags.size());
 			for (String s : m_tags.keySet())
 			{
@@ -329,6 +339,7 @@ public class CachedSearchResult
 		{
 			m_startPosition = in.readLong();
 			m_endPosition = in.readLong();
+			m_dataType = (String)in.readObject();
 			int tagCount = in.readInt();
 			for (int I = 0; I < tagCount; I++)
 			{
@@ -346,9 +357,10 @@ public class CachedSearchResult
 		private long m_endPostition;
 		private ByteBuffer m_readBuffer;
 		private Map<String, String> m_tags;
+		private String m_dataType;
 
 		public CachedDataPointRow(Map<String, String> tags,
-				long startPosition, long endPostition)
+				long startPosition, long endPostition, String dataType)
 		{
 			m_currentPosition = startPosition;
 			m_endPostition = endPostition;
@@ -356,6 +368,7 @@ public class CachedSearchResult
 			m_readBuffer.clear();
 			m_readBuffer.limit(0);
 			m_tags = tags;
+			m_dataType = dataType;
 		}
 
 		private void readMorePoints() throws IOException
@@ -393,11 +406,8 @@ public class CachedSearchResult
 					return (null);
 
 				long timestamp = m_readBuffer.getLong();
-				byte flag = m_readBuffer.get();
-				if (flag == LONG_FLAG)
-					ret = new DataPoint(timestamp, m_readBuffer.getLong());
-				else
-					ret = new DataPoint(timestamp, m_readBuffer.getDouble());
+
+				ret = m_dataPointFactory.getDataPoint(timestamp, m_readBuffer);
 
 			}
 			catch (IOException ioe)
@@ -418,6 +428,12 @@ public class CachedSearchResult
 		public String getName()
 		{
 			return (m_metricName);
+		}
+
+		@Override
+		public String getDataType()
+		{
+			return null;  //To change body of implemented methods use File | Settings | File Templates.
 		}
 
 		@Override

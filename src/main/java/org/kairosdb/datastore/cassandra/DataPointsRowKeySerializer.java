@@ -32,13 +32,19 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 		byte[] metricName = dataPointsRowKey.getMetricName().getBytes(UTF8);
 		size += metricName.length;
 		size++; //Add one for null at end of string
+		byte[] dataType = dataPointsRowKey.getDataType().getBytes(UTF8);
+		size += dataType.length;
+		size += 2; //for null marker and datatype size
 		byte[] tagString = generateTagString(dataPointsRowKey.getTags()).getBytes(UTF8);
 		size += tagString.length;
 
 		ByteBuffer buffer = ByteBuffer.allocate(size);
-		buffer.put(metricName);
+		buffer.put(metricName); //Metric name is put in this way for sorting purposes
 		buffer.put((byte)0x0);
 		buffer.putLong(dataPointsRowKey.getTimestamp());
+		buffer.put((byte)0x0); //Marks the beginning of datatype
+		buffer.put((byte)dataType.length);
+		buffer.put(dataType);
 		buffer.put(tagString);
 
 		buffer.flip();
@@ -108,8 +114,23 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 
 		long timestamp = byteBuffer.getLong();
 
+		//Check for datatype marker which ia a null
+		byteBuffer.mark();
+		String dataType = null;
+		if (byteBuffer.get() == 0x0)
+		{
+			int dtSize = byteBuffer.get();
+			byte[] dataTypeBytes = new byte[dtSize];
+			byteBuffer.get(dataTypeBytes);
+			dataType = new String(dataTypeBytes, UTF8);
+		}
+		else
+		{
+			byteBuffer.reset();
+		}
+
 		DataPointsRowKey rowKey = new DataPointsRowKey(new String(metricName, UTF8),
-				timestamp);
+				timestamp, dataType);
 
 		byte[] tagString = new byte[byteBuffer.remaining()];
 		byteBuffer.get(tagString);

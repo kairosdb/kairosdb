@@ -16,6 +16,8 @@
 
 package org.kairosdb.core;
 
+import org.kairosdb.core.datapoints.DataPointHelper;
+import org.kairosdb.datastore.cassandra.ValueSerializer;
 import org.kairosdb.util.Util;
 
 import java.nio.ByteBuffer;
@@ -25,9 +27,8 @@ import java.nio.ByteBuffer;
  * <p>
  * Implementations of this interface aren't expected to be synchronized.
  */
-public class LegacyDataPoint implements DataPoint
+public class LegacyDataPoint extends DataPointHelper implements NumericDataPoint
 {
-	private long m_timestamp;
 	private boolean m_isInteger;
 	private long m_longValue;
 	private double m_doubleValue;
@@ -35,31 +36,31 @@ public class LegacyDataPoint implements DataPoint
 
 	public LegacyDataPoint(long timestamp, long value)
 	{
+		super(timestamp);
 		m_isInteger = true;
-		m_timestamp = timestamp;
 		m_longValue = value;
 	}
 
 	public LegacyDataPoint(long timestamp, double value)
 	{
+		super(timestamp);
 		m_isInteger = false;
-		m_timestamp = timestamp;
 		m_doubleValue = value;
 	}
 
-	/**
-	 Get the timestamp for this data point in milliseconds
-	 @return timestamp
-	 */
-	public long getTimestamp()
-	{
-		return m_timestamp;
-	}
 
 	@Override
 	public ByteBuffer toByteBuffer()
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		if (m_byteBuffer != null)
+		{
+			if (m_isInteger)
+				m_byteBuffer = ValueSerializer.toByteBuffer(m_longValue);
+			else
+				m_byteBuffer = ValueSerializer.toByteBuffer((float)m_doubleValue);
+		}
+
+		return (m_byteBuffer);  //To change body of implemented methods use File | Settings | File Templates.
 	}
 
 	public boolean isInteger()
@@ -89,19 +90,23 @@ public class LegacyDataPoint implements DataPoint
 				'}';
 	}
 
-	//@Override
-	public int compareTo(DataPoint o)
-	{
-		long ret = getTimestamp() - o.getTimestamp();
 
-		if (ret == 0L)
-		{
-			if (m_isInteger)
-				return (Util.compareLong(m_longValue, o.getLongValue()));
-			else
-				return (Double.compare(m_doubleValue, o.getDoubleValue()));
-		}
+	@Override
+	public String getApiDataType()
+	{
+		if (m_isInteger)
+			return (API_LONG);
 		else
-			return (ret < 0L ? -1 : 1);
+			return (API_DOUBLE);
+	}
+
+	/**
+	 Legacy data points are no longer written to the datastore
+	 @return Returns null.
+	 */
+	@Override
+	public String getDataStoreDataType()
+	{
+		return null;  //To change body of implemented methods use File | Settings | File Templates.
 	}
 }

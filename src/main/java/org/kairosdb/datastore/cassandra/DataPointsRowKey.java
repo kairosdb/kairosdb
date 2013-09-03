@@ -22,18 +22,20 @@ public class DataPointsRowKey
 {
 	private String m_metricName;
 	private long m_timestamp;
+	private String m_dataType;
 	private SortedMap<String, String> m_tags;
 
-	public DataPointsRowKey(String metricName, long timestamp)
+	public DataPointsRowKey(String metricName, long timestamp, String dataType)
 	{
-		this(metricName, timestamp, new TreeMap<String, String>());
+		this(metricName, timestamp, dataType, new TreeMap<String, String>());
 	}
 
-	public DataPointsRowKey(String metricName, long timestamp,
+	public DataPointsRowKey(String metricName, long timestamp, String datatype,
 			SortedMap<String, String> tags)
 	{
 		m_metricName = metricName;
 		m_timestamp = timestamp;
+		m_dataType = datatype;
 		m_tags = tags;
 	}
 
@@ -55,6 +57,11 @@ public class DataPointsRowKey
 	public long getTimestamp()
 	{
 		return m_timestamp;
+	}
+
+	public String getDataType()
+	{
+		return m_dataType;
 	}
 
 	@SuppressWarnings("RedundantIfStatement")

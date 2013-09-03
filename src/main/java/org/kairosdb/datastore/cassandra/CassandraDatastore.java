@@ -37,6 +37,7 @@ import me.prettyprint.hector.api.query.CountQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.LegacyDataPoint;
 import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.DataPointRow;
 import org.kairosdb.core.datastore.Datastore;
@@ -145,7 +146,7 @@ public class CassandraDatastore implements Datastore
 							DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
 							dps.addTag("host", hostname);
 							dps.addTag("buffer", CF_DATA_POINTS);
-							dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
+							dps.addDataPoint(new LegacyDataPoint(System.currentTimeMillis(), pendingWrites));
 							putInternalDataPoints(dps);
 						}
 					}, mutatorLock, lockCondition);
@@ -163,7 +164,7 @@ public class CassandraDatastore implements Datastore
 							DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
 							dps.addTag("host", hostname);
 							dps.addTag("buffer", CF_ROW_KEY_INDEX);
-							dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
+							dps.addDataPoint(new LegacyDataPoint(System.currentTimeMillis(), pendingWrites));
 							putInternalDataPoints(dps);
 						}
 					}, mutatorLock, lockCondition);
@@ -181,7 +182,7 @@ public class CassandraDatastore implements Datastore
 							DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
 							dps.addTag("host", hostname);
 							dps.addTag("buffer", CF_STRING_INDEX);
-							dps.addDataPoint(new DataPoint(System.currentTimeMillis(), pendingWrites));
+							dps.addDataPoint(new LegacyDataPoint(System.currentTimeMillis(), pendingWrites));
 							putInternalDataPoints(dps);
 						}
 					}, mutatorLock, lockCondition);
@@ -258,7 +259,8 @@ public class CassandraDatastore implements Datastore
 				if (newRowTime != rowTime)
 				{
 					rowTime = newRowTime;
-					rowKey = new DataPointsRowKey(dps.getName(), rowTime, dps.getTags());
+					rowKey = new DataPointsRowKey(dps.getName(), rowTime, dps.getDataStoreDataType(),
+							dps.getTags());
 
 					long now = System.currentTimeMillis();
 					//Write out the row key if it is not cached
@@ -291,17 +293,10 @@ public class CassandraDatastore implements Datastore
 					}
 				}
 
-				int columnTime = getColumnName(rowTime, dp.getTimestamp(), dp.isInteger());
-				if (dp.isInteger())
-				{
-					m_dataPointWriteBuffer.addData(rowKey, columnTime,
-							ValueSerializer.toByteBuffer(dp.getLongValue()), writeTime);
-				}
-				else
-				{
-					m_dataPointWriteBuffer.addData(rowKey, columnTime,
-							ValueSerializer.toByteBuffer((float) dp.getDoubleValue()), writeTime);
-				}
+				int columnTime = getColumnName(rowTime, dp.getTimestamp());
+				m_dataPointWriteBuffer.addData(rowKey, columnTime,
+						dp.toByteBuffer(), writeTime);
+
 			}
 		}
 		catch (DatastoreException e)
@@ -435,7 +430,7 @@ public class CassandraDatastore implements Datastore
 		CountQuery<String, DataPointsRowKey> countQuery = HFactory.createCountQuery(m_keyspace, StringSerializer.get(), DATA_POINTS_ROW_KEY_SERIALIZER);
 		countQuery.setColumnFamily(CF_ROW_KEY_INDEX).
 				setKey(deleteQuery.getName()).
-				setRange(new DataPointsRowKey(deleteQuery.getName(), 0L), new DataPointsRowKey(deleteQuery.getName(), Long.MAX_VALUE), Integer.MAX_VALUE);
+				setRange(new DataPointsRowKey(deleteQuery.getName(), 0L, ""), new DataPointsRowKey(deleteQuery.getName(), Long.MAX_VALUE, ""), Integer.MAX_VALUE);
 		int rowKeyColumnCount = countQuery.execute().get();
 
 		ListMultimap<Long, DataPointsRowKey> rowKeys = getKeysForQuery(deleteQuery);
@@ -464,8 +459,9 @@ public class CassandraDatastore implements Datastore
 				// Delete remaining partial rows
 				DataPoint column = row.next();
 				long rowTime = calculateRowTime(column.getTimestamp());
-				DataPointsRowKey rowKey = new DataPointsRowKey(row.getName(), rowTime, tags);
-				int columnName = getColumnName(rowTime, column.getTimestamp(), column.isInteger());
+				DataPointsRowKey rowKey = new DataPointsRowKey(row.getName(), rowTime,
+						row.getDataType(), tags);
+				int columnName = getColumnName(rowTime, column.getTimestamp());
 				m_dataPointWriteBuffer.deleteColumn(rowKey, columnName, now);
 			}
 		}
@@ -506,14 +502,14 @@ public class CassandraDatastore implements Datastore
 						DATA_POINTS_ROW_KEY_SERIALIZER, StringSerializer.get());
 
 		DataPointsRowKey startKey = new DataPointsRowKey(query.getName(),
-				calculateRowTime(query.getStartTime()));
+				calculateRowTime(query.getStartTime()), "");
 
 		/*
 		Adding 1 to the end time ensures we get all the keys that have end time and
 		have tags in the key.
 		 */
 		DataPointsRowKey endKey = new DataPointsRowKey(query.getName(),
-				calculateRowTime(query.getEndTime()) + 1);
+				calculateRowTime(query.getEndTime()) + 1, "");
 
 
 		sliceQuery.setColumnFamily(CF_ROW_KEY_INDEX)
@@ -554,15 +550,15 @@ public class CassandraDatastore implements Datastore
 
 
 	@SuppressWarnings("PointlessBitwiseExpression")
-	public static int getColumnName(long rowTime, long timestamp, boolean isInteger)
+	public static int getColumnName(long rowTime, long timestamp)
 	{
 		int ret = (int) (timestamp - rowTime);
 
-		if (isInteger)
-			return ((ret << 1) | LONG_FLAG);
-		else
-			return ((ret << 1) | FLOAT_FLAG);
-
+		/*
+			The timestamp is shifted to support legacy datapoints that
+			used the extra bit to determin if the value was long or double
+		 */
+		return (ret << 1);
 	}
 
 	public static long getColumnTimestamp(long rowTime, int columnName)

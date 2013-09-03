@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,7 +122,7 @@ public class QueryQueuingManager implements KairosMetricReporter
 	{
 		DataPointSet collisionSet = new DataPointSet(QUERY_COLLISIONS_METRIC_NAME);
 		collisionSet.addTag("host", hostname);
-		collisionSet.addDataPoint(new DataPoint(System.currentTimeMillis(), collisions.getAndSet(0)));
+		collisionSet.addDataPoint(new LongDataPoint(System.currentTimeMillis(), collisions.getAndSet(0)));
 
 		return Collections.singletonList(collisionSet);
 	}

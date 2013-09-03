@@ -59,12 +59,12 @@ public class QueryRunner
 		if (startTime < m_tierRowTime)
 			m_startTime = 0;
 		else
-			m_startTime = getColumnName(m_tierRowTime, startTime, true); //Pass true so we get 0x0 for last bit
+			m_startTime = getColumnName(m_tierRowTime, startTime);
 
 		if (endTime > (m_tierRowTime + ROW_WIDTH))
-			m_endTime = getColumnName(m_tierRowTime, m_tierRowTime + ROW_WIDTH, false);
+			m_endTime = getColumnName(m_tierRowTime, m_tierRowTime + ROW_WIDTH) +1;
 		else
-			m_endTime = getColumnName(m_tierRowTime, endTime, false); //Pass false so we get 0x1 for last bit
+			m_endTime = getColumnName(m_tierRowTime, endTime) +1; //add 1 so we get 0x1 for last bit
 
 		m_cachedResults = csResult;
 		m_singleRowReadSize = singleRowReadSize;

@@ -24,6 +24,8 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.Aggregator;
+import org.kairosdb.core.datapoints.DataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.Grouper;
@@ -55,6 +57,7 @@ public class KairosDatastore
 	private final QueryQueuingManager m_queuingManager;
 	private final List<DataPointListener> m_dataPointListeners;
 	private final String m_hostname;
+	private final DataPointFactory m_dataPointFactory;
 
 	private String m_baseCacheDir;
 	private volatile String m_cacheDir;
@@ -62,13 +65,15 @@ public class KairosDatastore
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-	                       List<DataPointListener> dataPointListeners, @Named("HOSTNAME") String hostname)
+	      List<DataPointListener> dataPointListeners, @Named("HOSTNAME") String hostname,
+			DataPointFactory dataPointFactory)
 			throws DatastoreException
 	{
 		m_datastore = checkNotNull(datastore);
 		m_dataPointListeners = checkNotNull(dataPointListeners);
 		m_queuingManager = checkNotNull(queuingManager);
 		m_hostname = checkNotNullOrEmpty(hostname);
+		m_dataPointFactory = dataPointFactory;
 
 		m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
 
@@ -198,12 +203,13 @@ public class KairosDatastore
 			if (metric.getCacheTime() > 0)
 			{
 				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(),
-						tempFile, metric.getCacheTime());
+						tempFile, metric.getCacheTime(), m_dataPointFactory);
 			}
 
 			if (cachedResults == null)
 			{
-				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile);
+				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(),
+						tempFile, m_dataPointFactory);
 			}
 		}
 		catch (Exception e)
@@ -236,7 +242,7 @@ public class KairosDatastore
 			if (metric.getCacheTime() > 0)
 			{
 				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(),
-						tempFile, metric.getCacheTime());
+						tempFile, metric.getCacheTime(), m_dataPointFactory);
 				if (cachedResults != null)
 				{
 					returnedRows = cachedResults.getRows();
@@ -248,7 +254,7 @@ public class KairosDatastore
 			{
 				logger.debug("Cache MISS!");
 				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(),
-						tempFile);
+						tempFile, m_dataPointFactory);
 				returnedRows = m_datastore.queryDatabase(metric, cachedResults);
 			}
 		}
@@ -292,12 +298,12 @@ public class KairosDatastore
 		DataPointSet dps = new DataPointSet(QUERY_METRIC_TIME);
 		dps.addTag("host", m_hostname);
 		dps.addTag("metric_name", metric.getName());
-		dps.addDataPoint(new DataPoint(queryStartTime, System.currentTimeMillis() - queryStartTime));
+		dps.addDataPoint(new LongDataPoint(queryStartTime, System.currentTimeMillis() - queryStartTime));
 		putDataPoints(dps);
 
 		DataPointSet waitingSet = new DataPointSet(QUERIES_WAITING_METRIC_NAME);
 		waitingSet.addTag("host", m_hostname);
-		waitingSet.addDataPoint(new DataPoint(queryStartTime, m_queuingManager.getQueryWaitingCount()));
+		waitingSet.addDataPoint(new LongDataPoint(queryStartTime, m_queuingManager.getQueryWaitingCount()));
 		putDataPoints(waitingSet);
 
 		return results;
@@ -311,7 +317,8 @@ public class KairosDatastore
 		{
 			String cacheFilename = UUID.randomUUID().toString();
 			String tempFile = m_cacheDir + cacheFilename;
-			CachedSearchResult cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile);
+			CachedSearchResult cachedResults = CachedSearchResult.createCachedSearchResult(
+					metric.getName(), tempFile, m_dataPointFactory);
 			m_datastore.deleteDataPoints(metric, cachedResults);
 		}
 		catch (Exception e)

@@ -31,6 +31,7 @@ import org.kairosdb.core.groupby.TagGroupBy;
 
 import java.util.*;
 
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -465,6 +466,29 @@ public abstract class DatastoreTestHelper
 
 		dq.close();
 	}
+
+	@Test
+	public void test_queryDatabase_noResults() throws DatastoreException
+	{
+
+		Map<String, String> tags = new TreeMap<String, String>();
+		QueryMetric query = new QueryMetric(500, 0, "metric1");
+		query.setEndTime(1000);
+
+		query.setTags(tags);
+
+		DatastoreQuery dq = s_datastore.createQuery(query);
+
+		List<DataPointGroup> results = dq.execute();
+
+		assertThat(results.size(), equalTo(1));
+		DataPointGroup dpg = results.get(0);
+		assertThat(dpg.getName(), is("metric1"));
+		assertFalse(dpg.hasNext());
+
+		dq.close();
+	}
+
 
 	private void assertValues(DataPointGroup group, long... values)
 	{

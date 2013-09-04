@@ -18,6 +18,8 @@ package org.kairosdb.core.http.rest;
 
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
+import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -276,6 +278,12 @@ public class MetricsResource
 			jsonResponse.end();
 			writer.flush();
 			writer.close();
+
+			/*DataPointSet dps = new DataPointSet(QUERY_METRIC_TIME);
+			dps.addTag("host", m_hostname);
+			dps.addTag("metric_name", m_metric.getName());
+			dps.addDataPoint(new DataPoint(queryStartTime, System.currentTimeMillis() - queryStartTime));
+			putDataPoints(dps);*/
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new FileStreamingOutput(respFile));

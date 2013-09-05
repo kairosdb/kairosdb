@@ -6,7 +6,10 @@ cd "$KAIROSDB_BIN_DIR/.."
 
 KAIROSDB_LIB_DIR="lib"
 KAIROSDB_LOG_DIR="log"
-JAVA_OPTS=
+
+if [ -f "$KAIROSDB_BIN_DIR/kairosdb-env.sh" ]; then
+	"$KAIROSDB_BIN_DIR/kairosdb-env.sh"
+fi
 
 if [ ! -d "$KAIROSDB_LOG_DIR" ]; then
 	mkdir "$KAIROSDB_LOG_DIR"

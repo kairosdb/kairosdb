@@ -131,23 +131,26 @@ public class QueryRunner
 	private void writeColumns(DataPointsRowKey rowKey, List<HColumn<Integer, ByteBuffer>> columns)
 			throws IOException
 	{
-		Map<String, String> tags = rowKey.getTags();
-		m_cachedResults.startDataPointSet(tags);
-
-		for (HColumn<Integer, ByteBuffer> column : columns)
+		if (columns.size() != 0)
 		{
-			int columnTime = column.getName();
+			Map<String, String> tags = rowKey.getTags();
+			m_cachedResults.startDataPointSet(tags);
 
-			ByteBuffer value = column.getValue();
-			if (isLongValue(columnTime))
+			for (HColumn<Integer, ByteBuffer> column : columns)
 			{
-				m_cachedResults.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
-						columnTime), ValueSerializer.getLongFromByteBuffer(value));
-			}
-			else
-			{
-				m_cachedResults.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
-						columnTime), ValueSerializer.getDoubleFromByteBuffer(value));
+				int columnTime = column.getName();
+
+				ByteBuffer value = column.getValue();
+				if (isLongValue(columnTime))
+				{
+					m_cachedResults.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
+							columnTime), ValueSerializer.getLongFromByteBuffer(value));
+				}
+				else
+				{
+					m_cachedResults.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
+							columnTime), ValueSerializer.getDoubleFromByteBuffer(value));
+				}
 			}
 		}
 	}

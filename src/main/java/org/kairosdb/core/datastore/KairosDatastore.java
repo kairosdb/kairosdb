@@ -29,6 +29,7 @@ import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.Grouper;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.groupby.TagGroupByResult;
+import org.kairosdb.core.reporting.ThreadReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -393,11 +394,7 @@ public class KairosDatastore
 			int waitingCount = m_queuingManager.getQueryWaitingCount();
 			if (waitingCount != 0)
 			{
-				DataPointSet waitingSet = new DataPointSet(QUERIES_WAITING_METRIC_NAME);
-				waitingSet.addTag("host", m_hostname);
-				waitingSet.addDataPoint(new DataPoint(System.currentTimeMillis(),
-						m_queuingManager.getQueryWaitingCount()));
-				putDataPoints(waitingSet);
+				ThreadReporter.addDataPoint(QUERIES_WAITING_METRIC_NAME, waitingCount);
 			}
 
 			m_metric = metric;
@@ -474,13 +471,8 @@ public class KairosDatastore
 
 
 			//Report how long query took
-			DataPointSet dps = new DataPointSet(QUERY_METRIC_TIME);
-			dps.addTag("host", m_hostname);
-			dps.addTag("metric_name", m_metric.getName());
-			dps.addDataPoint(new DataPoint(queryStartTime, System.currentTimeMillis() - queryStartTime));
-			putDataPoints(dps);
-			
-			
+			ThreadReporter.addDataPoint(QUERY_METRIC_TIME, System.currentTimeMillis() - queryStartTime);
+
 			return (m_results);
 		}
 

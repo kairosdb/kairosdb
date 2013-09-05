@@ -43,6 +43,11 @@ public class DataPointSet
 		m_tags.put(name, value);
 	}
 
+	public void setTags(SortedMap<String, String> tags)
+	{
+		m_tags = tags;
+	}
+
 	@Override
 	public String toString()
 	{

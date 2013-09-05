@@ -18,6 +18,7 @@ package org.kairosdb.core.http.rest;
 
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
+import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -33,6 +34,7 @@ import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.core.http.rest.json.JsonMetricParser;
 import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
 import org.kairosdb.core.http.rest.validation.ValidationException;
+import org.kairosdb.core.reporting.ThreadReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,10 +63,18 @@ enum NameType
 public class MetricsResource
 {
 	public static final Logger logger = LoggerFactory.getLogger(MetricsResource.class);
+	public static final String QUERY_TIME = "kairosdb.http.query_time";
+	public static final String REQUEST_TIME = "kairosdb.http.request_time";
+
+	public static final String QUERY_URL = "/datapoints/query";
 
 	private final KairosDatastore datastore;
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
 	private final GsonParser gsonParser;
+
+	@Inject
+	@Named("HOSTNAME")
+	private String hostName = "localhost";
 
 	@Inject
 	public MetricsResource(KairosDatastore datastore, GsonParser gsonParser)
@@ -174,6 +184,7 @@ public class MetricsResource
 	{
 		checkNotNull(json);
 		logger.debug(json);
+
 		try
 		{
 			File respFile = File.createTempFile("kairos", ".json");
@@ -239,12 +250,15 @@ public class MetricsResource
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/datapoints/query")
+	@Path(QUERY_URL)
 	public Response get(String json) throws Exception
 	{
 		// todo verify that end time is not before start time.
 		checkNotNull(json);
 		logger.debug(json);
+
+		ThreadReporter.setReportTime(System.currentTimeMillis());
+		ThreadReporter.addTag("host", hostName);
 
 		try
 		{
@@ -258,14 +272,22 @@ public class MetricsResource
 
 			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
 
+			int queryCount = 0;
 			for (QueryMetric query : queries)
 			{
+				queryCount ++;
+				ThreadReporter.addTag("metric_name", query.getName());
+				ThreadReporter.addTag("query_index", String.valueOf(queryCount));
+
 				DatastoreQuery dq = datastore.createQuery(query);
+				long startQuery = System.currentTimeMillis();
 
 				try
 				{
 					List<DataPointGroup> results = dq.execute();
 					jsonResponse.formatQuery(results);
+
+					ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
 				}
 				finally
 				{
@@ -279,11 +301,12 @@ public class MetricsResource
 			writer.flush();
 			writer.close();
 
-			/*DataPointSet dps = new DataPointSet(QUERY_METRIC_TIME);
-			dps.addTag("host", m_hostname);
-			dps.addTag("metric_name", m_metric.getName());
-			dps.addDataPoint(new DataPoint(queryStartTime, System.currentTimeMillis() - queryStartTime));
-			putDataPoints(dps);*/
+			ThreadReporter.clearTags();
+			ThreadReporter.addTag("host", hostName);
+			ThreadReporter.addTag("request", QUERY_URL);
+			ThreadReporter.addDataPoint(REQUEST_TIME, System.currentTimeMillis() - ThreadReporter.getReportTime());
+
+			ThreadReporter.submitData(datastore);
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new FileStreamingOutput(respFile));
@@ -310,6 +333,10 @@ public class MetricsResource
 		{
 			logger.error("Query failed.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
+		}
+		finally
+		{
+			ThreadReporter.clear();
 		}
 	}
 

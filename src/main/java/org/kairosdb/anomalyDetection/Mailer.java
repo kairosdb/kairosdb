@@ -36,7 +36,7 @@ public class Mailer
 					}
 				});
 
-		String to = "jsabin@proofpoint.com";
+		String to = "kairosdb.test@gmail.com";
 		String from = "pulse@proofpoint.com";
 		String subject = "Anomalous Data Found";
 		Message msg = new MimeMessage(session);
@@ -45,9 +45,8 @@ public class Mailer
 			msg.setRecipient(Message.RecipientType.TO, new InternetAddress(to));
 			msg.setSubject(subject);
 
-			String message = String.format("%s %s %s", dataPoint.toString(), "\n", url);
-			msg.setText(message);
-//			msg.setContent(message, "text/html");
+			String message = String.format("%s %s <a href=\"%s\">%s</a>", dataPoint.toString(), "<br>", url, url);
+			msg.setContent(message, "text/html");
 
 			// Send the message.
 			Transport.send(msg);

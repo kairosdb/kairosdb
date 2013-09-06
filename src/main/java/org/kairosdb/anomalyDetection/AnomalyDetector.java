@@ -92,8 +92,6 @@ public class AnomalyDetector implements DataPointListener
 
 		try
 		{
-			//long startTime = new RelativeTime(1, "hours").getTimeRelativeTo(dataPoint.getTimestamp());
-
 			query.put("start_absolute", dataPoint.getTimestamp() - 3600000);
 			query.put("end_absolute", dataPoint.getTimestamp() + 900000);
 
@@ -159,7 +157,7 @@ public class AnomalyDetector implements DataPointListener
 	private static boolean isUnsafe(char ch)
 	{
 //		return ch > 128 || ch < 0 || " %$&+,/:;=?@<>#%".indexOf(ch) >= 0;
-		return ch > 128 || ch < 0 || " %$&+/;=?@<>#%".indexOf(ch) >= 0;
+		return ch > 128 || ch < 0 || " %$&+/;=?@<>#%\"".indexOf(ch) >= 0;
 	}
 }
 

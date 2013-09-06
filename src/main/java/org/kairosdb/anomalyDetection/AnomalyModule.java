@@ -13,8 +13,8 @@ public class AnomalyModule extends AbstractModule
 	@Override
 	protected void configure()
 	{
-//		bind(SkylineDataPointFeed.class).in(Singleton.class);
 		bind(AnomalyDetector.class).in(Singleton.class);
 		bind(StdDevFromAverageAlgorithm.class).in(Singleton.class);
+		bind(MedianStreamAnomalyDetector.class).in(Singleton.class);
 	}
 }

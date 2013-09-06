@@ -5,6 +5,13 @@
 //        
 package org.kairosdb.anomalyDetection;
 
-public class FakeAnomalyAlgorithm
+import org.kairosdb.core.DataPoint;
+
+public class FakeAnomalyAlgorithm implements AnomalyAlgorithm
 {
+	@Override
+	public boolean isAnomaly(String metricName, DataPoint dataPoint)
+	{
+		return true;
+	}
 }

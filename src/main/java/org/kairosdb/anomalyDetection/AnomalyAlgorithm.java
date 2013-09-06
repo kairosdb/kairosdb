@@ -5,6 +5,9 @@
 //        
 package org.kairosdb.anomalyDetection;
 
-public class AnomalyAlgorithm
+import org.kairosdb.core.DataPoint;
+
+public interface AnomalyAlgorithm
 {
+	boolean isAnomaly(String metricName, DataPoint dataPoint);
 }

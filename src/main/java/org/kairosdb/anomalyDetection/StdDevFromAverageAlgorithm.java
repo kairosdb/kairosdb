@@ -17,7 +17,7 @@ public class StdDevFromAverageAlgorithm implements AnomalyAlgorithm
 	@Override
 	public boolean isAnomaly(String metricName, DataPoint dataPoint)
 	{
-		if (!metricName.equals("my_test"))
+		if (!metricName.equals("jeff_test"))
 			return false;
 
 		DataPointAverage average;
@@ -34,7 +34,7 @@ public class StdDevFromAverageAlgorithm implements AnomalyAlgorithm
 		average.incrementPwrSumAvg((dataPoint.getDoubleValue() * dataPoint.getDoubleValue() - average.pwrSumAvg) / average.count);
 		double stdDev = Math.sqrt((average.pwrSumAvg * average.count - average.count * average.average * average.average) / (average.count - 1));
 
-		//System.out.println("Average: " + average.average + " stddev = " + stdDev);
+		System.out.println("Average: " + average.average + " stddev = " + stdDev);
 
 		// Anomaly if 3 stddev from average
 		return dataPoint.getDoubleValue() > (average.average + 3 * stdDev) ||

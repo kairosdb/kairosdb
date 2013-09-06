@@ -16,7 +16,6 @@ import org.json.JSONObject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.http.rest.json.RelativeTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +30,7 @@ public class AnomalyDetector implements DataPointListener
 
 	private List<AnomalyAlgorithm> algorithms;
 	private int consensus;
+	private Mailer mailer = new Mailer();
 
 	// todo how to get port
 	@Inject()
@@ -72,8 +72,10 @@ public class AnomalyDetector implements DataPointListener
 			if (consensusCount >= consensus)
 			{
 				anomalies.add(dataPoint);
+				String url = generateURL(dataPointSet.getName(), dataPoint);
 				logger.error("Anomaly at metric " + dataPointSet.getName() + " Time: " + new Date(dataPoint.getTimestamp()));
-				logger.error(generateURL(dataPointSet.getName(), dataPoint));
+				logger.error(url);
+				mailer.mail(dataPoint, url);
 			}
 		}
 	}

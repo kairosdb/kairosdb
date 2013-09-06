@@ -28,8 +28,8 @@ import org.kairosdb.core.DataPoint;
  */
 public class MedianStreamAnomalyDetector implements AnomalyAlgorithm
 {
-	private static final int TREE_SIZE = 20;
-	private static final double FACTOR = 1.5;
+	private static final int TREE_SIZE = 100;
+	private static final double FACTOR = 2.5;
 
 	private AnalyzerTreeMap<AnalyzerDataPoint, String> m_tree;
 
@@ -41,6 +41,9 @@ public class MedianStreamAnomalyDetector implements AnomalyAlgorithm
 	@Override
 	public boolean isAnomaly(String metricName, DataPoint dataPoint)
 	{
+		if (!metricName.equals("my_test"))
+			return false;
+
 		boolean anomaly = false;
 
 		if (m_tree.size() == TREE_SIZE)

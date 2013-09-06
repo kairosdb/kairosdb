@@ -5,7 +5,7 @@
 //        
 package org.kairosdb.anomalyDetection;
 
-import net.razorvine.pickle.Pickler;
+//import net.razorvine.pickle.Pickler;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.slf4j.Logger;
@@ -40,7 +40,7 @@ public class PicklePusher
 
 	public void pushDataPoints(DataPointSet dataPointSet)
 	{
-		System.out.println("Forwarding " + dataPointSet.getName());
+		/*System.out.println("Forwarding " + dataPointSet.getName());
 
 		try
 		{
@@ -73,7 +73,7 @@ public class PicklePusher
 		catch (Exception e)
 		{
 			e.printStackTrace();
-		}
+		}*/
 	}
 
 //	private class TCPClient

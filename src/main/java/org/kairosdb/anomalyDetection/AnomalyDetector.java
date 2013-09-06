@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -71,7 +72,7 @@ public class AnomalyDetector implements DataPointListener
 			if (consensusCount >= consensus)
 			{
 				anomalies.add(dataPoint);
-				logger.error("Anomaly: " + dataPoint);
+				logger.error("Anomaly at metric " + dataPointSet.getName() + " Time: " + new Date(dataPoint.getTimestamp()));
 				logger.error(generateURL(dataPointSet.getName(), dataPoint));
 			}
 		}
@@ -89,9 +90,10 @@ public class AnomalyDetector implements DataPointListener
 
 		try
 		{
-			long startTime = new RelativeTime(1, "hours").getTimeRelativeTo(dataPoint.getTimestamp());
+			//long startTime = new RelativeTime(1, "hours").getTimeRelativeTo(dataPoint.getTimestamp());
 
-			query.put("start_absolute", startTime);
+			query.put("start_absolute", dataPoint.getTimestamp() - 3600000);
+			query.put("end_absolute", dataPoint.getTimestamp() + 900000);
 
 			JSONArray metrics = new JSONArray();
 

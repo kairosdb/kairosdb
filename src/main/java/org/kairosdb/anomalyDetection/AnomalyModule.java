@@ -15,7 +15,7 @@ public class AnomalyModule extends AbstractModule
 	{
 		bind(AnomalyDetector.class).in(Singleton.class);
 //		bind(StdDevFromAverageAlgorithm.class).in(Singleton.class);
-//		bind(MedianStreamAnomalyDetector.class).in(Singleton.class);
-		bind(FakeAnomalyAlgorithm.class).in(Singleton.class);
+		bind(MedianStreamAnomalyDetector.class).in(Singleton.class);
+//		bind(FakeAnomalyAlgorithm.class).in(Singleton.class);
 	}
 }

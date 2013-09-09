@@ -24,7 +24,8 @@ public class Mailer
 
 	public Mailer(String hostname)
 	{
-		this.hostname = hostname;
+		//this.hostname = hostname;
+		this.hostname = "10.92.0.14";
 		// Set up the SMTP server.
 		props = new Properties();
 		props.put("mail.smtp.auth", "true");
@@ -45,7 +46,8 @@ public class Mailer
 				});
 
 //		String to = "kairosdb.test@gmail.com";
-		String to = "jsabin@proofpoint.com";
+		//String to = "jsabin@proofpoint.com";
+		String to = "bhawkins@proofpoint.com";
 		String from = "pulse@proofpoint.com";
 		String subject = "Anomalous Data Found";
 		Message msg = new MimeMessage(session);

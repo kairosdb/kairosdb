@@ -83,15 +83,19 @@ public class HBaseDatastoreTest extends DatastoreTestHelper
 		query.setTags(tags);
 
 		DatastoreQuery dq = super.s_datastore.createQuery(query);
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
 
-		List<DataPointGroup> results = dq.execute();
-
-		assertThat(results.size(), CoreMatchers.equalTo(1));
-		DataPointGroup dpg = results.get(0);
-		assertThat(dpg.getName(), is("metric_not_there"));
-		assertFalse(dpg.hasNext());
-
-		dq.close();
+			assertThat(results.size(), CoreMatchers.equalTo(1));
+			DataPointGroup dpg = results.get(0);
+			assertThat(dpg.getName(), is("metric_not_there"));
+			assertFalse(dpg.hasNext());
+		}
+		finally
+		{
+			dq.close();
+		}
 	}
 
 

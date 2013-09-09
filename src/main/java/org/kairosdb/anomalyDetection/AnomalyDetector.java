@@ -75,7 +75,7 @@ public class AnomalyDetector implements DataPointListener
 			}
 		}
 
-		if (System.currentTimeMillis() - lastReportTime >= 3000)
+		if (System.currentTimeMillis() - lastReportTime >= 3000 && anomalies.size() > 0)
 		{
 			List<Anomaly> anomaliesToEmail = new ArrayList<Anomaly>(anomalies);
 			anomalies = new ArrayList<Anomaly>();

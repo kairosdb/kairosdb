@@ -352,19 +352,9 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		Thread.sleep(2000);
 
 		rows = s_datastore.queryDatabase(query, createCache(metricToDelete));
-		assertThat(rows.size(), equalTo(1));
-		DataPointRow row = rows.get(0);
-		int count = 0;
-		while(row.hasNext())
-		{
-			DataPoint next = row.next();
-			assertThat(next.getLongValue(), equalTo(16L));
-			count++;
-		}
+		assertThat(rows.size(), equalTo(0));
 
-		assertThat(count, equalTo(0));
-
-		// Verify that the index key is gone
+		// Verify that the index key is still there
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 		ListMultimap<Long, DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQuery(queryEverything);
 		assertThat(indexRowKeys.size(), equalTo(1));

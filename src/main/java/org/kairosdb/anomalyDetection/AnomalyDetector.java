@@ -75,7 +75,7 @@ public class AnomalyDetector implements DataPointListener
 				String url = generateURL(dataPointSet.getName(), dataPoint);
 				logger.error("Anomaly at metric " + dataPointSet.getName() + " Time: " + new Date(dataPoint.getTimestamp()));
 				logger.error(url);
-				mailer.mail(dataPoint, url);
+				//mailer.mail(dataPoint, url);
 			}
 		}
 	}

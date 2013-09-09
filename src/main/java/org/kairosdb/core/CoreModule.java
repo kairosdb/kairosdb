@@ -62,6 +62,7 @@ public class CoreModule extends AbstractModule
 		bind(LeastSquaresAggregator.class);
 		bind(HistogramAggregator.class);
 		bind(DivideAggregator.class);
+		bind(MedianAggregator.class);
 
 		bind(ValueGroupBy.class);
 		bind(TimeGroupBy.class);

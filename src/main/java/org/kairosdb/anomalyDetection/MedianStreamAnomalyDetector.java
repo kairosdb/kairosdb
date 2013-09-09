@@ -61,7 +61,8 @@ public class MedianStreamAnomalyDetector implements AnomalyAlgorithm
 			}
 		}
 
-		m_tree.put(new AnalyzerDataPoint(dataPoint.getTimestamp(), dataPoint.getDoubleValue()), null);
+		if (!anomaly)
+			m_tree.put(new AnalyzerDataPoint(dataPoint.getTimestamp(), dataPoint.getDoubleValue()), null);
 
 		return anomaly;
 	}

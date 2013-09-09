@@ -82,13 +82,15 @@ public class MedianStreamAnomalyDetector implements AnomalyAlgorithm
 			double lastValue = m_lastValues.getLast();
 			if ((newValue > lastValue) && ((newValue - lastValue) > (lastValue * 0.33)))
 			{
-				System.out.println("Anomaly found at "+ new Date(dataPoint.getTimestamp()) + " " + ((newValue - lastValue) / lastValue));
+				ret = ((newValue - lastValue) / lastValue);
+				System.out.println("Anomaly found at "+ new Date(dataPoint.getTimestamp()) + " " + ret);
 			}
 		}
 
 		if (m_lastValues.size() > LAST_VALUE_SIZE)
 			m_lastValues.removeLast();
 
+		//return ret;
 		return false;
 	}
 }

@@ -15,10 +15,10 @@ public class StdDevFromAverageAlgorithm implements AnomalyAlgorithm
 	private Map<String, DataPointAverage> averageMap = new HashMap<String, DataPointAverage>();
 
 	@Override
-	public boolean isAnomaly(String metricName, DataPoint dataPoint)
+	public double isAnomaly(String metricName, DataPoint dataPoint)
 	{
 		if (!metricName.equals("jeff_test"))
-			return false;
+			return 0;
 
 		DataPointAverage average;
 		if (averageMap.containsKey(metricName))
@@ -37,8 +37,11 @@ public class StdDevFromAverageAlgorithm implements AnomalyAlgorithm
 		System.out.println("Average: " + average.average + " stddev = " + stdDev);
 
 		// Anomaly if 3 stddev from average
-		return dataPoint.getDoubleValue() > (average.average + 3 * stdDev) ||
-				dataPoint.getDoubleValue() < (average.average - 3 * stdDev);
+		if(dataPoint.getDoubleValue() > (average.average + 3 * stdDev) ||
+				dataPoint.getDoubleValue() < (average.average - 3 * stdDev))
+			return 1;
+		else
+			return 0;
 	}
 
 	private class DataPointAverage

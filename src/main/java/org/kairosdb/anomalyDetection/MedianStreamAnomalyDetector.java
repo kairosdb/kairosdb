@@ -45,10 +45,10 @@ public class MedianStreamAnomalyDetector implements AnomalyAlgorithm
 	}
 
 	@Override
-	public boolean isAnomaly(String metricName, DataPoint dataPoint)
+	public double isAnomaly(String metricName, DataPoint dataPoint)
 	{
 		if (!metricName.equals("my_test"))
-			return false;
+			return 0;
 
 		/*boolean anomaly = false;
 
@@ -90,7 +90,6 @@ public class MedianStreamAnomalyDetector implements AnomalyAlgorithm
 		if (m_lastValues.size() > LAST_VALUE_SIZE)
 			m_lastValues.removeLast();
 
-		//return ret;
-		return false;
+		return ret;
 	}
 }

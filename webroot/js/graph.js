@@ -530,14 +530,14 @@ function addTag(tagContainer) {
 		});
 }
 
-function showChartForQuery(subTitle, query, metricData) {
+function showChartForQuery(subTitle, query, metricData, dataPointDate) {
 	kairosdb.dataPointsQuery(query, function (queries) {
-		showChart(subTitle, queries, metricData);
+		showChart(subTitle, queries, metricData, dataPointDate);
 		$("#deleteButton").button("enable");
 	});
 }
 
-function showChart(subTitle, queries, metricData) {
+function showChart(subTitle, queries, metricData, dataPointDate) {
 	if (queries.length == 0) {
 		return;
 	}
@@ -547,6 +547,8 @@ function showChart(subTitle, queries, metricData) {
 	var data = [];
 	var axisCount = 0;
 	var metricCount = 0;
+	var highlightCount = 0;
+
 	queries.forEach(function (resultSet) {
 		var axis = {};
 		if (metricCount == 0){
@@ -588,6 +590,14 @@ function showChart(subTitle, queries, metricData) {
 			result.yaxis = axisCount; // Flot
 			result.yAxis = axisCount - 1; // Highcharts
 
+			if (dataPointDate){
+				$.each(result.data, function (index, item){
+					highlightCount++;
+					if (item[0] == dataPointDate)
+						return false;
+				});
+			}
+
 			dataPointCount += queryResult.values.length;
 			data.push(result);
 		});
@@ -609,9 +619,9 @@ function showChart(subTitle, queries, metricData) {
 	}
 
 	if (isHighChartsLoaded())
-		showHighChartsChart(subTitle, yaxis, data);
+		showHighChartsChart(subTitle, yaxis, data, highlightCount);
 	else
-		showFlotChart(subTitle, yaxis, data);
+		showFlotChart(subTitle, yaxis, data, highlightCount);
 	$status.html("");
 }
 

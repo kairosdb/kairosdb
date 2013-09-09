@@ -1,11 +1,12 @@
-function showFlotChart(subTitle, yaxis, data) {
+function showFlotChart(subTitle, yaxis, data, hightlightCount) {
 	var flotOptions = {
 		series: {
 			lines: {
 				show: true
 			},
 			points: {
-				show: true
+				show: true,
+				symbol: paintPoint
 			}
 		},
 		grid: {
@@ -22,21 +23,28 @@ function showFlotChart(subTitle, yaxis, data) {
 			container: $("#graphLegend"),
 			noColumns: 5
 		},
-		colors: ["#4572a7", "#aa4643", "#89a54e", "#80699b", "#db843d"]
+		colors: ["#4572a7", "#aa4643", "#89a54e", "#80699b", "#db843d"],
+		highlightColor: "#FF0000"
+
 	};
+
 
 	flotOptions.yaxes = yaxis;
 
 	$('#chartContainer')._addClass('flotChartSize'); // Flot requires that the chart have an explicit size
 
 	setTimeout(function(){
-		drawSingleSeriesChart(subTitle, data, flotOptions);
+		drawSingleSeriesChart(subTitle, data, flotOptions, hightlightCount);
 	}, 0);
 
 	$("#resetZoom").click(function () {
 		$("#resetZoom").hide();
 		drawSingleSeriesChart(subTitle, data, flotOptions);
 	});
+}
+
+function paintPoint(ctx, x, y, radius, shadow) {
+	ctx.arc(x, y, radius, 0, shadow ? Math.PI : Math.PI * 2, false);
 }
 
 function getTimezone(date)
@@ -52,12 +60,16 @@ function getTimezone(date)
 	return "";
 }
 
-function drawSingleSeriesChart(subTitle, data, flotOptions) {
+function drawSingleSeriesChart(subTitle, data, flotOptions, highlightCount) {
 	$("#flotTitle").html(subTitle);
 
 	var $chartContainer = $("#chartContainer");
 
-	$.plot($chartContainer, data, flotOptions);
+	var plot = $.plot($chartContainer, data, flotOptions);
+
+	if (highlightCount > 0)
+		plot.highlight(0, highlightCount - 1        );
+
 
 	$chartContainer.bind("plothover", function (event, pos, item) {
 		if (item) {

@@ -39,7 +39,10 @@
 				var data = decodeURI($.url("?d"));
 				var dataObj = JSON.parse(data);
 
-				showChartForQuery("(Click and drag to zoom)", queryObj, dataObj);
+				var dataPoint = decodeURI($.url("?p"));
+				var dataPointDate = JSON.parse(dataPoint);
+
+				showChartForQuery("(Click and drag to zoom)", queryObj, dataObj, dataPointDate);
 			}
 			catch (e)
 			{

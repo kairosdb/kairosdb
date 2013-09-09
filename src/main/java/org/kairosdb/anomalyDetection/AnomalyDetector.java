@@ -10,9 +10,6 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Named;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
@@ -30,7 +27,9 @@ public class AnomalyDetector implements DataPointListener
 
 	private List<AnomalyAlgorithm> algorithms;
 	private int consensus;
-	private Mailer mailer = new Mailer();
+	private Mailer mailer;
+	private List<Anomaly> anomalies = new ArrayList<Anomaly>();
+	private long lastReportTime;
 
 	// todo how to get port
 	@Inject()
@@ -40,6 +39,7 @@ public class AnomalyDetector implements DataPointListener
 	@Inject
 	public AnomalyDetector(Injector injector)
 	{
+		mailer = new Mailer(hostname);
 		Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
 
 		algorithms = new ArrayList<AnomalyAlgorithm>();
@@ -58,106 +58,30 @@ public class AnomalyDetector implements DataPointListener
 	@Override
 	public void dataPoints(DataPointSet dataPointSet)
 	{
-		List<DataPoint> anomalies = new ArrayList<DataPoint>();
-
 		for (DataPoint dataPoint : dataPointSet.getDataPoints())
 		{
-			int consensusCount = 0;
+			List<Anomaly> possibleAnomalies = new ArrayList<Anomaly>();
 			for (AnomalyAlgorithm algorithm : algorithms)
 			{
-				if (algorithm.isAnomaly(dataPointSet.getName(), dataPoint))
-					consensusCount++;
+				double score = algorithm.isAnomaly(dataPointSet.getName(), dataPoint);
+				if (score != 0)
+					possibleAnomalies.add(new Anomaly(dataPointSet.getName(), dataPoint, score));
 			}
 
-			if (consensusCount >= consensus)
+			if (possibleAnomalies.size() >= consensus)
 			{
-				anomalies.add(dataPoint);
-				String url = generateURL(dataPointSet.getName(), dataPoint);
+				anomalies.add(possibleAnomalies.get(0));
 				logger.error("Anomaly at metric " + dataPointSet.getName() + " Time: " + new Date(dataPoint.getTimestamp()));
-				logger.error(url);
-				//mailer.mail(dataPoint, url);
 			}
 		}
-	}
 
-	private String generateURL(String metricName, DataPoint dataPoint)
-	{
-		return String.format("http://%s:8080/view.html?q=%s", hostname, generateQuery(metricName, dataPoint));
-	}
-
-	private String generateQuery(String metricName, DataPoint dataPoint)
-	{
-		String url = "";
-		JSONObject query = new JSONObject();
-
-		try
+		if (System.currentTimeMillis() - lastReportTime >= 3000)
 		{
-			query.put("start_absolute", dataPoint.getTimestamp() - 3600000);
-			query.put("end_absolute", dataPoint.getTimestamp() + 900000);
-
-			JSONArray metrics = new JSONArray();
-
-			JSONObject metric = new JSONObject();
-			metric.put("name", metricName);
-
-			JSONArray aggregators = new JSONArray();
-
-			JSONObject sumAggregator = new JSONObject();
-			sumAggregator.put("name", "sum");
-
-			JSONObject sampling = new JSONObject();
-			sampling.put("value", "1");
-			sampling.put("unit", "milliseconds");
-
-			sumAggregator.put("sampling", sampling);
-
-			aggregators.put(sumAggregator);
-
-			metric.put("aggregators", aggregators);
-
-			metrics.put(metric);
-
-			query.put("metrics", metrics);
-
-			url = encode(query.toString());
+			List<Anomaly> anomaliesToEmail = new ArrayList<Anomaly>(anomalies);
+			anomalies = new ArrayList<Anomaly>();
+			mailer.mail(anomaliesToEmail);
+			lastReportTime = System.currentTimeMillis();
 		}
-		catch (JSONException e)
-		{
-			// todo
-			e.printStackTrace();
-		}
-
-		return url;
-	}
-
-	private static String encode(String input)
-	{
-		StringBuilder resultStr = new StringBuilder();
-		for (char ch : input.toCharArray())
-		{
-			if (isUnsafe(ch))
-			{
-				resultStr.append('%');
-				resultStr.append(toHex(ch / 16));
-				resultStr.append(toHex(ch % 16));
-			}
-			else
-			{
-				resultStr.append(ch);
-			}
-		}
-		return resultStr.toString();
-	}
-
-	private static char toHex(int ch)
-	{
-		return (char) (ch < 10 ? '0' + ch : 'A' + ch - 10);
-	}
-
-	private static boolean isUnsafe(char ch)
-	{
-//		return ch > 128 || ch < 0 || " %$&+,/:;=?@<>#%".indexOf(ch) >= 0;
-		return ch > 128 || ch < 0 || " %$&+/;=?@<>#%\"".indexOf(ch) >= 0;
 	}
 }
 

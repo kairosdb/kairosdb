@@ -10,8 +10,8 @@ import org.kairosdb.core.DataPoint;
 public class FakeAnomalyAlgorithm implements AnomalyAlgorithm
 {
 	@Override
-	public boolean isAnomaly(String metricName, DataPoint dataPoint)
+	public double isAnomaly(String metricName, DataPoint dataPoint)
 	{
-		return true;
+		return 1;
 	}
 }

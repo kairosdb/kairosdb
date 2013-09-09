@@ -94,7 +94,7 @@ public class HBaseDatastoreTest extends DatastoreTestHelper
 		}
 		finally
 		{
-			//dq.close();
+			dq.close();
 		}
 	}
 

@@ -46,6 +46,7 @@
 			$("#groupByTimeTemplate").hide();
 			$("#groupByValueTemplate").hide();
             $(".aggregatorPercentile").hide();
+            $(".scalingFactor").hide();
 			$("#tabs").tabs({'active': 0});
 
 			$startTime.bind("change paste keyup", function(){
@@ -388,7 +389,8 @@
 				<option value="min">MIN</option>
 				<option value="max">MAX</option>
 				<option value="rate">RATE</option>
-				<option value="sum" selected="selected">SUM</option>
+                <option value="sum" selected="selected">SUM</option>
+                <option value="scale">SCALE</option>
                 <option value="least_squares">LEAST SQUARES</option>
                 <option value="histogram">HISTOGRAM</option>
 			</select>
@@ -419,6 +421,10 @@
             <div style="display: table-cell" class="aggregatorPercentile">
                 <input class="ui-widget aggregatorPercentileValue" style="width: 40px; margin-left: 10px;" type="text"
                        value="0.75">
+            </div>
+            <div style="display: table-cell" class="scalingFactor">
+                <span class="header" style="margin-left: 10px; vertical-align: top;">Factor</span>
+                <input class="ui-widget scalingFactorValue" style="width: 60px; margin-left: 10px;" type="text" value="1.0">
             </div>
 		</div>
 	</div>

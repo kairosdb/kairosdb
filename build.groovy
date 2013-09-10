@@ -213,7 +213,7 @@ def doRPM(Rule rule)
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.properties",
 			new File("src/main/resources/kairosdb.properties"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/bin/kairosdb-env.sh",
-			new File("src/scripts/kairosdb-env.sh"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
+			new File("src/scripts/kairosdb-env.sh"), 0755, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 
 	for (AbstractFileSet.File f : webrootFileSet.getFiles())
 		rpmBuilder.addFile("$rpmBaseInstallDir/webroot/$f.file", new File(f.getBaseDir(), f.getFile()))

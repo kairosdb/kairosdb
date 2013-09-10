@@ -25,6 +25,8 @@ import org.kairosdb.core.groupby.GroupByResult;
 import java.util.List;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 @AggregatorName(name = "scale", description = "Scales each data point by a factor.")
 public class ScaleAggregator implements Aggregator
 {
@@ -33,6 +35,8 @@ public class ScaleAggregator implements Aggregator
     @Override
     public DataPointGroup aggregate(DataPointGroup dataPointGroup)
     {
+        checkNotNull(dataPointGroup);
+
         return new ScaleDataPointGroup(dataPointGroup);
     }
 

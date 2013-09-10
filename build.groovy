@@ -137,7 +137,7 @@ libFileSets = [
 		new RegExFileSet("lib/ivy/default", ".*\\.jar")
 	]
 
-scriptsFileSet = new RegExFileSet("src/scripts", ".*")
+scriptsFileSet = new RegExFileSet("src/scripts", ".*").addExcludeFile("kairosdb-env.sh")
 webrootFileSet = new RegExFileSet("webroot", ".*").recurse()
 
 zipLibDir = "$programName/lib"
@@ -212,6 +212,8 @@ def doRPM(Rule rule)
 	rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.properties",
 			new File("src/main/resources/kairosdb.properties"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
+	rpmBuilder.addFile("$rpmBaseInstallDir/bin/kairosdb-env.sh",
+			new File("src/scripts/kairosdb-env.sh"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 
 	for (AbstractFileSet.File f : webrootFileSet.getFiles())
 		rpmBuilder.addFile("$rpmBaseInstallDir/webroot/$f.file", new File(f.getBaseDir(), f.getFile()))
@@ -249,7 +251,7 @@ def doDeb(Rule rule)
 	if (resp == 0)
 	{
 		def password = jpf.getPassword()
-		sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --to-deb $rpmFile")
+		sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --bump=0 --to-deb $rpmFile")
 		sudo.run()
 		//pass the password to the process on stdin
 		sudo.sendMessage("$password\n")

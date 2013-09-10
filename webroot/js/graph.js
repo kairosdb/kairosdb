@@ -1,10 +1,9 @@
-function displayQuery()
-{
+function displayQuery() {
 	var queryString = $('#query-hidden-text').val();
 	if ($('#query-type-json').is(':checked'))
 		$("#query-text").val(queryString);
 	else
-		$("#query-text").val('var query = '+queryString.replace(/\"(\w*)\":/g,"$1:")+';');
+		$("#query-text").val('var query = ' + queryString.replace(/\"(\w*)\":/g, "$1:") + ';');
 }
 
 function updateChart() {
@@ -70,15 +69,13 @@ function updateChart() {
 		$metricContainer.find(".aggregator").each(function (index, aggregator) {
 			var name = $(aggregator).find(".aggregatorName").val();
 
-			if (name == 'rate')
-			{
+			if (name == 'rate') {
 				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				metric.addRate(unit);
 			}
-			else if (name == 'histogram')
-			{
+			else if (name == 'histogram') {
 				var value = $(aggregator).find(".aggregatorSamplingValue").val();
-				if(!isValidInteger(value)) {
+				if (!isValidInteger(value)) {
 					return true;
 				}
 				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
@@ -88,16 +85,13 @@ function updateChart() {
 				}
 				metric.addHistogram(value, unit, percentile);
 			}
-			else if (name == 'div')
-			{
+			else if (name == 'div') {
 				var divisor = $(aggregator).find(".divisorValue").val();
 				metric.addDivideAggregator(divisor);
 			}
-			else
-			{
+			else {
 				var value = $(aggregator).find(".aggregatorSamplingValue").val();
-				if(!isValidInteger(value))
-				{
+				if (!isValidInteger(value)) {
 					return true;
 				}
 				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
@@ -105,30 +99,26 @@ function updateChart() {
 			}
 		});
 
-		function isValidPercentile(percentile)
-        {
-            var intRegex = /^(0*\.\d*|(0*1(\.0*|))|0+)$/;
-            if(!intRegex.test(percentile)) {
-               showErrorMessage("percentile value must be between [0-1]")
-               return false;
-            }
-            else
-            {
-                return true;
-            }
-        }
+		function isValidPercentile(percentile) {
+			var intRegex = /^(0*\.\d*|(0*1(\.0*|))|0+)$/;
+			if (!intRegex.test(percentile)) {
+				showErrorMessage("percentile value must be between [0-1]")
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
 
-		function isValidInteger(value)
-		{
+		function isValidInteger(value) {
 			var intRegex = /^\d+$/;
-	        if(!intRegex.test(value)) {
-	           showErrorMessage("sampling value must be an integer greater than 0.")
-	           return false;
-	        }
-	        else
-	        {
-	            return true;
-	        }
+			if (!intRegex.test(value)) {
+				showErrorMessage("sampling value must be an integer greater than 0.")
+				return false;
+			}
+			else {
+				return true;
+			}
 		}
 
 		// Add Tags
@@ -172,7 +162,7 @@ function updateChart() {
 	$('#query-hidden-text').val(JSON.stringify(query, null, 2));
 	displayQuery();
 
-	$("#graph_link").attr("href", "view.html?q="+encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
+	$("#graph_link").attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
 	$("#graph_link").show();
 	showChartForQuery("(Click and drag to zoom)", query, metricData);
 }
@@ -181,11 +171,10 @@ function updateChart() {
  * Returns additional data in a JSON object of the form
  * metrics: [{scale:true}, {scale:false}]
  */
-function getAdditionalChartData()
-{
+function getAdditionalChartData() {
 	var metricDataArray = [];
 
-	$('.metricContainer').each(function (index, element){
+	$('.metricContainer').each(function (index, element) {
 		var metric = {};
 		metric.scale = $(element).find(".scale").is(':checked');
 		metricDataArray.push(metric);
@@ -310,7 +299,7 @@ function addMetric() {
 		});
 
 	// Add scale checkbox
-	if (metricCount < 1){
+	if (metricCount < 1) {
 		$metricContainer.find(".checkbox").hide();
 	}
 
@@ -460,18 +449,18 @@ function addAggregator(container) {
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
-		else if(name == "histogram"){
+		else if (name == "histogram") {
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
 			$aggregatorContainer.find(".aggregatorSampling").show();
 		}
-		else if (name == "div"){
+		else if (name == "div") {
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();
 			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
 
 			$aggregatorContainer.find(".divisor").show();
 		}
-		else{
+		else {
 			$aggregatorContainer.find(".aggregatorSampling").show();
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();
@@ -549,7 +538,7 @@ function showChart(subTitle, queries, metricData) {
 	var metricCount = 0;
 	queries.forEach(function (resultSet) {
 		var axis = {};
-		if (metricCount == 0){
+		if (metricCount == 0) {
 			yaxis.push(axis);
 			axisCount++;
 		}
@@ -597,12 +586,10 @@ function showChart(subTitle, queries, metricData) {
 	$("#numDataPoints").html(dataPointCount);
 
 	var $status = $('#status');
-	if (dataPointCount > 20000)
-	{
+	if (dataPointCount > 20000) {
 		var response = confirm("You are attempting to plot more than 20,000 data points.\nThis may take a long time." +
 			"\nYou may want to down sample your data.\n\nDo you want to continue?");
-		if (response != true)
-		{
+		if (response != true) {
 			$status.html("Plotting canceled");
 			return;
 		}
@@ -615,13 +602,12 @@ function showChart(subTitle, queries, metricData) {
 	$status.html("");
 }
 
-function isHighChartsLoaded()
-{
-	try{
-	 	Highcharts.charts;
+function isHighChartsLoaded() {
+	try {
+		Highcharts.charts;
 		return true;
 	}
-	catch(err){
+	catch (err) {
 		return false;
 	}
 }
@@ -636,4 +622,31 @@ function deleteDataPoints() {
 		});
 	}
 }
+
+function foo() {
+	var query = new kairosdb.MetricQuery();
+	query.addMetric(new kairosdb.Metric("archive_search"));
+	query.setStartAbsolute(0);
+
+	$.ajax({
+		type: "POST",
+		url: "api/v1/datapoints/query/tags",
+		headers: { 'Content-Type': ['application/json']},
+		data: JSON.stringify(query),
+		dataType: 'json',
+		success: function (data, textStatus, jqXHR) {
+			debugger;
+		},
+		error: function (jqXHR, textStatus, errorThrown) {
+			var $errorContainer = $("#errorContainer");
+			$errorContainer.show();
+			$errorContainer.html("");
+			$errorContainer.append("Status Code: " + jqXHR.status + "</br>");
+			$errorContainer.append("Status: " + jqXHR.statusText + "<br>");
+			$errorContainer.append("Return Value: " + jqXHR.responseText);
+		}
+	})
+}
+
+
 

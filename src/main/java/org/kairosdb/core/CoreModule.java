@@ -81,6 +81,8 @@ public class CoreModule extends AbstractModule
 		bind(DoubleDataPointFactoryImpl.class);
 		bind(LongDataPointFactoryImpl.class);
 
+		bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class).in(Singleton.class);
+
 		Move the code below into an overall datapoint factory class and bind it.
 		it will then provide the appropriate factory for the specified type.
 		for (String key : m_props.keySet())

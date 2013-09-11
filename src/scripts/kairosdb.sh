@@ -8,7 +8,7 @@ KAIROSDB_LIB_DIR="lib"
 KAIROSDB_LOG_DIR="log"
 
 if [ -f "$KAIROSDB_BIN_DIR/kairosdb-env.sh" ]; then
-	"$KAIROSDB_BIN_DIR/kairosdb-env.sh"
+	. "$KAIROSDB_BIN_DIR/kairosdb-env.sh"
 fi
 
 if [ ! -d "$KAIROSDB_LOG_DIR" ]; then

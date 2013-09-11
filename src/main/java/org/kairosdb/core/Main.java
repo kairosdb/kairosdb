@@ -239,7 +239,7 @@ public class Main
 
 		Iterable<String> metrics = ds.getMetricNames();
 
-		//metrics = Arrays.asList("gov_status_responsetime", "gov_status_downtime");
+		//metrics = Arrays.asList("cpu.temperature");
 
 		try
 		{

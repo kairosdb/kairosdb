@@ -147,6 +147,7 @@ public class RemoteDatastore implements Datastore
 
 				caw.flush();
 				caw.writeTo(m_dataWriter);
+				m_dataWriter.flush();
 			}
 			catch (IOException e)
 			{
@@ -164,13 +165,14 @@ public class RemoteDatastore implements Datastore
 	 */
 	private void sendZipfile(String zipFile) throws IOException
 	{
-		logger.debug("Sending %s", zipFile);
+		logger.debug("Sending {}", zipFile);
 		HttpClient client = new DefaultHttpClient();
 		HttpPost post = new HttpPost(m_remoteUrl+"/api/v1/datapoints");
 
-		FileInputStream zipStream = new FileInputStream(new File(m_dataDirectory, zipFile));
+		File zipFileObj = new File(m_dataDirectory, zipFile);
+		FileInputStream zipStream = new FileInputStream(zipFileObj);
 		post.setHeader("Content-Type", "application/gzip");
-		File zipFileObj = new File(zipFile);
+		
 		post.setEntity(new InputStreamEntity(zipStream, zipFileObj.length()));
 		HttpResponse response = client.execute(post);
 

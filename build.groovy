@@ -66,8 +66,7 @@ jp.getCompileRule().getDefinition().set("source", "1.6")
 
 additionalFiles = new RegExFileSet("src/main/java", ".*\\.sql").recurse()
 jp.getJarRule().addFileSet(additionalFiles)
-jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties",
-		"logback.xml")
+jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
 
 //Set information in the manifest file
 manifest = jp.getJarRule().getManifest().getMainAttributes()
@@ -149,6 +148,7 @@ tarRule = new TarRule("build/${programName}-${version}.tar")
 		.addFileSetTo(zipBinDir, scriptsFileSet)
 		.addFileSetTo(zipWebRootDir, webrootFileSet)
 		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.properties")
+		.addFileTo(zipConfDir, "src/main/resources", "logback.xml")
 		.setFilePermission(".*\\.sh", 0755)
 
 for (AbstractFileSet fs in libFileSets)
@@ -212,6 +212,8 @@ def doRPM(Rule rule)
 	rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.properties",
 			new File("src/main/resources/kairosdb.properties"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
+	rpmBuilder.addFile("$rpmBaseInstallDir/conf/logback.xml",
+			new File("src/main/resources/logback.xml"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/bin/kairosdb-env.sh",
 			new File("src/scripts/kairosdb-env.sh"), 0755, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 

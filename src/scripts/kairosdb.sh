@@ -28,9 +28,11 @@ else
 fi
 
 # Load up the classpath
+CLASSPATH="conf"
 for jar in $KAIROSDB_LIB_DIR/*.jar; do
 	CLASSPATH="$CLASSPATH:$jar"
 done
+
 
 
 if [ "$1" = "run" ] ; then

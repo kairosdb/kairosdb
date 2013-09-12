@@ -17,7 +17,7 @@ package org.kairosdb.core.http.rest.json;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.testing.BeanValidationHelper;
 
 import javax.validation.ConstraintViolation;
@@ -41,7 +41,7 @@ public class RelativeTimeTest
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void test_getTimeRelativeTo_invalidUnit() throws KariosDBException
+	public void test_getTimeRelativeTo_invalidUnit() throws KairosDBException
 	{
 		RelativeTime time = new RelativeTime(5, "QUARTERS");
 

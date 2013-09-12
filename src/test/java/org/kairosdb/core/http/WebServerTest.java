@@ -9,7 +9,7 @@ import com.google.common.io.Resources;
 import org.apache.http.conn.HttpHostConnectException;
 import org.junit.After;
 import org.junit.Test;
-import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 
@@ -64,7 +64,7 @@ public class WebServerTest
 	}
 
 	@Test
-	public void test_SSL_success() throws KariosDBException, IOException, UnrecoverableKeyException,
+	public void test_SSL_success() throws KairosDBException, IOException, UnrecoverableKeyException,
 			CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, InterruptedException
 	{
 		String keyStorePath = Resources.getResource("keystore.jks").getPath();
@@ -81,7 +81,7 @@ public class WebServerTest
 	}
 
 	@Test(expected = HttpHostConnectException.class)
-	public void test_noSSL() throws KariosDBException, IOException, UnrecoverableKeyException,
+	public void test_noSSL() throws KairosDBException, IOException, UnrecoverableKeyException,
 			CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, InterruptedException
 	{
 		String keyStorePath = Resources.getResource("keystore.jks").getPath();
@@ -95,7 +95,7 @@ public class WebServerTest
 	}
 
 	@Test
-	public void test_SSL_and_HTTP_success() throws KariosDBException, IOException, UnrecoverableKeyException,
+	public void test_SSL_and_HTTP_success() throws KairosDBException, IOException, UnrecoverableKeyException,
 			CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, InterruptedException
 	{
 		String keyStorePath = Resources.getResource("keystore.jks").getPath();
@@ -116,7 +116,7 @@ public class WebServerTest
 	}
 
 	@Test
-	public void test_basicAuth_unauthorized() throws KariosDBException, IOException, InterruptedException
+	public void test_basicAuth_unauthorized() throws KairosDBException, IOException, InterruptedException
 	{
 		server = new WebServer(9001, ".");
 		server.setAuthCredentials("bob", "bobPassword");
@@ -129,7 +129,7 @@ public class WebServerTest
 	}
 
 	@Test
-	public void test_basicAuth_authorized() throws KariosDBException, IOException, InterruptedException
+	public void test_basicAuth_authorized() throws KairosDBException, IOException, InterruptedException
 	{
 		server = new WebServer(9001, ".");
 		server.setAuthCredentials("bob", "bobPassword");

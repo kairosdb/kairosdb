@@ -25,12 +25,10 @@ import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.Delimiters;
 import org.jboss.netty.handler.codec.string.StringEncoder;
 import org.kairosdb.core.KairosDBService;
-import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.core.exception.KairosDBException;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executors;
 
 public class TelnetServer extends SimpleChannelUpstreamHandler implements ChannelPipelineFactory,
@@ -105,7 +103,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 	}
 
 	@Override
-	public void start() throws KariosDBException
+	public void start() throws KairosDBException
 	{
 		// Configure the server.
 		ServerBootstrap bootstrap = new ServerBootstrap(

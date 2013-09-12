@@ -15,19 +15,19 @@
  */
 package org.kairosdb.core.exception;
 
-public class KariosDBException extends Exception
+public class KairosDBException extends Exception
 {
-	public KariosDBException(String message)
+	public KairosDBException(String message)
 	{
 		super(message);
 	}
 
-	public KariosDBException(String message, Throwable cause)
+	public KairosDBException(String message, Throwable cause)
 	{
 		super(message, cause);
 	}
 
-	public KariosDBException(Throwable cause)
+	public KairosDBException(Throwable cause)
 	{
 		super(cause);
 	}

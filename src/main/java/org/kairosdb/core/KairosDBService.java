@@ -16,10 +16,10 @@
 
 package org.kairosdb.core;
 
-import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.core.exception.KairosDBException;
 
 public interface KairosDBService
 {
-	public void start() throws KariosDBException;
+	public void start() throws KairosDBException;
 	public void stop();
 }

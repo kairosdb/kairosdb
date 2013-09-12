@@ -22,7 +22,7 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.core.exception.KairosDBException;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +43,7 @@ public class KairosDatastoreTest
 	private AggregatorFactory aggFactory = new TestAggregatorFactory();
 
 	@Test(expected = NullPointerException.class)
-	public void test_query_nullMetricInvalid() throws KariosDBException
+	public void test_query_nullMetricInvalid() throws KairosDBException
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
@@ -53,7 +53,7 @@ public class KairosDatastoreTest
 	}
 
 	@Test
-	public void test_query_sumAggregator() throws KariosDBException
+	public void test_query_sumAggregator() throws KairosDBException
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
@@ -82,7 +82,7 @@ public class KairosDatastoreTest
 	}
 
 	@Test
-	public void test_query_noAggregator() throws KariosDBException
+	public void test_query_noAggregator() throws KairosDBException
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),

@@ -27,7 +27,7 @@ import org.kairosdb.core.datastore.DataPointRow;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.core.exception.KairosDBException;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -344,7 +344,7 @@ public class Main
 	}
 
 
-	public void startServices() throws KariosDBException
+	public void startServices() throws KairosDBException
 	{
 		Map<Key<?>, Binding<?>> bindings =
 				m_injector.getAllBindings();

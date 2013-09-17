@@ -30,15 +30,18 @@ public class H2DataPointGroup implements DataPointRow
 	private DataPoint_base.ResultSet m_results;
 	private DataPoint_base m_nextDataPoint;
 	private Map<String, String> m_tags = new TreeMap<String, String>();
+	private int m_count;
 
 	public H2DataPointGroup(String name, Map<String, String> tags,
-			DataPoint_base.ResultSet resultSet)
+			DataPoint_base.ResultSet resultSet, int count)
 	{
 		m_name = name;
 		m_tags = tags;
 		m_results = resultSet;
 		if (m_results.next())
 			m_nextDataPoint = m_results.getRecord();
+
+		m_count = count;
 	}
 
 	public boolean hasNext()
@@ -95,5 +98,11 @@ public class H2DataPointGroup implements DataPointRow
 	public void close()
 	{
 		m_results.close();
+	}
+
+	@Override
+	public int getDataPointCount()
+	{
+		return m_count;
 	}
 }

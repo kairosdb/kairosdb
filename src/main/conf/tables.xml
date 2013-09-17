@@ -198,5 +198,27 @@
 				MERGE INTO data_point ("metric_id", "timestamp", "double_value") VALUES(?, ?, ?)
 			</sql>
 		</query>
+
+		<query name="count_data_points_for_metric">
+			<comment>
+				Counts the data points for a metric query.
+			</comment>
+			<input>
+				<param name="metric_id" type="string" test="foo"/>
+				<param name="start_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
+				<param name="end_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
+			</input>
+			<return>
+				<param name="dp_count" type="integer"/>
+			</return>
+			<sql>
+				select count(0) as dp_count
+				from data_point dp
+				where
+				dp."metric_id" = ?
+				and dp."timestamp" &gt;= ?
+				and dp."timestamp" &lt;= ?
+			</sql>
+		</query>
 	</queries>
 </tables>

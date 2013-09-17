@@ -119,7 +119,7 @@ public abstract class RangeAggregator implements Aggregator
 			}
 			else
 			{
-				return ((int)((timestamp - m_startTime) / m_range));
+				return (timestamp / m_range);
 			}
 		}
 

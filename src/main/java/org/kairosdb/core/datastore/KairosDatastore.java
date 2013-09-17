@@ -385,6 +385,7 @@ public class KairosDatastore
 		private String m_cacheFilename;
 		private QueryMetric m_metric;
 		private List<DataPointGroup> m_results;
+		private int m_dataPointCount;
 		
 		public DatastoreQueryImpl(QueryMetric metric)
 				throws UnsupportedEncodingException, NoSuchAlgorithmException,
@@ -400,6 +401,11 @@ public class KairosDatastore
 			m_metric = metric;
 			m_cacheFilename = calculateFilenameHash(metric);
 			m_queuingManager.waitForTimeToRun(m_cacheFilename);
+		}
+
+		public int getSampleSize()
+		{
+			return m_dataPointCount;
 		}
 
 		@Override
@@ -437,6 +443,12 @@ public class KairosDatastore
 			catch (Exception e)
 			{
 				throw new DatastoreException(e);
+			}
+
+			//Get data point count
+			for (DataPointRow returnedRow : returnedRows)
+			{
+				m_dataPointCount += returnedRow.getDataPointCount();
 			}
 
 			// It is more efficient to group by tags using the cached results because we have pointers to each tag.

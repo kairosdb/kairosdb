@@ -203,7 +203,7 @@ public class MetricsResource
 
 				try
 				{
-					jsonResponse.formatQuery(result);
+					jsonResponse.formatQuery(result, -1);
 				}
 				finally
 				{
@@ -285,7 +285,7 @@ public class MetricsResource
 				try
 				{
 					List<DataPointGroup> results = dq.execute();
-					jsonResponse.formatQuery(results);
+					jsonResponse.formatQuery(results, dq.getSampleSize());
 
 					ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
 				}

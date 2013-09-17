@@ -47,4 +47,9 @@ public interface DataPointRow extends Iterator<DataPoint>
 	 will be called at the end of a query to free up resources.
 	 */
 	public void close();
+
+	/**
+	 Returns the number of datapoints in this row
+	 */
+	public int getDataPointCount();
 }

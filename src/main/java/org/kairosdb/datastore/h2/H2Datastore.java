@@ -272,12 +272,17 @@ public class H2Datastore implements Datastore
 				tagMap.put(mtag.getTagName(), mtag.getTagValue());
 			}
 
+			Timestamp startTime = new Timestamp(query.getStartTime());
+			Timestamp endTime = new Timestamp(query.getEndTime());
+
+			int count = new CountDataPointsForMetricQuery(metricId, startTime,
+					endTime).runQuery().getOnlyRecord().getDpCount();
+
 			DataPoint.ResultSet resultSet = DataPoint.factory.getForMetricId(metricId,
-					new Timestamp(query.getStartTime()),
-					new Timestamp(query.getEndTime()));
+					startTime, endTime);
 
 			//The H2DataPointGroup will close the resultSet
-			retList.add(new H2DataPointGroup(query.getName(), tagMap, resultSet));
+			retList.add(new H2DataPointGroup(query.getName(), tagMap, resultSet, count));
 		}
 
 

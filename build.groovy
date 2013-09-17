@@ -290,6 +290,8 @@ def doRun(Rule rule)
 	if (rule.getProperty("DEBUG"))
 		debug = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
 
+	//this is to load logback into classpath
+	testClasspath.addPath("src/main/resources");
 	saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${testClasspath} org.kairosdb.core.Main ${args}")
 }
 

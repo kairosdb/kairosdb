@@ -61,6 +61,12 @@ public class DataPointRowImpl implements DataPointRow
 	{
 	}
 
+	@Override
+	public int getDataPointCount()
+	{
+		return 0;  //To change body of implemented methods use File | Settings | File Templates.
+	}
+
 	public void addDataPoint(DataPoint dataPoint)
 	{
 		dataPoints.add(dataPoint);

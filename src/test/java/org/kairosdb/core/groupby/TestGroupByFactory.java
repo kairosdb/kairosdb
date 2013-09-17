@@ -28,6 +28,8 @@ public class TestGroupByFactory implements GroupByFactory
 	{
 		addGroupBy(new SimpleTimeGroupBy());
 		addGroupBy(new ValueGroupBy());
+		addGroupBy(new TagGroupBy());
+		addGroupBy(new TimeGroupBy());
 	}
 
 	private void addGroupBy(GroupBy groupBy)

@@ -1,0 +1,22 @@
+{
+	"metrics": [
+		{
+			"tags": {"bob":"tom"},
+			"name": "kairosdb.datastore.key_write_size",
+			"aggregators": [
+				{
+					"name": "sum",
+					"sampling": {
+						"value": "1",
+						"unit": "milliseconds"
+					}
+				}
+			]
+		}
+	],
+	"cache_time": -1,
+	"start_relative": {
+		"value": "1",
+		"unit": "hours"
+	}
+}

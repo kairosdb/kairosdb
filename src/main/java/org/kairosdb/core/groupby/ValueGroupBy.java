@@ -21,6 +21,7 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.GroupByName;
 import org.kairosdb.core.formatter.FormatterException;
 
+import javax.validation.constraints.Min;
 import java.io.StringWriter;
 import java.util.Map;
 
@@ -32,6 +33,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 @GroupByName(name = "value", description = "Groups data points by value.")
 public class ValueGroupBy implements GroupBy
 {
+	@Min(1)
 	private int rangeSize;
 
 	public ValueGroupBy()

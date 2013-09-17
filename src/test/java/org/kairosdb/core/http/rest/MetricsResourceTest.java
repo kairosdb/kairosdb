@@ -196,18 +196,18 @@ public class MetricsResourceTest
 	@Test
 	public void testQueryWithBeanValidationException() throws IOException
 	{
-		String json = Resources.toString(Resources.getResource("query-metric-invalid-relative-unit.json"), Charsets.UTF_8);
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-relative-unit.json"), Charsets.UTF_8);
 
 		JsonResponse response = client.post(json, GET_METRIC_URL);
 
 		assertResponse(response, 400,
-				"{\"errors\":[\"\\\"bogus\\\" is not a valid time unit, must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS\"]}");
+				"{\"errors\":[\"query.bogus is not a valid time unit, must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS\"]}");
 	}
 
 	@Test
 	public void testQueryWithJsonMapperParsingException() throws IOException
 	{
-		String json = Resources.toString(Resources.getResource("query-metric-invalid-json.json"), Charsets.UTF_8);
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-json.json"), Charsets.UTF_8);
 
 		JsonResponse response = client.post(json, GET_METRIC_URL);
 

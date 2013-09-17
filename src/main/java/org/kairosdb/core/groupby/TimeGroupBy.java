@@ -24,6 +24,8 @@ import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.formatter.FormatterException;
 
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import java.io.StringWriter;
 import java.util.Calendar;
 import java.util.Map;
@@ -35,8 +37,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @GroupByName(name = "time", description = "Groups data points in time ranges.")
 public class TimeGroupBy implements GroupBy
 {
+	@NotNull
 	private Duration rangeSize;
+
+	@Min(1)
 	private int groupCount;
+
 	private long startDate;
 	private Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 

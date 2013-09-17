@@ -40,11 +40,10 @@ import org.kairosdb.core.http.rest.QueryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Valid;
-import javax.validation.Validation;
-import javax.validation.Validator;
+import javax.validation.*;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import javax.validation.metadata.ConstraintDescriptor;
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -53,8 +52,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
-
-import static com.google.common.base.Preconditions.checkState;
 
 
 public class GsonParser
@@ -125,11 +122,16 @@ public class GsonParser
 
 	private void validateObject(Object object) throws BeanValidationException
 	{
+		validateObject(object, null);
+	}
+
+	private void validateObject(Object object, String context) throws BeanValidationException
+	{
 		// validate object using the bean validation framework
 		Set<ConstraintViolation<Object>> violations = VALIDATOR.validate(object);
 		if (!violations.isEmpty())
 		{
-			throw new BeanValidationException(violations);
+			throw new BeanValidationException(violations, context);
 		}
 	}
 
@@ -141,83 +143,129 @@ public class GsonParser
 
 		JsonObject obj = parser.parse(json).getAsJsonObject();
 
-		Query query = m_gson.fromJson(obj, Query.class);
-
-		validateObject(query);
+		Query query;
+		try
+		{
+			query = m_gson.fromJson(obj, Query.class);
+			validateObject(query);
+		}
+		catch (ContextualJsonSyntaxException e)
+		{
+			throw new BeanValidationException(new SimpleConstraintViolation(e.getContext(), e.getMessage()), "query");
+		}
 
 		JsonArray metricsArray = obj.getAsJsonArray("metrics");
+		if (metricsArray == null)
+		{
+			throw new BeanValidationException(new SimpleConstraintViolation("metric[]", "must have a size of at least 1"), "query");
+		}
+
 		for (int I = 0; I < metricsArray.size(); I++)
 		{
-			Metric metric = m_gson.fromJson(metricsArray.get(I), Metric.class);
-			validateObject(metric);
-
-			QueryMetric queryMetric = new QueryMetric(getStartTime(query), query.getCacheTime(),
-					metric.getName());
-
-			StringBuilder sb = new StringBuilder();
-			sb.append(query.getCacheString()).append(metric.getCacheString());
-			queryMetric.setCacheString(sb.toString());
-
-			JsonObject jsMetric = metricsArray.get(I).getAsJsonObject();
-
-			JsonElement aggregators = jsMetric.get("aggregators");
-			if (aggregators != null)
-				parseAggregators(queryMetric, aggregators.getAsJsonArray());
-
-			long endTime = getEndTime(query);
-			if (endTime > -1)
-				queryMetric.setEndTime(endTime);
-
-			JsonElement group_by = jsMetric.get("group_by");
-			if (group_by != null)
+			String context = "query.metric[" + I + "]";
+			try
 			{
-				JsonArray groupBys = group_by.getAsJsonArray();
-				parseGroupBy(queryMetric, groupBys);
+				Metric metric;
+				metric = m_gson.fromJson(metricsArray.get(I), Metric.class);
+
+				validateObject(metric, context);
+
+				long startTime = getStartTime(query);
+				QueryMetric queryMetric = new QueryMetric(startTime, query.getCacheTime(),
+						metric.getName());
+
+				long endTime = getEndTime(query);
+				if (endTime > -1)
+					queryMetric.setEndTime(endTime);
+
+				if (queryMetric.getEndTime() < startTime)
+					throw new BeanValidationException(new SimpleConstraintViolation("end_time", "must be greater than the start time"), context);
+
+				StringBuilder sb = new StringBuilder();
+				sb.append(query.getCacheString()).append(metric.getCacheString());
+				queryMetric.setCacheString(sb.toString());
+
+				JsonObject jsMetric = metricsArray.get(I).getAsJsonObject();
+
+				JsonElement aggregators = jsMetric.get("aggregators");
+				if (aggregators != null)
+				{
+					JsonArray asJsonArray = aggregators.getAsJsonArray();
+					if (asJsonArray.size() < 1)
+						throw new BeanValidationException(new SimpleConstraintViolation("aggregators[]", "must have a size of at least 1"), context);
+					parseAggregators(context, queryMetric, asJsonArray);
+				}
+
+				JsonElement group_by = jsMetric.get("group_by");
+				if (group_by != null)
+				{
+					JsonArray groupBys = group_by.getAsJsonArray();
+					parseGroupBy(context, queryMetric, groupBys);
+				}
+
+				queryMetric.setTags(metric.getTags());
+
+				ret.add(queryMetric);
 			}
-
-			queryMetric.setTags(metric.getTags());
-
-			ret.add(queryMetric);
+			catch (ContextualJsonSyntaxException e)
+			{
+				throw new BeanValidationException(new SimpleConstraintViolation(e.getContext(), e.getMessage()), context);
+			}
 		}
 
 		return (ret);
 	}
 
-	private void parseAggregators(QueryMetric queryMetric, JsonArray aggregators) throws QueryException
+	private void parseAggregators(String context, QueryMetric queryMetric, JsonArray aggregators) throws QueryException, BeanValidationException
 	{
 		for (int J = 0; J < aggregators.size(); J++)
 		{
 			JsonObject jsAggregator = aggregators.get(J).getAsJsonObject();
 
-			String aggName = jsAggregator.get("name").getAsString();
+			JsonElement name = jsAggregator.get("name");
+			if (name == null || name.getAsString().isEmpty())
+				throw new BeanValidationException(new SimpleConstraintViolation("aggregators[" + J + "]", "must have a name"), context);
+
+			String aggContext = context + ".aggregators[" + J + "]";
+			String aggName = name.getAsString();
 			Aggregator aggregator = m_aggregatorFactory.createAggregator(aggName);
-			checkState(aggregator != null, "Aggregator " + aggName + " could not be found.");
+
+			if (aggregator == null)
+				throw new BeanValidationException(new SimpleConstraintViolation(aggName, "invalid aggregator name"), aggContext);
 
 			//If it is a range aggregator we will default the start time to
 			//the start of the query.
 			if (aggregator instanceof RangeAggregator)
 			{
-				RangeAggregator ra = (RangeAggregator)aggregator;
+				RangeAggregator ra = (RangeAggregator) aggregator;
 				ra.setStartTime(queryMetric.getStartTime());
 			}
 
-			deserializeProperties(jsAggregator, aggName, aggregator);
+			deserializeProperties(context + ".aggregator[" + J + "]", jsAggregator, aggName, aggregator);
 
 			queryMetric.addAggregator(aggregator);
 		}
 	}
 
-	private void parseGroupBy(QueryMetric queryMetric, JsonArray groupBys) throws QueryException
+	private void parseGroupBy(String context, QueryMetric queryMetric, JsonArray groupBys) throws QueryException, BeanValidationException
 	{
 		for (int J = 0; J < groupBys.size(); J++)
 		{
+			String groupContext = "group_by[" + J + "]";
 			JsonObject jsGroupBy = groupBys.get(J).getAsJsonObject();
 
-			String name = jsGroupBy.get("name").getAsString();
-			GroupBy groupBy = m_groupByFactory.createGroupBy(name);
-			checkState(groupBy != null, "GroupBy " + name + " could not be found.");
+			JsonElement nameElement = jsGroupBy.get("name");
+			if (nameElement == null || nameElement.getAsString().isEmpty())
+				throw new BeanValidationException(new SimpleConstraintViolation(groupContext, "must have a name"), context);
 
-			deserializeProperties(jsGroupBy, name, groupBy);
+			String name = nameElement.getAsString();
+
+			GroupBy groupBy = m_groupByFactory.createGroupBy(name);
+			if (groupBy == null)
+				throw new BeanValidationException(new SimpleConstraintViolation(groupContext + "." + name, "invalid group_by name"), context);
+
+			deserializeProperties(context + "." + groupContext, jsGroupBy, name, groupBy);
+			validateObject(groupBy, context + "." + groupContext);
 
 			groupBy.setStartDate(queryMetric.getStartTime());
 
@@ -225,7 +273,7 @@ public class GsonParser
 		}
 	}
 
-	private void deserializeProperties(JsonObject jsonObject, String name, Object object) throws QueryException
+	private void deserializeProperties(String context, JsonObject jsonObject, String name, Object object) throws QueryException, BeanValidationException
 	{
 		Set<Map.Entry<String, JsonElement>> props = jsonObject.entrySet();
 		for (Map.Entry<String, JsonElement> prop : props)
@@ -254,7 +302,16 @@ public class GsonParser
 
 			Class propClass = pd.getPropertyType();
 
-			Object propValue = m_gson.fromJson(prop.getValue(), propClass);
+			Object propValue;
+			try
+			{
+				propValue = m_gson.fromJson(prop.getValue(), propClass);
+				validateObject(propValue, context + "." + property);
+			}
+			catch (ContextualJsonSyntaxException e)
+			{
+				throw new BeanValidationException(new SimpleConstraintViolation(e.getContext(), e.getMessage()), context);
+			}
 
 			Method method = pd.getWriteMethod();
 			if (method == null)
@@ -280,18 +337,31 @@ public class GsonParser
 		}
 	}
 
-	private long getStartTime(Query request)
+	private long getStartTime(Query request) throws BeanValidationException
 	{
 		if (request.getStartAbsolute() != null)
-			return Long.parseLong(request.getStartAbsolute());
+		{
+			if (request.getStartAbsolute() < 0)
+				throw new BeanValidationException(new SimpleConstraintViolation("start_absolute", "must be not be before Jan 01, 1970"), "query");
+			return request.getStartAbsolute();
+		}
+		else if (request.getStartRelative() != null)
+		{
+			long timeRelativeToNow = request.getStartRelative().getTimeRelativeTo(System.currentTimeMillis());
+			if (timeRelativeToNow < 0)
+				throw new BeanValidationException(new SimpleConstraintViolation("start_relative", "must be not be before Jan 01, 1970"), "query");
+			return timeRelativeToNow;
+		}
 		else
-			return request.getStartRelative().getTimeRelativeTo(System.currentTimeMillis());
+		{
+			throw new BeanValidationException(new SimpleConstraintViolation("start_time", "relative or absolute time must be set"), "query");
+		}
 	}
 
 	private long getEndTime(Query request)
 	{
 		if (request.getEndAbsolute() != null)
-			return Long.parseLong(request.getEndAbsolute());
+			return request.getEndAbsolute();
 		else if (request.getEndRelative() != null)
 			return request.getEndRelative().getTimeRelativeTo(System.currentTimeMillis());
 		return -1;
@@ -303,6 +373,7 @@ public class GsonParser
 		@NotNull
 		@NotEmpty()
 		@SerializedName("name")
+
 		private String name;
 
 		@SerializedName("tags")
@@ -352,44 +423,47 @@ public class GsonParser
 	private static class Query
 	{
 		@SerializedName("start_absolute")
-		private String m_startAbsolute;
+		private Long m_startAbsolute;
+
 		@SerializedName("end_absolute")
-		private String m_endAbsolute;
+		private Long m_endAbsolute;
+
+		@Min(0)
 		@SerializedName("cache_time")
-		private int m_cacheTime;
+		private int cache_time;
 
 		@Valid
 		@SerializedName("start_relative")
-		private RelativeTime m_startRelative;
+		private RelativeTime start_relative;
 
 		@Valid
 		@SerializedName("end_relative")
-		private RelativeTime m_endRelative;
+		private RelativeTime end_relative;
 
 
-		public String getStartAbsolute()
+		public Long getStartAbsolute()
 		{
 			return m_startAbsolute;
 		}
 
-		public String getEndAbsolute()
+		public Long getEndAbsolute()
 		{
 			return m_endAbsolute;
 		}
 
 		public int getCacheTime()
 		{
-			return m_cacheTime;
+			return cache_time;
 		}
 
 		public RelativeTime getStartRelative()
 		{
-			return m_startRelative;
+			return start_relative;
 		}
 
 		public RelativeTime getEndRelative()
 		{
-			return m_endRelative;
+			return end_relative;
 		}
 
 		public String getCacheString()
@@ -398,14 +472,14 @@ public class GsonParser
 			if (m_startAbsolute != null)
 				sb.append(m_startAbsolute).append(":");
 
-			if (m_startRelative != null)
-				sb.append(m_startRelative.toString()).append(":");
+			if (start_relative != null)
+				sb.append(start_relative.toString()).append(":");
 
 			if (m_endAbsolute != null)
 				sb.append(m_endAbsolute).append(":");
 
-			if (m_endRelative != null)
-				sb.append(m_endRelative.toString()).append(":");
+			if (end_relative != null)
+				sb.append(end_relative.toString()).append(":");
 
 			return (sb.toString());
 		}
@@ -416,9 +490,9 @@ public class GsonParser
 			return "Query{" +
 					"startAbsolute='" + m_startAbsolute + '\'' +
 					", endAbsolute='" + m_endAbsolute + '\'' +
-					", cacheTime=" + m_cacheTime +
-					", startRelative=" + m_startRelative +
-					", endRelative=" + m_endRelative +
+					", cache_time=" + cache_time +
+					", startRelative=" + start_relative +
+					", endRelative=" + end_relative +
 					'}';
 		}
 	}
@@ -427,6 +501,7 @@ public class GsonParser
 	private static class LowercaseEnumTypeAdapterFactory implements TypeAdapterFactory
 	{
 		public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type)
+
 		{
 			Class<T> rawType = (Class<T>) type.getRawType();
 			if (!rawType.isEnum())
@@ -490,8 +565,8 @@ public class GsonParser
 			}
 			catch (IllegalArgumentException e)
 			{
-				throw new JsonSyntaxException(json.toString() + " is not a valid time unit, must be one of " +
-						TimeUnit.toValueNames());
+				throw new ContextualJsonSyntaxException(unit,
+						"is not a valid time unit, must be one of " + TimeUnit.toValueNames());
 			}
 
 			return tu;
@@ -516,31 +591,134 @@ public class GsonParser
 			if (jeTags != null)
 			{
 				JsonObject joTags = jeTags.getAsJsonObject();
+				int count = 0;
 				for (Map.Entry<String, JsonElement> tagEntry : joTags.entrySet())
 				{
+					String context = "tags[" + count + "]";
 					if (tagEntry.getKey().isEmpty())
-						throw new JsonSyntaxException("Tag names cannot be empty");
+						throw new ContextualJsonSyntaxException(context, "name must not be empty");
 
 					if (tagEntry.getValue().isJsonArray())
 					{
 						for (JsonElement element : tagEntry.getValue().getAsJsonArray())
 						{
 							if (element.isJsonNull() || element.getAsString().isEmpty())
-								throw new JsonSyntaxException("Value for tag " + tagEntry.getKey() + " cannot be null or empty.");
+								throw new ContextualJsonSyntaxException(context + "." + tagEntry.getKey(), "value must not be null or empty");
 							tags.put(tagEntry.getKey(), element.getAsString());
 						}
 					}
 					else
 					{
 						if (tagEntry.getValue().isJsonNull() || tagEntry.getValue().getAsString().isEmpty())
-							throw new JsonSyntaxException("Value for tag " + tagEntry.getKey() + " cannot be null or empty.");
+							throw new ContextualJsonSyntaxException(context + "." + tagEntry.getKey(), "value must not be null or empty");
 						tags.put(tagEntry.getKey(), tagEntry.getValue().getAsString());
 					}
+					count++;
 				}
 			}
 
 			Metric ret = new Metric(name, tags);
 			return (ret);
+		}
+	}
+
+	//===========================================================================
+	private static class ContextualJsonSyntaxException extends RuntimeException
+	{
+		private String context;
+
+		private ContextualJsonSyntaxException(String context, String msg)
+		{
+			super(msg);
+			this.context = context;
+		}
+
+		private String getContext()
+		{
+			return context;
+		}
+	}
+
+	//===========================================================================
+	private static class SimpleConstraintViolation implements ConstraintViolation<Object>
+	{
+		private String message;
+		private String context;
+
+		private SimpleConstraintViolation(String context, String message)
+		{
+			this.message = message;
+			this.context = context;
+		}
+
+		@Override
+		public String getMessage()
+		{
+			return message;
+		}
+
+		@Override
+		public String getMessageTemplate()
+		{
+			return null;
+		}
+
+		@Override
+		public Object getRootBean()
+		{
+			return null;
+		}
+
+		@Override
+		public Class<Object> getRootBeanClass()
+		{
+			return null;
+		}
+
+		@Override
+		public Object getLeafBean()
+		{
+			return null;
+		}
+
+		@Override
+		public Path getPropertyPath()
+		{
+			return new SimplePath(context);
+		}
+
+		@Override
+		public Object getInvalidValue()
+		{
+			return null;
+		}
+
+		@Override
+		public ConstraintDescriptor<?> getConstraintDescriptor()
+		{
+			return null;
+		}
+	}
+
+	private static class SimplePath implements Path
+	{
+		private String context;
+
+		private SimplePath(String context)
+		{
+			this.context = context;
+		}
+
+		@Override
+		public Iterator<Node> iterator()
+		{
+			return null;
+		}
+
+		@Override
+		public String toString()
+		{
+			return context;
 		}
 	}
 

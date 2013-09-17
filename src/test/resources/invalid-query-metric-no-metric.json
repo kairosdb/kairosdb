@@ -1,0 +1,10 @@
+{
+	"start_relative": {
+		"value": 1,
+		"unit": "minutes"
+	},
+	"end_relative": {
+		"value": 10,
+		"unit": "years"
+	}
+}

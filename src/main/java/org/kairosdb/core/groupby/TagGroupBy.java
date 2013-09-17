@@ -15,9 +15,11 @@
  */
 package org.kairosdb.core.groupby;
 
+import org.apache.bval.constraints.NotEmpty;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.GroupByName;
 
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +30,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @GroupByName(name = "tag", description = "Groups data points by tag names.")
 public class TagGroupBy implements GroupBy
 {
+	@NotNull
+	@NotEmpty()
 	private List<String> tags;
 
 	public TagGroupBy()

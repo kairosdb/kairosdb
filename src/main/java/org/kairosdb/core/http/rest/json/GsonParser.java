@@ -243,6 +243,8 @@ public class GsonParser
 
 			deserializeProperties(context + ".aggregator[" + J + "]", jsAggregator, aggName, aggregator);
 
+			validateObject(aggregator, aggContext);
+
 			queryMetric.addAggregator(aggregator);
 		}
 	}
@@ -311,6 +313,10 @@ public class GsonParser
 			catch (ContextualJsonSyntaxException e)
 			{
 				throw new BeanValidationException(new SimpleConstraintViolation(e.getContext(), e.getMessage()), context);
+			}
+			catch(NumberFormatException e)
+			{
+				throw new BeanValidationException(new SimpleConstraintViolation(property, e.getMessage()), context);
 			}
 
 			Method method = pd.getWriteMethod();

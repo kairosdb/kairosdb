@@ -18,12 +18,15 @@ package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.util.UniformReservoir;
+import org.kairosdb.core.http.rest.validation.NonZero;
 import org.kairosdb.util.Reservoir;
+import org.kairosdb.util.UniformReservoir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 
 import static java.lang.Math.floor;
 
@@ -31,6 +34,8 @@ import static java.lang.Math.floor;
 public class HistogramAggregator extends RangeAggregator
 {
 	public static final Logger logger = LoggerFactory.getLogger(HistogramAggregator.class);
+
+	@NonZero
 	private double percentile;
 
 	public void setPercentile(double percentile)

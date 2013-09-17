@@ -190,7 +190,7 @@ public class MetricsResourceTest
 		assertResponse(response, 200,
 				"{\"queries\":" +
 						"[{\"results\":" +
-						"[{\"name\":\"abc.123\",\"tags\":{\"server\":[\"server1\",\"server2\"]},\"values\":[[1,60.2],[2,30.200000000000003],[3,20.1]]}]}]}");
+						"[{\"name\":\"abc.123\",\"sample_size\":0,\"tags\":{\"server\":[\"server1\",\"server2\"]},\"values\":[[1,60.2],[2,30.200000000000003],[3,20.1]]}]}]}");
 	}
 
 	@Test

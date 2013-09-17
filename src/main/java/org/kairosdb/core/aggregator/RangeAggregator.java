@@ -21,6 +21,8 @@ import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -32,8 +34,11 @@ public abstract class RangeAggregator implements Aggregator
 {
 	private long m_startTime = 0L;
 	private long m_range = 1L;
-	private Sampling m_sampling = null;
 	private long m_dayOfMonthOffset = 0L; //day of month offset in milliseconds
+
+	@NotNull
+	@Valid
+	private Sampling m_sampling;
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{

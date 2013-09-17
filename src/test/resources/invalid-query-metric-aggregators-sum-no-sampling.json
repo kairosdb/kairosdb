@@ -8,14 +8,9 @@
 				"host": "foo",
 				"type": "bar"
 			},
-			"group_by": [
+			"aggregators": [
 				{
-					"name": "time",
-					"range_size": {
-						"value": "1",
-						"unit": "bogus"
-					},
-					"group_count": "1"
+					"name": "sum"
 				}
 			]
 		}

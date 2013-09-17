@@ -1,14 +1,18 @@
 {
-    "start_absolute": 784041330,
-    "end_absolute": 788879730,
-    "metrics": [
-        {
-            "name": "bob",
-            "aggregators":[
-                {
-                    "name":"sum"
-                }
-            ]
-        }
-    ]
+	"start_absolute": 784041330,
+	"end_absolute": 788879730,
+	"metrics": [
+		{
+			"name": "bob",
+			"aggregators": [
+				{
+					"name": "sum",
+					"sampling": {
+						"value": "1",
+						"unit": "milliseconds"
+					}
+				}
+			]
+		}
+	]
 }

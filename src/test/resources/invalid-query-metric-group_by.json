@@ -4,11 +4,6 @@
 	"metrics": [
 		{
 			"name": "abc.123",
-			"aggregators":[
-				{
-					"name":"sum"
-				}
-			],
 			"tags": {
 				"host": "foo",
 				"type": "bar"

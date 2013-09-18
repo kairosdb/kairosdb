@@ -1,3 +1,19 @@
+/*
+ * Copyright 2013 Proofpoint Inc.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package org.kairosdb.core.formatter;
 
 import org.json.JSONException;
@@ -10,19 +26,10 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 
-/**
- Created with IntelliJ IDEA.
- User: bhawkins
- Date: 7/1/13
- Time: 10:04 AM
- To change this template use File | Settings | File Templates.
- */
 public class JsonResponse
 {
 	private Writer m_writer;
 	private JSONWriter m_jsonWriter;
-	private boolean m_began = false;
-	private boolean m_beganQueries = false;
 
 	public JsonResponse(Writer writer)
 	{
@@ -30,27 +37,23 @@ public class JsonResponse
 		m_jsonWriter = new JSONWriter(writer);
 	}
 
-
 	public void begin() throws FormatterException
 	{
 		try
 		{
 			m_jsonWriter.object();
-			m_began = true;
 		}
 		catch (JSONException e)
 		{
 			throw new FormatterException(e);
 		}
 	}
-
 
 	public void startQueries() throws FormatterException
 	{
 		try
 		{
 			m_jsonWriter.key("queries").array();
-			m_beganQueries = true;
 		}
 		catch (JSONException e)
 		{
@@ -59,12 +62,12 @@ public class JsonResponse
 
 	}
 
-
 	/**
-	 Formats the query results
-	 @param queryResults
-	 @param sampleSize Passing a sample size of -1 will cause the attribute to not show up
-	 @throws FormatterException
+	 * Formats the query results
+	 *
+	 * @param queryResults results of the query
+	 * @param sampleSize   Passing a sample size of -1 will cause the attribute to not show up
+	 * @throws FormatterException
 	 */
 	public void formatQuery(List<DataPointGroup> queryResults, int sampleSize) throws FormatterException
 	{
@@ -144,13 +147,11 @@ public class JsonResponse
 		}
 	}
 
-
 	public void endQueries() throws FormatterException
 	{
 		try
 		{
 			m_jsonWriter.endArray();
-			m_beganQueries = false;
 		}
 		catch (JSONException e)
 		{
@@ -158,12 +159,6 @@ public class JsonResponse
 		}
 
 	}
-
-
-	public void writeMeta() throws FormatterException
-	{
-	}
-
 
 	public void end() throws FormatterException
 	{
@@ -176,5 +171,4 @@ public class JsonResponse
 			throw new FormatterException(e);
 		}
 	}
-
 }

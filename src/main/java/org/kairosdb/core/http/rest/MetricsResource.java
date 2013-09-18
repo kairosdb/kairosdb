@@ -19,8 +19,6 @@ package org.kairosdb.core.http.rest;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.name.Named;
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -253,7 +251,6 @@ public class MetricsResource
 	@Path(QUERY_URL)
 	public Response get(String json) throws Exception
 	{
-		// todo verify that end time is not before start time.
 		checkNotNull(json);
 		logger.debug(json);
 

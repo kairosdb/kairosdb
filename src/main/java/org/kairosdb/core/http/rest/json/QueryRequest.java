@@ -56,7 +56,6 @@ public class QueryRequest
 		this.endRelative = endRelative;
 		this.cacheTime = cacheTime;
 
-		// todo need to validate that the start and end times make sense. ie. end must be after start, etc.
 		checkArgument(startAbsolute != null || startRelative != null);
 		this.metrics = checkNotNull(metrics);
 	}

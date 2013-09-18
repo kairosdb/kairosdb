@@ -42,24 +42,12 @@ public class JsonResponse
 		try
 		{
 			m_jsonWriter.object();
-		}
-		catch (JSONException e)
-		{
-			throw new FormatterException(e);
-		}
-	}
-
-	public void startQueries() throws FormatterException
-	{
-		try
-		{
 			m_jsonWriter.key("queries").array();
 		}
 		catch (JSONException e)
 		{
 			throw new FormatterException(e);
 		}
-
 	}
 
 	/**
@@ -147,23 +135,11 @@ public class JsonResponse
 		}
 	}
 
-	public void endQueries() throws FormatterException
-	{
-		try
-		{
-			m_jsonWriter.endArray();
-		}
-		catch (JSONException e)
-		{
-			throw new FormatterException(e);
-		}
-
-	}
-
 	public void end() throws FormatterException
 	{
 		try
 		{
+			m_jsonWriter.endArray();
 			m_jsonWriter.endObject();
 		}
 		catch (JSONException e)

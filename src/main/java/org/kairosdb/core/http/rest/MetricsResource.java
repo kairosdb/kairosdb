@@ -191,7 +191,6 @@ public class MetricsResource
 			JsonResponse jsonResponse = new JsonResponse(writer);
 
 			jsonResponse.begin();
-			jsonResponse.startQueries();
 
 			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
 
@@ -211,8 +210,6 @@ public class MetricsResource
 					}
 				}
 			}
-
-			jsonResponse.endQueries();
 
 			jsonResponse.end();
 			writer.flush();
@@ -265,7 +262,6 @@ public class MetricsResource
 			JsonResponse jsonResponse = new JsonResponse(writer);
 
 			jsonResponse.begin();
-			jsonResponse.startQueries();
 
 			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
 
@@ -291,8 +287,6 @@ public class MetricsResource
 					dq.close();
 				}
 			}
-
-			jsonResponse.endQueries();
 
 			jsonResponse.end();
 			writer.flush();

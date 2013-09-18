@@ -165,14 +165,14 @@ public class GsonParser
 			String context = "query.metric[" + I + "]";
 			try
 			{
-				Metric metric;
-				metric = m_gson.fromJson(metricsArray.get(I), Metric.class);
+				Metric metric = m_gson.fromJson(metricsArray.get(I), Metric.class);
 
 				validateObject(metric, context);
 
 				long startTime = getStartTime(query);
 				QueryMetric queryMetric = new QueryMetric(startTime, query.getCacheTime(),
 						metric.getName());
+				queryMetric.setExcludeTags(metric.isExcludeTags());
 
 				long endTime = getEndTime(query);
 				if (endTime > -1)
@@ -379,21 +379,29 @@ public class GsonParser
 		@NotNull
 		@NotEmpty()
 		@SerializedName("name")
-
 		private String name;
 
 		@SerializedName("tags")
 		private SetMultimap<String, String> tags;
 
-		public Metric(String name, TreeMultimap<String, String> tags)
+		@SerializedName("exclude_tags")
+		private boolean exclude_tags;
+
+		public Metric(String name, boolean exclude_tags, TreeMultimap<String, String> tags)
 		{
 			this.name = name;
 			this.tags = tags;
+			this.exclude_tags = exclude_tags;
 		}
 
 		public String getName()
 		{
 			return name;
+		}
+
+		private boolean isExcludeTags()
+		{
+			return exclude_tags;
 		}
 
 		public String getCacheString()
@@ -592,6 +600,10 @@ public class GsonParser
 			if (jsonObject.get("name") != null)
 				name = jsonObject.get("name").getAsString();
 
+			boolean exclude_tags = false;
+			if (jsonObject.get("exclude_tags") != null)
+				exclude_tags = jsonObject.get("exclude_tags").getAsBoolean();
+
 			TreeMultimap<String, String> tags = TreeMultimap.create();
 			JsonElement jeTags = jsonObject.get("tags");
 			if (jeTags != null)
@@ -623,7 +635,7 @@ public class GsonParser
 				}
 			}
 
-			Metric ret = new Metric(name, tags);
+			Metric ret = new Metric(name, exclude_tags, tags);
 			return (ret);
 		}
 	}

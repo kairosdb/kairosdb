@@ -54,10 +54,11 @@ public class JsonResponse
 	 * Formats the query results
 	 *
 	 * @param queryResults results of the query
+	 * @param excludeTags if true do not include tag information
 	 * @param sampleSize   Passing a sample size of -1 will cause the attribute to not show up
 	 * @throws FormatterException
 	 */
-	public void formatQuery(List<DataPointGroup> queryResults, int sampleSize) throws FormatterException
+	public void formatQuery(List<DataPointGroup> queryResults, boolean excludeTags, int sampleSize) throws FormatterException
 	{
 		try
 		{
@@ -89,14 +90,17 @@ public class JsonResponse
 					m_jsonWriter.endArray();
 				}
 
-				m_jsonWriter.key("tags").object();
-
-				for (String tagName : group.getTagNames())
+				if (!excludeTags)
 				{
-					m_jsonWriter.key(tagName);
-					m_jsonWriter.value(group.getTagValues(tagName));
+					m_jsonWriter.key("tags").object();
+
+					for (String tagName : group.getTagNames())
+					{
+						m_jsonWriter.key(tagName);
+						m_jsonWriter.value(group.getTagValues(tagName));
+					}
+					m_jsonWriter.endObject();
 				}
-				m_jsonWriter.endObject();
 
 				m_jsonWriter.key("values").array();
 				while (group.hasNext())

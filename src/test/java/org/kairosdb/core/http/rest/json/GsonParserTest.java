@@ -136,6 +136,23 @@ public class GsonParserTest
 	}
 
 	@Test
+	public void test_excludeTags() throws Exception
+	{
+		String json = Resources.toString(Resources.getResource("query-metric-exclude-tags.json"), Charsets.UTF_8);
+
+		List<QueryMetric> results = parser.parseQueryMetric(json);
+
+		assertThat(results.size(), equalTo(1));
+		QueryMetric queryMetric = results.get(0);
+		assertThat(queryMetric.getCacheString(), equalTo("784041330:788879730:bob:host=bar:host=foo:"));
+		assertThat(queryMetric.isExcludeTags(), equalTo(true));
+		assertThat(queryMetric.getTags(), notNullValue());
+		assertThat(queryMetric.getTags().get("host").size(), equalTo(2));
+		assertThat(queryMetric.getTags().get("host"), hasItem("bar"));
+		assertThat(queryMetric.getTags().get("host"), hasItem("foo"));
+	}
+
+	@Test
 	public void test_cacheTime_invalid() throws IOException, QueryException
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-cache-time.json"), Charsets.UTF_8);

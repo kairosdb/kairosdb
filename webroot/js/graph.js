@@ -450,6 +450,7 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
 		else if (name == "histogram") {
+			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
 			$aggregatorContainer.find(".aggregatorSampling").show();
 		}

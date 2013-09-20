@@ -119,6 +119,20 @@
 						getTagsForMetric(metricName, request, response);
 				}
 			});
+
+			$(document).on("click", function(e) {
+				// Close the groupBy dialog if it loses focus
+				var clickedOnDialog = $(e.target)
+						.closest(".ui-widget.ui-dialog")
+						.children(".ui-dialog-content")
+						.is(".tagDialog");
+
+				var searchButton = $(e.target).is(".ui-icon-search") || $(e.target).is(".tagSearch");
+
+				if (!clickedOnDialog && !searchButton) {
+					$('.tagDialog').dialog('close');
+				}
+			});
 		});
 	</script>
 

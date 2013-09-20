@@ -25,10 +25,10 @@
 
 	<script>
 		var metricNames = [];
-		var tagNames = [];
-		var tagValues = [];
 
 		$(function () {
+			if(!window.console){ window.console = {log: function(){} }; } // If not console, don't log
+
 			var $startTime = $("#startTime");
 			var $endTime = $("#endTime");
 
@@ -101,7 +101,7 @@
 			}).click(addMetric);
 
 			// todo Timing issue for the first tab (metric). Can't add autocomplete until we have retrieved the
-			// todo metric names, tag names and tag values. Find a more elegant solution than to add to the first metric here.
+			// todo metric names. Find a more elegant solution than to add to the first metric here.
 			$.getJSON("api/v1/metricnames", function (json) {
 				metricNames = json.results;
 				$(".metricName")
@@ -110,24 +110,14 @@
 						});
 			});
 
-			$.getJSON("api/v1/tagnames", function (json) {
-				tagNames = json.results;
-				$("[name='tagName']")
-						.autocomplete({
-							source: tagNames
-						});
-				$("#autocompleteTagName")
-						.autocomplete({
-							source: tagNames
-						});
-			});
-
-			$.getJSON("api/v1/tagvalues", function (json) {
-				tagValues = json.results;
-				$("[name='tagValue']")
-						.autocomplete({
-							source: tagValues
-						});
+			// Autocomplete for GroupBy dialog
+			$("#autocompleteTagName").autocomplete({
+				source: function (request, response) {
+					var selectedTabIndex = $("#tabs").tabs("option", "active");
+					var metricName = $('#metricContainer' + selectedTabIndex).find(".metricName").val();
+					if (metricName)
+						getTagsForMetric(metricName, request, response);
+				}
 			});
 		});
 	</script>
@@ -248,7 +238,7 @@
 	<table class="ui-widget">
 		<tr>
 			<td class="ui-widget">Name*</td>
-			<td><input class="ui-widget metricName" type="#groupBytext"></td>
+			<td><input class="ui-widget metricName"></td>
 		</tr>
 	</table>
 

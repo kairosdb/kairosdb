@@ -45,12 +45,12 @@ function updateChart() {
 				var count = $(groupBy).find(".groupByTimeCount").val();
 
 				if (value < 1) {
-					showErrorMessage("Missing Time Group By size must be greater than 0.")
+					showErrorMessage("Missing Time Group By size must be greater than 0.");
 					return true;
 				}
 
 				if (count < 1) {
-					showErrorMessage("Missing Time Group By count must be greater than 0.")
+					showErrorMessage("Missing Time Group By count must be greater than 0.");
 					return true;
 				}
 				metric.addGroupBy(new kairosdb.TimeGroupBy(value, unit, count));
@@ -58,7 +58,7 @@ function updateChart() {
 			else if (name == "value") {
 				var size = $(groupBy).find(".groupByValueValue").val();
 				if (size < 1) {
-					showErrorMessage("Missing Value Group By size must be greater than 0.")
+					showErrorMessage("Missing Value Group By size must be greater than 0.");
 					return true;
 				}
 				metric.addGroupBy(new kairosdb.ValueGroupBy(size));
@@ -69,16 +69,17 @@ function updateChart() {
 		$metricContainer.find(".aggregator").each(function (index, aggregator) {
 			var name = $(aggregator).find(".aggregatorName").val();
 
+			var unit;
 			if (name == 'rate') {
-				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				metric.addRate(unit);
 			}
 			else if (name == 'histogram') {
-				var value = $(aggregator).find(".aggregatorSamplingValue").val();
+				value = $(aggregator).find(".aggregatorSamplingValue").val();
 				if (!isValidInteger(value)) {
 					return true;
 				}
-				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				var percentile = $(aggregator).find(".aggregatorPercentileValue").val();
 				if (!isValidPercentile(percentile)) {
 					return true;
@@ -94,7 +95,7 @@ function updateChart() {
 				if (!isValidInteger(value)) {
 					return true;
 				}
-				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				metric.addAggregator(name, value, unit);
 			}
 		});
@@ -102,7 +103,7 @@ function updateChart() {
 		function isValidPercentile(percentile) {
 			var intRegex = /^(0*\.\d*|(0*1(\.0*|))|0+)$/;
 			if (!intRegex.test(percentile)) {
-				showErrorMessage("percentile value must be between [0-1]")
+				showErrorMessage("percentile value must be between [0-1]");
 				return false;
 			}
 			else {
@@ -113,7 +114,7 @@ function updateChart() {
 		function isValidInteger(value) {
 			var intRegex = /^\d+$/;
 			if (!intRegex.test(value)) {
-				showErrorMessage("sampling value must be an integer greater than 0.")
+				showErrorMessage("sampling value must be an integer greater than 0.");
 				return false;
 			}
 			else {
@@ -162,8 +163,9 @@ function updateChart() {
 	$('#query-hidden-text').val(JSON.stringify(query, null, 2));
 	displayQuery();
 
-	$("#graph_link").attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
-	$("#graph_link").show();
+	var $graphLink = $("#graph_link");
+	$graphLink.attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
+	$graphLink.show();
 	showChartForQuery("(Click and drag to zoom)", query, metricData);
 }
 
@@ -260,7 +262,7 @@ function addMetric() {
 			addTag(tagContainer)
 		});
 
-	var tagContainer = $('<div id="' + tagContainerName + '"></div>');
+	var tagContainer = $('<div id="' + tagContainerName + '" metricCount="' + metricCount + '"></div>');
 	tagContainer.appendTo($metricContainer);
 
 	// Rename Aggregator Container
@@ -304,11 +306,12 @@ function addMetric() {
 	}
 
 	// Tell tabs object to update changes
-	$("#tabs").tabs("refresh");
+	var $tabs = $("#tabs");
+	$tabs.tabs("refresh");
 
 	// Activate newly added tab
 	var lastTab = $(".ui-tabs-nav").children().size() - 1;
-	$("#tabs").tabs({active: lastTab});
+	$tabs.tabs({active: lastTab});
 }
 
 function addGroupBy(container) {
@@ -334,7 +337,6 @@ function addGroupBy(container) {
 		// Remove old group by
 		groupByContainer.empty();
 
-		var groupBy;
 		var newName = $groupByContainer.find(".groupByName").val();
 		if (newName == "tags") {
 			handleTagGroupBy(groupByContainer);
@@ -345,7 +347,7 @@ function addGroupBy(container) {
 			$groupBy.show();
 
 		}
-		else if (newName = "value") {
+		else if (newName == "value") {
 			$groupBy = $("#groupByValueTemplate").clone();
 			$groupBy.removeAttr("id").appendTo(groupByContainer);
 			$groupBy.show();
@@ -475,21 +477,6 @@ function addAutocomplete(metricContainer) {
 		.autocomplete({
 			source: metricNames
 		});
-
-	metricContainer.find("[name='tagName']")
-		.autocomplete({
-			source: tagNames
-		});
-
-	metricContainer.find(".metricGroupBy")
-		.autocomplete({
-			source: tagNames
-		});
-
-	metricContainer.find("[name='tagValue']")
-		.autocomplete({
-			source: tagValues
-		});
 }
 
 function addTag(tagContainer) {
@@ -499,13 +486,25 @@ function addTag(tagContainer) {
 	$("#tagContainer").clone().removeAttr("id").appendTo(newDiv);
 
 	// add auto complete
-	newDiv.find("[name='tagName']").autocomplete({
-		source: tagNames
+	var $tagNameElement = newDiv.find("[name='tagName']");
+	$tagNameElement.autocomplete({
+		source: function (request, response) {
+			var metricCount = tagContainer.attr("metricCount");
+			var metricName = $('#metricContainer' + metricCount).find(".metricName").val();
+			if (metricName)
+				getTagsForMetric(metricName, request, response);
+		}
 	});
 
 	// add auto complete
 	newDiv.find("[name='tagValue']").autocomplete({
-		source: tagValues
+		source: function (request, response) {
+			var metricCount = tagContainer.attr("metricCount");
+			var metricName = $('#metricContainer' + metricCount).find(".metricName").val();
+			var tagName = $tagNameElement.val();
+			if (metricName && tagName)
+				getValuesForTag(metricName, tagName, request, response);
+		}
 	});
 
 	// Add remove button
@@ -518,6 +517,65 @@ function addTag(tagContainer) {
 	}).click(function () {
 			newDiv.remove();
 		});
+}
+
+function getTagsForMetric(metricName, request, response) {
+	var query = new kairosdb.MetricQuery();
+	query.addMetric(new kairosdb.Metric(metricName));
+	query.setStartAbsolute(0);
+
+	$.ajax({
+		type: "POST",
+		url: "api/v1/datapoints/query/tags",
+		headers: { 'Content-Type': ['application/json']},
+		data: JSON.stringify(query),
+		dataType: 'json',
+		success: function (data) {
+			var tagNames = [];
+			$.each(data.queries[0].results[0].tags, function (tag) {
+				tagNames.push(tag);
+			});
+
+			var matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), "i");
+			response($.grep(tagNames, function (tag) {
+				return matcher.test(tag);
+			}));
+		},
+		error: function (jqXHR, textStatus, errorThrown) {
+			console.log(errorThrown);
+		}
+	});
+}
+
+function getValuesForTag(metricName, tagName, request, response) {
+	var query = new kairosdb.MetricQuery();
+	query.addMetric(new kairosdb.Metric(metricName));
+	query.setStartAbsolute(0);
+
+	$.ajax({
+		type: "POST",
+		url: "api/v1/datapoints/query/tags",
+		headers: { 'Content-Type': ['application/json']},
+		data: JSON.stringify(query),
+		dataType: 'json',
+		success: function (data) {
+			var values = [];
+			$.each(data.queries[0].results[0].tags, function (tag, val) {
+				if (tag == tagName){
+					values = val;
+					return false; //break;
+				}
+			});
+
+			var matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), "i");
+			response($.grep(values, function (item) {
+				return matcher.test(item);
+			}));
+		},
+		error: function (jqXHR, textStatus, errorThrown) {
+			console.log(errorThrown);
+		}
+	});
 }
 
 function showChartForQuery(subTitle, query, metricData) {
@@ -616,37 +674,12 @@ function isHighChartsLoaded() {
 function deleteDataPoints() {
 	if (confirm("Are you sure you want to delete all data points returned from the last query?")) {
 		var query = $("#query-hidden-text").val();
-		kairosdb.deleteDataPoints(query, function (queries) {
+		kairosdb.deleteDataPoints(query, function () {
 			if (confirm("Data was deleted. It may take up 30 seconds are more to update. Do you want to refresh the graph?")) {
 				updateChart();
 			}
 		});
 	}
-}
-
-function foo() {
-	var query = new kairosdb.MetricQuery();
-	query.addMetric(new kairosdb.Metric("archive_search"));
-	query.setStartAbsolute(0);
-
-	$.ajax({
-		type: "POST",
-		url: "api/v1/datapoints/query/tags",
-		headers: { 'Content-Type': ['application/json']},
-		data: JSON.stringify(query),
-		dataType: 'json',
-		success: function (data, textStatus, jqXHR) {
-			debugger;
-		},
-		error: function (jqXHR, textStatus, errorThrown) {
-			var $errorContainer = $("#errorContainer");
-			$errorContainer.show();
-			$errorContainer.html("");
-			$errorContainer.append("Status Code: " + jqXHR.status + "</br>");
-			$errorContainer.append("Status: " + jqXHR.statusText + "<br>");
-			$errorContainer.append("Return Value: " + jqXHR.responseText);
-		}
-	})
 }
 
 

@@ -67,11 +67,16 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 
 		dps.addDataPoint(dp);
 
+		int tagCount = 0;
 		for (int i = 4; i < command.length; i++)
 		{
 			String[] tag = command[i].split("=");
 			dps.addTag(tag[0], tag[1]);
+			tagCount ++;
 		}
+
+		if (tagCount == 0)
+			dps.addTag("add", "tag");
 
 		m_datastore.putDataPoints(dps);
 	}

@@ -109,6 +109,7 @@ kairosdb.Metric = function (name) {
 
 		var aggregator = {};
 		aggregator.name = name;
+		aggregator.align_sampling = true;
 
 		if (value && unit) {
 			aggregator.sampling = {};

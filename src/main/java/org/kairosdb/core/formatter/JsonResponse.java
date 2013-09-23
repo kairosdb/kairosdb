@@ -62,7 +62,12 @@ public class JsonResponse
 	{
 		try
 		{
-			m_jsonWriter.object().key("results").array();
+			m_jsonWriter.object();
+
+			if (sampleSize != -1)
+				m_jsonWriter.key("sample_size").value(sampleSize);
+
+			m_jsonWriter.key("results").array();
 
 			for (DataPointGroup group : queryResults)
 			{
@@ -70,10 +75,6 @@ public class JsonResponse
 
 				m_jsonWriter.object();
 				m_jsonWriter.key("name").value(metric);
-
-				if (sampleSize != -1)
-					m_jsonWriter.key("sample_size").value(sampleSize);
-
 
 				if (!group.getGroupByResult().isEmpty())
 				{

@@ -1,10 +1,10 @@
 {
 	"queries": [
 		{
+            "sample_size": 10,
 			"results": [
 				{
 					"name": "metric1",
-					"sample_size": 10,
 					"group_by": [
 						{
 							"name": "value",
@@ -22,7 +22,6 @@
 				},
 				{
 					"name": "metric2",
-					"sample_size": 10,
 					"group_by": [
 						{
 							"name": "value",

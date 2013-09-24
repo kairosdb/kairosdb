@@ -43,12 +43,22 @@ public class RemoteDatastore implements Datastore
 	public static final String DATA_DIR_PROP = "kairosdb.datastore.remote.data_dir";
 	public static final String REMOTE_URL_PROP = "kairosdb.datastore.remote.remote_url";
 
+	public static final String FILE_SIZE_METRIC = "kairosdb.datastore.remote.file_size";
+	public static final String ZIP_FILE_SIZE_METRIC = "kairosdb.datastore.remote.zip_file_size";
+	public static final String WRITE_SIZE_METRIC = "kairosdb.datastore.remote.write_size";
+	public static final String TIME_TO_SEND_METRIC = "kairosdb.datastore.remote.time_to_send";
+
 	private final Object m_dataFileLock = new Object();
 	private BufferedWriter m_dataWriter;
 	private String m_dataFileName;
 	private volatile boolean m_firstDataPoint = true;
 	private String m_dataDirectory;
 	private String m_remoteUrl;
+	private int m_dataPointCounter;
+
+	@javax.inject.Inject
+	@Named("HOSTNAME")
+	private String m_hostName = "localhost";
 
 
 	@Inject
@@ -69,6 +79,7 @@ public class RemoteDatastore implements Datastore
 		m_dataWriter = new BufferedWriter(new FileWriter(m_dataFileName));
 		m_dataWriter.write("[\n");
 		m_firstDataPoint = true;
+		m_dataPointCounter = 0;
 	}
 
 	private void closeDataFile() throws IOException
@@ -102,6 +113,7 @@ public class RemoteDatastore implements Datastore
 	{
 		CharArrayWriter caw = new CharArrayWriter();
 		JSONWriter writer = new JSONWriter(caw);
+		int dataPointsWritten = 0;
 		try
 		{
 			writer.object();
@@ -118,6 +130,7 @@ public class RemoteDatastore implements Datastore
 			writer.key("datapoints").array();
 			for (DataPoint dataPoint :dps.getDataPoints())
 			{
+				dataPointsWritten ++;
 				writer.array();
 				writer.value(dataPoint.getTimestamp());
 				if (dataPoint.isInteger())
@@ -137,6 +150,7 @@ public class RemoteDatastore implements Datastore
 
 		synchronized (m_dataFileLock)
 		{
+			m_dataPointCounter += dataPointsWritten;
 			try
 			{
 				if (!m_firstDataPoint)
@@ -224,8 +238,9 @@ public class RemoteDatastore implements Datastore
 	/**
 	 Compresses the given file and removes the uncompressed file
 	 @param file
+	 @return Size of the zip file
 	 */
-	private void zipFile(String file) throws IOException
+	private long zipFile(String file) throws IOException
 	{
 		String zipFile = file+".gz";
 
@@ -243,12 +258,25 @@ public class RemoteDatastore implements Datastore
 
 		//delete uncompressed file
 		new File(file).delete();
+
+		return (new File(zipFile).length());
 	}
 
 
 	public void sendData() throws IOException
 	{
 		String oldDataFile = m_dataFileName;
+		long now = System.currentTimeMillis();
+
+		long fileSize = (new File(m_dataFileName)).length();
+
+		DataPointSet dpsFileSize = new DataPointSet(FILE_SIZE_METRIC);
+		dpsFileSize.addTag("host", m_hostName);
+		dpsFileSize.addDataPoint(new DataPoint(now, fileSize));
+
+		DataPointSet dpsWriteSize = new DataPointSet(WRITE_SIZE_METRIC);
+		dpsWriteSize.addTag("host", m_hostName);
+		dpsWriteSize.addDataPoint(new DataPoint(now, m_dataPointCounter));
 
 		synchronized (m_dataFileLock)
 		{
@@ -256,9 +284,31 @@ public class RemoteDatastore implements Datastore
 			openDataFile();
 		}
 
-		zipFile(oldDataFile);
+		long zipSize = zipFile(oldDataFile);
+
+		DataPointSet dpsZipFileSize = new DataPointSet(ZIP_FILE_SIZE_METRIC);
+		dpsZipFileSize.addTag("host", m_hostName);
+		dpsZipFileSize.addDataPoint(new DataPoint(now, zipSize));
 
 		sendAllZipfiles();
+
+		long timeToSend = System.currentTimeMillis() - now;
+
+		DataPointSet dpsTimeToSend = new DataPointSet(TIME_TO_SEND_METRIC);
+		dpsTimeToSend.addTag("host", m_hostName);
+		dpsTimeToSend.addDataPoint(new DataPoint(now, timeToSend));
+
+		try
+		{
+			putDataPoints(dpsFileSize);
+			putDataPoints(dpsWriteSize);
+			putDataPoints(dpsTimeToSend);
+			putDataPoints(dpsZipFileSize);
+		}
+		catch (DatastoreException e)
+		{
+			logger.error("Error writing remote metrics", e);
+		}
 	}
 
 

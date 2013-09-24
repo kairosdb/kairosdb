@@ -9,6 +9,7 @@
 <head>
 	<link href="css/cupertino/jquery-ui-1.10.0.custom.css" rel="stylesheet">
 	<link href="css/style.css" rel="stylesheet">
+	<link href="css/combobox.css" rel="stylesheet">
 
 	<script src="js/jquery.1.9.0.min.js"></script>
 	<script src="js/kairosdb.js"></script>
@@ -22,6 +23,7 @@
 	<script src="js/jquery.flot.selection.js"></script>
 	<script src="js/jquery.flot.resize.js"></script>
 	<!--<script src="js/highcharts.js"></script>-->
+	<script src="js/combobox.js"></script>
 
 	<script>
 		var metricNames = [];
@@ -100,21 +102,14 @@
 				}
 			}).click(addMetric);
 
-			// todo Timing issue for the first tab (metric). Can't add autocomplete until we have retrieved the
-			// todo metric names. Find a more elegant solution than to add to the first metric here.
 			$.getJSON("api/v1/metricnames", function (json) {
 				metricNames = json.results;
-				$(".metricName")
-						.autocomplete({
-							source: metricNames
-						});
 			});
 
 			// Autocomplete for GroupBy dialog
-			$("#autocompleteTagName").autocomplete({
-				source: function (request, response) {
+			$("#autocompleteTagName").combobox().combobox({source: function (request, response) {
 					var selectedTabIndex = $("#tabs").tabs("option", "active");
-					var metricName = $('#metricContainer' + selectedTabIndex).find(".metricName").val();
+					var metricName = $('#metricContainer' + selectedTabIndex).find(".metricName").combobox("value");
 					if (metricName)
 						getTagsForMetric(metricName, request, response);
 				}
@@ -369,7 +364,7 @@
 </div>
 
 <!-- Hidden GroupBy Dialog. Used for auto-completion of tag name -->
-<div id="groupByTagDialog" class="tagDialog">
+<div id="groupByTagDialog" class="tagDialog" style="overflow:visible">
 	<button id="cancelTagNameButton" class="ui-widget"
 	        style="background:none; border: none; width:1px; float:right; margin-right: 5px; margin-top: 0;"></button>
 	<span class="ui-widget header">Search for tag name.</span>

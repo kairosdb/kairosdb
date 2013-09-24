@@ -474,9 +474,9 @@ function addAggregator(container) {
 
 function addAutocomplete(metricContainer) {
 	metricContainer.find(".metricName")
-		.autocomplete({
-			source: metricNames
-		});
+		.combobox().combobox({source: function (request, response) {
+			response(metricNames);
+		}});
 }
 
 function addTag(tagContainer) {
@@ -486,25 +486,22 @@ function addTag(tagContainer) {
 	$("#tagContainer").clone().removeAttr("id").appendTo(newDiv);
 
 	// add auto complete
-	var $tagNameElement = newDiv.find("[name='tagName']");
-	$tagNameElement.autocomplete({
-		source: function (request, response) {
+	var $tagNameElement = newDiv.find("[name='tagName']")
+		.combobox().combobox({source: function (request, response) {
 			var metricCount = tagContainer.attr("metricCount");
-			var metricName = $('#metricContainer' + metricCount).find(".metricName").val();
+			var metricName = $('#metricContainer' + metricCount).find(".metricName").combobox("value");
 			if (metricName)
 				getTagsForMetric(metricName, request, response);
-		}
-	});
+		}});
 
 	// add auto complete
-	newDiv.find("[name='tagValue']").autocomplete({
-		source: function (request, response) {
-			var metricCount = tagContainer.attr("metricCount");
-			var metricName = $('#metricContainer' + metricCount).find(".metricName").val();
-			var tagName = $tagNameElement.val();
-			if (metricName && tagName)
-				getValuesForTag(metricName, tagName, request, response);
-		}
+	newDiv.find("[name='tagValue']").combobox().combobox({source: function (request, response) {
+		var metricCount = tagContainer.attr("metricCount");
+		var metricName = $('#metricContainer' + metricCount).find(".metricName").combobox("value");
+		var tagName = $tagNameElement.combobox("value");
+		if (metricName && tagName)
+			getValuesForTag(metricName, tagName, request, response);
+	}
 	});
 
 	// Add remove button
@@ -536,10 +533,7 @@ function getTagsForMetric(metricName, request, response) {
 				tagNames.push(tag);
 			});
 
-			var matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), "i");
-			response($.grep(tagNames, function (tag) {
-				return matcher.test(tag);
-			}));
+			response(tagNames);
 		},
 		error: function (jqXHR, textStatus, errorThrown) {
 			console.log(errorThrown);

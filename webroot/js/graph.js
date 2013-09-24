@@ -399,7 +399,7 @@ function handleTagGroupBy(groupByContainer) {
 function addTagNameToGroupBy() {
 	var $autocompleteTagName = $("#autocompleteTagName");
 	var value = $groupBy.find(".groupByTagsValue");
-	value.val(value.val() + " " + $autocompleteTagName.val());
+	value.val(value.val() + " " + $autocompleteTagName.combobox("value"));
 	$autocompleteTagName.val(""); // clear value
 
 	$("#addTagNameButton").unbind("click");

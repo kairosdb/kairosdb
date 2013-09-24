@@ -13,6 +13,9 @@ function updateChart() {
 	$("#status").html("");
 	$("#queryTime").html("");
 	$("#numDataPoints").html("");
+	$("#flotTitle").html("");
+	$("#graphLegend").html("");
+	$("#chartContainer").html("");
 
 	var query = new kairosdb.MetricQuery();
 
@@ -20,7 +23,7 @@ function updateChart() {
 
 	$('.metricContainer').each(function (index, element) {
 		var $metricContainer = $(element);
-		var metricName = $metricContainer.find('.metricName').val();
+		var metricName = $metricContainer.find('.metricName').combobox("value");
 		if (!metricName) {
 			showErrorMessage("Metric Name is required.");
 			return;

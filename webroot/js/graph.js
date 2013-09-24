@@ -252,6 +252,22 @@ function addMetric() {
 
 	addAutocomplete($metricContainer);
 
+	// Add metric name refresh button
+	$metricContainer.find(".refresh-metric-names").
+		button({
+			text: false,
+			icons: {
+				primary: 'ui-icon-arrowrefresh-1-e'
+			}
+		}).click(function () {
+			var $button = $(".ui-button-icon-primary", this);
+			$button.toggleClass("ui-icon-arrowrefresh-1-e ui-icon-signal-diag");
+			updateMetricNamesArray(function(){
+				$button.toggleClass("ui-icon-arrowrefresh-1-e ui-icon-signal-diag");
+			});
+		}
+	);
+
 	// Setup tag button
 	var tagButtonName = "mertric-" + metricCount + "AddTagButton";
 	var tagButton = $metricContainer.find("#tagButton");
@@ -263,7 +279,8 @@ function addMetric() {
 		}
 	}).click(function () {
 			addTag(tagContainer)
-		});
+		}
+	);
 
 	var tagContainer = $('<div id="' + tagContainerName + '" metricCount="' + metricCount + '"></div>');
 	tagContainer.appendTo($metricContainer);
@@ -517,6 +534,17 @@ function addTag(tagContainer) {
 	}).click(function () {
 			newDiv.remove();
 		});
+}
+
+function updateMetricNamesArray(callBack)
+{
+	$.getJSON("api/v1/metricnames", function (json) {
+		debugger;
+		metricNames = json.results;
+		if (callBack) {
+			callBack();
+		}
+	});
 }
 
 function getTagsForMetric(metricName, request, response) {

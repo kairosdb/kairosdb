@@ -102,9 +102,7 @@
 				}
 			}).click(addMetric);
 
-			$.getJSON("api/v1/metricnames", function (json) {
-				metricNames = json.results;
-			});
+			updateMetricNamesArray();
 
 			// Autocomplete for GroupBy dialog
 			$("#autocompleteTagName").combobox().combobox({source: function (request, response) {
@@ -248,6 +246,7 @@
 		<tr>
 			<td class="ui-widget">Name*</td>
 			<td><input class="ui-widget metricName"></td>
+			<td><button class="ui-widget refresh-metric-names" title="Update metric names" style="height: 20px;"></button></td>
 		</tr>
 	</table>
 

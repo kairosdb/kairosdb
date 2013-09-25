@@ -10,12 +10,12 @@
 			},
 			"aggregators": [
 				{
-					"name": "histogram",
+					"name": "percentile",
 					"sampling": {
 						"value": 10,
 						"unit": "minutes"
 					},
-					"percentile": 0
+					"percentile":"0.7.1"
 				}
 			]
 		}

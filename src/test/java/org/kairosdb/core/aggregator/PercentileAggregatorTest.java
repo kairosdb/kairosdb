@@ -32,9 +32,9 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.closeTo;
 import static org.junit.Assert.assertThat;
 
-public class HistogramAggregatorTest
+public class PercentileAggregatorTest
 {
-	private HistogramAggregator aggregator;
+	private PercentileAggregator aggregator;
 
 	@Rule
 	public ExpectedException exception = ExpectedException.none();
@@ -42,7 +42,7 @@ public class HistogramAggregatorTest
 	@Before
 	public void setUp()
 	{
-		aggregator = new HistogramAggregator();
+		aggregator = new PercentileAggregator();
 	}
 
 	@Test(expected = NullPointerException.class)

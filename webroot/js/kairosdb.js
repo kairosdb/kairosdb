@@ -16,7 +16,7 @@ kairosdb.Aggregators =
 	SORT: "sort",
 	SUM: "sum",
 	LEAST_SQUARES: "least_squares",
-	HISTOGRAM: "histogram"
+	PERCENTILE: "percentile"
 };
 
 kairosdb.Unit =  //Values used for Aggregator sampling and Relative time
@@ -72,20 +72,20 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
-	this.addHistogram = function (value, unit, percentile) {
+	this.addPercentile = function (value, unit, percent) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
-		var histogram = {};
-		histogram.name = "histogram";
-		histogram.percentile = percentile;
+		var percentile = {};
+		percentile.name = "percentile";
+		percentile.percentile = percent;
 		if (unit) {
-			histogram.sampling = {};
-			histogram.sampling.unit = unit;
-			histogram.sampling.value = value;
+			percentile.sampling = {};
+			percentile.sampling.unit = unit;
+			percentile.sampling.value = value;
 		}
 
-		this.aggregators.push(histogram);
+		this.aggregators.push(percentile);
 		return this;
 	};
 

@@ -78,7 +78,7 @@ function updateChart() {
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				metric.addRate(unit);
 			}
-			else if (name == 'histogram') {
+			else if (name == 'percentile') {
 				value = $(aggregator).find(".aggregatorSamplingValue").val();
 				if (!isValidInteger(value)) {
 					return true;
@@ -88,7 +88,7 @@ function updateChart() {
 				if (!isValidPercentile(percentile)) {
 					return true;
 				}
-				metric.addHistogram(value, unit, percentile);
+				metric.addPercentile(value, unit, percentile);
 			}
 			else if (name == 'div') {
 				var divisor = $(aggregator).find(".divisorValue").val();
@@ -472,7 +472,7 @@ function addAggregator(container) {
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
-		else if (name == "histogram") {
+		else if (name == "percentile") {
 			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
 			$aggregatorContainer.find(".aggregatorSampling").show();

@@ -34,7 +34,7 @@ public class TestAggregatorFactory implements AggregatorFactory
 		addAggregator(new AvgAggregator());
 		addAggregator(new StdAggregator());
 		addAggregator(new DivideAggregator());
-		addAggregator(new HistogramAggregator());
+		addAggregator(new PercentileAggregator());
 	}
 
 	private void addAggregator(Aggregator agg)

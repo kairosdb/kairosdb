@@ -337,25 +337,25 @@ public class GsonParserTest
 	}
 
 	@Test
-	public void test_aggregator_histogram_no_percentile_invalid() throws IOException, QueryException
+	public void test_aggregator_percentile_no_percentile_invalid() throws IOException, QueryException
 	{
-		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-histogram-no-percentile.json"), Charsets.UTF_8);
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-percentile-no-percentile.json"), Charsets.UTF_8);
 
 		assertBeanValidation(json, "query.metric[0].aggregators[0].percentile may not be zero");
 	}
 
 	@Test
-	public void test_aggregator_histogram_percentile_zero_invalid() throws IOException, QueryException
+	public void test_aggregator_percentile_percentile_zero_invalid() throws IOException, QueryException
 	{
-		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-histogram-percentile-zero.json"), Charsets.UTF_8);
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-percentile-percentile-zero.json"), Charsets.UTF_8);
 
 		assertBeanValidation(json, "query.metric[0].aggregators[0].percentile may not be zero");
 	}
 
 	@Test
-	public void test_aggregator_histogram_percentile_numberFormat_invalid() throws IOException, QueryException
+	public void test_aggregator_percentile_percentile_numberFormat_invalid() throws IOException, QueryException
 	{
-		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-histogram-percentile.json"), Charsets.UTF_8);
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-percentile-percentile.json"), Charsets.UTF_8);
 
 		assertBeanValidation(json, "query.metric[0].aggregator[0].percentile multiple points");
 	}

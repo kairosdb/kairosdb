@@ -669,8 +669,8 @@ function showChart(subTitle, queries, metricData) {
 		metricCount++;
 	});
 
-	$("#sampleSize").html(sampleSize);
-	$("#numDataPoints").html(dataPointCount);
+	$("#sampleSize").html(numeral(sampleSize).format('0,0'));
+	$("#numDataPoints").html(numeral(dataPointCount).format('0,0'));
 
 	var $status = $('#status');
 	if (dataPointCount > 20000) {

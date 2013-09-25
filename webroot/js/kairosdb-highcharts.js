@@ -37,7 +37,7 @@ function drawChart(subTitle, yaxis, data) {
 		tooltip: {
 			formatter: function () {
 				return '<b>' + this.series.name + '</b><br/>' +
-					this.x + ': ' + this.y;
+					this.x + ': ' + numeral(this.y).format('0,0');
 			}
 		},
 		legend: {

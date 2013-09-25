@@ -12,6 +12,7 @@ function updateChart() {
 
 	$("#status").html("");
 	$("#queryTime").html("");
+	$("#sampleSize").html("");
 	$("#numDataPoints").html("");
 	$("#flotTitle").html("");
 	$("#graphLegend").html("");
@@ -539,7 +540,6 @@ function addTag(tagContainer) {
 function updateMetricNamesArray(callBack)
 {
 	$.getJSON("api/v1/metricnames", function (json) {
-		debugger;
 		metricNames = json.results;
 		if (callBack) {
 			callBack();
@@ -620,6 +620,7 @@ function showChart(subTitle, queries, metricData) {
 	var data = [];
 	var axisCount = 0;
 	var metricCount = 0;
+	var sampleSize = 0;
 	queries.forEach(function (resultSet) {
 		var axis = {};
 		if (metricCount == 0) {
@@ -633,6 +634,7 @@ function showChart(subTitle, queries, metricData) {
 			axisCount++;
 		}
 
+		sampleSize += resultSet.sample_size;
 		resultSet.results.forEach(function (queryResult) {
 
 			var groupByMessage = "";
@@ -667,6 +669,7 @@ function showChart(subTitle, queries, metricData) {
 		metricCount++;
 	});
 
+	$("#sampleSize").html(sampleSize);
 	$("#numDataPoints").html(dataPointCount);
 
 	var $status = $('#status');

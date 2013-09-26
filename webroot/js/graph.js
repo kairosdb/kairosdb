@@ -94,7 +94,17 @@ function updateChart() {
 				var divisor = $(aggregator).find(".divisorValue").val();
 				metric.addDivideAggregator(divisor);
 			}
-			else {
+			else if (name == 'scale')
+			{
+				var scalingFactor = $(aggregator).find(".scalingFactorValue").val();
+				if(!isValidScalingFactor(scalingFactor))
+				{
+					return true;
+				}
+				metric.addScaleAggregator(scalingFactor);
+			}
+			else
+			{
 				var value = $(aggregator).find(".aggregatorSamplingValue").val();
 				if (!isValidInteger(value)) {
 					return true;
@@ -124,6 +134,19 @@ function updateChart() {
 			else {
 				return true;
 			}
+		}
+
+		function isValidScalingFactor(value)
+		{
+			var intRegex = /^\d*(\.\d+)?$/;
+	        if(!intRegex.test(value)) {
+	           showErrorMessage("scaling factor must be a floating point number >= 0.")
+	           return false;
+	        }
+	        else
+	        {
+	            return true;
+	        }
 		}
 
 		// Add Tags
@@ -464,10 +487,12 @@ function addAggregator(container) {
 		var name = $aggregatorContainer.find(".aggregatorName").val();
 
 		if (name == "rate") {
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();
 			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
+			$aggregatorContainer.find(".scalingFactor").hide();
 
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
@@ -475,20 +500,30 @@ function addAggregator(container) {
 		else if (name == "percentile") {
 			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
+			$aggregatorContainer.find(".scalingFactor").hide();
 		}
 		else if (name == "div") {
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();
 			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
-
+			$aggregatorContainer.find(".scalingFactor").hide();
 			$aggregatorContainer.find(".divisor").show();
 		}
-		else {
-			$aggregatorContainer.find(".aggregatorSampling").show();
-			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
+		else if (name == 'scale') {
+			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
+			$aggregatorContainer.find(".aggregatorSampling").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();
 			$aggregatorContainer.find(".divisor").hide();
+			$aggregatorContainer.find(".scalingFactor").show();
+		}
+		else {
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
+			$aggregatorContainer.find(".aggregatorSampling").show();
+            $aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".divisor").hide();
+			$aggregatorContainer.find(".scalingFactor").hide();
 		}
 	});
 }

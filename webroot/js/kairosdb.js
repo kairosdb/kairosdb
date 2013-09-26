@@ -16,7 +16,8 @@ kairosdb.Aggregators =
 	SORT: "sort",
 	SUM: "sum",
 	LEAST_SQUARES: "least_squares",
-	PERCENTILE: "percentile"
+	PERCENTILE: "percentile",
+	SCALE: "scale"
 };
 
 kairosdb.Unit =  //Values used for Aggregator sampling and Relative time
@@ -119,6 +120,21 @@ kairosdb.Metric = function (name) {
 
 		this.aggregators.push(aggregator);
 		return this;
+	}
+
+	this.addScaleAggregator = function (scalingFactor) {
+		if (!this.aggregators)
+			this.aggregators = [];
+
+		var aggregator = {};
+		aggregator.name = 'scale';
+		if (scalingFactor) {
+            aggregator.factor = scalingFactor;
+		}
+
+        this.aggregators.push(aggregator);
+
+	    return this;
 	}
 };
 

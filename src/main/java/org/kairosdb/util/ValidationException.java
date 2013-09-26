@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package org.kairosdb.core.http.rest.validation;
+package org.kairosdb.util;
 
 public class ValidationException extends Exception
 

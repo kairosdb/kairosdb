@@ -23,7 +23,7 @@ import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.http.rest.validation.ValidationException;
+import org.kairosdb.util.ValidationException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -123,6 +123,27 @@ public class JsonMetricParserTest
 	}
 
 	@Test
+	public void test_metricName_invalidCharacters() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"bad:name\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[1,2]]}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
+		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
+
+		try
+		{
+			parser.parse();
+			fail("Should throw ValidationException");
+		}
+		catch (ValidationException e)
+		{
+			assertThat(e.getMessage(), equalTo("metric[0].name may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+		}
+	}
+
+	@Test
 	public void test_emptyTags_Invalid() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metricName\", \"datapoints\": [[1,2]]}]";
@@ -140,6 +161,90 @@ public class JsonMetricParserTest
 		catch (ValidationException e)
 		{
 			assertThat(e.getMessage(), equalTo("metric[0].tags cannot be null or empty."));
+		}
+	}
+
+	@Test
+	public void test_emptyTagName_Invalid() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metricName\", \"tags\":{\"\":\"bar\"}, \"datapoints\": [[1,2]]}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
+		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
+
+		try
+		{
+			parser.parse();
+			fail("Should throw ValidationException");
+		}
+		catch (ValidationException e)
+		{
+			assertThat(e.getMessage(), equalTo("metric[0].tag[0].name may not be empty."));
+		}
+	}
+
+	@Test
+	public void test_tagName_invalidCharacters() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metricName\", \"tags\":{\"bad:name\":\"bar\"}, \"datapoints\": [[1,2]]}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
+		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
+
+		try
+		{
+			parser.parse();
+			fail("Should throw ValidationException");
+		}
+		catch (ValidationException e)
+		{
+			assertThat(e.getMessage(), equalTo("metric[0].tag[0].name may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+		}
+	}
+
+	@Test
+	public void test_emptyTagValue_Invalid() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metricName\", \"tags\":{\"foo\":\"\"}, \"datapoints\": [[1,2]]}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
+		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
+
+		try
+		{
+			parser.parse();
+			fail("Should throw ValidationException");
+		}
+		catch (ValidationException e)
+		{
+			assertThat(e.getMessage(), equalTo("metric[0].tag[0].value may not be empty."));
+		}
+	}
+
+	@Test
+	public void test_tagValue_invalidCharacters() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metricName\", \"tags\":{\"foo\":\"bad:value\"}, \"datapoints\": [[1,2]]}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
+		JsonMetricParser parser = new JsonMetricParser(datastore, new ByteArrayInputStream(json.getBytes()));
+
+		try
+		{
+			parser.parse();
+			fail("Should throw ValidationException");
+		}
+		catch (ValidationException e)
+		{
+			assertThat(e.getMessage(), equalTo("metric[0].tag[0].value may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
 		}
 	}
 

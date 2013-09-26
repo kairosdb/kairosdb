@@ -13,28 +13,27 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+package org.kairosdb.util;
 
-package org.kairosdb.core.http.rest.validation;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class JsonValidator
+public class CharacterSet
 {
-	private JsonValidator()
+	private static final Pattern regex = Pattern.compile("^[a-zA-Z0-9\\-\\./_]*$");
+
+	private CharacterSet()
 	{
 	}
 
-
-	public static void validateNotNullOrEmpty(String name, String value) throws ValidationException
+	/**
+	 * Returns true if the specified string contains a valid set of characters
+	 * @param s string to test
+	 * @return true if all characters in the string are valid
+	 */
+	public static boolean isValid(String s)
 	{
-		if (value == null)
-			throw new ValidationException(name + " may not be null.");
-		if (value.isEmpty())
-			throw new ValidationException(name + " may not be empty.");
+		Matcher matcher = regex.matcher(s);
+		return matcher.matches();
 	}
-
-	public static void validateMin(String name, long value, long minValue) throws ValidationException
-	{
-		if (value < minValue)
-			throw new ValidationException(name + " must be greater than or equal to " + minValue);
-	}
-
 }

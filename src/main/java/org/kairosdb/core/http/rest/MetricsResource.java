@@ -31,8 +31,8 @@ import org.kairosdb.core.http.rest.json.ErrorResponse;
 import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.core.http.rest.json.JsonMetricParser;
 import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
-import org.kairosdb.core.http.rest.validation.ValidationException;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.util.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

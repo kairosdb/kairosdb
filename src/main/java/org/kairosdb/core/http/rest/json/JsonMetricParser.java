@@ -21,8 +21,8 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.http.rest.validation.JsonValidator;
-import org.kairosdb.core.http.rest.validation.ValidationException;
+import org.kairosdb.util.NameValidator;
+import org.kairosdb.util.ValidationException;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -98,12 +98,12 @@ public class JsonMetricParser
 			else if (token.equals("timestamp"))
 			{
 				timestamp = reader.nextLong();
-				JsonValidator.validateMin("timestamp", timestamp, 1);
+				NameValidator.validateMin("timestamp", timestamp, 1);
 			}
 			else if (token.equals("value"))
 			{
 				value = reader.nextString();
-				JsonValidator.validateNotNullOrEmpty("value", value);
+				NameValidator.validateNotNullOrEmpty("value", value);
 			}
 			else if (token.equals("datapoints"))
 			{
@@ -111,7 +111,7 @@ public class JsonMetricParser
 			}
 			else if (token.equals("tags"))
 			{
-				tags = parseTags(reader);
+				tags = parseTags(reader,count);
 			}
 		}
 		reader.endObject();
@@ -132,19 +132,29 @@ public class JsonMetricParser
 				dataPoints.add(new DataPoint(timestamp, Long.parseLong(value)));
 		}
 
-		JsonValidator.validateNotNullOrEmpty("metric[" + count + "].name", name);
+		NameValidator.validateNotNullOrEmpty("metric[" + count + "].name", name);
+		NameValidator.validateCharacterSet("metric[" + count + "].name", name);
 
 		datastore.putDataPoints(new DataPointSet(name, tags, dataPoints));
 	}
 
-	private Map<String, String> parseTags(JsonReader reader) throws IOException
+	private Map<String, String> parseTags(JsonReader reader, int metricCount) throws IOException, ValidationException
 	{
 		Map<String, String> tags = new HashMap<String, String>();
 		reader.beginObject();
+		int tagCount = 0;
 		while(reader.hasNext())
 		{
 			String tagName = reader.nextName();
-			tags.put(tagName, reader.nextString());
+			NameValidator.validateNotNullOrEmpty(String.format("metric[%d].tag[%d].name", metricCount, tagCount), tagName);
+			NameValidator.validateCharacterSet(String.format("metric[%d].tag[%d].name", metricCount, tagCount), tagName);
+
+			String value = reader.nextString();
+			NameValidator.validateNotNullOrEmpty(String.format("metric[%d].tag[%d].value", metricCount, tagCount), value);
+			NameValidator.validateCharacterSet(String.format("metric[%d].tag[%d].value", metricCount, tagCount), value);
+
+			tags.put(tagName, value);
+			tagCount++;
 		}
 		reader.endObject();
 		return tags;
@@ -158,15 +168,15 @@ public class JsonMetricParser
 		{
 			reader.beginArray();
 			long timestamp = reader.nextLong();
-			JsonValidator.validateMin("datapoints.timestamp", timestamp, 1);
+			NameValidator.validateMin("datapoints.timestamp", timestamp, 1);
 
 			String value = reader.nextString();
-			JsonValidator.validateNotNullOrEmpty("value", value);
+			NameValidator.validateNotNullOrEmpty("value", value);
 
 			if (value.contains("."))
 				dataPoints.add(new DataPoint(timestamp, Double.parseDouble(value)));
 			else
-				dataPoints.add(new DataPoint(timestamp, Long.parseLong(value)));
+					dataPoints.add(new DataPoint(timestamp, Long.parseLong(value)));
 			reader.endArray();
 		}
 		reader.endArray();

@@ -90,6 +90,15 @@ function updateChart() {
                 }
                 metric.addHistogram(value, unit, percentile);
 			}
+            else if (name == 'scale')
+            {
+                var scalingFactor = $(aggregator).find(".scalingFactorValue").val();
+                if(!isValidScalingFactor(scalingFactor))
+                {
+                    return true;
+                }
+                metric.addScaleAggregator(scalingFactor);
+            }
 			else
 			{
 				var value = $(aggregator).find(".aggregatorSamplingValue").val();
@@ -120,6 +129,19 @@ function updateChart() {
 			var intRegex = /^\d+$/;
 	        if(!intRegex.test(value)) {
 	           showErrorMessage("sampling value must be an integer greater than 0.")
+	           return false;
+	        }
+	        else
+	        {
+	            return true;
+	        }
+		}
+
+		function isValidScalingFactor(value)
+		{
+			var intRegex = /^\d*(\.\d+)?$/;
+	        if(!intRegex.test(value)) {
+	           showErrorMessage("scaling factor must be a floating point number >= 0.")
 	           return false;
 	        }
 	        else
@@ -448,19 +470,31 @@ function addAggregator(container) {
 	$aggregatorContainer.find(".aggregatorName").change(function () {
 		var name = $aggregatorContainer.find(".aggregatorName").val();
 		if (name == "rate") {
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".scalingFactor").hide();
 
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
-		else if(name == "histogram"){
+		else if(name == "histogram") {
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
+			$aggregatorContainer.find(".scalingFactor").hide();
 		}
-		else{
+		else if (name == 'scale') {
+			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
+			$aggregatorContainer.find(".aggregatorSampling").hide();
+			$aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".scalingFactor").show();
+		}
+		else {
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
             $aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".scalingFactor").hide();
 		}
 	});
 }

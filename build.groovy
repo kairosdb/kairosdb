@@ -275,12 +275,40 @@ new SimpleRule("run").setDescription("Runs kairosdb")
 		.addDepends(jp.getJarRule())
 		.setMakeAction("doRun")
 		.setProperty("DEBUG", false)
+new SimpleRule("export").setDescription("Exports metrics from KairosDB." +
+		"\n\t-D f <filename> - file to write output to. If not specified, the output goes to stdout." +
+		"\n\t-D n <metricName> - name of metric to export. If not specified, then all metrics are exported.")
+		.addDepends(jp.getJarRule())
+		.setMakeAction("doRun")
+		.setProperty("ACTION", "export")
+new SimpleRule("import").setDescription("Imports metrics." +
+		"\n\t-D f <filename> to specify output file. If not specified the input comes from stdin.")
+		.addDepends(jp.getJarRule())
+		.setMakeAction("doRun")
+		.setProperty("ACTION", "import")
 
 def doRun(Rule rule)
 {
-	//args = "-c import -f export.txt"
-	//args = "-c export -f test_export.txt"
-	args = "-c run"
+	if (rule.getProperty("ACTION") == "export")
+	{
+		args = "-c export "
+		metricName = saw.getProperty("n", "")
+		if (metricName.length() > 0)
+			args += "-n " + metricName
+		filename = saw.getProperty("f", "")
+		if (filename.length() > 0)
+			args += " -f " + filename
+	}
+	else if (rule.getProperty("ACTION") == "import")
+	{
+		args = "-c import "
+		filename = saw.getProperty("f", "")
+		if (filename.length() > 0)
+			args += " -f " + filename
+	}
+	else
+		args = "-c run"
+
 	//Check if you have a custom kairosdb.properties file and load it.
 	customProps = new File("kairosdb.properties")
 	if (customProps.exists())

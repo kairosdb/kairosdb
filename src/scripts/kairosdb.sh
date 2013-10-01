@@ -28,7 +28,7 @@ else
 fi
 
 # Load up the classpath
-CLASSPATH="conf"
+CLASSPATH="conf/logging"
 for jar in $KAIROSDB_LIB_DIR/*.jar; do
 	CLASSPATH="$CLASSPATH:$jar"
 done

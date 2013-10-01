@@ -73,6 +73,9 @@ public class DataCache<T>
 	 */
 	public void clear()
 	{
-		m_cache.clear();
+		synchronized (m_lock)
+		{
+			m_cache.clear();
+		}
 	}
 }

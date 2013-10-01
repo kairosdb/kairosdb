@@ -27,7 +27,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
 version = "0.9.2"
-release = "1" //package release number
+release = "2" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -142,13 +142,14 @@ webrootFileSet = new RegExFileSet("webroot", ".*").recurse()
 zipLibDir = "$programName/lib"
 zipBinDir = "$programName/bin"
 zipConfDir = "$programName/conf"
+zipConfLoggingDir = "$zipConfDir/logging"
 zipWebRootDir = "$programName/webroot"
 tarRule = new TarRule("build/${programName}-${version}.tar")
 		.addDepend(jp.getJarRule())
 		.addFileSetTo(zipBinDir, scriptsFileSet)
 		.addFileSetTo(zipWebRootDir, webrootFileSet)
 		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.properties")
-		.addFileTo(zipConfDir, "src/main/resources", "logback.xml")
+		.addFileTo(zipConfLoggingDir, "src/main/resources", "logback.xml")
 		.setFilePermission(".*\\.sh", 0755)
 
 for (AbstractFileSet fs in libFileSets)
@@ -212,7 +213,7 @@ def doRPM(Rule rule)
 	rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.properties",
 			new File("src/main/resources/kairosdb.properties"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
-	rpmBuilder.addFile("$rpmBaseInstallDir/conf/logback.xml",
+	rpmBuilder.addFile("$rpmBaseInstallDir/conf/logging/logback.xml",
 			new File("src/main/resources/logback.xml"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/bin/kairosdb-env.sh",
 			new File("src/scripts/kairosdb-env.sh"), 0755, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))

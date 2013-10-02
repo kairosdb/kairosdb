@@ -10,6 +10,10 @@
 	<link href="css/cupertino/jquery-ui-1.10.0.custom.css" rel="stylesheet">
 	<link href="css/style.css" rel="stylesheet">
 	<link href="css/combobox.css" rel="stylesheet">
+<<<<<<< HEAD
+
+=======
+>>>>>>> export_from_web_ui
 	<script src="js/jquery.1.9.0.min.js"></script>
 	<script src="js/kairosdb.js"></script>
 	<script src="js/kairosdb-query.js"></script>
@@ -27,6 +31,11 @@
 	<!--<script src="js/highcharts.js"></script>-->
 	<script src="js/combobox.js"></script>
 	<script src="js/numeral.min.js"></script>
+<<<<<<< HEAD
+=======
+
+	<link rel="icon" type="image/png" href="favicon.png" />
+>>>>>>> export_from_web_ui
 
 	<script>
 		var metricNames = [];
@@ -393,16 +402,24 @@
 		<div style="display: table-cell">
 			<select class="ui-widget aggregatorName">
 				<option value="avg">AVG</option>
+				<option value="count">COUNT</option>
 				<option value="dev">DEV</option>
 				<option value="div">DIV</option>
+				<option value="least_squares">LEAST SQUARES</option>
 				<option value="max">MAX</option>
 				<option value="min">MIN</option>
+				<option value="percentile">PERCENTILE</option>
 				<option value="rate">RATE</option>
+<<<<<<< HEAD
                 <option value="sum" selected="selected">SUM</option>
                 <option value="scale">SCALE</option>
                 <option value="count">COUNT</option>
                 <option value="least_squares">LEAST SQUARES</option>
                 <option value="percentile">PERCENTILE</option>
+=======
+				<option value="scale">SCALE</option>
+				<option value="sum" selected="selected">SUM</option>
+>>>>>>> export_from_web_ui
 			</select>
 		</div>
 		<div style="display: table-cell">

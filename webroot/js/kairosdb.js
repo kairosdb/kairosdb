@@ -9,6 +9,7 @@ kairosdb.MetricException = function (message) {
 kairosdb.Aggregators =
 {
 	AVG: "avg",
+	COUNT: "count",
 	DEV: "dev",
 	MAX: "max",
 	MIN: "min",

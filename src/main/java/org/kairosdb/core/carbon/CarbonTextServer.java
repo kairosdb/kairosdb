@@ -37,12 +37,15 @@ public class CarbonTextServer extends SimpleChannelUpstreamHandler implements Ch
 
 	private final int m_port;
 	private final KairosDatastore m_datastore;
+	private final TagParser m_tagParser;
 
 	@Inject
-	public CarbonTextServer(KairosDatastore datastore, @Named("kairosdb.carbon.text.port") int port)
+	public CarbonTextServer(KairosDatastore datastore,
+			TagParser tagParser, @Named("kairosdb.carbon.text.port") int port)
 	{
 		m_port = port;
 		m_datastore = datastore;
+		m_tagParser = tagParser;
 	}
 
 	@Override
@@ -75,7 +78,13 @@ public class CarbonTextServer extends SimpleChannelUpstreamHandler implements Ch
 				String[] msgArr = (String[])message;
 
 				//TODO: Validate data
-				DataPointSet dps = new DataPointSet(msgArr[0]);
+				DataPointSet dps = m_tagParser.parseMetricName(msgArr[0]);
+
+				//Bail out if no data point set is returned
+				if (dps == null)
+					return;
+
+				//TODO: validate dps has name and at least one tag
 
 				long timestamp = Long.parseLong(msgArr[2]) * 1000; //Converting to milliseconds
 
@@ -86,7 +95,6 @@ public class CarbonTextServer extends SimpleChannelUpstreamHandler implements Ch
 					dp = new DataPoint(timestamp, Long.parseLong(msgArr[1]));
 
 				dps.addDataPoint(dp);
-				dps.addTag("host", "local");
 				m_datastore.putDataPoints(dps);
 			}
 			catch (Exception e)

@@ -16,6 +16,8 @@
 
 package org.kairosdb.core.carbon;
 
+import org.kairosdb.core.DataPointSet;
+
 import java.util.Map;
 
 /**
@@ -27,5 +29,12 @@ import java.util.Map;
  */
 public interface TagParser
 {
-	public Map<String, String> parseTags(String metricName);
+	/**
+	 Parse the incomming metric name and return a DataPointSet to represent the
+	 data.  The DataPointSet needs to contain the metric name and at least
+	 one tag.  If a null is returned the metric is not submitted to the datastore
+	 @param metricName
+	 @return DataPointSet containing metric name and at least one tag or null.
+	 */
+	public DataPointSet parseMetricName(String metricName);
 }

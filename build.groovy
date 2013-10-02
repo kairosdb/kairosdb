@@ -317,7 +317,7 @@ def doRun(Rule rule)
 
 	debug = ""
 	if (rule.getProperty("DEBUG"))
-		debug = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+		debug = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 
 	//this is to load logback into classpath
 	testClasspath.addPath("src/main/resources");

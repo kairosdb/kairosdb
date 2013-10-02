@@ -9,7 +9,7 @@
 <head>
 	<link href="css/cupertino/jquery-ui-1.10.0.custom.css" rel="stylesheet">
 	<link href="css/style.css" rel="stylesheet">
-
+	<link href="css/combobox.css" rel="stylesheet">
 	<script src="js/jquery.1.9.0.min.js"></script>
 	<script src="js/kairosdb.js"></script>
 	<script src="js/kairosdb-query.js"></script>
@@ -21,18 +21,27 @@
 	<script src="js/jquery.flot.time.js"></script>
 	<script src="js/jquery.flot.selection.js"></script>
 	<script src="js/jquery.flot.resize.js"></script>
+    <script src="js/Blob.js"></script>
+    <script src="js/FileSaver.js"></script>
+    <script src="js/dataExporter.js"></script>
 	<!--<script src="js/highcharts.js"></script>-->
+	<script src="js/combobox.js"></script>
+	<script src="js/numeral.min.js"></script>
+
+	<link rel="icon" type="image/png" href="favicon.png" />
 
 	<script>
 		var metricNames = [];
-		var tagNames = [];
-		var tagValues = [];
 
 		$(function () {
+			if(!window.console){ window.console = {log: function(){} }; } // If not console, don't log
+
 			var $startTime = $("#startTime");
 			var $endTime = $("#endTime");
 
 			$("#submitButton").button().click(updateChart);
+            $("#submitButtonJSON").button().click(exportJsonQueryData);
+            $("#submitButtonCSV").button().click(exportCsvQueryData);
 			$("#deleteButton").button().click(deleteDataPoints).button("disable");
 			$startTime.datepicker();
 			$endTime.datepicker();
@@ -47,6 +56,7 @@
 			$("#groupByValueTemplate").hide();
             $(".aggregatorPercentile").hide();
             $(".divisor").hide();
+            $(".scalingFactor").hide();
 			$("#tabs").tabs({'active': 0});
 
 			$startTime.bind("change paste keyup", function(){
@@ -100,34 +110,29 @@
 				}
 			}).click(addMetric);
 
-			// todo Timing issue for the first tab (metric). Can't add autocomplete until we have retrieved the
-			// todo metric names, tag names and tag values. Find a more elegant solution than to add to the first metric here.
-			$.getJSON("api/v1/metricnames", function (json) {
-				metricNames = json.results;
-				$(".metricName")
-						.autocomplete({
-							source: metricNames
-						});
+			updateMetricNamesArray();
+
+			// Autocomplete for GroupBy dialog
+			$("#autocompleteTagName").combobox().combobox({source: function (request, response) {
+					var selectedTabIndex = $("#tabs").tabs("option", "active");
+					var metricName = $('#metricContainer' + selectedTabIndex).find(".metricName").combobox("value");
+					if (metricName)
+						getTagsForMetric(metricName, request, response);
+				}
 			});
 
-			$.getJSON("api/v1/tagnames", function (json) {
-				tagNames = json.results;
-				$("[name='tagName']")
-						.autocomplete({
-							source: tagNames
-						});
-				$("#autocompleteTagName")
-						.autocomplete({
-							source: tagNames
-						});
-			});
+			$(document).on("click", function(e) {
+				// Close the groupBy dialog if it loses focus
+				var clickedOnDialog = $(e.target)
+						.closest(".ui-widget.ui-dialog")
+						.children(".ui-dialog-content")
+						.is(".tagDialog");
 
-			$.getJSON("api/v1/tagvalues", function (json) {
-				tagValues = json.results;
-				$("[name='tagValue']")
-						.autocomplete({
-							source: tagValues
-						});
+				var searchButton = $(e.target).is(".ui-icon-search") || $(e.target).is(".tagSearch");
+
+				if (!clickedOnDialog && !searchButton) {
+					$('.tagDialog').dialog('close');
+				}
 			});
 		});
 	</script>
@@ -137,6 +142,7 @@
 <body>
 
 <H2 class="header">KairosDB</H2>
+
 
 <span class="header ui-widget">Time Range</span>
 
@@ -198,6 +204,8 @@
 
 <p>
 	<button id="submitButton" style="margin-top: 10px;">Load Graph</button>
+    <button id="submitButtonJSON" style="margin-top: 10px;">Load JSON</button>
+    <button id="submitButtonCSV" style="margin-top: 10px;">Load CSV</button>
 	<button id="deleteButton" style="margin-top: 10px;">Delete Data</button>
 
 <div class="ui-widget">
@@ -217,6 +225,7 @@
 	<a id="graph_link" href="" target="_blank" style="display: none">Link to Graph</a>
 </p>
 <span class="header ui-widget">Query Time: </span><span id="queryTime" class="ui-widget"></span><br>
+<span class="header ui-widget">Sample Size: </span><span id="sampleSize" class="ui-widget"></span><br>
 <span class="header ui-widget">Data Points: </span><span id="numDataPoints" class="ui-widget"></span><br>
 <span id="status" class="ui-widget"></span>
 
@@ -245,10 +254,11 @@
 
 <!-- Hidden Metric div used for cloning -->
 <div id="metricTemplate">
-	<table class="ui-widget">
+	<table class="ui-widget metricNameTable">
 		<tr>
 			<td class="ui-widget">Name*</td>
-			<td><input class="ui-widget metricName" type="#groupBytext"></td>
+			<td><input class="ui-widget metricName" style="width: 300px"></td>
+			<td><button class="ui-widget refresh-metric-names" title="Update metric names" style="height: 20px;"></button></td>
 		</tr>
 	</table>
 
@@ -365,7 +375,7 @@
 </div>
 
 <!-- Hidden GroupBy Dialog. Used for auto-completion of tag name -->
-<div id="groupByTagDialog" class="tagDialog">
+<div id="groupByTagDialog" class="tagDialog" style="overflow:visible">
 	<button id="cancelTagNameButton" class="ui-widget"
 	        style="background:none; border: none; width:1px; float:right; margin-right: 5px; margin-top: 0;"></button>
 	<span class="ui-widget header">Search for tag name.</span>
@@ -385,18 +395,20 @@
 		<div style="display: table-cell">
 			<select class="ui-widget aggregatorName">
 				<option value="avg">AVG</option>
+				<option value="count">COUNT</option>
 				<option value="dev">DEV</option>
 				<option value="div">DIV</option>
-				<option value="min">MIN</option>
+				<option value="least_squares">LEAST SQUARES</option>
 				<option value="max">MAX</option>
+				<option value="min">MIN</option>
+				<option value="percentile">PERCENTILE</option>
 				<option value="rate">RATE</option>
+				<option value="scale">SCALE</option>
 				<option value="sum" selected="selected">SUM</option>
-                <option value="least_squares">LEAST SQUARES</option>
-                <option value="histogram">HISTOGRAM</option>
 			</select>
 		</div>
-		<div>
-			<div style="display: table-cell" class="aggregatorSampling"> 
+		<div style="display: table-cell">
+			<div style="display: table-cell" class="aggregatorSampling">
 				<span class="header" style="margin-left: 10px; vertical-align: top;">Sampling</span>
 			</div>
 			<div style="display: table-cell" class="aggregatorSampling">
@@ -422,10 +434,14 @@
                 <input class="ui-widget aggregatorPercentileValue" style="width: 40px; margin-left: 10px;" type="text"
                        value="0.75">
             </div>
-			<div class="divisor">
+			<div style="display: table-cell" class="divisor">
 				<span class="header" style="margin-left: 10px; vertical-align: top;">Divisor</span>
 				<input class="ui-widget divisorValue" style="width: 60px; margin-left: 10px;" type="text">
 			</div>
+            <div style="display: table-cell" class="scalingFactor">
+                <span class="header" style="margin-left: 10px; vertical-align: top;">Factor</span>
+                <input class="ui-widget scalingFactorValue" style="width: 60px; margin-left: 10px;" type="text" value="1.0">
+            </div>
 		</div>
 	</div>
 </div>

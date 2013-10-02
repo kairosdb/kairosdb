@@ -51,5 +51,6 @@ public class CarbonServerModule extends AbstractModule
 		}
 
 		bind(CarbonTextServer.class).in(Singleton.class);
+		bind(CarbonPickleServer.class).in(Singleton.class);
 	}
 }

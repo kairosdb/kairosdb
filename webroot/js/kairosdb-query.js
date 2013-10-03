@@ -18,7 +18,7 @@ kairosdb.dataPointsQuery = function (metricQuery, callback) {
 		data: JSON.stringify(metricQuery),
 		dataType: 'json',
 		success: function (data, textStatus, jqXHR) {
-			
+			$status.html("<i>Plotting in progress...</i>");
 			$queryTime.html(numeral(new Date().getTime() - startTime.getTime()).format('0,0') + " ms");
 			setTimeout(function(){
 				callback(data.queries);

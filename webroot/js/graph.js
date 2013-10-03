@@ -6,10 +6,19 @@ function displayQuery() {
 		$("#query-text").val('var query = ' + queryString.replace(/\"(\w*)\":/g, "$1:") + ';');
 }
 
+function updateChart() {
+	$("#resetZoom").hide();
+	$("#errorContainer").hide();
 
+	$("#status").html("");
+	$("#queryTime").html("");
+	$("#sampleSize").html("");
+	$("#numDataPoints").html("");
+	$("#flotTitle").html("");
+	$("#graphLegend").html("");
+	$("#chartContainer").html("");
 
-function buildKairosDBQuery() {
-    var query = new kairosdb.MetricQuery();
+	var query = new kairosdb.MetricQuery();
 
 	// todo cachetime
 
@@ -176,14 +185,6 @@ function buildKairosDBQuery() {
 			query.setEndRelative(endRelativeValue, $("#endRelativeUnit").val())
 		}
 	}
-    return query;
-}
-
-function updateChart() {
-	
-	resetQueryStatus();
-	
-	var query=buildKairosDBQuery();
 
 	var metricData = getAdditionalChartData();
 	$('#query-hidden-text').val(JSON.stringify(query, null, 2));
@@ -193,19 +194,6 @@ function updateChart() {
 	$graphLink.attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
 	$graphLink.show();
 	showChartForQuery("(Click and drag to zoom)", query, metricData);
-}
-
-function resetQueryStatus() {
-	$("#resetZoom").hide();
-	$("#errorContainer").hide();
-
-	$("#status").html("");
-	$("#queryTime").html("");
-	$("#sampleSize").html("");
-	$("#numDataPoints").html("");
-	$("#flotTitle").html("");
-	$("#graphLegend").html("");
-	$("#chartContainer").html("");
 }
 
 /**
@@ -652,8 +640,6 @@ function getValuesForTag(metricName, tagName, request, response) {
 
 function showChartForQuery(subTitle, query, metricData) {
 	kairosdb.dataPointsQuery(query, function (queries) {
-        var $status = $('#status');
-        $status.html("<i>Plotting in progress...</i>");
 		showChart(subTitle, queries, metricData);
 		$("#deleteButton").button("enable");
 	});

@@ -40,7 +40,8 @@
 	$.widget( "ui.combobox", {
 
 		options: {
-			source: null
+			source: null,
+			MAX_DROP_DOWN_LENGTH: 200
 		},
 
 		version: "@VERSION",
@@ -109,12 +110,19 @@
 
 		_linkSelectList: function (request, response) {
 			var optionElement = this.element;
+			var maxDropDown = this.options.MAX_DROP_DOWN_LENGTH;
 
 			this.options.source(request, function (items) {
 
 				optionElement.empty();
+				var itemCount = 0;
 				$.each(items, function (index, item) {
-					optionElement.append($("<option />").val(item).text(item));
+					itemCount++;
+					optionElement.append($('<option class="myOption"/>').val(item).text(item));
+					if (itemCount == maxDropDown) {
+						optionElement.append($("<option />").val("[maxItems]").text("<strong>[showing " + maxDropDown + " of " + + items.length + "]</strong>"));
+						return false;
+					}
 				});
 
 				var matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), 'i');
@@ -137,6 +145,7 @@
 				}));
 			});
 		},
+
 
 		_events: {
 
@@ -172,12 +181,19 @@
 
 			},
 
-			"autocompleteselect input": function( event, ui ) {
+			"autocompleteselect input": function (event, ui) {
 
-				ui.item.option.selected = true;
-				this._trigger( "select", event, {
-					item: ui.item.option
-				});
+				if (ui.item.option.value == "[maxItems]") {
+					// do not select item
+					ui.item.option.selected = false;
+					return false;
+				}
+				else {
+					ui.item.option.selected = true;
+					this._trigger("select", event, {
+						item: ui.item.option
+					});
+				}
 
 			},
 
@@ -207,7 +223,6 @@
 				this.uiInput.autocomplete("search", "");
 
 			}
-
 		},
 
 		value: function ( newVal ) {

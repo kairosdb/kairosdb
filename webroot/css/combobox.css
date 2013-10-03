@@ -33,4 +33,4 @@
 .ui-combobox-input { padding: 0.2em; margin: 0; }
 .ui-combobox-button { position: absolute; width: 1.8em !important; margin: 0; margin-left: -1px; top: 0; bottom: 0; }
 .ui-combobox-button .ui-button-text { padding: 0em; }
-.ui-combobox .ui-autocomplete { max-height: 10em; overflow-y: auto; overflow-x: hidden; }
+.ui-combobox .ui-autocomplete { max-height: 20em; overflow-y: auto; overflow-x: hidden; }

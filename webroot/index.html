@@ -10,7 +10,6 @@
 	<link href="css/cupertino/jquery-ui-1.10.0.custom.css" rel="stylesheet">
 	<link href="css/style.css" rel="stylesheet">
 	<link href="css/combobox.css" rel="stylesheet">
-
 	<script src="js/jquery.1.9.0.min.js"></script>
 	<script src="js/kairosdb.js"></script>
 	<script src="js/kairosdb-query.js"></script>
@@ -22,6 +21,9 @@
 	<script src="js/jquery.flot.time.js"></script>
 	<script src="js/jquery.flot.selection.js"></script>
 	<script src="js/jquery.flot.resize.js"></script>
+    <script src="js/Blob.js"></script>
+    <script src="js/FileSaver.js"></script>
+    <script src="js/dataExporter.js"></script>
 	<!--<script src="js/highcharts.js"></script>-->
 	<script src="js/combobox.js"></script>
 	<script src="js/numeral.min.js"></script>
@@ -36,6 +38,8 @@
 			var $endTime = $("#endTime");
 
 			$("#submitButton").button().click(updateChart);
+            $("#submitButtonJSON").button().click(exportJsonQueryData);
+            $("#submitButtonCSV").button().click(exportCsvQueryData);
 			$("#deleteButton").button().click(deleteDataPoints).button("disable");
 			$startTime.datepicker();
 			$endTime.datepicker();
@@ -137,6 +141,7 @@
 
 <H2 class="header">KairosDB</H2>
 
+
 <span class="header ui-widget">Time Range</span>
 
 <div class="wire-frame" style="margin-top: 5px;">
@@ -197,6 +202,8 @@
 
 <p>
 	<button id="submitButton" style="margin-top: 10px;">Load Graph</button>
+    <button id="submitButtonJSON" style="margin-top: 10px;">Load JSON</button>
+    <button id="submitButtonCSV" style="margin-top: 10px;">Load CSV</button>
 	<button id="deleteButton" style="margin-top: 10px;">Delete Data</button>
 
 <div class="ui-widget">
@@ -388,8 +395,8 @@
 				<option value="avg">AVG</option>
 				<option value="dev">DEV</option>
 				<option value="div">DIV</option>
-				<option value="min">MIN</option>
 				<option value="max">MAX</option>
+				<option value="min">MIN</option>
 				<option value="rate">RATE</option>
                 <option value="sum" selected="selected">SUM</option>
                 <option value="scale">SCALE</option>

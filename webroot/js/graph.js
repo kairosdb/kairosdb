@@ -18,7 +18,8 @@ function updateChart() {
 	$("#graphLegend").html("");
 	$("#chartContainer").html("");
 
-	var query = new kairosdb.MetricQuery();
+function buildKairosDBQuery(){
+    var query = new kairosdb.MetricQuery();
 
 	// todo cachetime
 
@@ -185,6 +186,18 @@ function updateChart() {
 			query.setEndRelative(endRelativeValue, $("#endRelativeUnit").val())
 		}
 	}
+    return query;
+}
+
+function updateChart() {
+	$("#resetZoom").hide();
+	$("#errorContainer").hide();
+
+	$("#status").html("");
+	$("#queryTime").html("");
+	$("#numDataPoints").html("");
+
+	var query=buildKairosDBQuery();
 
 	var metricData = getAdditionalChartData();
 	$('#query-hidden-text').val(JSON.stringify(query, null, 2));
@@ -640,6 +653,8 @@ function getValuesForTag(metricName, tagName, request, response) {
 
 function showChartForQuery(subTitle, query, metricData) {
 	kairosdb.dataPointsQuery(query, function (queries) {
+        var $status = $('#status');
+        $status.html("<i>Plotting in progress...</i>");
 		showChart(subTitle, queries, metricData);
 		$("#deleteButton").button("enable");
 	});

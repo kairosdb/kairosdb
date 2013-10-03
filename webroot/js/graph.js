@@ -6,18 +6,6 @@ function displayQuery() {
 		$("#query-text").val('var query = ' + queryString.replace(/\"(\w*)\":/g, "$1:") + ';');
 }
 
-function updateChart() {
-	$("#resetZoom").hide();
-	$("#errorContainer").hide();
-
-	$("#status").html("");
-	$("#queryTime").html("");
-	$("#sampleSize").html("");
-	$("#numDataPoints").html("");
-	$("#flotTitle").html("");
-	$("#graphLegend").html("");
-	$("#chartContainer").html("");
-
 function buildKairosDBQuery(){
     var query = new kairosdb.MetricQuery();
 
@@ -195,7 +183,11 @@ function updateChart() {
 
 	$("#status").html("");
 	$("#queryTime").html("");
+	$("#sampleSize").html("");
 	$("#numDataPoints").html("");
+	$("#flotTitle").html("");
+	$("#graphLegend").html("");
+	$("#chartContainer").html("");
 
 	var query=buildKairosDBQuery();
 

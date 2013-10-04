@@ -10,6 +10,7 @@
 	<link href="css/cupertino/jquery-ui-1.10.0.custom.css" rel="stylesheet">
 	<link href="css/style.css" rel="stylesheet">
 	<link href="css/combobox.css" rel="stylesheet">
+	<link type="text/css" rel="stylesheet" href="jquery.dropdown.css" />
 	<script src="js/jquery.1.9.0.min.js"></script>
 	<script src="js/kairosdb.js"></script>
 	<script src="js/kairosdb-query.js"></script>
@@ -21,6 +22,7 @@
 	<script src="js/jquery.flot.time.js"></script>
 	<script src="js/jquery.flot.selection.js"></script>
 	<script src="js/jquery.flot.resize.js"></script>
+	<script src="js/jquery.dropdown.min.js"></script>
     <script src="js/Blob.js"></script>
     <script src="js/FileSaver.js"></script>
     <script src="js/dataExporter.js"></script>
@@ -37,6 +39,7 @@
 			var $startTime = $("#startTime");
 			var $endTime = $("#endTime");
 
+			$("#saveButton").button();
 			$("#submitButton").button().click(updateChart);
             $("#submitButtonJSON").button().click(exportJsonQueryData);
             $("#submitButtonCSV").button().click(exportCsvQueryData);
@@ -201,11 +204,9 @@
 <div class="ui-widget footnote">* Required Fields</div>
 
 <p>
-	<button id="submitButton" style="margin-top: 10px;">Load Graph</button>
-    <button id="submitButtonJSON" style="margin-top: 10px;">Load JSON</button>
-    <button id="submitButtonCSV" style="margin-top: 10px;">Load CSV</button>
+	<button id="submitButton" style="margin-top: 10px;">Graph</button>
+	<button id="saveButton" style="margin-top: 10px;" value="Dropdown" data-dropdown="#saveDropdown">Save</button>
 	<button id="deleteButton" style="margin-top: 10px;">Delete Data</button>
-
 <div class="ui-widget">
 	<div id="errorContainer" class="ui-state-error ui-corner-all" style="padding:5px; width: 500px;"></div>
 	<p>
@@ -444,6 +445,12 @@
 	</div>
 </div>
 
+<div id="saveDropdown" class="dropdown dropdown-tip">
+	<div  class="dropdown-panel">
+		<button id="submitButtonCSV" style="margin-top: 10px;">CSV</button>
+		<button id="submitButtonJSON" style="margin-top: 10px;">JSON</button>
+	</div>
+</div>
 
 </body>
 </html>

@@ -216,8 +216,10 @@
 				this.uiInput.focus();
 
 				// close if already visible
-				if (this._wasOpen)
+				if (this._wasOpen) {
+					this._trigger("change");
 					return;
+				}
 
 				// pass empty string as value to search for, displaying all results
 				this.uiInput.autocomplete("search", "");

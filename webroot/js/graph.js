@@ -264,7 +264,7 @@ function addMetric() {
 
 	// Add text listener to name
 	var $tab = $newMetric.find('.metricTab');
-	$metricContainer.find(".metricName").bind("comboboxselect comboboxchange", function (event) {
+	$metricContainer.find(".metricName").bind("comboboxselect comboboxchange comboboxfocus", function (event) {
 		var metricName = $(this).combobox("value");
 		if (metricName && metricName.length > 0) {
 			$tab.text(metricName);

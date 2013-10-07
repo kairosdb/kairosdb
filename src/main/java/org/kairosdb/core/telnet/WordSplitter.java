@@ -36,22 +36,28 @@ public class WordSplitter extends OneToOneDecoder
 
 	@Override
 	protected Object decode(final ChannelHandlerContext ctx,
-			final Channel channel,
-			final Object msg) throws Exception
+	                        final Channel channel,
+	                        final Object msg) throws Exception
 	{
-		return splitString(((ChannelBuffer) msg).toString(CHARSET), ' ');
+		return splitString(((ChannelBuffer) msg).toString(CHARSET));
 	}
 
-	private String[] splitString(final String s, final char c)
+	private String[] splitString(final String s)
 	{
-		final char[] chars = s.toCharArray();
+		final char c = ' ';
+
+		final char[] chars = s.trim().toCharArray();
 		int num_substrings = 1;
+		char last = 'A';
 		for (final char x : chars)
 		{
 			if (x == c)
 			{
-				num_substrings++;
+				if (x != last) //skip double whitespace
+					num_substrings++;
 			}
+
+			last = x;
 		}
 
 		final String[] result = new String[num_substrings];
@@ -59,13 +65,18 @@ public class WordSplitter extends OneToOneDecoder
 		int start = 0;  // starting index in chars of the current substring.
 		int pos = 0;    // current index in chars.
 		int i = 0;      // number of the current substring.
+		last = 'A';
 		for (; pos < len; pos++)
 		{
 			if (chars[pos] == c)
 			{
-				result[i++] = new String(chars, start, pos - start);
+				if (chars[pos] != last)
+					result[i++] = new String(chars, start, pos - start);
+
 				start = pos + 1;
 			}
+
+			last = chars[pos];
 		}
 		result[i] = new String(chars, start, pos - start);
 		return result;

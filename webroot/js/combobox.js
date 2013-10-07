@@ -32,7 +32,10 @@
  */
 
 /**
- * Modified by Jeff Sabin to allow the source to specified so an AJAX call can be made.
+ * Modified by Jeff Sabin:
+ *  <li>to allow the source to specified so an AJAX call can be made.
+ *  <li>invalid text is not removed
+ *  <li>value() return the text in the input field if it is not valid
  */
 
 (function( $, undefined ) {
@@ -164,15 +167,6 @@
 							return false;
 						}
 					});
-
-					if ( !valid ) {
-
-						// remove invalid value, as it didn't match anything
-						$el.val( "" );
-						this.element.prop('selectedIndex', -1);
-						//return false;
-
-					}
 				}
 
 				this._trigger( "change", event, {
@@ -216,8 +210,10 @@
 				this.uiInput.focus();
 
 				// close if already visible
-				if (this._wasOpen)
+				if (this._wasOpen) {
+					this._trigger("change");
 					return;
+				}
 
 				// pass empty string as value to search for, displaying all results
 				this.uiInput.autocomplete("search", "");
@@ -232,7 +228,8 @@
 
 			if ( !arguments.length ) {
 				selected = select.children( ":selected" );
-				return selected.length > 0 ? selected.val() : null;
+
+				return selected.length > 0 ? selected.val() : this.uiInput.val().length < 0 ? null : this.uiInput.val();
 			}
 
 			select.prop('selectedIndex', -1);
@@ -245,11 +242,7 @@
 
 			if ( valid ) {
 				this.uiInput.val(select.children(':selected').text());
-			} else {
-				this.uiInput.val( "" );
-				this.element.prop('selectedIndex', -1);
 			}
-
 		},
 
 		_destroy: function () {

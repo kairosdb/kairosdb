@@ -116,23 +116,29 @@
 			var maxDropDown = this.options.MAX_DROP_DOWN_LENGTH;
 
 			this.options.source(request, function (items) {
+				var matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), 'i');
 
 				optionElement.empty();
-				var itemCount = 0;
+				var itemsThatMatch = 0;
+				var listLimited = false;
 				$.each(items, function (index, item) {
-					itemCount++;
-					optionElement.append($('<option class="myOption"/>').val(item).text(item));
-					if (itemCount == maxDropDown) {
-						optionElement.append($("<option />").val("[maxItems]").text("<strong>[showing " + maxDropDown + " of " + + items.length + "]</strong>"));
-						return false;
+					if (matcher.test(item)) {
+						itemsThatMatch++;
+						if (itemsThatMatch <= maxDropDown) {
+							optionElement.append($('<option class="myOption"/>').val(item).text(item));
+						}
+						else
+							listLimited = true;
 					}
 				});
 
-				var matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), 'i');
+				if (listLimited) {
+					optionElement.append($("<option />").val("[maxItems]").text("<strong>[showing " + maxDropDown + " of " + itemsThatMatch + "]</strong>"));
+				}
+
+
 				response(optionElement.children('option').map(function () {
 					var text = $(this).text();
-
-					if (this.value && ( !request.term || matcher.test(text) )) {
 
 						return {
 							label: text.replace(
@@ -144,7 +150,6 @@
 							value: text,
 							option: this
 						};
-					}
 				}));
 			});
 		},

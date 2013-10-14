@@ -74,4 +74,23 @@ public class DataPointSet
 	{
 		return (Collections.unmodifiableList(m_dataPoints));
 	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o) return true;
+		if (!(o instanceof DataPointSet)) return false;
+
+		DataPointSet that = (DataPointSet) o;
+
+		if (m_dataPoints != null ? !m_dataPoints.equals(that.m_dataPoints) : that.m_dataPoints != null)
+			return false;
+		if (m_name != null ? !m_name.equals(that.m_name) : that.m_name != null)
+			return false;
+		if (m_tags != null ? !m_tags.equals(that.m_tags) : that.m_tags != null)
+			return false;
+
+		return true;
+	}
+
 }

@@ -16,7 +16,6 @@
 
 package org.kairosdb.core.carbon;
 
-import com.mchange.v1.util.ClosableResource;
 import org.kairosdb.core.carbon.pickle.PickleMetric;
 import org.kairosdb.core.carbon.pickle.Pickler;
 

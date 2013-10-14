@@ -16,12 +16,12 @@
 
 package org.kairosdb.core.carbon;
 
-import net.razorvine.pickle.Unpickler;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
+import org.kairosdb.core.carbon.pickle.Unpickler;
 
 /**
  Created with IntelliJ IDEA.

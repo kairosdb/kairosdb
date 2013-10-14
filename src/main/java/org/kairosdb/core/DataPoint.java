@@ -95,4 +95,22 @@ public class DataPoint implements Comparable<DataPoint>
 		else
 			return (ret < 0L ? -1 : 1);
 	}
+
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o) return true;
+		if (!(o instanceof DataPoint)) return false;
+
+		DataPoint dataPoint = (DataPoint) o;
+
+		if (Double.compare(dataPoint.m_doubleValue, m_doubleValue) != 0)
+			return false;
+		if (m_isInteger != dataPoint.m_isInteger) return false;
+		if (m_longValue != dataPoint.m_longValue) return false;
+		if (m_timestamp != dataPoint.m_timestamp) return false;
+
+		return true;
+	}
 }

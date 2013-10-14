@@ -38,6 +38,7 @@ public class CarbonTextServer extends SimpleChannelUpstreamHandler implements Ch
 	private final int m_port;
 	private final KairosDatastore m_datastore;
 	private final TagParser m_tagParser;
+	private ServerBootstrap m_serverBootstrap;
 
 	@Inject
 	public CarbonTextServer(KairosDatastore datastore,
@@ -84,7 +85,12 @@ public class CarbonTextServer extends SimpleChannelUpstreamHandler implements Ch
 				if (dps == null)
 					return;
 
-				//TODO: validate dps has name and at least one tag
+				//validate dps has at least one tag
+				if (dps.getTags().size() == 0)
+				{
+					logger.warn("Metric "+msgArr[0]+" is missing a tag");
+					return;
+				}
 
 				long timestamp = Long.parseLong(msgArr[2]) * 1000; //Converting to milliseconds
 
@@ -132,24 +138,26 @@ public class CarbonTextServer extends SimpleChannelUpstreamHandler implements Ch
 	public void start() throws KairosDBException
 	{
 		// Configure the server.
-		ServerBootstrap bootstrap = new ServerBootstrap(
+		m_serverBootstrap = new ServerBootstrap(
 				new NioServerSocketChannelFactory(
 						Executors.newCachedThreadPool(),
 						Executors.newCachedThreadPool()));
 
 		// Configure the pipeline factory.
-		bootstrap.setPipelineFactory(this);
-		bootstrap.setOption("child.tcpNoDelay", true);
-		bootstrap.setOption("child.keepAlive", true);
-		bootstrap.setOption("reuseAddress", true);
+		m_serverBootstrap.setPipelineFactory(this);
+		m_serverBootstrap.setOption("child.tcpNoDelay", true);
+		m_serverBootstrap.setOption("child.keepAlive", true);
+		m_serverBootstrap.setOption("reuseAddress", true);
 
 		// Bind and start to accept incoming connections.
-		bootstrap.bind(new InetSocketAddress(m_port));
+		m_serverBootstrap.bind(new InetSocketAddress(m_port));
 	}
 
 	@Override
 	public void stop()
 	{
+		if (m_serverBootstrap != null)
+			m_serverBootstrap.shutdown();
 	}
 
 }

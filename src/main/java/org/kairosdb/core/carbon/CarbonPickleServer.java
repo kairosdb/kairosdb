@@ -9,6 +9,7 @@ import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDBService;
+import org.kairosdb.core.carbon.pickle.PickleMetric;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 /**
@@ -41,6 +43,7 @@ public class CarbonPickleServer extends SimpleChannelUpstreamHandler implements 
 
 	private final KairosDatastore m_datastore;
 	private final TagParser m_tagParser;
+	private ServerBootstrap m_serverBootstrap;
 
 	@Inject
 	public CarbonPickleServer(KairosDatastore datastore, TagParser tagParser)
@@ -71,30 +74,24 @@ public class CarbonPickleServer extends SimpleChannelUpstreamHandler implements 
 	{
 		//System.out.println("I GOT ONE!!!!");
 
-		if (msgevent.getMessage() instanceof ArrayList)
+		if (msgevent.getMessage() instanceof List)
 		{
-			for (Object o : (ArrayList) msgevent.getMessage())
+			for (Object o : (List) msgevent.getMessage())
 			{
-				Object[] dp = (Object[])o;
+				//todo verify cast
+				PickleMetric metric = (PickleMetric)o;
 
-				String name = (String)dp[0];
-				long time = ((Double)((Object[])dp[1])[0]).longValue();
-				Object value = ((Object[])dp[1])[1];
-
-				if (logger.isDebugEnabled())
-					logger.debug(name+" "+time+" "+value);
-
-				DataPointSet dps = m_tagParser.parseMetricName(name);
+				DataPointSet dps = m_tagParser.parseMetricName(metric.getPath());
 				if (dps == null)
 					continue;
 
+				long time = metric.getTime();
+
 				time *= 1000;  //Convert to milliseconds
-				if (value instanceof Long)
-					dps.addDataPoint(new DataPoint(time, ((Long) value).longValue()));
-				else if (value instanceof Integer)
-					dps.addDataPoint(new DataPoint(time, ((Integer) value).intValue()));
+				if (metric.isLongValue())
+					dps.addDataPoint(new DataPoint(time, metric.getLongValue()));
 				else
-					dps.addDataPoint(new DataPoint(time, ((Double) value).doubleValue()));
+					dps.addDataPoint(new DataPoint(time, metric.getDoubleValue()));
 
 				try
 				{
@@ -112,25 +109,26 @@ public class CarbonPickleServer extends SimpleChannelUpstreamHandler implements 
 	public void start() throws KairosDBException
 	{
 		// Configure the server.
-		ServerBootstrap bootstrap = new ServerBootstrap(
+		m_serverBootstrap = new ServerBootstrap(
 				new NioServerSocketChannelFactory(
 						Executors.newCachedThreadPool(),
 						Executors.newCachedThreadPool()));
 
 		// Configure the pipeline factory.
-		bootstrap.setPipelineFactory(this);
-		bootstrap.setOption("child.tcpNoDelay", true);
-		bootstrap.setOption("child.keepAlive", true);
-		bootstrap.setOption("reuseAddress", true);
+		m_serverBootstrap.setPipelineFactory(this);
+		m_serverBootstrap.setOption("child.tcpNoDelay", true);
+		m_serverBootstrap.setOption("child.keepAlive", true);
+		m_serverBootstrap.setOption("reuseAddress", true);
 
 		// Bind and start to accept incoming connections.
-		bootstrap.bind(new InetSocketAddress(m_port));
+		m_serverBootstrap.bind(new InetSocketAddress(m_port));
 	}
 
 	@Override
 	public void stop()
 	{
-		//To change body of implemented methods use File | Settings | File Templates.
+		if (m_serverBootstrap != null)
+			m_serverBootstrap.shutdown();
 	}
 
 	@Override

@@ -41,6 +41,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 
 	private int m_port;
 	private CommandProvider m_commands;
+	private ServerBootstrap m_serverBootstrap;
 
 	@Inject
 	public TelnetServer(@Named("kairosdb.telnetserver.port") int port,
@@ -126,24 +127,26 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 	public void start() throws KairosDBException
 	{
 		// Configure the server.
-		ServerBootstrap bootstrap = new ServerBootstrap(
+		m_serverBootstrap = new ServerBootstrap(
 				new NioServerSocketChannelFactory(
 						Executors.newCachedThreadPool(),
 						Executors.newCachedThreadPool()));
 
 		// Configure the pipeline factory.
-		bootstrap.setPipelineFactory(this);
-		bootstrap.setOption("child.tcpNoDelay", true);
-		bootstrap.setOption("child.keepAlive", true);
-		bootstrap.setOption("reuseAddress", true);
+		m_serverBootstrap.setPipelineFactory(this);
+		m_serverBootstrap.setOption("child.tcpNoDelay", true);
+		m_serverBootstrap.setOption("child.keepAlive", true);
+		m_serverBootstrap.setOption("reuseAddress", true);
 
 		// Bind and start to accept incoming connections.
-		bootstrap.bind(new InetSocketAddress(m_port));
+		m_serverBootstrap.bind(new InetSocketAddress(m_port));
 	}
 
 	@Override
 	public void stop()
 	{
+		if (m_serverBootstrap != null)
+			m_serverBootstrap.shutdown();
 	}
 
 	private static String formatCommand(String[] command)

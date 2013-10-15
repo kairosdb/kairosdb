@@ -20,10 +20,41 @@ import me.prettyprint.cassandra.serializers.AbstractSerializer;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.SortedMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRowKey>
 {
 	public static final Charset UTF8 = Charset.forName("UTF-8");
+
+	private ConcurrentHashMap<String, String> m_stringPool;
+
+	public DataPointsRowKeySerializer()
+	{
+		this(false);
+	}
+
+	public DataPointsRowKeySerializer(boolean poolStrings)
+	{
+		if (poolStrings)
+			m_stringPool = new ConcurrentHashMap<String, String>();
+	}
+
+	/**
+	 If we are pooling strings the string from the pool will be returned.
+	 @param str
+	 @return
+	 */
+	private String getString(String str)
+	{
+		if (m_stringPool != null)
+		{
+			String ret = m_stringPool.putIfAbsent(str, str);
+
+			return (ret == null) ? str : ret;
+		}
+		else
+			return (str);
+	}
 
 	@Override
 	public ByteBuffer toByteBuffer(DataPointsRowKey dataPointsRowKey)
@@ -83,7 +114,7 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 					value = tagString.substring(mark, position);
 					mark = position +1;
 
-					rowKey.addTag(tag, value);
+					rowKey.addTag(getString(tag), getString(value));
 					tag = null;
 				}
 			}
@@ -108,7 +139,7 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 
 		long timestamp = byteBuffer.getLong();
 
-		DataPointsRowKey rowKey = new DataPointsRowKey(new String(metricName, UTF8),
+		DataPointsRowKey rowKey = new DataPointsRowKey(getString(new String(metricName, UTF8)),
 				timestamp);
 
 		byte[] tagString = new byte[byteBuffer.remaining()];

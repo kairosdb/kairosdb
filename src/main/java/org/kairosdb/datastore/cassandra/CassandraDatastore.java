@@ -419,14 +419,13 @@ public class CassandraDatastore implements Datastore
 			}
 			else
 			{
-				if (!queryKeys.isEmpty())
-				{
-					runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS, queryKeys,
-							query.getStartTime(), query.getEndTime(), cachedSearchResult, m_singleRowReadSize,
-							m_multiRowReadSize));
+				runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS, queryKeys,
+						query.getStartTime(), query.getEndTime(), cachedSearchResult, m_singleRowReadSize,
+						m_multiRowReadSize));
 
-					queryKeys = new ArrayList<DataPointsRowKey>();
-				}
+				queryKeys = new ArrayList<DataPointsRowKey>();
+				queryKeys.add(rowKey);
+				currentTimeTier = rowKey.getTimestamp();
 			}
 		}
 

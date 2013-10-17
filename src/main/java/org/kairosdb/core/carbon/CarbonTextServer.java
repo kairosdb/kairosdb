@@ -1,20 +1,4 @@
-/*
- * Copyright 2013 Proofpoint Inc.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
-
-package org.kairosdb.core.telnet;
+package org.kairosdb.core.carbon;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -24,8 +8,14 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.Delimiters;
 import org.jboss.netty.handler.codec.string.StringEncoder;
+import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDBService;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.core.telnet.CommandProvider;
+import org.kairosdb.core.telnet.TelnetCommand;
+import org.kairosdb.core.telnet.WordSplitter;
 import org.kairosdb.util.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,24 +23,31 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 
-public class TelnetServer extends SimpleChannelUpstreamHandler implements ChannelPipelineFactory,
+/**
+ Created with IntelliJ IDEA.
+ User: bhawkins
+ Date: 9/30/13
+ Time: 4:09 PM
+ To change this template use File | Settings | File Templates.
+ */
+public class CarbonTextServer extends SimpleChannelUpstreamHandler implements ChannelPipelineFactory,
 		KairosDBService
 {
-	public static final Logger logger = LoggerFactory.getLogger(TelnetServer.class);
+	public static final Logger logger = LoggerFactory.getLogger(CarbonTextServer.class);
 
-
-	private int m_port;
-	private CommandProvider m_commands;
+	private final int m_port;
+	private final KairosDatastore m_datastore;
+	private final TagParser m_tagParser;
 	private ServerBootstrap m_serverBootstrap;
 
 	@Inject
-	public TelnetServer(@Named("kairosdb.telnetserver.port") int port,
-	                    CommandProvider commandProvider)
+	public CarbonTextServer(KairosDatastore datastore,
+			TagParser tagParser, @Named("kairosdb.carbon.text.port") int port)
 	{
-		m_commands = commandProvider;
 		m_port = port;
+		m_datastore = datastore;
+		m_tagParser = tagParser;
 	}
-
 
 	@Override
 	public ChannelPipeline getPipeline() throws Exception
@@ -72,30 +69,44 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 
 	@Override
 	public void messageReceived(final ChannelHandlerContext ctx,
-	                            final MessageEvent msgevent)
+			final MessageEvent msgevent)
 	{
 		final Object message = msgevent.getMessage();
 		if (message instanceof String[])
 		{
-			String[] command = (String[]) message;
-			TelnetCommand telnetCommand = m_commands.getCommand(command[0]);
-			if (telnetCommand != null)
+			try
 			{
-				try
+				String[] msgArr = (String[])message;
+
+				//TODO: Validate data
+				DataPointSet dps = m_tagParser.parseMetricName(msgArr[0]);
+
+				//Bail out if no data point set is returned
+				if (dps == null)
+					return;
+
+				//validate dps has at least one tag
+				if (dps.getTags().size() == 0)
 				{
-					telnetCommand.execute(msgevent.getChannel(), command);
+					logger.warn("Metric "+msgArr[0]+" is missing a tag");
+					return;
 				}
-				catch(ValidationException e)
-				{
-					log("Failed to execute command: " + formatCommand(command), e);
-				}
-				catch (Exception e)
-				{
-					logger.error("", e);
-				}
+
+				long timestamp = Long.parseLong(msgArr[2]) * 1000; //Converting to milliseconds
+
+				DataPoint dp;
+				if (msgArr[1].contains("."))
+					dp = new DataPoint(timestamp, Double.parseDouble(msgArr[1]));
+				else
+					dp = new DataPoint(timestamp, Long.parseLong(msgArr[1]));
+
+				dps.addDataPoint(dp);
+				m_datastore.putDataPoints(dps);
 			}
-			else
-				log("Unknown command: " + command[0]);
+			catch (Exception e)
+			{
+				logger.error("Carbon text error", e);
+			}
 		}
 		else
 		{
@@ -149,14 +160,4 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 			m_serverBootstrap.shutdown();
 	}
 
-	private static String formatCommand(String[] command)
-	{
-		StringBuilder builder = new StringBuilder();
-		for (String s : command)
-		{
-			builder.append(s).append(" ");
-		}
-
-		return builder.toString();
-	}
 }

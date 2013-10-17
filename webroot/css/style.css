@@ -80,3 +80,11 @@ a
 {
     width: 320px;
 }
+
+.cursorWaiting * {
+	cursor: wait;
+}
+
+.cursorNormal * {
+	cursor: auto;
+}

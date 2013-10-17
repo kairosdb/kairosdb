@@ -1,3 +1,5 @@
+var metricToTags = {};
+
 function displayQuery() {
 	var queryString = $('#query-hidden-text').val();
 	if ($('#query-type-json').is(':checked'))
@@ -268,6 +270,7 @@ function addMetric() {
 		var metricName = $(this).combobox("value");
 		if (metricName && metricName.length > 0) {
 			$tab.text(metricName);
+			getTagsForMetric(metricName)
 		}
 		else {
 			$tab.text("metric");
@@ -286,7 +289,14 @@ function addMetric() {
 		}).click(function () {
 			var $button = $(".ui-button-icon-primary", this);
 			$button.toggleClass("ui-icon-arrowrefresh-1-e ui-icon-signal-diag");
-			updateMetricNamesArray(function(){
+			updateMetricNamesArray(function () {
+
+				// Clear metricToTags cache and re-add metrics in tabs
+				metricToTags = {};
+				$.each(getMetricNamesFromTabs(), function(index, name){
+					getTagsForMetric(name);
+				});
+
 				$button.toggleClass("ui-icon-arrowrefresh-1-e ui-icon-signal-diag");
 			});
 		}
@@ -528,6 +538,15 @@ function addAggregator(container) {
 	});
 }
 
+function getMetricNamesFromTabs(){
+	var metricNames = [];
+	$(".metricTab").each(function(index, value){
+		metricNames.push(value.text);
+	});
+
+	return metricNames;
+}
+
 function addAutocomplete(metricContainer) {
 	metricContainer.find(".metricName")
 		.combobox().combobox({source: function (request, response) {
@@ -546,8 +565,13 @@ function addTag(tagContainer) {
 		.combobox().combobox({source: function (request, response) {
 			var metricCount = tagContainer.attr("metricCount");
 			var metricName = $('#metricContainer' + metricCount).find(".metricName").combobox("value");
-			if (metricName)
-				getTagsForMetric(metricName, request, response);
+			if (metricName){
+				var tags = [];
+				$.each(metricToTags[metricName], function(tag){
+					tags.push(tag);
+				});
+				response(tags);
+			}
 		}});
 
 	// add auto complete
@@ -555,8 +579,10 @@ function addTag(tagContainer) {
 		var metricCount = tagContainer.attr("metricCount");
 		var metricName = $('#metricContainer' + metricCount).find(".metricName").combobox("value");
 		var tagName = $tagNameElement.combobox("value");
-		if (metricName && tagName)
-			getValuesForTag(metricName, tagName, request, response);
+		if (metricName && tagName) {
+			var values = [];
+			response(metricToTags[metricName][tagName]);
+		}
 	}
 	});
 
@@ -582,10 +608,15 @@ function updateMetricNamesArray(callBack)
 	});
 }
 
-function getTagsForMetric(metricName, request, response) {
+function getTagsForMetric(metricName) {
+	if (metricName in metricToTags){
+		return;
+	}
+
 	var query = new kairosdb.MetricQuery();
 	query.addMetric(new kairosdb.Metric(metricName));
 	query.setStartAbsolute(0);
+	$('body').toggleClass('cursorWaiting');
 
 	$.ajax({
 		type: "POST",
@@ -594,45 +625,15 @@ function getTagsForMetric(metricName, request, response) {
 		data: JSON.stringify(query),
 		dataType: 'json',
 		success: function (data) {
-			var tagNames = [];
-			$.each(data.queries[0].results[0].tags, function (tag) {
-				tagNames.push(tag);
+			var metric = metricToTags[metricName] = {};
+			$.each(data.queries[0].results[0].tags, function (tag, values) {
+				metric[tag] = values;
 			});
 
-			response(tagNames);
+			$('body').toggleClass('cursorWaiting');
 		},
 		error: function (jqXHR, textStatus, errorThrown) {
-			console.log(errorThrown);
-		}
-	});
-}
-
-function getValuesForTag(metricName, tagName, request, response) {
-	var query = new kairosdb.MetricQuery();
-	query.addMetric(new kairosdb.Metric(metricName));
-	query.setStartAbsolute(0);
-
-	$.ajax({
-		type: "POST",
-		url: "api/v1/datapoints/query/tags",
-		headers: { 'Content-Type': ['application/json']},
-		data: JSON.stringify(query),
-		dataType: 'json',
-		success: function (data) {
-			var values = [];
-			$.each(data.queries[0].results[0].tags, function (tag, val) {
-				if (tag == tagName){
-					values = val;
-					return false; //break;
-				}
-			});
-
-			var matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), "i");
-			response($.grep(values, function (item) {
-				return matcher.test(item);
-			}));
-		},
-		error: function (jqXHR, textStatus, errorThrown) {
+			$('body').toggleClass('cursorWaiting');
 			console.log(errorThrown);
 		}
 	});

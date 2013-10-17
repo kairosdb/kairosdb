@@ -110,8 +110,13 @@
 			$("#autocompleteTagName").combobox().combobox({source: function (request, response) {
 					var selectedTabIndex = $("#tabs").tabs("option", "active");
 					var metricName = $('#metricContainer' + selectedTabIndex).find(".metricName").combobox("value");
-					if (metricName)
-						getTagsForMetric(metricName, request, response);
+					if (metricName){
+						var tags = [];
+						$.each(metricToTags[metricName], function(tag){
+							tags.push(tag);
+						});
+						response(tags);
+					}
 				}
 			});
 

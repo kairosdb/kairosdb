@@ -396,13 +396,13 @@ public class JsonMetricParserTest
 		}
 
 		@Override
-		public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException
+		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 		{
-			return null;
+
 		}
 
 		@Override
-		public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
+		public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 		{
 		}
 

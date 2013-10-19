@@ -44,10 +44,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -321,42 +318,43 @@ public class MetricsResourceTest
 		}
 
 		@Override
-		public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException
+		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 		{
 			if (m_toThrow != null)
 				throw m_toThrow;
 
-			List<DataPointRow> groups = new ArrayList<DataPointRow>();
+			try
+			{
+				Map<String, String> tags = new TreeMap<String, String>();
+				tags.put("server", "server1");
 
-			DataPointRowImpl group1 = new DataPointRowImpl();
-			group1.setName(query.getName());
-			group1.addDataPoint(new DataPoint(1, 10));
-			group1.addDataPoint(new DataPoint(1, 20));
-			group1.addDataPoint(new DataPoint(2, 10));
-			group1.addDataPoint(new DataPoint(2, 5));
-			group1.addDataPoint(new DataPoint(3, 10));
+				queryCallback.startDataPointSet(tags);
+				queryCallback.addDataPoint(1, 10);
+				queryCallback.addDataPoint(1, 20);
+				queryCallback.addDataPoint(2, 10);
+				queryCallback.addDataPoint(2, 5);
+				queryCallback.addDataPoint(3, 10);
 
-			group1.addTag("server", "server1");
+				tags = new TreeMap<String, String>();
+				tags.put("server", "server2");
 
-			groups.add(group1);
+				queryCallback.startDataPointSet(tags);
+				queryCallback.addDataPoint(1, 10.1);
+				queryCallback.addDataPoint(1, 20.1);
+				queryCallback.addDataPoint(2, 10.1);
+				queryCallback.addDataPoint(2, 5.1);
+				queryCallback.addDataPoint(3, 10.1);
 
-			DataPointRowImpl group2 = new DataPointRowImpl();
-			group2.setName(query.getName());
-			group2.addDataPoint(new DataPoint(1, 10.1));
-			group2.addDataPoint(new DataPoint(1, 20.1));
-			group2.addDataPoint(new DataPoint(2, 10.1));
-			group2.addDataPoint(new DataPoint(2, 5.1));
-			group2.addDataPoint(new DataPoint(3, 10.1));
-
-			group2.addTag("server", "server2");
-
-			groups.add(group2);
-
-			return groups;
+				queryCallback.endDataPoints();
+			}
+			catch (IOException e)
+			{
+				throw new DatastoreException(e);
+			}
 		}
 
 		@Override
-		public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
+		public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 		{
 		}
 

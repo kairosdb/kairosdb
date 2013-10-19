@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
@@ -331,13 +330,13 @@ public class RemoteDatastore implements Datastore
 	}
 
 	@Override
-	public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException
+	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 	{
 		throw new DatastoreException("Method not implemented.");
 	}
 
 	@Override
-	public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
+	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 	{
 		throw new DatastoreException("Method not implemented.");
 	}

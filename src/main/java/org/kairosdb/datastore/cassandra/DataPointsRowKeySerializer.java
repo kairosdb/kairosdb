@@ -16,6 +16,7 @@
 package org.kairosdb.datastore.cassandra;
 
 import me.prettyprint.cassandra.serializers.AbstractSerializer;
+import org.kairosdb.util.StringPool;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -26,7 +27,7 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 {
 	public static final Charset UTF8 = Charset.forName("UTF-8");
 
-	private ConcurrentHashMap<String, String> m_stringPool;
+	private StringPool m_stringPool;
 
 	public DataPointsRowKeySerializer()
 	{
@@ -36,7 +37,7 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 	public DataPointsRowKeySerializer(boolean poolStrings)
 	{
 		if (poolStrings)
-			m_stringPool = new ConcurrentHashMap<String, String>();
+			m_stringPool = new StringPool();
 	}
 
 	/**
@@ -47,11 +48,7 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 	private String getString(String str)
 	{
 		if (m_stringPool != null)
-		{
-			String ret = m_stringPool.putIfAbsent(str, str);
-
-			return (ret == null) ? str : ret;
-		}
+			return (m_stringPool.getString(str));
 		else
 			return (str);
 	}

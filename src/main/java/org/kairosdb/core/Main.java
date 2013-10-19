@@ -19,12 +19,14 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
+import org.json.JSONWriter;
 import com.google.inject.*;
 import jcmdline.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.kairosdb.core.datastore.DataPointRow;
 import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
@@ -164,13 +166,15 @@ public class Main
 		{
 			if (s_exportFile.isSet())
 			{
-				PrintStream ps = new PrintStream(new FileOutputStream(s_exportFile.getValue()));
+				Writer ps = new OutputStreamWriter(new FileOutputStream(s_exportFile.getValue()), "UTF-8");
 				main.runExport(ps, s_exportMetricNames.getValues());
+				ps.flush();
 				ps.close();
 			}
 			else
 			{
-				main.runExport(System.out, s_exportMetricNames.getValues());
+				main.runExport(new OutputStreamWriter(System.out, "UTF-8"), s_exportMetricNames.getValues());
+				System.out.flush();
 			}
 
 			main.stopServices();
@@ -237,7 +241,7 @@ public class Main
 		}
 	}
 
-	public void runExport(PrintStream out, List<String> metricNames) throws DatastoreException, IOException
+	public void runExport(Writer out, List<String> metricNames) throws DatastoreException, IOException
 	{
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
 
@@ -248,52 +252,47 @@ public class Main
 		else
 			metrics = ds.getMetricNames();
 
-		try
+		for (String metric : metrics)
 		{
-			for (String metric : metrics)
+			logger.info("Exporting: " + metric);
+			QueryMetric qm = new QueryMetric(1L, 0, metric);
+			ExportQueryCallback callback = new ExportQueryCallback(metric, out);
+			ds.export(qm, callback);
+
+			/*for (DataPointRow result : results)
 			{
-				logger.info("Exporting: " + metric);
-				QueryMetric qm = new QueryMetric(1L, 0, metric);
-				List<DataPointRow> results = ds.export(qm);
-
-				for (DataPointRow result : results)
+				JSONObject tags = new JSONObject();
+				for (String key : result.getTagNames())
 				{
-					JSONObject tags = new JSONObject();
-					for (String key : result.getTagNames())
-					{
-						tags.put(key, result.getTagValue(key));
-					}
-
-					while (result.hasNext())
-					{
-						DataPoint dp = result.next();
-
-						JSONObject jsObj = new JSONObject();
-						jsObj.put("name", metric);
-						jsObj.put("time", dp.getTimestamp());
-
-						if (dp.isInteger())
-						{
-							jsObj.put("int_value", true);
-							jsObj.put("value", dp.getLongValue());
-						}
-						else
-						{
-							jsObj.put("int_value", false);
-							jsObj.put("value", dp.getDoubleValue());
-						}
-
-						jsObj.put("tags", tags);
-
-						out.println(jsObj.toString());
-					}
+					tags.put(key, result.getTagValue(key));
 				}
-			}
+
+				while (result.hasNext())
+				{
+					DataPoint dp = result.next();
+
+					JSONObject jsObj = new JSONObject();
+					jsObj.put("name", metric);
+					jsObj.put("time", dp.getTimestamp());
+
+					if (dp.isInteger())
+					{
+						jsObj.put("int_value", true);
+						jsObj.put("value", dp.getLongValue());
+					}
+					else
+					{
+						jsObj.put("int_value", false);
+						jsObj.put("value", dp.getDoubleValue());
+					}
+
+					jsObj.put("tags", tags);
+
+					out.println(jsObj.toString());
+				}
+			}*/
 		}
-		catch (JSONException e)
-		{
-			e.printStackTrace();
-		}
+
 
 		out.flush();
 	}
@@ -383,5 +382,85 @@ public class Main
 		//Stop the datastore
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
 		ds.close();
+	}
+
+	private class ExportQueryCallback implements QueryCallback
+	{
+		private final Writer m_writer;
+		private JSONWriter m_jsonWriter;
+		private final String m_metric;
+		private boolean m_hasBegun;
+
+		public ExportQueryCallback(String metricName, Writer out)
+		{
+			m_metric = metricName;
+			m_writer = out;
+			m_jsonWriter = new JSONWriter(out);
+			m_hasBegun = false;
+		}
+
+		@Override
+		public void addDataPoint(long timestamp, long value) throws IOException
+		{
+			try
+			{
+				m_jsonWriter.array().value(timestamp).value(value).endArray();
+			}
+			catch (JSONException e)
+			{
+				throw new IOException(e);
+			}
+		}
+
+		@Override
+		public void addDataPoint(long timestamp, double value) throws IOException
+		{
+			try
+			{
+				m_jsonWriter.array().value(timestamp).value(value).endArray();
+			}
+			catch (JSONException e)
+			{
+				throw new IOException(e);
+			}
+		}
+
+		@Override
+		public void startDataPointSet(Map<String, String> tags) throws IOException
+		{
+			if (m_hasBegun)
+				endDataPoints();
+
+			m_hasBegun = true;
+			try
+			{
+				m_jsonWriter = new JSONWriter(m_writer);
+				m_jsonWriter.object();
+				m_jsonWriter.key("name").value(m_metric);
+				m_jsonWriter.key("tags").value(tags);
+
+				m_jsonWriter.key("datapoints").array();
+
+			}
+			catch (JSONException e)
+			{
+				throw new IOException(e);
+			}
+		}
+
+		@Override
+		public void endDataPoints() throws IOException
+		{
+			try
+			{
+				m_jsonWriter.endArray().endObject();
+				m_writer.write("\n");
+			}
+			catch (JSONException e)
+			{
+				throw new IOException(e);
+			}
+
+		}
 	}
 }

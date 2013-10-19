@@ -20,7 +20,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.Aggregator;
@@ -30,6 +29,7 @@ import org.kairosdb.core.groupby.Grouper;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.groupby.TagGroupByResult;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -184,35 +184,11 @@ public class KairosDatastore
 	 * @return list of data point rows
 	 * @throws DatastoreException
 	 */
-	public List<DataPointRow> export(QueryMetric metric) throws DatastoreException
+	public void export(QueryMetric metric, QueryCallback callback) throws DatastoreException
 	{
 		checkNotNull(metric);
 
-		CachedSearchResult cachedResults = null;
-
-		try
-		{
-			String cacheFilename = calculateFilenameHash(metric);
-			String tempFile = m_cacheDir + cacheFilename;
-
-
-			if (metric.getCacheTime() > 0)
-			{
-				cachedResults = CachedSearchResult.openCachedSearchResult(metric.getName(),
-						tempFile, metric.getCacheTime());
-			}
-
-			if (cachedResults == null)
-			{
-				cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile);
-			}
-		}
-		catch (Exception e)
-		{
-			throw new DatastoreException(e);
-		}
-
-		return (m_datastore.queryDatabase(metric, cachedResults));
+		m_datastore.queryDatabase(metric, callback);
 	}
 
 	public List<DataPointGroup> queryTags(QueryMetric metric) throws DatastoreException
@@ -256,10 +232,7 @@ public class KairosDatastore
 
 		try
 		{
-			String cacheFilename = UUID.randomUUID().toString();
-			String tempFile = m_cacheDir + cacheFilename;
-			CachedSearchResult cachedResults = CachedSearchResult.createCachedSearchResult(metric.getName(), tempFile);
-			m_datastore.deleteDataPoints(metric, cachedResults);
+			m_datastore.deleteDataPoints(metric);
 		}
 		catch (Exception e)
 		{
@@ -292,17 +265,21 @@ public class KairosDatastore
 	{
 		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
 
+		MemoryMonitor mm = new MemoryMonitor(100);
 		for (DataPointRow row : rows)
 		{
 			ret.add(new DataPointGroupRowWrapper(row));
+			mm.checkMemoryAndThrowException();
 		}
 
 		return (ret);
 	}
 
-	private static List<DataPointGroup> groupByTags(String metricName, List<DataPointGroup> dataPointsList, TagGroupBy tagGroupBy)
+	private static List<DataPointGroup> groupByTags(String metricName,
+			List<DataPointGroup> dataPointsList, TagGroupBy tagGroupBy)
 	{
 		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
+		MemoryMonitor mm = new MemoryMonitor(20);
 
 		if (dataPointsList.isEmpty())
 		{
@@ -323,6 +300,7 @@ public class KairosDatastore
 					String tagsKey = getTagsKey(matchingTags);
 					groups.put(tagsKey, dataPointGroup);
 					groupByResults.put(tagsKey, new TagGroupByResult(tagGroupBy, matchingTags));
+					mm.checkMemoryAndThrowException();
 				}
 
 				for (String key : groups.keySet())
@@ -437,7 +415,8 @@ public class KairosDatastore
 					logger.debug("Cache MISS!");
 					cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
 							tempFile);
-					returnedRows = m_datastore.queryDatabase(m_metric, cachedResults);
+					m_datastore.queryDatabase(m_metric, cachedResults);
+					returnedRows = cachedResults.getRows();
 				}
 			}
 			catch (Exception e)

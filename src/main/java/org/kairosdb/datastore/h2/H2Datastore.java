@@ -254,44 +254,57 @@ public class H2Datastore implements Datastore
 	}
 
 	@Override
-	public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 	{
 		GenOrmQueryResultSet<? extends MetricIdResults> idQuery = getMetricIdsForQuery(query);
 
-		List<DataPointRow> retList = new ArrayList<DataPointRow>();
-		while (idQuery.next())
+		try
 		{
-			String metricId = idQuery.getRecord().getMetricId();
-
-			//Collect the tags in the results
-			MetricTag.ResultSet tags = MetricTag.factory.getByMetric(metricId);
-			Map<String, String> tagMap = new TreeMap<String, String>();
-			while (tags.next())
+			while (idQuery.next())
 			{
-				MetricTag mtag = tags.getRecord();
-				tagMap.put(mtag.getTagName(), mtag.getTagValue());
+				String metricId = idQuery.getRecord().getMetricId();
+
+				//Collect the tags in the results
+				MetricTag.ResultSet tags = MetricTag.factory.getByMetric(metricId);
+				Map<String, String> tagMap = new TreeMap<String, String>();
+
+				while (tags.next())
+				{
+					MetricTag mtag = tags.getRecord();
+					tagMap.put(mtag.getTagName(), mtag.getTagValue());
+				}
+
+				queryCallback.startDataPointSet(tagMap);
+
+				Timestamp startTime = new Timestamp(query.getStartTime());
+				Timestamp endTime = new Timestamp(query.getEndTime());
+
+				int count = new CountDataPointsForMetricQuery(metricId, startTime,
+						endTime).runQuery().getOnlyRecord().getDpCount();
+
+				DataPoint.ResultSet resultSet = DataPoint.factory.getForMetricId(metricId,
+						startTime, endTime);
+
+				while (resultSet.next())
+				{
+					DataPoint record = resultSet.getRecord();
+
+					if (!record.isLongValueNull())
+						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getLongValue());
+					else
+						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getDoubleValue());
+				}
 			}
-
-			Timestamp startTime = new Timestamp(query.getStartTime());
-			Timestamp endTime = new Timestamp(query.getEndTime());
-
-			int count = new CountDataPointsForMetricQuery(metricId, startTime,
-					endTime).runQuery().getOnlyRecord().getDpCount();
-
-			DataPoint.ResultSet resultSet = DataPoint.factory.getForMetricId(metricId,
-					startTime, endTime);
-
-			//The H2DataPointGroup will close the resultSet
-			retList.add(new H2DataPointGroup(query.getName(), tagMap, resultSet, count));
+			queryCallback.endDataPoints();
 		}
-
-
-		return (retList);
-
+		catch (IOException e)
+		{
+			throw new DatastoreException(e);
+		}
 	}
 
 	@Override
-	public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
+	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 	{
 		GenOrmQueryResultSet<? extends MetricIdResults> idQuery =
 				getMetricIdsForQuery(deleteQuery);

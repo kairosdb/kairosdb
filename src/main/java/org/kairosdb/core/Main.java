@@ -58,9 +58,9 @@ public class Main
 			StringParam.UNSPECIFIED_LENGTH, true, true);
 
 	/**
-	start is identical to run except that logging data only goes to the log file
-	and not to standard out as well
-	*/
+	 start is identical to run except that logging data only goes to the log file
+	 and not to standard out as well
+	 */
 	private static StringParam s_operationCommand = new StringParam("c",
 			"command to run", new String[]{"run", "start", "export", "import"});
 
@@ -248,7 +248,7 @@ public class Main
 		Iterable<String> metrics;
 
 		if (metricNames != null && metricNames.size() > 0)
-				metrics = metricNames;
+			metrics = metricNames;
 		else
 			metrics = ds.getMetricNames();
 
@@ -389,14 +389,11 @@ public class Main
 		private final Writer m_writer;
 		private JSONWriter m_jsonWriter;
 		private final String m_metric;
-		private boolean m_hasBegun;
 
 		public ExportQueryCallback(String metricName, Writer out)
 		{
 			m_metric = metricName;
 			m_writer = out;
-			m_jsonWriter = new JSONWriter(out);
-			m_hasBegun = false;
 		}
 
 		@Override
@@ -428,10 +425,9 @@ public class Main
 		@Override
 		public void startDataPointSet(Map<String, String> tags) throws IOException
 		{
-			if (m_hasBegun)
+			if (m_jsonWriter != null)
 				endDataPoints();
 
-			m_hasBegun = true;
 			try
 			{
 				m_jsonWriter = new JSONWriter(m_writer);
@@ -453,8 +449,12 @@ public class Main
 		{
 			try
 			{
-				m_jsonWriter.endArray().endObject();
-				m_writer.write("\n");
+				if (m_jsonWriter != null)
+				{
+					m_jsonWriter.endArray().endObject();
+					m_writer.write("\n");
+					m_jsonWriter = null;
+				}
 			}
 			catch (JSONException e)
 			{

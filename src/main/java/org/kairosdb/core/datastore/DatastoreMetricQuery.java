@@ -28,4 +28,8 @@ public interface DatastoreMetricQuery
 	long getStartTime();
 
 	long getEndTime();
+
+	int getLimit();
+
+	Order getOrder();
 }

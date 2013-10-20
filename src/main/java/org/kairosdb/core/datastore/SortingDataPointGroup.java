@@ -30,20 +30,21 @@ public class SortingDataPointGroup extends AbstractDataPointGroup
 	//We keep this list so we can close the iterators
 	private List<DataPointGroup> m_taggedDataPointsList = new ArrayList<DataPointGroup>();
 
-	public SortingDataPointGroup(String name)
+	public SortingDataPointGroup(String name, Order order)
 	{
 		super(name);
-		m_tree = new TournamentTree<DataPoint>(new DataPointComparator());
+		m_tree = new TournamentTree<DataPoint>(new DataPointComparator(), order);
 	}
 
-	public SortingDataPointGroup(List<DataPointGroup> listDataPointGroup)
+	public SortingDataPointGroup(List<DataPointGroup> listDataPointGroup, Order order)
 	{
-		this(listDataPointGroup, null);
+		this(listDataPointGroup, null, order);
 	}
 
-	public SortingDataPointGroup(List<DataPointGroup> listDataPointGroup, GroupByResult groupByResult)
+	public SortingDataPointGroup(List<DataPointGroup> listDataPointGroup, GroupByResult groupByResult,
+			Order order)
 	{
-		this(listDataPointGroup.size() == 0 ? "" : listDataPointGroup.get(0).getName());
+		this(listDataPointGroup.size() == 0 ? "" : listDataPointGroup.get(0).getName(), order);
 
 		if (groupByResult != null)
 			addGroupByResult(groupByResult);

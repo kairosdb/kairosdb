@@ -31,6 +31,7 @@ import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.RangeAggregator;
+import org.kairosdb.core.datastore.Order;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.groupby.GroupBy;
@@ -173,6 +174,7 @@ public class GsonParser
 				QueryMetric queryMetric = new QueryMetric(startTime, query.getCacheTime(),
 						metric.getName());
 				queryMetric.setExcludeTags(metric.isExcludeTags());
+				queryMetric.setLimit(metric.getLimit());
 
 				long endTime = getEndTime(query);
 				if (endTime > -1)
@@ -202,6 +204,10 @@ public class GsonParser
 					JsonArray groupBys = group_by.getAsJsonArray();
 					parseGroupBy(context, queryMetric, groupBys);
 				}
+
+				JsonElement order = jsMetric.get("order");
+				if (order != null)
+					queryMetric.setOrder(Order.fromString(order.getAsString(), context));
 
 				queryMetric.setTags(metric.getTags());
 
@@ -387,16 +393,30 @@ public class GsonParser
 		@SerializedName("exclude_tags")
 		private boolean exclude_tags;
 
+		@SerializedName("limit")
+		private int limit;
+
 		public Metric(String name, boolean exclude_tags, TreeMultimap<String, String> tags)
 		{
 			this.name = name;
 			this.tags = tags;
 			this.exclude_tags = exclude_tags;
+			this.limit = 0;
 		}
 
 		public String getName()
 		{
 			return name;
+		}
+
+		public int getLimit()
+		{
+			return limit;
+		}
+
+		public void setLimit(int limit)
+		{
+			this.limit = limit;
 		}
 
 		private boolean isExcludeTags()
@@ -636,6 +656,11 @@ public class GsonParser
 			}
 
 			Metric ret = new Metric(name, exclude_tags, tags);
+
+			JsonElement limit = jsonObject.get("limit");
+			if (limit != null)
+				ret.setLimit(limit.getAsInt());
+
 			return (ret);
 		}
 	}
@@ -658,12 +683,12 @@ public class GsonParser
 	}
 
 	//===========================================================================
-	private static class SimpleConstraintViolation implements ConstraintViolation<Object>
+	public static class SimpleConstraintViolation implements ConstraintViolation<Object>
 	{
 		private String message;
 		private String context;
 
-		private SimpleConstraintViolation(String context, String message)
+		public SimpleConstraintViolation(String context, String message)
 		{
 			this.message = message;
 			this.context = context;

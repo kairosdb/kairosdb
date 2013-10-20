@@ -17,6 +17,7 @@ package org.kairosdb.util;
 
 
 import org.junit.Test;
+import org.kairosdb.core.datastore.Order;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -60,7 +61,7 @@ public class TournamentTreeTest
 	@Test
 	public void testTwoIterators()
 	{
-		TournamentTree<RowData> tt = new TournamentTree<RowData>(new RowDataComparator());
+		TournamentTree<RowData> tt = new TournamentTree<RowData>(new RowDataComparator(), Order.ASC);
 
 		List<RowData> list1 = new ArrayList<RowData>();
 		list1.add(new RowData(1, 0));
@@ -103,7 +104,7 @@ public class TournamentTreeTest
 	@Test
 	public void testTwoIteratorsSameData()
 	{
-		TournamentTree<RowData> tt = new TournamentTree<RowData>(new RowDataComparator());
+		TournamentTree<RowData> tt = new TournamentTree<RowData>(new RowDataComparator(), Order.ASC);
 
 		List<RowData> list1 = new ArrayList<RowData>();
 		list1.add(new RowData(1, 0));
@@ -136,7 +137,7 @@ public class TournamentTreeTest
 	@Test
 	public void testThreeIterators()
 	{
-		TournamentTree<RowData> tt = new TournamentTree<RowData>(new RowDataComparator());
+		TournamentTree<RowData> tt = new TournamentTree<RowData>(new RowDataComparator(), Order.ASC);
 
 		List<RowData> list1 = new ArrayList<RowData>();
 		list1.add(new RowData(1, 0));

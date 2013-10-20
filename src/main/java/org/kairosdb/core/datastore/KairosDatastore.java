@@ -23,6 +23,7 @@ import com.google.inject.name.Named;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.Aggregator;
+import org.kairosdb.core.aggregator.LimitAggregator;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.Grouper;
@@ -276,14 +277,14 @@ public class KairosDatastore
 	}
 
 	private static List<DataPointGroup> groupByTags(String metricName,
-			List<DataPointGroup> dataPointsList, TagGroupBy tagGroupBy)
+			List<DataPointGroup> dataPointsList, TagGroupBy tagGroupBy, Order order)
 	{
 		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
 		MemoryMonitor mm = new MemoryMonitor(20);
 
 		if (dataPointsList.isEmpty())
 		{
-			ret.add(new SortingDataPointGroup(metricName));
+			ret.add(new SortingDataPointGroup(metricName, order));
 		}
 		else
 		{
@@ -305,12 +306,12 @@ public class KairosDatastore
 
 				for (String key : groups.keySet())
 				{
-					ret.add(new SortingDataPointGroup(groups.get(key), groupByResults.get(key)));
+					ret.add(new SortingDataPointGroup(groups.get(key), groupByResults.get(key), order));
 				}
 			}
 			else
 			{
-				ret.add(new SortingDataPointGroup(dataPointsList));
+				ret.add(new SortingDataPointGroup(dataPointsList, order));
 			}
 		}
 
@@ -431,7 +432,8 @@ public class KairosDatastore
 			}
 
 			// It is more efficient to group by tags using the cached results because we have pointers to each tag.
-			List<DataPointGroup> queryResults = groupByTags(m_metric.getName(), wrapRows(returnedRows), getTagGroupBy(m_metric.getGroupBys()));
+			List<DataPointGroup> queryResults = groupByTags(m_metric.getName(),
+					wrapRows(returnedRows), getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
 
 			// Now group for all other types of group bys.
 			Grouper grouper = new Grouper();
@@ -450,6 +452,11 @@ public class KairosDatastore
 				DataPointGroup aggregatedGroup = queryResult;
 
 				List<Aggregator> aggregators = m_metric.getAggregators();
+
+				if (m_metric.getLimit() != 0)
+				{
+					aggregatedGroup = new LimitAggregator(m_metric.getLimit()).aggregate(aggregatedGroup);
+				}
 
 				//This will pipe the aggregators together.
 				for (Aggregator aggregator : aggregators)

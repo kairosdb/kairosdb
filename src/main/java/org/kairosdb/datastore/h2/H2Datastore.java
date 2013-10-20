@@ -282,8 +282,17 @@ public class H2Datastore implements Datastore
 				int count = new CountDataPointsForMetricQuery(metricId, startTime,
 						endTime).runQuery().getOnlyRecord().getDpCount();
 
-				DataPoint.ResultSet resultSet = DataPoint.factory.getForMetricId(metricId,
-						startTime, endTime);
+				DataPoint.ResultSet resultSet;
+				if (query.getLimit() == 0)
+				{
+					resultSet = DataPoint.factory.getForMetricId(metricId,
+							startTime, endTime, query.getOrder().getText());
+				}
+				else
+				{
+					resultSet = DataPoint.factory.getForMetricIdWithLimit(metricId,
+							startTime, endTime, query.getLimit(), query.getOrder().getText());
+				}
 
 				while (resultSet.next())
 				{

@@ -47,7 +47,9 @@ public class DataPoint_base extends GenOrmRecord
 		public DataPoint findOrCreate(String metricId, java.sql.Timestamp timestamp);
 		/**
 		*/
-		public ResultSet getForMetricId(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime);/**
+		public ResultSet getForMetricId(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, String order);/**
+		*/
+		public ResultSet getForMetricIdWithLimit(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, int limit, String order);/**
 		*/
 		public ResultSet getByMetric(String metricId);
 		}
@@ -326,9 +328,12 @@ public class DataPoint_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 		*/
-		public ResultSet getForMetricId(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime)
+		public ResultSet getForMetricId(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, String order)
 			{
-			String query = SELECT+"from data_point this\n				where\n				this.\"metric_id\" = ?\n				and this.\"timestamp\" >= ?\n				and this.\"timestamp\" <= ?\n				order by this.\"timestamp\"";
+			String query = SELECT+"from data_point this\n				where\n				this.\"metric_id\" = ?\n				and this.\"timestamp\" >= ?\n				and this.\"timestamp\" <= ?\n				order by this.\"timestamp\" %order%";
+			HashMap<String, String> replaceMap = new HashMap<String, String>();
+			replaceMap.put("order", order);
+			query = QueryHelper.replaceText(query, replaceMap);
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			
@@ -336,6 +341,44 @@ public class DataPoint_base extends GenOrmRecord
 				{
 				genorm_statement = GenOrmDataSource.prepareStatement(query);
 				genorm_statement.setString(1, metricId);genorm_statement.setTimestamp(2, startTime);genorm_statement.setTimestamp(3, endTime);
+				
+				s_logger.debug(genorm_statement.toString());
+				
+				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
+				
+				return (rs);
+				}
+			catch (java.sql.SQLException sqle)
+				{
+				try
+					{
+					if (genorm_statement != null)
+						genorm_statement.close();
+					}
+				catch (java.sql.SQLException sqle2) { }
+					
+				if (s_logger.isDebug())
+					sqle.printStackTrace();
+				throw new GenOrmException(sqle);
+				}
+			}
+			
+		//---------------------------------------------------------------------------
+		/**
+		*/
+		public ResultSet getForMetricIdWithLimit(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, int limit, String order)
+			{
+			String query = SELECT+"from data_point this\n				where\n				this.\"metric_id\" = ?\n				and this.\"timestamp\" >= ?\n				and this.\"timestamp\" <= ?\n				order by this.\"timestamp\" %order%\n				limit ?";
+			HashMap<String, String> replaceMap = new HashMap<String, String>();
+			replaceMap.put("order", order);
+			query = QueryHelper.replaceText(query, replaceMap);
+			
+			java.sql.PreparedStatement genorm_statement = null;
+			
+			try
+				{
+				genorm_statement = GenOrmDataSource.prepareStatement(query);
+				genorm_statement.setString(1, metricId);genorm_statement.setTimestamp(2, startTime);genorm_statement.setTimestamp(3, endTime);genorm_statement.setInt(4, limit);
 				
 				s_logger.debug(genorm_statement.toString());
 				
@@ -403,7 +446,10 @@ public class DataPoint_base extends GenOrmRecord
 			{
 			ResultSet rs;
 			System.out.println("DataPoint.getForMetricId");
-			rs = getForMetricId("foo", new java.sql.Timestamp(0L), new java.sql.Timestamp(0L));
+			rs = getForMetricId("foo", new java.sql.Timestamp(0L), new java.sql.Timestamp(0L), "asc");
+			rs.close();
+			System.out.println("DataPoint.getForMetricIdWithLimit");
+			rs = getForMetricIdWithLimit("foo", new java.sql.Timestamp(0L), new java.sql.Timestamp(0L), 10, "asc");
 			rs.close();
 
 			}

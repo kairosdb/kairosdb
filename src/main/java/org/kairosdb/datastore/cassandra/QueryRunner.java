@@ -25,6 +25,7 @@ import me.prettyprint.hector.api.factory.HFactory;
 import me.prettyprint.hector.api.query.MultigetSliceQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.datastore.CachedSearchResult;
+import org.kairosdb.core.datastore.Order;
 import org.kairosdb.core.datastore.QueryCallback;
 
 import java.io.IOException;
@@ -47,11 +48,13 @@ public class QueryRunner
 	private QueryCallback m_queryCallback;
 	private int m_singleRowReadSize;
 	private int m_multiRowReadSize;
+	private boolean m_limit = false;
+	private boolean m_descending = false;
 
 	public QueryRunner(Keyspace keyspace, String columnFamily,
 			List<DataPointsRowKey> rowKeys, long startTime, long endTime,
 			QueryCallback csResult,
-			int singleRowReadSize, int multiRowReadSize)
+			int singleRowReadSize, int multiRowReadSize, int limit, Order order)
 	{
 		m_keyspace = keyspace;
 		m_columnFamily = columnFamily;
@@ -71,7 +74,15 @@ public class QueryRunner
 		m_singleRowReadSize = singleRowReadSize;
 		m_multiRowReadSize = multiRowReadSize;
 
+		if (limit != 0)
+		{
+			m_limit = true;
+			m_singleRowReadSize = limit;
+			m_multiRowReadSize = limit;
+		}
 
+		if (order == Order.DESC)
+			m_descending = true;
 	}
 
 	public void runQuery() throws IOException
@@ -83,7 +94,10 @@ public class QueryRunner
 
 		msliceQuery.setColumnFamily(m_columnFamily);
 		msliceQuery.setKeys(m_rowKeys);
-		msliceQuery.setRange(m_startTime, m_endTime, false, m_multiRowReadSize);
+		if (m_descending)
+			msliceQuery.setRange(m_endTime, m_startTime, true, m_multiRowReadSize);
+		else
+			msliceQuery.setRange(m_startTime, m_endTime, false, m_multiRowReadSize);
 
 		Rows<DataPointsRowKey, Integer, ByteBuffer> rows =
 				msliceQuery.execute().get();
@@ -94,7 +108,7 @@ public class QueryRunner
 		for (Row<DataPointsRowKey, Integer, ByteBuffer> row : rows)
 		{
 			List<HColumn<Integer, ByteBuffer>> columns = row.getColumnSlice().getColumns();
-			if (columns.size() == m_multiRowReadSize)
+			if (!m_limit && columns.size() == m_multiRowReadSize)
 				unfinishedRows.add(row);
 
 			writeColumns(row.getKey(), columns);
@@ -120,7 +134,10 @@ public class QueryRunner
 			{
 				Integer lastTime = columns.get(columns.size() -1).getName();
 
-				sliceQuery.setRange(lastTime+1, m_endTime, false, m_singleRowReadSize);
+				if (m_descending)
+					sliceQuery.setRange(lastTime-1, m_startTime, true, m_singleRowReadSize);
+				else
+					sliceQuery.setRange(lastTime+1, m_endTime, false, m_singleRowReadSize);
 
 				columns = sliceQuery.execute().get().getColumns();
 				writeColumns(key, columns);

@@ -53,6 +53,7 @@
 				<param name="end_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
 			</input>
 			<replace>
+				<param name="order" tag="order" type="string" test="asc"/>
 			</replace>
 			<sql>
 				from data_point this
@@ -60,7 +61,28 @@
 				this."metric_id" = ?
 				and this."timestamp" &gt;= ?
 				and this."timestamp" &lt;= ?
-				order by this."timestamp"
+				order by this."timestamp" %order%
+			</sql>
+		</table_query>
+
+		<table_query name="for_metric_id_with_limit" result_type="multi">
+			<input>
+				<param name="metric_id" type="string" test="foo"/>
+				<param name="start_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
+				<param name="end_time" type="timestamp" test="new java.sql.Timestamp(0L)"/>
+				<param name="limit" type="integer" test="10"/>
+			</input>
+			<replace>
+				<param name="order" tag="order" type="string" test="asc"/>
+			</replace>
+			<sql>
+				from data_point this
+				where
+				this."metric_id" = ?
+				and this."timestamp" &gt;= ?
+				and this."timestamp" &lt;= ?
+				order by this."timestamp" %order%
+				limit ?
 			</sql>
 		</table_query>
 	</table>

@@ -17,6 +17,8 @@ package org.kairosdb.util;
 
 
 
+import org.kairosdb.core.datastore.Order;
+
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.TreeSet;
@@ -59,19 +61,21 @@ public class TournamentTree<T>
 	private TreeSet<TreeValue<T>> m_treeSet;
 	private Comparator<T> m_comparator;
 	private int m_iteratorIndex = 0;
+	private Order m_order;
 
-	public TournamentTree(Comparator<T> comparator)
-		{
+	public TournamentTree(Comparator<T> comparator, Order order)
+	{
 		m_comparator = comparator;
 		m_treeSet = new TreeSet<TreeValue<T>>(new TreeComparator());
-		}
+		m_order = order;
+	}
 
 	//---------------------------------------------------------------------------
 	public void addIterator(Iterator<T> iterator)
-		{
+	{
 		if (iterator.hasNext())
 			m_treeSet.add(new TreeValue<T>(iterator, iterator.next(), m_iteratorIndex ++));
-		}
+	}
 
 	//---------------------------------------------------------------------------
 	public boolean hasNext()
@@ -82,7 +86,11 @@ public class TournamentTree<T>
 	//---------------------------------------------------------------------------
 	public T nextElement()
 	{
-		TreeValue<T> value = m_treeSet.pollFirst();
+		TreeValue<T> value;
+		if (m_order == Order.ASC)
+			value = m_treeSet.pollFirst();
+		else
+			value = m_treeSet.pollLast();
 
 		if (value == null)
 			return (null);

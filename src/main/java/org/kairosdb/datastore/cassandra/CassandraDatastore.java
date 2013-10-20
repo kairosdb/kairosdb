@@ -425,7 +425,7 @@ public class CassandraDatastore implements Datastore
 			{
 				runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS, queryKeys,
 						query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
-						m_multiRowReadSize));
+						m_multiRowReadSize, query.getLimit(), query.getOrder()));
 
 				queryKeys = new ArrayList<DataPointsRowKey>();
 				queryKeys.add(rowKey);
@@ -440,7 +440,7 @@ public class CassandraDatastore implements Datastore
 		{
 			runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS, queryKeys,
 					query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
-					m_multiRowReadSize));
+					m_multiRowReadSize, query.getLimit(), query.getOrder()));
 		}
 
 		ThreadReporter.addDataPoint(KEY_QUERY_TIME, System.currentTimeMillis() - startTime);

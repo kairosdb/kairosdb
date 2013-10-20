@@ -18,6 +18,7 @@ package org.kairosdb.datastore;
 
 import com.google.common.collect.SetMultimap;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.Order;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
@@ -61,5 +62,17 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 	public long getEndTime()
 	{
 		return (m_endTime);
+	}
+
+	@Override
+	public int getLimit()
+	{
+		return 0;  //To change body of implemented methods use File | Settings | File Templates.
+	}
+
+	@Override
+	public Order getOrder()
+	{
+		return Order.ASC;
 	}
 }

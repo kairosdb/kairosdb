@@ -32,6 +32,7 @@ import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.core.http.rest.json.JsonMetricParser;
 import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.util.MemoryMonitorException;
 import org.kairosdb.util.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,6 +173,11 @@ public class MetricsResource
 			logger.error("Failed to add metric.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
 		}
+		catch (OutOfMemoryError e)
+		{
+			logger.error("Out of memory error.", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
+		}
 	}
 
 
@@ -236,9 +242,20 @@ public class MetricsResource
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addErrors(e.getErrorMessages()).build();
 		}
+		catch (MemoryMonitorException e)
+		{
+			logger.error("Query failed.", e);
+			System.gc();
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
+		}
 		catch (Exception e)
 		{
 			logger.error("Query failed.", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
+		}
+		catch (OutOfMemoryError e)
+		{
+			logger.error("Out of memory error.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
 		}
 	}
@@ -320,9 +337,21 @@ public class MetricsResource
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addErrors(e.getErrorMessages()).build();
 		}
+		catch (MemoryMonitorException e)
+		{
+			logger.error("Query failed.", e);
+			Thread.sleep(1000);
+			System.gc();
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
+		}
 		catch (Exception e)
 		{
 			logger.error("Query failed.", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
+		}
+		catch (OutOfMemoryError e)
+		{
+			logger.error("Out of memory error.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
 		}
 		finally
@@ -367,9 +396,20 @@ public class MetricsResource
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addErrors(e.getErrorMessages()).build();
 		}
+		catch (MemoryMonitorException e)
+		{
+			logger.error("Query failed.", e);
+			System.gc();
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
+		}
 		catch (Exception e)
 		{
 			logger.error("Delete failed.", e);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
+		}
+		catch (OutOfMemoryError e)
+		{
+			logger.error("Out of memory error.", e);
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage())).build();
 		}
 	}

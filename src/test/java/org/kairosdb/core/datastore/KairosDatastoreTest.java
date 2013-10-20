@@ -220,41 +220,42 @@ public class KairosDatastoreTest
 		}
 
 		@Override
-		public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback)
 				throws DatastoreException
 		{
 			if (m_toThrow != null)
 				throw m_toThrow;
 
-			List<DataPointRow> groups = new ArrayList<DataPointRow>();
+			try
+			{
+				queryCallback.startDataPointSet(Collections.<String, String>emptyMap());
+				queryCallback.addDataPoint(1, 3);
+				queryCallback.addDataPoint(1, 10);
+				queryCallback.addDataPoint(1, 20);
+				queryCallback.addDataPoint(2, 1);
+				queryCallback.addDataPoint(2, 3);
+				queryCallback.addDataPoint(2, 5);
+				queryCallback.addDataPoint(3, 25);
 
-			DataPointRowImpl group1 = new DataPointRowImpl();
-			group1.setName(query.getName());
-			group1.addDataPoint(new DataPoint(1, 3));
-			group1.addDataPoint(new DataPoint(1, 10));
-			group1.addDataPoint(new DataPoint(1, 20));
-			group1.addDataPoint(new DataPoint(2, 1));
-			group1.addDataPoint(new DataPoint(2, 3));
-			group1.addDataPoint(new DataPoint(2, 5));
-			group1.addDataPoint(new DataPoint(3, 25));
-			groups.add(group1);
+				queryCallback.startDataPointSet(Collections.<String, String>emptyMap());
+				queryCallback.addDataPoint(1, 5);
+				queryCallback.addDataPoint(1, 14);
+				queryCallback.addDataPoint(1, 20);
+				queryCallback.addDataPoint(2, 6);
+				queryCallback.addDataPoint(2, 8);
+				queryCallback.addDataPoint(2, 9);
+				queryCallback.addDataPoint(3, 7);
 
-			DataPointRowImpl group2 = new DataPointRowImpl();
-			group2.setName(query.getName());
-			group2.addDataPoint(new DataPoint(1, 5));
-			group2.addDataPoint(new DataPoint(1, 14));
-			group2.addDataPoint(new DataPoint(1, 20));
-			group2.addDataPoint(new DataPoint(2, 6));
-			group2.addDataPoint(new DataPoint(2, 8));
-			group2.addDataPoint(new DataPoint(2, 9));
-			group2.addDataPoint(new DataPoint(3, 7));
-			groups.add(group2);
-
-			return groups;
+				queryCallback.endDataPoints();
+			}
+			catch (IOException e)
+			{
+				throw new DatastoreException(e);
+			}
 		}
 
 		@Override
-		public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
+		public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 		{
 		}
 

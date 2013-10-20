@@ -19,10 +19,7 @@ package org.kairosdb.core;
 import org.junit.Test;
 import org.kairosdb.core.exception.DatastoreException;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 
 public class ExportTest
 {
@@ -35,7 +32,7 @@ public class ExportTest
 
 		Main main = new Main(props);
 
-		PrintStream ps = new PrintStream(new FileOutputStream("build/export.json"));
+		Writer ps = new OutputStreamWriter(new FileOutputStream("build/export.json"), "UTF-8");
 		main.runExport(ps, null);
 	}
 }

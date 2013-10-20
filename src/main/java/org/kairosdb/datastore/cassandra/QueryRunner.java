@@ -25,6 +25,7 @@ import me.prettyprint.hector.api.factory.HFactory;
 import me.prettyprint.hector.api.query.MultigetSliceQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.datastore.CachedSearchResult;
+import org.kairosdb.core.datastore.QueryCallback;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -43,13 +44,13 @@ public class QueryRunner
 	private List<DataPointsRowKey> m_rowKeys;
 	private int m_startTime; //relative row time
 	private int m_endTime; //relative row time
-	private CachedSearchResult m_cachedResults;
+	private QueryCallback m_queryCallback;
 	private int m_singleRowReadSize;
 	private int m_multiRowReadSize;
 
 	public QueryRunner(Keyspace keyspace, String columnFamily,
 			List<DataPointsRowKey> rowKeys, long startTime, long endTime,
-			CachedSearchResult csResult,
+			QueryCallback csResult,
 			int singleRowReadSize, int multiRowReadSize)
 	{
 		m_keyspace = keyspace;
@@ -66,7 +67,7 @@ public class QueryRunner
 		else
 			m_endTime = getColumnName(m_tierRowTime, endTime, false); //Pass false so we get 0x1 for last bit
 
-		m_cachedResults = csResult;
+		m_queryCallback = csResult;
 		m_singleRowReadSize = singleRowReadSize;
 		m_multiRowReadSize = multiRowReadSize;
 
@@ -134,7 +135,7 @@ public class QueryRunner
 		if (columns.size() != 0)
 		{
 			Map<String, String> tags = rowKey.getTags();
-			m_cachedResults.startDataPointSet(tags);
+			m_queryCallback.startDataPointSet(tags);
 
 			for (HColumn<Integer, ByteBuffer> column : columns)
 			{
@@ -143,12 +144,12 @@ public class QueryRunner
 				ByteBuffer value = column.getValue();
 				if (isLongValue(columnTime))
 				{
-					m_cachedResults.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
+					m_queryCallback.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
 							columnTime), ValueSerializer.getLongFromByteBuffer(value));
 				}
 				else
 				{
-					m_cachedResults.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
+					m_queryCallback.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
 							columnTime), ValueSerializer.getDoubleFromByteBuffer(value));
 				}
 			}

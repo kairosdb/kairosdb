@@ -27,6 +27,7 @@ import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.core.jobs.CacheFileCleaner;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
+import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.Util;
 
 import java.util.List;
@@ -52,6 +53,7 @@ public class CoreModule extends AbstractModule
 		bind(GsonParser.class).in(Singleton.class);
 		bind(CacheFileCleaner.class).in(Singleton.class);
 		bind(KairosDBScheduler.class).in(Singleton.class);
+		bind(MemoryMonitor.class).in(Singleton.class);
 
 		bind(SumAggregator.class);
 		bind(MinAggregator.class);

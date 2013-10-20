@@ -26,7 +26,6 @@ import org.kairosdb.util.ValidationException;
 
 import java.net.SocketAddress;
 import java.util.Collections;
-import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -382,13 +381,12 @@ public class PutCommandTest
 		}
 
 		@Override
-		public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException
+		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 		{
-			return null;
 		}
 
 		@Override
-		public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
+		public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 		{
 		}
 

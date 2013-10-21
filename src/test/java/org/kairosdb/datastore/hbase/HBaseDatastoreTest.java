@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package org.kairosdb.core.datastore.hbase;
+package org.kairosdb.datastore.hbase;
 
 
 import net.opentsdb.kairosdb.HBaseDatastore;

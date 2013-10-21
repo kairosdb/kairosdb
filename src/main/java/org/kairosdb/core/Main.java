@@ -258,39 +258,6 @@ public class Main
 			QueryMetric qm = new QueryMetric(1L, 0, metric);
 			ExportQueryCallback callback = new ExportQueryCallback(metric, out);
 			ds.export(qm, callback);
-
-			/*for (DataPointRow result : results)
-			{
-				JSONObject tags = new JSONObject();
-				for (String key : result.getTagNames())
-				{
-					tags.put(key, result.getTagValue(key));
-				}
-
-				while (result.hasNext())
-				{
-					DataPoint dp = result.next();
-
-					JSONObject jsObj = new JSONObject();
-					jsObj.put("name", metric);
-					jsObj.put("time", dp.getTimestamp());
-
-					if (dp.isInteger())
-					{
-						jsObj.put("int_value", true);
-						jsObj.put("value", dp.getLongValue());
-					}
-					else
-					{
-						jsObj.put("int_value", false);
-						jsObj.put("value", dp.getDoubleValue());
-					}
-
-					jsObj.put("tags", tags);
-
-					out.println(jsObj.toString());
-				}
-			}*/
 		}
 
 

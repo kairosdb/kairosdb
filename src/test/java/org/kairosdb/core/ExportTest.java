@@ -16,16 +16,28 @@
 
 package org.kairosdb.core;
 
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.kairosdb.core.exception.DatastoreException;
 
 import java.io.*;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ExportTest
 {
-	@Test
-	public void testExport() throws IOException, DatastoreException
+	@BeforeClass
+	public static void loadData()
 	{
+
+	}
+
+
+	@Test
+	public void test1_testExport() throws IOException, DatastoreException
+	{
+		System.out.println("Running Export");
 		File props = new File("kairosdb.properties");
 		if (!props.exists())
 			props = null;
@@ -34,5 +46,11 @@ public class ExportTest
 
 		Writer ps = new OutputStreamWriter(new FileOutputStream("build/export.json"), "UTF-8");
 		main.runExport(ps, null);
+	}
+
+	@Test
+	public void test2_testImport()
+	{
+		System.out.println("Running Import");
 	}
 }

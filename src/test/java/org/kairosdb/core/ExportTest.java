@@ -63,7 +63,7 @@ public class ExportTest
 
 		os.close();
 		sock.close();
-		Thread.sleep(2000);
+		Thread.sleep(10000);
 	}
 
 	@BeforeClass
@@ -88,7 +88,7 @@ public class ExportTest
 
 		QueryMetric metric = new QueryMetric(0, Long.MAX_VALUE, 0, METRIC_NAME);
 		ds.delete(metric);
-		Thread.sleep(2000);
+		Thread.sleep(3000);
 	}
 
 	@AfterClass
@@ -132,7 +132,7 @@ public class ExportTest
 		s_main.runImport(export);
 
 		export.close();
-		Thread.sleep(2000);
+		Thread.sleep(3000);
 
 		verifyDataPoints();
 	}

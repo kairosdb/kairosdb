@@ -153,7 +153,7 @@ public class MetricsResource
 	{
 		try
 		{
-			JsonMetricParser parser = new JsonMetricParser(datastore, json);
+			JsonMetricParser parser = new JsonMetricParser(datastore, new InputStreamReader(json, "UTF-8"));
 			parser.parse();
 
 			return Response.status(Response.Status.NO_CONTENT).build();

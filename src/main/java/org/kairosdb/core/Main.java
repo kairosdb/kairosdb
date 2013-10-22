@@ -19,6 +19,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
+import org.json.JSONArray;
 import org.json.JSONWriter;
 import com.google.inject.*;
 import jcmdline.*;
@@ -30,6 +31,8 @@ import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.core.http.rest.json.JsonMetricParser;
+import org.kairosdb.util.ValidationException;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -241,6 +244,11 @@ public class Main
 		}
 	}
 
+	public Injector getInjector()
+	{
+		return (m_injector);
+	}
+
 	public void runExport(Writer out, List<String> metricNames) throws DatastoreException, IOException
 	{
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
@@ -264,7 +272,7 @@ public class Main
 		out.flush();
 	}
 
-	public void runImport(InputStream in) throws IOException, JSONException, DatastoreException
+	public void runImport(InputStream in) throws IOException, JSONException, DatastoreException, ValidationException
 	{
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
 
@@ -273,29 +281,9 @@ public class Main
 		String line = null;
 		while ((line = reader.readLine()) != null)
 		{
-			JSONObject metric = new JSONObject(line);
+			JsonMetricParser jsonMetricParser = new JsonMetricParser(ds, new StringReader(line));
 
-			DataPointSet dps = new DataPointSet(metric.getString("name"));
-
-			JSONObject tags = metric.getJSONObject("tags");
-			Iterator<Object> keys = tags.keys();
-			while (keys.hasNext())
-			{
-				String tagName = (String) keys.next();
-				String tagValue = tags.getString(tagName);
-
-				dps.addTag(tagName, tagValue);
-			}
-
-			DataPoint dp;
-			if (metric.getBoolean("int_value"))
-				dp = new DataPoint(metric.getLong("time"), metric.getLong("value"));
-			else
-				dp = new DataPoint(metric.getLong("time"), metric.getDouble("value"));
-
-			dps.addDataPoint(dp);
-
-			ds.putDataPoints(dps);
+			jsonMetricParser.parse();
 		}
 	}
 

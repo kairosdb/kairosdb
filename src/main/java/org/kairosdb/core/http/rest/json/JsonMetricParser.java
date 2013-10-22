@@ -17,6 +17,7 @@
 package org.kairosdb.core.http.rest.json;
 
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -24,10 +25,7 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.util.NameValidator;
 import org.kairosdb.util.ValidationException;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,9 +41,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class JsonMetricParser
 {
 	private KairosDatastore datastore;
-	private InputStream inputStream;
+	private Reader inputStream;
 
-	public JsonMetricParser(KairosDatastore datastore, InputStream stream)
+	public JsonMetricParser(KairosDatastore datastore, Reader stream)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.inputStream = checkNotNull(stream);
@@ -53,29 +51,44 @@ public class JsonMetricParser
 
 	public void parse() throws IOException, ValidationException, DatastoreException
 	{
-		JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
+		JsonReader reader = new JsonReader(inputStream);
 
 		try
 		{
 			int metricCount = 0;
-			try
-			{
-			reader.beginArray();
-			}
-			catch(EOFException e)
-			{
-				throw new ValidationException("Invalid json. No content due to end of input.");
-			}
-			while(reader.hasNext())
-			{
-				parseMetric(reader, metricCount);
-				metricCount++;
-			}
 
-			reader.endArray();
+			if (reader.peek().equals(JsonToken.BEGIN_ARRAY))
+			{
+				try
+				{
+					reader.beginArray();
+				}
+				catch(EOFException e)
+				{
+					throw new ValidationException("Invalid json. No content due to end of input.");
+				}
+				while(reader.hasNext())
+				{
+					parseMetric(reader, metricCount);
+					metricCount++;
+				}
+
+				reader.endArray();
+			}
+			else if (reader.peek().equals(JsonToken.BEGIN_OBJECT))
+			{
+				parseMetric(reader, 0);
+			}
+			else
+				throw new ValidationException("Invalid start of json.");
 
 		}
-		finally {
+		catch(EOFException e)
+		{
+			throw new ValidationException("Invalid json. No content due to end of input.");
+		}
+		finally
+		{
 			reader.close();
 		}
 	}
@@ -99,6 +112,13 @@ public class JsonMetricParser
 			{
 				timestamp = reader.nextLong();
 				NameValidator.validateMin("timestamp", timestamp, 1);
+			}
+			//This is here as this code is now handling the import files.
+			//We had a pre 0.9.2 import file that contained time instead of timestamp
+			else if (token.equals("time"))
+			{
+				timestamp = reader.nextLong();
+				NameValidator.validateMin("time", timestamp, 1);
 			}
 			else if (token.equals("value"))
 			{

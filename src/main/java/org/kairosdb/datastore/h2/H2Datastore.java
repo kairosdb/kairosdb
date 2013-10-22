@@ -279,9 +279,6 @@ public class H2Datastore implements Datastore
 				Timestamp startTime = new Timestamp(query.getStartTime());
 				Timestamp endTime = new Timestamp(query.getEndTime());
 
-				int count = new CountDataPointsForMetricQuery(metricId, startTime,
-						endTime).runQuery().getOnlyRecord().getDpCount();
-
 				DataPoint.ResultSet resultSet = DataPoint.factory.getForMetricId(metricId,
 						startTime, endTime);
 
@@ -306,23 +303,61 @@ public class H2Datastore implements Datastore
 	@Override
 	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 	{
-		GenOrmQueryResultSet<? extends MetricIdResults> idQuery =
-				getMetricIdsForQuery(deleteQuery);
-
-		while (idQuery.next())
+		GenOrmDataSource.attachAndBegin();
+		try
 		{
-			String metricId = idQuery.getRecord().getMetricId();
+			GenOrmQueryResultSet<? extends MetricIdResults> idQuery =
+					getMetricIdsForQuery(deleteQuery);
 
-			new DeleteMetricsQuery(metricId,
-					new Timestamp(deleteQuery.getStartTime()),
-					new Timestamp(deleteQuery.getEndTime())).runUpdate();
+			while (idQuery.next())
+			{
+				String metricId = idQuery.getRecord().getMetricId();
+
+				new DeleteMetricsQuery(metricId,
+						new Timestamp(deleteQuery.getStartTime()),
+						new Timestamp(deleteQuery.getEndTime())).runUpdate();
+			}
+
+			idQuery.close();
+
+			GenOrmDataSource.commit();
+		}
+		finally
+		{
+			GenOrmDataSource.close();
 		}
 	}
 
 	@Override
 	public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		GenOrmQueryResultSet<? extends MetricIdResults> idQuery = getMetricIdsForQuery(query);
+
+		TagSetImpl tagSet = new TagSetImpl();
+		try
+		{
+			while (idQuery.next())
+			{
+				String metricId = idQuery.getRecord().getMetricId();
+
+				//Collect the tags in the results
+				MetricTag.ResultSet tags = MetricTag.factory.getByMetric(metricId);
+
+				while (tags.next())
+				{
+					MetricTag mtag = tags.getRecord();
+					tagSet.addTag(mtag.getTagName(), mtag.getTagValue());
+				}
+
+				tags.close();
+			}
+		}
+		finally
+		{
+			idQuery.close();
+		}
+
+		return tagSet;
 	}
 
 	private String createMetricKey(DataPointSet dps)

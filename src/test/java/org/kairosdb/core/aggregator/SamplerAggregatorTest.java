@@ -82,6 +82,31 @@ public class SamplerAggregatorTest
         assertThat(dp.getDoubleValue(), equalTo(20.0));
     }
 
+    @Test
+    public void test_changingPeriod()
+    {
+        ListDataPointGroup group = new ListDataPointGroup("rate");
+        group.addDataPoint(new DataPoint(1, 10));
+        group.addDataPoint(new DataPoint(2, 10));
+        group.addDataPoint(new DataPoint(4, 10));
+        group.addDataPoint(new DataPoint(6, 20));
+
+        SamplerAggregator samplerAggregator = new SamplerAggregator();
+        DataPointGroup results = samplerAggregator.aggregate(group);
+
+        DataPoint dp = results.next();
+        assertThat(dp.getTimestamp(), equalTo(2L));
+        assertThat(dp.getDoubleValue(), equalTo(10.0));
+
+        dp = results.next();
+        assertThat(dp.getTimestamp(), equalTo(4L));
+        assertThat(dp.getDoubleValue(), equalTo(5.0));
+
+        dp = results.next();
+        assertThat(dp.getTimestamp(), equalTo(6L));
+        assertThat(dp.getDoubleValue(), equalTo(10.0));
+    }
+
 
     @Test(expected = IllegalStateException.class)
     public void test_dataPointsAtSameTime()

@@ -80,6 +80,10 @@ function updateChart() {
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				metric.addRate(unit);
 			}
+			else if (name == 'sampler') {
+				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				metric.addSampler(unit);
+			}
 			else if (name == 'percentile') {
 				value = $(aggregator).find(".aggregatorSamplingValue").val();
 				if (!isValidInteger(value)) {
@@ -496,7 +500,7 @@ function addAggregator(container) {
 	$aggregatorContainer.find(".aggregatorName").change(function () {
 		var name = $aggregatorContainer.find(".aggregatorName").val();
 
-		if (name == "rate") {
+		if (name == "rate" || name == "sampler") {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();

@@ -20,10 +20,12 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
@@ -62,13 +64,43 @@ public class RemoteDatastore implements Datastore
 
 	@Inject
 	public RemoteDatastore(@Named(DATA_DIR_PROP) String dataDir,
-			@Named(REMOTE_URL_PROP) String remoteUrl) throws IOException
+			@Named(REMOTE_URL_PROP) String remoteUrl) throws IOException, DatastoreException
 	{
 		m_dataDirectory = dataDir;
 		m_remoteUrl = remoteUrl;
 
+		//This is to check and make sure the remote kairos is there and properly configured.
+		getKairosVersion();
+
 		sendAllZipfiles();
 		openDataFile();
+	}
+
+	private void getKairosVersion() throws DatastoreException
+	{
+		try
+		{
+			HttpClient client = new DefaultHttpClient();
+			HttpGet get = new HttpGet(m_remoteUrl+"/api/v1/version");
+
+			HttpResponse response = client.execute(get);
+
+			ByteArrayOutputStream bout = new ByteArrayOutputStream();
+			response.getEntity().writeTo(bout);
+
+			JSONObject respJson = new JSONObject(bout.toString("UTF-8"));
+
+			logger.info("Connecting to remote Kairos version: "+ respJson.getString("version"));
+
+		}
+		catch (IOException e)
+		{
+			throw new DatastoreException("Unable to connect to remote kairos node.", e);
+		}
+		catch (JSONException e)
+		{
+			throw new DatastoreException("Unalbe to parse repsone from remote kairos node.", e);
+		}
 	}
 
 	private void openDataFile() throws IOException

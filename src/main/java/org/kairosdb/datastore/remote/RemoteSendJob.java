@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Random;
 
 import static org.quartz.TriggerBuilder.newTrigger;
 
@@ -25,15 +26,22 @@ public class RemoteSendJob implements KairosDBJob
 {
 	public static final Logger logger = LoggerFactory.getLogger(RemoteSendJob.class);
 	public static final String SCHEDULE = "kairosdb.datastore.remote.schedule";
+	public static final String DELAY = "kairosdb.datastore.remote.random_delay";
 
 	private String m_schedule;
+	private int m_delay;
+	private Random m_rand;
 	private RemoteDatastore m_datastore;
 
 	@Inject
-	public RemoteSendJob(@Named(SCHEDULE) String schedule, RemoteDatastore datastore)
+	public RemoteSendJob(@Named(SCHEDULE) String schedule,
+			@Named(DELAY) int delay, RemoteDatastore datastore)
 	{
 		m_schedule = schedule;
+		m_delay = delay;
 		m_datastore = datastore;
+
+		m_rand = new Random(System.currentTimeMillis());
 	}
 
 	@Override
@@ -48,6 +56,20 @@ public class RemoteSendJob implements KairosDBJob
 	@Override
 	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
 	{
+		if (m_delay != 0)
+		{
+			int delay = m_rand.nextInt(m_delay);
+
+			try
+			{
+				Thread.sleep(delay * 1000);
+			}
+			catch (InterruptedException e)
+			{
+				logger.warn("Sleep delay interrupted", e);
+			}
+		}
+
 		try
 		{
 			logger.debug("Sending remote data");

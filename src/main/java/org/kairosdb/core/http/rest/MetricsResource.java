@@ -27,13 +27,9 @@ import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
 import org.kairosdb.core.formatter.JsonResponse;
-import org.kairosdb.core.http.rest.json.ErrorResponse;
-import org.kairosdb.core.http.rest.json.GsonParser;
-import org.kairosdb.core.http.rest.json.JsonMetricParser;
-import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
+import org.kairosdb.core.http.rest.json.*;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.util.MemoryMonitorException;
-import org.kairosdb.util.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,14 +150,19 @@ public class MetricsResource
 		try
 		{
 			JsonMetricParser parser = new JsonMetricParser(datastore, new InputStreamReader(json, "UTF-8"));
-			parser.parse();
+			ValidationErrors validationErrors = parser.parse();
 
-			return Response.status(Response.Status.NO_CONTENT).build();
-		}
-		catch (ValidationException e)
-		{
-			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			return builder.addError(e.getMessage()).build();
+			if (!validationErrors.hasErrors())
+				return Response.status(Response.Status.NO_CONTENT).build();
+			else
+			{
+				JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+				for (String errorMessage : validationErrors.getErrors())
+				{
+					builder.addError(errorMessage);
+				}
+				return builder.build();
+			}
 		}
 		catch(MalformedJsonException e)
 		{
@@ -536,6 +537,7 @@ public class MetricsResource
 			m_responseFile = responseFile;
 		}
 
+		@SuppressWarnings("ResultOfMethodCallIgnored")
 		@Override
 		public void write(OutputStream output) throws IOException, WebApplicationException
 		{

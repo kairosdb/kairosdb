@@ -16,17 +16,19 @@
 package org.kairosdb.util;
 
 import org.junit.Test;
+import org.kairosdb.core.http.rest.json.ValidationErrors;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
-public class NameValidatorTest
+public class ValidatorTest
 {
 	@Test
 	public void test_validateCharacterSet_valid() throws ValidationException
 	{
-		NameValidator.validateCharacterSet("test", "ABC-123_xyz/456.789");
+		Validator.validateCharacterSet("test", "ABC-123_xyz/456.789");
 	}
 
 	@Test
@@ -34,7 +36,7 @@ public class NameValidatorTest
 	{
 		try
 		{
-			NameValidator.validateCharacterSet("test", "abc:123");
+			Validator.validateCharacterSet("test", "abc:123");
 			fail("Expected ValidationException");
 		}
 		catch (ValidationException e)
@@ -46,7 +48,7 @@ public class NameValidatorTest
 	@Test
 	public void test_validateNotNullOrEmpty_valid() throws ValidationException
 	{
-		NameValidator.validateNotNullOrEmpty("name", "the name");
+		Validator.validateNotNullOrEmpty("name", "the name");
 	}
 
 	@Test
@@ -54,7 +56,7 @@ public class NameValidatorTest
 	{
 		try
 		{
-			NameValidator.validateNotNullOrEmpty("name", "");
+			Validator.validateNotNullOrEmpty("name", "");
 			fail("Expected ValidationException");
 		}
 		catch (ValidationException e)
@@ -68,7 +70,7 @@ public class NameValidatorTest
 	{
 		try
 		{
-			NameValidator.validateNotNullOrEmpty("name", null);
+			Validator.validateNotNullOrEmpty("name", null);
 			fail("Expected ValidationException");
 		}
 		catch (ValidationException e)
@@ -80,7 +82,7 @@ public class NameValidatorTest
 	@Test
 	public void test_validateMin_valid() throws ValidationException
 	{
-		NameValidator.validateMin("name", 2, 1);
+		Validator.validateMin("name", 2, 1);
 	}
 
 	@Test
@@ -88,7 +90,7 @@ public class NameValidatorTest
 	{
 		try
 		{
-			NameValidator.validateMin("name", 10, 11);
+			Validator.validateMin("name", 10, 11);
 			fail("Expected ValidationException");
 		}
 		catch (ValidationException e)
@@ -96,4 +98,57 @@ public class NameValidatorTest
 			assertThat(e.getMessage(), equalTo("name must be greater than or equal to 11."));
 		}
 	}
+
+	@Test
+	public void test_isValidateCharacterSet_valid()
+	{
+		ValidationErrors errors = new ValidationErrors();
+
+		assertThat(Validator.isValidateCharacterSet(errors, "test", "ABC-123_xyz/456.789"), equalTo(true));
+		assertThat(errors.size(), equalTo(0));
+	}
+
+	@Test
+	public void test_isValidateCharacterSet_invalid() throws ValidationException
+	{
+		ValidationErrors errors = new ValidationErrors();
+
+		assertThat(Validator.isValidateCharacterSet(errors, "test", "ABC:123"), equalTo(false));
+		assertThat(errors.getErrors(), hasItem("test may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+	}
+
+	@Test
+	public void test_isNotNullOrEmpty_valid()
+	{
+		ValidationErrors errors = new ValidationErrors();
+
+		assertThat(Validator.isNotNullOrEmpty(errors, "name", "the name"), equalTo(true));
+	}
+
+	@Test
+	public void test_isNotNullOrEmpty_invalid()
+	{
+		ValidationErrors errors = new ValidationErrors();
+
+		assertThat(Validator.isNotNullOrEmpty(errors, "name", null), equalTo(false));
+		assertThat(errors.getErrors(), hasItem("name may not be null."));
+	}
+
+	@Test
+	public void test_isGreaterThanOrEqualTo_valid() throws ValidationException
+	{
+		ValidationErrors errors = new ValidationErrors();
+
+		assertThat(Validator.isGreaterThanOrEqualTo(errors, "name", 2, 1), equalTo(true));
+	}
+
+	@Test
+	public void test_isGreaterThanOrEqualTo_invalid() throws ValidationException
+	{
+		ValidationErrors errors = new ValidationErrors();
+
+		assertThat(Validator.isGreaterThanOrEqualTo(errors, "name", 10, 11), equalTo(false));
+		assertThat(errors.getErrors(), hasItem("name must be greater than or equal to 11."));
+	}
+
 }

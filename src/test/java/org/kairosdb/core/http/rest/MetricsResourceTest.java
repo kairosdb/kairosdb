@@ -23,7 +23,6 @@ import com.google.inject.name.Names;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointListenerProvider;
 import org.kairosdb.core.DataPointSet;

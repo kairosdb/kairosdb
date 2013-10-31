@@ -16,6 +16,9 @@
 
 package org.kairosdb.core.http.rest.json;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import org.kairosdb.core.DataPoint;
@@ -27,9 +30,7 @@ import org.kairosdb.util.Validator;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -43,11 +44,14 @@ public class JsonMetricParser
 {
 	private KairosDatastore datastore;
 	private Reader inputStream;
+	private Gson gson;
 
 	public JsonMetricParser(KairosDatastore datastore, Reader stream)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.inputStream = checkNotNull(stream);
+		GsonBuilder builder = new GsonBuilder();
+		gson = builder.create();
 	}
 
 	public ValidationErrors parse() throws IOException, DatastoreException
@@ -68,7 +72,8 @@ public class JsonMetricParser
 
 					while (reader.hasNext())
 					{
-						validationErrors.add(parseMetric(reader, metricCount));
+						NewMetric metric = parseMetric(reader);
+						validateAndAddDataPoints(metric, validationErrors, metricCount);
 						metricCount++;
 					}
 				}
@@ -81,7 +86,8 @@ public class JsonMetricParser
 			}
 			else if (reader.peek().equals(JsonToken.BEGIN_OBJECT))
 			{
-				validationErrors.add(parseMetric(reader, 0));
+				NewMetric metric = parseMetric(reader);
+				validateAndAddDataPoints(metric, validationErrors, 0);
 			}
 			else
 				validationErrors.addErrorMessage("Invalid start of json.");
@@ -99,127 +105,129 @@ public class JsonMetricParser
 		return validationErrors;
 	}
 
-	private ValidationErrors parseMetric(JsonReader reader, int count) throws IOException, DatastoreException
+	private NewMetric parseMetric(JsonReader reader)
+	{
+		NewMetric metric;
+		try
+		{
+			metric = gson.fromJson(reader, NewMetric.class);
+		}
+		catch (IllegalArgumentException e)
+		{
+			// Happens when parsing data points where one of the pair is missing (timestamp or value)
+			throw new JsonSyntaxException("Invalid JSON");
+		}
+		return metric;
+	}
+
+	private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) throws DatastoreException
 	{
 		ValidationErrors validationErrors = new ValidationErrors();
 
-		reader.beginObject();
-		String name = null;
-		long timestamp = 0;
-		String value = null;
-		Map<String, String> tags = new HashMap<String, String>();
-		List<DataPoint> dataPoints = new ArrayList<DataPoint>();
-		while (reader.hasNext())
+		if (Validator.isNotNullOrEmpty(validationErrors, "metric[" + count + "].name", metric.getName()))
+			Validator.isValidateCharacterSet(validationErrors, "metric[" + count + "].name", metric.getName());
+
+		if (metric.getTimestamp() > 0)
+			Validator.isNotNullOrEmpty(validationErrors, "metric[" + count + "].value", metric.getValue());
+		if (metric.getValue() != null && !metric.getValue().isEmpty())
+			Validator.isGreaterThanOrEqualTo(validationErrors, "metric[" + count + "].timestamp", metric.getTimestamp(), 1);
+
+		if (Validator.isGreaterThanOrEqualTo(validationErrors, "metric[" + count + "].tags count", metric.getTags().size(), 1))
 		{
-			String token = reader.nextName();
-			if (token.equals("name"))
+			int tagCount = 0;
+			for (Map.Entry<String, String> entry : metric.getTags().entrySet())
 			{
-				name = reader.nextString();
-			}
-			else if (token.equals("timestamp"))
-			{
-				timestamp = reader.nextLong();
-			}
-			//This is here as this code is now handling the import files.
-			//We had a pre 0.9.2 import file that contained time instead of timestamp
-			else if (token.equals("time"))
-			{
-				timestamp = reader.nextLong();
-			}
-			else if (token.equals("value"))
-			{
-				value = reader.nextString();
-			}
-			else if (token.equals("datapoints"))
-			{
-				dataPoints = parseDataPoints(reader, validationErrors);
-			}
-			else if (token.equals("tags"))
-			{
-				tags = parseTags(reader, validationErrors, count);
-			}
-		}
-		reader.endObject();
+				if (Validator.isNotNullOrEmpty(validationErrors, String.format("metric[%d].tag[%d].name", count, tagCount), entry.getKey()))
+					Validator.isValidateCharacterSet(validationErrors, String.format("metric[%d].tag[%d].name", count, tagCount), entry.getKey());
+				if (Validator.isNotNullOrEmpty(validationErrors, String.format("metric[%d].tag[%d].value", count, tagCount), entry.getValue()))
+					Validator.isValidateCharacterSet(validationErrors, String.format("metric[%d].tag[%d].value", count, tagCount), entry.getValue());
 
-		if (Validator.isNotNullOrEmpty(validationErrors, "metric[" + count + "].name", name))
-			Validator.isValidateCharacterSet(validationErrors, "metric[" + count + "].name", name);
-
-		if (timestamp > 0)
-			Validator.isNotNullOrEmpty(validationErrors, "metric[" + count + "].value", value);
-		if (value != null && !value.isEmpty())
-			Validator.isGreaterThanOrEqualTo(validationErrors, "metric[" + count + "].timestamp", timestamp, 1);
-
-		if (timestamp > 0 && value != null && !value.isEmpty())
-		{
-			dataPoints.add(createDataPoint(timestamp, value));
-		}
-
-		if (!validationErrors.hasErrors() &&
-				Validator.isGreaterThanOrEqualTo(validationErrors, "metric[" + count + "].tags count", tags.size(), 1))
-		{
-			datastore.putDataPoints(new DataPointSet(name, tags, dataPoints));
-		}
-
-		return validationErrors;
-	}
-
-	private Map<String, String> parseTags(JsonReader reader, ValidationErrors validationErrors, int metricCount) throws IOException
-	{
-		Map<String, String> tags = new HashMap<String, String>();
-		reader.beginObject();
-		int tagCount = 0;
-		boolean valid = true;
-		while (reader.hasNext())
-		{
-			String tagName = reader.nextName();
-			String value = reader.nextString();
-
-			if (Validator.isNotNullOrEmpty(validationErrors, String.format("metric[%d].tag[%d].name", metricCount, tagCount), tagName) &&
-					Validator.isValidateCharacterSet(validationErrors, String.format("metric[%d].tag[%d].name", metricCount, tagCount), tagName) &&
-					Validator.isNotNullOrEmpty(validationErrors, String.format("metric[%d].tag[%d].value", metricCount, tagCount), value) &&
-					Validator.isValidateCharacterSet(validationErrors, String.format("metric[%d].tag[%d].value", metricCount, tagCount), value))
-			{
-				tags.put(tagName, value);
 				tagCount++;
 			}
-			else
-				valid = false;
 		}
-		reader.endObject();
 
-		return valid ? tags : null;
-	}
-
-	private List<DataPoint> parseDataPoints(JsonReader reader, ValidationErrors validationErrors) throws IOException
-	{
-		List<DataPoint> dataPoints = new ArrayList<DataPoint>();
-		reader.beginArray();
-		boolean valid = true;
-		while (reader.hasNext())
+		if (!validationErrors.hasErrors())
 		{
-			reader.beginArray();
-			long timestamp = reader.nextLong();
+			DataPointSet dataPointSet = new DataPointSet(metric.getName(), metric.getTags(), Collections.<DataPoint>emptyList());
 
-			String value = reader.nextString();
+			if (metric.getTimestamp() > 0 && metric.getValue() != null && !metric.getValue().isEmpty())
+			{
+				dataPointSet.addDataPoint(new DataPoint(metric.getTimestamp(), metric.getValue()));
+			}
 
-			if (Validator.isGreaterThanOrEqualTo(validationErrors, "datapoints.timestamp", timestamp, 1) &&
-					Validator.isNotNullOrEmpty(validationErrors, "value", value))
-				dataPoints.add(createDataPoint(timestamp, value));
-			else
-				valid = false;
+			if (metric.getDatapoints() != null && metric.getDatapoints().length > 0)
+			{
+				int dataPointCount = 0;
+				for (double[] dataPoint : metric.getDatapoints())
+				{
+					if (dataPoint.length < 1)
+					{
+						validationErrors.addErrorMessage(String.format("metric[%d].datapoints[%d].timestamp cannot be null or empty.", count, dataPointCount));
+						break;
+					}
+					else if (dataPoint.length < 2)
+					{
+						validationErrors.addErrorMessage(String.format("metric[%d].datapoints[%d].value cannot be null or empty.", count, dataPointCount));
+						break;
+					}
+					else
+					{
+						long timestamp = (long) dataPoint[0];
+						Validator.isGreaterThanOrEqualTo(validationErrors, String.format("metric[%d].datapoints[%d].value cannot be null or empty.", count, dataPointCount), timestamp, 1);
+						if (dataPoint[1] % 1 == 0)
+							dataPointSet.addDataPoint(new DataPoint(timestamp, (long) dataPoint[1]));
+						else
+							dataPointSet.addDataPoint(new DataPoint(timestamp, dataPoint[1]));
+					}
+					dataPointCount++;
+				}
+			}
 
-			reader.endArray();
+			if (dataPointSet.getDataPoints().size() > 0)
+				datastore.putDataPoints(dataPointSet);
 		}
-		reader.endArray();
 
-		return valid ? dataPoints : null;
+		errors.add(validationErrors);
+
+		return !validationErrors.hasErrors();
 	}
 
-	private DataPoint createDataPoint(long timestamp, String value)
+	@SuppressWarnings({"MismatchedReadAndWriteOfArray", "UnusedDeclaration"})
+	private class NewMetric
 	{
-		if (value.contains("."))
-			return new DataPoint(timestamp, Double.parseDouble(value));
-		else
-			return new DataPoint(timestamp, Long.parseLong(value));
+		private String name;
+		private long timestamp = 0;
+		private long time = 0;
+		private String value;
+		private Map<String, String> tags;
+		private double[][] datapoints;
+
+		private String getName()
+		{
+			return name;
+		}
+
+		public long getTimestamp()
+		{
+			if (time > 0)
+				return time;
+			else
+				return timestamp;
+		}
+
+		public String getValue()
+		{
+			return value;
+		}
+
+		public Map<String, String> getTags()
+		{
+			return tags != null ? tags : Collections.<String, String>emptyMap();
+		}
+
+		private double[][] getDatapoints()
+		{
+			return datapoints;
+		}
 	}
 }

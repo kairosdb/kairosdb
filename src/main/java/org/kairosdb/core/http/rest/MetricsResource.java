@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.http.rest;
 
+import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.name.Named;
@@ -163,6 +164,16 @@ public class MetricsResource
 				}
 				return builder.build();
 			}
+		}
+		catch(JsonIOException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addError(e.getMessage()).build();
+		}
+		catch(JsonSyntaxException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addError(e.getMessage()).build();
 		}
 		catch(MalformedJsonException e)
 		{

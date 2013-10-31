@@ -17,7 +17,7 @@ package org.kairosdb.core.http.rest.json;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import com.google.gson.stream.MalformedJsonException;
+import com.google.gson.JsonSyntaxException;
 import org.junit.Test;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
@@ -74,7 +74,7 @@ public class JsonMetricParserTest
 	@Test
 	public void test_timestampButNoValue_Invalid() throws DatastoreException, IOException
 	{
-		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234}]";
+		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"tags\": {\"foo\":\"bar\"}}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
@@ -104,7 +104,55 @@ public class JsonMetricParserTest
 	}
 
 	@Test
-	public void test_timestamp_Invalid() throws DatastoreException, IOException
+	public void test_datapoints_empty_Invalid() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[]]}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json));
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.size(), equalTo(1));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0].datapoints[0].timestamp cannot be null or empty."));
+	}
+
+	@Test(expected = JsonSyntaxException.class)
+	public void test_datapoints_empty_value_Invalid() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[2,]]}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json));
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.size(), equalTo(1));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0].datapoints[0].value cannot be null or empty."));
+	}
+
+	@Test(expected = JsonSyntaxException.class)
+	public void test_datapoints_empty_timestamp_Invalid() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[,2]]}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json));
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.size(), equalTo(1));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0].datapoints[0].value cannot be null or empty."));
+	}
+
+	@Test
+	public void test_datapoints_timestamp_Invalid() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[0, 1234]]}]";
 
@@ -116,7 +164,7 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("datapoints.timestamp must be greater than or equal to 1."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0].datapoints[0].value cannot be null or empty. must be greater than or equal to 1."));
 	}
 
 	@Test
@@ -274,8 +322,8 @@ public class JsonMetricParserTest
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getLongValue(), equalTo(4321L));
 	}
 
-	@Test(expected = MalformedJsonException.class)
-	public void test_invaidJson() throws DatastoreException, IOException
+	@Test(expected = JsonSyntaxException.class)
+	public void test_invalidJson() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": }]";
 
@@ -319,10 +367,10 @@ public class JsonMetricParserTest
 		assertThat(dataPointSetList.get(0).getTags().size(), equalTo(1));
 		assertThat(dataPointSetList.get(0).getTags().get("foo"), equalTo("bar"));
 		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(2));
-		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(456L));
-		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getLongValue(), equalTo(654L));
-		assertThat(dataPointSetList.get(0).getDataPoints().get(1).getTimestamp(), equalTo(1234L));
-		assertThat(dataPointSetList.get(0).getDataPoints().get(1).getLongValue(), equalTo(4321L));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getLongValue(), equalTo(4321L));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(1).getTimestamp(), equalTo(456L));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(1).getLongValue(), equalTo(654L));
 	}
 
 	@Test

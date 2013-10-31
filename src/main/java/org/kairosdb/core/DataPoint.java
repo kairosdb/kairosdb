@@ -18,6 +18,8 @@ package org.kairosdb.core;
 
 import org.kairosdb.util.Util;
 
+import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+
 /**
  * Represents a single data point.
  * <p>
@@ -42,6 +44,20 @@ public class DataPoint implements Comparable<DataPoint>
 		m_isInteger = false;
 		m_timestamp = timestamp;
 		m_doubleValue = value;
+	}
+
+	public DataPoint(long timestamp, String value)
+	{
+		checkNotNullOrEmpty(value);
+		m_timestamp = timestamp;
+		if (value.contains(".")) {
+			m_doubleValue = Double.parseDouble(value);
+			m_isInteger = false;
+		}
+		else{
+			m_longValue = Long.parseLong(value);
+			m_isInteger = true;
+		}
 	}
 
 	/**

@@ -173,7 +173,7 @@ public class MetricsResourceTest
 
 		JsonResponse response = client.post(json, ADD_METRIC_URL);
 
-		assertResponse(response, 400, "{\"errors\":[\"datapoints.timestamp must be greater than or equal to 1.\"]}");
+		assertResponse(response, 400, "{\"errors\":[\"metric[1].datapoints[0].value cannot be null or empty. must be greater than or equal to 1.\"]}");
 	}
 
 	@Test

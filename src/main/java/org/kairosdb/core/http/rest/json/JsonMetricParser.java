@@ -124,23 +124,31 @@ public class JsonMetricParser
 	{
 		ValidationErrors validationErrors = new ValidationErrors();
 
-		if (Validator.isNotNullOrEmpty(validationErrors, "metric[" + count + "].name", metric.getName()))
-			Validator.isValidateCharacterSet(validationErrors, "metric[" + count + "].name", metric.getName());
+		String context = String.format("metric[%d]", count);
+		if (Validator.isNotNullOrEmpty(validationErrors, context + ".name", metric.getName()))
+		{
+			context = String.format("%s(name=%s)", context, metric.getName());
+			Validator.isValidateCharacterSet(validationErrors, context, metric.getName());
+		}
 
 		if (metric.getTimestamp() > 0)
-			Validator.isNotNullOrEmpty(validationErrors, "metric[" + count + "].value", metric.getValue());
+			Validator.isNotNullOrEmpty(validationErrors, context + ".value", metric.getValue());
 		if (metric.getValue() != null && !metric.getValue().isEmpty())
-			Validator.isGreaterThanOrEqualTo(validationErrors, "metric[" + count + "].timestamp", metric.getTimestamp(), 1);
+			Validator.isGreaterThanOrEqualTo(validationErrors, context + ".timestamp", metric.getTimestamp(), 1);
 
-		if (Validator.isGreaterThanOrEqualTo(validationErrors, "metric[" + count + "].tags count", metric.getTags().size(), 1))
+		if (Validator.isGreaterThanOrEqualTo(validationErrors, context + ".tags count", metric.getTags().size(), 1))
 		{
 			int tagCount = 0;
+			String tagContext = String.format("%s.tag[%d]", context, tagCount);
 			for (Map.Entry<String, String> entry : metric.getTags().entrySet())
 			{
-				if (Validator.isNotNullOrEmpty(validationErrors, String.format("metric[%d].tag[%d].name", count, tagCount), entry.getKey()))
-					Validator.isValidateCharacterSet(validationErrors, String.format("metric[%d].tag[%d].name", count, tagCount), entry.getKey());
-				if (Validator.isNotNullOrEmpty(validationErrors, String.format("metric[%d].tag[%d].value", count, tagCount), entry.getValue()))
-					Validator.isValidateCharacterSet(validationErrors, String.format("metric[%d].tag[%d].value", count, tagCount), entry.getValue());
+				if (Validator.isNotNullOrEmpty(validationErrors, String.format("%s.name", tagContext), entry.getKey()))
+				{
+					tagContext = String.format("%s.tag[%s]", context, entry.getKey());
+					Validator.isValidateCharacterSet(validationErrors, tagContext, entry.getKey());
+				}
+				if (Validator.isNotNullOrEmpty(validationErrors, String.format("%s.value", tagContext), entry.getValue()))
+					Validator.isValidateCharacterSet(validationErrors, String.format("%s.value", tagContext), entry.getValue());
 
 				tagCount++;
 			}
@@ -158,22 +166,23 @@ public class JsonMetricParser
 			if (metric.getDatapoints() != null && metric.getDatapoints().length > 0)
 			{
 				int dataPointCount = 0;
+				String dataPointContext = String.format("%s.datapoints[%d]", context, dataPointCount);
 				for (double[] dataPoint : metric.getDatapoints())
 				{
 					if (dataPoint.length < 1)
 					{
-						validationErrors.addErrorMessage(String.format("metric[%d].datapoints[%d].timestamp cannot be null or empty.", count, dataPointCount));
+						validationErrors.addErrorMessage(String.format("%s.timestamp cannot be null or empty.", context));
 						break;
 					}
 					else if (dataPoint.length < 2)
 					{
-						validationErrors.addErrorMessage(String.format("metric[%d].datapoints[%d].value cannot be null or empty.", count, dataPointCount));
+						validationErrors.addErrorMessage(String.format("%s.value cannot be null or empty.", dataPointContext));
 						break;
 					}
 					else
 					{
 						long timestamp = (long) dataPoint[0];
-						Validator.isGreaterThanOrEqualTo(validationErrors, String.format("metric[%d].datapoints[%d].value cannot be null or empty.", count, dataPointCount), timestamp, 1);
+						Validator.isGreaterThanOrEqualTo(validationErrors, String.format("%s.value cannot be null or empty.", dataPointContext), timestamp, 1);
 						if (dataPoint[1] % 1 == 0)
 							dataPointSet.addDataPoint(new DataPoint(timestamp, (long) dataPoint[1]));
 						else

@@ -84,7 +84,7 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].value may not be null."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).value may not be null."));
 	}
 
 	@Test
@@ -100,7 +100,7 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].timestamp must be greater than or equal to 1."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).timestamp must be greater than or equal to 1."));
 	}
 
 	@Test
@@ -116,7 +116,7 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].datapoints[0].timestamp cannot be null or empty."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).timestamp cannot be null or empty."));
 	}
 
 	@Test(expected = JsonSyntaxException.class)
@@ -164,7 +164,7 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].datapoints[0].value cannot be null or empty. must be greater than or equal to 1."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].value cannot be null or empty. must be greater than or equal to 1."));
 	}
 
 	@Test
@@ -197,7 +197,7 @@ public class JsonMetricParserTest
 
 		assertThat(validationErrors.size(), equalTo(1));
 		assertThat(validationErrors.getFirstError(),
-				equalTo("metric[0].name may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+				equalTo("metric[0](name=bad:name) may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
 	}
 
 	@Test
@@ -213,7 +213,7 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].tags count must be greater than or equal to 1."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metricName).tags count must be greater than or equal to 1."));
 	}
 
 	@Test
@@ -229,7 +229,7 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].tag[0].name may not be empty."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metricName).tag[0].name may not be empty."));
 	}
 
 	@Test
@@ -245,7 +245,8 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].tag[0].name may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+		assertThat(validationErrors.getFirstError(),
+				equalTo("metric[0](name=metricName).tag[bad:name] may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
 	}
 
 	@Test
@@ -261,7 +262,7 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].tag[0].value may not be empty."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metricName).tag[foo].value may not be empty."));
 	}
 
 	@Test
@@ -277,7 +278,8 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].tag[0].value may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+		assertThat(validationErrors.getFirstError(),
+				equalTo("metric[0](name=metricName).tag[foo].value may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
 	}
 
 	@Test
@@ -293,8 +295,8 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(2));
-		assertThat(validationErrors.getErrors(), hasItem("metric[0].tag[0].value may not be empty."));
-		assertThat(validationErrors.getErrors(), hasItem("metric[0].value may not be empty."));
+		assertThat(validationErrors.getErrors(), hasItem("metric[0](name=metricName).tag[name].value may not be empty."));
+		assertThat(validationErrors.getErrors(), hasItem("metric[0](name=metricName).value may not be empty."));
 	}
 
 	@Test

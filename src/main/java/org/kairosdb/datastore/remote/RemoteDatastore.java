@@ -50,6 +50,7 @@ public class RemoteDatastore implements Datastore
 	public static final String TIME_TO_SEND_METRIC = "kairosdb.datastore.remote.time_to_send";
 
 	private final Object m_dataFileLock = new Object();
+	private final Object m_sendLock = new Object();
 	private BufferedWriter m_dataWriter;
 	private String m_dataFileName;
 	private volatile boolean m_firstDataPoint = true;
@@ -296,49 +297,52 @@ public class RemoteDatastore implements Datastore
 
 	public void sendData() throws IOException
 	{
-		String oldDataFile = m_dataFileName;
-		long now = System.currentTimeMillis();
-
-		long fileSize = (new File(m_dataFileName)).length();
-
-		DataPointSet dpsFileSize = new DataPointSet(FILE_SIZE_METRIC);
-		dpsFileSize.addTag("host", m_hostName);
-		dpsFileSize.addDataPoint(new DataPoint(now, fileSize));
-
-		DataPointSet dpsWriteSize = new DataPointSet(WRITE_SIZE_METRIC);
-		dpsWriteSize.addTag("host", m_hostName);
-		dpsWriteSize.addDataPoint(new DataPoint(now, m_dataPointCounter));
-
-		synchronized (m_dataFileLock)
+		synchronized (m_sendLock)
 		{
-			closeDataFile();
-			openDataFile();
-		}
+			String oldDataFile = m_dataFileName;
+			long now = System.currentTimeMillis();
 
-		long zipSize = zipFile(oldDataFile);
+			long fileSize = (new File(m_dataFileName)).length();
 
-		DataPointSet dpsZipFileSize = new DataPointSet(ZIP_FILE_SIZE_METRIC);
-		dpsZipFileSize.addTag("host", m_hostName);
-		dpsZipFileSize.addDataPoint(new DataPoint(now, zipSize));
+			DataPointSet dpsFileSize = new DataPointSet(FILE_SIZE_METRIC);
+			dpsFileSize.addTag("host", m_hostName);
+			dpsFileSize.addDataPoint(new DataPoint(now, fileSize));
 
-		sendAllZipfiles();
+			DataPointSet dpsWriteSize = new DataPointSet(WRITE_SIZE_METRIC);
+			dpsWriteSize.addTag("host", m_hostName);
+			dpsWriteSize.addDataPoint(new DataPoint(now, m_dataPointCounter));
 
-		long timeToSend = System.currentTimeMillis() - now;
+			synchronized (m_dataFileLock)
+			{
+				closeDataFile();
+				openDataFile();
+			}
 
-		DataPointSet dpsTimeToSend = new DataPointSet(TIME_TO_SEND_METRIC);
-		dpsTimeToSend.addTag("host", m_hostName);
-		dpsTimeToSend.addDataPoint(new DataPoint(now, timeToSend));
+			long zipSize = zipFile(oldDataFile);
 
-		try
-		{
-			putDataPoints(dpsFileSize);
-			putDataPoints(dpsWriteSize);
-			putDataPoints(dpsTimeToSend);
-			putDataPoints(dpsZipFileSize);
-		}
-		catch (DatastoreException e)
-		{
-			logger.error("Error writing remote metrics", e);
+			DataPointSet dpsZipFileSize = new DataPointSet(ZIP_FILE_SIZE_METRIC);
+			dpsZipFileSize.addTag("host", m_hostName);
+			dpsZipFileSize.addDataPoint(new DataPoint(now, zipSize));
+
+			sendAllZipfiles();
+
+			long timeToSend = System.currentTimeMillis() - now;
+
+			DataPointSet dpsTimeToSend = new DataPointSet(TIME_TO_SEND_METRIC);
+			dpsTimeToSend.addTag("host", m_hostName);
+			dpsTimeToSend.addDataPoint(new DataPoint(now, timeToSend));
+
+			try
+			{
+				putDataPoints(dpsFileSize);
+				putDataPoints(dpsWriteSize);
+				putDataPoints(dpsTimeToSend);
+				putDataPoints(dpsZipFileSize);
+			}
+			catch (DatastoreException e)
+			{
+				logger.error("Error writing remote metrics", e);
+			}
 		}
 	}
 

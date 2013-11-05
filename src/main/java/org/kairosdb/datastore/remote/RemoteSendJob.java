@@ -3,10 +3,7 @@ package org.kairosdb.datastore.remote;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.scheduler.KairosDBJob;
-import org.quartz.CronScheduleBuilder;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.Trigger;
+import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +19,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
  Time: 4:22 PM
  To change this template use File | Settings | File Templates.
  */
+@DisallowConcurrentExecution
 public class RemoteSendJob implements KairosDBJob
 {
 	public static final Logger logger = LoggerFactory.getLogger(RemoteSendJob.class);
@@ -76,7 +74,7 @@ public class RemoteSendJob implements KairosDBJob
 			m_datastore.sendData();
 			logger.debug("Finished sending remote data");
 		}
-		catch (IOException e)
+		catch (Exception e)
 		{
 			logger.error("Unable to send remote data", e);
 			throw new JobExecutionException("Unable to send remote data: "+e.getMessage());

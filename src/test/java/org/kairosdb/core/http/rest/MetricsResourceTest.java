@@ -23,7 +23,6 @@ import com.google.inject.name.Names;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointListenerProvider;
 import org.kairosdb.core.DataPointSet;
@@ -174,7 +173,7 @@ public class MetricsResourceTest
 
 		JsonResponse response = client.post(json, ADD_METRIC_URL);
 
-		assertResponse(response, 400, "{\"errors\":[\"datapoints.timestamp must be greater than or equal to 1.\"]}");
+		assertResponse(response, 400, "{\"errors\":[\"metric[1](name=archive.file.search).datapoints[0].value cannot be null or empty. must be greater than or equal to 1.\"]}");
 	}
 
 	@Test

@@ -85,6 +85,13 @@ public class CarbonPickleServer extends SimpleChannelUpstreamHandler implements 
 				if (dps == null)
 					continue;
 
+				//validate dps has at least one tag
+				if (dps.getTags().size() == 0)
+				{
+					logger.warn("Metric "+metric.getPath()+" is missing a tag");
+					return;
+				}
+
 				long time = metric.getTime();
 
 				time *= 1000;  //Convert to milliseconds

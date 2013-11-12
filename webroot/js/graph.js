@@ -8,7 +8,8 @@ function displayQuery() {
 		$("#query-text").val('var query = ' + queryString.replace(/\"(\w*)\":/g, "$1:") + ';');
 }
 
-function updateChart() {
+function clear()
+{
 	$("#resetZoom").hide();
 	$("#errorContainer").hide();
 
@@ -19,7 +20,24 @@ function updateChart() {
 	$("#flotTitle").html("");
 	$("#graphLegend").html("");
 	$("#chartContainer").html("");
+}
 
+function updateChart() {
+	clear();
+	var query=buildKairosDBQuery();
+
+	var metricData = getAdditionalChartData();
+	$('#query-hidden-text').val(JSON.stringify(query, null, 2));
+	displayQuery();
+
+	var $graphLink = $("#graph_link");
+	$graphLink.attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
+	$graphLink.show();
+	showChartForQuery("(Click and drag to zoom)", query, metricData);
+}
+
+function buildKairosDBQuery() {
+	var hasError = false;
 	var query = new kairosdb.MetricQuery();
 
 	// todo cachetime
@@ -29,6 +47,7 @@ function updateChart() {
 		var metricName = $metricContainer.find('.metricName').combobox("value");
 		if (!metricName) {
 			showErrorMessage("Metric Name is required.");
+			hasError = true;
 			return;
 		}
 
@@ -41,6 +60,7 @@ function updateChart() {
 				var tags = $(groupBy).find(".groupByTagsValue").val();
 				if (!tags || tags.length < 1) {
 					showErrorMessage("Missing Group By tag names.");
+					hasError = true;
 					return true; // continue to next item
 				}
 				metric.addGroupBy(new kairosdb.TagGroupBy(tags));
@@ -52,11 +72,13 @@ function updateChart() {
 
 				if (value < 1) {
 					showErrorMessage("Missing Time Group By size must be greater than 0.");
+					hasError = true;
 					return true;
 				}
 
 				if (count < 1) {
 					showErrorMessage("Missing Time Group By count must be greater than 0.");
+					hasError = true;
 					return true;
 				}
 				metric.addGroupBy(new kairosdb.TimeGroupBy(value, unit, count));
@@ -65,6 +87,7 @@ function updateChart() {
 				var size = $(groupBy).find(".groupByValueValue").val();
 				if (size < 1) {
 					showErrorMessage("Missing Value Group By size must be greater than 0.");
+					hasError = true;
 					return true;
 				}
 				metric.addGroupBy(new kairosdb.ValueGroupBy(size));
@@ -120,6 +143,7 @@ function updateChart() {
 			var intRegex = /^(0*\.\d*|(0*1(\.0*|))|0+)$/;
 			if (!intRegex.test(percentile)) {
 				showErrorMessage("percentile value must be between [0-1]");
+				hasError = true;
 				return false;
 			}
 			else {
@@ -131,6 +155,7 @@ function updateChart() {
 			var intRegex = /^\d+$/;
 			if (!intRegex.test(value)) {
 				showErrorMessage("sampling value must be an integer greater than 0.");
+				hasError = true;
 				return false;
 			}
 			else {
@@ -141,14 +166,15 @@ function updateChart() {
 		function isValidScalingFactor(value)
 		{
 			var intRegex = /^\d*(\.\d+)?$/;
-	        if(!intRegex.test(value)) {
-	           showErrorMessage("scaling factor must be a floating point number >= 0.")
-	           return false;
-	        }
-	        else
-	        {
-	            return true;
-	        }
+			if(!intRegex.test(value)) {
+				showErrorMessage("scaling factor must be a floating point number >= 0.")
+				hasError = true;
+				return false;
+			}
+			else
+			{
+				return true;
+			}
 		}
 
 		// Add Tags
@@ -174,6 +200,7 @@ function updateChart() {
 	}
 	else {
 		showErrorMessage("Start time is required.");
+		hasError = true;
 		return;
 	}
 
@@ -188,14 +215,7 @@ function updateChart() {
 		}
 	}
 
-	var metricData = getAdditionalChartData();
-	$('#query-hidden-text').val(JSON.stringify(query, null, 2));
-	displayQuery();
-
-	var $graphLink = $("#graph_link");
-	$graphLink.attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
-	$graphLink.show();
-	showChartForQuery("(Click and drag to zoom)", query, metricData);
+	return hasError ? null : query;
 }
 
 /**

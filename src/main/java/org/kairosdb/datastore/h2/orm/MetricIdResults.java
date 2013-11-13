@@ -25,6 +25,7 @@ import genorm.runtime.GenOrmQueryRecord;
 	Returns the metric ids for a specified query. In essence this the initial rows returned.
 */
 public interface MetricIdResults extends GenOrmQueryRecord
-	{
+{
 	public String getMetricId();
-	}
+	public String getType();
+}

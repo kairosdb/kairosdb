@@ -14,7 +14,7 @@
 			<type custom="boolean" java="boolean" db="BOOLEAN"/>
 			<type custom="string" java="String" db="VARCHAR"/>
 			<type custom="timestamp" java="java.sql.Timestamp" db="TIMESTAMP"/>
-			<type custom="binary" java="byte[]" db="BYTEA"/>
+			<type custom="binary" java="byte[]" db="BINARY"/>
 			<type custom="money" java="java.math.BigDecimal" db="DECIMAL"/>
 			<type custom="version" java="Double" db="DOUBLE PRECISION"/>
 		</type_map>
@@ -28,6 +28,7 @@
 			<comment>id is the combination of the name and tags</comment>
 		</col>
 		<col name="name" type="string"/>
+		<col name="type" type="string"/>
 	</table>
 
 	<table name="tag">
@@ -43,8 +44,7 @@
 			<reference table="metric" column="id"/>
 		</col>
 		<col name="timestamp" type="timestamp" primary_key="true"/>
-		<col name="long_value" type="long"/>
-		<col name="double_value" type="double"/>
+		<col name="value" type="binary"/>
 
 		<table_query name="for_metric_id" result_type="multi">
 			<input>
@@ -166,9 +166,10 @@
 			</replace>
 			<return>
 				<param name="metric_id" type="string"/>
+				<param name="type" type="string"/>
 			</return>
 			<sql>
-				select m."id" as metric_id from metric m, metric_tag mt
+				select m."id" as metric_id, m.type from metric m, metric_tag mt
 				where
 				mt."metric_id" = m."id"
 				and m."name" = ?
@@ -193,33 +194,20 @@
 			</sql>
 		</query>
 
-		<query name="insert_long_data_point">
+		<query name="insert_data_point">
 			<comment>
 				Inserts or updates data point
 			</comment>
 			<input>
 				<param name="metric_id" type="string" test="test_metric"/>
 				<param name="timestamp" type="timestamp" test=""/>
-				<param name="value" type="long" test="123"/>
+				<param name="value" type="binary" test=""/>
 			</input>
 			<sql>
-				MERGE INTO data_point ("metric_id", "timestamp", "long_value") VALUES(?, ?, ?)
+				MERGE INTO data_point ("metric_id", "timestamp", "value") VALUES(?, ?, ?)
 			</sql>
 		</query>
 
-		<query name="insert_double_data_point">
-			<comment>
-				Inserts or updates data point
-			</comment>
-			<input>
-				<param name="metric_id" type="string" test="test_metric"/>
-				<param name="timestamp" type="timestamp" test=""/>
-				<param name="value" type="double" test="123.123"/>
-			</input>
-			<sql>
-				MERGE INTO data_point ("metric_id", "timestamp", "double_value") VALUES(?, ?, ?)
-			</sql>
-		</query>
 
 		<query name="count_data_points_for_metric">
 			<comment>

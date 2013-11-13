@@ -16,6 +16,8 @@
 
 package org.kairosdb.core;
 
+import org.kairosdb.core.datapoints.DataPointFactory;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -34,4 +36,8 @@ public interface KairosDataPointFactory
 	public DataPoint createDataPoint(byte type, long timestamp, ByteBuffer buffer);
 
 	public byte getTypeByte(String type);
+
+	public DataPointFactory getFactoryForType(String type);
+
+	public DataPointFactory getFactoryForDataStoreType(String dataStoreType);
 }

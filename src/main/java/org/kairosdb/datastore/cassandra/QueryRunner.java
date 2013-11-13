@@ -152,7 +152,7 @@ public class QueryRunner
 		if (columns.size() != 0)
 		{
 			Map<String, String> tags = rowKey.getTags();
-			m_queryCallback.startDataPointSet(tags);
+			m_queryCallback.startDataPointSet(rowKey.getDataType(), tags);
 
 			for (HColumn<Integer, ByteBuffer> column : columns)
 			{

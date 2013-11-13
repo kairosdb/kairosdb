@@ -22,6 +22,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.datapoints.DataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPoint;
@@ -59,7 +60,7 @@ public class KairosDatastore
 	private final QueryQueuingManager m_queuingManager;
 	private final List<DataPointListener> m_dataPointListeners;
 	private final String m_hostname;
-	private final DataPointFactory m_dataPointFactory;
+	private final KairosDataPointFactory m_dataPointFactory;
 
 	private String m_baseCacheDir;
 	private volatile String m_cacheDir;
@@ -68,7 +69,7 @@ public class KairosDatastore
 	@Inject
 	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
 	      List<DataPointListener> dataPointListeners, @Named("HOSTNAME") String hostname,
-			DataPointFactory dataPointFactory)
+			KairosDataPointFactory dataPointFactory)
 			throws DatastoreException
 	{
 		m_datastore = checkNotNull(datastore);
@@ -409,7 +410,7 @@ public class KairosDatastore
 				if (m_metric.getCacheTime() > 0)
 				{
 					cachedResults = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
-							tempFile, m_metric.getCacheTime());
+							tempFile, m_metric.getCacheTime(), m_dataPointFactory);
 					if (cachedResults != null)
 					{
 						returnedRows = cachedResults.getRows();
@@ -421,7 +422,7 @@ public class KairosDatastore
 				{
 					logger.debug("Cache MISS!");
 					cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
-							tempFile);
+							tempFile, m_dataPointFactory);
 					m_datastore.queryDatabase(m_metric, cachedResults);
 					returnedRows = cachedResults.getRows();
 				}

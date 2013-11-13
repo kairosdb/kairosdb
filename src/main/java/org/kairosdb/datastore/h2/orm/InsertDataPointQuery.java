@@ -19,12 +19,12 @@ import genorm.runtime.*;
 /**
 	Inserts or updates data point
 */
-public class InsertLongDataPointQuery extends genorm.runtime.SQLQuery
+public class InsertDataPointQuery extends genorm.runtime.SQLQuery
 	{
-	private static final Logger s_logger = LoggerFactory.getLogger(InsertLongDataPointQuery.class.getName());
+	private static final Logger s_logger = LoggerFactory.getLogger(InsertDataPointQuery.class.getName());
 	
-	public static final String QUERY_NAME = "insert_long_data_point";
-	public static final String QUERY = "MERGE INTO data_point (\"metric_id\", \"timestamp\", \"long_value\") VALUES(?, ?, ?)";
+	public static final String QUERY_NAME = "insert_data_point";
+	public static final String QUERY = "MERGE INTO data_point (\"metric_id\", \"timestamp\", \"value\") VALUES(?, ?, ?)";
 	private static final int ATTRIBUTE_COUNT = 0;
 	private static Map<String, Integer> s_attributeIndex;
 	private static String[] s_attributeNames = {
@@ -41,15 +41,15 @@ public class InsertLongDataPointQuery extends genorm.runtime.SQLQuery
 	
 	private String m_metricId;
 	private java.sql.Timestamp m_timestamp;
-	private long m_value;
+	private byte[] m_value;
 
 	//Deprecated
-	public InsertLongDataPointQuery()
+	public InsertDataPointQuery()
 		{
 		super();
 		}		
 	//---------------------------------------------------------------------------
-	public InsertLongDataPointQuery(String metricId, java.sql.Timestamp timestamp, long value)
+	public InsertDataPointQuery(String metricId, java.sql.Timestamp timestamp, byte[] value)
 		{
 		super();
 		m_metricId = metricId;
@@ -84,7 +84,7 @@ public class InsertLongDataPointQuery extends genorm.runtime.SQLQuery
 	
 	//---------------------------------------------------------------------------
 	//Deprecated
-	public int runUpdate(String metricId, java.sql.Timestamp timestamp, long value)
+	public int runUpdate(String metricId, java.sql.Timestamp timestamp, byte[] value)
 		{
 		int ret = 0;
 		java.sql.PreparedStatement genorm_statement = null;
@@ -96,7 +96,7 @@ public class InsertLongDataPointQuery extends genorm.runtime.SQLQuery
 			genorm_statement = org.kairosdb.datastore.h2.orm.GenOrmDataSource.prepareStatement(genorm_query);
 			genorm_statement.setString(1, metricId);
 			genorm_statement.setTimestamp(2, timestamp);
-			genorm_statement.setLong(3, value);
+			genorm_statement.setBytes(3, value);
 
 			
 			ret = genorm_statement.executeUpdate();
@@ -129,7 +129,7 @@ public class InsertLongDataPointQuery extends genorm.runtime.SQLQuery
 			genorm_statement = org.kairosdb.datastore.h2.orm.GenOrmDataSource.prepareStatement(genorm_query);
 			genorm_statement.setString(1, m_metricId);
 			genorm_statement.setTimestamp(2, m_timestamp);
-			genorm_statement.setLong(3, m_value);
+			genorm_statement.setBytes(3, m_value);
 
 			
 			ret = genorm_statement.executeUpdate();

@@ -37,8 +37,6 @@ import java.util.Properties;
 
 public class CoreModule extends AbstractModule
 {
-	public static final String DATAPOINTS_FACTORY_PROP_PREFIX = "kairosdb.datapoints.factory.";
-
 	private Properties m_props;
 
 	public CoreModule(Properties props)
@@ -76,6 +74,7 @@ public class CoreModule extends AbstractModule
 		bind(TagGroupBy.class);
 
 		Names.bindProperties(binder(), m_props);
+		bind(Properties.class).toInstance(m_props);
 
 		String hostname = m_props.getProperty("kairosdb.hostname");
 		bindConstant().annotatedWith(Names.named("HOSTNAME")).to(hostname != null ? hostname: Util.getHostName());
@@ -87,15 +86,5 @@ public class CoreModule extends AbstractModule
 		bind(LongDataPointFactoryImpl.class);
 
 		bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class).in(Singleton.class);
-
-		Move the code below into an overall datapoint factory class and bind it.
-		it will then provide the appropriate factory for the specified type.
-		for (String key : m_props.keySet())
-		{
-			if (key.startsWith(DATAPOINTS_FACTORY_PROP_PREFIX))
-			{
-
-			}
-		}
 	}
 }

@@ -20,18 +20,16 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
-<<<<<<< HEAD
 import org.kairosdb.core.*;
 import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.DataPointRow;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
-=======
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.*;
->>>>>>> develop
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.h2.orm.*;
+import org.kairosdb.datastore.h2.orm.DataPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -145,16 +143,8 @@ public class H2Datastore implements Datastore
 
 			for (org.kairosdb.core.DataPoint dataPoint : dps.getDataPoints())
 			{
-				if ( dataPoint.isInteger())
-				{
-					new InsertLongDataPointQuery(m.getId(), new Timestamp(dataPoint.getTimestamp()),
-							dataPoint.getLongValue()).runUpdate();
-				}
-				else
-				{
-					new InsertDoubleDataPointQuery(m.getId(), new Timestamp(dataPoint.getTimestamp()),
-							dataPoint.getDoubleValue()).runUpdate();
-				}
+				new InsertDataPointQuery(m.getId(), new Timestamp(dataPoint.getTimestamp()),
+						dataPoint.toByteBuffer().array()).runUpdate();
 			}
 
 			GenOrmDataSource.commit();
@@ -270,7 +260,10 @@ public class H2Datastore implements Datastore
 		{
 			while (idQuery.next())
 			{
-				String metricId = idQuery.getRecord().getMetricId();
+				MetricIdResults result = idQuery.getRecord();
+
+				String metricId = result.getMetricId();
+				String type = result.getType();
 
 				//Collect the tags in the results
 				MetricTag.ResultSet tags = MetricTag.factory.getByMetric(metricId);
@@ -282,13 +275,7 @@ public class H2Datastore implements Datastore
 					tagMap.put(mtag.getTagName(), mtag.getTagValue());
 				}
 
-<<<<<<< HEAD
-			org.kairosdb.datastore.h2.orm.DataPoint.ResultSet resultSet = org.kairosdb.datastore.h2.orm.DataPoint.factory.getForMetricId(metricId,
-					new Timestamp(query.getStartTime()),
-					new Timestamp(query.getEndTime()));
-=======
-				queryCallback.startDataPointSet(tagMap);
->>>>>>> develop
+				queryCallback.startDataPointSet(type, tagMap);
 
 				Timestamp startTime = new Timestamp(query.getStartTime());
 				Timestamp endTime = new Timestamp(query.getEndTime());
@@ -387,6 +374,8 @@ public class H2Datastore implements Datastore
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append(dps.getName()).append(":");
+
+		sb.append(dps.getDataStoreDataType()).append(":");
 
 		SortedMap<String, String> tags = dps.getTags();
 		for (String name : tags.keySet())

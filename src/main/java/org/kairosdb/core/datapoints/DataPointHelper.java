@@ -27,16 +27,4 @@ public abstract class DataPointHelper implements DataPoint
 		return m_timestamp;
 	}
 
-	//@Override
-	public int compareTo(DataPoint o)
-	{
-		long ret = getTimestamp() - o.getTimestamp();
-
-		if (ret == 0L)
-		{  //Simple hack to break a tie.
-			ret = System.identityHashCode(this) - System.identityHashCode(o);
-		}
-
-		return (ret < 0L ? -1 : 1);
-	}
 }

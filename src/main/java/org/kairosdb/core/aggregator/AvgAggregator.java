@@ -18,11 +18,10 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.NumericDataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datapoints.DataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
-import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.core.exception.KairosDBException;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -39,7 +38,7 @@ public class AvgAggregator extends RangeAggregator
 	DoubleDataPointFactory m_dataPointFactory;
 
 	@Inject
-	public AvgAggregator(DoubleDataPointFactory dataPointFactory) throws KariosDBException
+	public AvgAggregator(DoubleDataPointFactory dataPointFactory) throws KairosDBException
 	{
 		m_dataPointFactory = dataPointFactory;
 	}
@@ -61,9 +60,9 @@ public class AvgAggregator extends RangeAggregator
 			while (dataPointRange.hasNext())
 			{
 				DataPoint dp = dataPointRange.next();
-				if (dp instanceof NumericDataPoint)
+				if (dp.isDouble())
 				{
-					sum += ((NumericDataPoint)dp).getDoubleValue();
+					sum += dp.getDoubleValue();
 					count++;
 				}
 			}

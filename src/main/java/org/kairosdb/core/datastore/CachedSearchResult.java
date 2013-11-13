@@ -17,6 +17,7 @@
 package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.DataPointFactory;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.StringPool;
@@ -49,7 +50,7 @@ public class CachedSearchResult implements QueryCallback
 	private File m_indexFile;
 	private AtomicInteger m_closeCounter = new AtomicInteger();
 	private boolean m_readFromCache = false;
-	private DataPointFactory m_dataPointFactory;
+	private KairosDataPointFactory m_dataPointFactory;
 	private StringPool m_stringPool;
 	private int m_readBufferSize = MAX_READ_BUFFER_SIZE;
 
@@ -70,7 +71,7 @@ public class CachedSearchResult implements QueryCallback
 	}
 
 	private CachedSearchResult(String metricName, File dataFile, File indexFile,
-			DataPointFactory datatPointFactory)
+			KairosDataPointFactory datatPointFactory)
 			throws FileNotFoundException
 	{
 		m_metricName = metricName;
@@ -144,7 +145,7 @@ public class CachedSearchResult implements QueryCallback
 	}
 
 	public static CachedSearchResult createCachedSearchResult(String metricName,
-			String baseFileName, DataPointFactory dataPointFactory)
+			String baseFileName, KairosDataPointFactory dataPointFactory)
 			throws IOException
 	{
 		File dataFile = getDataFile(baseFileName);
@@ -165,7 +166,7 @@ public class CachedSearchResult implements QueryCallback
 	 @return The CachedSearchResult if the file exists or null if it doesn't
 	 */
 	public static CachedSearchResult openCachedSearchResult(String metricName,
-			String baseFileName, int cacheTime, DataPointFactory dataPointFactory) throws IOException
+			String baseFileName, int cacheTime, KairosDataPointFactory dataPointFactory) throws IOException
 	{
 		CachedSearchResult ret = null;
 		File dataFile = getDataFile(baseFileName);
@@ -260,7 +261,7 @@ public class CachedSearchResult implements QueryCallback
 		}
 	}
 
-	/*public void addDataPoint(long timestamp, long value) throws IOException
+	public void addDataPoint(long timestamp, long value) throws IOException
 	{
 		if (!m_writeBuffer.hasRemaining())
 		{
@@ -284,7 +285,7 @@ public class CachedSearchResult implements QueryCallback
 		m_writeBuffer.putDouble(value);
 
 		m_currentFilePositionMarker.incrementDataPointCount();
-	}*/
+	}
 
 	public List<DataPointRow> getRows()
 	{
@@ -469,7 +470,7 @@ public class CachedSearchResult implements QueryCallback
 
 				long timestamp = m_readBuffer.getLong();
 
-				ret = m_dataPointFactory.getDataPoint(timestamp, m_readBuffer);
+				ret = m_dataPointFactory.createDataPoint(m_dataType, timestamp, m_readBuffer);
 
 			}
 			catch (IOException ioe)

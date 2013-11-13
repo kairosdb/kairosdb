@@ -42,6 +42,30 @@ public class DoubleDataPoint extends DataPointHelper implements NumericDataPoint
 	@Override
 	public String getDataStoreDataType()
 	{
-		return "double";
+		return DoubleDataPointFactoryImpl.DST_DOUBLE;
+	}
+
+	@Override
+	public boolean isLong()
+	{
+		return false;
+	}
+
+	@Override
+	public long getLong()
+	{
+		return 0;
+	}
+
+	@Override
+	public boolean isDouble()
+	{
+		return true;
+	}
+
+	@Override
+	public double getDouble()
+	{
+		return m_value;
 	}
 }

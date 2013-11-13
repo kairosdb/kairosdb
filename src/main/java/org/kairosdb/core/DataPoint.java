@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 
 
-public interface DataPoint extends Comparable<DataPoint>
+public interface DataPoint
 {
 	public static final String API_LONG = "long";
 	public static final String API_DOUBLE = "double";
@@ -19,14 +19,6 @@ public interface DataPoint extends Comparable<DataPoint>
 	public ByteBuffer toByteBuffer();
 	public String toString();
 
-	/**
-	 This is used when sorting data points within the tournament tree.
-	 The sorting must be by timestamp.  Two objects *must not* be considered equal
-	 or they will disappear in the storing process.
-	 @param dp
-	 @return Must return either 1 or -1, never 0 or data loss will occur.
-	 */
-	public int compareTo(DataPoint dp);
 
 	/**
 		This is used to identify the data type on the wire in json format
@@ -43,5 +35,10 @@ public interface DataPoint extends Comparable<DataPoint>
 	 @return
 	 */
 	public String getDataStoreDataType();
+
+	public boolean isLong();
+	public long getLongValue();
+	public boolean isDouble();
+	public double getDoubleValue();
 
 }

@@ -21,10 +21,15 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.DataPointFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  Created with IntelliJ IDEA.
@@ -35,38 +40,89 @@ import java.util.Map;
  */
 public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 {
+	public static final Logger logger = LoggerFactory.getLogger(GuiceKairosDataPointFactory.class);
+	public static final String DATAPOINTS_FACTORY_PROP_PREFIX = "kairosdb.datapoints.factory.";
+
+	private Map<String, DataPointFactory> m_factoryMapDataStore = new HashMap<String, DataPointFactory>();
+	private Map<String, DataPointFactory> m_factoryMapRegistered = new HashMap<String, DataPointFactory>();
+
 
 	@Inject
-	public GuiceKairosDataPointFactory(Injector injector)
+	public GuiceKairosDataPointFactory(Injector injector, Properties props)
 	{
-		m_injector = injector;
 		Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
 
 		for (Key<?> key : bindings.keySet())
 		{
 			Class bindingClass = key.getTypeLiteral().getRawType();
-			if (Aggregator.class.isAssignableFrom(bindingClass))
+			if (DataPointFactory.class.isAssignableFrom(bindingClass))
 			{
-				AggregatorName ann = (AggregatorName)bindingClass.getAnnotation(AggregatorName.class);
-				if (ann == null)
-					throw new IllegalStateException("Aggregator class "+bindingClass.getName()+
-							" does not have required annotation "+AggregatorName.class.getName());
+				DataPointFactory factory = (DataPointFactory)injector.getInstance(bindingClass);
+				String dsType = factory.getDataStoreType();
+				DataPointFactory registered = m_factoryMapDataStore.put(dsType, factory);
+				if (registered != null)
+				{
+					logger.error("Multiple classes registered for data store type.  Registered {} but {} was already registered for type {}",
+							factory.getClass(), registered.getClass(), dsType);
+				}
+			}
+		}
 
-				m_aggregators.put(ann.name(), bindingClass);
+		for (Object prop : props.keySet())
+		{
+			String key = (String)prop;
+			if (key.startsWith(DATAPOINTS_FACTORY_PROP_PREFIX))
+			{
+				String className = (String)props.getProperty(key);
+				String type = key.substring(DATAPOINTS_FACTORY_PROP_PREFIX.length());
+				try
+				{
+					Class factoryClass = Class.forName(className);
+
+					DataPointFactory factory = (DataPointFactory) injector.getInstance(factoryClass);
+
+					m_factoryMapRegistered.put(type, factory);
+				}
+				catch (ClassNotFoundException e)
+				{
+					logger.error("Unable to load class {} specified by property {}.", className, key);
+				}
 			}
 		}
 	}
 
+	/**
+	 Creates DataPoint using the registered type
+	 @param type registered type in the configuration file
+	 @param timestamp
+	 @param json
+	 @return
+	 */
 	@Override
 	public DataPoint createDataPoint(String type, long timestamp, String json)
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		DataPointFactory factory = m_factoryMapRegistered.get(type);
+
+		DataPoint dp = factory.getDataPoint(timestamp, json);
+
+		return (dp);
 	}
 
+	/**
+	 Creates a DataPoint using the data store type.
+	 @param dataStoreType Internal data store type.
+	 @param timestamp
+	 @param buffer
+	 @return
+	 */
 	@Override
-	public DataPoint createDataPoint(String type, long timestamp, ByteBuffer buffer)
+	public DataPoint createDataPoint(String dataStoreType, long timestamp, ByteBuffer buffer)
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		DataPointFactory factory = m_factoryMapDataStore.get(dataStoreType);
+
+		DataPoint dp = factory.getDataPoint(timestamp, buffer);
+
+		return (dp);
 	}
 
 	@Override
@@ -79,5 +135,29 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 	public byte getTypeByte(String type)
 	{
 		return 0;  //To change body of implemented methods use File | Settings | File Templates.
+	}
+
+	/**
+	 Locate a DataPointFactory for the specified data point type.
+	 @param type publicly registered data type
+	 @return
+	 */
+	@Override
+	public DataPointFactory getFactoryForType(String type)
+	{
+
+		return (null);
+	}
+
+	/**
+	 Locate a DataPointFactory for the specified data store type.
+	 @param dataStoreType Internally registered type for a data point.
+	 @return
+	 */
+	@Override
+	public DataPointFactory getFactoryForDataStoreType(String dataStoreType)
+	{
+
+		return (null);
 	}
 }

@@ -47,6 +47,30 @@ public class LongDataPoint extends DataPointHelper implements NumericDataPoint
 	@Override
 	public String getDataStoreDataType()
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		return LongDataPointFactoryImpl.DST_LONG;
+	}
+
+	@Override
+	public boolean isLong()
+	{
+		return true;
+	}
+
+	@Override
+	public long getLong()
+	{
+		return m_value;
+	}
+
+	@Override
+	public boolean isDouble()
+	{
+		return true;
+	}
+
+	@Override
+	public double getDouble()
+	{
+		return (double)m_value;
 	}
 }

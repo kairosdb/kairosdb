@@ -14,26 +14,24 @@ public class DataPoint_base extends GenOrmRecord
 
 	public static final String COL_METRIC_ID = "metric_id";
 	public static final String COL_TIMESTAMP = "timestamp";
-	public static final String COL_LONG_VALUE = "long_value";
-	public static final String COL_DOUBLE_VALUE = "double_value";
+	public static final String COL_VALUE = "value";
 
 	//Change this value to true to turn on warning messages
 	private static final boolean WARNINGS = false;
-	private static final String SELECT = "SELECT this.\"metric_id\", this.\"timestamp\", this.\"long_value\", this.\"double_value\" ";
+	private static final String SELECT = "SELECT this.\"metric_id\", this.\"timestamp\", this.\"value\" ";
 	private static final String FROM = "FROM data_point this ";
 	private static final String WHERE = "WHERE ";
 	private static final String KEY_WHERE = "WHERE \"metric_id\" = ? AND \"timestamp\" = ?";
 	
 	public static final String TABLE_NAME = "data_point";
-	public static final int NUMBER_OF_COLUMNS = 4;
+	public static final int NUMBER_OF_COLUMNS = 3;
 	
 	
 	private static final String s_fieldEscapeString = "\""; 
 	
 	public static final GenOrmFieldMeta METRIC_ID_FIELD_META = new GenOrmFieldMeta("metric_id", "string", 0, true, true);
 	public static final GenOrmFieldMeta TIMESTAMP_FIELD_META = new GenOrmFieldMeta("timestamp", "timestamp", 1, true, false);
-	public static final GenOrmFieldMeta LONG_VALUE_FIELD_META = new GenOrmFieldMeta("long_value", "long", 2, false, false);
-	public static final GenOrmFieldMeta DOUBLE_VALUE_FIELD_META = new GenOrmFieldMeta("double_value", "double", 3, false, false);
+	public static final GenOrmFieldMeta VALUE_FIELD_META = new GenOrmFieldMeta("value", "binary", 2, false, false);
 
 	
 		
@@ -57,7 +55,7 @@ public class DataPoint_base extends GenOrmRecord
 	public static class DataPointFactoryImpl //Inherit interfaces
 			implements DataPointFactory 
 		{
-		public static final String CREATE_SQL = "CREATE CACHED TABLE data_point (\n	\"metric_id\" VARCHAR  NOT NULL,\n	\"timestamp\" TIMESTAMP  NOT NULL,\n	\"long_value\" BIGINT  NULL,\n	\"double_value\" DOUBLE  NULL,\n	PRIMARY KEY (\"metric_id\", \"timestamp\"),\n	CONSTRAINT data_point_metric_id_fkey FOREIGN KEY (\"metric_id\")\n		REFERENCES metric (\"id\") \n	)";
+		public static final String CREATE_SQL = "CREATE CACHED TABLE data_point (\n	\"metric_id\" VARCHAR  NOT NULL,\n	\"timestamp\" TIMESTAMP  NOT NULL,\n	\"value\" BINARY  NULL,\n	PRIMARY KEY (\"metric_id\", \"timestamp\"),\n	CONSTRAINT data_point_metric_id_fkey FOREIGN KEY (\"metric_id\")\n		REFERENCES metric (\"id\") \n	)";
 
 		private ArrayList<GenOrmFieldMeta> m_fieldMeta;
 		private ArrayList<GenOrmConstraint> m_foreignKeyConstraints;
@@ -67,8 +65,7 @@ public class DataPoint_base extends GenOrmRecord
 			m_fieldMeta = new ArrayList<GenOrmFieldMeta>();
 			m_fieldMeta.add(METRIC_ID_FIELD_META);
 			m_fieldMeta.add(TIMESTAMP_FIELD_META);
-			m_fieldMeta.add(LONG_VALUE_FIELD_META);
-			m_fieldMeta.add(DOUBLE_VALUE_FIELD_META);
+			m_fieldMeta.add(VALUE_FIELD_META);
 
 			m_foreignKeyConstraints = new ArrayList<GenOrmConstraint>();
 			m_foreignKeyConstraints.add(new GenOrmConstraint("metric", "data_point_metric_id_fkey", "CONSTRAINT data_point_metric_id_fkey FOREIGN KEY (\"metric_id\")\n	REFERENCES metric (\"id\")"));
@@ -636,8 +633,7 @@ public class DataPoint_base extends GenOrmRecord
 		
 	private GenOrmString m_metricId;
 	private GenOrmTimestamp m_timestamp;
-	private GenOrmLong m_longValue;
-	private GenOrmDouble m_doubleValue;
+	private GenOrmBinary m_value;
 
 	
 	private List<GenOrmRecordKey> m_foreignKeys;
@@ -696,10 +692,10 @@ public class DataPoint_base extends GenOrmRecord
 	//---------------------------------------------------------------------------
 	/**
 	*/
-	public long getLongValue() { return (m_longValue.getValue()); }
-	public DataPoint setLongValue(long data)
+	public byte[] getValue() { return (m_value.getValue()); }
+	public DataPoint setValue(byte[] data)
 		{
-		boolean changed = m_longValue.setValue(data);
+		boolean changed = m_value.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
@@ -707,73 +703,30 @@ public class DataPoint_base extends GenOrmRecord
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
-			m_dirtyFlags.set(LONG_VALUE_FIELD_META.getDirtyFlag());
+			m_dirtyFlags.set(VALUE_FIELD_META.getDirtyFlag());
 			
 			if (m_isNewRecord) //Force set the prev value
-				m_longValue.setPrevValue(data);
+				m_value.setPrevValue(data);
 			}
 			
 		return ((DataPoint)this);
 		}
 		
-	public boolean isLongValueNull()
+	public boolean isValueNull()
 		{
-		return (m_longValue.isNull());
+		return (m_value.isNull());
 		}
 		
-	public DataPoint setLongValueNull()
+	public DataPoint setValueNull()
 		{
-		boolean changed = m_longValue.setNull();
+		boolean changed = m_value.setNull();
 		
 		if (changed)
 			{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
-			m_dirtyFlags.set(LONG_VALUE_FIELD_META.getDirtyFlag());
-			}
-		
-		return ((DataPoint)this);
-		}
-
-	//---------------------------------------------------------------------------
-	/**
-	*/
-	public double getDoubleValue() { return (m_doubleValue.getValue()); }
-	public DataPoint setDoubleValue(double data)
-		{
-		boolean changed = m_doubleValue.setValue(data);
-		
-		//Add the now dirty record to the transaction only if it is not previously dirty
-		if (changed)
-			{
-			if (m_dirtyFlags.isEmpty())
-				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
-				
-			m_dirtyFlags.set(DOUBLE_VALUE_FIELD_META.getDirtyFlag());
-			
-			if (m_isNewRecord) //Force set the prev value
-				m_doubleValue.setPrevValue(data);
-			}
-			
-		return ((DataPoint)this);
-		}
-		
-	public boolean isDoubleValueNull()
-		{
-		return (m_doubleValue.isNull());
-		}
-		
-	public DataPoint setDoubleValueNull()
-		{
-		boolean changed = m_doubleValue.setNull();
-		
-		if (changed)
-			{
-			if (m_dirtyFlags.isEmpty())
-				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
-				
-			m_dirtyFlags.set(DOUBLE_VALUE_FIELD_META.getDirtyFlag());
+			m_dirtyFlags.set(VALUE_FIELD_META.getDirtyFlag());
 			}
 		
 		return ((DataPoint)this);
@@ -831,8 +784,7 @@ public class DataPoint_base extends GenOrmRecord
 				}
 			m_metricId.setValue(rs, 1);
 			m_timestamp.setValue(rs, 2);
-			m_longValue.setValue(rs, 3);
-			m_doubleValue.setValue(rs, 4);
+			m_value.setValue(rs, 3);
 
 			}
 		catch (java.sql.SQLException sqle)
@@ -856,11 +808,8 @@ public class DataPoint_base extends GenOrmRecord
 		m_timestamp = new GenOrmTimestamp(TIMESTAMP_FIELD_META);
 		addField(m_timestamp);
 
-		m_longValue = new GenOrmLong(LONG_VALUE_FIELD_META);
-		addField(m_longValue);
-
-		m_doubleValue = new GenOrmDouble(DOUBLE_VALUE_FIELD_META);
-		addField(m_doubleValue);
+		m_value = new GenOrmBinary(VALUE_FIELD_META);
+		addField(m_value);
 
 		GenOrmRecordKey foreignKey;
 		foreignKey = new GenOrmRecordKey("metric");
@@ -907,11 +856,8 @@ public class DataPoint_base extends GenOrmRecord
 		sb.append("timestamp=\"");
 		sb.append(m_timestamp.getValue());
 		sb.append("\" ");
-		sb.append("long_value=\"");
-		sb.append(m_longValue.getValue());
-		sb.append("\" ");
-		sb.append("double_value=\"");
-		sb.append(m_doubleValue.getValue());
+		sb.append("value=\"");
+		sb.append(m_value.getValue());
 		sb.append("\" ");
 
 		

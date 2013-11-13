@@ -5,11 +5,7 @@ import org.kairosdb.core.DataPoint;
 import java.nio.ByteBuffer;
 
 /**
- Created with IntelliJ IDEA.
- User: bhawkins
- Date: 9/2/13
- Time: 5:03 AM
- To change this template use File | Settings | File Templates.
+ Implmementation must be thread safe.
  */
 public interface DataPointFactory
 {

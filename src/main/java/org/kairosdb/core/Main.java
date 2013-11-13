@@ -72,14 +72,59 @@ public class Main
 	private Injector m_injector;
 	private List<KairosDBService> m_services = new ArrayList<KairosDBService>();
 
+	private void loadPlugins(Properties props, final File propertiesFile) throws IOException
+	{
+		File propDir = propertiesFile.getParentFile();
+		if (propDir == null)
+			propDir = new File(".");
+
+		String[] pluginProps = propDir.list(new FilenameFilter()
+			{
+				@Override
+				public boolean accept(File dir, String name)
+				{
+					return (name.endsWith(".properties") && !name.equals(propertiesFile.getName()));
+				}
+			});
+
+		ClassLoader cl = getClass().getClassLoader();
+
+		for (String prop : pluginProps)
+		{
+			logger.info("Loading plugin properties: {}", prop);
+			//Load the properties file from a jar if there is one first.
+			//This way defaults can be set
+			InputStream propStream = cl.getResourceAsStream(prop);
+
+			if (propStream != null)
+			{
+				props.load(propStream);
+				propStream.close();
+			}
+
+			//Load the file in
+			FileInputStream fis = new FileInputStream(new File(propDir, prop));
+			props.load(fis);
+			fis.close();
+		}
+	}
+
 
 	public Main(File propertiesFile) throws IOException
 	{
 		Properties props = new Properties();
-		props.load(getClass().getClassLoader().getResourceAsStream("kairosdb.properties"));
+		InputStream is = getClass().getClassLoader().getResourceAsStream("kairosdb.properties");
+		props.load(is);
+		is.close();
 
 		if (propertiesFile != null)
-			props.load(new FileInputStream(propertiesFile));
+		{
+			FileInputStream fis = new FileInputStream(propertiesFile);
+			props.load(fis);
+			fis.close();
+
+			loadPlugins(props, propertiesFile);
+		}
 
 		List<Module> moduleList = new ArrayList<Module>();
 		moduleList.add(new CoreModule(props));

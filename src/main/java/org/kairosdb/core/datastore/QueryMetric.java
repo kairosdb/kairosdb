@@ -38,6 +38,9 @@ public class QueryMetric implements DatastoreMetricQuery
 	private List<GroupBy> groupBys = new ArrayList<GroupBy>();
 	private List<Aggregator> aggregators;
 	private String cacheString;
+	private boolean excludeTags = false;
+	private int limit;
+	private Order order = Order.ASC;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
@@ -148,5 +151,35 @@ public class QueryMetric implements DatastoreMetricQuery
 	public String getCacheString()
 	{
 		return (cacheString);
+	}
+
+	public boolean isExcludeTags()
+	{
+		return excludeTags;
+	}
+
+	public void setExcludeTags(boolean excludeTags)
+	{
+		this.excludeTags = excludeTags;
+	}
+
+	public void setLimit(int limit)
+	{
+		this.limit = limit;
+	}
+
+	public int getLimit()
+	{
+		return (limit);
+	}
+
+	public void setOrder(Order order)
+	{
+		this.order = order;
+	}
+
+	public Order getOrder()
+	{
+		return (order);
 	}
 }

@@ -19,7 +19,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import org.kairosdb.core.KairosDBService;
-import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.core.exception.KairosDBException;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.matchers.GroupMatcher;
@@ -54,7 +54,7 @@ public class KairosDBScheduler implements KairosDBService
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void start() throws KariosDBException
+	public void start() throws KairosDBException
 	{
 		try
 		{
@@ -87,7 +87,7 @@ public class KairosDBScheduler implements KairosDBService
 		}
 		catch (SchedulerException e)
 		{
-			throw new KariosDBException("Failed to start " + getClass().getName(), e);
+			throw new KairosDBException("Failed to start " + getClass().getName(), e);
 		}
 	}
 

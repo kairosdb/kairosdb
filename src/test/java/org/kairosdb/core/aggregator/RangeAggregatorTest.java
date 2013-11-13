@@ -36,6 +36,7 @@ public class RangeAggregatorTest
 
 		SumAggregator agg = new SumAggregator();
 		agg.setSampling(new Sampling(1, TimeUnit.YEARS));
+		agg.setAlignSampling(true);
 		cal.clear();
 		cal.set(2012, 0, 0, 0, 0, 0);
 		agg.setStartTime(cal.getTimeInMillis());
@@ -64,6 +65,7 @@ public class RangeAggregatorTest
 
 		SumAggregator agg = new SumAggregator();
 		agg.setSampling(new Sampling(1, TimeUnit.MONTHS));
+		agg.setAlignSampling(true);
 		cal.clear();
 		cal.set(2012, 0, 1, 0, 0, 0);
 		agg.setStartTime(cal.getTimeInMillis());
@@ -97,6 +99,7 @@ public class RangeAggregatorTest
 
 		SumAggregator agg = new SumAggregator();
 		agg.setSampling(new Sampling(2, TimeUnit.MONTHS));
+		agg.setAlignSampling(true);
 		cal.clear();
 		cal.set(2012, 0, 1, 0, 0, 0);
 		agg.setStartTime(cal.getTimeInMillis());
@@ -146,5 +149,29 @@ public class RangeAggregatorTest
 		assertThat(dpg.next().getLongValue(), is(1L));
 
 		assertThat(dpg.hasNext(), is(false));
+	}
+
+	@Test
+	public void test_alignOnWeek()
+	{
+		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		ListDataPointGroup dpGroup = new ListDataPointGroup("range_test");
+
+		for (int I = 1; I <= 32; I++)
+		{
+			cal.clear();
+			cal.set(2012, 0, I+15, 1, 1, 1);
+			dpGroup.addDataPoint(new DataPoint(cal.getTimeInMillis(), 1));
+		}
+
+		SumAggregator agg = new SumAggregator();
+		agg.setSampling(new Sampling(1, TimeUnit.WEEKS));
+		agg.setAlignSampling(true);
+		cal.clear();
+		cal.set(2012, 0, 16, 0, 0, 0);
+		agg.setStartTime(cal.getTimeInMillis());
+
+		//Just making sure the alignment doesn't blow up
+		DataPointGroup dpg = agg.aggregate(dpGroup);
 	}
 }

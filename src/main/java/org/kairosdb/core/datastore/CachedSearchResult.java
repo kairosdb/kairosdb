@@ -18,6 +18,8 @@ package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.DataPointFactory;
+import org.kairosdb.util.MemoryMonitor;
+import org.kairosdb.util.StringPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,12 +29,12 @@ import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CachedSearchResult
+public class CachedSearchResult implements QueryCallback
 {
 	public static final Logger logger = LoggerFactory.getLogger(CachedSearchResult.class);
 
 	public static final int DATA_POINT_SIZE = 8 + 1 + 8; //timestamp + type flag + value
-	public static final int READ_BUFFER_SIZE = 60; //The number of datapoints to read into each buffer we could potentially have a lot of these so we keep them smaller
+	public static final int MAX_READ_BUFFER_SIZE = 60; //The number of datapoints to read into each buffer we could potentially have a lot of these so we keep them smaller
 	public static final int WRITE_BUFFER_SIZE = 500;
 
 	public static final byte LONG_FLAG = 0x1;
@@ -40,6 +42,7 @@ public class CachedSearchResult
 
 	private String m_metricName;
 	private List<FilePositionMarker> m_dataPointSets;
+	private FilePositionMarker m_currentFilePositionMarker;
 	private ByteBuffer m_writeBuffer;
 	private File m_dataFile;
 	private FileChannel m_dataFileChannel;
@@ -47,6 +50,10 @@ public class CachedSearchResult
 	private AtomicInteger m_closeCounter = new AtomicInteger();
 	private boolean m_readFromCache = false;
 	private DataPointFactory m_dataPointFactory;
+	private StringPool m_stringPool;
+	private int m_readBufferSize = MAX_READ_BUFFER_SIZE;
+
+	private MemoryMonitor m_memMonitor = new MemoryMonitor();
 
 	private static File getIndexFile(String baseFileName)
 	{
@@ -73,6 +80,7 @@ public class CachedSearchResult
 		m_dataPointSets = new ArrayList<FilePositionMarker>();
 		m_dataFile = dataFile;
 		m_dataPointFactory = datatPointFactory;
+		m_stringPool = new StringPool();
 	}
 
 	private void openCacheFile() throws FileNotFoundException
@@ -92,6 +100,7 @@ public class CachedSearchResult
 	{
 		ObjectInputStream in = new ObjectInputStream(new FileInputStream(m_indexFile));
 		int size = in.readInt();
+		int avgRowWidth = 0;
 		for (int I = 0; I < size; I++)
 		{
 			//open the cache file only if there will be data point groups returned
@@ -101,7 +110,12 @@ public class CachedSearchResult
 			FilePositionMarker marker = new FilePositionMarker();
 			marker.readExternal(in);
 			m_dataPointSets.add(marker);
+			avgRowWidth += marker.getDataPointCount();
 		}
+
+		avgRowWidth /= size;
+
+		m_readBufferSize = Math.min(m_readBufferSize, avgRowWidth);
 
 		m_readFromCache = true;
 		in.close();
@@ -221,7 +235,7 @@ public class CachedSearchResult
 	 of the set to be saved.  All inserted datapoints after this call are
 	 expected to be in ascending time order and have the same tags.
 	 */
-	public void startDataPointSet(Map<String, String> tags, String type) throws IOException
+	public void startDataPointSet(String type, Map<String, String> tags) throws IOException
 	{
 		if (m_dataFileChannel == null)
 			openCacheFile();
@@ -229,7 +243,8 @@ public class CachedSearchResult
 		endDataPoints();
 
 		long curPosition = m_dataFileChannel.position();
-		m_dataPointSets.add(new FilePositionMarker(curPosition, tags, type));
+		m_currentFilePositionMarker = new FilePositionMarker(curPosition, tags, type);
+		m_dataPointSets.add(m_currentFilePositionMarker);
 	}
 
 	private void flushWriteBuffer() throws IOException
@@ -254,6 +269,8 @@ public class CachedSearchResult
 		m_writeBuffer.putLong(timestamp);
 		m_writeBuffer.put(LONG_FLAG);
 		m_writeBuffer.putLong(value);
+
+		m_currentFilePositionMarker.incrementDataPointCount();
 	}
 
 	public void addDataPoint(long timestamp, double value) throws IOException
@@ -265,15 +282,43 @@ public class CachedSearchResult
 		m_writeBuffer.putLong(timestamp);
 		m_writeBuffer.put(DOUBLE_FLAG);
 		m_writeBuffer.putDouble(value);
+
+		m_currentFilePositionMarker.incrementDataPointCount();
 	}*/
 
 	public List<DataPointRow> getRows()
 	{
+		//Calculate read buffer size
+		int avgRowWidth = 1;
+		for (FilePositionMarker marker : m_dataPointSets)
+		{
+			avgRowWidth += marker.getDataPointCount();
+		}
+		//todo: check for zero in m_dataPointSets
+		if (m_dataPointSets.size() != 0)
+		{
+			avgRowWidth /= m_dataPointSets.size();
+
+			m_readBufferSize = Math.min(avgRowWidth, MAX_READ_BUFFER_SIZE);
+
+			//Try to max out at 100M
+			m_readBufferSize = (int)Math.min(m_readBufferSize,
+					(100000000L / (DATA_POINT_SIZE * m_dataPointSets.size())));
+		}
+
+		if (m_readBufferSize == 0)
+			m_readBufferSize = 1;
+
+		//System.out.println("Read Buffer size "+m_readBufferSize);
+
 		List<DataPointRow> ret = new ArrayList<DataPointRow>();
+		MemoryMonitor mm = new MemoryMonitor(20);
+
 		for (FilePositionMarker dpSet : m_dataPointSets)
 		{
 			ret.add(dpSet.iterator());
 			m_closeCounter.incrementAndGet();
+			mm.checkMemoryAndThrowException();
 		}
 
 		return (ret);
@@ -286,6 +331,7 @@ public class CachedSearchResult
 		private long m_endPosition;
 		private Map<String, String> m_tags;
 		private String m_dataType;
+		private int m_dataPointCount;
 
 
 		public FilePositionMarker()
@@ -294,6 +340,7 @@ public class CachedSearchResult
 			m_endPosition = 0L;
 			m_tags = new HashMap<String, String>();
 			m_dataType = null;
+			m_dataPointCount = 0;
 		}
 
 		public FilePositionMarker(long startPosition, Map<String, String> tags,
@@ -314,10 +361,21 @@ public class CachedSearchResult
 			return m_tags;
 		}
 
+		public void incrementDataPointCount()
+		{
+			m_dataPointCount ++;
+		}
+
+		public int getDataPointCount()
+		{
+			return m_dataPointCount;
+		}
+
 		@Override
 		public CachedDataPointRow iterator()
 		{
-			return (new CachedDataPointRow(m_tags, m_startPosition, m_endPosition, m_dataType));
+			return (new CachedDataPointRow(m_tags, m_startPosition, m_endPosition,
+					m_dataType, m_dataPointCount));
 		}
 
 		@Override
@@ -340,11 +398,13 @@ public class CachedSearchResult
 			m_startPosition = in.readLong();
 			m_endPosition = in.readLong();
 			m_dataType = (String)in.readObject();
+			m_dataPointCount = (int)((m_endPosition - m_startPosition) / DATA_POINT_SIZE);
+
 			int tagCount = in.readInt();
 			for (int I = 0; I < tagCount; I++)
 			{
-				String key = (String)in.readObject();
-				String value = (String)in.readObject();
+				String key = m_stringPool.getString((String)in.readObject());
+				String value = m_stringPool.getString((String)in.readObject());
 				m_tags.put(key, value);
 			}
 		}
@@ -358,17 +418,19 @@ public class CachedSearchResult
 		private ByteBuffer m_readBuffer;
 		private Map<String, String> m_tags;
 		private String m_dataType;
+		private int m_dataPointCount;
 
 		public CachedDataPointRow(Map<String, String> tags,
-				long startPosition, long endPostition, String dataType)
+				long startPosition, long endPostition, String dataType, int dataPointCount)
 		{
 			m_currentPosition = startPosition;
 			m_endPostition = endPostition;
-			m_readBuffer = ByteBuffer.allocate(DATA_POINT_SIZE * READ_BUFFER_SIZE);
+			m_readBuffer = ByteBuffer.allocate(DATA_POINT_SIZE * m_readBufferSize);
 			m_readBuffer.clear();
 			m_readBuffer.limit(0);
 			m_tags = tags;
 			m_dataType = dataType;
+			m_dataPointCount = dataPointCount;
 		}
 
 		private void readMorePoints() throws IOException
@@ -452,6 +514,12 @@ public class CachedSearchResult
 		public void close()
 		{
 			decrementClose();
+		}
+
+		@Override
+		public int getDataPointCount()
+		{
+			return m_dataPointCount;
 		}
 
 		@Override

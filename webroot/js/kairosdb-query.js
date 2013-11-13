@@ -19,7 +19,7 @@ kairosdb.dataPointsQuery = function (metricQuery, callback) {
 		dataType: 'json',
 		success: function (data, textStatus, jqXHR) {
 			$status.html("<i>Plotting in progress...</i>");
-			$queryTime.html(new Date().getTime() - startTime.getTime() + " ms");
+			$queryTime.html(numeral(new Date().getTime() - startTime.getTime()).format('0,0') + " ms");
 			setTimeout(function(){
 				callback(data.queries);
 			}, 0);
@@ -34,7 +34,7 @@ kairosdb.dataPointsQuery = function (metricQuery, callback) {
 			$errorContainer.append("Return Value: " +  jqXHR.responseText);
 
 			$status.html("");
-			$queryTime.html(new Date().getTime() - startTime.getTime() + " ms");
+			$queryTime.html(numeral(new Date().getTime() - startTime.getTime()).format('0,0') + " ms");
 		}
 	});
 };

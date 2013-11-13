@@ -20,23 +20,21 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.datastore.CachedSearchResult;
-import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
@@ -46,23 +44,64 @@ public class RemoteDatastore implements Datastore
 	public static final String DATA_DIR_PROP = "kairosdb.datastore.remote.data_dir";
 	public static final String REMOTE_URL_PROP = "kairosdb.datastore.remote.remote_url";
 
+	public static final String FILE_SIZE_METRIC = "kairosdb.datastore.remote.file_size";
+	public static final String ZIP_FILE_SIZE_METRIC = "kairosdb.datastore.remote.zip_file_size";
+	public static final String WRITE_SIZE_METRIC = "kairosdb.datastore.remote.write_size";
+	public static final String TIME_TO_SEND_METRIC = "kairosdb.datastore.remote.time_to_send";
+
 	private final Object m_dataFileLock = new Object();
+	private final Object m_sendLock = new Object();
 	private BufferedWriter m_dataWriter;
 	private String m_dataFileName;
 	private volatile boolean m_firstDataPoint = true;
 	private String m_dataDirectory;
 	private String m_remoteUrl;
+	private int m_dataPointCounter;
+
+	@javax.inject.Inject
+	@Named("HOSTNAME")
+	private String m_hostName = "localhost";
 
 
 	@Inject
 	public RemoteDatastore(@Named(DATA_DIR_PROP) String dataDir,
-			@Named(REMOTE_URL_PROP) String remoteUrl) throws IOException
+			@Named(REMOTE_URL_PROP) String remoteUrl) throws IOException, DatastoreException
 	{
 		m_dataDirectory = dataDir;
 		m_remoteUrl = remoteUrl;
 
+		//This is to check and make sure the remote kairos is there and properly configured.
+		getKairosVersion();
+
 		sendAllZipfiles();
 		openDataFile();
+	}
+
+	private void getKairosVersion() throws DatastoreException
+	{
+		try
+		{
+			HttpClient client = new DefaultHttpClient();
+			HttpGet get = new HttpGet(m_remoteUrl+"/api/v1/version");
+
+			HttpResponse response = client.execute(get);
+
+			ByteArrayOutputStream bout = new ByteArrayOutputStream();
+			response.getEntity().writeTo(bout);
+
+			JSONObject respJson = new JSONObject(bout.toString("UTF-8"));
+
+			logger.info("Connecting to remote Kairos version: "+ respJson.getString("version"));
+
+		}
+		catch (IOException e)
+		{
+			throw new DatastoreException("Unable to connect to remote kairos node.", e);
+		}
+		catch (JSONException e)
+		{
+			throw new DatastoreException("Unalbe to parse repsone from remote kairos node.", e);
+		}
 	}
 
 	private void openDataFile() throws IOException
@@ -72,6 +111,7 @@ public class RemoteDatastore implements Datastore
 		m_dataWriter = new BufferedWriter(new FileWriter(m_dataFileName));
 		m_dataWriter.write("[\n");
 		m_firstDataPoint = true;
+		m_dataPointCounter = 0;
 	}
 
 	private void closeDataFile() throws IOException
@@ -105,6 +145,7 @@ public class RemoteDatastore implements Datastore
 	{
 		CharArrayWriter caw = new CharArrayWriter();
 		JSONWriter writer = new JSONWriter(caw);
+		int dataPointsWritten = 0;
 		try
 		{
 			writer.object();
@@ -121,6 +162,7 @@ public class RemoteDatastore implements Datastore
 			writer.key("datapoints").array();
 			for (DataPoint dataPoint :dps.getDataPoints())
 			{
+				dataPointsWritten ++;
 				writer.array();
 				writer.value(dataPoint.getTimestamp());
 				if (dataPoint.isInteger())
@@ -140,6 +182,7 @@ public class RemoteDatastore implements Datastore
 
 		synchronized (m_dataFileLock)
 		{
+			m_dataPointCounter += dataPointsWritten;
 			try
 			{
 				if (!m_firstDataPoint)
@@ -150,6 +193,7 @@ public class RemoteDatastore implements Datastore
 
 				caw.flush();
 				caw.writeTo(m_dataWriter);
+				m_dataWriter.flush();
 			}
 			catch (IOException e)
 			{
@@ -167,13 +211,14 @@ public class RemoteDatastore implements Datastore
 	 */
 	private void sendZipfile(String zipFile) throws IOException
 	{
-		logger.debug("Sending %s", zipFile);
+		logger.debug("Sending {}", zipFile);
 		HttpClient client = new DefaultHttpClient();
 		HttpPost post = new HttpPost(m_remoteUrl+"/api/v1/datapoints");
 
-		FileInputStream zipStream = new FileInputStream(new File(m_dataDirectory, zipFile));
+		File zipFileObj = new File(m_dataDirectory, zipFile);
+		FileInputStream zipStream = new FileInputStream(zipFileObj);
 		post.setHeader("Content-Type", "application/gzip");
-		File zipFileObj = new File(zipFile);
+		
 		post.setEntity(new InputStreamEntity(zipStream, zipFileObj.length()));
 		HttpResponse response = client.execute(post);
 
@@ -225,8 +270,9 @@ public class RemoteDatastore implements Datastore
 	/**
 	 Compresses the given file and removes the uncompressed file
 	 @param file
+	 @return Size of the zip file
 	 */
-	private void zipFile(String file) throws IOException
+	private long zipFile(String file) throws IOException
 	{
 		String zipFile = file+".gz";
 
@@ -244,22 +290,60 @@ public class RemoteDatastore implements Datastore
 
 		//delete uncompressed file
 		new File(file).delete();
+
+		return (new File(zipFile).length());
 	}
 
 
 	public void sendData() throws IOException
 	{
-		String oldDataFile = m_dataFileName;
-
-		synchronized (m_dataFileLock)
+		synchronized (m_sendLock)
 		{
-			closeDataFile();
-			openDataFile();
+			String oldDataFile = m_dataFileName;
+			long now = System.currentTimeMillis();
+
+			long fileSize = (new File(m_dataFileName)).length();
+
+			DataPointSet dpsFileSize = new DataPointSet(FILE_SIZE_METRIC);
+			dpsFileSize.addTag("host", m_hostName);
+			dpsFileSize.addDataPoint(new DataPoint(now, fileSize));
+
+			DataPointSet dpsWriteSize = new DataPointSet(WRITE_SIZE_METRIC);
+			dpsWriteSize.addTag("host", m_hostName);
+			dpsWriteSize.addDataPoint(new DataPoint(now, m_dataPointCounter));
+
+			synchronized (m_dataFileLock)
+			{
+				closeDataFile();
+				openDataFile();
+			}
+
+			long zipSize = zipFile(oldDataFile);
+
+			DataPointSet dpsZipFileSize = new DataPointSet(ZIP_FILE_SIZE_METRIC);
+			dpsZipFileSize.addTag("host", m_hostName);
+			dpsZipFileSize.addDataPoint(new DataPoint(now, zipSize));
+
+			sendAllZipfiles();
+
+			long timeToSend = System.currentTimeMillis() - now;
+
+			DataPointSet dpsTimeToSend = new DataPointSet(TIME_TO_SEND_METRIC);
+			dpsTimeToSend.addTag("host", m_hostName);
+			dpsTimeToSend.addDataPoint(new DataPoint(now, timeToSend));
+
+			try
+			{
+				putDataPoints(dpsFileSize);
+				putDataPoints(dpsWriteSize);
+				putDataPoints(dpsTimeToSend);
+				putDataPoints(dpsZipFileSize);
+			}
+			catch (DatastoreException e)
+			{
+				logger.error("Error writing remote metrics", e);
+			}
 		}
-
-		zipFile(oldDataFile);
-
-		sendAllZipfiles();
 	}
 
 
@@ -282,14 +366,20 @@ public class RemoteDatastore implements Datastore
 	}
 
 	@Override
-	public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException
+	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 	{
 		throw new DatastoreException("Method not implemented.");
 	}
 
 	@Override
-	public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
+	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 	{
 		throw new DatastoreException("Method not implemented.");
+	}
+
+	@Override
+	public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
+	{
+		return null;  //To change body of implemented methods use File | Settings | File Templates.
 	}
 }

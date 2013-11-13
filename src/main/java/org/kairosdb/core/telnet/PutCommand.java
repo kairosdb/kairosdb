@@ -25,6 +25,8 @@ import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.util.Util;
+import org.kairosdb.util.ValidationException;
+import org.kairosdb.util.Validator;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,9 +49,10 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 	}
 
 	@Override
-	public void execute(Channel chan, String[] command) throws DatastoreException
+	public void execute(Channel chan, String[] command) throws DatastoreException, ValidationException
 	{
-		m_counter.incrementAndGet();
+		Validator.validateNotNullOrEmpty("metricName", command[1]);
+		Validator.validateCharacterSet("metricName", command[1]);
 
 		DataPointSet dps = new DataPointSet(command[1]);
 
@@ -67,13 +70,33 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 
 		dps.addDataPoint(dp);
 
+		int tagCount = 0;
 		for (int i = 4; i < command.length; i++)
 		{
 			String[] tag = command[i].split("=");
+			validateTag(tagCount, tag);
+
 			dps.addTag(tag[0], tag[1]);
+			tagCount++;
 		}
 
+		if (tagCount == 0)
+			dps.addTag("add", "tag");
+
+		m_counter.incrementAndGet();
 		m_datastore.putDataPoints(dps);
+	}
+
+	private void validateTag(int tagCount, String[] tag) throws ValidationException
+	{
+		if (tag.length < 2)
+			throw new ValidationException(String.format("tag[%d] must be in the format 'name=value'.", tagCount));
+
+		Validator.validateNotNullOrEmpty(String.format("tag[%d].name", tagCount), tag[0]);
+		Validator.validateCharacterSet(String.format("tag[%d].name", tagCount), tag[0]);
+
+		Validator.validateNotNullOrEmpty(String.format("tag[%d].value", tagCount), tag[1]);
+		Validator.validateCharacterSet(String.format("tag[%d].value", tagCount), tag[1]);
 	}
 
 	@Override

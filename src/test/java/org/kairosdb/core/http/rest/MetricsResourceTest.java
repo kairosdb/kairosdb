@@ -15,6 +15,7 @@
  */
 package org.kairosdb.core.http.rest;
 
+import ch.qos.logback.classic.Level;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.inject.*;
@@ -22,7 +23,6 @@ import com.google.inject.name.Names;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointListenerProvider;
 import org.kairosdb.core.DataPointSet;
@@ -37,27 +37,31 @@ import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
-import org.kairosdb.testing.TestingDataPointRowImpl;
+import org.kairosdb.util.LoggingUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
+import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertThat;
 
 public class MetricsResourceTest
 {
+	public static final Logger logger = LoggerFactory.getLogger(MetricsResourceTest.class);
+
 	private static final String ADD_METRIC_URL = "http://localhost:9001/api/v1/datapoints";
 	private static final String GET_METRIC_URL = "http://localhost:9001/api/v1/datapoints/query";
 	private static final String METRIC_NAMES_URL = "http://localhost:9001/api/v1/metricnames";
 	private static final String TAG_NAMES_URL = "http://localhost:9001/api/v1/tagnames";
 	private static final String TAG_VALUES_URL = "http://localhost:9001/api/v1/tagvalues";
 
+	private static TestDatastore datastore;
+	private static QueryQueuingManager queuingManager;
 	private static Client client;
 	private static WebServer server;
 
@@ -68,10 +72,11 @@ public class MetricsResourceTest
 		SLF4JBridgeHandler.removeHandlersForRootLogger();
 		SLF4JBridgeHandler.install();
 
+		datastore = new TestDatastore();
+		queuingManager = new QueryQueuingManager(3, "localhost");
+
 		Injector injector = Guice.createInjector(new WebServletModule(new Properties()), new AbstractModule()
 		{
-			private Datastore datastore = new TestDatastore();
-
 			@Override
 			protected void configure()
 			{
@@ -83,7 +88,7 @@ public class MetricsResourceTest
 				bind(GroupByFactory.class).to(TestGroupByFactory.class);
 				bind(GsonParser.class).in(Singleton.class);
 				bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
-				bind(QueryQueuingManager.class).in(Singleton.class);
+				bind(QueryQueuingManager.class).toInstance(queuingManager);
 				bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
 				bindConstant().annotatedWith(Names.named("kairosdb.datastore.concurrentQueryThreads")).to(1);
 			}
@@ -168,7 +173,7 @@ public class MetricsResourceTest
 
 		JsonResponse response = client.post(json, ADD_METRIC_URL);
 
-		assertResponse(response, 400, "{\"errors\":[\"datapoints.timestamp must be greater than or equal to 1\"]}");
+		assertResponse(response, 400, "{\"errors\":[\"metric[1](name=archive.file.search).datapoints[0].value cannot be null or empty. must be greater than or equal to 1.\"]}");
 	}
 
 	@Test
@@ -180,25 +185,25 @@ public class MetricsResourceTest
 
 		assertResponse(response, 200,
 				"{\"queries\":" +
-						"[{\"results\":" +
+						"[{\"sample_size\":10,\"results\":" +
 						"[{\"name\":\"abc.123\",\"tags\":{\"server\":[\"server1\",\"server2\"]},\"values\":[[1,60.2],[2,30.200000000000003],[3,20.1]]}]}]}");
 	}
 
 	@Test
 	public void testQueryWithBeanValidationException() throws IOException
 	{
-		String json = Resources.toString(Resources.getResource("query-metric-invalid-relative-unit.json"), Charsets.UTF_8);
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-relative-unit.json"), Charsets.UTF_8);
 
 		JsonResponse response = client.post(json, GET_METRIC_URL);
 
 		assertResponse(response, 400,
-				"{\"errors\":[\"\\\"bogus\\\" is not a valid time unit, must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS\"]}");
+				"{\"errors\":[\"query.bogus is not a valid time unit, must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS\"]}");
 	}
 
 	@Test
 	public void testQueryWithJsonMapperParsingException() throws IOException
 	{
-		String json = Resources.toString(Resources.getResource("query-metric-invalid-json.json"), Charsets.UTF_8);
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-json.json"), Charsets.UTF_8);
 
 		JsonResponse response = client.post(json, GET_METRIC_URL);
 
@@ -230,6 +235,31 @@ public class MetricsResourceTest
 		assertResponse(response, 200, "{\"results\":[\"larry\",\"moe\",\"curly\"]}");
 	}
 
+	@Test
+	public void test_datastoreThrowsException() throws DatastoreException, IOException
+	{
+		Level previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);
+
+		try
+		{
+			datastore.throwQueryException(new DatastoreException("bogus"));
+
+			String json = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
+
+			JsonResponse response = client.post(json, GET_METRIC_URL);
+
+			datastore.throwQueryException(null);
+
+			assertThat(response.getStatusCode(), equalTo(500));
+			assertThat(response.getJson(), equalTo("{\"errors\":[\"org.kairosdb.core.exception.DatastoreException: bogus\"]}"));
+			assertEquals(3, queuingManager.getAvailableThreads());
+		}
+		finally
+		{
+			LoggingUtils.setLogLevel(previousLogLevel);
+		}
+	}
+
 	private void assertResponse(JsonResponse response, int responseCode, String expectedContent)
 	{
 		assertThat(response.getStatusCode(), equalTo(responseCode));
@@ -246,9 +276,15 @@ public class MetricsResourceTest
 
 	public static class TestDatastore implements Datastore
 	{
+		private DatastoreException m_toThrow = null;
 
 		protected TestDatastore() throws DatastoreException
 		{
+		}
+
+		public void throwQueryException(DatastoreException toThrow)
+		{
+			m_toThrow = toThrow;
 		}
 
 		@Override
@@ -281,40 +317,50 @@ public class MetricsResourceTest
 		}
 
 		@Override
-		public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 		{
-			List<DataPointRow> groups = new ArrayList<DataPointRow>();
+			if (m_toThrow != null)
+				throw m_toThrow;
 
-			TestingDataPointRowImpl group1 = new TestingDataPointRowImpl();
-			group1.setName(query.getName());
-			group1.addDataPoint(new DataPoint(1, 10));
-			group1.addDataPoint(new DataPoint(1, 20));
-			group1.addDataPoint(new DataPoint(2, 10));
-			group1.addDataPoint(new DataPoint(2, 5));
-			group1.addDataPoint(new DataPoint(3, 10));
+			try
+			{
+				Map<String, String> tags = new TreeMap<String, String>();
+				tags.put("server", "server1");
 
-			group1.addTag("server", "server1");
+				queryCallback.startDataPointSet(tags);
+				queryCallback.addDataPoint(1, 10);
+				queryCallback.addDataPoint(1, 20);
+				queryCallback.addDataPoint(2, 10);
+				queryCallback.addDataPoint(2, 5);
+				queryCallback.addDataPoint(3, 10);
 
-			groups.add(group1);
+				tags = new TreeMap<String, String>();
+				tags.put("server", "server2");
 
-			TestingDataPointRowImpl group2 = new TestingDataPointRowImpl();
-			group2.setName(query.getName());
-			group2.addDataPoint(new DataPoint(1, 10.1));
-			group2.addDataPoint(new DataPoint(1, 20.1));
-			group2.addDataPoint(new DataPoint(2, 10.1));
-			group2.addDataPoint(new DataPoint(2, 5.1));
-			group2.addDataPoint(new DataPoint(3, 10.1));
+				queryCallback.startDataPointSet(tags);
+				queryCallback.addDataPoint(1, 10.1);
+				queryCallback.addDataPoint(1, 20.1);
+				queryCallback.addDataPoint(2, 10.1);
+				queryCallback.addDataPoint(2, 5.1);
+				queryCallback.addDataPoint(3, 10.1);
 
-			group2.addTag("server", "server2");
-
-			groups.add(group2);
-
-			return groups;
+				queryCallback.endDataPoints();
+			}
+			catch (IOException e)
+			{
+				throw new DatastoreException(e);
+			}
 		}
 
 		@Override
-		public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
+		public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 		{
+		}
+
+		@Override
+		public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
+		{
+			return null;
 		}
 	}
 

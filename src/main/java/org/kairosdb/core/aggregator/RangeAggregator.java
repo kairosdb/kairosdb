@@ -16,11 +16,14 @@
 
 package org.kairosdb.core.aggregator;
 
+import org.joda.time.DateTime;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -32,12 +35,47 @@ public abstract class RangeAggregator implements Aggregator
 {
 	private long m_startTime = 0L;
 	private long m_range = 1L;
-	private Sampling m_sampling = null;
 	private long m_dayOfMonthOffset = 0L; //day of month offset in milliseconds
+	private boolean m_alignSampling;
+
+	@NotNull
+	@Valid
+	private Sampling m_sampling;
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
 		checkNotNull(dataPointGroup);
+
+		if (m_alignSampling)
+		{
+			TimeUnit tu = m_sampling.getUnit();
+
+			DateTime dt = new DateTime(m_startTime);
+			switch (tu)
+			{
+				case YEARS:
+				case MONTHS:
+				case WEEKS:
+				case DAYS:
+					if (tu == TimeUnit.WEEKS)
+						dt = dt.withDayOfWeek(1);
+					else if (tu == TimeUnit.MONTHS)
+						dt = dt.withDayOfMonth(1);
+					else
+						dt = dt.withDayOfYear(1);
+                 
+				case HOURS:
+				case MINUTES:
+				case SECONDS:
+				case MILLISECONDS:
+					dt = dt.withHourOfDay(0);
+					dt = dt.withMinuteOfHour(0);
+					dt = dt.withSecondOfMinute(0);
+					dt = dt.withMillisOfSecond(0);
+			}
+
+			m_startTime = dt.getMillis();
+		}
 
 		return (new RangeDataPointAggregator(dataPointGroup, getSubAggregator()));
 	}
@@ -46,6 +84,11 @@ public abstract class RangeAggregator implements Aggregator
 	{
 		m_sampling = sampling;
 		m_range = sampling.getSampling();
+	}
+
+	public void setAlignSampling(boolean align)
+	{
+		m_alignSampling = align;
 	}
 
 	/**
@@ -119,7 +162,7 @@ public abstract class RangeAggregator implements Aggregator
 			}
 			else
 			{
-				return ((int)((timestamp - m_startTime) / m_range));
+				return ((timestamp - m_startTime) / m_range);
 			}
 		}
 

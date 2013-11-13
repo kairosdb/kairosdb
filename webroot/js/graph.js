@@ -1,29 +1,53 @@
-function displayQuery()
-{
+var metricToTags = {};
+
+function displayQuery() {
 	var queryString = $('#query-hidden-text').val();
 	if ($('#query-type-json').is(':checked'))
 		$("#query-text").val(queryString);
 	else
-		$("#query-text").val('var query = '+queryString.replace(/\"(\w*)\":/g,"$1:")+';');
+		$("#query-text").val('var query = ' + queryString.replace(/\"(\w*)\":/g, "$1:") + ';');
 }
 
-function updateChart() {
+function clear()
+{
 	$("#resetZoom").hide();
 	$("#errorContainer").hide();
 
 	$("#status").html("");
 	$("#queryTime").html("");
+	$("#sampleSize").html("");
 	$("#numDataPoints").html("");
+	$("#flotTitle").html("");
+	$("#graphLegend").html("");
+	$("#chartContainer").html("");
+}
 
+function updateChart() {
+	clear();
+	var query=buildKairosDBQuery();
+
+	var metricData = getAdditionalChartData();
+	$('#query-hidden-text').val(JSON.stringify(query, null, 2));
+	displayQuery();
+
+	var $graphLink = $("#graph_link");
+	$graphLink.attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
+	$graphLink.show();
+	showChartForQuery("(Click and drag to zoom)", query, metricData);
+}
+
+function buildKairosDBQuery() {
+	var hasError = false;
 	var query = new kairosdb.MetricQuery();
 
 	// todo cachetime
 
 	$('.metricContainer').each(function (index, element) {
 		var $metricContainer = $(element);
-		var metricName = $metricContainer.find('.metricName').val();
+		var metricName = $metricContainer.find('.metricName').combobox("value");
 		if (!metricName) {
 			showErrorMessage("Metric Name is required.");
+			hasError = true;
 			return;
 		}
 
@@ -36,6 +60,7 @@ function updateChart() {
 				var tags = $(groupBy).find(".groupByTagsValue").val();
 				if (!tags || tags.length < 1) {
 					showErrorMessage("Missing Group By tag names.");
+					hasError = true;
 					return true; // continue to next item
 				}
 				metric.addGroupBy(new kairosdb.TagGroupBy(tags));
@@ -46,12 +71,14 @@ function updateChart() {
 				var count = $(groupBy).find(".groupByTimeCount").val();
 
 				if (value < 1) {
-					showErrorMessage("Missing Time Group By size must be greater than 0.")
+					showErrorMessage("Missing Time Group By size must be greater than 0.");
+					hasError = true;
 					return true;
 				}
 
 				if (count < 1) {
-					showErrorMessage("Missing Time Group By count must be greater than 0.")
+					showErrorMessage("Missing Time Group By count must be greater than 0.");
+					hasError = true;
 					return true;
 				}
 				metric.addGroupBy(new kairosdb.TimeGroupBy(value, unit, count));
@@ -59,7 +86,8 @@ function updateChart() {
 			else if (name == "value") {
 				var size = $(groupBy).find(".groupByValueValue").val();
 				if (size < 1) {
-					showErrorMessage("Missing Value Group By size must be greater than 0.")
+					showErrorMessage("Missing Value Group By size must be greater than 0.");
+					hasError = true;
 					return true;
 				}
 				metric.addGroupBy(new kairosdb.ValueGroupBy(size));
@@ -70,68 +98,89 @@ function updateChart() {
 		$metricContainer.find(".aggregator").each(function (index, aggregator) {
 			var name = $(aggregator).find(".aggregatorName").val();
 
-			if (name == 'rate')
-			{
-				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+			var unit;
+			if (name == 'rate') {
+				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				metric.addRate(unit);
 			}
-			else if (name == 'histogram')
+			else if (name == 'percentile') {
+				value = $(aggregator).find(".aggregatorSamplingValue").val();
+				if (!isValidInteger(value)) {
+					return true;
+				}
+				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				var percentile = $(aggregator).find(".aggregatorPercentileValue").val();
+				if (!isValidPercentile(percentile)) {
+					return true;
+				}
+				metric.addPercentile(value, unit, percentile);
+			}
+			else if (name == 'div') {
+				var divisor = $(aggregator).find(".divisorValue").val();
+				metric.addDivideAggregator(divisor);
+			}
+			else if (name == 'scale')
 			{
-				var value = $(aggregator).find(".aggregatorSamplingValue").val();
-				if(!isValidInteger(value))
-                {
-                    return true;
-                }
-                var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-                var percentile =  $(aggregator).find(".aggregatorPercentileValue").val();
-                if(!isValidPercentile(percentile))
-                {
-                    return true;
-                }
-                metric.addHistogram(value, unit, percentile);
+				var scalingFactor = $(aggregator).find(".scalingFactorValue").val();
+				if(!isValidScalingFactor(scalingFactor))
+				{
+					return true;
+				}
+				metric.addScaleAggregator(scalingFactor);
 			}
 			else
 			{
 				var value = $(aggregator).find(".aggregatorSamplingValue").val();
-				if(!isValidInteger(value))
-				{
+				if (!isValidInteger(value)) {
 					return true;
 				}
-				var unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				metric.addAggregator(name, value, unit);
 			}
 		});
 
-		function isValidPercentile(percentile)
-        {
-            var intRegex = /^(0*\.\d*|(0*1(\.0*|))|0+)$/;
-            if(!intRegex.test(percentile)) {
-               showErrorMessage("percentile value must be between [0-1]")
-               return false;
-            }
-            else
-            {
-                return true;
-            }
-        }
+		function isValidPercentile(percentile) {
+			var intRegex = /^(0*\.\d*|(0*1(\.0*|))|0+)$/;
+			if (!intRegex.test(percentile)) {
+				showErrorMessage("percentile value must be between [0-1]");
+				hasError = true;
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
 
-		function isValidInteger(value)
-		{
+		function isValidInteger(value) {
 			var intRegex = /^\d+$/;
-	        if(!intRegex.test(value)) {
-	           showErrorMessage("sampling value must be an integer greater than 0.")
-	           return false;
-	        }
-	        else
-	        {
-	            return true;
-	        }
+			if (!intRegex.test(value)) {
+				showErrorMessage("sampling value must be an integer greater than 0.");
+				hasError = true;
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
+
+		function isValidScalingFactor(value)
+		{
+			var intRegex = /^\d*(\.\d+)?$/;
+			if(!intRegex.test(value)) {
+				showErrorMessage("scaling factor must be a floating point number >= 0.")
+				hasError = true;
+				return false;
+			}
+			else
+			{
+				return true;
+			}
 		}
 
 		// Add Tags
 		$metricContainer.find("[name='tags']").each(function (index, tagContainer) {
-			var name = $(tagContainer).find("[name='tagName']").val();
-			var value = $(tagContainer).find("[name='tagValue']").val();
+			var name = $(tagContainer).find("[name='tagName']").combobox("value");
+			var value = $(tagContainer).find("[name='tagValue']").combobox("value");
 
 			if (name && value)
 				metric.addTag(name, value);
@@ -151,6 +200,7 @@ function updateChart() {
 	}
 	else {
 		showErrorMessage("Start time is required.");
+		hasError = true;
 		return;
 	}
 
@@ -165,24 +215,17 @@ function updateChart() {
 		}
 	}
 
-	var metricData = getAdditionalChartData();
-	$('#query-hidden-text').val(JSON.stringify(query, null, 2));
-	displayQuery();
-
-	$("#graph_link").attr("href", "view.html?q="+encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
-	$("#graph_link").show();
-	showChartForQuery("(Click and drag to zoom)", query, metricData);
+	return hasError ? null : query;
 }
 
 /**
  * Returns additional data in a JSON object of the form
  * metrics: [{scale:true}, {scale:false}]
  */
-function getAdditionalChartData()
-{
+function getAdditionalChartData() {
 	var metricDataArray = [];
 
-	$('.metricContainer').each(function (index, element){
+	$('.metricContainer').each(function (index, element) {
 		var metric = {};
 		metric.scale = $(element).find(".scale").is(':checked');
 		metricDataArray.push(metric);
@@ -243,10 +286,11 @@ function addMetric() {
 
 	// Add text listener to name
 	var $tab = $newMetric.find('.metricTab');
-	$metricContainer.find(".metricName").bind("change paste keyup autocompleteclose", function () {
-		var metricName = $(this).val();
-		if (metricName.length > 0) {
+	$metricContainer.find(".metricName").bind("comboboxselect comboboxchange comboboxfocus", function (event) {
+		var metricName = $(this).combobox("value");
+		if (metricName && metricName.length > 0) {
 			$tab.text(metricName);
+			getTagsForMetric(metricName)
 		}
 		else {
 			$tab.text("metric");
@@ -254,6 +298,29 @@ function addMetric() {
 	});
 
 	addAutocomplete($metricContainer);
+
+	// Add metric name refresh button
+	$metricContainer.find(".refresh-metric-names").
+		button({
+			text: false,
+			icons: {
+				primary: 'ui-icon-arrowrefresh-1-e'
+			}
+		}).click(function () {
+			var $button = $(".ui-button-icon-primary", this);
+			$button.toggleClass("ui-icon-arrowrefresh-1-e ui-icon-signal-diag");
+			updateMetricNamesArray(function () {
+
+				// Clear metricToTags cache and re-add metrics in tabs
+				metricToTags = {};
+				$.each(getMetricNamesFromTabs(), function(index, name){
+					getTagsForMetric(name);
+				});
+
+				$button.toggleClass("ui-icon-arrowrefresh-1-e ui-icon-signal-diag");
+			});
+		}
+	);
 
 	// Setup tag button
 	var tagButtonName = "mertric-" + metricCount + "AddTagButton";
@@ -266,9 +333,10 @@ function addMetric() {
 		}
 	}).click(function () {
 			addTag(tagContainer)
-		});
+		}
+	);
 
-	var tagContainer = $('<div id="' + tagContainerName + '"></div>');
+	var tagContainer = $('<div id="' + tagContainerName + '" metricCount="' + metricCount + '"></div>');
 	tagContainer.appendTo($metricContainer);
 
 	// Rename Aggregator Container
@@ -307,16 +375,17 @@ function addMetric() {
 		});
 
 	// Add scale checkbox
-	if (metricCount < 1){
+	if (metricCount < 1) {
 		$metricContainer.find(".checkbox").hide();
 	}
 
 	// Tell tabs object to update changes
-	$("#tabs").tabs("refresh");
+	var $tabs = $("#tabs");
+	$tabs.tabs("refresh");
 
 	// Activate newly added tab
 	var lastTab = $(".ui-tabs-nav").children().size() - 1;
-	$("#tabs").tabs({active: lastTab});
+	$tabs.tabs({active: lastTab});
 }
 
 function addGroupBy(container) {
@@ -342,7 +411,6 @@ function addGroupBy(container) {
 		// Remove old group by
 		groupByContainer.empty();
 
-		var groupBy;
 		var newName = $groupByContainer.find(".groupByName").val();
 		if (newName == "tags") {
 			handleTagGroupBy(groupByContainer);
@@ -353,7 +421,7 @@ function addGroupBy(container) {
 			$groupBy.show();
 
 		}
-		else if (newName = "value") {
+		else if (newName == "value") {
 			$groupBy = $("#groupByValueTemplate").clone();
 			$groupBy.removeAttr("id").appendTo(groupByContainer);
 			$groupBy.show();
@@ -402,7 +470,7 @@ function handleTagGroupBy(groupByContainer) {
 function addTagNameToGroupBy() {
 	var $autocompleteTagName = $("#autocompleteTagName");
 	var value = $groupBy.find(".groupByTagsValue");
-	value.val(value.val() + " " + $autocompleteTagName.val());
+	value.val(value.val() + " " + $autocompleteTagName.combobox("value"));
 	$autocompleteTagName.val(""); // clear value
 
 	$("#addTagNameButton").unbind("click");
@@ -447,44 +515,63 @@ function addAggregator(container) {
 	// Add listener for aggregator change
 	$aggregatorContainer.find(".aggregatorName").change(function () {
 		var name = $aggregatorContainer.find(".aggregatorName").val();
+
 		if (name == "rate") {
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".divisor").hide();
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
+			$aggregatorContainer.find(".scalingFactor").hide();
 
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
-		else if(name == "histogram"){
+		else if (name == "percentile") {
+			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
+			$aggregatorContainer.find(".scalingFactor").hide();
 		}
-		else{
+		else if (name == "div") {
+			$aggregatorContainer.find(".aggregatorSampling").hide();
+			$aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
+			$aggregatorContainer.find(".scalingFactor").hide();
+			$aggregatorContainer.find(".divisor").show();
+		}
+		else if (name == 'scale') {
+			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
+			$aggregatorContainer.find(".aggregatorSampling").hide();
+			$aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".divisor").hide();
+			$aggregatorContainer.find(".scalingFactor").show();
+		}
+		else {
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
             $aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".divisor").hide();
+			$aggregatorContainer.find(".scalingFactor").hide();
 		}
 	});
 }
 
+function getMetricNamesFromTabs(){
+	var metricNames = [];
+	$(".metricTab").each(function(index, value){
+		metricNames.push(value.text);
+	});
+
+	return metricNames;
+}
+
 function addAutocomplete(metricContainer) {
 	metricContainer.find(".metricName")
-		.autocomplete({
-			source: metricNames
-		});
-
-	metricContainer.find("[name='tagName']")
-		.autocomplete({
-			source: tagNames
-		});
-
-	metricContainer.find(".metricGroupBy")
-		.autocomplete({
-			source: tagNames
-		});
-
-	metricContainer.find("[name='tagValue']")
-		.autocomplete({
-			source: tagValues
-		});
+		.combobox().combobox({source: function (request, response) {
+			response(metricNames);
+		}});
 }
 
 function addTag(tagContainer) {
@@ -494,13 +581,29 @@ function addTag(tagContainer) {
 	$("#tagContainer").clone().removeAttr("id").appendTo(newDiv);
 
 	// add auto complete
-	newDiv.find("[name='tagName']").autocomplete({
-		source: tagNames
-	});
+	var $tagNameElement = newDiv.find("[name='tagName']")
+		.combobox().combobox({source: function (request, response) {
+			var metricCount = tagContainer.attr("metricCount");
+			var metricName = $('#metricContainer' + metricCount).find(".metricName").combobox("value");
+			if (metricName){
+				var tags = [];
+				$.each(metricToTags[metricName], function(tag){
+					tags.push(tag);
+				});
+				response(tags);
+			}
+		}});
 
 	// add auto complete
-	newDiv.find("[name='tagValue']").autocomplete({
-		source: tagValues
+	newDiv.find("[name='tagValue']").combobox().combobox({source: function (request, response) {
+		var metricCount = tagContainer.attr("metricCount");
+		var metricName = $('#metricContainer' + metricCount).find(".metricName").combobox("value");
+		var tagName = $tagNameElement.combobox("value");
+		if (metricName && tagName) {
+			var values = [];
+			response(metricToTags[metricName][tagName]);
+		}
+	}
 	});
 
 	// Add remove button
@@ -513,6 +616,47 @@ function addTag(tagContainer) {
 	}).click(function () {
 			newDiv.remove();
 		});
+}
+
+function updateMetricNamesArray(callBack)
+{
+	$.getJSON("api/v1/metricnames", function (json) {
+		metricNames = json.results;
+		if (callBack) {
+			callBack();
+		}
+	});
+}
+
+function getTagsForMetric(metricName) {
+	if (metricName in metricToTags){
+		return;
+	}
+
+	var query = new kairosdb.MetricQuery();
+	query.addMetric(new kairosdb.Metric(metricName));
+	query.setStartAbsolute(0);
+	$('body').toggleClass('cursorWaiting');
+
+	$.ajax({
+		type: "POST",
+		url: "api/v1/datapoints/query/tags",
+		headers: { 'Content-Type': ['application/json']},
+		data: JSON.stringify(query),
+		dataType: 'json',
+		success: function (data) {
+			var metric = metricToTags[metricName] = {};
+			$.each(data.queries[0].results[0].tags, function (tag, values) {
+				metric[tag] = values;
+			});
+
+			$('body').toggleClass('cursorWaiting');
+		},
+		error: function (jqXHR, textStatus, errorThrown) {
+			$('body').toggleClass('cursorWaiting');
+			console.log(errorThrown);
+		}
+	});
 }
 
 function showChartForQuery(subTitle, query, metricData) {
@@ -532,9 +676,10 @@ function showChart(subTitle, queries, metricData) {
 	var data = [];
 	var axisCount = 0;
 	var metricCount = 0;
+	var sampleSize = 0;
 	queries.forEach(function (resultSet) {
 		var axis = {};
-		if (metricCount == 0){
+		if (metricCount == 0) {
 			yaxis.push(axis);
 			axisCount++;
 		}
@@ -545,6 +690,7 @@ function showChart(subTitle, queries, metricData) {
 			axisCount++;
 		}
 
+		sampleSize += resultSet.sample_size;
 		resultSet.results.forEach(function (queryResult) {
 
 			var groupByMessage = "";
@@ -579,15 +725,14 @@ function showChart(subTitle, queries, metricData) {
 		metricCount++;
 	});
 
-	$("#numDataPoints").html(dataPointCount);
+	$("#sampleSize").html(numeral(sampleSize).format('0,0'));
+	$("#numDataPoints").html(numeral(dataPointCount).format('0,0'));
 
 	var $status = $('#status');
-	if (dataPointCount > 20000)
-	{
+	if (dataPointCount > 20000) {
 		var response = confirm("You are attempting to plot more than 20,000 data points.\nThis may take a long time." +
 			"\nYou may want to down sample your data.\n\nDo you want to continue?");
-		if (response != true)
-		{
+		if (response != true) {
 			$status.html("Plotting canceled");
 			return;
 		}
@@ -600,13 +745,12 @@ function showChart(subTitle, queries, metricData) {
 	$status.html("");
 }
 
-function isHighChartsLoaded()
-{
-	try{
-	 	Highcharts.charts;
+function isHighChartsLoaded() {
+	try {
+		Highcharts.charts;
 		return true;
 	}
-	catch(err){
+	catch (err) {
 		return false;
 	}
 }
@@ -614,11 +758,13 @@ function isHighChartsLoaded()
 function deleteDataPoints() {
 	if (confirm("Are you sure you want to delete all data points returned from the last query?")) {
 		var query = $("#query-hidden-text").val();
-		kairosdb.deleteDataPoints(query, function (queries) {
+		kairosdb.deleteDataPoints(query, function () {
 			if (confirm("Data was deleted. It may take up 30 seconds are more to update. Do you want to refresh the graph?")) {
 				updateChart();
 			}
 		});
 	}
 }
+
+
 

@@ -18,6 +18,7 @@ package org.kairosdb.datastore.cassandra;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.SetMultimap;
+import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,11 +33,13 @@ import org.kairosdb.datastore.DatastoreTestHelper;
 import java.io.IOException;
 import java.util.*;
 
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.core.Is.is;
 
 
 public class CassandraDatastoreTest extends DatastoreTestHelper
@@ -187,10 +190,19 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		s_datastore.close();
 	}
 
+	private static List<DataPointsRowKey> readIterator(Iterator<DataPointsRowKey> it)
+	{
+		List<DataPointsRowKey> ret = new ArrayList<DataPointsRowKey>();
+		while (it.hasNext())
+			ret.add(it.next());
+
+		return (ret);
+	}
+
 	private static void deleteMetric(String metricName) throws IOException, DatastoreException
 	{
 		DatastoreMetricQueryImpl query = new DatastoreMetricQueryImpl(metricName, EMPTY_MAP, 0L, Long.MAX_VALUE);
-		s_datastore.deleteDataPoints(query, createCache("YetAnotherMetricToDelete"));
+		s_datastore.deleteDataPoints(query);
 	}
 
 	@Test
@@ -199,7 +211,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
 				HashMultimap.<String, String>create(), s_dataPointTime, s_dataPointTime);
 
-		ListMultimap<Long, DataPointsRowKey> keys = s_datastore.getKeysForQuery(query);
+		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
 
 		assertEquals(4, keys.size());
 	}
@@ -213,7 +225,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
 				tagFilter, s_dataPointTime, s_dataPointTime);
 
-		ListMultimap<Long, DataPointsRowKey> keys = s_datastore.getKeysForQuery(query);
+		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
 
 		assertEquals(2, keys.size());
 	}
@@ -228,8 +240,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		query.setEndTime(s_dataPointTime);
 		query.setTags(tagFilter);
 
-		QueryResults queryResults = DatastoreTestHelper.s_datastore.query(query);
-		List<DataPointGroup> results = queryResults.getDataPoints();
+		DatastoreQuery dq = DatastoreTestHelper.s_datastore.createQuery(query);
+		List<DataPointGroup> results = dq.execute();
 
 		DataPointGroup dataPointGroup = results.get(0);
 		int counter = 0;
@@ -244,21 +256,15 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dataPointGroup.close();
 		assertThat(total, equalTo(counter * 42));
 		assertEquals(OVERFLOW_SIZE, counter);
-		queryResults.close();
+		dq.close();
 	}
 
 	@Test (expected = NullPointerException.class)
 	public void test_deleteDataPoints_nullQuery_Invalid() throws IOException, DatastoreException
 	{
-		s_datastore.deleteDataPoints(null, createCache("foo"));
+		s_datastore.deleteDataPoints(null);
 	}
 
-	@Test (expected = NullPointerException.class)
-	public void test_deleteDataPoints_nullCache_Invalid() throws IOException, DatastoreException
-	{
-		DatastoreMetricQuery query = new DatastoreMetricQueryImpl("MetricToDelete", EMPTY_MAP, 0L, Long.MAX_VALUE);
-		s_datastore.deleteDataPoints(query, null);
-	}
 
 	@Test
 	public void test_deleteDataPoints_DeleteEntireRow() throws IOException, DatastoreException, InterruptedException
@@ -266,18 +272,23 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		String metricToDelete = "MetricToDelete";
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 
-		List<DataPointRow> rows = s_datastore.queryDatabase(query, createCache(metricToDelete));
+		CachedSearchResult res = createCache(metricToDelete);
+		s_datastore.queryDatabase(query, res);
+		List<DataPointRow> rows = res.getRows();
+
 		assertThat(rows.size(), equalTo(1));
 
-		s_datastore.deleteDataPoints(query, createCache(metricToDelete));
+		s_datastore.deleteDataPoints(query);
 		Thread.sleep(2000);
 
 		// Verify that all data points are gone
-		rows = s_datastore.queryDatabase(query, createCache(metricToDelete));
+		res = createCache(metricToDelete);
+		s_datastore.queryDatabase(query, res);
+		rows = res.getRows();
 		assertThat(rows.size(), equalTo(0));
 
 		// Verify that the index key is gone
-		ListMultimap<Long, DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQuery(query);
+		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(query));
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
@@ -290,18 +301,22 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		String metricToDelete = "OtherMetricToDelete";
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 
-		List<DataPointRow> rows = s_datastore.queryDatabase(query, createCache(metricToDelete));
+		CachedSearchResult res = createCache(metricToDelete);
+		s_datastore.queryDatabase(query, res);
+		List<DataPointRow> rows = res.getRows();
 		assertThat(rows.size(), equalTo(4));
 
-		s_datastore.deleteDataPoints(query, createCache(metricToDelete));
+		s_datastore.deleteDataPoints(query);
 		Thread.sleep(2000);
 
-		rows = s_datastore.queryDatabase(query, createCache(metricToDelete));
+		res = createCache(metricToDelete);
+		s_datastore.queryDatabase(query, res);
+		rows = res.getRows();
 		assertThat(rows.size(), equalTo(0));
 
 		// Verify that the index key is gone
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
-		ListMultimap<Long, DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQuery(queryEverything);
+		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(queryEverything));
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
@@ -315,20 +330,24 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		String metricToDelete = "MetricToPartiallyDelete";
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 
-		List<DataPointRow> rows = s_datastore.queryDatabase(query, createCache(metricToDelete));
+		CachedSearchResult res = createCache(metricToDelete);
+		s_datastore.queryDatabase(query, res);
+		List<DataPointRow> rows = res.getRows();
 		assertThat(rows.size(), equalTo(4));
 
 		DatastoreMetricQuery deleteQuery = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L,
 				rowKeyTime + (3 * CassandraDatastore.ROW_WIDTH - 1));
-		s_datastore.deleteDataPoints(deleteQuery, createCache(metricToDelete));
+		s_datastore.deleteDataPoints(deleteQuery);
 		Thread.sleep(2000);
 
-		rows = s_datastore.queryDatabase(query, createCache(metricToDelete));
+		res = createCache(metricToDelete);
+		s_datastore.queryDatabase(query, res);
+		rows = res.getRows();
 		assertThat(rows.size(), equalTo(1));
 
 		// Verify that the index key is gone
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
-		ListMultimap<Long, DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQuery(queryEverything);
+		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(queryEverything));
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
@@ -342,32 +361,52 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		String metricToDelete = "YetAnotherMetricToDelete";
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, rowKeyTime, rowKeyTime + 2000);
 
-		List<DataPointRow> rows = s_datastore.queryDatabase(query, createCache(metricToDelete));
+		CachedSearchResult res = createCache(metricToDelete);
+		s_datastore.queryDatabase(query, res);
+		List<DataPointRow> rows = res.getRows();
 		assertThat(rows.size(), equalTo(1));
 
-		s_datastore.deleteDataPoints(query, createCache(metricToDelete));
+		s_datastore.deleteDataPoints(query);
 		Thread.sleep(2000);
 
-		rows = s_datastore.queryDatabase(query, createCache(metricToDelete));
-		assertThat(rows.size(), equalTo(1));
-		DataPointRow row = rows.get(0);
-		int count = 0;
-		while(row.hasNext())
-		{
-			DataPoint next = row.next();
-			assertThat(next.getLongValue(), equalTo(16L));
-			count++;
-		}
+		res = createCache(metricToDelete);
+		s_datastore.queryDatabase(query, res);
+		rows = res.getRows();
+		assertThat(rows.size(), equalTo(0));
 
-		assertThat(count, equalTo(0));
-
-		// Verify that the index key is gone
+		// Verify that the index key is still there
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
-		ListMultimap<Long, DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQuery(queryEverything);
+		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(queryEverything));
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
 		assertThat(s_datastore.getMetricNames(), hasItem(metricToDelete));
+	}
+
+	/**
+	 This is here because hbase throws an exception in this case
+	 @throws DatastoreException
+	 */
+	@Test
+	public void test_queryDatabase_noMetric() throws DatastoreException
+	{
+
+		Map<String, String> tags = new TreeMap<String, String>();
+		QueryMetric query = new QueryMetric(500, 0, "metric_not_there");
+		query.setEndTime(3000);
+
+		query.setTags(tags);
+
+		DatastoreQuery dq = super.s_datastore.createQuery(query);
+
+		List<DataPointGroup> results = dq.execute();
+
+		assertThat(results.size(), CoreMatchers.equalTo(1));
+		DataPointGroup dpg = results.get(0);
+		assertThat(dpg.getName(), is("metric_not_there"));
+		assertFalse(dpg.hasNext());
+
+		dq.close();
 	}
 
 	@Test

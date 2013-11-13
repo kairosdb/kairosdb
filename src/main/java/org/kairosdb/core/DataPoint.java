@@ -3,12 +3,14 @@ package org.kairosdb.core;
 import java.nio.ByteBuffer;
 
 
+
 public interface DataPoint extends Comparable<DataPoint>
 {
 	public static final String API_LONG = "long";
 	public static final String API_DOUBLE = "double";
 
 	public long getTimestamp();
+
 
 	/**
 	 Provides serialized form of data so it can be written to the data store
@@ -41,4 +43,5 @@ public interface DataPoint extends Comparable<DataPoint>
 	 @return
 	 */
 	public String getDataStoreDataType();
+
 }

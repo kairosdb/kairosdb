@@ -1,0 +1,28 @@
+{
+	"start_relative": {
+		"value": 10,
+		"unit": "minutes"
+	},
+	"end_relative": {
+		"value": 20,
+		"unit": "minutes"
+	},
+	"metrics": [
+		{
+			"name": "abc.123",
+			"aggregators": [
+				{
+					"name": "sum",
+					"sampling": {
+						"unit": "minutes",
+						"value": 10
+					}
+				}
+			],
+			"tags": {
+				"host": "foo",
+				"type": "bar"
+			}
+		}
+	]
+}

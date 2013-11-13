@@ -23,8 +23,9 @@ public interface Datastore
 
 	public Iterable<String> getTagValues() throws DatastoreException;
 
-	public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult) throws DatastoreException;
+	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException;
 
-	public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException;
+	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException;
 
+	public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException;
 }

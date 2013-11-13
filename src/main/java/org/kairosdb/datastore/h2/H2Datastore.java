@@ -20,11 +20,16 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
+<<<<<<< HEAD
 import org.kairosdb.core.*;
 import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.DataPointRow;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
+=======
+import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datastore.*;
+>>>>>>> develop
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.h2.orm.*;
 import org.slf4j.Logger;
@@ -257,51 +262,125 @@ public class H2Datastore implements Datastore
 	}
 
 	@Override
-	public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 	{
 		GenOrmQueryResultSet<? extends MetricIdResults> idQuery = getMetricIdsForQuery(query);
 
-		List<DataPointRow> retList = new ArrayList<DataPointRow>();
-		while (idQuery.next())
+		try
 		{
-			String metricId = idQuery.getRecord().getMetricId();
-
-			//Collect the tags in the results
-			MetricTag.ResultSet tags = MetricTag.factory.getByMetric(metricId);
-			Map<String, String> tagMap = new TreeMap<String, String>();
-			while (tags.next())
+			while (idQuery.next())
 			{
-				MetricTag mtag = tags.getRecord();
-				tagMap.put(mtag.getTagName(), mtag.getTagValue());
-			}
+				String metricId = idQuery.getRecord().getMetricId();
 
+				//Collect the tags in the results
+				MetricTag.ResultSet tags = MetricTag.factory.getByMetric(metricId);
+				Map<String, String> tagMap = new TreeMap<String, String>();
+
+				while (tags.next())
+				{
+					MetricTag mtag = tags.getRecord();
+					tagMap.put(mtag.getTagName(), mtag.getTagValue());
+				}
+
+<<<<<<< HEAD
 			org.kairosdb.datastore.h2.orm.DataPoint.ResultSet resultSet = org.kairosdb.datastore.h2.orm.DataPoint.factory.getForMetricId(metricId,
 					new Timestamp(query.getStartTime()),
 					new Timestamp(query.getEndTime()));
+=======
+				queryCallback.startDataPointSet(tagMap);
+>>>>>>> develop
 
-			//The H2DataPointGroup will close the resultSet
-			retList.add(new H2DataPointGroup(query.getName(), tagMap, resultSet));
+				Timestamp startTime = new Timestamp(query.getStartTime());
+				Timestamp endTime = new Timestamp(query.getEndTime());
+
+				DataPoint.ResultSet resultSet;
+				if (query.getLimit() == 0)
+				{
+					resultSet = DataPoint.factory.getForMetricId(metricId,
+							startTime, endTime, query.getOrder().getText());
+				}
+				else
+				{
+					resultSet = DataPoint.factory.getForMetricIdWithLimit(metricId,
+							startTime, endTime, query.getLimit(), query.getOrder().getText());
+				}
+
+				while (resultSet.next())
+				{
+					DataPoint record = resultSet.getRecord();
+
+					if (!record.isLongValueNull())
+						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getLongValue());
+					else
+						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getDoubleValue());
+				}
+			}
+			queryCallback.endDataPoints();
 		}
-
-
-		return (retList);
-
+		catch (IOException e)
+		{
+			throw new DatastoreException(e);
+		}
 	}
 
 	@Override
-	public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
+	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 	{
-		GenOrmQueryResultSet<? extends MetricIdResults> idQuery =
-				getMetricIdsForQuery(deleteQuery);
-
-		while (idQuery.next())
+		GenOrmDataSource.attachAndBegin();
+		try
 		{
-			String metricId = idQuery.getRecord().getMetricId();
+			GenOrmQueryResultSet<? extends MetricIdResults> idQuery =
+					getMetricIdsForQuery(deleteQuery);
 
-			new DeleteMetricsQuery(metricId,
-					new Timestamp(deleteQuery.getStartTime()),
-					new Timestamp(deleteQuery.getEndTime())).runUpdate();
+			while (idQuery.next())
+			{
+				String metricId = idQuery.getRecord().getMetricId();
+
+				new DeleteMetricsQuery(metricId,
+						new Timestamp(deleteQuery.getStartTime()),
+						new Timestamp(deleteQuery.getEndTime())).runUpdate();
+			}
+
+			idQuery.close();
+
+			GenOrmDataSource.commit();
 		}
+		finally
+		{
+			GenOrmDataSource.close();
+		}
+	}
+
+	@Override
+	public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
+	{
+		GenOrmQueryResultSet<? extends MetricIdResults> idQuery = getMetricIdsForQuery(query);
+
+		TagSetImpl tagSet = new TagSetImpl();
+		try
+		{
+			while (idQuery.next())
+			{
+				String metricId = idQuery.getRecord().getMetricId();
+
+				//Collect the tags in the results
+				MetricTag.ResultSet tags = MetricTag.factory.getByMetric(metricId);
+
+				while (tags.next())
+				{
+					MetricTag mtag = tags.getRecord();
+					tagSet.addTag(mtag.getTagName(), mtag.getTagValue());
+				}
+
+				tags.close();
+			}
+		}
+		finally
+		{
+			idQuery.close();
+		}
+
+		return tagSet;
 	}
 
 	private String createMetricKey(DataPointSet dps)

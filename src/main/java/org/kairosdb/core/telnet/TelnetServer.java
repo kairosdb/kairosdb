@@ -25,24 +25,27 @@ import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.Delimiters;
 import org.jboss.netty.handler.codec.string.StringEncoder;
 import org.kairosdb.core.KairosDBService;
-import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.util.ValidationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executors;
 
 public class TelnetServer extends SimpleChannelUpstreamHandler implements ChannelPipelineFactory,
 		KairosDBService
 {
+	public static final Logger logger = LoggerFactory.getLogger(TelnetServer.class);
+
+
 	private int m_port;
 	private CommandProvider m_commands;
-	private UnknownCommand m_unknownCommand;
+	private ServerBootstrap m_serverBootstrap;
 
 	@Inject
-	public TelnetServer(@Named("kairosdb.telnetserver.port")int port,
-			CommandProvider commandProvider)
+	public TelnetServer(@Named("kairosdb.telnetserver.port") int port,
+	                    CommandProvider commandProvider)
 	{
 		m_commands = commandProvider;
 		m_port = port;
@@ -69,63 +72,91 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 
 	@Override
 	public void messageReceived(final ChannelHandlerContext ctx,
-			final MessageEvent msgevent) {
-		try
+	                            final MessageEvent msgevent)
+	{
+		final Object message = msgevent.getMessage();
+		if (message instanceof String[])
 		{
-			final Object message = msgevent.getMessage();
-			if (message instanceof String[])
+			String[] command = (String[]) message;
+			TelnetCommand telnetCommand = m_commands.getCommand(command[0]);
+			if (telnetCommand != null)
 			{
-				String[] command = (String[])message;
-				TelnetCommand telnetCommand = m_commands.getCommand(command[0]);
-				if (telnetCommand == null)
-					telnetCommand = m_unknownCommand;
-
-				telnetCommand.execute(msgevent.getChannel(), command);
+				try
+				{
+					telnetCommand.execute(msgevent.getChannel(), command);
+				}
+				catch(ValidationException e)
+				{
+					log("Failed to execute command: " + formatCommand(command), e);
+				}
+				catch (Exception e)
+				{
+					logger.error("", e);
+				}
 			}
 			else
-			{
-				//TODO
-				/*logError(msgevent.getChannel(), "Unexpected message type "
-						+ message.getClass() + ": " + message);
-				exceptions_caught.incrementAndGet();*/
-			}
+				log("Unknown command: " + command[0]);
 		}
-		catch (Exception e)
+		else
 		{
-			Object pretty_message = msgevent.getMessage();
-			if (pretty_message instanceof String[])
-			{
-				pretty_message = Arrays.toString((String[]) pretty_message);
-			}
-			//TODO
-			/*logError(msgevent.getChannel(), "Unexpected exception caught"
-					+ " while serving " + pretty_message, e);
-			exceptions_caught.incrementAndGet();*/
+			log("Invalid message. Must be of type String.");
+		}
+	}
+
+	private static void log(String message)
+	{
+		log(message, null);
+	}
+
+	private static void log(String message, Exception e)
+	{
+		if (logger.isDebugEnabled())
+			if (e != null)
+				logger.debug(message, e);
+			else
+				logger.debug(message);
+		else
+		{
+			if (e instanceof ValidationException)
+				message = message + " Reason: " + e.getMessage();
+			logger.warn(message);
 		}
 	}
 
 	@Override
-	public void start() throws KariosDBException
+	public void start() throws KairosDBException
 	{
 		// Configure the server.
-		ServerBootstrap bootstrap = new ServerBootstrap(
+		m_serverBootstrap = new ServerBootstrap(
 				new NioServerSocketChannelFactory(
 						Executors.newCachedThreadPool(),
 						Executors.newCachedThreadPool()));
 
 		// Configure the pipeline factory.
-		bootstrap.setPipelineFactory(this);
-		bootstrap.setOption("child.tcpNoDelay", true);
-		bootstrap.setOption("child.keepAlive", true);
-		bootstrap.setOption("reuseAddress", true);
+		m_serverBootstrap.setPipelineFactory(this);
+		m_serverBootstrap.setOption("child.tcpNoDelay", true);
+		m_serverBootstrap.setOption("child.keepAlive", true);
+		m_serverBootstrap.setOption("reuseAddress", true);
 
 		// Bind and start to accept incoming connections.
-		bootstrap.bind(new InetSocketAddress(m_port));
+		m_serverBootstrap.bind(new InetSocketAddress(m_port));
 	}
 
 	@Override
 	public void stop()
 	{
+		if (m_serverBootstrap != null)
+			m_serverBootstrap.shutdown();
+	}
 
+	private static String formatCommand(String[] command)
+	{
+		StringBuilder builder = new StringBuilder();
+		for (String s : command)
+		{
+			builder.append(s).append(" ");
+		}
+
+		return builder.toString();
 	}
 }

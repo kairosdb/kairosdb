@@ -27,7 +27,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
 version = "0.9.2"
-release = "1" //package release number
+release = "4" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -66,8 +66,7 @@ jp.getCompileRule().getDefinition().set("source", "1.6")
 
 additionalFiles = new RegExFileSet("src/main/java", ".*\\.sql").recurse()
 jp.getJarRule().addFileSet(additionalFiles)
-jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties",
-		"logback.xml")
+jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
 
 //Set information in the manifest file
 manifest = jp.getJarRule().getManifest().getMainAttributes()
@@ -137,18 +136,20 @@ libFileSets = [
 		new RegExFileSet("lib/ivy/default", ".*\\.jar")
 	]
 
-scriptsFileSet = new RegExFileSet("src/scripts", ".*")
+scriptsFileSet = new RegExFileSet("src/scripts", ".*").addExcludeFile("kairosdb-env.sh")
 webrootFileSet = new RegExFileSet("webroot", ".*").recurse()
 
 zipLibDir = "$programName/lib"
 zipBinDir = "$programName/bin"
 zipConfDir = "$programName/conf"
+zipConfLoggingDir = "$zipConfDir/logging"
 zipWebRootDir = "$programName/webroot"
 tarRule = new TarRule("build/${programName}-${version}.tar")
 		.addDepend(jp.getJarRule())
 		.addFileSetTo(zipBinDir, scriptsFileSet)
 		.addFileSetTo(zipWebRootDir, webrootFileSet)
 		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.properties")
+		.addFileTo(zipConfLoggingDir, "src/main/resources", "logback.xml")
 		.setFilePermission(".*\\.sh", 0755)
 
 for (AbstractFileSet fs in libFileSets)
@@ -212,6 +213,10 @@ def doRPM(Rule rule)
 	rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.properties",
 			new File("src/main/resources/kairosdb.properties"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
+	rpmBuilder.addFile("$rpmBaseInstallDir/conf/logging/logback.xml",
+			new File("src/main/resources/logback.xml"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
+	rpmBuilder.addFile("$rpmBaseInstallDir/bin/kairosdb-env.sh",
+			new File("src/scripts/kairosdb-env.sh"), 0755, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 
 	for (AbstractFileSet.File f : webrootFileSet.getFiles())
 		rpmBuilder.addFile("$rpmBaseInstallDir/webroot/$f.file", new File(f.getBaseDir(), f.getFile()))
@@ -249,7 +254,7 @@ def doDeb(Rule rule)
 	if (resp == 0)
 	{
 		def password = jpf.getPassword()
-		sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --to-deb $rpmFile")
+		sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --bump=0 --to-deb $rpmFile")
 		sudo.run()
 		//pass the password to the process on stdin
 		sudo.sendMessage("$password\n")
@@ -271,12 +276,40 @@ new SimpleRule("run").setDescription("Runs kairosdb")
 		.addDepends(jp.getJarRule())
 		.setMakeAction("doRun")
 		.setProperty("DEBUG", false)
+new SimpleRule("export").setDescription("Exports metrics from KairosDB." +
+		"\n\t-D f <filename> - file to write output to. If not specified, the output goes to stdout." +
+		"\n\t-D n <metricName> - name of metric to export. If not specified, then all metrics are exported.")
+		.addDepends(jp.getJarRule())
+		.setMakeAction("doRun")
+		.setProperty("ACTION", "export")
+new SimpleRule("import").setDescription("Imports metrics." +
+		"\n\t-D f <filename> to specify output file. If not specified the input comes from stdin.")
+		.addDepends(jp.getJarRule())
+		.setMakeAction("doRun")
+		.setProperty("ACTION", "import")
 
 def doRun(Rule rule)
 {
-	//args = "-c import -f export.txt"
-	//args = "-c export -f test_export.txt"
-	args = "-c run"
+	if (rule.getProperty("ACTION") == "export")
+	{
+		args = "-c export "
+		metricName = saw.getProperty("n", "")
+		if (metricName.length() > 0)
+			args += "-n " + metricName
+		filename = saw.getProperty("f", "")
+		if (filename.length() > 0)
+			args += " -f " + filename
+	}
+	else if (rule.getProperty("ACTION") == "import")
+	{
+		args = "-c import "
+		filename = saw.getProperty("f", "")
+		if (filename.length() > 0)
+			args += " -f " + filename
+	}
+	else
+		args = "-c run"
+
 	//Check if you have a custom kairosdb.properties file and load it.
 	customProps = new File("kairosdb.properties")
 	if (customProps.exists())
@@ -284,8 +317,10 @@ def doRun(Rule rule)
 
 	debug = ""
 	if (rule.getProperty("DEBUG"))
-		debug = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+		debug = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 
+	//this is to load logback into classpath
+	testClasspath.addPath("src/main/resources");
 	saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${testClasspath} org.kairosdb.core.Main ${args}")
 }
 

@@ -6,7 +6,10 @@ cd "$KAIROSDB_BIN_DIR/.."
 
 KAIROSDB_LIB_DIR="lib"
 KAIROSDB_LOG_DIR="log"
-JAVA_OPTS=
+
+if [ -f "$KAIROSDB_BIN_DIR/kairosdb-env.sh" ]; then
+	. "$KAIROSDB_BIN_DIR/kairosdb-env.sh"
+fi
 
 if [ ! -d "$KAIROSDB_LOG_DIR" ]; then
 	mkdir "$KAIROSDB_LOG_DIR"
@@ -25,9 +28,11 @@ else
 fi
 
 # Load up the classpath
+CLASSPATH="conf/logging"
 for jar in $KAIROSDB_LIB_DIR/*.jar; do
 	CLASSPATH="$CLASSPATH:$jar"
 done
+
 
 
 if [ "$1" = "run" ] ; then

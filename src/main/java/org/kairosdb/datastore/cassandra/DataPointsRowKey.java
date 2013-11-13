@@ -59,6 +59,11 @@ public class DataPointsRowKey
 		return m_timestamp;
 	}
 
+	/**
+	 If this returns null then it is the old row key format and the data type
+	 is determined by the timestamp bit in the column.
+	 @return
+	 */
 	public String getDataType()
 	{
 		return m_dataType;

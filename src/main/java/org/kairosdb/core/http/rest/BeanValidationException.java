@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 
 import javax.validation.ConstraintViolation;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -29,10 +30,22 @@ import java.util.Set;
 public class BeanValidationException extends IOException
 {
 	private ImmutableSet<ConstraintViolation<Object>> violations;
+	private String context;
 
 	public BeanValidationException(Set<ConstraintViolation<Object>> violations)
 	{
-		super(messagesFor(violations).toString());
+		this(violations, null);
+	}
+
+	public BeanValidationException(ConstraintViolation<Object> violation, String context)
+	{
+		this(Collections.singleton(violation), context);
+	}
+
+	public BeanValidationException(Set<ConstraintViolation<Object>> violations, String context)
+	{
+		super(messagesFor(violations, context).toString());
+		this.context = context;
 		this.violations = ImmutableSet.copyOf(violations);
 	}
 
@@ -43,7 +56,7 @@ public class BeanValidationException extends IOException
 	 */
 	public List<String> getErrorMessages()
 	{
-		return messagesFor(violations);
+		return messagesFor(violations, context);
 	}
 
 	/**
@@ -56,11 +69,14 @@ public class BeanValidationException extends IOException
 		return violations;
 	}
 
-	private static List<String> messagesFor(Set<ConstraintViolation<Object>> violations)
+	private static List<String> messagesFor(Set<ConstraintViolation<Object>> violations, String context)
 	{
 		ImmutableList.Builder<String> messages = new ImmutableList.Builder<String>();
 		for (ConstraintViolation<?> violation : violations) {
-			messages.add(violation.getPropertyPath().toString() + " " + violation.getMessage());
+			if (context != null && !context.isEmpty() )
+				messages.add(context + "." + violation.getPropertyPath().toString() + " " + violation.getMessage());
+			else
+				messages.add(violation.getPropertyPath().toString() + " " + violation.getMessage());
 		}
 
 		return messages.build();

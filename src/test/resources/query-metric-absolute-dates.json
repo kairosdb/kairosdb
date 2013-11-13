@@ -6,7 +6,12 @@
 			"name": "abc.123",
 			"aggregators":[
                 {
-                    "name":"sum"
+                    "name":"sum",
+	                "sampling":
+	                {
+		                "value": 1,
+		                "unit": "milliseconds"
+	                }
                 }
             ],
 			"tags": {

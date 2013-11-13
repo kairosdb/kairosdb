@@ -1,28 +1,35 @@
+/*
+ * Copyright 2013 Proofpoint Inc.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package org.kairosdb.core.formatter;
 
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.QueryResults;
 import org.kairosdb.core.groupby.GroupByResult;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
 
-/**
- Created with IntelliJ IDEA.
- User: bhawkins
- Date: 7/1/13
- Time: 10:04 AM
- To change this template use File | Settings | File Templates.
- */
 public class JsonResponse
 {
 	private Writer m_writer;
 	private JSONWriter m_jsonWriter;
-	private boolean m_began = false;
-	private boolean m_beganQueries = false;
 
 	public JsonResponse(Writer writer)
 	{
@@ -30,43 +37,39 @@ public class JsonResponse
 		m_jsonWriter = new JSONWriter(writer);
 	}
 
-
 	public void begin() throws FormatterException
 	{
 		try
 		{
 			m_jsonWriter.object();
-			m_began = true;
-		}
-		catch (JSONException e)
-		{
-			throw new FormatterException(e);
-		}
-	}
-
-
-	public void startQueries() throws FormatterException
-	{
-		try
-		{
 			m_jsonWriter.key("queries").array();
-			m_beganQueries = true;
 		}
 		catch (JSONException e)
 		{
 			throw new FormatterException(e);
 		}
-
 	}
 
-
-	public void formatQuery(QueryResults queryResults) throws FormatterException
+	/**
+	 * Formats the query results
+	 *
+	 * @param queryResults results of the query
+	 * @param excludeTags if true do not include tag information
+	 * @param sampleSize   Passing a sample size of -1 will cause the attribute to not show up
+	 * @throws FormatterException
+	 */
+	public void formatQuery(List<DataPointGroup> queryResults, boolean excludeTags, int sampleSize) throws FormatterException
 	{
 		try
 		{
-			m_jsonWriter.object().key("results").array();
+			m_jsonWriter.object();
 
-			for (DataPointGroup group : queryResults.getDataPoints())
+			if (sampleSize != -1)
+				m_jsonWriter.key("sample_size").value(sampleSize);
+
+			m_jsonWriter.key("results").array();
+
+			for (DataPointGroup group : queryResults)
 			{
 				final String metric = group.getName();
 
@@ -88,14 +91,17 @@ public class JsonResponse
 					m_jsonWriter.endArray();
 				}
 
-				m_jsonWriter.key("tags").object();
-
-				for (String tagName : group.getTagNames())
+				if (!excludeTags)
 				{
-					m_jsonWriter.key(tagName);
-					m_jsonWriter.value(group.getTagValues(tagName));
+					m_jsonWriter.key("tags").object();
+
+					for (String tagName : group.getTagNames())
+					{
+						m_jsonWriter.key(tagName);
+						m_jsonWriter.value(group.getTagValues(tagName));
+					}
+					m_jsonWriter.endObject();
 				}
-				m_jsonWriter.endObject();
 
 				m_jsonWriter.key("values").array();
 				while (group.hasNext())
@@ -134,31 +140,11 @@ public class JsonResponse
 		}
 	}
 
-
-	public void endQueries() throws FormatterException
-	{
-		try
-		{
-			m_jsonWriter.endArray();
-			m_beganQueries = false;
-		}
-		catch (JSONException e)
-		{
-			throw new FormatterException(e);
-		}
-
-	}
-
-
-	public void writeMeta() throws FormatterException
-	{
-	}
-
-
 	public void end() throws FormatterException
 	{
 		try
 		{
+			m_jsonWriter.endArray();
 			m_jsonWriter.endObject();
 		}
 		catch (JSONException e)
@@ -166,5 +152,4 @@ public class JsonResponse
 			throw new FormatterException(e);
 		}
 	}
-
 }

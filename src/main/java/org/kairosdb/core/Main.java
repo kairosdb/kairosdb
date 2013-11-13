@@ -19,15 +19,20 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
+import org.json.JSONArray;
+import org.json.JSONWriter;
 import com.google.inject.*;
 import jcmdline.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.kairosdb.core.datastore.DataPointRow;
 import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.core.http.rest.json.JsonMetricParser;
+import org.kairosdb.util.ValidationException;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -51,10 +56,14 @@ public class Main
 			"file to save export to or read from depending on command", FileParam.NO_ATTRIBUTES,
 			FileParam.OPTIONAL);
 
+	private static StringParam s_exportMetricNames = new StringParam("n",
+			"name of metrics to export. If not specified, then all metrics are exported", 1,
+			StringParam.UNSPECIFIED_LENGTH, true, true);
+
 	/**
-	start is identical to run except that logging data only goes to the log file
-	and not to standard out as well
-	*/
+	 start is identical to run except that logging data only goes to the log file
+	 and not to standard out as well
+	 */
 	private static StringParam s_operationCommand = new StringParam("c",
 			"command to run", new String[]{"run", "start", "export", "import"});
 
@@ -79,7 +88,7 @@ public class Main
 		{
 			if (propName.startsWith(SERVICE_PREFIX))
 			{
-				Class<?> aClass = null;
+				Class<?> aClass;
 				try
 				{
 					if ("".equals(props.getProperty(propName)))
@@ -126,7 +135,7 @@ public class Main
 	{
 		CmdLineHandler cl = new VersionCmdLineHandler("Version 1.0",
 				new HelpCmdLineHandler("KairosDB Help", "kairosdb", "Starts KairosDB",
-						new Parameter[]{s_operationCommand, s_propertiesFile, s_exportFile}, null));
+						new Parameter[]{s_operationCommand, s_propertiesFile, s_exportFile, s_exportMetricNames}, null));
 
 		cl.parse(args);
 
@@ -160,13 +169,15 @@ public class Main
 		{
 			if (s_exportFile.isSet())
 			{
-				PrintStream ps = new PrintStream(new FileOutputStream(s_exportFile.getValue()));
-				main.runExport(ps);
+				Writer ps = new OutputStreamWriter(new FileOutputStream(s_exportFile.getValue()), "UTF-8");
+				main.runExport(ps, s_exportMetricNames.getValues());
+				ps.flush();
 				ps.close();
 			}
 			else
 			{
-				main.runExport(System.out);
+				main.runExport(new OutputStreamWriter(System.out, "UTF-8"), s_exportMetricNames.getValues());
+				System.out.flush();
 			}
 
 			main.stopServices();
@@ -233,65 +244,35 @@ public class Main
 		}
 	}
 
-	public void runExport(PrintStream out) throws DatastoreException, IOException
+	public Injector getInjector()
+	{
+		return (m_injector);
+	}
+
+	public void runExport(Writer out, List<String> metricNames) throws DatastoreException, IOException
 	{
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
 
-		Iterable<String> metrics = ds.getMetricNames();
+		Iterable<String> metrics;
 
-		//metrics = Arrays.asList("gov_status_responsetime", "gov_status_downtime");
+		if (metricNames != null && metricNames.size() > 0)
+			metrics = metricNames;
+		else
+			metrics = ds.getMetricNames();
 
-		try
+		for (String metric : metrics)
 		{
-			for (String metric : metrics)
-			{
-				logger.info("Exporting: " + metric);
-				QueryMetric qm = new QueryMetric(1L, 0, metric);
-				List<DataPointRow> results = ds.export(qm);
-
-				for (DataPointRow result : results)
-				{
-					JSONObject tags = new JSONObject();
-					for (String key : result.getTagNames())
-					{
-						tags.put(key, result.getTagValue(key));
-					}
-
-					while (result.hasNext())
-					{
-						DataPoint dp = result.next();
-
-						JSONObject jsObj = new JSONObject();
-						jsObj.put("name", metric);
-						jsObj.put("time", dp.getTimestamp());
-
-						if (dp.isInteger())
-						{
-							jsObj.put("int_value", true);
-							jsObj.put("value", dp.getLongValue());
-						}
-						else
-						{
-							jsObj.put("int_value", false);
-							jsObj.put("value", dp.getDoubleValue());
-						}
-
-						jsObj.put("tags", tags);
-
-						out.println(jsObj.toString());
-					}
-				}
-			}
+			logger.info("Exporting: " + metric);
+			QueryMetric qm = new QueryMetric(1L, 0, metric);
+			ExportQueryCallback callback = new ExportQueryCallback(metric, out);
+			ds.export(qm, callback);
 		}
-		catch (JSONException e)
-		{
-			e.printStackTrace();
-		}
+
 
 		out.flush();
 	}
 
-	public void runImport(InputStream in) throws IOException, JSONException, DatastoreException
+	public void runImport(InputStream in) throws IOException, JSONException, DatastoreException, ValidationException
 	{
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
 
@@ -300,29 +281,9 @@ public class Main
 		String line = null;
 		while ((line = reader.readLine()) != null)
 		{
-			JSONObject metric = new JSONObject(line);
+			JsonMetricParser jsonMetricParser = new JsonMetricParser(ds, new StringReader(line));
 
-			DataPointSet dps = new DataPointSet(metric.getString("name"));
-
-			JSONObject tags = metric.getJSONObject("tags");
-			Iterator<Object> keys = tags.keys();
-			while (keys.hasNext())
-			{
-				String tagName = (String) keys.next();
-				String tagValue = tags.getString(tagName);
-
-				dps.addTag(tagName, tagValue);
-			}
-
-			DataPoint dp;
-			if (metric.getBoolean("int_value"))
-				dp = new DataPoint(metric.getLong("time"), metric.getLong("value"));
-			else
-				dp = new DataPoint(metric.getLong("time"), metric.getDouble("value"));
-
-			dps.addDataPoint(dp);
-
-			ds.putDataPoints(dps);
+			jsonMetricParser.parse();
 		}
 	}
 
@@ -344,7 +305,7 @@ public class Main
 	}
 
 
-	public void startServices() throws KariosDBException
+	public void startServices() throws KairosDBException
 	{
 		Map<Key<?>, Binding<?>> bindings =
 				m_injector.getAllBindings();
@@ -376,5 +337,85 @@ public class Main
 		//Stop the datastore
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
 		ds.close();
+	}
+
+	private class ExportQueryCallback implements QueryCallback
+	{
+		private final Writer m_writer;
+		private JSONWriter m_jsonWriter;
+		private final String m_metric;
+
+		public ExportQueryCallback(String metricName, Writer out)
+		{
+			m_metric = metricName;
+			m_writer = out;
+		}
+
+		@Override
+		public void addDataPoint(long timestamp, long value) throws IOException
+		{
+			try
+			{
+				m_jsonWriter.array().value(timestamp).value(value).endArray();
+			}
+			catch (JSONException e)
+			{
+				throw new IOException(e);
+			}
+		}
+
+		@Override
+		public void addDataPoint(long timestamp, double value) throws IOException
+		{
+			try
+			{
+				m_jsonWriter.array().value(timestamp).value(value).endArray();
+			}
+			catch (JSONException e)
+			{
+				throw new IOException(e);
+			}
+		}
+
+		@Override
+		public void startDataPointSet(String type, Map<String, String> tags) throws IOException
+		{
+			if (m_jsonWriter != null)
+				endDataPoints();
+
+			try
+			{
+				m_jsonWriter = new JSONWriter(m_writer);
+				m_jsonWriter.object();
+				m_jsonWriter.key("name").value(m_metric);
+				m_jsonWriter.key("tags").value(tags);
+
+				m_jsonWriter.key("datapoints").array();
+
+			}
+			catch (JSONException e)
+			{
+				throw new IOException(e);
+			}
+		}
+
+		@Override
+		public void endDataPoints() throws IOException
+		{
+			try
+			{
+				if (m_jsonWriter != null)
+				{
+					m_jsonWriter.endArray().endObject();
+					m_writer.write("\n");
+					m_jsonWriter = null;
+				}
+			}
+			catch (JSONException e)
+			{
+				throw new IOException(e);
+			}
+
+		}
 	}
 }

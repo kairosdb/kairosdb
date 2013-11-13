@@ -1,0 +1,18 @@
+{
+	"start_absolute": 784041330,
+	"end_absolute": 788879730,
+	"metrics": [
+		{
+			"name": "abc.123",
+			"tags": {
+				"host": "foo",
+				"type": "bar"
+			},
+			"group_by":[
+				{
+					"name": "bogus"
+				}
+			]
+		}
+	]
+}

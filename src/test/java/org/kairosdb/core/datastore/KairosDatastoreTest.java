@@ -22,8 +22,7 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.exception.KariosDBException;
-import org.kairosdb.testing.TestingDataPointRowImpl;
+import org.kairosdb.core.exception.KairosDBException;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.fail;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -42,17 +43,17 @@ public class KairosDatastoreTest
 	private AggregatorFactory aggFactory = new TestAggregatorFactory();
 
 	@Test(expected = NullPointerException.class)
-	public void test_query_nullMetricInvalid() throws KariosDBException
+	public void test_query_nullMetricInvalid() throws KairosDBException
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
 				Collections.<DataPointListener>emptyList(), "hostname");
 
-		datastore.query(null);
+		datastore.createQuery(null);
 	}
 
 	@Test
-	public void test_query_sumAggregator() throws KariosDBException
+	public void test_query_sumAggregator() throws KairosDBException
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
@@ -60,8 +61,8 @@ public class KairosDatastoreTest
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 		metric.addAggregator(aggFactory.createAggregator("sum"));
 
-		QueryResults queryResults = datastore.query(metric);
-		List<DataPointGroup> results = queryResults.getDataPoints();
+		DatastoreQuery dq = datastore.createQuery(metric);
+		List<DataPointGroup> results = dq.execute();
 
 		DataPointGroup group = results.get(0);
 
@@ -77,19 +78,19 @@ public class KairosDatastoreTest
 		assertThat(dataPoint.getTimestamp(), equalTo(3L));
 		assertThat(dataPoint.getLongValue(), equalTo(32L));
 
-		queryResults.close();
+		dq.close();
 	}
 
 	@Test
-	public void test_query_noAggregator() throws KariosDBException
+	public void test_query_noAggregator() throws KairosDBException
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
 				Collections.<DataPointListener>emptyList(), "hostname");
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 
-		QueryResults queryResults = datastore.query(metric);
-		List<DataPointGroup> results = queryResults.getDataPoints();
+		DatastoreQuery dq = datastore.createQuery(metric);
+		List<DataPointGroup> results = dq.execute();
 
 		assertThat(results.size(), is(1));
 		DataPointGroup group = results.get(0);
@@ -150,7 +151,7 @@ public class KairosDatastoreTest
 		assertThat(dataPoint.getTimestamp(), equalTo(3L));
 		assertThat(dataPoint.getLongValue(), equalTo(25L));
 
-		queryResults.close();
+		dq.close();
 	}
 
 	@SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions"})
@@ -179,6 +180,7 @@ public class KairosDatastoreTest
 
 	private class TestDatastore implements Datastore
 	{
+		private DatastoreException m_toThrow = null;
 
 		protected TestDatastore() throws DatastoreException
 		{
@@ -212,39 +214,55 @@ public class KairosDatastoreTest
 			return null;
 		}
 
-		@Override
-		public List<DataPointRow> queryDatabase(DatastoreMetricQuery query, CachedSearchResult cachedSearchResult)
+		public void throwQueryException(DatastoreException toThrow)
 		{
-			List<DataPointRow> groups = new ArrayList<DataPointRow>();
-
-			TestingDataPointRowImpl group1 = new TestingDataPointRowImpl();
-			group1.setName(query.getName());
-			group1.addDataPoint(new DataPoint(1, 3));
-			group1.addDataPoint(new DataPoint(1, 10));
-			group1.addDataPoint(new DataPoint(1, 20));
-			group1.addDataPoint(new DataPoint(2, 1));
-			group1.addDataPoint(new DataPoint(2, 3));
-			group1.addDataPoint(new DataPoint(2, 5));
-			group1.addDataPoint(new DataPoint(3, 25));
-			groups.add(group1);
-
-			TestingDataPointRowImpl group2 = new TestingDataPointRowImpl();
-			group2.setName(query.getName());
-			group2.addDataPoint(new DataPoint(1, 5));
-			group2.addDataPoint(new DataPoint(1, 14));
-			group2.addDataPoint(new DataPoint(1, 20));
-			group2.addDataPoint(new DataPoint(2, 6));
-			group2.addDataPoint(new DataPoint(2, 8));
-			group2.addDataPoint(new DataPoint(2, 9));
-			group2.addDataPoint(new DataPoint(3, 7));
-			groups.add(group2);
-
-			return groups;
+			m_toThrow = toThrow;
 		}
 
 		@Override
-		public void deleteDataPoints(DatastoreMetricQuery deleteQuery, CachedSearchResult cachedSearchResult) throws DatastoreException
+		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback)
+				throws DatastoreException
 		{
+			if (m_toThrow != null)
+				throw m_toThrow;
+
+			try
+			{
+				queryCallback.startDataPointSet(Collections.<String, String>emptyMap());
+				queryCallback.addDataPoint(1, 3);
+				queryCallback.addDataPoint(1, 10);
+				queryCallback.addDataPoint(1, 20);
+				queryCallback.addDataPoint(2, 1);
+				queryCallback.addDataPoint(2, 3);
+				queryCallback.addDataPoint(2, 5);
+				queryCallback.addDataPoint(3, 25);
+
+				queryCallback.startDataPointSet(Collections.<String, String>emptyMap());
+				queryCallback.addDataPoint(1, 5);
+				queryCallback.addDataPoint(1, 14);
+				queryCallback.addDataPoint(1, 20);
+				queryCallback.addDataPoint(2, 6);
+				queryCallback.addDataPoint(2, 8);
+				queryCallback.addDataPoint(2, 9);
+				queryCallback.addDataPoint(3, 7);
+
+				queryCallback.endDataPoints();
+			}
+			catch (IOException e)
+			{
+				throw new DatastoreException(e);
+			}
+		}
+
+		@Override
+		public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
+		{
+		}
+
+		@Override
+		public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
+		{
+			return null;  //To change body of implemented methods use File | Settings | File Templates.
 		}
 	}
 }

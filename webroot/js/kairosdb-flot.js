@@ -73,7 +73,7 @@ function drawSingleSeriesChart(subTitle, data, flotOptions) {
 				formattedDate = formattedDate.replace("millis", timestamp.getMilliseconds());
 				formattedDate += " " + getTimezone(timestamp);
 				showTooltip(item.pageX, item.pageY,
-					item.series.label + "<br>" + formattedDate + "<br>" + y);
+					item.series.label + "<br>" + formattedDate + "<br>" + numeral(y).format('0,0'));
 			}
 		} else {
 			$("#tooltip").remove();

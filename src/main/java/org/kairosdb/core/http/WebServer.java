@@ -36,7 +36,7 @@ import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.security.Credential;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.kairosdb.core.KairosDBService;
-import org.kairosdb.core.exception.KariosDBException;
+import org.kairosdb.core.exception.KairosDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +92,7 @@ public class WebServer implements KairosDBService
 	}
 
 	@Override
-	public void start() throws KariosDBException
+	public void start() throws KairosDBException
 	{
 		try
 		{
@@ -138,7 +138,7 @@ public class WebServer implements KairosDBService
 		}
 		catch (Exception e)
 		{
-			throw new KariosDBException(e);
+			throw new KairosDBException(e);
 		}
 	}
 

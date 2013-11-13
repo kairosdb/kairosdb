@@ -1,0 +1,43 @@
+{
+	"queries": [
+		{
+            "sample_size": 10,
+			"results": [
+				{
+					"name": "metric1",
+					"group_by": [
+						{
+							"name": "value",
+							"range_size": 10,
+							"group": {
+								"group_number": 0
+							}
+						}
+					],
+					"tags": {
+						"tag1": ["value1"],
+						"tag2": ["value2"]
+					},
+					"values": [[12345, 1 ], [56789, 2], [98765, 2.9]]
+				},
+				{
+					"name": "metric2",
+					"group_by": [
+						{
+							"name": "value",
+							"range_size": 10,
+							"group": {
+								"group_number": 1
+							}
+						}
+					],
+					"tags": {
+						"tag3": ["value3"],
+						"tag4": ["value4"]
+					},
+					"values": [[12345,5],[56789,6],[98765,7.9]]
+				}
+			]
+		}
+	]
+}

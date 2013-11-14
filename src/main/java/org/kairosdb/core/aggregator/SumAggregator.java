@@ -15,8 +15,10 @@
  */
 package org.kairosdb.core.aggregator;
 
+import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +35,13 @@ public class SumAggregator extends RangeAggregator
 {
 	public static final Logger logger = LoggerFactory.getLogger(SumAggregator.class);
 
+	private DoubleDataPointFactory m_dataPointFactory;
+
+	@Inject
+	public SumAggregator(DoubleDataPointFactory dataPointFactory)
+	{
+		m_dataPointFactory = dataPointFactory;
+	}
 
 	@Override
 	protected RangeSubAggregator getSubAggregator()
@@ -59,7 +68,7 @@ public class SumAggregator extends RangeAggregator
 				logger.debug("Aggregating "+counter+" values");
 			}
 
-			return Collections.singletonList(new DataPoint(returnTime, sum));
+			return Collections.singletonList(m_dataPointFactory.createDataPoint(returnTime, sum));
 		}
 	}
 }

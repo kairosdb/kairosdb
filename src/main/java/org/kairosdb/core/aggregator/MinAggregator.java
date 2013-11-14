@@ -17,6 +17,7 @@ package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -29,6 +30,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @AggregatorName(name = "min", description = "Returns the minimum value data point for the time range.")
 public class MinAggregator extends RangeAggregator
 {
+	private DoubleDataPointFactory m_dataPointFactory;
+
+
+	public MinAggregator(DoubleDataPointFactory dataPointFactory)
+	{
+		m_dataPointFactory = dataPointFactory;
+	}
+
 	@Override
 	protected RangeSubAggregator getSubAggregator()
 	{
@@ -49,7 +58,7 @@ public class MinAggregator extends RangeAggregator
 				min = Math.min(min, dp.getDoubleValue());
 			}
 
-			return Collections.singletonList(new DataPoint(returnTime, min));
+			return Collections.singletonList(m_dataPointFactory.createDataPoint(returnTime, min));
 		}
 	}
 }

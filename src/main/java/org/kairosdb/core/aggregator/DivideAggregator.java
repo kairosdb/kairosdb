@@ -17,8 +17,10 @@
 package org.kairosdb.core.aggregator;
 
 
+import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.http.rest.validation.NonZero;
@@ -31,8 +33,16 @@ import static com.google.common.base.Preconditions.checkState;
 @AggregatorName(name = "div", description = "Divides each data point by a divisor.")
 public class DivideAggregator implements Aggregator
 {
+	private DoubleDataPointFactory m_dataPointFactory;
+
 	@NonZero
 	private double m_divisor;
+
+	@Inject
+	public DivideAggregator(DoubleDataPointFactory dataPointFactory)
+	{
+		m_dataPointFactory = dataPointFactory;
+	}
 
 	@Override
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
@@ -66,7 +76,7 @@ public class DivideAggregator implements Aggregator
 		{
 			DataPoint dp = m_innerDataPointGroup.next();
 
-			dp = new DataPoint(dp.getTimestamp(), dp.getDoubleValue() / m_divisor);
+			dp = m_dataPointFactory.createDataPoint(dp.getTimestamp(), dp.getDoubleValue() / m_divisor);
 
 			return (dp);
 		}

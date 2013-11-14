@@ -17,8 +17,10 @@
 package org.kairosdb.core.aggregator;
 
 
+import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
 
@@ -30,80 +32,87 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @AggregatorName(name = "scale", description = "Scales each data point by a factor.")
 public class ScaleAggregator implements Aggregator
 {
-    private double m_factor;
+	private double m_factor;
+	private DoubleDataPointFactory m_dataPointFactory;
 
-    @Override
-    public DataPointGroup aggregate(DataPointGroup dataPointGroup)
-    {
-        checkNotNull(dataPointGroup);
+	@Inject
+	public ScaleAggregator(DoubleDataPointFactory dataPointFactory)
+	{
+		m_dataPointFactory = dataPointFactory;
+	}
 
-        return new ScaleDataPointGroup(dataPointGroup);
-    }
+	@Override
+	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
+	{
+		checkNotNull(dataPointGroup);
 
-    public void setFactor(double factor)
-    {
-        m_factor = factor;
-    }
+		return new ScaleDataPointGroup(dataPointGroup);
+	}
 
-    private class ScaleDataPointGroup implements DataPointGroup
-    {
-        private DataPointGroup m_innerDataPointGroup;
+	public void setFactor(double factor)
+	{
+		m_factor = factor;
+	}
 
-        public ScaleDataPointGroup(DataPointGroup innerDataPointGroup)
-        {
-            m_innerDataPointGroup = innerDataPointGroup;
-        }
+	private class ScaleDataPointGroup implements DataPointGroup
+	{
+		private DataPointGroup m_innerDataPointGroup;
 
-        @Override
-        public boolean hasNext()
-        {
-            return (m_innerDataPointGroup.hasNext());
-        }
+		public ScaleDataPointGroup(DataPointGroup innerDataPointGroup)
+		{
+			m_innerDataPointGroup = innerDataPointGroup;
+		}
 
-        @Override
-        public DataPoint next()
-        {
-            DataPoint dp = m_innerDataPointGroup.next();
+		@Override
+		public boolean hasNext()
+		{
+			return (m_innerDataPointGroup.hasNext());
+		}
 
-            dp = new DataPoint(dp.getTimestamp(), dp.getDoubleValue() * m_factor);
+		@Override
+		public DataPoint next()
+		{
+			DataPoint dp = m_innerDataPointGroup.next();
 
-            return (dp);
-        }
+			dp = m_dataPointFactory.createDataPoint(dp.getTimestamp(), dp.getDoubleValue() * m_factor);
 
-        @Override
-        public void remove()
-        {
-            m_innerDataPointGroup.remove();
-        }
+			return (dp);
+		}
 
-        @Override
-        public String getName()
-        {
-            return (m_innerDataPointGroup.getName());
-        }
+		@Override
+		public void remove()
+		{
+			m_innerDataPointGroup.remove();
+		}
 
-        @Override
-        public List<GroupByResult> getGroupByResult()
-        {
-            return (m_innerDataPointGroup.getGroupByResult());
-        }
+		@Override
+		public String getName()
+		{
+			return (m_innerDataPointGroup.getName());
+		}
 
-        @Override
-        public void close()
-        {
-            m_innerDataPointGroup.close();
-        }
+		@Override
+		public List<GroupByResult> getGroupByResult()
+		{
+			return (m_innerDataPointGroup.getGroupByResult());
+		}
 
-        @Override
-        public Set<String> getTagNames()
-        {
-            return (m_innerDataPointGroup.getTagNames());
-        }
+		@Override
+		public void close()
+		{
+			m_innerDataPointGroup.close();
+		}
 
-        @Override
-        public Set<String> getTagValues(String tag)
-        {
-            return (m_innerDataPointGroup.getTagValues(tag));
-        }
-    }
+		@Override
+		public Set<String> getTagNames()
+		{
+			return (m_innerDataPointGroup.getTagNames());
+		}
+
+		@Override
+		public Set<String> getTagValues(String tag)
+		{
+			return (m_innerDataPointGroup.getTagValues(tag));
+		}
+	}
 }

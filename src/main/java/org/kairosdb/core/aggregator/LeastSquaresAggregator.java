@@ -1,8 +1,10 @@
 package org.kairosdb.core.aggregator;
 
+import com.google.inject.Inject;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -18,6 +20,14 @@ import java.util.List;
 @AggregatorName(name = "least_squares", description = "Returns a best fit line through the datapoints using the least squares algorithm.")
 public class LeastSquaresAggregator extends RangeAggregator
 {
+	private DoubleDataPointFactory m_dataPointFactory;
+
+	@Inject
+	public LeastSquaresAggregator(DoubleDataPointFactory dataPointFactory)
+	{
+		m_dataPointFactory = dataPointFactory;
+	}
+
 	@Override
 	protected RangeSubAggregator getSubAggregator()
 	{
@@ -74,8 +84,8 @@ public class LeastSquaresAggregator extends RangeAggregator
 			}
 			else if (count != 0)
 			{
-				ret.add(new DataPoint(start, m_simpleRegression.predict(start)));
-				ret.add(new DataPoint(stop, m_simpleRegression.predict(stop)));
+				ret.add(m_dataPointFactory.createDataPoint(start, m_simpleRegression.predict(start)));
+				ret.add(m_dataPointFactory.createDataPoint(stop, m_simpleRegression.predict(stop)));
 			}
 
 			return (ret);

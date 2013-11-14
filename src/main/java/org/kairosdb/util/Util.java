@@ -16,10 +16,13 @@
 package org.kairosdb.util;
 
 
+import com.google.common.collect.ImmutableList;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
+import java.util.Collections;
+import java.util.List;
 
 public class Util
 {
@@ -127,5 +130,82 @@ public class Util
 		{
 			return "";
 		}
+	}
+
+	public static InetAddress findPublicIp()
+	{
+		// Check if local host address is a good v4 address
+		InetAddress localAddress = null;
+		try {
+			localAddress = InetAddress.getLocalHost();
+			if (isGoodV4Address(localAddress)) {
+				return localAddress;
+			}
+		}
+		catch (UnknownHostException ignored) {
+		}
+		if (localAddress == null) {
+			try {
+				localAddress = InetAddress.getByAddress(new byte[]{127, 0, 0, 1});
+			}
+			catch (UnknownHostException e) {
+				throw new AssertionError("Could not get local ip address");
+			}
+		}
+
+		// check all up network interfaces for a good v4 address
+		for (NetworkInterface networkInterface : getGoodNetworkInterfaces()) {
+			for (InetAddress address : Collections.list(networkInterface.getInetAddresses())) {
+				if (isGoodV4Address(address)) {
+					return address;
+				}
+			}
+		}
+		// check all up network interfaces for a good v6 address
+		for (NetworkInterface networkInterface : getGoodNetworkInterfaces()) {
+			for (InetAddress address : Collections.list(networkInterface.getInetAddresses())) {
+				if (isGoodV6Address(address)) {
+					return address;
+				}
+			}
+		}
+		// just return the local host address
+		// it is most likely that this is a disconnected developer machine
+		return localAddress;
+	}
+
+	private static List<NetworkInterface> getGoodNetworkInterfaces()
+	{
+		ImmutableList.Builder<NetworkInterface> builder = ImmutableList.builder();
+		try {
+			for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+				try {
+					if (!networkInterface.isLoopback() && networkInterface.isUp()) {
+						builder.add(networkInterface);
+					}
+				}
+				catch (Exception ignored) {
+				}
+			}
+		}
+		catch (SocketException ignored) {
+		}
+		return builder.build();
+	}
+
+	private static boolean isGoodV4Address(InetAddress address)
+	{
+		return address instanceof Inet4Address &&
+				!address.isAnyLocalAddress() &&
+				!address.isLoopbackAddress() &&
+				!address.isMulticastAddress();
+	}
+
+	private static boolean isGoodV6Address(InetAddress address)
+	{
+		return address instanceof Inet6Address &&
+				!address.isAnyLocalAddress() &&
+				!address.isLoopbackAddress() &&
+				!address.isMulticastAddress();
 	}
 }

@@ -76,7 +76,7 @@ public class MetricsResource
 	public MetricsResource(KairosDatastore datastore, GsonParser gsonParser)
 	{
 		this.datastore = checkNotNull(datastore);
-		this.gsonParser= checkNotNull(gsonParser);
+		this.gsonParser = checkNotNull(gsonParser);
 		formatters.put("json", new JsonFormatter());
 	}
 
@@ -94,8 +94,8 @@ public class MetricsResource
 	public Response getVersion()
 	{
 		Package thisPackage = getClass().getPackage();
-		String versionString = thisPackage.getImplementationTitle()+" "+thisPackage.getImplementationVersion();
-		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \""+versionString+"\"}");
+		String versionString = thisPackage.getImplementationTitle() + " " + thisPackage.getImplementationVersion();
+		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \"" + versionString + "\"}");
 		setHeaders(responseBuilder);
 		return responseBuilder.build();
 	}
@@ -165,17 +165,17 @@ public class MetricsResource
 				return builder.build();
 			}
 		}
-		catch(JsonIOException e)
+		catch (JsonIOException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
 		}
-		catch(JsonSyntaxException e)
+		catch (JsonSyntaxException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
 		}
-		catch(MalformedJsonException e)
+		catch (MalformedJsonException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
@@ -203,7 +203,7 @@ public class MetricsResource
 
 		try
 		{
-			File respFile = File.createTempFile("kairos", ".json");
+			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new FileWriter(respFile));
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
@@ -285,7 +285,7 @@ public class MetricsResource
 
 		try
 		{
-			File respFile = File.createTempFile("kairos", ".json");
+			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new FileWriter(respFile));
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
@@ -297,7 +297,7 @@ public class MetricsResource
 			int queryCount = 0;
 			for (QueryMetric query : queries)
 			{
-				queryCount ++;
+				queryCount++;
 				ThreadReporter.addTag("metric_name", query.getName());
 				ThreadReporter.addTag("query_index", String.valueOf(queryCount));
 
@@ -427,16 +427,16 @@ public class MetricsResource
 	}
 
 	/**
-	 Information for this endpoint was taken from
-	 https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS
-
-	 Response to a cors preflight request to access data.
+	 * Information for this endpoint was taken from
+	 * https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS
+	 * <p/>
+	 * Response to a cors preflight request to access data.
 	 */
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/query")
-	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers")String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method")String requestMethod)
+	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
+	                                   @HeaderParam("Access-Control-Request-Method") String requestMethod)
 	{
 		ResponseBuilder responseBuilder = Response.status(Response.Status.OK);
 		responseBuilder.header("Access-Control-Allow-Origin", "*");
@@ -450,8 +450,8 @@ public class MetricsResource
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints")
-	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers")String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method")String requestMethod)
+	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
+	                                        @HeaderParam("Access-Control-Request-Method") String requestMethod)
 	{
 		return (corsPreflightQuery(requestHeaders, requestMethod));
 	}
@@ -482,7 +482,7 @@ public class MetricsResource
 		try
 		{
 			Iterable<String> values = null;
-			switch(type)
+			switch (type)
 			{
 				case METRIC_NAMES:
 					values = datastore.getMetricNames();
@@ -524,7 +524,7 @@ public class MetricsResource
 		@SuppressWarnings("ResultOfMethodCallIgnored")
 		public void write(OutputStream output) throws IOException, WebApplicationException
 		{
-			Writer writer = new OutputStreamWriter(output,  "UTF-8");
+			Writer writer = new OutputStreamWriter(output, "UTF-8");
 
 			try
 			{
@@ -552,19 +552,25 @@ public class MetricsResource
 		@Override
 		public void write(OutputStream output) throws IOException, WebApplicationException
 		{
-			InputStream reader = new FileInputStream(m_responseFile);
-
-			byte[] buffer = new byte[1024];
-			int size;
-
-			while ((size = reader.read(buffer)) != -1)
+			try
 			{
-				output.write(buffer, 0, size);
-			}
+				InputStream reader = new FileInputStream(m_responseFile);
 
-			reader.close();
-			output.flush();
-			m_responseFile.delete();
+				byte[] buffer = new byte[1024];
+				int size;
+
+				while ((size = reader.read(buffer)) != -1)
+				{
+					output.write(buffer, 0, size);
+				}
+
+				reader.close();
+				output.flush();
+			}
+			finally
+			{
+				m_responseFile.delete();
+			}
 		}
 	}
 }

@@ -21,7 +21,9 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import org.kairosdb.core.aggregator.*;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryQueuingManager;
@@ -33,15 +35,35 @@ import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.Util;
 
 import java.util.List;
+import java.util.MissingResourceException;
 import java.util.Properties;
 
 public class CoreModule extends AbstractModule
 {
+	public static final String DATAPOINTS_FACTORY_LONG = "kairosdb.datapoints.factory.long";
+	public static final String DATAPOINTS_FACTORY_DOUBLE = "kairosdb.datapoints.factory.double";
 	private Properties m_props;
 
 	public CoreModule(Properties props)
 	{
 		m_props = props;
+	}
+
+	private Class getClassForProperty(String property)
+	{
+		String className = m_props.getProperty(property);
+
+		Class klass = null;
+		try
+		{
+			klass = getClass().getClassLoader().loadClass(className);
+		}
+		catch (ClassNotFoundException e)
+		{
+			throw new MissingResourceException("Unable to load class", className, property);
+		}
+
+		return (klass);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -82,8 +104,11 @@ public class CoreModule extends AbstractModule
 		bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
 
 		//bind datapoint default impls
-		bind(DoubleDataPointFactoryImpl.class);
-		bind(LongDataPointFactoryImpl.class);
+		bind(DoubleDataPointFactory.class)
+				.to(getClassForProperty(DATAPOINTS_FACTORY_DOUBLE)).in(Singleton.class);
+
+		bind(LongDataPointFactory.class)
+				.to(getClassForProperty(DATAPOINTS_FACTORY_LONG)).in(Singleton.class);
 
 		bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class).in(Singleton.class);
 	}

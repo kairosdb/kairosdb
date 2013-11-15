@@ -21,6 +21,8 @@ import com.google.inject.name.Named;
 import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
@@ -39,13 +41,18 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 	private KairosDatastore m_datastore;
 	private AtomicInteger m_counter = new AtomicInteger();
 	private String m_hostName;
+	private LongDataPointFactory m_longFactory;
+	private DoubleDataPointFactory m_doubleFactory;
 
 	@Inject
-	public PutCommand(KairosDatastore datastore, @Named("HOSTNAME") String hostname)
+	public PutCommand(KairosDatastore datastore, @Named("HOSTNAME") String hostname,
+			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
 		checkNotNullOrEmpty(hostname);
 		m_hostName = hostname;
 		m_datastore = datastore;
+		m_longFactory = longFactory;
+		m_doubleFactory = doubleFactory;
 	}
 
 	@Override
@@ -64,9 +71,9 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 
 		DataPoint dp;
 		if (command[3].contains("."))
-			dp = new DataPoint(timestamp, Double.parseDouble(command[3]));
+			dp = m_doubleFactory.createDataPoint(timestamp, Double.parseDouble(command[3]));
 		else
-			dp = new DataPoint(timestamp, Util.parseLong(command[3]));
+			dp = m_longFactory.createDataPoint(timestamp, Util.parseLong(command[3]));
 
 		dps.addDataPoint(dp);
 
@@ -111,7 +118,7 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
 		dps.addTag("host", m_hostName);
 		dps.addTag("method", "put");
-		dps.addDataPoint(new DataPoint(now, m_counter.getAndSet(0)));
+		dps.addDataPoint(m_longFactory.createDataPoint(now, m_counter.getAndSet(0)));
 
 		return (Collections.singletonList(dps));
 	}

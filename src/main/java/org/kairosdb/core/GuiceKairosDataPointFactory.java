@@ -73,7 +73,7 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 			String key = (String)prop;
 			if (key.startsWith(DATAPOINTS_FACTORY_PROP_PREFIX))
 			{
-				String className = (String)props.getProperty(key);
+				String className = props.getProperty(key);
 				String type = key.substring(DATAPOINTS_FACTORY_PROP_PREFIX.length());
 				try
 				{

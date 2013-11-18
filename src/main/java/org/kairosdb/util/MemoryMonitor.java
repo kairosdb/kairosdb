@@ -40,7 +40,8 @@ public class MemoryMonitor
 				ret = pool;
 			}
 		}
-		// we do something when we reached 80% of memory usage
+		// we do something when we reached 99.9% of memory usage
+		// when we get to this point gc was unable to recover memory.
 		ret.setCollectionUsageThreshold((int) Math.floor(ret.getUsage().getMax() * 0.999));
 
 		return (ret);

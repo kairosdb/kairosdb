@@ -19,27 +19,27 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
-import org.json.JSONArray;
-import org.json.JSONWriter;
 import com.google.inject.*;
 import jcmdline.*;
 import org.json.JSONException;
-import org.json.JSONObject;
-import org.kairosdb.core.datastore.DataPointRow;
+import org.json.JSONWriter;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.http.rest.json.JsonMetricParser;
-import org.kairosdb.util.ValidationException;
+import org.kairosdb.core.http.rest.json.ValidationErrors;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 public class Main
 {
@@ -317,18 +317,24 @@ public class Main
 		out.flush();
 	}
 
-	public void runImport(InputStream in) throws IOException, JSONException, DatastoreException, ValidationException
+	public void runImport(InputStream in) throws IOException, DatastoreException
 	{
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
 
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8));
 
-		String line = null;
+		String line;
 		while ((line = reader.readLine()) != null)
 		{
 			JsonMetricParser jsonMetricParser = new JsonMetricParser(ds, new StringReader(line));
 
-			jsonMetricParser.parse();
+			ValidationErrors validationErrors = jsonMetricParser.parse();
+
+			for (String error : validationErrors.getErrors())
+			{
+				logger.error(error);
+				System.err.println(error);
+			}
 		}
 	}
 

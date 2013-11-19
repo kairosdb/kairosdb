@@ -87,10 +87,11 @@ manifest.putValue("Implementation-Version", "${version}.${buildNumber}")
 //Add git revision information
 gitRevisionFile= ".gitrevision"
 new File(gitRevisionFile).text = ""
-saw.exec(null, "git rev-parse HEAD", false, null, gitRevisionFile);
+ret = saw.exec(null, "git rev-parse HEAD", false, null, gitRevisionFile);
 revision = new File(gitRevisionFile).text.trim()
 new File(gitRevisionFile).delete()
-manifest.putValue("Git-Revision", revision);
+if (ret == 0)
+	manifest.putValue("Git-Revision", revision);
 
 saw.setDefaultTarget("jar")
 

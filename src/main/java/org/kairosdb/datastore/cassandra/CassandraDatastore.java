@@ -47,6 +47,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -102,6 +104,8 @@ public class CassandraDatastore implements Datastore
 	private DataCache<String> m_tagNameCache = new DataCache<String>(STRING_CACHE_SIZE);
 	private DataCache<String> m_tagValueCache = new DataCache<String>(STRING_CACHE_SIZE);
 
+	private ThreadPoolExecutor m_queryThreadPool;
+
 	@Inject
 	@Named(DATA_WRITE_CONSISTENCY_LEVEL)
 	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.QUORUM;
@@ -135,6 +139,8 @@ public class CassandraDatastore implements Datastore
 			m_singleRowReadSize = singleRowReadSize;
 			m_multiRowSize = multiRowSize;
 			m_multiRowReadSize = multiRowReadSize;
+
+			m_queryThreadPool = new ThreadPoolExecutor(2, 5, 5, TimeUnit.MINUTES, new LinkedBlockingDeque<Runnable>());
 
 			CassandraHostConfigurator hostConfig = new CassandraHostConfigurator(cassandraHostList);
 			//TODO: fine tune the hostConfig
@@ -442,8 +448,12 @@ public class CassandraDatastore implements Datastore
 		long startTime = System.currentTimeMillis();
 		long currentTimeTier = 0L;
 
-		List<QueryRunner> runners = new ArrayList<QueryRunner>();
 		List<DataPointsRowKey> queryKeys = new ArrayList<DataPointsRowKey>();
+
+		QueryRunner runner = new QueryRunner(m_keyspace, CF_DATA_POINTS,
+				query.getStartTime(), query.getEndTime(), queryCallback,
+				m_singleRowReadSize, m_multiRowReadSize, query.getLimit(), query.getOrder(),
+				m_queryThreadPool);
 
 		MemoryMonitor mm = new MemoryMonitor(20);
 		while (rowKeys.hasNext())
@@ -458,9 +468,7 @@ public class CassandraDatastore implements Datastore
 			}
 			else
 			{
-				runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS, queryKeys,
-						query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
-						m_multiRowReadSize, query.getLimit(), query.getOrder()));
+				runner.addRunner(queryKeys);
 
 				queryKeys = new ArrayList<DataPointsRowKey>();
 				queryKeys.add(rowKey);
@@ -473,9 +481,7 @@ public class CassandraDatastore implements Datastore
 		//There may be stragglers that are not ran
 		if (!queryKeys.isEmpty())
 		{
-			runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS, queryKeys,
-					query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
-					m_multiRowReadSize, query.getLimit(), query.getOrder()));
+			runner.addRunner(queryKeys);
 		}
 
 		ThreadReporter.addDataPoint(KEY_QUERY_TIME, System.currentTimeMillis() - startTime);
@@ -484,13 +490,7 @@ public class CassandraDatastore implements Datastore
 		mm.setCheckRate(1);
 		try
 		{
-			//TODO: Run this with multiple threads
-			for (QueryRunner runner : runners)
-			{
-				runner.runQuery();
-
-				mm.checkMemoryAndThrowException();
-			}
+			runner.runQuery();
 
 			queryCallback.endDataPoints();
 		}

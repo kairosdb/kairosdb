@@ -27,12 +27,16 @@ import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.Order;
 import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.util.MemoryMonitor;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Observable;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.*;
 
@@ -42,37 +46,35 @@ public class QueryRunner
 
 	private Keyspace m_keyspace;
 	private String m_columnFamily;
-	private List<DataPointsRowKey> m_rowKeys;
-	private int m_startTime; //relative row time
-	private int m_endTime; //relative row time
+	private long m_queryStartTime;
+	private long m_queryEndTime;
+	private boolean m_descending = false;
 	private QueryCallback m_queryCallback;
+	private Object m_callbackLock = new Object();
 	private int m_singleRowReadSize;
 	private int m_multiRowReadSize;
 	private boolean m_limit = false;
-	private boolean m_descending = false;
+	private List<Runner> m_runners = new ArrayList<Runner>();
+	private MemoryMonitor m_memoryMonitor = new MemoryMonitor(1);
+	private ExecutorService m_threadPool;
+
 
 	public QueryRunner(Keyspace keyspace, String columnFamily,
-			List<DataPointsRowKey> rowKeys, long startTime, long endTime,
-			QueryCallback csResult,
-			int singleRowReadSize, int multiRowReadSize, int limit, Order order)
+			long startTime, long endTime, QueryCallback csResult,
+			int singleRowReadSize, int multiRowReadSize, int limit, Order order,
+			ExecutorService threadPool)
 	{
 		m_keyspace = keyspace;
 		m_columnFamily = columnFamily;
-		m_rowKeys = rowKeys;
-		long m_tierRowTime = rowKeys.get(0).getTimestamp();
-		if (startTime < m_tierRowTime)
-			m_startTime = 0;
-		else
-			m_startTime = getColumnName(m_tierRowTime, startTime, true); //Pass true so we get 0x0 for last bit
 
-		if (endTime > (m_tierRowTime + ROW_WIDTH))
-			m_endTime = getColumnName(m_tierRowTime, m_tierRowTime + ROW_WIDTH, false);
-		else
-			m_endTime = getColumnName(m_tierRowTime, endTime, false); //Pass false so we get 0x1 for last bit
+		m_queryStartTime = startTime;
+		m_queryEndTime = endTime;
 
 		m_queryCallback = csResult;
 		m_singleRowReadSize = singleRowReadSize;
 		m_multiRowReadSize = multiRowReadSize;
+
+		m_threadPool = threadPool;
 
 		if (limit != 0)
 		{
@@ -85,63 +87,23 @@ public class QueryRunner
 			m_descending = true;
 	}
 
+	public void addRunner(List<DataPointsRowKey> rowKeys)
+	{
+		Runner runner = new Runner(rowKeys);
+		m_runners.add(runner);
+	}
+
+
 	public void runQuery() throws IOException
 	{
-		MultigetSliceQuery<DataPointsRowKey, Integer, ByteBuffer> msliceQuery =
-				HFactory.createMultigetSliceQuery(m_keyspace,
-						ROW_KEY_SERIALIZER,
-						IntegerSerializer.get(), ByteBufferSerializer.get());
-
-		msliceQuery.setColumnFamily(m_columnFamily);
-		msliceQuery.setKeys(m_rowKeys);
-		if (m_descending)
-			msliceQuery.setRange(m_endTime, m_startTime, true, m_multiRowReadSize);
-		else
-			msliceQuery.setRange(m_startTime, m_endTime, false, m_multiRowReadSize);
-
-		Rows<DataPointsRowKey, Integer, ByteBuffer> rows =
-				msliceQuery.execute().get();
-
-		List<Row<DataPointsRowKey, Integer, ByteBuffer>> unfinishedRows =
-				new ArrayList<Row<DataPointsRowKey, Integer, ByteBuffer>>();
-
-		for (Row<DataPointsRowKey, Integer, ByteBuffer> row : rows)
+		try
 		{
-			List<HColumn<Integer, ByteBuffer>> columns = row.getColumnSlice().getColumns();
-			if (!m_limit && columns.size() == m_multiRowReadSize)
-				unfinishedRows.add(row);
-
-			writeColumns(row.getKey(), columns);
+			System.out.println(m_runners.size() +" Runners");
+			m_threadPool.invokeAll(m_runners);
 		}
-
-
-		//Iterate through the unfinished rows and get the rest of the data.
-		//todo: use multiple threads to retrieve this data
-		for (Row<DataPointsRowKey, Integer, ByteBuffer> unfinishedRow : unfinishedRows)
+		catch (InterruptedException e)
 		{
-			DataPointsRowKey key = unfinishedRow.getKey();
-
-			SliceQuery<DataPointsRowKey, Integer, ByteBuffer> sliceQuery =
-					HFactory.createSliceQuery(m_keyspace, ROW_KEY_SERIALIZER,
-					IntegerSerializer.get(), ByteBufferSerializer.get());
-
-			sliceQuery.setColumnFamily(m_columnFamily);
-			sliceQuery.setKey(key);
-
-			List<HColumn<Integer, ByteBuffer>> columns = unfinishedRow.getColumnSlice().getColumns();
-
-			do
-			{
-				Integer lastTime = columns.get(columns.size() -1).getName();
-
-				if (m_descending)
-					sliceQuery.setRange(lastTime-1, m_startTime, true, m_singleRowReadSize);
-				else
-					sliceQuery.setRange(lastTime+1, m_endTime, false, m_singleRowReadSize);
-
-				columns = sliceQuery.execute().get().getColumns();
-				writeColumns(key, columns);
-			} while (columns.size() == m_singleRowReadSize);
+			e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
 		}
 	}
 
@@ -152,24 +114,117 @@ public class QueryRunner
 		if (columns.size() != 0)
 		{
 			Map<String, String> tags = rowKey.getTags();
-			m_queryCallback.startDataPointSet(tags);
 
-			for (HColumn<Integer, ByteBuffer> column : columns)
+			synchronized (m_callbackLock)
 			{
-				int columnTime = column.getName();
+				m_queryCallback.startDataPointSet(tags);
 
-				ByteBuffer value = column.getValue();
-				if (isLongValue(columnTime))
+				for (HColumn<Integer, ByteBuffer> column : columns)
 				{
-					m_queryCallback.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
-							columnTime), ValueSerializer.getLongFromByteBuffer(value));
-				}
-				else
-				{
-					m_queryCallback.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
-							columnTime), ValueSerializer.getDoubleFromByteBuffer(value));
+					int columnTime = column.getName();
+
+					ByteBuffer value = column.getValue();
+					if (isLongValue(columnTime))
+					{
+						m_queryCallback.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
+								columnTime), ValueSerializer.getLongFromByteBuffer(value));
+					}
+					else
+					{
+						m_queryCallback.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
+								columnTime), ValueSerializer.getDoubleFromByteBuffer(value));
+					}
 				}
 			}
+
+			m_memoryMonitor.checkMemoryAndThrowException();
+		}
+	}
+
+	private class Runner implements Callable<String>
+	{
+		private int m_startTime; //relative row time
+		private int m_endTime; //relative row time
+		private List<DataPointsRowKey> m_rowKeys;
+
+		public Runner(List<DataPointsRowKey> rowKeys)
+		{
+			m_rowKeys = rowKeys;
+
+			long tierRowTime = rowKeys.get(0).getTimestamp();
+			if (m_queryStartTime < tierRowTime)
+				m_startTime = 0;
+			else
+				m_startTime = getColumnName(tierRowTime, m_queryStartTime, true); //Pass true so we get 0x0 for last bit
+
+			if (m_queryEndTime > (tierRowTime + ROW_WIDTH))
+				m_endTime = getColumnName(tierRowTime, tierRowTime + ROW_WIDTH, false);
+			else
+				m_endTime = getColumnName(tierRowTime, m_queryEndTime, false); //Pass false so we get 0x1 for last bit
+		}
+
+
+		@Override
+		public String call() throws Exception
+		{
+			MultigetSliceQuery<DataPointsRowKey, Integer, ByteBuffer> msliceQuery =
+					HFactory.createMultigetSliceQuery(m_keyspace,
+							ROW_KEY_SERIALIZER,
+							IntegerSerializer.get(), ByteBufferSerializer.get());
+
+			msliceQuery.setColumnFamily(m_columnFamily);
+			msliceQuery.setKeys(m_rowKeys);
+			if (m_descending)
+				msliceQuery.setRange(m_endTime, m_startTime, true, m_multiRowReadSize);
+			else
+				msliceQuery.setRange(m_startTime, m_endTime, false, m_multiRowReadSize);
+
+			Rows<DataPointsRowKey, Integer, ByteBuffer> rows =
+					msliceQuery.execute().get();
+
+			List<Row<DataPointsRowKey, Integer, ByteBuffer>> unfinishedRows =
+					new ArrayList<Row<DataPointsRowKey, Integer, ByteBuffer>>();
+
+			for (Row<DataPointsRowKey, Integer, ByteBuffer> row : rows)
+			{
+				List<HColumn<Integer, ByteBuffer>> columns = row.getColumnSlice().getColumns();
+				if (!m_limit && columns.size() == m_multiRowReadSize)
+					unfinishedRows.add(row);
+
+				writeColumns(row.getKey(), columns);
+			}
+
+
+			//Iterate through the unfinished rows and get the rest of the data.
+			//todo: use multiple threads to retrieve this data
+			for (Row<DataPointsRowKey, Integer, ByteBuffer> unfinishedRow : unfinishedRows)
+			{
+				DataPointsRowKey key = unfinishedRow.getKey();
+
+				SliceQuery<DataPointsRowKey, Integer, ByteBuffer> sliceQuery =
+						HFactory.createSliceQuery(m_keyspace, ROW_KEY_SERIALIZER,
+								IntegerSerializer.get(), ByteBufferSerializer.get());
+
+				sliceQuery.setColumnFamily(m_columnFamily);
+				sliceQuery.setKey(key);
+
+				List<HColumn<Integer, ByteBuffer>> columns = unfinishedRow.getColumnSlice().getColumns();
+
+				do
+				{
+					Integer lastTime = columns.get(columns.size() -1).getName();
+
+					if (m_descending)
+						sliceQuery.setRange(lastTime-1, m_startTime, true, m_singleRowReadSize);
+					else
+						sliceQuery.setRange(lastTime+1, m_endTime, false, m_singleRowReadSize);
+
+					columns = sliceQuery.execute().get().getColumns();
+					writeColumns(key, columns);
+				} while (columns.size() == m_singleRowReadSize);
+			}
+
+			return ("");
 		}
 	}
 

@@ -281,6 +281,48 @@ public class KairosDatastore
 		return (ret);
 	}
 
+	private static List<DataPointGroup> groupByType(String metricName,
+			List<DataPointGroup> dataPointGroupList, TagGroupBy tagGroupBy, Order order)
+	{
+		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
+		MemoryMonitor mm = new MemoryMonitor(20);
+
+		if (dataPointGroupList.isEmpty())
+		{
+			ret.add(new SortingDataPointGroup(metricName, order));
+		}
+		else
+		{
+			if (tagGroupBy != null)
+			{
+				ListMultimap<String, DataPointGroup> groups = ArrayListMultimap.create();
+				Map<String, TagGroupByResult> groupByResults = new HashMap<String, TagGroupByResult>();
+
+				for (DataPointGroup dataPointGroup : dataPointGroupList)
+				{
+					//Todo: Add code to datastore implementations to filter by the group by tag
+
+					LinkedHashMap<String, String> matchingTags = getMatchingTags(dataPointGroup, tagGroupBy.getTagNames());
+					String tagsKey = getTagsKey(matchingTags);
+					groups.put(tagsKey, dataPointGroup);
+					groupByResults.put(tagsKey, new TagGroupByResult(tagGroupBy, matchingTags));
+					mm.checkMemoryAndThrowException();
+				}
+
+				for (String key : groups.keySet())
+				{
+					ret.add(new SortingDataPointGroup(groups.get(key), groupByResults.get(key), order));
+				}
+			}
+			else
+			{
+				ret.add(new SortingDataPointGroup(dataPointGroupList, order));
+			}
+		}
+
+		return ret;
+	}
+
 	private static List<DataPointGroup> groupByTags(String metricName,
 			List<DataPointGroup> dataPointsList, TagGroupBy tagGroupBy, Order order)
 	{

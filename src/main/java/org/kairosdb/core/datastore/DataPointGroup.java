@@ -39,6 +39,12 @@ public interface DataPointGroup extends Iterator<DataPoint>, TagSet
 	public List<GroupByResult> getGroupByResult();
 
 	/**
+	 Returns the api data type for this group
+	 @return
+	 */
+	public String getDataType();
+
+	/**
 	 Close any underlying resources held open by this DataPointGroup.  This
 	 will be called at the end of a query to free up resources.
 	 */

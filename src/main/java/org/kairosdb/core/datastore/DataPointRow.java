@@ -33,7 +33,7 @@ public interface DataPointRow extends Iterator<DataPoint>
 	 Returns the data type associated with the data points in this row
 	 @return
 	 */
-	public String getDataType();
+	public String getDatastoreType();
 
 	/**
 	 Returns a set of tag names associated with this group of data points

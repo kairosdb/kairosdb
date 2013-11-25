@@ -62,13 +62,17 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 		if (timestamp < 3000000000L)
 			timestamp *= 1000;
 
-		DataPoint dp;
-		if (command[3].contains("."))
-			dp = new DataPoint(timestamp, Double.parseDouble(command[3]));
-		else
-			dp = new DataPoint(timestamp, Util.parseLong(command[3]));
+        try {
+            DataPoint dp;
+            if (command[3].contains("."))
+                dp = new DataPoint(timestamp, Double.parseDouble(command[3]));
+            else
+                dp = new DataPoint(timestamp, Util.parseLong(command[3]));
+            dps.addDataPoint(dp);
 
-		dps.addDataPoint(dp);
+        } catch (NumberFormatException e) {
+            throw new ValidationException(e.getMessage());
+        }
 
 		int tagCount = 0;
 		for (int i = 4; i < command.length; i++)

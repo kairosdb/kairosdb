@@ -276,6 +276,7 @@ public class CassandraDatastore implements Datastore
 		m_dataPointWriteBuffer.close();
 		m_rowKeyWriteBuffer.close();
 		m_stringIndexWriteBuffer.close();
+		m_queryThreadPool.shutdown();
 	}
 
 

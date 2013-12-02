@@ -28,6 +28,8 @@ import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.Order;
 import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.util.MemoryMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -42,6 +44,7 @@ import static org.kairosdb.datastore.cassandra.CassandraDatastore.*;
 
 public class QueryRunner
 {
+	public static final Logger logger = LoggerFactory.getLogger(QueryRunner.class);
 	public static final DataPointsRowKeySerializer ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
 	private Keyspace m_keyspace;
@@ -98,7 +101,8 @@ public class QueryRunner
 	{
 		try
 		{
-			System.out.println(m_runners.size() +" Runners");
+			logger.info("Query running with {} runners", m_runners.size());
+			//System.out.println(m_runners.size() +" Runners");
 			m_threadPool.invokeAll(m_runners);
 		}
 		catch (InterruptedException e)

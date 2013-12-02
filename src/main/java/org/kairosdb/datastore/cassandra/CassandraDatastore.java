@@ -140,7 +140,7 @@ public class CassandraDatastore implements Datastore
 			m_multiRowSize = multiRowSize;
 			m_multiRowReadSize = multiRowReadSize;
 
-			m_queryThreadPool = new ThreadPoolExecutor(2, 5, 5, TimeUnit.MINUTES, new LinkedBlockingDeque<Runnable>());
+			m_queryThreadPool = new ThreadPoolExecutor(4, 5, 5, TimeUnit.MINUTES, new LinkedBlockingDeque<Runnable>());
 
 			CassandraHostConfigurator hostConfig = new CassandraHostConfigurator(cassandraHostList);
 			//TODO: fine tune the hostConfig

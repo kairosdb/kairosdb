@@ -140,7 +140,9 @@ public class MetricsResource
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
 		}
-		return (add(gzipInputStream));
+		Response resp = add(gzipInputStream);
+
+		return (resp);
 	}
 
 	@POST

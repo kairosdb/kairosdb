@@ -21,7 +21,6 @@ import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.KairosDatastore;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,9 +29,12 @@ import java.util.Properties;
 public class CassandraModule extends AbstractModule
 {
 	public static final String CASSANDRA_AUTH_MAP = "cassandra.auth.map";
+	public static final String CASSANDRA_HECTOR_MAP = "cassandra.hector.map";
 	public static final String AUTH_PREFIX = "kairosdb.datastore.cassandra.auth.";
+	public static final String HECTOR_PREFIX = "kairosdb.datastore.cassandra.hector.";
 
 	private Map<String, String> m_authMap = new HashMap<String, String>();
+	private Map<String, Object> m_hectorMap = new HashMap<String, Object>();
 
 	public CassandraModule(Properties props)
 	{
@@ -47,6 +49,11 @@ public class CassandraModule extends AbstractModule
 
 				m_authMap.put(consumerKey, consumerToken);
 			}
+			else if (strKey.startsWith(HECTOR_PREFIX))
+			{
+				String configKey = strKey.substring(HECTOR_PREFIX.length());
+				m_hectorMap.put(configKey, props.get(key));
+			}
 		}
 	}
 
@@ -57,8 +64,12 @@ public class CassandraModule extends AbstractModule
 		bind(Datastore.class).to(CassandraDatastore.class).in(Scopes.SINGLETON);
 		bind(CassandraDatastore.class).in(Scopes.SINGLETON);
 		bind(IncreaseMaxBufferSizesJob.class).in(Scopes.SINGLETON);
+		bind(HectorConfiguration.class).in(Scopes.SINGLETON);
 
 		bind(new TypeLiteral<Map<String, String>>(){}).annotatedWith(Names.named(CASSANDRA_AUTH_MAP))
 				.toInstance(m_authMap);
+
+		bind(new TypeLiteral<Map<String, Object>>(){}).annotatedWith(Names.named(CASSANDRA_HECTOR_MAP))
+				.toInstance(m_hectorMap);
 	}
 }

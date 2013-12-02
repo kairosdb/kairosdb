@@ -64,7 +64,6 @@ public class CassandraDatastore implements Datastore
 
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
-	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.host_list";
 	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
 	public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
 	public static final String WRITE_DELAY_PROPERTY = "kairosdb.datastore.cassandra.write_delay";
@@ -120,15 +119,15 @@ public class CassandraDatastore implements Datastore
 
 
 	@Inject
-	public CassandraDatastore(@Named(HOST_LIST_PROPERTY) String cassandraHostList,
-	                          @Named(CassandraModule.CASSANDRA_AUTH_MAP) Map<String, String> cassandraAuthentication,
+	public CassandraDatastore(@Named(CassandraModule.CASSANDRA_AUTH_MAP) Map<String, String> cassandraAuthentication,
 	                          @Named(REPLICATION_FACTOR_PROPERTY) int replicationFactor,
 	                          @Named(SINGLE_ROW_READ_SIZE_PROPERTY) int singleRowReadSize,
 	                          @Named(MULTI_ROW_SIZE_PROPERTY) int multiRowSize,
 	                          @Named(MULTI_ROW_READ_SIZE_PROPERTY) int multiRowReadSize,
 	                          @Named(WRITE_DELAY_PROPERTY) int writeDelay,
 	                          @Named(WRITE_BUFFER_SIZE) int maxWriteSize,
-	                          final @Named("HOSTNAME") String hostname) throws DatastoreException
+	                          final @Named("HOSTNAME") String hostname,
+	                          HectorConfiguration configuration) throws DatastoreException
 	{
 		try
 		{
@@ -136,8 +135,7 @@ public class CassandraDatastore implements Datastore
 			m_multiRowSize = multiRowSize;
 			m_multiRowReadSize = multiRowReadSize;
 
-			CassandraHostConfigurator hostConfig = new CassandraHostConfigurator(cassandraHostList);
-			//TODO: fine tune the hostConfig
+			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
 
 			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
 					hostConfig, cassandraAuthentication);
@@ -665,7 +663,6 @@ public class CassandraDatastore implements Datastore
 		@Override
 		public void remove()
 		{
-			//To change body of implemented methods use File | Settings | File Templates.
 		}
 	}
 
@@ -716,7 +713,6 @@ public class CassandraDatastore implements Datastore
 		@Override
 		public void endDataPoints()
 		{
-			//To change body of implemented methods use File | Settings | File Templates.
 		}
 	}
 }

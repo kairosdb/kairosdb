@@ -42,7 +42,7 @@ public interface DataPointGroup extends Iterator<DataPoint>, TagSet
 	 Returns the api data type for this group
 	 @return
 	 */
-	public String getDataType();
+	/*public String getAPIDataType();*/
 
 	/**
 	 Close any underlying resources held open by this DataPointGroup.  This

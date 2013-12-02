@@ -63,6 +63,12 @@ public class SortingDataPointGroup extends AbstractDataPointGroup
 	}
 
 	@Override
+	public String getAPIDataType()
+	{
+		return null;  //To change body of implemented methods use File | Settings | File Templates.
+	}
+
+	@Override
 	public void close()
 	{
 		for (DataPointGroup taggedDataPoints : m_taggedDataPointsList)

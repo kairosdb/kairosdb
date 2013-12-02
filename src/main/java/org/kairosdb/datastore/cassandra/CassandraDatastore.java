@@ -35,7 +35,8 @@ import me.prettyprint.hector.api.query.CountQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.LegacyDataPoint;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.ThreadReporter;
@@ -50,6 +51,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.core.CoreModule.DATAPOINTS_FACTORY_LONG;
 
 public class CassandraDatastore implements Datastore
 {
@@ -96,6 +98,9 @@ public class CassandraDatastore implements Datastore
 	private DataCache<String> m_metricNameCache = new DataCache<String>(STRING_CACHE_SIZE);
 	private DataCache<String> m_tagNameCache = new DataCache<String>(STRING_CACHE_SIZE);
 	private DataCache<String> m_tagValueCache = new DataCache<String>(STRING_CACHE_SIZE);
+
+	@Inject
+	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 
 	@Inject
@@ -144,7 +149,7 @@ public class CassandraDatastore implements Datastore
 							DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
 							dps.addTag("host", hostname);
 							dps.addTag("buffer", CF_DATA_POINTS);
-							dps.addDataPoint(new LegacyDataPoint(System.currentTimeMillis(), pendingWrites));
+							dps.addDataPoint(m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
 							putInternalDataPoints(dps);
 						}
 					}, mutatorLock, lockCondition);
@@ -162,7 +167,7 @@ public class CassandraDatastore implements Datastore
 							DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
 							dps.addTag("host", hostname);
 							dps.addTag("buffer", CF_ROW_KEY_INDEX);
-							dps.addDataPoint(new LegacyDataPoint(System.currentTimeMillis(), pendingWrites));
+							dps.addDataPoint(m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
 							putInternalDataPoints(dps);
 						}
 					}, mutatorLock, lockCondition);
@@ -180,7 +185,7 @@ public class CassandraDatastore implements Datastore
 							DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
 							dps.addTag("host", hostname);
 							dps.addTag("buffer", CF_STRING_INDEX);
-							dps.addDataPoint(new LegacyDataPoint(System.currentTimeMillis(), pendingWrites));
+							dps.addDataPoint(m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
 							putInternalDataPoints(dps);
 						}
 					}, mutatorLock, lockCondition);
@@ -468,6 +473,8 @@ public class CassandraDatastore implements Datastore
 		long now = System.currentTimeMillis();
 
 		// Get number of columns in the row key
+		// We do this up front to avoid waiting for a sync of cassandra to see
+		// if they are all gone.
 		CountQuery<String, DataPointsRowKey> countQuery = HFactory.createCountQuery(m_keyspace, StringSerializer.get(), DATA_POINTS_ROW_KEY_SERIALIZER);
 		countQuery.setColumnFamily(CF_ROW_KEY_INDEX).
 				setKey(deleteQuery.getName()).

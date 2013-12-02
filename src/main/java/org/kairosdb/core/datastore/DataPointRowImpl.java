@@ -44,7 +44,7 @@ public class DataPointRowImpl implements DataPointRow
 	}
 
 	@Override
-	public String getDataType()
+	public String getDatastoreType()
 	{
 		return null;  //To change body of implemented methods use File | Settings | File Templates.
 	}

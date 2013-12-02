@@ -494,9 +494,9 @@ public class CachedSearchResult implements QueryCallback
 		}
 
 		@Override
-		public String getDataType()
+		public String getDatastoreType()
 		{
-			return null;  //To change body of implemented methods use File | Settings | File Templates.
+			return m_dataType;
 		}
 
 		@Override

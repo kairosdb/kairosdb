@@ -1,6 +1,8 @@
 package org.kairosdb.core.datapoints;
 
-import org.kairosdb.core.NumericDataPoint;
+
+import org.json.JSONException;
+import org.json.JSONWriter;
 
 import java.nio.ByteBuffer;
 
@@ -11,7 +13,7 @@ import java.nio.ByteBuffer;
  Time: 7:20 AM
  To change this template use File | Settings | File Templates.
  */
-public class DoubleDataPoint extends DataPointHelper implements NumericDataPoint
+public class DoubleDataPoint extends DataPointHelper
 {
 	private double m_value;
 
@@ -34,6 +36,15 @@ public class DoubleDataPoint extends DataPointHelper implements NumericDataPoint
 	}
 
 	@Override
+	public void writeJson(JSONWriter writer) throws JSONException
+	{
+		if (m_value != m_value || Double.isInfinite(m_value))
+			throw new IllegalStateException("NaN or Infinity:" + m_value + " data point=" + this);
+
+		writer.value(m_value);
+	}
+
+	@Override
 	public String getApiDataType()
 	{
 		return API_DOUBLE;
@@ -52,9 +63,9 @@ public class DoubleDataPoint extends DataPointHelper implements NumericDataPoint
 	}
 
 	@Override
-	public long getLong()
+	public long getLongValue()
 	{
-		return 0;
+		return (long)m_value;
 	}
 
 	@Override
@@ -63,9 +74,4 @@ public class DoubleDataPoint extends DataPointHelper implements NumericDataPoint
 		return true;
 	}
 
-	@Override
-	public double getDouble()
-	{
-		return m_value;
-	}
 }

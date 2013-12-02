@@ -93,4 +93,10 @@ public abstract class AggregatedDataPointGroupWrapper implements DataPointGroup
 	{
 		return innerDataPointGroup.getGroupByResult();
 	}
+
+	@Override
+	public String getAPIDataType()
+	{
+		return innerDataPointGroup.getAPIDataType();
+	}
 }

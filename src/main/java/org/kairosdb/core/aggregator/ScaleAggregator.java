@@ -98,6 +98,12 @@ public class ScaleAggregator implements Aggregator
 		}
 
 		@Override
+		public String getAPIDataType()
+		{
+			return m_innerDataPointGroup.getAPIDataType();
+		}
+
+		@Override
 		public void close()
 		{
 			m_innerDataPointGroup.close();

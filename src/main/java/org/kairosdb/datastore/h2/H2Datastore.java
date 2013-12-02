@@ -37,6 +37,7 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -49,10 +50,13 @@ public class H2Datastore implements Datastore
 	public static final String DATABASE_PATH_PROPERTY = "kairosdb.datastore.h2.database_path";
 
 	private Connection m_holdConnection;  //Connection that holds the database open
+	private KairosDataPointFactory m_dataPointFactory;
 
 	@Inject
-	public H2Datastore(@Named(DATABASE_PATH_PROPERTY) String dbPath) throws DatastoreException
+	public H2Datastore(@Named(DATABASE_PATH_PROPERTY) String dbPath, 
+			KairosDataPointFactory dataPointFactory) throws DatastoreException
 	{
+		m_dataPointFactory = dataPointFactory;
 		logger.info("Starting H2 database in " + dbPath);
 		boolean createDB = false;
 
@@ -296,10 +300,15 @@ public class H2Datastore implements Datastore
 				{
 					DataPoint record = resultSet.getRecord();
 
-					if (!record.isLongValueNull())
+					queryCallback.addDataPoint(m_dataPointFactory.createDataPoint(type,
+							record.getTimestamp().getTime(),
+							ByteBuffer.wrap(record.getValue())));
+
+					/*if (!record.isLongValueNull())
 						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getLongValue());
 					else
 						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getDoubleValue());
+						*/
 				}
 			}
 			queryCallback.endDataPoints();

@@ -29,6 +29,8 @@ import org.json.JSONObject;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.slf4j.Logger;
@@ -37,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
+
 
 public class RemoteDatastore implements Datastore
 {
@@ -58,9 +61,12 @@ public class RemoteDatastore implements Datastore
 	private String m_remoteUrl;
 	private int m_dataPointCounter;
 
-	@javax.inject.Inject
+	@Inject
 	@Named("HOSTNAME")
 	private String m_hostName = "localhost";
+
+	@Inject
+	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 
 	@Inject
@@ -165,7 +171,7 @@ public class RemoteDatastore implements Datastore
 				dataPointsWritten ++;
 				writer.array();
 				writer.value(dataPoint.getTimestamp());
-				if (dataPoint.isInteger())
+				if (dataPoint.isLong())
 					writer.value(dataPoint.getLongValue());
 				else
 					writer.value(dataPoint.getDoubleValue());
@@ -306,11 +312,11 @@ public class RemoteDatastore implements Datastore
 
 			DataPointSet dpsFileSize = new DataPointSet(FILE_SIZE_METRIC);
 			dpsFileSize.addTag("host", m_hostName);
-			dpsFileSize.addDataPoint(new DataPoint(now, fileSize));
+			dpsFileSize.addDataPoint(m_longDataPointFactory.createDataPoint(now, fileSize));
 
 			DataPointSet dpsWriteSize = new DataPointSet(WRITE_SIZE_METRIC);
 			dpsWriteSize.addTag("host", m_hostName);
-			dpsWriteSize.addDataPoint(new DataPoint(now, m_dataPointCounter));
+			dpsWriteSize.addDataPoint(m_longDataPointFactory.createDataPoint(now, m_dataPointCounter));
 
 			synchronized (m_dataFileLock)
 			{
@@ -322,7 +328,7 @@ public class RemoteDatastore implements Datastore
 
 			DataPointSet dpsZipFileSize = new DataPointSet(ZIP_FILE_SIZE_METRIC);
 			dpsZipFileSize.addTag("host", m_hostName);
-			dpsZipFileSize.addDataPoint(new DataPoint(now, zipSize));
+			dpsZipFileSize.addDataPoint(m_longDataPointFactory.createDataPoint(now, zipSize));
 
 			sendAllZipfiles();
 
@@ -330,7 +336,7 @@ public class RemoteDatastore implements Datastore
 
 			DataPointSet dpsTimeToSend = new DataPointSet(TIME_TO_SEND_METRIC);
 			dpsTimeToSend.addTag("host", m_hostName);
-			dpsTimeToSend.addDataPoint(new DataPoint(now, timeToSend));
+			dpsTimeToSend.addDataPoint(m_longDataPointFactory.createDataPoint(now, timeToSend));
 
 			try
 			{

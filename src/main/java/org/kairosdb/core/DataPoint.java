@@ -1,5 +1,8 @@
 package org.kairosdb.core;
 
+import org.json.JSONException;
+import org.json.JSONWriter;
+
 import java.nio.ByteBuffer;
 
 
@@ -9,6 +12,8 @@ public interface DataPoint
 	public static final String API_LONG = "long";
 	public static final String API_DOUBLE = "double";
 
+	public static final String GROUP_NUMBER = "number";
+
 	public long getTimestamp();
 
 
@@ -17,8 +22,8 @@ public interface DataPoint
 	 @return
 	 */
 	public ByteBuffer toByteBuffer();
-	public String toString();
 
+	public void writeJson(JSONWriter writer) throws JSONException;
 
 	/**
 		This is used to identify the data type on the wire in json format

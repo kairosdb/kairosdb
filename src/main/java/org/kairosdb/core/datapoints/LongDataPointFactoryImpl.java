@@ -4,6 +4,9 @@ import org.kairosdb.core.DataPoint;
 
 import java.nio.ByteBuffer;
 
+import static org.kairosdb.core.DataPoint.API_LONG;
+import static org.kairosdb.core.DataPoint.GROUP_NUMBER;
+
 public class LongDataPointFactoryImpl implements LongDataPointFactory
 {
 	public static final String DST_LONG = "kairos_long";
@@ -28,6 +31,12 @@ public class LongDataPointFactoryImpl implements LongDataPointFactory
 	public String getDataStoreType()
 	{
 		return DST_LONG;
+	}
+
+	@Override
+	public String getGroupType()
+	{
+		return GROUP_NUMBER;
 	}
 
 	@Override

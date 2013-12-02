@@ -40,4 +40,6 @@ public interface KairosDataPointFactory
 	public DataPointFactory getFactoryForType(String type);
 
 	public DataPointFactory getFactoryForDataStoreType(String dataStoreType);
+
+	public String getGroupType(String datastoreType);
 }

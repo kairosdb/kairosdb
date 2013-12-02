@@ -25,11 +25,15 @@ import java.util.Set;
 
 public class DataPointGroupRowWrapper implements DataPointGroup
 {
-	DataPointRow m_row;
+	private DataPointRow m_row;
+	private String m_dataType;
 
 	public DataPointGroupRowWrapper(DataPointRow row)
 	{
 		m_row = row;
+		String datastoreType = m_row.getDatastoreType();
+
+
 	}
 
 
@@ -55,6 +59,12 @@ public class DataPointGroupRowWrapper implements DataPointGroup
 	public List<GroupByResult> getGroupByResult()
 	{
 		return null;
+	}
+
+	@Override
+	public String getAPIDataType()
+	{
+		return m_dataType;
 	}
 
 	@Override

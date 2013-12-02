@@ -11,6 +11,10 @@ import org.jboss.netty.handler.codec.string.StringEncoder;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDBService;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.telnet.CommandProvider;
@@ -39,6 +43,12 @@ public class CarbonTextServer extends SimpleChannelUpstreamHandler implements Ch
 	private final KairosDatastore m_datastore;
 	private final TagParser m_tagParser;
 	private ServerBootstrap m_serverBootstrap;
+
+	@Inject
+	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
+
+	@Inject
+	private DoubleDataPointFactory m_doubleDataPointFactory = new DoubleDataPointFactoryImpl();
 
 	@Inject
 	public CarbonTextServer(KairosDatastore datastore,
@@ -96,9 +106,9 @@ public class CarbonTextServer extends SimpleChannelUpstreamHandler implements Ch
 
 				DataPoint dp;
 				if (msgArr[1].contains("."))
-					dp = new DataPoint(timestamp, Double.parseDouble(msgArr[1]));
+					dp = m_doubleDataPointFactory.createDataPoint(timestamp, Double.parseDouble(msgArr[1]));
 				else
-					dp = new DataPoint(timestamp, Long.parseLong(msgArr[1]));
+					dp = m_longDataPointFactory.createDataPoint(timestamp, Long.parseLong(msgArr[1]));
 
 				dps.addDataPoint(dp);
 				m_datastore.putDataPoints(dps);

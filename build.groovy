@@ -27,7 +27,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
 version = "0.9.3beta"
-release = "1" //package release number
+release = "2" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along

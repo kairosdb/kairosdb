@@ -16,9 +16,33 @@ public class LongDataPointFactoryImpl implements LongDataPointFactory
 		return null;
 	}
 
+	public static void writeToByteBuffer(ByteBuffer buffer, LongDataPoint dataPoint)
+	{
+		boolean writeRest = false;
+
+		long value = dataPoint.getValue();
+		if (value != 0L)  //Short circuit for zero values
+		{
+			for (int I = 1; I <= 8; I++)
+			{
+				byte b = (byte)((value >>> (64 - (8 * I))) & 0xFF);
+				if (writeRest || b != 0)
+				{
+					buffer.put(b);
+					writeRest = true;
+				}
+			}
+		}
+	}
+
 	public static ByteBuffer writeToByteBuffer(LongDataPoint dataPoint)
 	{
-		return null;
+		ByteBuffer buffer = ByteBuffer.allocate(8);
+
+		writeToByteBuffer(buffer, dataPoint);
+
+		buffer.flip();
+		return (buffer);
 	}
 
 	@Override

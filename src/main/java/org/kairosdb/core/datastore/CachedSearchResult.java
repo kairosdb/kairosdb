@@ -128,6 +128,9 @@ public class CachedSearchResult implements QueryCallback
 			return; //No need to save if we read it from the file
 
 		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(m_indexFile));
+
+		//todo: write out a type lookup table
+
 		out.writeInt(m_dataPointSets.size());
 		for (FilePositionMarker marker : m_dataPointSets)
 		{
@@ -281,6 +284,20 @@ public class CachedSearchResult implements QueryCallback
 			flushWriteBuffer();
 		}
 		m_writeBuffer.putLong(timestamp);
+		m_writeBuffer.put(DOUBLE_FLAG);
+		m_writeBuffer.putDouble(value);
+
+		m_currentFilePositionMarker.incrementDataPointCount();
+	}
+
+	@Override
+	public void addDataPoint(DataPoint datapoint) throws IOException
+	{
+		if (!m_writeBuffer.hasRemaining())
+		{
+			flushWriteBuffer();
+		}
+		m_writeBuffer.putLong(datapoint.getTimestamp());
 		m_writeBuffer.put(DOUBLE_FLAG);
 		m_writeBuffer.putDouble(value);
 

@@ -702,6 +702,12 @@ public class CassandraDatastore implements Datastore
 		}
 
 		@Override
+		public void addDataPoint(DataPoint datapoint) throws IOException
+		{
+			//To change body of implemented methods use File | Settings | File Templates.
+		}
+
+		@Override
 		public void startDataPointSet(String dataType, Map<String, String> tags) throws IOException
 		{
 			m_currentType = dataType;

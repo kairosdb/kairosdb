@@ -351,25 +351,15 @@ public class Main
 			m_writer = out;
 		}
 
-		@Override
-		public void addDataPoint(long timestamp, long value) throws IOException
-		{
-			try
-			{
-				m_jsonWriter.array().value(timestamp).value(value).endArray();
-			}
-			catch (JSONException e)
-			{
-				throw new IOException(e);
-			}
-		}
 
 		@Override
-		public void addDataPoint(long timestamp, double value) throws IOException
+		public void addDataPoint(DataPoint datapoint) throws IOException
 		{
 			try
 			{
-				m_jsonWriter.array().value(timestamp).value(value).endArray();
+				m_jsonWriter.array().value(datapoint.getTimestamp());
+				datapoint.writeJson(m_jsonWriter);
+				m_jsonWriter.value(datapoint.getApiDataType()).endArray();
 			}
 			catch (JSONException e)
 			{

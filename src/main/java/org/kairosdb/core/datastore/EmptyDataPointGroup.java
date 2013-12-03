@@ -38,12 +38,6 @@ public class EmptyDataPointGroup implements DataPointGroup
 	}
 
 	@Override
-	public String getAPIDataType()
-	{
-		return null;
-	}
-
-	@Override
 	public void close()
 	{
 	}

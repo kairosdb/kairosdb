@@ -278,8 +278,8 @@ public class KairosDatastore
 		return (ret);
 	}
 
-	private List<DataPointGroup> groupByType(String metricName,
-			List<DataPointRow> rows, Order order)
+	private List<DataPointGroup> groupByTypeAndTag(String metricName,
+			List<DataPointRow> rows, TagGroupBy tagGroupBy, Order order)
 	{
 		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
 		MemoryMonitor mm = new MemoryMonitor(20);
@@ -290,19 +290,45 @@ public class KairosDatastore
 		}
 		else
 		{
-			ListMultimap<String, DataPointGroup> groups = ArrayListMultimap.create();
+			ListMultimap<String, DataPointGroup> typeGroups = ArrayListMultimap.create();
 
 			for (DataPointRow row : rows)
 			{
 				String groupType = m_dataPointFactory.getGroupType(row.getDatastoreType());
 
-				groups.put(groupType, new DataPointGroupRowWrapper(row));
+				typeGroups.put(groupType, new DataPointGroupRowWrapper(row));
 				mm.checkMemoryAndThrowException();
 			}
 
-			for (String key : groups.keySet())
+			for (String type : typeGroups.keySet())
 			{
-				ret.add(new SortingDataPointGroup(groups.get(key), new TypeGroupByResult(key), order));
+				if (tagGroupBy != null)
+				{
+					ListMultimap<String, DataPointGroup> groups = ArrayListMultimap.create();
+					Map<String, TagGroupByResult> groupByResults = new HashMap<String, TagGroupByResult>();
+
+					for (DataPointGroup dataPointGroup : typeGroups.get(type))
+					{
+						//Todo: Add code to datastore implementations to filter by the group by tag
+
+						LinkedHashMap<String, String> matchingTags = getMatchingTags(dataPointGroup, tagGroupBy.getTagNames());
+						String tagsKey = getTagsKey(matchingTags);
+						groups.put(tagsKey, dataPointGroup);
+						groupByResults.put(tagsKey, new TagGroupByResult(tagGroupBy, matchingTags));
+						mm.checkMemoryAndThrowException();
+					}
+
+					for (String key : groups.keySet())
+					{
+						SortingDataPointGroup sdpGroup = new SortingDataPointGroup(groups.get(key), groupByResults.get(key), order);
+						sdpGroup.addGroupByResult(new TypeGroupByResult(type));
+						ret.add(sdpGroup);
+					}
+				}
+				else
+				{
+					ret.add(new SortingDataPointGroup(typeGroups.get(type), new TypeGroupByResult(type), order));
+				}
 			}
 		}
 
@@ -465,15 +491,15 @@ public class KairosDatastore
 				m_dataPointCount += returnedRow.getDataPointCount();
 			}
 
-			List<DataPointGroup> queryResults = groupByType(m_metric.getName(),
-					returnedRows, m_metric.getOrder());
+			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
+					returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
 
-			if (m_metric.getGroupBys() != null)
+			/*if (m_metric.getGroupBys() != null)
 			{
 				// It is more efficient to group by tags using the cached results because we have pointers to each tag.
 				queryResults = groupByTags(m_metric.getName(),
 						queryResults, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
-			}
+			}*/
 
 			// Now group for all other types of group bys.
 			Grouper grouper = new Grouper();

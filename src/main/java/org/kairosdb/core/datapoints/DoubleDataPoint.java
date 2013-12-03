@@ -32,7 +32,13 @@ public class DoubleDataPoint extends DataPointHelper
 	@Override
 	public ByteBuffer toByteBuffer()
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		return DoubleDataPointFactoryImpl.writeToByteBuffer(this);
+	}
+
+	@Override
+	public void writeToBuffer(ByteBuffer buffer)
+	{
+		DoubleDataPointFactoryImpl.writeToByteBuffer(buffer, this);
 	}
 
 	@Override

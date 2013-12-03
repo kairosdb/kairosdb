@@ -23,6 +23,8 @@ public interface DataPoint
 	 */
 	public ByteBuffer toByteBuffer();
 
+	public void writeToBuffer(ByteBuffer buffer);
+
 	public void writeJson(JSONWriter writer) throws JSONException;
 
 	/**

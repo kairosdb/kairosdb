@@ -99,11 +99,6 @@ public class DivideAggregator implements Aggregator
 			return (m_innerDataPointGroup.getGroupByResult());
 		}
 
-		@Override
-		public String getAPIDataType()
-		{
-			return m_innerDataPointGroup.getAPIDataType();
-		}
 
 		@Override
 		public void close()

@@ -40,4 +40,19 @@ public class DoubleDataPointFactoryImpl implements DoubleDataPointFactory
 	{
 		return null;  //To change body of implemented methods use File | Settings | File Templates.
 	}
+
+	public static ByteBuffer writeToByteBuffer(DoubleDataPoint dataPoint)
+	{
+		ByteBuffer buffer = ByteBuffer.allocate(8);
+
+		writeToByteBuffer(buffer, dataPoint);
+
+		buffer.flip();
+		return (buffer);
+	}
+
+	public static void writeToByteBuffer(ByteBuffer buffer, DoubleDataPoint dataPoint)
+	{
+		buffer.putDouble(dataPoint.getDoubleValue());
+	}
 }

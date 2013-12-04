@@ -21,6 +21,7 @@ import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import com.google.inject.*;
 import jcmdline.*;
+import org.apache.commons.io.FileUtils;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -36,10 +37,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 import java.io.*;
 import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 public class Main
 {
@@ -60,14 +58,22 @@ public class Main
 			"name of metrics to export. If not specified, then all metrics are exported", 1,
 			StringParam.UNSPECIFIED_LENGTH, true, true);
 
+	private static StringParam s_exportRecoveryFile = new StringParam("r",
+			"full path to a recovery file. The file tracks metrics that have been exported. If export fails and is run " +
+					"again it uses this file to pickup where it left off.", 1,
+			StringParam.UNSPECIFIED_LENGTH, true, false);
+
+	private static BooleanParam s_appendToExportFile = new BooleanParam("a",
+			"Appends to the export file. By default, the export file is overwritten.");
+
 	/**
-	 start is identical to run except that logging data only goes to the log file
-	 and not to standard out as well
+	 * start is identical to run except that logging data only goes to the log file
+	 * and not to standard out as well
 	 */
 	private static StringParam s_operationCommand = new StringParam("c",
-			"command to run", new String[]{"run", "start", "export", "import"});
+			"command to run: export, import, run, start", new String[]{"run", "start", "export", "import"}, false);
 
-	private static Object s_shutdownObject = new Object();
+	private final static Object s_shutdownObject = new Object();
 
 	private Injector m_injector;
 	private List<KairosDBService> m_services = new ArrayList<KairosDBService>();
@@ -79,13 +85,13 @@ public class Main
 			propDir = new File(".");
 
 		String[] pluginProps = propDir.list(new FilenameFilter()
+		{
+			@Override
+			public boolean accept(File dir, String name)
 			{
-				@Override
-				public boolean accept(File dir, String name)
-				{
-					return (name.endsWith(".properties") && !name.equals(propertiesFile.getName()));
-				}
-			});
+				return (name.endsWith(".properties") && !name.equals(propertiesFile.getName()));
+			}
+		});
 
 		ClassLoader cl = getClass().getClassLoader();
 
@@ -148,7 +154,7 @@ public class Main
 						{
 							constructor = aClass.getConstructor(Properties.class);
 						}
-						catch (NoSuchMethodException nsme)
+						catch (NoSuchMethodException ignore)
 						{
 						}
 
@@ -180,7 +186,8 @@ public class Main
 	{
 		CmdLineHandler cl = new VersionCmdLineHandler("Version 1.0",
 				new HelpCmdLineHandler("KairosDB Help", "kairosdb", "Starts KairosDB",
-						new Parameter[]{s_operationCommand, s_propertiesFile, s_exportFile, s_exportMetricNames}, null));
+						new Parameter[]{s_operationCommand, s_propertiesFile, s_exportFile, s_exportMetricNames,
+								s_exportRecoveryFile, s_appendToExportFile}, null));
 
 		cl.parse(args);
 
@@ -214,7 +221,8 @@ public class Main
 		{
 			if (s_exportFile.isSet())
 			{
-				Writer ps = new OutputStreamWriter(new FileOutputStream(s_exportFile.getValue()), "UTF-8");
+				Writer ps = new OutputStreamWriter(new FileOutputStream(s_exportFile.getValue(),
+						s_appendToExportFile.isSet()), "UTF-8");
 				main.runExport(ps, s_exportMetricNames.getValues());
 				ps.flush();
 				ps.close();
@@ -296,25 +304,36 @@ public class Main
 
 	public void runExport(Writer out, List<String> metricNames) throws DatastoreException, IOException
 	{
-		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
-
-		Iterable<String> metrics;
-
-		if (metricNames != null && metricNames.size() > 0)
-			metrics = metricNames;
-		else
-			metrics = ds.getMetricNames();
-
-		for (String metric : metrics)
+		RecoveryFile recoveryFile = new RecoveryFile();
+		try
 		{
-			logger.info("Exporting: " + metric);
-			QueryMetric qm = new QueryMetric(1L, 0, metric);
-			ExportQueryCallback callback = new ExportQueryCallback(metric, out);
-			ds.export(qm, callback);
+			KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
+			Iterable<String> metrics;
+
+			if (metricNames != null && metricNames.size() > 0)
+				metrics = metricNames;
+			else
+				metrics = ds.getMetricNames();
+
+			for (String metric : metrics)
+			{
+				if (!recoveryFile.contains(metric))
+				{
+					logger.info("Exporting: " + metric);
+					QueryMetric qm = new QueryMetric(1L, 0, metric);
+					ExportQueryCallback callback = new ExportQueryCallback(metric, out);
+					ds.export(qm, callback);
+
+					recoveryFile.writeMetric(metric);
+				}
+				else
+					logger.info("Skipping metric " + metric + " because it was already exported.");
+			}
 		}
-
-
-		out.flush();
+		finally
+		{
+			recoveryFile.close();
+		}
 	}
 
 	public void runImport(InputStream in) throws IOException, DatastoreException
@@ -350,7 +369,7 @@ public class Main
 				s_shutdownObject.wait();
 			}
 		}
-		catch (InterruptedException e)
+		catch (InterruptedException ignore)
 		{
 		}
 	}
@@ -381,13 +400,59 @@ public class Main
 		logger.info("Shutting down");
 		for (KairosDBService service : m_services)
 		{
-			logger.info("Stopping "+service.getClass().getName());
+			logger.info("Stopping " + service.getClass().getName());
 			service.stop();
 		}
 
 		//Stop the datastore
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
 		ds.close();
+	}
+
+	private class RecoveryFile
+	{
+		private final Set<String> metricsExported = new HashSet<String>();
+
+		private File recoveryFile;
+		private PrintWriter writer;
+
+		public RecoveryFile() throws IOException
+		{
+			if (s_exportRecoveryFile.isSet())
+			{
+				recoveryFile = new File(s_exportRecoveryFile.getValue());
+				logger.info("Tracking exported metric names in " + recoveryFile.getAbsolutePath());
+
+				if (recoveryFile.exists())
+				{
+					logger.info("Skipping metrics found in " + recoveryFile.getAbsolutePath());
+					List<String> list = FileUtils.readLines(recoveryFile);
+					metricsExported.addAll(list);
+				}
+
+				writer = new PrintWriter(new FileOutputStream(recoveryFile, true));
+			}
+		}
+
+		public boolean contains(String metric)
+		{
+			return metricsExported.contains(metric);
+		}
+
+		public void writeMetric(String metric)
+		{
+			if (writer != null)
+			{
+				writer.println(metric);
+				writer.flush();
+			}
+		}
+
+		public void close()
+		{
+			if (writer != null)
+				writer.close();
+		}
 	}
 
 	private class ExportQueryCallback implements QueryCallback

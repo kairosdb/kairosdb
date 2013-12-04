@@ -25,10 +25,13 @@ import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -435,6 +438,23 @@ public class JsonMetricParserTest
 		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(1));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getLongValue(), equalTo(4321L));
+	}
+
+	@Test
+	public void test_parserSpeed() throws DatastoreException, IOException
+	{
+		Reader reader = new InputStreamReader(
+				new GZIPInputStream(ClassLoader.getSystemResourceAsStream("large_import.gz")));
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname");
+		JsonMetricParser parser = new JsonMetricParser(datastore, reader);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		System.out.println(parser.getDataPointCount());
+		System.out.println(parser.getIngestTime());
 	}
 
 	private static class FakeDataStore implements Datastore

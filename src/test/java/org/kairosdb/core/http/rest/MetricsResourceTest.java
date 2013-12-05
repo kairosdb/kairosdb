@@ -208,7 +208,7 @@ public class MetricsResourceTest
 		JsonResponse response = client.post(json, GET_METRIC_URL);
 
 		assertResponse(response, 400,
-				"{\"errors\":[\"com.google.gson.stream.MalformedJsonException: Expected EOF at line 2 column 21\"]}");
+				"{\"errors\":[\"com.google.gson.stream.MalformedJsonException: Use JsonReader.setLenient(true) to accept malformed JSON at line 2 column 22\"]}");
 	}
 
 	@Test

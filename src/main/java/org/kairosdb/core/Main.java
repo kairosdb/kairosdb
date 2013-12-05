@@ -19,6 +19,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
+import com.google.gson.Gson;
 import com.google.inject.*;
 import jcmdline.*;
 import org.apache.commons.io.FileUtils;
@@ -342,10 +343,11 @@ public class Main
 
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8));
 
+		Gson gson = new Gson();
 		String line;
 		while ((line = reader.readLine()) != null)
 		{
-			JsonMetricParser jsonMetricParser = new JsonMetricParser(ds, new StringReader(line));
+			JsonMetricParser jsonMetricParser = new JsonMetricParser(ds, new StringReader(line), gson);
 
 			ValidationErrors validationErrors = jsonMetricParser.parse();
 

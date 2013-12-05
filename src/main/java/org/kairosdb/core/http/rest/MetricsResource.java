@@ -16,6 +16,8 @@
 
 package org.kairosdb.core.http.rest;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
@@ -72,6 +74,9 @@ public class MetricsResource implements KairosMetricReporter
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
 	private final GsonParser gsonParser;
 
+	//Used for parsing incomming metrices
+	private final Gson gson;
+
 	//These two are used to track rate of ingestion
 	private AtomicInteger m_ingestedDataPoints = new AtomicInteger();
 	private AtomicInteger m_ingestTime = new AtomicInteger();
@@ -86,6 +91,9 @@ public class MetricsResource implements KairosMetricReporter
 		this.datastore = checkNotNull(datastore);
 		this.gsonParser = checkNotNull(gsonParser);
 		formatters.put("json", new JsonFormatter());
+
+		GsonBuilder builder = new GsonBuilder();
+		gson = builder.create();
 	}
 
 	private void setHeaders(ResponseBuilder responseBuilder)
@@ -158,7 +166,7 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		try
 		{
-			JsonMetricParser parser = new JsonMetricParser(datastore, new InputStreamReader(json, "UTF-8"));
+			JsonMetricParser parser = new JsonMetricParser(datastore, new InputStreamReader(json, "UTF-8"), gson);
 			ValidationErrors validationErrors = parser.parse();
 
 			m_ingestedDataPoints.addAndGet(parser.getDataPointCount());

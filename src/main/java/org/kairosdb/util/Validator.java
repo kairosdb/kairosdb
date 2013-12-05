@@ -45,7 +45,7 @@ public class Validator
 			throw new ValidationException(errors.getFirstError());
 	}
 
-	public static boolean isValidateCharacterSet(ValidationErrors validationErrors, String name, String value)
+	public static boolean isValidateCharacterSet(ValidationErrors validationErrors, Object name, String value)
 	{
 		if (value == null || value.isEmpty() || !CharacterSet.isValid(value)){
 			validationErrors.addErrorMessage(name + " may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'.");
@@ -54,7 +54,7 @@ public class Validator
 		return true;
 	}
 
-	public static boolean isNotNullOrEmpty(ValidationErrors validationErrors, String name, String value)
+	public static boolean isNotNullOrEmpty(ValidationErrors validationErrors, Object name, String value)
 	{
 		if (value == null)
 		{
@@ -70,7 +70,7 @@ public class Validator
 		return true;
 	}
 
-	public static boolean isGreaterThanOrEqualTo(ValidationErrors validationErrors, String name, long value, long minValue)
+	public static boolean isGreaterThanOrEqualTo(ValidationErrors validationErrors, Object name, long value, long minValue)
 	{
 		if (value < minValue)
 		{

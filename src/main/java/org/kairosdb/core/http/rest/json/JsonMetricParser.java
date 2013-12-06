@@ -16,11 +16,10 @@
 
 package org.kairosdb.core.http.rest.json;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
+import org.json.JSONTokener;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -31,6 +30,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -46,19 +46,33 @@ public class JsonMetricParser
 	private Reader inputStream;
 	private Gson gson;
 
-	public JsonMetricParser(KairosDatastore datastore, Reader stream)
+	public int getDataPointCount()
+	{
+		return dataPointCount;
+	}
+
+	public int getIngestTime()
+	{
+		return ingestTime;
+	}
+
+	private int dataPointCount;
+	private int ingestTime;
+
+	public JsonMetricParser(KairosDatastore datastore, Reader stream, Gson gson)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.inputStream = checkNotNull(stream);
-		GsonBuilder builder = new GsonBuilder();
-		gson = builder.create();
+		this.gson = gson;
 	}
 
 	public ValidationErrors parse() throws IOException, DatastoreException
 	{
+		long start = System.currentTimeMillis();
 		ValidationErrors validationErrors = new ValidationErrors();
 
 		JsonReader reader = new JsonReader(inputStream);
+		JsonParser parser = new JsonParser();
 
 		try
 		{
@@ -102,6 +116,8 @@ public class JsonMetricParser
 			reader.close();
 		}
 
+		ingestTime = (int)(System.currentTimeMillis() - start);
+
 		return validationErrors;
 	}
 
@@ -120,39 +136,154 @@ public class JsonMetricParser
 		return metric;
 	}
 
+	private Map<String, String> getAsMap(JsonObject object)
+	{
+		Map<String, String> ret = new HashMap<String, String>();
+
+		for (Map.Entry<String, JsonElement> entry : object.entrySet())
+		{
+			ret.put(entry.getKey(), entry.getValue().getAsString());
+		}
+
+		return (ret);
+	}
+
+	private class Context
+	{
+		private int m_count;
+		private String m_name;
+		private String m_attribute;
+
+		public Context(int count)
+		{
+			m_count = count;
+		}
+
+		private Context setCount(int count)
+		{
+			m_count = count;
+			return (this);
+		}
+
+		private Context setName(String name)
+		{
+			m_name = name;
+			m_attribute = null;
+			return (this);
+		}
+
+		private Context setAttribute(String attribute)
+		{
+			m_attribute = attribute;
+			return (this);
+		}
+
+		public String toString()
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.append("metric[").append(m_count).append("]");
+			if (m_name != null)
+				sb.append("(name=").append(m_name).append(")");
+
+			if (m_attribute != null)
+				sb.append(".").append(m_attribute);
+
+			return (sb.toString());
+		}
+	}
+
+	private class SubContext
+	{
+		private Context m_context;
+		private String m_contextName;
+		private int m_count;
+		private String m_name;
+		private String m_attribute;
+
+		public SubContext(Context context, String contextName)
+		{
+			m_context = context;
+			m_contextName = contextName;
+		}
+
+		private SubContext setCount(int count)
+		{
+			m_count = count;
+			m_name = null;
+			m_attribute = null;
+			return (this);
+		}
+
+		private SubContext setName(String name)
+		{
+			m_name = name;
+			m_attribute = null;
+			return (this);
+		}
+
+		private SubContext setAttribute(String attribute)
+		{
+			m_attribute = attribute;
+			return (this);
+		}
+
+		public String toString()
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.append(m_context).append(".").append(m_contextName).append("[");
+			if (m_name != null)
+				sb.append(m_name);
+			else
+				sb.append(m_count);
+			sb.append("]");
+
+			if (m_attribute != null)
+				sb.append(".").append(m_attribute);
+
+			return (sb.toString());
+		}
+	}
+
+
 	private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) throws DatastoreException
 	{
 		ValidationErrors validationErrors = new ValidationErrors();
 
-		String context = String.format("metric[%d]", count);
-		if (Validator.isNotNullOrEmpty(validationErrors, context + ".name", metric.getName()))
+		Context context = new Context(count);
+		if (metric.validate())
 		{
-			context = String.format("%s(name=%s)", context, metric.getName());
-			Validator.isValidateCharacterSet(validationErrors, context, metric.getName());
-		}
-
-		if (metric.getTimestamp() > 0)
-			Validator.isNotNullOrEmpty(validationErrors, context + ".value", metric.getValue());
-		if (metric.getValue() != null && !metric.getValue().isEmpty())
-			Validator.isGreaterThanOrEqualTo(validationErrors, context + ".timestamp", metric.getTimestamp(), 1);
-
-		if (Validator.isGreaterThanOrEqualTo(validationErrors, context + ".tags count", metric.getTags().size(), 1))
-		{
-			int tagCount = 0;
-			String tagContext = String.format("%s.tag[%d]", context, tagCount);
-			for (Map.Entry<String, String> entry : metric.getTags().entrySet())
+			if (Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("name"), metric.getName()))
 			{
-				if (Validator.isNotNullOrEmpty(validationErrors, String.format("%s.name", tagContext), entry.getKey()))
-				{
-					tagContext = String.format("%s.tag[%s]", context, entry.getKey());
-					Validator.isValidateCharacterSet(validationErrors, tagContext, entry.getKey());
-				}
-				if (Validator.isNotNullOrEmpty(validationErrors, String.format("%s.value", tagContext), entry.getValue()))
-					Validator.isValidateCharacterSet(validationErrors, String.format("%s.value", tagContext), entry.getValue());
+				context.setName(metric.getName());
+				Validator.isValidateCharacterSet(validationErrors, context, metric.getName());
+			}
 
-				tagCount++;
+			if (metric.getTimestamp() > 0)
+				Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("value"), metric.getValue());
+			if (metric.getValue() != null && !metric.getValue().isEmpty())
+				Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp(), 1);
+
+			if (Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("tags count"), metric.getTags().size(), 1))
+			{
+				int tagCount = 0;
+				SubContext tagContext = new SubContext(context.setAttribute(null), "tag");
+
+				for (Map.Entry<String, String> entry : metric.getTags().entrySet())
+				{
+					tagContext.setCount(tagCount);
+					if (Validator.isNotNullOrEmpty(validationErrors, tagContext.setAttribute("name"), entry.getKey()))
+					{
+						tagContext.setName(entry.getKey());
+						Validator.isValidateCharacterSet(validationErrors, tagContext, entry.getKey());
+					}
+					if (Validator.isNotNullOrEmpty(validationErrors, tagContext.setAttribute("value"), entry.getValue()))
+						Validator.isValidateCharacterSet(validationErrors, tagContext, entry.getValue());
+
+					tagCount++;
+				}
 			}
 		}
+
 
 		if (!validationErrors.hasErrors())
 		{
@@ -166,23 +297,26 @@ public class JsonMetricParser
 			if (metric.getDatapoints() != null && metric.getDatapoints().length > 0)
 			{
 				int dataPointCount = 0;
-				String dataPointContext = String.format("%s.datapoints[%d]", context, dataPointCount);
+				SubContext dataPointContext = new SubContext(context, "datapoints");
 				for (double[] dataPoint : metric.getDatapoints())
 				{
+					dataPointContext.setCount(dataPointCount);
 					if (dataPoint.length < 1)
 					{
-						validationErrors.addErrorMessage(String.format("%s.timestamp cannot be null or empty.", context));
+						validationErrors.addErrorMessage(dataPointContext.setAttribute("timestamp") +" cannot be null or empty.");
 						break;
 					}
 					else if (dataPoint.length < 2)
 					{
-						validationErrors.addErrorMessage(String.format("%s.value cannot be null or empty.", dataPointContext));
+						validationErrors.addErrorMessage(dataPointContext.setAttribute("value") + " cannot be null or empty.");
 						break;
 					}
 					else
 					{
 						long timestamp = (long) dataPoint[0];
-						Validator.isGreaterThanOrEqualTo(validationErrors, String.format("%s.value cannot be null or empty.", dataPointContext), timestamp, 1);
+						if (metric.validate())
+							Validator.isGreaterThanOrEqualTo(validationErrors, dataPointContext.setAttribute("value") + " cannot be null or empty.", timestamp, 1);
+
 						if (dataPoint[1] % 1 == 0)
 							dataPointSet.addDataPoint(new DataPoint(timestamp, (long) dataPoint[1]));
 						else
@@ -191,6 +325,8 @@ public class JsonMetricParser
 					dataPointCount++;
 				}
 			}
+
+			dataPointCount += dataPointSet.getDataPoints().size();
 
 			if (dataPointSet.getDataPoints().size() > 0)
 				datastore.putDataPoints(dataPointSet);
@@ -210,6 +346,7 @@ public class JsonMetricParser
 		private String value;
 		private Map<String, String> tags;
 		private double[][] datapoints;
+		private boolean skip_validate = false;
 
 		private String getName()
 		{
@@ -237,6 +374,11 @@ public class JsonMetricParser
 		private double[][] getDatapoints()
 		{
 			return datapoints;
+		}
+
+		private boolean validate()
+		{
+			return !skip_validate;
 		}
 	}
 }

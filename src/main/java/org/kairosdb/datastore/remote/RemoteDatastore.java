@@ -31,7 +31,10 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +64,8 @@ public class RemoteDatastore implements Datastore
 	private String m_remoteUrl;
 	private int m_dataPointCounter;
 
+	private HttpClient m_client;
+
 	@Inject
 	@Named("HOSTNAME")
 	private String m_hostName = "localhost";
@@ -75,6 +80,7 @@ public class RemoteDatastore implements Datastore
 	{
 		m_dataDirectory = dataDir;
 		m_remoteUrl = remoteUrl;
+		m_client = new DefaultHttpClient();
 
 		//This is to check and make sure the remote kairos is there and properly configured.
 		getKairosVersion();
@@ -87,10 +93,9 @@ public class RemoteDatastore implements Datastore
 	{
 		try
 		{
-			HttpClient client = new DefaultHttpClient();
 			HttpGet get = new HttpGet(m_remoteUrl+"/api/v1/version");
 
-			HttpResponse response = client.execute(get);
+			HttpResponse response = m_client.execute(get);
 
 			ByteArrayOutputStream bout = new ByteArrayOutputStream();
 			response.getEntity().writeTo(bout);
@@ -157,6 +162,7 @@ public class RemoteDatastore implements Datastore
 			writer.object();
 
 			writer.key("name").value(dps.getName());
+			writer.key("skip_validate").value(true);
 			writer.key("tags").object();
 			Map<String, String> tags = dps.getTags();
 			for (String tag : tags.keySet())
@@ -218,7 +224,6 @@ public class RemoteDatastore implements Datastore
 	private void sendZipfile(String zipFile) throws IOException
 	{
 		logger.debug("Sending {}", zipFile);
-		HttpClient client = new DefaultHttpClient();
 		HttpPost post = new HttpPost(m_remoteUrl+"/api/v1/datapoints");
 
 		File zipFileObj = new File(m_dataDirectory, zipFile);
@@ -226,7 +231,7 @@ public class RemoteDatastore implements Datastore
 		post.setHeader("Content-Type", "application/gzip");
 		
 		post.setEntity(new InputStreamEntity(zipStream, zipFileObj.length()));
-		HttpResponse response = client.execute(post);
+		HttpResponse response = m_client.execute(post);
 
 		zipStream.close();
 		if (response.getStatusLine().getStatusCode() == 204)

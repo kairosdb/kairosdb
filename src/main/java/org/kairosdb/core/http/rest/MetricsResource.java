@@ -16,10 +16,14 @@
 
 package org.kairosdb.core.http.rest;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.name.Named;
+import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -29,6 +33,7 @@ import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
 import org.kairosdb.core.formatter.JsonResponse;
 import org.kairosdb.core.http.rest.json.*;
+import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.util.MemoryMonitorException;
 import org.slf4j.Logger;
@@ -40,9 +45,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -56,17 +60,26 @@ enum NameType
 }
 
 @Path("/api/v1")
-public class MetricsResource
+public class MetricsResource implements KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(MetricsResource.class);
 	public static final String QUERY_TIME = "kairosdb.http.query_time";
 	public static final String REQUEST_TIME = "kairosdb.http.request_time";
+	public static final String INGEST_COUNT = "kairosdb.http.ingest_count";
+	public static final String INGEST_TIME = "kairosdb.http.ingest_time";
 
 	public static final String QUERY_URL = "/datapoints/query";
 
 	private final KairosDatastore datastore;
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
 	private final GsonParser gsonParser;
+
+	//Used for parsing incomming metrices
+	private final Gson gson;
+
+	//These two are used to track rate of ingestion
+	private AtomicInteger m_ingestedDataPoints = new AtomicInteger();
+	private AtomicInteger m_ingestTime = new AtomicInteger();
 
 	@Inject
 	@Named("HOSTNAME")
@@ -76,8 +89,11 @@ public class MetricsResource
 	public MetricsResource(KairosDatastore datastore, GsonParser gsonParser)
 	{
 		this.datastore = checkNotNull(datastore);
-		this.gsonParser= checkNotNull(gsonParser);
+		this.gsonParser = checkNotNull(gsonParser);
 		formatters.put("json", new JsonFormatter());
+
+		GsonBuilder builder = new GsonBuilder();
+		gson = builder.create();
 	}
 
 	private void setHeaders(ResponseBuilder responseBuilder)
@@ -94,8 +110,8 @@ public class MetricsResource
 	public Response getVersion()
 	{
 		Package thisPackage = getClass().getPackage();
-		String versionString = thisPackage.getImplementationTitle()+" "+thisPackage.getImplementationVersion();
-		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \""+versionString+"\"}");
+		String versionString = thisPackage.getImplementationTitle() + " " + thisPackage.getImplementationVersion();
+		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \"" + versionString + "\"}");
 		setHeaders(responseBuilder);
 		return responseBuilder.build();
 	}
@@ -150,8 +166,11 @@ public class MetricsResource
 	{
 		try
 		{
-			JsonMetricParser parser = new JsonMetricParser(datastore, new InputStreamReader(json, "UTF-8"));
+			JsonMetricParser parser = new JsonMetricParser(datastore, new InputStreamReader(json, "UTF-8"), gson);
 			ValidationErrors validationErrors = parser.parse();
+
+			m_ingestedDataPoints.addAndGet(parser.getDataPointCount());
+			m_ingestTime.addAndGet(parser.getIngestTime());
 
 			if (!validationErrors.hasErrors())
 				return Response.status(Response.Status.NO_CONTENT).build();
@@ -165,17 +184,17 @@ public class MetricsResource
 				return builder.build();
 			}
 		}
-		catch(JsonIOException e)
+		catch (JsonIOException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
 		}
-		catch(JsonSyntaxException e)
+		catch (JsonSyntaxException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
 		}
-		catch(MalformedJsonException e)
+		catch (MalformedJsonException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
@@ -203,7 +222,7 @@ public class MetricsResource
 
 		try
 		{
-			File respFile = File.createTempFile("kairos", ".json");
+			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new FileWriter(respFile));
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
@@ -285,7 +304,7 @@ public class MetricsResource
 
 		try
 		{
-			File respFile = File.createTempFile("kairos", ".json");
+			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new FileWriter(respFile));
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
@@ -297,7 +316,7 @@ public class MetricsResource
 			int queryCount = 0;
 			for (QueryMetric query : queries)
 			{
-				queryCount ++;
+				queryCount++;
 				ThreadReporter.addTag("metric_name", query.getName());
 				ThreadReporter.addTag("query_index", String.valueOf(queryCount));
 
@@ -427,16 +446,16 @@ public class MetricsResource
 	}
 
 	/**
-	 Information for this endpoint was taken from
-	 https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS
-
-	 Response to a cors preflight request to access data.
+	 * Information for this endpoint was taken from
+	 * https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS
+	 * <p/>
+	 * Response to a cors preflight request to access data.
 	 */
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/query")
-	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers")String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method")String requestMethod)
+	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
+	                                   @HeaderParam("Access-Control-Request-Method") String requestMethod)
 	{
 		ResponseBuilder responseBuilder = Response.status(Response.Status.OK);
 		responseBuilder.header("Access-Control-Allow-Origin", "*");
@@ -450,8 +469,8 @@ public class MetricsResource
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints")
-	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers")String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method")String requestMethod)
+	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
+	                                        @HeaderParam("Access-Control-Request-Method") String requestMethod)
 	{
 		return (corsPreflightQuery(requestHeaders, requestMethod));
 	}
@@ -482,7 +501,7 @@ public class MetricsResource
 		try
 		{
 			Iterable<String> values = null;
-			switch(type)
+			switch (type)
 			{
 				case METRIC_NAMES:
 					values = datastore.getMetricNames();
@@ -510,6 +529,30 @@ public class MetricsResource
 		}
 	}
 
+	@Override
+	public List<DataPointSet> getMetrics(long now)
+	{
+		int time = m_ingestTime.getAndSet(0);
+		int count = m_ingestedDataPoints.getAndSet(0);
+
+		if (count == 0)
+			return Collections.EMPTY_LIST;
+
+		DataPointSet dpsCount = new DataPointSet(INGEST_COUNT);
+		DataPointSet dpsTime = new DataPointSet(INGEST_TIME);
+
+		dpsCount.addTag("host", hostName);
+		dpsTime.addTag("host", hostName);
+
+		dpsCount.addDataPoint(new DataPoint(now, count));
+		dpsTime.addDataPoint(new DataPoint(now, time));
+		List<DataPointSet> ret = new ArrayList<DataPointSet>();
+		ret.add(dpsCount);
+		ret.add(dpsTime);
+
+		return ret;
+	}
+
 	public class ValuesStreamingOutput implements StreamingOutput
 	{
 		private DataFormatter m_formatter;
@@ -524,7 +567,7 @@ public class MetricsResource
 		@SuppressWarnings("ResultOfMethodCallIgnored")
 		public void write(OutputStream output) throws IOException, WebApplicationException
 		{
-			Writer writer = new OutputStreamWriter(output,  "UTF-8");
+			Writer writer = new OutputStreamWriter(output, "UTF-8");
 
 			try
 			{
@@ -552,19 +595,25 @@ public class MetricsResource
 		@Override
 		public void write(OutputStream output) throws IOException, WebApplicationException
 		{
-			InputStream reader = new FileInputStream(m_responseFile);
-
-			byte[] buffer = new byte[1024];
-			int size;
-
-			while ((size = reader.read(buffer)) != -1)
+			try
 			{
-				output.write(buffer, 0, size);
-			}
+				InputStream reader = new FileInputStream(m_responseFile);
 
-			reader.close();
-			output.flush();
-			m_responseFile.delete();
+				byte[] buffer = new byte[1024];
+				int size;
+
+				while ((size = reader.read(buffer)) != -1)
+				{
+					output.write(buffer, 0, size);
+				}
+
+				reader.close();
+				output.flush();
+			}
+			finally
+			{
+				m_responseFile.delete();
+			}
 		}
 	}
 }

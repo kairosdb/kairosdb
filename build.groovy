@@ -14,6 +14,7 @@ import tablesaw.addons.java.Classpath
 import tablesaw.addons.java.JavaCRule
 import tablesaw.addons.java.JavaProgram
 import tablesaw.addons.junit.JUnitRule
+import tablesaw.ant.AntTask
 import tablesaw.rules.DirectoryRule
 import tablesaw.rules.Rule
 import tablesaw.rules.SimpleRule
@@ -26,8 +27,8 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "0.9.2"
-release = "4" //package release number
+version = "0.9.3"
+release = "1" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -87,10 +88,11 @@ manifest.putValue("Implementation-Version", "${version}.${buildNumber}")
 //Add git revision information
 gitRevisionFile= ".gitrevision"
 new File(gitRevisionFile).text = ""
-saw.exec(null, "git rev-parse HEAD", false, null, gitRevisionFile);
+ret = saw.exec(null, "git rev-parse HEAD", false, null, gitRevisionFile);
 revision = new File(gitRevisionFile).text.trim()
 new File(gitRevisionFile).delete()
-manifest.putValue("Git-Revision", revision);
+if (ret == 0)
+	manifest.putValue("Git-Revision", revision);
 
 saw.setDefaultTarget("jar")
 
@@ -363,5 +365,18 @@ def doIntegration(Rule rule)
 	saw.exec("java  -Dhost=${host} -Dport=${port} -cp ${integrationBuildRule.classpath} org.testng.TestNG src/integration-test/testng.xml")
 }
 
+
+//------------------------------------------------------------------------------
+//Rules for deploying to maven central
+initAnt = new SimpleRule().setMakeAction({rule: saw.initializeAnt()})
+
+new SimpleRule("makepom").setDescription("Generate maven pom file")
+		.addDepend(initAnt)
+		.setMakeAction(
+{rule:
+	saw.initializeAnt()
+	makepom = new AntTask("org.apache.ivy.ant.IvyMakePom").set("ivyfile", "ivy.xml").set("pomfile", "build/kairosdb.pom")
+	makepom.execute()
+})
 
 

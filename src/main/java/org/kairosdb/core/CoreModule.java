@@ -16,6 +16,7 @@
 
 package org.kairosdb.core;
 
+import com.google.common.net.InetAddresses;
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
@@ -111,5 +112,12 @@ public class CoreModule extends AbstractModule
 				.to(getClassForProperty(DATAPOINTS_FACTORY_LONG)).in(Singleton.class);
 
 		bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class).in(Singleton.class);
+
+		String hostIp = m_props.getProperty("kairosdb.host_ip");
+		bindConstant().annotatedWith(Names.named("HOST_IP")).to(hostIp != null ? hostIp: InetAddresses.toAddrString(Util.findPublicIp()));
+
+		bind(new TypeLiteral<List<DataPointListener>>()
+		{
+		}).toProvider(DataPointListenerProvider.class);
 	}
 }

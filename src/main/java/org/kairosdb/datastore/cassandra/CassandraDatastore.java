@@ -18,6 +18,7 @@ package org.kairosdb.datastore.cassandra;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import me.prettyprint.cassandra.model.ConfigurableConsistencyLevel;
 import me.prettyprint.cassandra.serializers.ByteBufferSerializer;
 import me.prettyprint.cassandra.serializers.IntegerSerializer;
 import me.prettyprint.cassandra.serializers.StringSerializer;
@@ -25,6 +26,7 @@ import me.prettyprint.cassandra.service.CassandraHostConfigurator;
 import me.prettyprint.cassandra.service.ColumnSliceIterator;
 import me.prettyprint.cassandra.service.ThriftKsDef;
 import me.prettyprint.hector.api.Cluster;
+import me.prettyprint.hector.api.HConsistencyLevel;
 import me.prettyprint.hector.api.Keyspace;
 import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
 import me.prettyprint.hector.api.ddl.ComparatorType;
@@ -65,7 +67,6 @@ public class CassandraDatastore implements Datastore
 
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
-	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.host_list";
 	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
 	public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
 	public static final String WRITE_DELAY_PROPERTY = "kairosdb.datastore.cassandra.write_delay";
@@ -74,6 +75,10 @@ public class CassandraDatastore implements Datastore
 	public static final String SINGLE_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.single_row_read_size";
 	public static final String MULTI_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_read_size";
 	public static final String MULTI_ROW_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_size";
+	public static final String DATA_READ_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.data_read_consistency_level";
+	public static final String DATA_WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.data_write_consistency_level";
+	public static final String INDEX_READ_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.index_read_consistency_level";
+	public static final String INDEX_WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.index_write_consistency_level";
 
 	public static final String KEYSPACE = "kairosdb";
 	public static final String CF_DATA_POINTS = "data_points";
@@ -102,17 +107,33 @@ public class CassandraDatastore implements Datastore
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
+	@Inject
+	@Named(DATA_WRITE_CONSISTENCY_LEVEL)
+	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.QUORUM;
 
 	@Inject
-	public CassandraDatastore(@Named(HOST_LIST_PROPERTY) String cassandraHostList,
-	                          @Named(CassandraModule.CASSANDRA_AUTH_MAP) Map<String, String> cassandraAuthentication,
+	@Named(DATA_READ_CONSISTENCY_LEVEL)
+	private ConsitencyLevel m_dataReadLevel = ConsitencyLevel.ONE;
+
+	@Inject
+	@Named(INDEX_WRITE_CONSISTENCY_LEVEL)
+	private ConsitencyLevel m_indexWriteLevel = ConsitencyLevel.QUORUM;
+
+	@Inject
+	@Named(INDEX_READ_CONSISTENCY_LEVEL)
+	private ConsitencyLevel m_indexReadLevel = ConsitencyLevel.ONE;
+
+
+	@Inject
+	public CassandraDatastore(@Named(CassandraModule.CASSANDRA_AUTH_MAP) Map<String, String> cassandraAuthentication,
 	                          @Named(REPLICATION_FACTOR_PROPERTY) int replicationFactor,
 	                          @Named(SINGLE_ROW_READ_SIZE_PROPERTY) int singleRowReadSize,
 	                          @Named(MULTI_ROW_SIZE_PROPERTY) int multiRowSize,
 	                          @Named(MULTI_ROW_READ_SIZE_PROPERTY) int multiRowReadSize,
 	                          @Named(WRITE_DELAY_PROPERTY) int writeDelay,
 	                          @Named(WRITE_BUFFER_SIZE) int maxWriteSize,
-	                          final @Named("HOSTNAME") String hostname) throws DatastoreException
+	                          final @Named("HOSTNAME") String hostname,
+	                          HectorConfiguration configuration) throws DatastoreException
 	{
 		try
 		{
@@ -120,8 +141,7 @@ public class CassandraDatastore implements Datastore
 			m_multiRowSize = multiRowSize;
 			m_multiRowReadSize = multiRowReadSize;
 
-			CassandraHostConfigurator hostConfig = new CassandraHostConfigurator(cassandraHostList);
-			//TODO: fine tune the hostConfig
+			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
 
 			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
 					hostConfig, cassandraAuthentication);
@@ -131,7 +151,20 @@ public class CassandraDatastore implements Datastore
 			if (keyspaceDef == null)
 				createSchema(replicationFactor);
 
-			m_keyspace = HFactory.createKeyspace(KEYSPACE, m_cluster);
+			ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
+
+			Map<String, HConsistencyLevel> readLevels = new HashMap<String, HConsistencyLevel>();
+			readLevels.put(CF_DATA_POINTS, m_dataReadLevel.getHectorLevel());
+			readLevels.put(CF_ROW_KEY_INDEX, m_indexReadLevel.getHectorLevel());
+
+			Map <String, HConsistencyLevel> writeLevels = new HashMap<String, HConsistencyLevel>();
+			writeLevels.put(CF_DATA_POINTS, m_dataWriteLevel.getHectorLevel());
+			writeLevels.put(CF_ROW_KEY_INDEX, m_indexWriteLevel.getHectorLevel());
+
+			confConsLevel.setReadCfConsistencyLevels(readLevels);
+			confConsLevel.setWriteCfConsistencyLevels(writeLevels);
+
+			m_keyspace = HFactory.createKeyspace(KEYSPACE, m_cluster, confConsLevel);
 
 			ReentrantLock mutatorLock = new ReentrantLock();
 			Condition lockCondition = mutatorLock.newCondition();
@@ -653,7 +686,6 @@ public class CassandraDatastore implements Datastore
 		@Override
 		public void remove()
 		{
-			//To change body of implemented methods use File | Settings | File Templates.
 		}
 	}
 
@@ -723,7 +755,6 @@ public class CassandraDatastore implements Datastore
 		@Override
 		public void endDataPoints()
 		{
-			//To change body of implemented methods use File | Settings | File Templates.
 		}
 	}
 }

@@ -17,6 +17,8 @@ package org.kairosdb.core.groupby;
 
 import com.google.common.collect.HashMultimap;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.datapoints.DataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,10 +29,10 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.util.Util.*;
 
 /**
  *  A grouping of data points. The group is written to disk.
@@ -53,11 +55,19 @@ public class Group
 	private HashMultimap<String, String> tags = HashMultimap.create();
 	private File file;
 
-	private Group(File file, DataPointGroup dataPointGroup, List<GroupByResult> groupByResults) throws FileNotFoundException
+	private final KairosDataPointFactory dataPointFactory;
+	private final Map<String, Integer> storageTypeIdMap;
+	private final List<DataPointFactory> dataPointFactories;
+
+	private Group(File file, DataPointGroup dataPointGroup, List<GroupByResult> groupByResults, KairosDataPointFactory dataPointFactory) throws FileNotFoundException
 	{
 		checkNotNull(file);
 		checkNotNull(groupByResults);
 		checkNotNull(dataPointGroup);
+
+		this.dataPointFactory = dataPointFactory;
+		storageTypeIdMap = new HashMap<String, Integer>();
+		dataPointFactories = new ArrayList<DataPointFactory>();
 
 		writeBuffer = ByteBuffer.allocate(DATA_POINT_SIZE * WRITE_BUFFER_SIZE);
 		writeBuffer.clear();
@@ -72,13 +82,13 @@ public class Group
 		addTags(dataPointGroup);
 	}
 
-	public static Group createGroup(DataPointGroup dataPointGroup, List<Integer> groupIds, List<GroupByResult> groupByResults) throws IOException
+	public static Group createGroup(DataPointGroup dataPointGroup, List<Integer> groupIds, List<GroupByResult> groupByResults, KairosDataPointFactory dataPointFactory) throws IOException
 	{
 		checkNotNull(dataPointGroup);
 		checkNotNull(groupIds);
 		checkNotNull(groupByResults);
 
-		return new Group(getFile(groupIds), dataPointGroup, groupByResults);
+		return new Group(getFile(groupIds), dataPointGroup, groupByResults, dataPointFactory);
 	}
 
 	private static File getFile(List<Integer> groupIds) throws IOException
@@ -92,6 +102,19 @@ public class Group
 		return File.createTempFile("grouper-" + builder.toString(), ".cache");
 	}
 
+	private int getStorageTypeId(String storageType)
+	{
+		Integer id = storageTypeIdMap.get(storageType);
+		if (id == null)
+		{
+			id = dataPointFactories.size();
+			storageTypeIdMap.put(storageType, dataPointFactories.size());
+			dataPointFactories.add(dataPointFactory.getFactoryForDataStoreType(storageType));
+		}
+
+		return id;
+	}
+
 	public void addDataPoint(DataPoint dataPoint) throws IOException
 	{
 		if (!writeBuffer.hasRemaining())
@@ -100,7 +123,11 @@ public class Group
 		}
 
 		writeBuffer.putLong(dataPoint.getTimestamp());
-		if (dataPoint.isInteger())
+		int id = getStorageTypeId(dataPoint.getDataStoreDataType());
+		packUnsignedLong(id, writeBuffer);
+		dataPoint.writeValueToBuffer(writeBuffer);
+
+		/*if (dataPoint.isInteger())
 		{
 			writeBuffer.put(LONG_FLAG);
 			writeBuffer.putLong(dataPoint.getLongValue());
@@ -109,7 +136,7 @@ public class Group
 		{
 			writeBuffer.put(DOUBLE_FLAG);
 			writeBuffer.putDouble(dataPoint.getDoubleValue());
-		}
+		}*/
 	}
 
 	private void flushWriteBuffer() throws IOException
@@ -241,11 +268,15 @@ public class Group
 					return (null);
 
 				long timestamp = readBuffer.getLong();
-				byte flag = readBuffer.get();
+				int typeId = (int)unpackUnsignedLong(readBuffer);
+
+				dataPoint = dataPointFactories.get(typeId).getDataPoint(timestamp, readBuffer);
+
+				/*byte flag = readBuffer.get();
 				if (flag == LONG_FLAG)
 					dataPoint = new DataPoint(timestamp, readBuffer.getLong());
 				else
-					dataPoint = new DataPoint(timestamp, readBuffer.getDouble());
+					dataPoint = new DataPoint(timestamp, readBuffer.getDouble());*/
 			}
 			catch (IOException e)
 			{

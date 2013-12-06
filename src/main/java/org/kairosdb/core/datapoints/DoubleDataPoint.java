@@ -36,7 +36,7 @@ public class DoubleDataPoint extends DataPointHelper
 	}
 
 	@Override
-	public void writeToBuffer(ByteBuffer buffer)
+	public void writeValueToBuffer(ByteBuffer buffer)
 	{
 		DoubleDataPointFactoryImpl.writeToByteBuffer(buffer, this);
 	}

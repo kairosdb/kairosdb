@@ -689,22 +689,26 @@ public class CassandraDatastore implements Datastore
 			m_dataPointWriteBuffer.deleteColumn(m_currentRow, columnName, m_now);
 		}
 
-		@Override
-		public void addDataPoint(long timestamp, long value) throws IOException
-		{
-			deleteDataPoint(timestamp, true);
-		}
-
-		@Override
-		public void addDataPoint(long timestamp, double value) throws IOException
-		{
-			deleteDataPoint(timestamp, false);
-		}
 
 		@Override
 		public void addDataPoint(DataPoint datapoint) throws IOException
 		{
-			//To change body of implemented methods use File | Settings | File Templates.
+			long time = datapoint.getTimestamp();
+
+			long rowTime = calculateRowTime(time);
+			if (m_currentRow == null)
+			{
+				m_currentRow = new DataPointsRowKey(m_metric, rowTime, m_currentType, m_currentTags);
+			}
+
+			int columnName;
+			//Handle old column name format.
+			if (m_currentType == null)
+				columnName = getColumnName(rowTime, time, datapoint.isLong());
+			else
+				columnName = getColumnName(rowTime, time);
+
+			m_dataPointWriteBuffer.deleteColumn(m_currentRow, columnName, m_now);
 		}
 
 		@Override

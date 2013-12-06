@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 
 public class Util
 {
@@ -127,5 +128,53 @@ public class Util
 		{
 			return "";
 		}
+	}
+
+	public static void packUnsignedLong(long value, ByteBuffer buffer)
+	{
+		/* Encodes a value using the variable-length encoding from
+		<a href="http://code.google.com/apis/protocolbuffers/docs/encoding.html">
+		Google Protocol Buffers</a>. Zig-zag is not used, so input must not be negative.
+		If values can be negative, use {@link #writeSignedVarLong(long, DataOutput)}
+		instead. This method treats negative input as like a large unsigned value. */
+		while ((value & 0xFFFFFFFFFFFFFF80L) != 0L)
+		{
+			buffer.put((byte) ((value & 0x7F) | 0x80));
+			value >>>= 7;
+		}
+		buffer.put((byte) (value & 0x7F));
+	}
+
+	public static long unpackUnsignedLong(ByteBuffer buffer)
+	{
+		long value = 0L;
+		int i = 0;
+		byte b;
+		while (((b = buffer.get()) & 0x80L) != 0)
+		{
+			value |= (b & 0x7F) << i;
+			i += 7;
+			if (i > 63)
+			{
+				throw new IllegalArgumentException("Variable length quantity is too long");
+			}
+		}
+		value |= (b << i);
+
+		return value;
+	}
+
+	public static void packLong(long value, ByteBuffer buffer)
+	{
+		// Great trick from http://code.google.com/apis/protocolbuffers/docs/encoding.html#types
+		packUnsignedLong((value << 1) ^ (value >> 63), buffer);
+
+	}
+
+	public static long unpackLong(ByteBuffer buffer)
+	{
+		long value = unpackUnsignedLong(buffer);
+
+		return ((value >>> 1) ^ -(value & 1));
 	}
 }

@@ -11,6 +11,8 @@ import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +31,9 @@ public class DataPointsMonitor implements DataPointListener, KairosMetricReporte
 
 	private volatile ConcurrentMap<String, AtomicInteger> m_metricCounters;
 	private String m_hostName;
+
+	@Inject
+	private LongDataPointFactory m_dataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
 	public DataPointsMonitor(@Named("HOSTNAME") String hostName)
@@ -85,7 +90,7 @@ public class DataPointsMonitor implements DataPointListener, KairosMetricReporte
 			DataPointSet dps = new DataPointSet(METRIC_NAME);
 			dps.addTag("host", m_hostName);
 			dps.addTag("metric_name", name);
-			dps.addDataPoint(new DataPoint(now, counters.get(name).longValue()));
+			dps.addDataPoint(m_dataPointFactory.createDataPoint(now, counters.get(name).longValue()));
 
 			ret.add(dps);
 		}

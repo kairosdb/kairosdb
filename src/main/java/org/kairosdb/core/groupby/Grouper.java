@@ -16,6 +16,7 @@
 package org.kairosdb.core.groupby;
 
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 
 import java.io.IOException;
@@ -29,6 +30,12 @@ import java.util.Map;
  */
 public class Grouper
 {
+	private final KairosDataPointFactory m_dataPointFactory;
+
+	public Grouper(KairosDataPointFactory dataPointFactory)
+	{
+		m_dataPointFactory = dataPointFactory;
+	}
 
 	/**
 	 * Groups data points by group bys.
@@ -85,7 +92,7 @@ public class Grouper
 		Group group = groupIdsToGroup.get(groupIds);
 		if (group == null)
 		{
-			group = Group.createGroup(dataPointGroup, groupIds, results);
+			group = Group.createGroup(dataPointGroup, groupIds, results, m_dataPointFactory);
 			groupIdsToGroup.put(groupIds, group);
 		}
 		return group;

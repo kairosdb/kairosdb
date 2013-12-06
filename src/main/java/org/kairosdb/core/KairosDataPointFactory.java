@@ -33,9 +33,9 @@ public interface KairosDataPointFactory
 
 	public DataPoint createDataPoint(String type, long timestamp, ByteBuffer buffer);
 
-	public DataPoint createDataPoint(byte type, long timestamp, ByteBuffer buffer);
+	//public DataPoint createDataPoint(byte type, long timestamp, ByteBuffer buffer);
 
-	public byte getTypeByte(String type);
+	//public byte getTypeByte(String type);
 
 	public DataPointFactory getFactoryForType(String type);
 

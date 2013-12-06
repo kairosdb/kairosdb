@@ -30,6 +30,8 @@ import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.kairosdb.util.Util.packLong;
+
 public class CachedSearchResult implements QueryCallback
 {
 	public static final Logger logger = LoggerFactory.getLogger(CachedSearchResult.class);
@@ -54,7 +56,6 @@ public class CachedSearchResult implements QueryCallback
 	private StringPool m_stringPool;
 	private int m_readBufferSize = MAX_READ_BUFFER_SIZE;
 
-	private MemoryMonitor m_memMonitor = new MemoryMonitor();
 
 	private static File getIndexFile(String baseFileName)
 	{
@@ -264,7 +265,7 @@ public class CachedSearchResult implements QueryCallback
 		}
 	}
 
-	public void addDataPoint(long timestamp, long value) throws IOException
+	/*public void addDataPoint(long timestamp, long value) throws IOException
 	{
 		if (!m_writeBuffer.hasRemaining())
 		{
@@ -288,7 +289,7 @@ public class CachedSearchResult implements QueryCallback
 		m_writeBuffer.putDouble(value);
 
 		m_currentFilePositionMarker.incrementDataPointCount();
-	}
+	}*/
 
 	@Override
 	public void addDataPoint(DataPoint datapoint) throws IOException
@@ -298,8 +299,7 @@ public class CachedSearchResult implements QueryCallback
 			flushWriteBuffer();
 		}
 		m_writeBuffer.putLong(datapoint.getTimestamp());
-		m_writeBuffer.put(DOUBLE_FLAG);
-		m_writeBuffer.putDouble(value);
+		datapoint.writeValueToBuffer(m_writeBuffer);
 
 		m_currentFilePositionMarker.incrementDataPointCount();
 	}

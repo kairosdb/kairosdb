@@ -125,17 +125,15 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 		return (dp);
 	}
 
-	@Override
-	public DataPoint createDataPoint(byte type, long timestamp, ByteBuffer buffer)
+	/*public DataPoint createDataPoint(byte type, long timestamp, ByteBuffer buffer)
 	{
 		return null;  //To change body of implemented methods use File | Settings | File Templates.
 	}
 
-	@Override
 	public byte getTypeByte(String type)
 	{
 		return 0;  //To change body of implemented methods use File | Settings | File Templates.
-	}
+	}*/
 
 	/**
 	 Locate a DataPointFactory for the specified data point type.
@@ -145,8 +143,7 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 	@Override
 	public DataPointFactory getFactoryForType(String type)
 	{
-
-		return (null);
+		return m_factoryMapRegistered.get(type);
 	}
 
 	/**
@@ -157,7 +154,12 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 	@Override
 	public DataPointFactory getFactoryForDataStoreType(String dataStoreType)
 	{
+		return m_factoryMapDataStore.get(dataStoreType);
+	}
 
-		return (null);
+	@Override
+	public String getGroupType(String datastoreType)
+	{
+		return getFactoryForDataStoreType(datastoreType).getGroupType();  //To change body of implemented methods use File | Settings | File Templates.
 	}
 }

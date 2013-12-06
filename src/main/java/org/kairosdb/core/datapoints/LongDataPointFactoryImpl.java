@@ -6,38 +6,30 @@ import java.nio.ByteBuffer;
 
 import static org.kairosdb.core.DataPoint.API_LONG;
 import static org.kairosdb.core.DataPoint.GROUP_NUMBER;
+import static org.kairosdb.util.Util.packLong;
+import static org.kairosdb.util.Util.unpackLong;
 
 public class LongDataPointFactoryImpl implements LongDataPointFactory
 {
 	public static final String DST_LONG = "kairos_long";
 
-	public static LongDataPoint getFromByteBuffer(ByteBuffer buffer)
+
+	public static LongDataPoint getFromByteBuffer(long timestamp, ByteBuffer buffer)
 	{
-		return null;
+		long value = unpackLong(buffer);
+
+		return new LongDataPoint(timestamp, value);
 	}
 
 	public static void writeToByteBuffer(ByteBuffer buffer, LongDataPoint dataPoint)
 	{
-		boolean writeRest = false;
-
 		long value = dataPoint.getValue();
-		if (value != 0L)  //Short circuit for zero values
-		{
-			for (int I = 1; I <= 8; I++)
-			{
-				byte b = (byte)((value >>> (64 - (8 * I))) & 0xFF);
-				if (writeRest || b != 0)
-				{
-					buffer.put(b);
-					writeRest = true;
-				}
-			}
-		}
+		packLong(value, buffer);
 	}
 
 	public static ByteBuffer writeToByteBuffer(LongDataPoint dataPoint)
 	{
-		ByteBuffer buffer = ByteBuffer.allocate(8);
+		ByteBuffer buffer = ByteBuffer.allocate(9);
 
 		writeToByteBuffer(buffer, dataPoint);
 
@@ -72,6 +64,6 @@ public class LongDataPointFactoryImpl implements LongDataPointFactory
 	@Override
 	public DataPoint getDataPoint(long timestamp, ByteBuffer buffer)
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		return getFromByteBuffer(timestamp, buffer);
 	}
 }

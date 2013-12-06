@@ -18,6 +18,7 @@ package org.kairosdb.core.reporting;
 
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 
@@ -132,7 +133,7 @@ public class ThreadReporter
 		s_reporterData.addDataPoint(new ReporterDataPoint(metric, s_currentTags.get(), value));
 	}
 
-	public static void submitData(KairosDatastore datastore) throws DatastoreException
+	public static void submitData(LongDataPointFactory dataPointFactory, KairosDatastore datastore) throws DatastoreException
 	{
 		while (s_reporterData.getListSize() != 0)
 		{
@@ -140,7 +141,7 @@ public class ThreadReporter
 
 			DataPointSet dps = new DataPointSet(dp.getMetricName());
 			dps.setTags(dp.getTags());
-			dps.addDataPoint(new DataPoint(s_reportTime.get(), dp.getValue()));
+			dps.addDataPoint(dataPointFactory.createDataPoint(s_reportTime.get(), dp.getValue()));
 			datastore.putDataPoints(dps);
 		}
 	}

@@ -502,7 +502,7 @@ public class KairosDatastore
 			}*/
 
 			// Now group for all other types of group bys.
-			Grouper grouper = new Grouper();
+			Grouper grouper = new Grouper(m_dataPointFactory);
 			try
 			{
 				queryResults = grouper.group(removeTagGroupBy(m_metric.getGroupBys()), queryResults);

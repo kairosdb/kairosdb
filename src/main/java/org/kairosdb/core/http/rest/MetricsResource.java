@@ -24,6 +24,9 @@ import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -80,6 +83,9 @@ public class MetricsResource implements KairosMetricReporter
 	//These two are used to track rate of ingestion
 	private AtomicInteger m_ingestedDataPoints = new AtomicInteger();
 	private AtomicInteger m_ingestTime = new AtomicInteger();
+
+	@Inject
+	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
 	@Named("HOSTNAME")
@@ -345,7 +351,7 @@ public class MetricsResource implements KairosMetricReporter
 			ThreadReporter.addTag("request", QUERY_URL);
 			ThreadReporter.addDataPoint(REQUEST_TIME, System.currentTimeMillis() - ThreadReporter.getReportTime());
 
-			ThreadReporter.submitData(datastore);
+			ThreadReporter.submitData(m_longDataPointFactory, datastore);
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new FileStreamingOutput(respFile));
@@ -544,8 +550,8 @@ public class MetricsResource implements KairosMetricReporter
 		dpsCount.addTag("host", hostName);
 		dpsTime.addTag("host", hostName);
 
-		dpsCount.addDataPoint(new DataPoint(now, count));
-		dpsTime.addDataPoint(new DataPoint(now, time));
+		dpsCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, count));
+		dpsTime.addDataPoint(m_longDataPointFactory.createDataPoint(now, time));
 		List<DataPointSet> ret = new ArrayList<DataPointSet>();
 		ret.add(dpsCount);
 		ret.add(dpsTime);

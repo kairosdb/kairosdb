@@ -72,7 +72,6 @@ public class JsonMetricParser
 		ValidationErrors validationErrors = new ValidationErrors();
 
 		JsonReader reader = new JsonReader(inputStream);
-		JsonParser parser = new JsonParser();
 
 		try
 		{
@@ -298,7 +297,7 @@ public class JsonMetricParser
 			{
 				int dataPointCount = 0;
 				SubContext dataPointContext = new SubContext(context, "datapoints");
-				for (double[] dataPoint : metric.getDatapoints())
+				for (Object[] dataPoint : metric.getDatapoints())
 				{
 					dataPointContext.setCount(dataPointCount);
 					if (dataPoint.length < 1)
@@ -313,7 +312,7 @@ public class JsonMetricParser
 					}
 					else
 					{
-						long timestamp = (long) dataPoint[0];
+						long timestamp = (Long)dataPoint[0];
 						if (metric.validate())
 							Validator.isGreaterThanOrEqualTo(validationErrors, dataPointContext.setAttribute("value") + " cannot be null or empty.", timestamp, 1);
 
@@ -345,7 +344,7 @@ public class JsonMetricParser
 		private long time = 0;
 		private String value;
 		private Map<String, String> tags;
-		private double[][] datapoints;
+		private Object[][] datapoints;
 		private boolean skip_validate = false;
 
 		private String getName()
@@ -371,7 +370,7 @@ public class JsonMetricParser
 			return tags != null ? tags : Collections.<String, String>emptyMap();
 		}
 
-		private double[][] getDatapoints()
+		private Object[][] getDatapoints()
 		{
 			return datapoints;
 		}

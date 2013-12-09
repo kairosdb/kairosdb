@@ -25,7 +25,7 @@ public interface DataPoint
 
 	public void writeValueToBuffer(ByteBuffer buffer);
 
-	public void writeJson(JSONWriter writer) throws JSONException;
+	public void writeValueToJson(JSONWriter writer) throws JSONException;
 
 	/**
 		This is used to identify the data type on the wire in json format

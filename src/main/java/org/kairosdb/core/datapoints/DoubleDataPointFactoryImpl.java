@@ -1,10 +1,10 @@
 package org.kairosdb.core.datapoints;
 
+import com.google.gson.JsonElement;
 import org.kairosdb.core.DataPoint;
 
 import java.nio.ByteBuffer;
 
-import static org.kairosdb.core.DataPoint.API_DOUBLE;
 import static org.kairosdb.core.DataPoint.GROUP_NUMBER;
 
 public class DoubleDataPointFactoryImpl implements DoubleDataPointFactory
@@ -30,7 +30,7 @@ public class DoubleDataPointFactoryImpl implements DoubleDataPointFactory
 	}
 
 	@Override
-	public DataPoint getDataPoint(long timestamp, String json)
+	public DataPoint getDataPoint(long timestamp, JsonElement json)
 	{
 		return null;  //To change body of implemented methods use File | Settings | File Templates.
 	}

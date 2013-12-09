@@ -1,10 +1,10 @@
 package org.kairosdb.core.datapoints;
 
+import com.google.gson.JsonElement;
 import org.kairosdb.core.DataPoint;
 
 import java.nio.ByteBuffer;
 
-import static org.kairosdb.core.DataPoint.API_LONG;
 import static org.kairosdb.core.DataPoint.GROUP_NUMBER;
 import static org.kairosdb.util.Util.packLong;
 import static org.kairosdb.util.Util.unpackLong;
@@ -56,7 +56,7 @@ public class LongDataPointFactoryImpl implements LongDataPointFactory
 	}
 
 	@Override
-	public DataPoint getDataPoint(long timestamp, String json)
+	public DataPoint getDataPoint(long timestamp, JsonElement json)
 	{
 		return null;  //To change body of implemented methods use File | Settings | File Templates.
 	}

@@ -24,6 +24,8 @@ import me.prettyprint.hector.api.beans.Rows;
 import me.prettyprint.hector.api.factory.HFactory;
 import me.prettyprint.hector.api.query.MultigetSliceQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
+import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.Order;
 import org.kairosdb.core.datastore.QueryCallback;
@@ -50,8 +52,13 @@ public class QueryRunner
 	private int m_multiRowReadSize;
 	private boolean m_limit = false;
 	private boolean m_descending = false;
+	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
+	private DoubleDataPointFactory m_doubleDataPointFactory = new DoubleDataPointFactoryImpl();
+
+	private final KairosDataPointFactory m_kairosDataPointFactory;
 
 	public QueryRunner(Keyspace keyspace, String columnFamily,
+			KairosDataPointFactory kairosDataPointFactory,
 			List<DataPointsRowKey> rowKeys, long startTime, long endTime,
 			QueryCallback csResult,
 			int singleRowReadSize, int multiRowReadSize, int limit, Order order)
@@ -59,6 +66,7 @@ public class QueryRunner
 		m_keyspace = keyspace;
 		m_columnFamily = columnFamily;
 		m_rowKeys = rowKeys;
+		m_kairosDataPointFactory = kairosDataPointFactory;
 		long m_tierRowTime = rowKeys.get(0).getTimestamp();
 		if (startTime < m_tierRowTime)
 			m_startTime = 0;
@@ -153,21 +161,38 @@ public class QueryRunner
 		{
 			Map<String, String> tags = rowKey.getTags();
 			m_queryCallback.startDataPointSet(rowKey.getDataType(), tags);
+			String type = rowKey.getDataType();
+
+			DataPointFactory dataPointFactory = null;
+			if (type != null)
+				dataPointFactory = m_kairosDataPointFactory.getFactoryForDataStoreType(type);
 
 			for (HColumn<Integer, ByteBuffer> column : columns)
 			{
 				int columnTime = column.getName();
 
 				ByteBuffer value = column.getValue();
-				if (isLongValue(columnTime))
+				long timestamp = getColumnTimestamp(rowKey.getTimestamp(), columnTime);
+
+				if (type == null)
 				{
-					m_queryCallback.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
-							columnTime), ValueSerializer.getLongFromByteBuffer(value));
+					if (isLongValue(columnTime))
+					{
+						m_queryCallback.addDataPoint(
+								m_longDataPointFactory.createDataPoint(timestamp,
+										ValueSerializer.getLongFromByteBuffer(value)));
+					}
+					else
+					{
+						m_queryCallback.addDataPoint(
+								m_doubleDataPointFactory.createDataPoint(timestamp,
+										ValueSerializer.getDoubleFromByteBuffer(value)));
+					}
 				}
 				else
 				{
-					m_queryCallback.addDataPoint(getColumnTimestamp(rowKey.getTimestamp(),
-							columnTime), ValueSerializer.getDoubleFromByteBuffer(value));
+					m_queryCallback.addDataPoint(
+							dataPointFactory.getDataPoint(timestamp, value));
 				}
 			}
 		}

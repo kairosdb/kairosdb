@@ -81,8 +81,10 @@ public class MetricsResource implements KairosMetricReporter
 	private final Gson gson;
 
 	//These two are used to track rate of ingestion
-	private AtomicInteger m_ingestedDataPoints = new AtomicInteger();
-	private AtomicInteger m_ingestTime = new AtomicInteger();
+	private final AtomicInteger m_ingestedDataPoints = new AtomicInteger();
+	private final AtomicInteger m_ingestTime = new AtomicInteger();
+
+	private final KairosDataPointFactory m_kairosDataPointFactory;
 
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
@@ -92,10 +94,12 @@ public class MetricsResource implements KairosMetricReporter
 	private String hostName = "localhost";
 
 	@Inject
-	public MetricsResource(KairosDatastore datastore, GsonParser gsonParser)
+	public MetricsResource(KairosDatastore datastore, GsonParser gsonParser,
+			KairosDataPointFactory dataPointFactory)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.gsonParser = checkNotNull(gsonParser);
+		m_kairosDataPointFactory = dataPointFactory;
 		formatters.put("json", new JsonFormatter());
 
 		GsonBuilder builder = new GsonBuilder();
@@ -172,7 +176,8 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		try
 		{
-			JsonMetricParser parser = new JsonMetricParser(datastore, new InputStreamReader(json, "UTF-8"), gson);
+			JsonMetricParser parser = new JsonMetricParser(datastore, new InputStreamReader(json, "UTF-8"),
+					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 
 			m_ingestedDataPoints.addAndGet(parser.getDataPointCount());

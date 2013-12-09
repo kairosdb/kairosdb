@@ -22,6 +22,7 @@ import com.google.gson.stream.JsonToken;
 import org.json.JSONTokener;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.util.Validator;
@@ -42,9 +43,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class JsonMetricParser
 {
-	private KairosDatastore datastore;
-	private Reader inputStream;
-	private Gson gson;
+	private final KairosDatastore datastore;
+	private final Reader inputStream;
+	private final Gson gson;
+	private final KairosDataPointFactory dataPointFactory;
 
 	public int getDataPointCount()
 	{
@@ -59,11 +61,13 @@ public class JsonMetricParser
 	private int dataPointCount;
 	private int ingestTime;
 
-	public JsonMetricParser(KairosDatastore datastore, Reader stream, Gson gson)
+	public JsonMetricParser(KairosDatastore datastore, Reader stream, Gson gson,
+			KairosDataPointFactory dataPointFactory)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.inputStream = checkNotNull(stream);
 		this.gson = gson;
+		this.dataPointFactory = dataPointFactory;
 	}
 
 	public ValidationErrors parse() throws IOException, DatastoreException
@@ -243,6 +247,16 @@ public class JsonMetricParser
 		}
 	}
 
+	private String findType(JsonElement value)
+	{
+		double v = value.getAsDouble();
+
+		if (v % 1 == 0)
+			return ("long");
+		else
+			return ("double");
+	}
+
 
 	private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) throws DatastoreException
 	{
@@ -258,8 +272,8 @@ public class JsonMetricParser
 			}
 
 			if (metric.getTimestamp() > 0)
-				Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("value"), metric.getValue());
-			if (metric.getValue() != null && !metric.getValue().isEmpty())
+				Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("value"), metric.getValue().getAsString());
+			if (metric.getValue() != null && !metric.getValue().getAsString().isEmpty())
 				Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp(), 1);
 
 			if (Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("tags count"), metric.getTags().size(), 1))
@@ -288,16 +302,21 @@ public class JsonMetricParser
 		{
 			DataPointSet dataPointSet = new DataPointSet(metric.getName(), metric.getTags(), Collections.<DataPoint>emptyList());
 
-			if (metric.getTimestamp() > 0 && metric.getValue() != null && !metric.getValue().isEmpty())
+			if (metric.getTimestamp() > 0 && metric.getValue() != null)
 			{
-				dataPointSet.addDataPoint(new DataPoint(metric.getTimestamp(), metric.getValue()));
+				String type = metric.getType();
+				if (type == null)
+					type = findType(metric.getValue());
+
+				dataPointSet.addDataPoint(dataPointFactory.createDataPoint(
+						type, metric.getTimestamp(), metric.getValue()));
 			}
 
 			if (metric.getDatapoints() != null && metric.getDatapoints().length > 0)
 			{
 				int dataPointCount = 0;
 				SubContext dataPointContext = new SubContext(context, "datapoints");
-				for (Object[] dataPoint : metric.getDatapoints())
+				for (JsonElement[] dataPoint : metric.getDatapoints())
 				{
 					dataPointContext.setCount(dataPointCount);
 					if (dataPoint.length < 1)
@@ -312,14 +331,23 @@ public class JsonMetricParser
 					}
 					else
 					{
-						long timestamp = (Long)dataPoint[0];
+						long timestamp = dataPoint[0].getAsLong();
 						if (metric.validate())
 							Validator.isGreaterThanOrEqualTo(validationErrors, dataPointContext.setAttribute("value") + " cannot be null or empty.", timestamp, 1);
 
-						if (dataPoint[1] % 1 == 0)
+						String type = metric.getType();
+						if (dataPoint.length > 2)
+							type = dataPoint[2].getAsString();
+
+						if (type == null)
+							type = findType(dataPoint[1]);
+
+						dataPointSet.addDataPoint(dataPointFactory.createDataPoint(type, timestamp, dataPoint[1]));
+
+						/*if (dataPoint[1] % 1 == 0)
 							dataPointSet.addDataPoint(new DataPoint(timestamp, (long) dataPoint[1]));
 						else
-							dataPointSet.addDataPoint(new DataPoint(timestamp, dataPoint[1]));
+							dataPointSet.addDataPoint(new DataPoint(timestamp, dataPoint[1]));*/
 					}
 					dataPointCount++;
 				}
@@ -342,10 +370,11 @@ public class JsonMetricParser
 		private String name;
 		private long timestamp = 0;
 		private long time = 0;
-		private String value;
+		private JsonElement value;
 		private Map<String, String> tags;
-		private Object[][] datapoints;
+		private JsonElement[][] datapoints;
 		private boolean skip_validate = false;
+		private String type;
 
 		private String getName()
 		{
@@ -360,7 +389,7 @@ public class JsonMetricParser
 				return timestamp;
 		}
 
-		public String getValue()
+		public JsonElement getValue()
 		{
 			return value;
 		}
@@ -370,7 +399,7 @@ public class JsonMetricParser
 			return tags != null ? tags : Collections.<String, String>emptyMap();
 		}
 
-		private Object[][] getDatapoints()
+		private JsonElement[][] getDatapoints()
 		{
 			return datapoints;
 		}
@@ -379,5 +408,7 @@ public class JsonMetricParser
 		{
 			return !skip_validate;
 		}
+
+		public String getType() { return type; }
 	}
 }

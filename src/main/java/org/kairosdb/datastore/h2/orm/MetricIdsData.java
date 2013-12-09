@@ -30,4 +30,10 @@ public class MetricIdsData extends MetricIdsQuery.Record
 		{
 		query.super(resultSet);
 		}
+
+		@Override
+		public String getType()
+		{
+			return (this.getMetricType());
+		}
 	}

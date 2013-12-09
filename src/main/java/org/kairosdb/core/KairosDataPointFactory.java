@@ -16,6 +16,7 @@
 
 package org.kairosdb.core;
 
+import com.google.gson.JsonElement;
 import org.kairosdb.core.datapoints.DataPointFactory;
 
 import java.nio.ByteBuffer;
@@ -29,7 +30,7 @@ import java.nio.ByteBuffer;
  */
 public interface KairosDataPointFactory
 {
-	public DataPoint createDataPoint(String type, long timestamp, String json);
+	public DataPoint createDataPoint(String type, long timestamp, JsonElement json);
 
 	public DataPoint createDataPoint(String type, long timestamp, ByteBuffer buffer);
 

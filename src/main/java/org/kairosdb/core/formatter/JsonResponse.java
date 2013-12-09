@@ -109,7 +109,7 @@ public class JsonResponse
 					DataPoint dataPoint = group.next();
 
 					m_jsonWriter.array().value(dataPoint.getTimestamp());
-					dataPoint.writeJson(m_jsonWriter);
+					dataPoint.writeValueToJson(m_jsonWriter);
 
 					/*if (dataPoint.isInteger())
 					{

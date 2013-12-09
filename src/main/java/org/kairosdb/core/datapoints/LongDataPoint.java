@@ -47,7 +47,7 @@ public class LongDataPoint extends DataPointHelper
 	}
 
 	@Override
-	public void writeJson(JSONWriter writer) throws JSONException
+	public void writeValueToJson(JSONWriter writer) throws JSONException
 	{
 		writer.value(m_value);
 	}

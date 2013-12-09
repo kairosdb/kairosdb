@@ -340,6 +340,7 @@ public class Main
 	public void runImport(InputStream in) throws IOException, DatastoreException
 	{
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
+		KairosDataPointFactory dpFactory = m_injector.getInstance(KairosDataPointFactory.class);
 
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8));
 
@@ -347,7 +348,8 @@ public class Main
 		String line;
 		while ((line = reader.readLine()) != null)
 		{
-			JsonMetricParser jsonMetricParser = new JsonMetricParser(ds, new StringReader(line), gson);
+			JsonMetricParser jsonMetricParser = new JsonMetricParser(ds, new StringReader(line),
+					gson, dpFactory);
 
 			ValidationErrors validationErrors = jsonMetricParser.parse();
 
@@ -476,7 +478,7 @@ public class Main
 			try
 			{
 				m_jsonWriter.array().value(datapoint.getTimestamp());
-				datapoint.writeJson(m_jsonWriter);
+				datapoint.writeValueToJson(m_jsonWriter);
 				m_jsonWriter.value(datapoint.getApiDataType()).endArray();
 			}
 			catch (JSONException e)

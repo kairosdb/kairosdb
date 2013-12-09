@@ -24,11 +24,12 @@ public class MetricIdsQuery extends genorm.runtime.SQLQuery
 	private static final Logger s_logger = LoggerFactory.getLogger(MetricIdsQuery.class.getName());
 	
 	public static final String QUERY_NAME = "metric_ids";
-	public static final String QUERY = "select m.\"id\" as metric_id from metric m, metric_tag mt\n				where\n				mt.\"metric_id\" = m.\"id\"\n				and m.\"name\" = ?\n				group by m.\"id\"";
-	private static final int ATTRIBUTE_COUNT = 1;
+	public static final String QUERY = "select m.\"id\" as metric_id, m.\"type\" as metric_type\n				from metric m, metric_tag mt\n				where\n				mt.\"metric_id\" = m.\"id\"\n				and m.\"name\" = ?\n				group by m.\"id\"";
+	private static final int ATTRIBUTE_COUNT = 2;
 	private static Map<String, Integer> s_attributeIndex;
 	private static String[] s_attributeNames = {
-			"metricId" };
+			"metricId",
+			"metricType" };
 			
 	static
 		{
@@ -372,6 +373,7 @@ public class MetricIdsQuery extends genorm.runtime.SQLQuery
 	public class Record implements GenOrmQueryRecord, Attributes
 		{
 		protected String m_metricId;
+		protected String m_metricType;
 
 		protected String[] m_attrValues;
 		
@@ -379,17 +381,20 @@ public class MetricIdsQuery extends genorm.runtime.SQLQuery
 				throws java.sql.SQLException
 			{
 			m_metricId = (String)rs.getString(1);
+			m_metricType = (String)rs.getString(2);
 
 			if (m_serializable)
 				{
 				m_attrValues = new String[ATTRIBUTE_COUNT];
 				
 				m_attrValues[0] = MetricIdsQuery.this.m_formatter.toString(s_attributeNames[0], m_metricId);
+				m_attrValues[1] = MetricIdsQuery.this.m_formatter.toString(s_attributeNames[1], m_metricType);
 
 				}
 			}
 			
 		public String getMetricId() { return (m_metricId); }
+		public String getMetricType() { return (m_metricType); }
  
 		
 		//------------------------------------------------------------------------
@@ -398,6 +403,9 @@ public class MetricIdsQuery extends genorm.runtime.SQLQuery
 			StringBuilder sb = new StringBuilder();
 			sb.append(" metric_id=\"");
 			sb.append(m_metricId);
+			sb.append("\"");
+			sb.append(" metric_type=\"");
+			sb.append(m_metricType);
 			sb.append("\"");
 
 			return (sb.toString().trim());

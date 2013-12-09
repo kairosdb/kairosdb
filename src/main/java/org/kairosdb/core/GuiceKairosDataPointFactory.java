@@ -16,11 +16,10 @@
 
 package org.kairosdb.core;
 
+import com.google.gson.JsonElement;
 import com.google.inject.Binding;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import org.kairosdb.core.aggregator.Aggregator;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datapoints.DataPointFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,13 +92,13 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 
 	/**
 	 Creates DataPoint using the registered type
-	 @param type registered type in the configuration file
+	 @return
+	  @param type registered type in the configuration file
 	 @param timestamp
 	 @param json
-	 @return
 	 */
 	@Override
-	public DataPoint createDataPoint(String type, long timestamp, String json)
+	public DataPoint createDataPoint(String type, long timestamp, JsonElement json)
 	{
 		DataPointFactory factory = m_factoryMapRegistered.get(type);
 

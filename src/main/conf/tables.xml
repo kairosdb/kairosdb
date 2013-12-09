@@ -144,9 +144,11 @@
 			</input>
 			<return>
 				<param name="metric_id" type="string"/>
+				<param name="metric_type" type="string"/>
 			</return>
 			<sql>
-				select m."id" as metric_id from metric m, metric_tag mt
+				select m."id" as metric_id, m."type" as metric_type
+				from metric m, metric_tag mt
 				where
 				mt."metric_id" = m."id"
 				and m."name" = ?

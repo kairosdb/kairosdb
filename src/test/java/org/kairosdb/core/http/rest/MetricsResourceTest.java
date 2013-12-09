@@ -28,6 +28,8 @@ import org.kairosdb.core.DataPointListenerProvider;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
+import org.kairosdb.core.datapoints.DoubleDataPoint;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupByFactory;
@@ -327,22 +329,22 @@ public class MetricsResourceTest
 				Map<String, String> tags = new TreeMap<String, String>();
 				tags.put("server", "server1");
 
-				queryCallback.startDataPointSet(tags);
-				queryCallback.addDataPoint(1, 10);
-				queryCallback.addDataPoint(1, 20);
-				queryCallback.addDataPoint(2, 10);
-				queryCallback.addDataPoint(2, 5);
-				queryCallback.addDataPoint(3, 10);
+				queryCallback.startDataPointSet("long", tags);
+				queryCallback.addDataPoint(new LongDataPoint(1, 10));
+				queryCallback.addDataPoint(new LongDataPoint(1, 20));
+				queryCallback.addDataPoint(new LongDataPoint(2, 10));
+				queryCallback.addDataPoint(new LongDataPoint(2, 5));
+				queryCallback.addDataPoint(new LongDataPoint(3, 10));
 
 				tags = new TreeMap<String, String>();
 				tags.put("server", "server2");
 
-				queryCallback.startDataPointSet(tags);
-				queryCallback.addDataPoint(1, 10.1);
-				queryCallback.addDataPoint(1, 20.1);
-				queryCallback.addDataPoint(2, 10.1);
-				queryCallback.addDataPoint(2, 5.1);
-				queryCallback.addDataPoint(3, 10.1);
+				queryCallback.startDataPointSet("double", tags);
+				queryCallback.addDataPoint(new DoubleDataPoint(1, 10.1));
+				queryCallback.addDataPoint(new DoubleDataPoint(1, 20.1));
+				queryCallback.addDataPoint(new DoubleDataPoint(2, 10.1));
+				queryCallback.addDataPoint(new DoubleDataPoint(2, 5.1));
+				queryCallback.addDataPoint(new DoubleDataPoint(3, 10.1));
 
 				queryCallback.endDataPoints();
 			}

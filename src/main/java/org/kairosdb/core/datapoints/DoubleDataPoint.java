@@ -80,4 +80,23 @@ public class DoubleDataPoint extends DataPointHelper
 		return true;
 	}
 
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		DoubleDataPoint that = (DoubleDataPoint) o;
+
+		if (Double.compare(that.m_value, m_value) != 0) return false;
+
+		return true;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		long temp = Double.doubleToLongBits(m_value);
+		return (int) (temp ^ (temp >>> 32));
+	}
 }

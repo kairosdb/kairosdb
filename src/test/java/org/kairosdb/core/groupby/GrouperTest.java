@@ -7,6 +7,8 @@ package org.kairosdb.core.groupby;
 
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.TestDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.testing.ListDataPointGroup;
@@ -25,7 +27,7 @@ public class GrouperTest
 	@Test
 	public void test() throws IOException, FormatterException
 	{
-		Grouper grouper = new Grouper();
+		Grouper grouper = new Grouper(new TestDataPointFactory());
 
 		List<GroupBy> groupBys = new ArrayList<GroupBy>();
 		groupBys.add(new ValueGroupBy(3));
@@ -34,19 +36,19 @@ public class GrouperTest
 		ListDataPointGroup dataPointGroup1 = new ListDataPointGroup("dataPointGroup1");
 		dataPointGroup1.addTag("host", "server1");
 		dataPointGroup1.addTag("customer", "acme");
-		dataPointGroup1.addDataPoint(new DataPoint(1, 0));
-		dataPointGroup1.addDataPoint(new DataPoint(1, 1));
-		dataPointGroup1.addDataPoint(new DataPoint(2, 2));
-		dataPointGroup1.addDataPoint(new DataPoint(2, 3));
-		dataPointGroup1.addDataPoint(new DataPoint(2, 4));
+		dataPointGroup1.addDataPoint(new LongDataPoint(1, 0));
+		dataPointGroup1.addDataPoint(new LongDataPoint(1, 1));
+		dataPointGroup1.addDataPoint(new LongDataPoint(2, 2));
+		dataPointGroup1.addDataPoint(new LongDataPoint(2, 3));
+		dataPointGroup1.addDataPoint(new LongDataPoint(2, 4));
 
 		ListDataPointGroup dataPointGroup2 = new ListDataPointGroup("dataPointGroup2");
 		dataPointGroup2.addTag("host", "server2");
 		dataPointGroup2.addTag("customer", "foobar");
-		dataPointGroup2.addDataPoint(new DataPoint(2, 5));
-		dataPointGroup2.addDataPoint(new DataPoint(2, 6));
-		dataPointGroup2.addDataPoint(new DataPoint(2, 7));
-		dataPointGroup2.addDataPoint(new DataPoint(2, 8));
+		dataPointGroup2.addDataPoint(new LongDataPoint(2, 5));
+		dataPointGroup2.addDataPoint(new LongDataPoint(2, 6));
+		dataPointGroup2.addDataPoint(new LongDataPoint(2, 7));
+		dataPointGroup2.addDataPoint(new LongDataPoint(2, 8));
 
 
 		List<DataPointGroup> dataPointGroups = new ArrayList<DataPointGroup>();

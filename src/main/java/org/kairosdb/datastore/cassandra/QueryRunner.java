@@ -160,12 +160,15 @@ public class QueryRunner
 		if (columns.size() != 0)
 		{
 			Map<String, String> tags = rowKey.getTags();
-			m_queryCallback.startDataPointSet(rowKey.getDataType(), tags);
 			String type = rowKey.getDataType();
 
+			if (type == null)
+				type = LegacyDataPointFactory.DATASTORE_TYPE;
+
+			m_queryCallback.startDataPointSet(type, tags);
+
 			DataPointFactory dataPointFactory = null;
-			if (type != null)
-				dataPointFactory = m_kairosDataPointFactory.getFactoryForDataStoreType(type);
+			dataPointFactory = m_kairosDataPointFactory.getFactoryForDataStoreType(type);
 
 			for (HColumn<Integer, ByteBuffer> column : columns)
 			{
@@ -174,18 +177,18 @@ public class QueryRunner
 				ByteBuffer value = column.getValue();
 				long timestamp = getColumnTimestamp(rowKey.getTimestamp(), columnTime);
 
-				if (type == null)
+				if (type == LegacyDataPointFactory.DATASTORE_TYPE)
 				{
 					if (isLongValue(columnTime))
 					{
 						m_queryCallback.addDataPoint(
-								m_longDataPointFactory.createDataPoint(timestamp,
+								new LegacyLongDataPoint(timestamp,
 										ValueSerializer.getLongFromByteBuffer(value)));
 					}
 					else
 					{
 						m_queryCallback.addDataPoint(
-								m_doubleDataPointFactory.createDataPoint(timestamp,
+								new LegacyDoubleDataPoint(timestamp,
 										ValueSerializer.getDoubleFromByteBuffer(value)));
 					}
 				}

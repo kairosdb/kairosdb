@@ -104,9 +104,11 @@ public class JsonFormatter implements DataFormatter
 					{
 						DataPoint dataPoint = group.next();
 
+						jsonWriter.array().value(dataPoint.getTimestamp());
+
 						dataPoint.writeValueToJson(jsonWriter);
 
-						/*jsonWriter.array().value(dataPoint.getTimestamp());
+						/*
 						if (dataPoint.isInteger())
 						{
 							jsonWriter.value(dataPoint.getLongValue());
@@ -121,7 +123,7 @@ public class JsonFormatter implements DataFormatter
 							jsonWriter.value(value);
 						}*/
 
-						jsonWriter.value(dataPoint.getApiDataType());
+						//jsonWriter.value(dataPoint.getApiDataType());
 						jsonWriter.endArray();
 					}
 					jsonWriter.endArray();

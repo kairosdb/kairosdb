@@ -24,6 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.kairosdb.core.DataPointListener;
+import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreTestHelper;
@@ -48,7 +49,7 @@ public class HBaseDatastoreTest extends DatastoreTestHelper
 	{
 		s_datastore = new KairosDatastore(new HBaseDatastore("tsdb", "tsdb-uid", "localhost", "", true),
 				new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
+				Collections.<DataPointListener>emptyList(), "hostname", new TestDataPointFactory());
 
 		loadData();
 

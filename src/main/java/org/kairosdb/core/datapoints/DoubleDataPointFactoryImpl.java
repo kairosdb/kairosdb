@@ -38,7 +38,9 @@ public class DoubleDataPointFactoryImpl implements DoubleDataPointFactory
 	@Override
 	public DataPoint getDataPoint(long timestamp, ByteBuffer buffer)
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		double value = buffer.getDouble();
+
+		return new DoubleDataPoint(timestamp, value);
 	}
 
 	public static ByteBuffer writeToByteBuffer(DoubleDataPoint dataPoint)

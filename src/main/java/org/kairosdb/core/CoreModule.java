@@ -22,10 +22,7 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import org.kairosdb.core.aggregator.*;
-import org.kairosdb.core.datapoints.DoubleDataPointFactory;
-import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
-import org.kairosdb.core.datapoints.LongDataPointFactory;
-import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryQueuingManager;
 import org.kairosdb.core.groupby.*;
@@ -110,6 +107,8 @@ public class CoreModule extends AbstractModule
 
 		bind(LongDataPointFactory.class)
 				.to(getClassForProperty(DATAPOINTS_FACTORY_LONG)).in(Singleton.class);
+
+		bind(LegacyDataPointFactory.class).in(Singleton.class);
 
 		bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class).in(Singleton.class);
 

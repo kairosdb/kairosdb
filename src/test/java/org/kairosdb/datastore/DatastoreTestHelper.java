@@ -22,6 +22,7 @@ import com.google.common.collect.TreeMultimap;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -82,10 +83,10 @@ public abstract class DatastoreTestHelper
 		dpSet.addTag("month", "April");
 
 		s_startTime = System.currentTimeMillis();
-		dpSet.addDataPoint(new DataPoint(s_startTime, 1));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 1000, 2));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 2000, 3));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 3000, 4));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime, 1));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime + 1000, 2));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime + 2000, 3));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime + 3000, 4));
 
 		s_datastore.putDataPoints(dpSet);
 
@@ -94,10 +95,10 @@ public abstract class DatastoreTestHelper
 		dpSet.addTag("client", "foo");
 		dpSet.addTag("month", "April");
 
-		dpSet.addDataPoint(new DataPoint(s_startTime, 5));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 1000, 6));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 2000, 7));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 3000, 8));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime, 5));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime + 1000, 6));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime + 2000, 7));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime + 3000, 8));
 
 		s_datastore.putDataPoints(dpSet);
 
@@ -106,10 +107,10 @@ public abstract class DatastoreTestHelper
 		dpSet.addTag("client", "bar");
 		dpSet.addTag("month", "April");
 
-		dpSet.addDataPoint(new DataPoint(s_startTime, 9));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 1000, 10));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 2000, 11));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 3000, 12));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime, 9));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime + 1000, 10));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime + 2000, 11));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime + 3000, 12));
 
 		s_datastore.putDataPoints(dpSet);
 
@@ -119,23 +120,23 @@ public abstract class DatastoreTestHelper
 		dpSet.addTag("client", "bar");
 		dpSet.addTag("month", "April");
 
-		dpSet.addDataPoint(new DataPoint(s_startTime, 13));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 1000, 14));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 2000, 15));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 3000, 16));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime, 13));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime + 1000, 14));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime + 2000, 15));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime + 3000, 16));
 
 		s_datastore.putDataPoints(dpSet);
 
 		metricNames.add("duplicates");
 		dpSet = new DataPointSet("duplicates");
 		dpSet.addTag("host", "A");
-		dpSet.addDataPoint(new DataPoint(s_startTime, 4));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime, 4));
 
 		s_datastore.putDataPoints(dpSet);
 
 		dpSet = new DataPointSet("duplicates");
 		dpSet.addTag("host", "A");
-		dpSet.addDataPoint(new DataPoint(s_startTime, 42));
+		dpSet.addDataPoint(new LongDataPoint(s_startTime, 42));
 
 		s_datastore.putDataPoints(dpSet);
 	}

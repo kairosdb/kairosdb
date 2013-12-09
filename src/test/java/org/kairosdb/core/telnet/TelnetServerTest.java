@@ -24,6 +24,9 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.carbon.CarbonClient;
 import org.kairosdb.core.carbon.CarbonPickleServer;
 import org.kairosdb.core.carbon.HostTagParser;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LongDataPoint;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
@@ -54,7 +57,8 @@ public class TelnetServerTest
 	{
 		m_datastore = mock(KairosDatastore.class);
 		TestCommandProvider commandProvider = new TestCommandProvider();
-		commandProvider.putCommand("put", new PutCommand(m_datastore, "localhost"));
+		commandProvider.putCommand("put", new PutCommand(m_datastore, "localhost",
+				new LongDataPointFactoryImpl(), new DoubleDataPointFactoryImpl()));
 
 		m_server = new TelnetServer(TELNET_PORT, commandProvider);
 		m_server.start();
@@ -78,7 +82,7 @@ public class TelnetServerTest
 
 		DataPointSet dps = new DataPointSet("test.metric");
 		dps.addTag("host", "test_host");
-		dps.addDataPoint(new DataPoint(now * 1000, 123));
+		dps.addDataPoint(new LongDataPoint(now * 1000, 123));
 
 		verify(m_datastore, timeout(5000).times(1)).putDataPoints(dps);
 	}
@@ -92,7 +96,7 @@ public class TelnetServerTest
 
 		DataPointSet dps = new DataPointSet("test.metric");
 		dps.addTag("host", "test_host");
-		dps.addDataPoint(new DataPoint(now * 1000, 123));
+		dps.addDataPoint(new LongDataPoint(now * 1000, 123));
 
 		verify(m_datastore, timeout(5000).times(1)).putDataPoints(dps);
 	}
@@ -106,7 +110,7 @@ public class TelnetServerTest
 
 		DataPointSet dps = new DataPointSet("test.metric");
 		dps.addTag("host", "test_host");
-		dps.addDataPoint(new DataPoint(now * 1000, 123));
+		dps.addDataPoint(new LongDataPoint(now * 1000, 123));
 
 		verify(m_datastore, timeout(5000).times(1)).putDataPoints(dps);
 	}
@@ -120,7 +124,7 @@ public class TelnetServerTest
 
 		DataPointSet dps = new DataPointSet("test.metric");
 		dps.addTag("host", "test_host");
-		dps.addDataPoint(new DataPoint(now * 1000, 123));
+		dps.addDataPoint(new LongDataPoint(now * 1000, 123));
 
 		verify(m_datastore, timeout(5000).times(1)).putDataPoints(dps);
 	}

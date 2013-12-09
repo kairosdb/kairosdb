@@ -21,6 +21,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.DoubleDataPoint;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
@@ -78,7 +80,7 @@ public class CarbonPickleServerTest
 
 		DataPointSet dps = new DataPointSet("test.metric_name");
 		dps.addTag("host", "host_name");
-		dps.addDataPoint(new DataPoint(now * 1000, 1234));
+		dps.addDataPoint(new LongDataPoint(now * 1000, 1234));
 
 		verify(m_datastore, timeout(5000).times(1)).putDataPoints(dps);
 	}
@@ -92,7 +94,7 @@ public class CarbonPickleServerTest
 
 		DataPointSet dps = new DataPointSet("test.metric_name");
 		dps.addTag("host", "host_name");
-		dps.addDataPoint(new DataPoint(now * 1000, 12.34));
+		dps.addDataPoint(new DoubleDataPoint(now * 1000, 12.34));
 
 		verify(m_datastore, timeout(5000).times(1)).putDataPoints(dps);
 	}

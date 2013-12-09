@@ -17,6 +17,7 @@ package org.kairosdb.core.groupby;
 
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.formatter.FormatterException;
@@ -55,13 +56,13 @@ public class TimeGroupByTest
 
 		groupBy.setStartDate(cal.getTimeInMillis());
 
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfWeek(Calendar.SUNDAY), 1), tags), equalTo(0));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfWeek(Calendar.MONDAY), 1), tags), equalTo(1));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfWeek(Calendar.TUESDAY), 1), tags), equalTo(2));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfWeek(Calendar.WEDNESDAY), 1), tags), equalTo(3));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfWeek(Calendar.THURSDAY), 1), tags), equalTo(4));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfWeek(Calendar.FRIDAY), 1), tags), equalTo(5));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfWeek(Calendar.SATURDAY), 1), tags), equalTo(6));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfWeek(Calendar.SUNDAY), 1), tags), equalTo(0));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfWeek(Calendar.MONDAY), 1), tags), equalTo(1));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfWeek(Calendar.TUESDAY), 1), tags), equalTo(2));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfWeek(Calendar.WEDNESDAY), 1), tags), equalTo(3));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfWeek(Calendar.THURSDAY), 1), tags), equalTo(4));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfWeek(Calendar.FRIDAY), 1), tags), equalTo(5));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfWeek(Calendar.SATURDAY), 1), tags), equalTo(6));
 	}
 
 	@Test
@@ -78,24 +79,24 @@ public class TimeGroupByTest
 		groupBy.setStartDate(cal.getTimeInMillis());
 
 		// 2010
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2010, Calendar.JANUARY, 1), 1), tags), equalTo(0));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2010, Calendar.JANUARY, 31), 1), tags), equalTo(0));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2010, Calendar.FEBRUARY, 1), 1), tags), equalTo(1));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2010, Calendar.FEBRUARY, 28), 1), tags), equalTo(1));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2010, Calendar.MARCH, 1), 1), tags), equalTo(2));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2010, Calendar.MARCH, 31), 1), tags), equalTo(2));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2010, Calendar.JULY, 1), 1), tags), equalTo(6));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2010, Calendar.JULY, 31), 1), tags), equalTo(6));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2010, Calendar.DECEMBER, 1), 1), tags), equalTo(11));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2010, Calendar.DECEMBER, 31), 1), tags), equalTo(11));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2010, Calendar.JANUARY, 1), 1), tags), equalTo(0));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2010, Calendar.JANUARY, 31), 1), tags), equalTo(0));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2010, Calendar.FEBRUARY, 1), 1), tags), equalTo(1));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2010, Calendar.FEBRUARY, 28), 1), tags), equalTo(1));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2010, Calendar.MARCH, 1), 1), tags), equalTo(2));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2010, Calendar.MARCH, 31), 1), tags), equalTo(2));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2010, Calendar.JULY, 1), 1), tags), equalTo(6));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2010, Calendar.JULY, 31), 1), tags), equalTo(6));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2010, Calendar.DECEMBER, 1), 1), tags), equalTo(11));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2010, Calendar.DECEMBER, 31), 1), tags), equalTo(11));
 
 		// 2011
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2011, Calendar.JANUARY, 31), 1), tags), equalTo(12));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2011, Calendar.FEBRUARY, 28), 1), tags), equalTo(13));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2011, Calendar.JANUARY, 31), 1), tags), equalTo(12));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2011, Calendar.FEBRUARY, 28), 1), tags), equalTo(13));
 
 		// 2012
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2012, Calendar.JANUARY, 31), 1), tags), equalTo(0));
-		assertThat(groupBy.getGroupId(new DataPoint(dayOfMonth(2012, Calendar.FEBRUARY, 28), 1), tags), equalTo(1));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2012, Calendar.JANUARY, 31), 1), tags), equalTo(0));
+		assertThat(groupBy.getGroupId(new LongDataPoint(dayOfMonth(2012, Calendar.FEBRUARY, 28), 1), tags), equalTo(1));
 	}
 
 	private long dayOfWeek(int dayOfWeek)

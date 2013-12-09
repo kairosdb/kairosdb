@@ -17,6 +17,8 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.exception.KairosDBException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,15 +28,15 @@ public class TestAggregatorFactory implements AggregatorFactory
 {
 	private Map<String, Aggregator> m_aggregators = new HashMap<String, Aggregator>();
 
-	public TestAggregatorFactory()
+	public TestAggregatorFactory() throws KairosDBException
 	{
-		addAggregator(new SumAggregator());
-		addAggregator(new MinAggregator());
-		addAggregator(new MaxAggregator());
-		addAggregator(new AvgAggregator());
-		addAggregator(new StdAggregator());
-		addAggregator(new DivideAggregator());
-		addAggregator(new PercentileAggregator());
+		addAggregator(new SumAggregator(new DoubleDataPointFactoryImpl()));
+		addAggregator(new MinAggregator(new DoubleDataPointFactoryImpl()));
+		addAggregator(new MaxAggregator(new DoubleDataPointFactoryImpl()));
+		addAggregator(new AvgAggregator(new DoubleDataPointFactoryImpl()));
+		addAggregator(new StdAggregator(new DoubleDataPointFactoryImpl()));
+		addAggregator(new DivideAggregator(new DoubleDataPointFactoryImpl()));
+		addAggregator(new PercentileAggregator(new DoubleDataPointFactoryImpl()));
 	}
 
 	private void addAggregator(Aggregator agg)

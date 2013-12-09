@@ -159,6 +159,6 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 	@Override
 	public String getGroupType(String datastoreType)
 	{
-		return getFactoryForDataStoreType(datastoreType).getGroupType();  //To change body of implemented methods use File | Settings | File Templates.
+		return getFactoryForDataStoreType(datastoreType).getGroupType();
 	}
 }

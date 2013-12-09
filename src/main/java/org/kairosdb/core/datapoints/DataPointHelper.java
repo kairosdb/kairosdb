@@ -27,4 +27,30 @@ public abstract class DataPointHelper implements DataPoint
 		return m_timestamp;
 	}
 
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o) return true;
+		if (!(o instanceof DataPointHelper)) return false;
+
+		DataPointHelper that = (DataPointHelper) o;
+
+		if (m_timestamp != that.m_timestamp) return false;
+
+		return true;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return (int) (m_timestamp ^ (m_timestamp >>> 32));
+	}
+
+	@Override
+	public String toString()
+	{
+		return "DataPointHelper{" +
+				"m_timestamp=" + m_timestamp +
+				'}';
+	}
 }

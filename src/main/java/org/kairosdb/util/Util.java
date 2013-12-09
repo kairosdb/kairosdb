@@ -142,31 +142,29 @@ public class Util
 		Google Protocol Buffers</a>. Zig-zag is not used, so input must not be negative.
 		If values can be negative, use {@link #writeSignedVarLong(long, DataOutput)}
 		instead. This method treats negative input as like a large unsigned value. */
-		while ((value & 0xFFFFFFFFFFFFFF80L) != 0L)
+		while ((value & ~0x7FL) != 0L)
 		{
 			buffer.put((byte) ((value & 0x7F) | 0x80));
 			value >>>= 7;
 		}
-		buffer.put((byte) (value & 0x7F));
+		buffer.put((byte)value);
 	}
 
 	public static long unpackUnsignedLong(ByteBuffer buffer)
 	{
-		long value = 0L;
-		int i = 0;
-		byte b;
-		while (((b = buffer.get()) & 0x80L) != 0)
+		int shift = 0;
+		long result = 0;
+		while (shift < 64)
 		{
-			value |= (b & 0x7F) << i;
-			i += 7;
-			if (i > 63)
+			final byte b = buffer.get();
+			result |= (long)(b & 0x7F) << shift;
+			if ((b & 0x80) == 0)
 			{
-				throw new IllegalArgumentException("Variable length quantity is too long");
+				return result;
 			}
+			shift += 7;
 		}
-		value |= (b << i);
-
-		return value;
+		throw new IllegalArgumentException("Variable length quantity is too long");
 	}
 
 	public static void packLong(long value, ByteBuffer buffer)

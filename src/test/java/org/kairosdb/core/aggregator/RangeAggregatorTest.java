@@ -8,6 +8,8 @@ package org.kairosdb.core.aggregator;
 
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
@@ -31,10 +33,10 @@ public class RangeAggregatorTest
 		{
 			cal.clear();
 			cal.set(2012, I, 1, 1, 1, 1);
-			dpGroup.addDataPoint(new DataPoint(cal.getTimeInMillis(), 1));
+			dpGroup.addDataPoint(new LongDataPoint(cal.getTimeInMillis(), 1));
 		}
 
-		SumAggregator agg = new SumAggregator();
+		SumAggregator agg = new SumAggregator(new DoubleDataPointFactoryImpl());
 		agg.setSampling(new Sampling(1, TimeUnit.YEARS));
 		agg.setAlignSampling(true);
 		cal.clear();
@@ -60,10 +62,10 @@ public class RangeAggregatorTest
 		{
 			cal.clear();
 			cal.set(2012, 0, I, 1, 1, 1);
-			dpGroup.addDataPoint(new DataPoint(cal.getTimeInMillis(), 1));
+			dpGroup.addDataPoint(new LongDataPoint(cal.getTimeInMillis(), 1));
 		}
 
-		SumAggregator agg = new SumAggregator();
+		SumAggregator agg = new SumAggregator(new DoubleDataPointFactoryImpl());
 		agg.setSampling(new Sampling(1, TimeUnit.MONTHS));
 		agg.setAlignSampling(true);
 		cal.clear();
@@ -94,10 +96,10 @@ public class RangeAggregatorTest
 		{
 			cal.clear();
 			cal.set(2012, 0, I, 1, 1, 1);
-			dpGroup.addDataPoint(new DataPoint(cal.getTimeInMillis(), 1));
+			dpGroup.addDataPoint(new LongDataPoint(cal.getTimeInMillis(), 1));
 		}
 
-		SumAggregator agg = new SumAggregator();
+		SumAggregator agg = new SumAggregator(new DoubleDataPointFactoryImpl());
 		agg.setSampling(new Sampling(2, TimeUnit.MONTHS));
 		agg.setAlignSampling(true);
 		cal.clear();
@@ -128,10 +130,10 @@ public class RangeAggregatorTest
 		{
 			cal.clear();
 			cal.set(2012, 0, I+15, 1, 1, 1);
-			dpGroup.addDataPoint(new DataPoint(cal.getTimeInMillis(), 1));
+			dpGroup.addDataPoint(new LongDataPoint(cal.getTimeInMillis(), 1));
 		}
 
-		SumAggregator agg = new SumAggregator();
+		SumAggregator agg = new SumAggregator(new DoubleDataPointFactoryImpl());
 		agg.setSampling(new Sampling(1, TimeUnit.MONTHS));
 		cal.clear();
 		cal.set(2012, 0, 16, 0, 0, 0);
@@ -161,10 +163,10 @@ public class RangeAggregatorTest
 		{
 			cal.clear();
 			cal.set(2012, 0, I+15, 1, 1, 1);
-			dpGroup.addDataPoint(new DataPoint(cal.getTimeInMillis(), 1));
+			dpGroup.addDataPoint(new LongDataPoint(cal.getTimeInMillis(), 1));
 		}
 
-		SumAggregator agg = new SumAggregator();
+		SumAggregator agg = new SumAggregator(new DoubleDataPointFactoryImpl());
 		agg.setSampling(new Sampling(1, TimeUnit.WEEKS));
 		agg.setAlignSampling(true);
 		cal.clear();

@@ -18,6 +18,9 @@ package org.kairosdb.core.aggregator;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.datapoints.DoubleDataPoint;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.testing.ListDataPointGroup;
 
@@ -32,7 +35,7 @@ public class ScaleAggregatorTest
     @Before
     public void setup()
     {
-        aggregator = new ScaleAggregator();
+        aggregator = new ScaleAggregator(new DoubleDataPointFactoryImpl());
     }
 
     @Test(expected = NullPointerException.class)
@@ -45,10 +48,10 @@ public class ScaleAggregatorTest
     public void test_longValues()
     {
         ListDataPointGroup group = new ListDataPointGroup("group");
-        group.addDataPoint(new DataPoint(1, 10));
-        group.addDataPoint(new DataPoint(1, 3));
-        group.addDataPoint(new DataPoint(2, 5));
-        group.addDataPoint(new DataPoint(3, 25));
+        group.addDataPoint(new LongDataPoint(1, 10));
+        group.addDataPoint(new LongDataPoint(1, 3));
+        group.addDataPoint(new LongDataPoint(2, 5));
+        group.addDataPoint(new LongDataPoint(3, 25));
 
         aggregator.setFactor(2.5);
 
@@ -77,9 +80,9 @@ public class ScaleAggregatorTest
     public void test_doubleValues()
     {
         ListDataPointGroup group = new ListDataPointGroup("group");
-        group.addDataPoint(new DataPoint(1, 10.0));
-        group.addDataPoint(new DataPoint(1, 20.3));
-        group.addDataPoint(new DataPoint(2, 3.2));
+        group.addDataPoint(new DoubleDataPoint(1, 10.0));
+        group.addDataPoint(new DoubleDataPoint(1, 20.3));
+        group.addDataPoint(new DoubleDataPoint(2, 3.2));
 
         aggregator.setFactor(1.5);
         DataPointGroup results = aggregator.aggregate(group);
@@ -103,8 +106,8 @@ public class ScaleAggregatorTest
     public void test_mixedTypeValues()
     {
         ListDataPointGroup group = new ListDataPointGroup("group");
-        group.addDataPoint(new DataPoint(1, 10.0));
-        group.addDataPoint(new DataPoint(2, 1));
+        group.addDataPoint(new DoubleDataPoint(1, 10.0));
+        group.addDataPoint(new LongDataPoint(2, 1));
 
         aggregator.setFactor(0.5);
 

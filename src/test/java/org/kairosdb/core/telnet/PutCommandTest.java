@@ -20,6 +20,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.TestDataPointFactory;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.util.ValidationException;
@@ -41,8 +45,9 @@ public class PutCommandTest
 	{
 		datastore = new FakeDatastore();
 		KairosDatastore kairosDatastore = new KairosDatastore(datastore, new QueryQueuingManager(1, "test"),
-				Collections.<DataPointListener>emptyList(), "test");
-		command = new PutCommand(kairosDatastore, "test");
+				Collections.<DataPointListener>emptyList(), "test", new TestDataPointFactory());
+		command = new PutCommand(kairosDatastore, "test", new LongDataPointFactoryImpl(),
+				new DoubleDataPointFactoryImpl());
 	}
 
 	@Test

@@ -23,6 +23,8 @@ import java.nio.ByteBuffer;
 import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.kairosdb.util.Util.packLong;
+import static org.kairosdb.util.Util.unpackLong;
 
 public class ValueSerializerTest
 {
@@ -97,5 +99,66 @@ public class ValueSerializerTest
 		buf = ValueSerializer.toByteBuffer(-1);
 		assertThat(buf.remaining(), equalTo(8));
 		assertThat(ValueSerializer.getLongFromByteBuffer(buf), equalTo(-1L));
+	}
+
+	private void testValue(long value, ByteBuffer buf)
+	{
+		buf.clear();
+		packLong(value, buf);
+		buf.flip();
+		long resp = unpackLong(buf);
+		assertThat(resp, equalTo(value));
+	}
+
+	@Test
+	public void testPackUnpack()
+	{
+		ByteBuffer buf = ByteBuffer.allocate(256);
+
+		testValue(0L, buf);
+
+		testValue(256, buf);
+
+		for (long I = 1; I < 0x100; I++)
+		{
+			testValue(I, buf);
+		}
+
+		for (long I = 0x100; I < 0x10000; I++)
+		{
+			testValue(I, buf);
+		}
+
+		for (long I = 0x10000; I < 0x1000000; I++)
+		{
+			testValue(I, buf);
+		}
+
+		for (long I = 0x1000000; I < 0x100000000L; I += 0x400000)
+		{
+			testValue(I, buf);
+		}
+
+		for (long I = 0x100000000L; I < 0x10000000000L; I += 0x40000000L)
+		{
+			testValue(I, buf);
+		}
+
+		for (long I = 0x10000000000L; I < 0x1000000000000L; I += 0x4000000000L)
+		{
+			testValue(I, buf);
+		}
+
+		for (long I = 0x1000000000000L; I < 0x100000000000000L; I += 0x400000000000L)
+		{
+			testValue(I, buf);
+		}
+
+		for (long I = 0x100000000000000L; I < 0x7000000000000000L; I += 0x40000000000000L)
+		{
+			testValue(I, buf);
+		}
+
+		testValue(-1, buf);
 	}
 }

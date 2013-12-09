@@ -82,4 +82,33 @@ public class LongDataPoint extends DataPointHelper
 		return true;
 	}
 
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		if (!super.equals(o)) return false;
+
+		LongDataPoint that = (LongDataPoint) o;
+
+		if (m_value != that.m_value) return false;
+
+		return true;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		int result = super.hashCode();
+		result = 31 * result + (int) (m_value ^ (m_value >>> 32));
+		return result;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "LongDataPoint{" +
+				"m_value=" + m_value +
+				'}';
+	}
 }

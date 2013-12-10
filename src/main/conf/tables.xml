@@ -171,7 +171,7 @@
 				<param name="type" type="string"/>
 			</return>
 			<sql>
-				select m."id" as metric_id, m.type from metric m, metric_tag mt
+				select m."id" as metric_id, m."type" from metric m, metric_tag mt
 				where
 				mt."metric_id" = m."id"
 				and m."name" = ?

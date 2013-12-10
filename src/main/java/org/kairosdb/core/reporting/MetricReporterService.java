@@ -97,22 +97,26 @@ public class MetricReporterService implements KairosDBJob
 				List<DataPointSet> dpList = reporter.getMetrics(timestamp);
 				for (DataPointSet dataPointSet : dpList)
 				{
-					m_datastore.putDataPoints(dataPointSet);
+					for (DataPoint dataPoint : dataPointSet.getDataPoints())
+					{
+						m_datastore.putDataPoint(dataPointSet.getName(),
+								dataPointSet.getTags(), dataPoint);
+					}
 				}
 			}
 
 
 			Runtime runtime = Runtime.getRuntime();
-			Map<String, String> tags = new HashMap<String, String>();
+			SortedMap<String, String> tags = new TreeMap<String, String>();
 			tags.put("host", m_hostname);
-			m_datastore.putDataPoints(new DataPointSet("kairosdb.jvm.free_memory",
-					tags, Collections.singletonList(m_dataPointFactory.createDataPoint(timestamp, runtime.freeMemory()))));
-			m_datastore.putDataPoints(new DataPointSet("kairosdb.jvm.total_memory",
-					tags, Collections.singletonList(m_dataPointFactory.createDataPoint(timestamp, runtime.totalMemory()))));
-			m_datastore.putDataPoints(new DataPointSet("kairosdb.jvm.max_memory",
-					tags, Collections.singletonList(m_dataPointFactory.createDataPoint(timestamp, runtime.maxMemory()))));
-			m_datastore.putDataPoints(new DataPointSet("kairosdb.jvm.thread_count",
-					tags, Collections.singletonList(m_dataPointFactory.createDataPoint(timestamp, getThreadCount()))));
+			m_datastore.putDataPoint("kairosdb.jvm.free_memory",
+					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.freeMemory()));
+			m_datastore.putDataPoint("kairosdb.jvm.total_memory",
+					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.totalMemory()));
+			m_datastore.putDataPoint("kairosdb.jvm.max_memory",
+					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.maxMemory()));
+			m_datastore.putDataPoint("kairosdb.jvm.thread_count",
+					tags, m_dataPointFactory.createDataPoint(timestamp, getThreadCount()));
 		}
 		catch (Throwable e)
 		{

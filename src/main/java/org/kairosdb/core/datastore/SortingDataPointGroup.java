@@ -93,6 +93,9 @@ public class SortingDataPointGroup extends AbstractDataPointGroup
 			long ret = point1.getTimestamp() - point2.getTimestamp();
 
 			if (ret == 0L)
+				ret = Double.compare(point1.getDoubleValue(), point2.getDoubleValue());
+
+			if (ret == 0L)
 			{  //Simple hack to break a tie.
 				ret = System.identityHashCode(point1) - System.identityHashCode(point2);
 			}

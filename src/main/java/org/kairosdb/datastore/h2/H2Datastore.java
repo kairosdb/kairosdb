@@ -126,16 +126,17 @@ public class H2Datastore implements Datastore
 		}
 	}
 
-	public void putDataPoints(DataPointSet dps)
+	@Override
+	public void putDataPoint(String metricName, SortedMap<String, String> tags, org.kairosdb.core.DataPoint dataPoint) throws DatastoreException
 	{
 		GenOrmDataSource.attachAndBegin();
 		try
 		{
-			String key = createMetricKey(dps);
+			String key = createMetricKey(metricName, tags, dataPoint.getDataStoreDataType());
 			Metric m = Metric.factory.findOrCreate(key);
-			m.setName(dps.getName());
+			m.setName(metricName);
+			m.setType(dataPoint.getDataStoreDataType());
 
-			SortedMap<String, String> tags = dps.getTags();
 			for (String name : tags.keySet())
 			{
 				String value = tags.get(name);
@@ -145,11 +146,8 @@ public class H2Datastore implements Datastore
 
 			GenOrmDataSource.flush();
 
-			for (org.kairosdb.core.DataPoint dataPoint : dps.getDataPoints())
-			{
-				new InsertDataPointQuery(m.getId(), new Timestamp(dataPoint.getTimestamp()),
-						dataPoint.toByteBuffer().array()).runUpdate();
-			}
+			new InsertDataPointQuery(m.getId(), new Timestamp(dataPoint.getTimestamp()),
+					dataPoint.toByteBuffer().array()).runUpdate();
 
 			GenOrmDataSource.commit();
 		}
@@ -157,8 +155,8 @@ public class H2Datastore implements Datastore
 		{
 			GenOrmDataSource.close();
 		}
-
 	}
+
 
 	@Override
 	public Iterable<String> getMetricNames()
@@ -379,14 +377,14 @@ public class H2Datastore implements Datastore
 		return tagSet;
 	}
 
-	private String createMetricKey(DataPointSet dps)
+	private String createMetricKey(String metricName, SortedMap<String, String> tags,
+			String type)
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append(dps.getName()).append(":");
+		sb.append(metricName).append(":");
 
-		sb.append(dps.getDataStoreDataType()).append(":");
+		sb.append(type).append(":");
 
-		SortedMap<String, String> tags = dps.getTags();
 		for (String name : tags.keySet())
 		{
 			sb.append(name).append("=");

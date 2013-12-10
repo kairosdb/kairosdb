@@ -16,6 +16,7 @@
 
 package org.kairosdb.util;
 
+import com.google.gson.JsonElement;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
 
 public class Validator
@@ -62,6 +63,27 @@ public class Validator
 			return false;
 		}
 		if (value.isEmpty())
+		{
+			validationErrors.addErrorMessage(name + " may not be empty.");
+			return false;
+		}
+
+		return true;
+	}
+
+	public static boolean isNotNullOrEmpty(ValidationErrors validationErrors, Object name, JsonElement value)
+	{
+		if (value == null)
+		{
+			validationErrors.addErrorMessage(name + " may not be null.");
+			return false;
+		}
+		if (value.isJsonNull())
+		{
+			validationErrors.addErrorMessage(name + " may not be empty.");
+			return false;
+		}
+		if (value.getAsString().isEmpty())
 		{
 			validationErrors.addErrorMessage(name + " may not be empty.");
 			return false;

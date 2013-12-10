@@ -58,7 +58,10 @@ public class LongDataPointFactoryImpl implements LongDataPointFactory
 	@Override
 	public DataPoint getDataPoint(long timestamp, JsonElement json)
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		long value = 0L;
+		if (!json.isJsonNull())
+			value = json.getAsLong();
+		return new LongDataPoint(timestamp, value);
 	}
 
 	@Override

@@ -281,8 +281,72 @@ public class CassandraDatastore implements Datastore
 		m_stringIndexWriteBuffer.close();
 	}
 
-
 	@Override
+	public void putDataPoint(String metricName, SortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+	{
+		try
+		{
+			long rowTime = -1L;
+			DataPointsRowKey rowKey = null;
+			//time the data is written.
+			long writeTime = System.currentTimeMillis();
+
+			if (dataPoint.getTimestamp() < 0)
+				throw new DatastoreException("Timestamp must be greater than or equal to zero.");
+			long newRowTime = calculateRowTime(dataPoint.getTimestamp());
+			if (newRowTime != rowTime)
+			{
+				rowTime = newRowTime;
+				rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
+						tags);
+
+				long now = System.currentTimeMillis();
+				//Write out the row key if it is not cached
+				if (!m_rowKeyCache.isCached(rowKey))
+					m_rowKeyWriteBuffer.addData(metricName, rowKey, "", now);
+
+				//Write metric name if not in cache
+				if (!m_metricNameCache.isCached(metricName))
+				{
+					m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
+							metricName, "", now);
+				}
+
+				//Check tag names and values to write them out
+				for (String tagName : tags.keySet())
+				{
+					if (!m_tagNameCache.isCached(tagName))
+					{
+						m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_NAMES,
+								tagName, "", now);
+					}
+
+					String value = tags.get(tagName);
+					if (!m_tagValueCache.isCached(value))
+					{
+						m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
+								value, "", now);
+					}
+				}
+			}
+
+			int columnTime = getColumnName(rowTime, dataPoint.getTimestamp());
+			m_dataPointWriteBuffer.addData(rowKey, columnTime,
+					dataPoint.toByteBuffer(), writeTime);
+
+		}
+		catch (DatastoreException e)
+		{
+			throw e;
+		}
+		catch (Exception e)
+		{
+			throw new DatastoreException(e);
+		}
+	}
+
+
+	//@Override
 	public void putDataPoints(DataPointSet dps) throws DatastoreException
 	{
 		try

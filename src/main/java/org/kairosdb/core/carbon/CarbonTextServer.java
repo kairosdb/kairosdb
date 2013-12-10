@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.util.SortedMap;
 import java.util.concurrent.Executors;
 
 /**
@@ -101,6 +102,8 @@ public class CarbonTextServer extends SimpleChannelUpstreamHandler implements Ch
 					logger.warn("Metric "+msgArr[0]+" is missing a tag");
 					return;
 				}
+				String metricName = dps.getName();
+				SortedMap<String, String> tags = dps.getTags();
 
 				long timestamp = Long.parseLong(msgArr[2]) * 1000; //Converting to milliseconds
 
@@ -110,8 +113,7 @@ public class CarbonTextServer extends SimpleChannelUpstreamHandler implements Ch
 				else
 					dp = m_longDataPointFactory.createDataPoint(timestamp, Long.parseLong(msgArr[1]));
 
-				dps.addDataPoint(dp);
-				m_datastore.putDataPoints(dps);
+				m_datastore.putDataPoint(metricName, tags, dp);
 			}
 			catch (Exception e)
 			{

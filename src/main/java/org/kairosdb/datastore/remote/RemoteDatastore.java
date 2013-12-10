@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.zip.GZIPOutputStream;
 
 
@@ -152,7 +153,7 @@ public class RemoteDatastore implements Datastore
 	}
 
 	@Override
-	public void putDataPoints(DataPointSet dps) throws DatastoreException
+	public void putDataPoint(String metricName, SortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
 	{
 		CharArrayWriter caw = new CharArrayWriter();
 		JSONWriter writer = new JSONWriter(caw);
@@ -161,10 +162,9 @@ public class RemoteDatastore implements Datastore
 		{
 			writer.object();
 
-			writer.key("name").value(dps.getName());
+			writer.key("name").value(metricName);
 			writer.key("skip_validate").value(true);
 			writer.key("tags").object();
-			Map<String, String> tags = dps.getTags();
 			for (String tag : tags.keySet())
 			{
 				writer.key(tag).value(tags.get(tag));

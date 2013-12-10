@@ -23,13 +23,10 @@ import com.google.inject.name.Names;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.kairosdb.core.DataPointListener;
-import org.kairosdb.core.DataPointListenerProvider;
-import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.*;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
-import org.kairosdb.core.datapoints.DoubleDataPoint;
-import org.kairosdb.core.datapoints.LongDataPoint;
+import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupByFactory;
@@ -45,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 import static junit.framework.Assert.assertEquals;
@@ -93,6 +91,33 @@ public class MetricsResourceTest
 				bind(QueryQueuingManager.class).toInstance(queuingManager);
 				bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
 				bindConstant().annotatedWith(Names.named("kairosdb.datastore.concurrentQueryThreads")).to(1);
+				bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
+
+				Properties props = new Properties();
+				InputStream is = getClass().getClassLoader().getResourceAsStream("kairosdb.properties");
+				try
+				{
+					props.load(is);
+					is.close();
+				}
+				catch (IOException e)
+				{
+					e.printStackTrace();
+				}
+
+				//Names.bindProperties(binder(), props);
+				bind(Properties.class).toInstance(props);
+
+				bind(DoubleDataPointFactory.class)
+						.to(DoubleDataPointFactoryImpl.class).in(Singleton.class);
+				bind(DoubleDataPointFactoryImpl.class).in(Singleton.class);
+
+				bind(LongDataPointFactory.class)
+						.to(LongDataPointFactoryImpl.class).in(Singleton.class);
+				bind(LongDataPointFactoryImpl.class).in(Singleton.class);
+
+				bind(LegacyDataPointFactory.class).in(Singleton.class);
+
 			}
 		});
 		server = injector.getInstance(WebServer.class);
@@ -175,7 +200,7 @@ public class MetricsResourceTest
 
 		JsonResponse response = client.post(json, ADD_METRIC_URL);
 
-		assertResponse(response, 400, "{\"errors\":[\"metric[1](name=archive.file.search).datapoints[0].value cannot be null or empty. must be greater than or equal to 1.\"]}");
+		assertResponse(response, 400, "{\"errors\":[\"metric[1](name=archive.file.search).datapoints[0].value cannot be null or empty, must be greater than or equal to 1.\"]}");
 	}
 
 	@Test
@@ -188,7 +213,7 @@ public class MetricsResourceTest
 		assertResponse(response, 200,
 				"{\"queries\":" +
 						"[{\"sample_size\":10,\"results\":" +
-						"[{\"name\":\"abc.123\",\"tags\":{\"server\":[\"server1\",\"server2\"]},\"values\":[[1,60.2],[2,30.200000000000003],[3,20.1]]}]}]}");
+						"[{\"name\":\"abc.123\",\"group_by\":[{\"name\":\"type\",\"type\":\"number\"}],\"tags\":{\"server\":[\"server1\",\"server2\"]},\"values\":[[1,60.2],[2,30.200000000000003],[3,20.1]]}]}]}");
 	}
 
 	@Test
@@ -329,7 +354,7 @@ public class MetricsResourceTest
 				Map<String, String> tags = new TreeMap<String, String>();
 				tags.put("server", "server1");
 
-				queryCallback.startDataPointSet("long", tags);
+				queryCallback.startDataPointSet(LongDataPointFactoryImpl.DST_LONG, tags);
 				queryCallback.addDataPoint(new LongDataPoint(1, 10));
 				queryCallback.addDataPoint(new LongDataPoint(1, 20));
 				queryCallback.addDataPoint(new LongDataPoint(2, 10));
@@ -339,7 +364,7 @@ public class MetricsResourceTest
 				tags = new TreeMap<String, String>();
 				tags.put("server", "server2");
 
-				queryCallback.startDataPointSet("double", tags);
+				queryCallback.startDataPointSet(DoubleDataPointFactoryImpl.DST_DOUBLE, tags);
 				queryCallback.addDataPoint(new DoubleDataPoint(1, 10.1));
 				queryCallback.addDataPoint(new DoubleDataPoint(1, 20.1));
 				queryCallback.addDataPoint(new DoubleDataPoint(2, 10.1));

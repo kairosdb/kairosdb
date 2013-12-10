@@ -32,7 +32,10 @@ public class DoubleDataPointFactoryImpl implements DoubleDataPointFactory
 	@Override
 	public DataPoint getDataPoint(long timestamp, JsonElement json)
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		double value = 0.0;
+		if (!json.isJsonNull())
+			value = json.getAsDouble();
+		return new DoubleDataPoint(timestamp, value);
 	}
 
 	@Override

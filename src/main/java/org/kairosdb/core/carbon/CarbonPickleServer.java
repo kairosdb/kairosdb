@@ -10,8 +10,7 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.carbon.pickle.PickleMetric;
-import org.kairosdb.core.datapoints.DoubleDataPoint;
-import org.kairosdb.core.datapoints.LongDataPoint;
+import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
@@ -21,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedMap;
 import java.util.concurrent.Executors;
 
 /**
@@ -34,6 +34,12 @@ public class CarbonPickleServer extends SimpleChannelUpstreamHandler implements 
 		KairosDBService
 {
 	public static final Logger logger = LoggerFactory.getLogger(CarbonPickleServer.class);
+
+	@Inject
+	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
+
+	@Inject
+	private DoubleDataPointFactory m_doubleDataPointFactory = new DoubleDataPointFactoryImpl();
 
 	@Inject
 	@Named("kairosdb.carbon.pickle.port")
@@ -74,8 +80,6 @@ public class CarbonPickleServer extends SimpleChannelUpstreamHandler implements 
 	public void messageReceived(final ChannelHandlerContext ctx,
 			final MessageEvent msgevent)
 	{
-		//System.out.println("I GOT ONE!!!!");
-
 		if (msgevent.getMessage() instanceof List)
 		{
 			for (Object o : (List) msgevent.getMessage())
@@ -94,17 +98,20 @@ public class CarbonPickleServer extends SimpleChannelUpstreamHandler implements 
 					return;
 				}
 
-				long time = metric.getTime();
+				String metricName = dps.getName();
+				SortedMap<String, String> tags = dps.getTags();
 
+				long time = metric.getTime();
+				DataPoint dataPoint;
 				time *= 1000;  //Convert to milliseconds
 				if (metric.isLongValue())
-					dps.addDataPoint(new LongDataPoint(time, metric.getLongValue()));
+					dataPoint = m_longDataPointFactory.createDataPoint(time, metric.getLongValue());
 				else
-					dps.addDataPoint(new DoubleDataPoint(time, metric.getDoubleValue()));
+					dataPoint = m_doubleDataPointFactory.createDataPoint(time, metric.getDoubleValue());
 
 				try
 				{
-					m_datastore.putDataPoints(dps);
+					m_datastore.putDataPoint(metricName, tags, dataPoint);
 				}
 				catch (DatastoreException e)
 				{

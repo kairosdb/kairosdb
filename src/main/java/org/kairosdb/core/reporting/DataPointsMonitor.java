@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,17 +57,6 @@ public class DataPointsMonitor implements DataPointListener, KairosMetricReporte
 		ai.addAndGet(count);
 	}
 
-	@Override
-	public void dataPoints(DataPointSet pds)
-	{
-		String metricName = pds.getName();
-		if (metricName.startsWith("kairosdb"))
-			return; //Skip our own metrics.
-
-		int count = pds.getDataPoints().size();
-
-		addCounter(metricName, count);
-	}
 
 	private Map<String, AtomicInteger> getAndClearCounters()
 	{
@@ -96,5 +86,14 @@ public class DataPointsMonitor implements DataPointListener, KairosMetricReporte
 		}
 
 		return (ret);
+	}
+
+	@Override
+	public void dataPoint(String metricName, SortedMap<String, String> tags, DataPoint dataPoint)
+	{
+		if (metricName.startsWith("kairosdb"))
+			return; //Skip our own metrics.
+
+		addCounter(metricName, 1);
 	}
 }

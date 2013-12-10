@@ -20,6 +20,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -153,16 +154,17 @@ public class KairosDatastore
 		m_datastore.close();
 	}
 
-	public void putDataPoints(DataPointSet dps) throws DatastoreException
+	public void putDataPoint(String metricName, SortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
 	{
 		//Add to datastore first.
-		m_datastore.putDataPoints(dps);
+		m_datastore.putDataPoint(metricName, tags, dataPoint);
 
 		for (DataPointListener dataPointListener : m_dataPointListeners)
 		{
-			dataPointListener.dataPoints(dps);
+			dataPointListener.dataPoint(metricName, tags, dataPoint);
 		}
 	}
+
 
 	public Iterable<String> getMetricNames() throws DatastoreException
 	{

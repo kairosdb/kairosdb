@@ -139,10 +139,7 @@ public class ThreadReporter
 		{
 			ReporterDataPoint dp = s_reporterData.getNextDataPoint();
 
-			DataPointSet dps = new DataPointSet(dp.getMetricName());
-			dps.setTags(dp.getTags());
-			dps.addDataPoint(dataPointFactory.createDataPoint(s_reportTime.get(), dp.getValue()));
-			datastore.putDataPoints(dps);
+			datastore.putDataPoint(dp.getMetricName(), dp.getTags(),					dataPointFactory.createDataPoint(s_reportTime.get(), dp.getValue()));
 		}
 	}
 

@@ -104,9 +104,11 @@ public class CoreModule extends AbstractModule
 		//bind datapoint default impls
 		bind(DoubleDataPointFactory.class)
 				.to(getClassForProperty(DATAPOINTS_FACTORY_DOUBLE)).in(Singleton.class);
+		bind(DoubleDataPointFactoryImpl.class).in(Singleton.class);
 
 		bind(LongDataPointFactory.class)
 				.to(getClassForProperty(DATAPOINTS_FACTORY_LONG)).in(Singleton.class);
+		bind(LongDataPointFactoryImpl.class).in(Singleton.class);
 
 		bind(LegacyDataPointFactory.class).in(Singleton.class);
 

@@ -130,7 +130,7 @@ public class ValidatorTest
 	{
 		ValidationErrors errors = new ValidationErrors();
 
-		assertThat(Validator.isNotNullOrEmpty(errors, "name", null), equalTo(false));
+		assertThat(Validator.isNotNullOrEmpty(errors, "name", (String)null), equalTo(false));
 		assertThat(errors.getErrors(), hasItem("name may not be null."));
 	}
 

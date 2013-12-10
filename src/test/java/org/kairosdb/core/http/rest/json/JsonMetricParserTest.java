@@ -131,7 +131,7 @@ public class JsonMetricParserTest
 		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].timestamp cannot be null or empty."));
 	}
 
-	@Test(expected = JsonSyntaxException.class)
+	@Test
 	public void test_datapoints_empty_value_Invalid() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[2,]]}]";
@@ -145,10 +145,10 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].datapoints[0].value cannot be null or empty."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].value may not be empty."));
 	}
 
-	@Test(expected = JsonSyntaxException.class)
+	@Test
 	public void test_datapoints_empty_timestamp_Invalid() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[,2]]}]";
@@ -162,7 +162,7 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].datapoints[0].value cannot be null or empty."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].value cannot be null or empty, must be greater than or equal to 1."));
 	}
 
 	@Test
@@ -179,7 +179,7 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].value cannot be null or empty. must be greater than or equal to 1."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].value cannot be null or empty, must be greater than or equal to 1."));
 	}
 
 	@Test

@@ -32,6 +32,8 @@ import org.kairosdb.util.Validator;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
@@ -61,7 +63,7 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 		Validator.validateNotNullOrEmpty("metricName", command[1]);
 		Validator.validateCharacterSet("metricName", command[1]);
 
-		DataPointSet dps = new DataPointSet(command[1]);
+		String metricName = command[1];
 
 		long timestamp = Util.parseLong(command[2]);
 		//Backwards compatible hack for the next 30 years
@@ -75,7 +77,7 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 		else
 			dp = m_longFactory.createDataPoint(timestamp, Util.parseLong(command[3]));
 
-		dps.addDataPoint(dp);
+		SortedMap<String, String> tags = new TreeMap<String, String>();
 
 		int tagCount = 0;
 		for (int i = 4; i < command.length; i++)
@@ -83,15 +85,15 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 			String[] tag = command[i].split("=");
 			validateTag(tagCount, tag);
 
-			dps.addTag(tag[0], tag[1]);
+			tags.put(tag[0], tag[1]);
 			tagCount++;
 		}
 
-		if (tagCount == 0)
-			dps.addTag("add", "tag");
+		if (tags.isEmpty())
+			tags.put("add", "tag");
 
 		m_counter.incrementAndGet();
-		m_datastore.putDataPoints(dps);
+		m_datastore.putDataPoint(metricName, tags, dp);
 	}
 
 	private void validateTag(int tagCount, String[] tag) throws ValidationException

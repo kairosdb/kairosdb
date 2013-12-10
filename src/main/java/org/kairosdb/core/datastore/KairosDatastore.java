@@ -17,6 +17,7 @@ package org.kairosdb.core.datastore;
 
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -154,7 +155,7 @@ public class KairosDatastore
 		m_datastore.close();
 	}
 
-	public void putDataPoint(String metricName, SortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
 	{
 		//Add to datastore first.
 		m_datastore.putDataPoint(metricName, tags, dataPoint);

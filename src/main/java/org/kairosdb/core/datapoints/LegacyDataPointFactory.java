@@ -2,8 +2,10 @@ package org.kairosdb.core.datapoints;
 
 import com.google.gson.JsonElement;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.datapoints.DataPointFactory;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static org.kairosdb.core.DataPoint.GROUP_NUMBER;
@@ -25,7 +27,7 @@ public class LegacyDataPointFactory implements DataPointFactory
 	public static final String DATASTORE_TYPE = "kairos_legacy";
 	public static final String API_TYPE = "legacy";
 
-	public static ByteBuffer writeToByteBuffer(LegacyLongDataPoint dataPoint)
+	/*public static ByteBuffer writeToByteBuffer(LegacyLongDataPoint dataPoint)
 	{
 		ByteBuffer buffer = ByteBuffer.allocate(10);
 
@@ -33,16 +35,16 @@ public class LegacyDataPointFactory implements DataPointFactory
 
 		buffer.flip();
 		return (buffer);
-	}
+	}*/
 
-	public static void writeToByteBuffer(ByteBuffer buffer, LegacyLongDataPoint dataPoint)
+	public static void writeToByteBuffer(DataOutput buffer, LegacyLongDataPoint dataPoint) throws IOException
 	{
 		long value = dataPoint.getLongValue();
-		buffer.put((byte)LONG_VALUE);
+		buffer.writeByte(LONG_VALUE);
 		packLong(value, buffer);
 	}
 
-	public static ByteBuffer writeToByteBuffer(LegacyDoubleDataPoint dataPoint)
+	/*public static ByteBuffer writeToByteBuffer(LegacyDoubleDataPoint dataPoint)
 	{
 		ByteBuffer buffer = ByteBuffer.allocate(9);
 
@@ -50,12 +52,12 @@ public class LegacyDataPointFactory implements DataPointFactory
 
 		buffer.flip();
 		return (buffer);
-	}
+	}*/
 
-	public static void writeToByteBuffer(ByteBuffer buffer, LegacyDoubleDataPoint dataPoint)
+	public static void writeToByteBuffer(DataOutput buffer, LegacyDoubleDataPoint dataPoint) throws IOException
 	{
-		buffer.put((byte)DOUBLE_VALUE);
-		buffer.putDouble(dataPoint.getDoubleValue());
+		buffer.writeByte(DOUBLE_VALUE);
+		buffer.writeDouble(dataPoint.getDoubleValue());
 	}
 
 	@Override
@@ -77,18 +79,18 @@ public class LegacyDataPointFactory implements DataPointFactory
 	}
 
 	@Override
-	public DataPoint getDataPoint(long timestamp, ByteBuffer buffer)
+	public DataPoint getDataPoint(long timestamp, DataInput buffer) throws IOException
 	{
 		DataPoint ret;
 
-		int type = buffer.get();
+		int type = buffer.readByte();
 		if (type == LONG_VALUE)
 		{
 			ret = new LegacyLongDataPoint(timestamp, unpackLong(buffer));
 		}
 		else
 		{
-			ret = new LegacyDoubleDataPoint(timestamp, buffer.getDouble());
+			ret = new LegacyDoubleDataPoint(timestamp, buffer.readDouble());
 		}
 
 		return ret;

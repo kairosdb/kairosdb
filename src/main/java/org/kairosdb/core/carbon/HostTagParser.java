@@ -41,14 +41,14 @@ public class HostTagParser implements TagParser
 	}
 
 	@Override
-	public DataPointSet parseMetricName(String metricName)
+	public CarbonMetric parseMetricName(String metricName)
 	{
 
 		Matcher metricMatcher = m_metricPattern.matcher(metricName);
 		if (!metricMatcher.matches())
 			return (null);
 
-		DataPointSet ret = new DataPointSet(metricMatcher.replaceAll(m_metricReplacement));
+		CarbonMetric ret = new CarbonMetric(metricMatcher.replaceAll(m_metricReplacement));
 
 		Matcher hostMatcher = m_hostPattern.matcher(metricName);
 		if (!hostMatcher.matches())

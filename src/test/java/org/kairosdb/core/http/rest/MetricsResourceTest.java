@@ -17,6 +17,7 @@ package org.kairosdb.core.http.rest;
 
 import ch.qos.logback.classic.Level;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.io.Resources;
 import com.google.inject.*;
 import com.google.inject.name.Names;
@@ -320,9 +321,8 @@ public class MetricsResourceTest
 		}
 
 		@Override
-		public void putDataPoints(DataPointSet dps)
+		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
 		{
-
 		}
 
 		@Override

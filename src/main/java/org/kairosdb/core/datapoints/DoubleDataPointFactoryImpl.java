@@ -3,6 +3,9 @@ package org.kairosdb.core.datapoints;
 import com.google.gson.JsonElement;
 import org.kairosdb.core.DataPoint;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static org.kairosdb.core.DataPoint.GROUP_NUMBER;
@@ -39,14 +42,14 @@ public class DoubleDataPointFactoryImpl implements DoubleDataPointFactory
 	}
 
 	@Override
-	public DataPoint getDataPoint(long timestamp, ByteBuffer buffer)
+	public DataPoint getDataPoint(long timestamp, DataInput buffer) throws IOException
 	{
-		double value = buffer.getDouble();
+		double value = buffer.readDouble();
 
 		return new DoubleDataPoint(timestamp, value);
 	}
 
-	public static ByteBuffer writeToByteBuffer(DoubleDataPoint dataPoint)
+	/*public static ByteBuffer writeToByteBuffer(DoubleDataPoint dataPoint)
 	{
 		ByteBuffer buffer = ByteBuffer.allocate(8);
 
@@ -54,10 +57,10 @@ public class DoubleDataPointFactoryImpl implements DoubleDataPointFactory
 
 		buffer.flip();
 		return (buffer);
-	}
+	}*/
 
-	public static void writeToByteBuffer(ByteBuffer buffer, DoubleDataPoint dataPoint)
+	public static void writeToByteBuffer(DataOutput buffer, DoubleDataPoint dataPoint) throws IOException
 	{
-		buffer.putDouble(dataPoint.getDoubleValue());
+		buffer.writeDouble(dataPoint.getDoubleValue());
 	}
 }

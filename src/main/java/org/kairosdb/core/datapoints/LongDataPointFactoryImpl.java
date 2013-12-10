@@ -3,6 +3,9 @@ package org.kairosdb.core.datapoints;
 import com.google.gson.JsonElement;
 import org.kairosdb.core.DataPoint;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static org.kairosdb.core.DataPoint.GROUP_NUMBER;
@@ -14,14 +17,14 @@ public class LongDataPointFactoryImpl implements LongDataPointFactory
 	public static final String DST_LONG = "kairos_long";
 
 
-	public static LongDataPoint getFromByteBuffer(long timestamp, ByteBuffer buffer)
+	public static LongDataPoint getFromByteBuffer(long timestamp, DataInput buffer) throws IOException
 	{
 		long value = unpackLong(buffer);
 
 		return new LongDataPoint(timestamp, value);
 	}
 
-	public static void writeToByteBuffer(ByteBuffer buffer, LongDataPoint dataPoint)
+	public static void writeToByteBuffer(DataOutput buffer, LongDataPoint dataPoint) throws IOException
 	{
 		long value = dataPoint.getValue();
 		packLong(value, buffer);
@@ -31,7 +34,7 @@ public class LongDataPointFactoryImpl implements LongDataPointFactory
 	{
 		ByteBuffer buffer = ByteBuffer.allocate(9);
 
-		writeToByteBuffer(buffer, dataPoint);
+		//writeToByteBuffer(buffer, dataPoint);
 
 		buffer.flip();
 		return (buffer);
@@ -65,7 +68,7 @@ public class LongDataPointFactoryImpl implements LongDataPointFactory
 	}
 
 	@Override
-	public DataPoint getDataPoint(long timestamp, ByteBuffer buffer)
+	public DataPoint getDataPoint(long timestamp, DataInput buffer) throws IOException
 	{
 		return getFromByteBuffer(timestamp, buffer);
 	}

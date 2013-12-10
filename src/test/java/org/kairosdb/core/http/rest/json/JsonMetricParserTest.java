@@ -16,14 +16,12 @@
 package org.kairosdb.core.http.rest.json;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.junit.Test;
-import org.kairosdb.core.DataPointListener;
-import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.TestDataPointFactory;
+import org.kairosdb.core.*;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 
@@ -495,6 +493,7 @@ public class JsonMetricParserTest
 	private static class FakeDataStore implements Datastore
 	{
 		List<DataPointSet> dataPointSetList = new ArrayList<DataPointSet>();
+		private DataPointSet lastDataPointSet;
 
 		protected FakeDataStore() throws DatastoreException
 		{
@@ -511,10 +510,23 @@ public class JsonMetricParserTest
 		}
 
 		@Override
+		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+		{
+			if ((lastDataPointSet == null) || (!lastDataPointSet.getName().equals(metricName)) ||
+					(!lastDataPointSet.getTags().equals(tags)))
+			{
+				lastDataPointSet = new DataPointSet(metricName, tags, Collections.EMPTY_LIST);
+				dataPointSetList.add(lastDataPointSet);
+			}
+
+			lastDataPointSet.addDataPoint(dataPoint);
+		}
+
+		/*@Override
 		public void putDataPoints(DataPointSet dps) throws DatastoreException
 		{
 			dataPointSetList.add(dps);
-		}
+		}*/
 
 		@Override
 		public Iterable<String> getMetricNames() throws DatastoreException

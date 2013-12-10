@@ -87,19 +87,16 @@ public class CarbonPickleServer extends SimpleChannelUpstreamHandler implements 
 				//todo verify cast
 				PickleMetric metric = (PickleMetric)o;
 
-				DataPointSet dps = m_tagParser.parseMetricName(metric.getPath());
-				if (dps == null)
+				CarbonMetric carbonMetric = m_tagParser.parseMetricName(metric.getPath());
+				if (carbonMetric == null)
 					continue;
 
 				//validate dps has at least one tag
-				if (dps.getTags().size() == 0)
+				if (carbonMetric.getTags().size() == 0)
 				{
 					logger.warn("Metric "+metric.getPath()+" is missing a tag");
 					return;
 				}
-
-				String metricName = dps.getName();
-				SortedMap<String, String> tags = dps.getTags();
 
 				long time = metric.getTime();
 				DataPoint dataPoint;
@@ -111,7 +108,7 @@ public class CarbonPickleServer extends SimpleChannelUpstreamHandler implements 
 
 				try
 				{
-					m_datastore.putDataPoint(metricName, tags, dataPoint);
+					m_datastore.putDataPoint(carbonMetric.getName(), carbonMetric.getTags(), dataPoint);
 				}
 				catch (DatastoreException e)
 				{

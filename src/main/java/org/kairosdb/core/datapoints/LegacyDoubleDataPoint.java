@@ -4,6 +4,7 @@ import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 
+import java.io.DataOutput;
 import java.nio.ByteBuffer;
 
 /**
@@ -23,14 +24,14 @@ public class LegacyDoubleDataPoint extends LegacyDataPoint
 		m_value = value;
 	}
 
-	@Override
+	/*@Override
 	public ByteBuffer toByteBuffer()
 	{
 		return LegacyDataPointFactory.writeToByteBuffer(this);
-	}
+	}*/
 
 	@Override
-	public void writeValueToBuffer(ByteBuffer buffer)
+	public void writeValueToBuffer(DataOutput buffer)
 	{
 		LegacyDataPointFactory.writeToByteBuffer(buffer, this);
 	}

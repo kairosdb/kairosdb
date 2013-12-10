@@ -15,13 +15,11 @@
  */
 package org.kairosdb.core.telnet;
 
+import com.google.common.collect.ImmutableSortedMap;
 import org.jboss.netty.channel.*;
 import org.junit.Before;
 import org.junit.Test;
-import org.kairosdb.core.DataPointListener;
-import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.TestDataPointFactory;
+import org.kairosdb.core.*;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
@@ -362,10 +360,19 @@ public class PutCommandTest
 		}
 
 		@Override
+		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+		{
+			if (set == null)
+				set = new DataPointSet(metricName, tags, Collections.EMPTY_LIST);
+
+			set.addDataPoint(dataPoint);
+		}
+
+		/*@Override
 		public void putDataPoints(DataPointSet dps) throws DatastoreException
 		{
 			this.set = dps;
-		}
+		}*/
 
 		@Override
 		public Iterable<String> getMetricNames() throws DatastoreException

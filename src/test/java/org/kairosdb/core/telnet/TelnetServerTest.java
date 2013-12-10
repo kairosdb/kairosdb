@@ -16,20 +16,19 @@
 
 package org.kairosdb.core.telnet;
 
+import com.google.common.collect.ImmutableSortedMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.carbon.CarbonClient;
-import org.kairosdb.core.carbon.CarbonPickleServer;
-import org.kairosdb.core.carbon.HostTagParser;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.util.Tags;
 
 import java.io.IOException;
 
@@ -80,11 +79,13 @@ public class TelnetServerTest
 
 		m_client.sendText("put test.metric "+now+" 123  host=test_host");
 
-		DataPointSet dps = new DataPointSet("test.metric");
-		dps.addTag("host", "test_host");
-		dps.addDataPoint(new LongDataPoint(now * 1000, 123));
+		ImmutableSortedMap<String, String> tags = Tags.create()
+				.put("host", "test_host")
+				.build();
+		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verify(m_datastore, timeout(5000).times(1)).putDataPoints(dps);
+		verify(m_datastore, timeout(5000).times(1))
+				.putDataPoint("test.metric", tags, dp);
 	}
 
 	@Test
@@ -94,11 +95,13 @@ public class TelnetServerTest
 
 		m_client.sendText("put test.metric  "+now+" 123 host=test_host");
 
-		DataPointSet dps = new DataPointSet("test.metric");
-		dps.addTag("host", "test_host");
-		dps.addDataPoint(new LongDataPoint(now * 1000, 123));
+		ImmutableSortedMap<String, String> tags = Tags.create()
+				.put("host", "test_host")
+				.build();
+		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verify(m_datastore, timeout(5000).times(1)).putDataPoints(dps);
+		verify(m_datastore, timeout(5000).times(1))
+				.putDataPoint("test.metric", tags, dp);
 	}
 
 	@Test
@@ -108,11 +111,13 @@ public class TelnetServerTest
 
 		m_client.sendText("put test.metric "+now+"  123 host=test_host");
 
-		DataPointSet dps = new DataPointSet("test.metric");
-		dps.addTag("host", "test_host");
-		dps.addDataPoint(new LongDataPoint(now * 1000, 123));
+		ImmutableSortedMap<String, String> tags = Tags.create()
+				.put("host", "test_host")
+				.build();
+		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verify(m_datastore, timeout(5000).times(1)).putDataPoints(dps);
+		verify(m_datastore, timeout(5000).times(1))
+				.putDataPoint("test.metric", tags, dp);
 	}
 
 	@Test
@@ -122,10 +127,12 @@ public class TelnetServerTest
 
 		m_client.sendText("put test.metric "+now+"   123 host=test_host");
 
-		DataPointSet dps = new DataPointSet("test.metric");
-		dps.addTag("host", "test_host");
-		dps.addDataPoint(new LongDataPoint(now * 1000, 123));
+		ImmutableSortedMap<String, String> tags = Tags.create()
+				.put("host", "test_host")
+				.build();
+		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verify(m_datastore, timeout(5000).times(1)).putDataPoints(dps);
+		verify(m_datastore, timeout(5000).times(1))
+				.putDataPoint("test.metric", tags, dp);
 	}
 }

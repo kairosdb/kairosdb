@@ -16,16 +16,14 @@
 
 package org.kairosdb.datastore.h2;
 
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
 import org.kairosdb.core.*;
-import org.kairosdb.core.datastore.CachedSearchResult;
-import org.kairosdb.core.datastore.DataPointRow;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.h2.orm.*;
@@ -127,7 +125,7 @@ public class H2Datastore implements Datastore
 	}
 
 	@Override
-	public void putDataPoint(String metricName, SortedMap<String, String> tags, org.kairosdb.core.DataPoint dataPoint) throws DatastoreException
+	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, org.kairosdb.core.DataPoint dataPoint) throws DatastoreException
 	{
 		GenOrmDataSource.attachAndBegin();
 		try

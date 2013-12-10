@@ -1,0 +1,55 @@
+package org.kairosdb.datastore.remote;
+
+import com.google.common.collect.ImmutableSortedMap;
+
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+/**
+ Created with IntelliJ IDEA.
+ User: bhawkins
+ Date: 12/10/13
+ Time: 8:25 AM
+ To change this template use File | Settings | File Templates.
+ */
+public class DataPointKey
+{
+	private final String m_key;
+	private final String m_name;
+	private final ImmutableSortedMap<String, String> m_tags;
+	private final String m_type;
+
+
+	public DataPointKey(String name, ImmutableSortedMap<String, String> tags, String type)
+	{
+		m_name = name;
+		m_tags = tags;
+		m_type = type;
+
+		StringBuilder sb = new StringBuilder();
+		sb.append(name).append(type);
+		for (String key : tags.keySet())
+		{
+			sb.append(":").append(key).append("=").append(tags.get(key));
+		}
+
+		m_key = sb.toString();
+	}
+
+	public String getName()
+	{
+		return m_name;
+	}
+
+	public ImmutableSortedMap<String, String> getTags()
+	{
+		return m_tags;
+	}
+
+	public String getType()
+	{
+		return m_type;
+	}
+
+
+}

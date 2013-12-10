@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.telnet;
 
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.jboss.netty.channel.Channel;
@@ -26,6 +27,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.util.Tags;
 import org.kairosdb.util.Util;
 import org.kairosdb.util.ValidationException;
 import org.kairosdb.util.Validator;
@@ -77,7 +79,7 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 		else
 			dp = m_longFactory.createDataPoint(timestamp, Util.parseLong(command[3]));
 
-		SortedMap<String, String> tags = new TreeMap<String, String>();
+		ImmutableSortedMap.Builder<String, String> tags = Tags.create();
 
 		int tagCount = 0;
 		for (int i = 4; i < command.length; i++)
@@ -89,11 +91,11 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 			tagCount++;
 		}
 
-		if (tags.isEmpty())
+		if (tagCount == 0)
 			tags.put("add", "tag");
 
 		m_counter.incrementAndGet();
-		m_datastore.putDataPoint(metricName, tags, dp);
+		m_datastore.putDataPoint(metricName, tags.build(), dp);
 	}
 
 	private void validateTag(int tagCount, String[] tag) throws ValidationException

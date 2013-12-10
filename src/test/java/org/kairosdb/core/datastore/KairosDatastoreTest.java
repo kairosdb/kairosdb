@@ -15,10 +15,10 @@
  */
 package org.kairosdb.core.datastore;
 
+import com.google.common.collect.ImmutableSortedMap;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
@@ -28,7 +28,6 @@ import org.kairosdb.core.exception.KairosDBException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -199,7 +198,7 @@ public class KairosDatastoreTest
 		}
 
 		@Override
-		public void putDataPoints(DataPointSet dps)
+		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
 		{
 		}
 

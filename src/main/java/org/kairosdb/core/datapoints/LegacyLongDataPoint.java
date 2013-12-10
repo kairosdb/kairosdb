@@ -4,6 +4,8 @@ import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -24,14 +26,14 @@ public class LegacyLongDataPoint extends LegacyDataPoint
 	}
 
 
-	@Override
+	/*@Override
 	public ByteBuffer toByteBuffer()
 	{
 		return LegacyDataPointFactory.writeToByteBuffer(this);
-	}
+	}*/
 
 	@Override
-	public void writeValueToBuffer(ByteBuffer buffer)
+	public void writeValueToBuffer(DataOutput buffer) throws IOException
 	{
 		LegacyDataPointFactory.writeToByteBuffer(buffer, this);
 	}

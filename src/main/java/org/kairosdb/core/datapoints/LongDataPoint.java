@@ -41,7 +41,7 @@ public class LongDataPoint extends DataPointHelper
 	}
 
 	@Override
-	public void writeValueToBuffer(ByteBuffer buffer)
+	public void writeValueToBuffer(DataOutput buffer)
 	{
 		LongDataPointFactoryImpl.writeToByteBuffer(buffer, this);
 	}

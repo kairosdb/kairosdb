@@ -294,7 +294,7 @@ public class CachedSearchResult implements QueryCallback
 	@Override
 	public void addDataPoint(DataPoint datapoint) throws IOException
 	{
-		if (!m_writeBuffer.hasRemaining())
+		if ((double)m_writeBuffer.remaining() < ((double)m_writeBuffer.limit() * 0.20))
 		{
 			flushWriteBuffer();
 		}

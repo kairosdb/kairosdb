@@ -90,20 +90,18 @@ public class CarbonTextServer extends SimpleChannelUpstreamHandler implements Ch
 				String[] msgArr = (String[])message;
 
 				//TODO: Validate data
-				DataPointSet dps = m_tagParser.parseMetricName(msgArr[0]);
+				CarbonMetric carbonMetric = m_tagParser.parseMetricName(msgArr[0]);
 
 				//Bail out if no data point set is returned
-				if (dps == null)
+				if (carbonMetric == null)
 					return;
 
 				//validate dps has at least one tag
-				if (dps.getTags().size() == 0)
+				if (carbonMetric.getTags().size() == 0)
 				{
 					logger.warn("Metric "+msgArr[0]+" is missing a tag");
 					return;
 				}
-				String metricName = dps.getName();
-				SortedMap<String, String> tags = dps.getTags();
 
 				long timestamp = Long.parseLong(msgArr[2]) * 1000; //Converting to milliseconds
 
@@ -113,7 +111,7 @@ public class CarbonTextServer extends SimpleChannelUpstreamHandler implements Ch
 				else
 					dp = m_longDataPointFactory.createDataPoint(timestamp, Long.parseLong(msgArr[1]));
 
-				m_datastore.putDataPoint(metricName, tags, dp);
+				m_datastore.putDataPoint(carbonMetric.getName(), carbonMetric.getTags(), dp);
 			}
 			catch (Exception e)
 			{

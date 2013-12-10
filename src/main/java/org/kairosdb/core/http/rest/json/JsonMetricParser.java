@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.http.rest.json;
 
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
@@ -301,7 +302,7 @@ public class JsonMetricParser
 		if (!validationErrors.hasErrors())
 		{
 			//DataPointSet dataPointSet = new DataPointSet(metric.getName(), metric.getTags(), Collections.<DataPoint>emptyList());
-			SortedMap<String, String> tags = new TreeMap<String, String>(metric.getTags());
+			ImmutableSortedMap<String, String> tags = ImmutableSortedMap.copyOf(metric.getTags());
 
 			if (metric.getTimestamp() > 0 && metric.getValue() != null)
 			{

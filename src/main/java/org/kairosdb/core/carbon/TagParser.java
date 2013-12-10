@@ -30,11 +30,10 @@ import java.util.Map;
 public interface TagParser
 {
 	/**
-	 Parse the incomming metric name and return a DataPointSet to represent the
+	 Parse the incoming metric name and return a DataPointSet to represent the
 	 data.  The DataPointSet needs to contain the metric name and at least
 	 one tag.  If a null is returned the metric is not submitted to the datastore
-	 @param metricName
-	 @return DataPointSet containing metric name and at least one tag or null.
+	 @return CarbonMetric containing metric name and at least one tag or null.
 	 */
-	public DataPointSet parseMetricName(String metricName);
+	public CarbonMetric parseMetricName(String metricName);
 }

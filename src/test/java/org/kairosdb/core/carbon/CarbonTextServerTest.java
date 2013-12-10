@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.carbon;
 
+import com.google.common.collect.ImmutableSortedMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,6 +27,7 @@ import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.util.Tags;
 
 import java.io.IOException;
 
@@ -78,11 +80,13 @@ public class CarbonTextServerTest
 
 		m_client.sendText("test.host_name.metric_name", now, "1234");
 
-		DataPointSet dps = new DataPointSet("test.metric_name");
-		dps.addTag("host", "host_name");
-		dps.addDataPoint(new LongDataPoint(now * 1000, 1234));
+		ImmutableSortedMap<String, String> tags = Tags.create()
+				.put("host", "host_name")
+				.build();
 
-		verify(m_datastore, timeout(5000).times(1)).putDataPoints(dps);
+		verify(m_datastore, timeout(5000).times(1))
+				.putDataPoint("test.metric_name", tags,
+						new LongDataPoint(now * 1000, 1234));
 	}
 
 	@Test
@@ -92,10 +96,12 @@ public class CarbonTextServerTest
 
 		m_client.sendText("test.host_name.metric_name", now, "12.34");
 
-		DataPointSet dps = new DataPointSet("test.metric_name");
-		dps.addTag("host", "host_name");
-		dps.addDataPoint(new DoubleDataPoint(now * 1000, 12.34));
+		ImmutableSortedMap<String, String> tags = Tags.create()
+				.put("host", "host_name")
+				.build();
 
-		verify(m_datastore, timeout(5000).times(1)).putDataPoints(dps);
+		verify(m_datastore, timeout(5000).times(1))
+				.putDataPoint("test.metric_name", tags,
+						new DoubleDataPoint(now * 1000, 12.34));
 	}
 }

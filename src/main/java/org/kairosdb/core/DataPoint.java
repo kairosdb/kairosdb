@@ -3,6 +3,8 @@ package org.kairosdb.core;
 import org.json.JSONException;
 import org.json.JSONWriter;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 
@@ -21,9 +23,9 @@ public interface DataPoint
 	 Provides serialized form of data so it can be written to the data store
 	 @return
 	 */
-	public ByteBuffer toByteBuffer();
+	//public ByteBuffer toByteBuffer();
 
-	public void writeValueToBuffer(ByteBuffer buffer);
+	public void writeValueToBuffer(DataOutput buffer) throws IOException;
 
 	public void writeValueToJson(JSONWriter writer) throws JSONException;
 

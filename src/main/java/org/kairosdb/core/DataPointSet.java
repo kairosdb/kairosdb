@@ -16,26 +16,29 @@
 
 package org.kairosdb.core;
 
+import com.google.common.collect.ImmutableSortedMap;
+import org.kairosdb.util.Tags;
+
 import java.util.*;
 
 public class DataPointSet
 {
 	private String m_name;
-	private SortedMap<String, String> m_tags;
+	private ImmutableSortedMap.Builder<String, String> m_tags;
 	private List<DataPoint> m_dataPoints;
 	private String m_dataType;
 
 	public DataPointSet(String name)
 	{
 		m_name = name;
-		m_tags = new TreeMap<String, String>();
+		m_tags = Tags.create();
 		m_dataPoints = new ArrayList<DataPoint>();
 	}
 
 	public DataPointSet(String mName, Map<String, String> tags, List<DataPoint> dataPoints)
 	{
 		this.m_name = mName;
-		this.m_tags = new TreeMap<String, String>(tags);
+		this.m_tags = Tags.create().putAll(tags);
 		this.m_dataPoints = new ArrayList<DataPoint>(dataPoints);
 	}
 
@@ -49,10 +52,10 @@ public class DataPointSet
 		m_tags.put(name, value);
 	}
 
-	public void setTags(SortedMap<String, String> tags)
+	/*public void setTags(SortedMap<String, String> tags)
 	{
 		m_tags = tags;
-	}
+	}*/
 
 	@Override
 	public String toString()
@@ -71,9 +74,9 @@ public class DataPointSet
 
 	public String getName() { return (m_name); }
 
-	public SortedMap<String, String> getTags()
+	public ImmutableSortedMap<String, String> getTags()
 	{
-		return (Collections.unmodifiableSortedMap(m_tags));
+		return m_tags.build();
 	}
 
 	public List<DataPoint> getDataPoints()

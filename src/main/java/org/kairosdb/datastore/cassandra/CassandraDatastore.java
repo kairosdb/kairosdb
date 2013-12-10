@@ -15,6 +15,7 @@
  */
 package org.kairosdb.datastore.cassandra;
 
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -54,7 +55,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.core.CoreModule.DATAPOINTS_FACTORY_LONG;
 
 public class CassandraDatastore implements Datastore
 {
@@ -282,7 +282,7 @@ public class CassandraDatastore implements Datastore
 	}
 
 	@Override
-	public void putDataPoint(String metricName, SortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
 	{
 		try
 		{

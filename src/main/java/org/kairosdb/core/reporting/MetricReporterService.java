@@ -15,6 +15,7 @@
  */
 package org.kairosdb.core.reporting;
 
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
@@ -23,6 +24,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.scheduler.KairosDBJob;
+import org.kairosdb.util.Tags;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -107,8 +109,8 @@ public class MetricReporterService implements KairosDBJob
 
 
 			Runtime runtime = Runtime.getRuntime();
-			SortedMap<String, String> tags = new TreeMap<String, String>();
-			tags.put("host", m_hostname);
+			ImmutableSortedMap<String, String> tags = Tags.create()
+					.put("host", m_hostname).build();
 			m_datastore.putDataPoint("kairosdb.jvm.free_memory",
 					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.freeMemory()));
 			m_datastore.putDataPoint("kairosdb.jvm.total_memory",

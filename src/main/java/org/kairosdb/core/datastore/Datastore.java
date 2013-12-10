@@ -6,6 +6,7 @@
 
 package org.kairosdb.core.datastore;
 
+import com.google.common.collect.ImmutableSortedMap;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.exception.DatastoreException;
@@ -17,7 +18,7 @@ public interface Datastore
 {
 	public void close() throws InterruptedException, DatastoreException;
 
-	public void putDataPoint(String metricName, SortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException;
+	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException;
 
 	//public void putDataPoints(DataPointSet dps) throws DatastoreException;
 

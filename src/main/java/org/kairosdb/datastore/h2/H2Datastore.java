@@ -28,13 +28,13 @@ import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.h2.orm.*;
 import org.kairosdb.datastore.h2.orm.DataPoint;
+import org.kairosdb.util.KDataInput;
+import org.kairosdb.util.KDataOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -144,10 +144,17 @@ public class H2Datastore implements Datastore
 
 			GenOrmDataSource.flush();
 
+			KDataOutput dataOutput = new KDataOutput();
+			dataPoint.writeValueToBuffer(dataOutput);
+
 			new InsertDataPointQuery(m.getId(), new Timestamp(dataPoint.getTimestamp()),
-					dataPoint.toByteBuffer().array()).runUpdate();
+					dataOutput.getBytes()).runUpdate();
 
 			GenOrmDataSource.commit();
+		}
+		catch (IOException e)
+		{
+			throw new DatastoreException(e);
 		}
 		finally
 		{
@@ -298,7 +305,7 @@ public class H2Datastore implements Datastore
 
 					queryCallback.addDataPoint(m_dataPointFactory.createDataPoint(type,
 							record.getTimestamp().getTime(),
-							ByteBuffer.wrap(record.getValue())));
+							KDataInput.createInput(record.getValue())));
 
 					/*if (!record.isLongValueNull())
 						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getLongValue());

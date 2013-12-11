@@ -4,6 +4,8 @@ package org.kairosdb.core.datapoints;
 import org.json.JSONException;
 import org.json.JSONWriter;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -34,14 +36,14 @@ public class LongDataPoint extends DataPointHelper
 		return (double)m_value;
 	}
 
-	@Override
+	/*@Override
 	public ByteBuffer toByteBuffer()
 	{
 		return (LongDataPointFactoryImpl.writeToByteBuffer(this));
-	}
+	}*/
 
 	@Override
-	public void writeValueToBuffer(DataOutput buffer)
+	public void writeValueToBuffer(DataOutput buffer) throws IOException
 	{
 		LongDataPointFactoryImpl.writeToByteBuffer(buffer, this);
 	}

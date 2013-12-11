@@ -25,6 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.io.DataInput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -98,7 +100,7 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 	 @param json
 	 */
 	@Override
-	public DataPoint createDataPoint(String type, long timestamp, JsonElement json)
+	public DataPoint createDataPoint(String type, long timestamp, JsonElement json) throws IOException
 	{
 		DataPointFactory factory = m_factoryMapRegistered.get(type);
 
@@ -115,7 +117,7 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 	 @return
 	 */
 	@Override
-	public DataPoint createDataPoint(String dataStoreType, long timestamp, ByteBuffer buffer)
+	public DataPoint createDataPoint(String dataStoreType, long timestamp, DataInput buffer) throws IOException
 	{
 		DataPointFactory factory = m_factoryMapDataStore.get(dataStoreType);
 

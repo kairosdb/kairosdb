@@ -16,6 +16,7 @@
 package org.kairosdb.datastore.cassandra;
 
 import me.prettyprint.cassandra.serializers.ByteBufferSerializer;
+import me.prettyprint.cassandra.serializers.BytesArraySerializer;
 import me.prettyprint.cassandra.serializers.IntegerSerializer;
 import me.prettyprint.hector.api.Keyspace;
 import me.prettyprint.hector.api.beans.HColumn;
@@ -29,6 +30,7 @@ import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.Order;
 import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.util.KDataInput;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -95,10 +97,10 @@ public class QueryRunner
 
 	public void runQuery() throws IOException
 	{
-		MultigetSliceQuery<DataPointsRowKey, Integer, ByteBuffer> msliceQuery =
+		MultigetSliceQuery<DataPointsRowKey, Integer, byte[]> msliceQuery =
 				HFactory.createMultigetSliceQuery(m_keyspace,
 						ROW_KEY_SERIALIZER,
-						IntegerSerializer.get(), ByteBufferSerializer.get());
+						IntegerSerializer.get(), BytesArraySerializer.get());
 
 		msliceQuery.setColumnFamily(m_columnFamily);
 		msliceQuery.setKeys(m_rowKeys);
@@ -107,15 +109,15 @@ public class QueryRunner
 		else
 			msliceQuery.setRange(m_startTime, m_endTime, false, m_multiRowReadSize);
 
-		Rows<DataPointsRowKey, Integer, ByteBuffer> rows =
+		Rows<DataPointsRowKey, Integer, byte[]> rows =
 				msliceQuery.execute().get();
 
-		List<Row<DataPointsRowKey, Integer, ByteBuffer>> unfinishedRows =
-				new ArrayList<Row<DataPointsRowKey, Integer, ByteBuffer>>();
+		List<Row<DataPointsRowKey, Integer, byte[]>> unfinishedRows =
+				new ArrayList<Row<DataPointsRowKey, Integer, byte[]>>();
 
-		for (Row<DataPointsRowKey, Integer, ByteBuffer> row : rows)
+		for (Row<DataPointsRowKey, Integer, byte[]> row : rows)
 		{
-			List<HColumn<Integer, ByteBuffer>> columns = row.getColumnSlice().getColumns();
+			List<HColumn<Integer, byte[]>> columns = row.getColumnSlice().getColumns();
 			if (!m_limit && columns.size() == m_multiRowReadSize)
 				unfinishedRows.add(row);
 
@@ -125,18 +127,18 @@ public class QueryRunner
 
 		//Iterate through the unfinished rows and get the rest of the data.
 		//todo: use multiple threads to retrieve this data
-		for (Row<DataPointsRowKey, Integer, ByteBuffer> unfinishedRow : unfinishedRows)
+		for (Row<DataPointsRowKey, Integer, byte[]> unfinishedRow : unfinishedRows)
 		{
 			DataPointsRowKey key = unfinishedRow.getKey();
 
-			SliceQuery<DataPointsRowKey, Integer, ByteBuffer> sliceQuery =
+			SliceQuery<DataPointsRowKey, Integer, byte[]> sliceQuery =
 					HFactory.createSliceQuery(m_keyspace, ROW_KEY_SERIALIZER,
-					IntegerSerializer.get(), ByteBufferSerializer.get());
+					IntegerSerializer.get(), BytesArraySerializer.get());
 
 			sliceQuery.setColumnFamily(m_columnFamily);
 			sliceQuery.setKey(key);
 
-			List<HColumn<Integer, ByteBuffer>> columns = unfinishedRow.getColumnSlice().getColumns();
+			List<HColumn<Integer, byte[]>> columns = unfinishedRow.getColumnSlice().getColumns();
 
 			do
 			{
@@ -154,7 +156,7 @@ public class QueryRunner
 	}
 
 
-	private void writeColumns(DataPointsRowKey rowKey, List<HColumn<Integer, ByteBuffer>> columns)
+	private void writeColumns(DataPointsRowKey rowKey, List<HColumn<Integer, byte[]>> columns)
 			throws IOException
 	{
 		if (columns.size() != 0)
@@ -170,11 +172,11 @@ public class QueryRunner
 			DataPointFactory dataPointFactory = null;
 			dataPointFactory = m_kairosDataPointFactory.getFactoryForDataStoreType(type);
 
-			for (HColumn<Integer, ByteBuffer> column : columns)
+			for (HColumn<Integer, byte[]> column : columns)
 			{
 				int columnTime = column.getName();
 
-				ByteBuffer value = column.getValue();
+				byte[] value = column.getValue();
 				long timestamp = getColumnTimestamp(rowKey.getTimestamp(), columnTime);
 
 				if (type == LegacyDataPointFactory.DATASTORE_TYPE)
@@ -183,19 +185,19 @@ public class QueryRunner
 					{
 						m_queryCallback.addDataPoint(
 								new LegacyLongDataPoint(timestamp,
-										ValueSerializer.getLongFromByteBuffer(value)));
+										ValueSerializer.getLongFromByteBuffer(ByteBuffer.wrap(value))));
 					}
 					else
 					{
 						m_queryCallback.addDataPoint(
 								new LegacyDoubleDataPoint(timestamp,
-										ValueSerializer.getDoubleFromByteBuffer(value)));
+										ValueSerializer.getDoubleFromByteBuffer(ByteBuffer.wrap(value))));
 					}
 				}
 				else
 				{
 					m_queryCallback.addDataPoint(
-							dataPointFactory.getDataPoint(timestamp, value));
+							dataPointFactory.getDataPoint(timestamp, KDataInput.createInput(value)));
 				}
 			}
 		}

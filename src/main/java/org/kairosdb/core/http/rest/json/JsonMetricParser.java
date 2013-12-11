@@ -258,7 +258,7 @@ public class JsonMetricParser
 	}
 
 
-	private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) throws DatastoreException
+	private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) throws DatastoreException, IOException
 	{
 		ValidationErrors validationErrors = new ValidationErrors();
 

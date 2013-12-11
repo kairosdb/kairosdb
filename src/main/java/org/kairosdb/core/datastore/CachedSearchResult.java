@@ -19,6 +19,7 @@ package org.kairosdb.core.datastore;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.util.BufferedDataInputStream;
+import org.kairosdb.util.BufferedDataOutputStream;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.StringPool;
 import org.slf4j.Logger;
@@ -46,6 +47,8 @@ public class CachedSearchResult implements QueryCallback
 	private ByteBuffer m_writeBuffer;
 	private File m_dataFile;
 	private RandomAccessFile m_randomAccessFile;
+	private BufferedDataOutputStream m_dataOuputStream;
+
 	private File m_indexFile;
 	private AtomicInteger m_closeCounter = new AtomicInteger();
 	private boolean m_readFromCache = false;
@@ -73,8 +76,8 @@ public class CachedSearchResult implements QueryCallback
 			throws FileNotFoundException
 	{
 		m_metricName = metricName;
-		m_writeBuffer = ByteBuffer.allocate(DATA_POINT_SIZE * WRITE_BUFFER_SIZE);
-		m_writeBuffer.clear();
+		/*m_writeBuffer = ByteBuffer.allocate(DATA_POINT_SIZE * WRITE_BUFFER_SIZE);
+		m_writeBuffer.clear();*/
 		m_indexFile = indexFile;
 		m_dataPointSets = new ArrayList<FilePositionMarker>();
 		m_dataFile = dataFile;
@@ -87,6 +90,7 @@ public class CachedSearchResult implements QueryCallback
 		//Cache cleanup could have removed the folders
 		m_dataFile.getParentFile().mkdirs();
 		m_randomAccessFile = new RandomAccessFile(m_dataFile, "rw");
+		m_dataOuputStream = BufferedDataOutputStream.create(m_randomAccessFile, 0L);
 	}
 
 
@@ -137,11 +141,11 @@ public class CachedSearchResult implements QueryCallback
 		out.close();
 	}
 
-	private void clearDataFile() throws IOException
+	/*private void clearDataFile() throws IOException
 	{
 		if (m_randomAccessFile != null)
 			m_randomAccessFile.getChannel().truncate(0);
-	}
+	}*/
 
 	public static CachedSearchResult createCachedSearchResult(String metricName,
 			String baseFileName, KairosDataPointFactory dataPointFactory)
@@ -150,10 +154,14 @@ public class CachedSearchResult implements QueryCallback
 		File dataFile = getDataFile(baseFileName);
 		File indexFile = getIndexFile(baseFileName);
 
+		//Just in case the file are there.
+		dataFile.delete();
+		indexFile.delete();
+
 		CachedSearchResult ret = new CachedSearchResult(metricName, dataFile,
 				indexFile, dataPointFactory);
 
-		ret.clearDataFile();
+		//ret.clearDataFile();
 
 		return (ret);
 	}
@@ -198,9 +206,10 @@ public class CachedSearchResult implements QueryCallback
 		if (m_randomAccessFile == null)
 			return;
 
-		flushWriteBuffer();
+		//flushWriteBuffer();
+		m_dataOuputStream.flush();
 
-		long curPosition = m_randomAccessFile.position();
+		long curPosition = m_dataOuputStream.getPosition();
 		if (m_dataPointSets.size() != 0)
 			m_dataPointSets.get(m_dataPointSets.size() -1).setEndPosition(curPosition);
 	}
@@ -242,12 +251,12 @@ public class CachedSearchResult implements QueryCallback
 
 		endDataPoints();
 
-		long curPosition = m_randomAccessFile.position();
+		long curPosition = m_dataOuputStream.getPosition();
 		m_currentFilePositionMarker = new FilePositionMarker(curPosition, tags, type);
 		m_dataPointSets.add(m_currentFilePositionMarker);
 	}
 
-	private void flushWriteBuffer() throws IOException
+	/*private void flushWriteBuffer() throws IOException
 	{
 		if (m_writeBuffer.position() != 0)
 		{
@@ -258,7 +267,7 @@ public class CachedSearchResult implements QueryCallback
 
 			m_writeBuffer.clear();
 		}
-	}
+	}*/
 
 	/*public void addDataPoint(long timestamp, long value) throws IOException
 	{
@@ -289,12 +298,13 @@ public class CachedSearchResult implements QueryCallback
 	@Override
 	public void addDataPoint(DataPoint datapoint) throws IOException
 	{
-		if ((double)m_writeBuffer.remaining() < ((double)m_writeBuffer.limit() * 0.20))
+		/*if ((double)m_writeBuffer.remaining() < ((double)m_writeBuffer.limit() * 0.20))
 		{
 			flushWriteBuffer();
-		}
-		m_writeBuffer.putLong(datapoint.getTimestamp());
-		datapoint.writeValueToBuffer(m_writeBuffer);
+		}*/
+		m_dataOuputStream.writeLong(datapoint.getTimestamp());
+		//m_writeBuffer.putLong(datapoint.getTimestamp());
+		datapoint.writeValueToBuffer(m_dataOuputStream);
 
 		m_currentFilePositionMarker.incrementDataPointCount();
 	}

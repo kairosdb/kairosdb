@@ -1,7 +1,5 @@
 package org.kairosdb.util;
 
-import org.eclipse.jetty.server.Authentication;
-
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -9,20 +7,20 @@ import java.nio.channels.FileChannel;
 /**
  Created by bhawkins on 12/10/13.
  */
-public class BufferedDataOuputStream extends DataOutputStream
+public class BufferedDataOutputStream extends DataOutputStream
 {
 	private WrappedOutputStream m_wrappedOutputStream;
 
-	public static BufferedDataOuputStream create(RandomAccessFile file, long startPosition)
+	public static BufferedDataOutputStream create(RandomAccessFile file, long startPosition)
 	{
 		WrappedOutputStream outputStream = new WrappedOutputStream(file, startPosition);
-		BufferedDataOuputStream ret = new BufferedDataOuputStream(outputStream);
+		BufferedDataOutputStream ret = new BufferedDataOutputStream(outputStream);
 		ret.setWrappedOutputStream(outputStream);
 
 		return ret;
 	}
 
-	private BufferedDataOuputStream(WrappedOutputStream outputStream)
+	private BufferedDataOutputStream(WrappedOutputStream outputStream)
 	{
 		super(new BufferedOutputStream(outputStream));
 	}

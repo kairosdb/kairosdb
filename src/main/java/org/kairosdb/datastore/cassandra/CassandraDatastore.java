@@ -21,6 +21,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import me.prettyprint.cassandra.model.ConfigurableConsistencyLevel;
 import me.prettyprint.cassandra.serializers.ByteBufferSerializer;
+import me.prettyprint.cassandra.serializers.BytesArraySerializer;
 import me.prettyprint.cassandra.serializers.IntegerSerializer;
 import me.prettyprint.cassandra.serializers.StringSerializer;
 import me.prettyprint.cassandra.service.CassandraHostConfigurator;
@@ -44,6 +45,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.util.KDataOutput;
 import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +98,7 @@ public class CassandraDatastore implements Datastore
 	private int m_singleRowReadSize;
 	private int m_multiRowSize;
 	private int m_multiRowReadSize;
-	private WriteBuffer<DataPointsRowKey, Integer, ByteBuffer> m_dataPointWriteBuffer;
+	private WriteBuffer<DataPointsRowKey, Integer, byte[]> m_dataPointWriteBuffer;
 	private WriteBuffer<String, DataPointsRowKey, String> m_rowKeyWriteBuffer;
 	private WriteBuffer<String, String, String> m_stringIndexWriteBuffer;
 
@@ -174,11 +176,11 @@ public class CassandraDatastore implements Datastore
 			ReentrantLock mutatorLock = new ReentrantLock();
 			Condition lockCondition = mutatorLock.newCondition();
 
-			m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, ByteBuffer>(
+			m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, byte[]>(
 					m_keyspace, CF_DATA_POINTS, writeDelay, maxWriteSize,
 					DATA_POINTS_ROW_KEY_SERIALIZER,
 					IntegerSerializer.get(),
-					ByteBufferSerializer.get(),
+					BytesArraySerializer.get(),
 					new WriteBufferStats()
 					{
 						@Override
@@ -331,8 +333,10 @@ public class CassandraDatastore implements Datastore
 			}
 
 			int columnTime = getColumnName(rowTime, dataPoint.getTimestamp());
+			KDataOutput kDataOutput = new KDataOutput();
+			dataPoint.writeValueToBuffer(kDataOutput);
 			m_dataPointWriteBuffer.addData(rowKey, columnTime,
-					dataPoint.toByteBuffer(), writeTime);
+					kDataOutput.getBytes(), writeTime);
 
 		}
 		catch (DatastoreException e)
@@ -399,8 +403,10 @@ public class CassandraDatastore implements Datastore
 				}
 
 				int columnTime = getColumnName(rowTime, dp.getTimestamp());
+				KDataOutput kDataOutput = new KDataOutput();
+				dp.writeValueToBuffer(kDataOutput);
 				m_dataPointWriteBuffer.addData(rowKey, columnTime,
-						dp.toByteBuffer(), writeTime);
+						kDataOutput.getBytes(), writeTime);
 
 			}
 		}

@@ -74,18 +74,26 @@ public class KairosDatastore
 
 		m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
 
-		cleanDirectory(new File(m_baseCacheDir));
-		newCacheDirectory();
-		File cacheDirectory = new File(m_cacheDir);
-		cacheDirectory.mkdirs();
-		checkState(cacheDirectory.exists(), "Cache directory not created");
+		setupCacheDirectory();
 	}
 
 	@Inject(optional = true)
 	public void setBaseCacheDir(@Named(QUERY_CACHE_DIR) String cacheTempDir)
 	{
 		if (cacheTempDir != null && !cacheTempDir.equals(""))
+		{
 			m_baseCacheDir = cacheTempDir;
+			setupCacheDirectory();
+		}
+	}
+
+	private void setupCacheDirectory()
+	{
+		cleanDirectory(new File(m_baseCacheDir));
+		newCacheDirectory();
+		File cacheDirectory = new File(m_cacheDir);
+		cacheDirectory.mkdirs();
+		checkState(cacheDirectory.exists(), "Cache directory not created");
 	}
 
 	public String getCacheDir()

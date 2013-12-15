@@ -45,4 +45,6 @@ public interface KairosDataPointFactory
 	public DataPointFactory getFactoryForDataStoreType(String dataStoreType);
 
 	public String getGroupType(String datastoreType);
+
+	public boolean isRegisteredType(String type);
 }

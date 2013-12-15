@@ -310,8 +310,13 @@ public class JsonMetricParser
 				if (type == null)
 					type = findType(metric.getValue());
 
-				datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
-						type, metric.getTimestamp(), metric.getValue()));
+				if (dataPointFactory.isRegisteredType(type))
+				{
+					datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
+							type, metric.getTimestamp(), metric.getValue()));
+				}
+				else
+					validationErrors.addErrorMessage("Unregistered data point type '"+type+"'");
 			}
 
 			if (metric.getDatapoints() != null && metric.getDatapoints().length > 0)
@@ -350,21 +355,19 @@ public class JsonMetricParser
 						if (type == null)
 							type = findType(dataPoint[1]);
 
+						if (!dataPointFactory.isRegisteredType(type))
+						{
+							validationErrors.addErrorMessage("Unregistered data point type '"+type+"'");
+							continue;
+						}
+
 						datastore.putDataPoint(metric.getName(), tags,
 								dataPointFactory.createDataPoint(type, timestamp, dataPoint[1]));
 						dataPointCount ++;
-
-						/*if (dataPoint[1] % 1 == 0)
-							dataPointSet.addDataPoint(new DataPoint(timestamp, (long) dataPoint[1]));
-						else
-							dataPointSet.addDataPoint(new DataPoint(timestamp, dataPoint[1]));*/
 					}
 					contextCount++;
 				}
 			}
-
-			/*if (dataPointSet.getDataPoints().size() > 0)
-				datastore.putDataPoints(dataPointSet);*/
 		}
 
 		errors.add(validationErrors);

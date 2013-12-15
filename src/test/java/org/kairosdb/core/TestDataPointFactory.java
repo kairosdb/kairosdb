@@ -74,4 +74,10 @@ public class TestDataPointFactory implements KairosDataPointFactory
 	{
 		return getFactoryForDataStoreType(datastoreType).getGroupType();
 	}
+
+	@Override
+	public boolean isRegisteredType(String type)
+	{
+		return m_factoryMapRegistered.containsKey(type);
+	}
 }

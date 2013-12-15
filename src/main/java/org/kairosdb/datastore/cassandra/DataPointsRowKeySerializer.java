@@ -155,7 +155,7 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 
 		//Check for datatype marker which ia a null
 		byteBuffer.mark();
-		String dataType = null;
+		String dataType = "";
 		if (byteBuffer.get() == 0x0)
 		{
 			int dtSize = byteBuffer.get();

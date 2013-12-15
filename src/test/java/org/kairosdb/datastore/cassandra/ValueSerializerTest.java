@@ -17,7 +17,11 @@
 package org.kairosdb.datastore.cassandra;
 
 import org.junit.Test;
+import org.kairosdb.util.KDataInput;
+import org.kairosdb.util.KDataOutput;
 
+import java.io.DataInput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static junit.framework.Assert.assertTrue;
@@ -101,64 +105,64 @@ public class ValueSerializerTest
 		assertThat(ValueSerializer.getLongFromByteBuffer(buf), equalTo(-1L));
 	}
 
-	private void testValue(long value, ByteBuffer buf)
+	private void testValue(long value) throws IOException
 	{
-		buf.clear();
-		packLong(value, buf);
-		buf.flip();
-		long resp = unpackLong(buf);
+		KDataOutput bufOutput = new KDataOutput();
+		packLong(value, bufOutput);
+
+		DataInput bufInput = KDataInput.createInput(bufOutput.getBytes());
+		long resp = unpackLong(bufInput);
+
 		assertThat(resp, equalTo(value));
 	}
 
 	@Test
-	public void testPackUnpack()
+	public void testPackUnpack() throws IOException
 	{
-		ByteBuffer buf = ByteBuffer.allocate(256);
+		testValue(0L);
 
-		testValue(0L, buf);
-
-		testValue(256, buf);
+		testValue(256);
 
 		for (long I = 1; I < 0x100; I++)
 		{
-			testValue(I, buf);
+			testValue(I);
 		}
 
 		for (long I = 0x100; I < 0x10000; I++)
 		{
-			testValue(I, buf);
+			testValue(I);
 		}
 
 		for (long I = 0x10000; I < 0x1000000; I++)
 		{
-			testValue(I, buf);
+			testValue(I);
 		}
 
 		for (long I = 0x1000000; I < 0x100000000L; I += 0x400000)
 		{
-			testValue(I, buf);
+			testValue(I);
 		}
 
 		for (long I = 0x100000000L; I < 0x10000000000L; I += 0x40000000L)
 		{
-			testValue(I, buf);
+			testValue(I);
 		}
 
 		for (long I = 0x10000000000L; I < 0x1000000000000L; I += 0x4000000000L)
 		{
-			testValue(I, buf);
+			testValue(I);
 		}
 
 		for (long I = 0x1000000000000L; I < 0x100000000000000L; I += 0x400000000000L)
 		{
-			testValue(I, buf);
+			testValue(I);
 		}
 
 		for (long I = 0x100000000000000L; I < 0x7000000000000000L; I += 0x40000000000000L)
 		{
-			testValue(I, buf);
+			testValue(I);
 		}
 
-		testValue(-1, buf);
+		testValue(-1);
 	}
 }

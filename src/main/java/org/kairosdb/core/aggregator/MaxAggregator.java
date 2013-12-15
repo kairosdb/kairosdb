@@ -40,6 +40,12 @@ public class MaxAggregator extends RangeAggregator
 	}
 
 	@Override
+	public boolean canAggregate(String groupType)
+	{
+		return DataPoint.GROUP_NUMBER.equals(groupType);
+	}
+
+	@Override
 	protected RangeSubAggregator getSubAggregator()
 	{
 		return (new MaxDataPointAggregator());

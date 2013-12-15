@@ -18,12 +18,13 @@ public class LongDataPointTest extends DataPointTestCommon
 		LongDataPointFactory longFactory = new LongDataPointFactoryImpl();
 		factory = longFactory;
 
-		dataPointList.add(longFactory.createDataPoint(123, 1));
+		dataPointList.clear();
+		dataPointList.add(longFactory.createDataPoint(1, 1));
 		dataPointList.add(longFactory.createDataPoint(123, 123));
-		dataPointList.add(longFactory.createDataPoint(123, 1234));
-		dataPointList.add(longFactory.createDataPoint(123, 65537));
-		dataPointList.add(longFactory.createDataPoint(123, 4294967296L));
-		dataPointList.add(longFactory.createDataPoint(1, 1234567890L));
+		dataPointList.add(longFactory.createDataPoint(1234, 1234));
+		dataPointList.add(longFactory.createDataPoint(65537, 65537));
+		dataPointList.add(longFactory.createDataPoint(4294967296L, 4294967296L));
+		dataPointList.add(longFactory.createDataPoint(1234567890L, 1234567890L));
 
 		sum = 5529602081.0;
 	}

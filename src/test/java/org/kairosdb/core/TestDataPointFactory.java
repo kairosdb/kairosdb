@@ -6,6 +6,8 @@ import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 
+import java.io.DataInput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +38,7 @@ public class TestDataPointFactory implements KairosDataPointFactory
 	}
 
 	@Override
-	public DataPoint createDataPoint(String type, long timestamp, JsonElement json)
+	public DataPoint createDataPoint(String type, long timestamp, JsonElement json) throws IOException
 	{
 		DataPointFactory factory = m_factoryMapRegistered.get(type);
 
@@ -46,7 +48,7 @@ public class TestDataPointFactory implements KairosDataPointFactory
 	}
 
 	@Override
-	public DataPoint createDataPoint(String type, long timestamp, ByteBuffer buffer)
+	public DataPoint createDataPoint(String type, long timestamp, DataInput buffer) throws IOException
 	{
 		DataPointFactory factory = m_factoryMapDataStore.get(type);
 

@@ -40,6 +40,12 @@ public class CountAggregator extends RangeAggregator
 		return (new CountDataPointAggregator());
 	}
 
+	@Override
+	public boolean canAggregate(String groupType)
+	{
+		return true;
+	}
+
 	private class CountDataPointAggregator implements RangeSubAggregator
 	{
 		@Override

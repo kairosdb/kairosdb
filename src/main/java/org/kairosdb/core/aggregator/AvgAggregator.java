@@ -49,6 +49,12 @@ public class AvgAggregator extends RangeAggregator
 		return (new AvgDataPointAggregator());
 	}
 
+	@Override
+	public boolean canAggregate(String groupType)
+	{
+		return DataPoint.GROUP_NUMBER.equals(groupType);
+	}
+
 	private class AvgDataPointAggregator implements RangeSubAggregator
 	{
 

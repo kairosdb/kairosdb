@@ -3,6 +3,7 @@ package org.kairosdb.core.datapoints;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,21 +24,25 @@ public class DataPointTestCommon
 	public static double sum = 0.0;
 
 	@Test
-	public void testBufferSerialization()
+	public void testBufferSerialization() throws IOException
 	{
-		ByteBuffer buffer = ByteBuffer.allocate(1024);
+		ByteArrayOutputStream buffer = new ByteArrayOutputStream(1024);
 
+		DataOutputStream dataOutputStream = new DataOutputStream(buffer);
 		for (DataPoint dataPoint : dataPointList)
 		{
-			dataPoint.writeValueToBuffer(buffer);
+			dataPoint.writeValueToBuffer(dataOutputStream);
 		}
 
 		double testSum = 0.0;
-		buffer.flip();
+
+		DataInputStream dataInputStream = new DataInputStream(
+				new ByteArrayInputStream(buffer.toByteArray()));
+
 		for (int i = 0; i < dataPointList.size(); i++)
 		{
 			DataPoint dp = factory.getDataPoint(dataPointList.get(i).getTimestamp(),
-					buffer);
+					dataInputStream);
 
 			assertEquals(dataPointList.get(i), dp);
 			testSum += dp.getDoubleValue();

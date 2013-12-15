@@ -60,7 +60,7 @@ public class DataPointsRowKey
 	}
 
 	/**
-	 If this returns null then it is the old row key format and the data type
+	 If this returns "" (empty string) then it is the old row key format and the data type
 	 is determined by the timestamp bit in the column.
 	 @return
 	 */

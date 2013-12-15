@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -44,10 +43,9 @@ public class CachedSearchResult implements QueryCallback
 	private String m_metricName;
 	private List<FilePositionMarker> m_dataPointSets;
 	private FilePositionMarker m_currentFilePositionMarker;
-	private ByteBuffer m_writeBuffer;
 	private File m_dataFile;
 	private RandomAccessFile m_randomAccessFile;
-	private BufferedDataOutputStream m_dataOuputStream;
+	private BufferedDataOutputStream m_dataOutputStream;
 
 	private File m_indexFile;
 	private AtomicInteger m_closeCounter = new AtomicInteger();
@@ -90,7 +88,7 @@ public class CachedSearchResult implements QueryCallback
 		//Cache cleanup could have removed the folders
 		m_dataFile.getParentFile().mkdirs();
 		m_randomAccessFile = new RandomAccessFile(m_dataFile, "rw");
-		m_dataOuputStream = BufferedDataOutputStream.create(m_randomAccessFile, 0L);
+		m_dataOutputStream = BufferedDataOutputStream.create(m_randomAccessFile, 0L);
 	}
 
 
@@ -207,9 +205,9 @@ public class CachedSearchResult implements QueryCallback
 			return;
 
 		//flushWriteBuffer();
-		m_dataOuputStream.flush();
+		m_dataOutputStream.flush();
 
-		long curPosition = m_dataOuputStream.getPosition();
+		long curPosition = m_dataOutputStream.getPosition();
 		if (m_dataPointSets.size() != 0)
 			m_dataPointSets.get(m_dataPointSets.size() -1).setEndPosition(curPosition);
 	}
@@ -251,7 +249,7 @@ public class CachedSearchResult implements QueryCallback
 
 		endDataPoints();
 
-		long curPosition = m_dataOuputStream.getPosition();
+		long curPosition = m_dataOutputStream.getPosition();
 		m_currentFilePositionMarker = new FilePositionMarker(curPosition, tags, type);
 		m_dataPointSets.add(m_currentFilePositionMarker);
 	}
@@ -302,9 +300,9 @@ public class CachedSearchResult implements QueryCallback
 		{
 			flushWriteBuffer();
 		}*/
-		m_dataOuputStream.writeLong(datapoint.getTimestamp());
+		m_dataOutputStream.writeLong(datapoint.getTimestamp());
 		//m_writeBuffer.putLong(datapoint.getTimestamp());
-		datapoint.writeValueToBuffer(m_dataOuputStream);
+		datapoint.writeValueToBuffer(m_dataOutputStream);
 
 		m_currentFilePositionMarker.incrementDataPointCount();
 	}

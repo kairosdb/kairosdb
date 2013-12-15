@@ -109,7 +109,7 @@ public class GrouperTest
 		group5.close();  // cleans up temp files
 	}
 
-	private void assertDataPoint(DataPoint dataPoint, long expectedTimestamp, long expectedValue)
+	public static void assertDataPoint(DataPoint dataPoint, long expectedTimestamp, long expectedValue)
 	{
 		assertThat(dataPoint.getTimestamp(), equalTo(expectedTimestamp));
 		assertThat(dataPoint.getLongValue(), equalTo(expectedValue));

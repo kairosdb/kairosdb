@@ -183,14 +183,19 @@ public class CassandraDatastore implements Datastore
 					BytesArraySerializer.get(),
 					new WriteBufferStats()
 					{
+						private ImmutableSortedMap m_tags;
+						{
+							m_tags = ImmutableSortedMap.naturalOrder()
+									.put("host", hostname)
+									.put("buffer", CF_DATA_POINTS)
+									.build();
+						}
+
 						@Override
 						public void saveWriteSize(int pendingWrites)
 						{
-							DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
-							dps.addTag("host", hostname);
-							dps.addTag("buffer", CF_DATA_POINTS);
-							dps.addDataPoint(m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
-							putInternalDataPoints(dps);
+							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
+									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
 						}
 					}, mutatorLock, lockCondition);
 
@@ -201,14 +206,19 @@ public class CassandraDatastore implements Datastore
 					StringSerializer.get(),
 					new WriteBufferStats()
 					{
+						private ImmutableSortedMap m_tags;
+						{
+							m_tags = ImmutableSortedMap.naturalOrder()
+									.put("host", hostname)
+									.put("buffer", CF_ROW_KEY_INDEX)
+									.build();
+						}
+
 						@Override
 						public void saveWriteSize(int pendingWrites)
 						{
-							DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
-							dps.addTag("host", hostname);
-							dps.addTag("buffer", CF_ROW_KEY_INDEX);
-							dps.addDataPoint(m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
-							putInternalDataPoints(dps);
+							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
+									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
 						}
 					}, mutatorLock, lockCondition);
 
@@ -219,14 +229,19 @@ public class CassandraDatastore implements Datastore
 					StringSerializer.get(),
 					new WriteBufferStats()
 					{
+						private ImmutableSortedMap m_tags;
+						{
+							m_tags = ImmutableSortedMap.naturalOrder()
+									.put("host", hostname)
+									.put("buffer", CF_STRING_INDEX)
+									.build();
+						}
+
 						@Override
 						public void saveWriteSize(int pendingWrites)
 						{
-							DataPointSet dps = new DataPointSet("kairosdb.datastore.write_size");
-							dps.addTag("host", hostname);
-							dps.addTag("buffer", CF_STRING_INDEX);
-							dps.addDataPoint(m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
-							putInternalDataPoints(dps);
+							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
+									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
 						}
 					}, mutatorLock, lockCondition);
 		}
@@ -236,11 +251,11 @@ public class CassandraDatastore implements Datastore
 		}
 	}
 
-	private void putInternalDataPoints(DataPointSet dps)
+	private void putInternalDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint)
 	{
 		try
 		{
-			putDataPoints(dps);
+			putDataPoint(metricName, tags, dataPoint);
 		}
 		catch (DatastoreException e)
 		{
@@ -351,7 +366,7 @@ public class CassandraDatastore implements Datastore
 
 
 	//@Override
-	public void putDataPoints(DataPointSet dps) throws DatastoreException
+	/*public void putDataPoints(DataPointSet dps) throws DatastoreException
 	{
 		try
 		{
@@ -418,7 +433,7 @@ public class CassandraDatastore implements Datastore
 		{
 			throw new DatastoreException(e);
 		}
-	}
+	}*/
 
 	@Override
 	public Iterable<String> getMetricNames()
@@ -514,6 +529,7 @@ public class CassandraDatastore implements Datastore
 	{
 		long startTime = System.currentTimeMillis();
 		long currentTimeTier = 0L;
+		String currentType = null;
 
 		List<QueryRunner> runners = new ArrayList<QueryRunner>();
 		List<DataPointsRowKey> queryKeys = new ArrayList<DataPointsRowKey>();
@@ -525,7 +541,11 @@ public class CassandraDatastore implements Datastore
 			if (currentTimeTier == 0L)
 				currentTimeTier = rowKey.getTimestamp();
 
-			if ((rowKey.getTimestamp() == currentTimeTier) && queryKeys.size() < m_multiRowSize)
+			if (currentType == null)
+				currentType = rowKey.getDataType();
+
+			if ((rowKey.getTimestamp() == currentTimeTier) && (queryKeys.size() < m_multiRowSize) &&
+					(currentType.equals(rowKey.getDataType())))
 			{
 				queryKeys.add(rowKey);
 			}

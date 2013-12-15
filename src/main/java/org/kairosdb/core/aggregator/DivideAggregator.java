@@ -45,6 +45,12 @@ public class DivideAggregator implements Aggregator
 	}
 
 	@Override
+	public boolean canAggregate(String groupType)
+	{
+		return DataPoint.GROUP_NUMBER.equals(groupType);
+	}
+
+	@Override
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
 		checkState(m_divisor != 0.0);

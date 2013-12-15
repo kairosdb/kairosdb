@@ -22,4 +22,5 @@ import java.util.List;
 public interface Aggregator
 {
 	DataPointGroup aggregate(DataPointGroup dataPointGroup);
+	boolean canAggregate(String groupType);
 }

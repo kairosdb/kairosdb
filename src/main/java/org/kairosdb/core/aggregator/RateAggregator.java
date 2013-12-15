@@ -37,6 +37,12 @@ public class RateAggregator implements Aggregator
 		m_dataPointFactory = dataPointFactory;
 	}
 
+	@Override
+	public boolean canAggregate(String groupType)
+	{
+		return DataPoint.GROUP_NUMBER.equals(groupType);
+	}
+
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
 		return (new RateDataPointAggregator(dataPointGroup));

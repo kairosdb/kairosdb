@@ -112,6 +112,8 @@ public class CoreModule extends AbstractModule
 
 		bind(LegacyDataPointFactory.class).in(Singleton.class);
 
+		bind(StringDataPointFactory.class).in(Singleton.class);
+
 		bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class).in(Singleton.class);
 
 		String hostIp = m_props.getProperty("kairosdb.host_ip");

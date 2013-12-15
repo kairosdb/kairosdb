@@ -34,6 +34,10 @@ public class TypeGroupByResult implements GroupByResult
 		m_type = type;
 	}
 
+	public String getType()
+	{
+		return m_type;
+	}
 
 	@Override
 	public String toJson() throws FormatterException

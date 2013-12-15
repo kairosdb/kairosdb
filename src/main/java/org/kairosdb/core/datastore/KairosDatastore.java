@@ -518,6 +518,16 @@ public class KairosDatastore
 			m_results = new ArrayList<DataPointGroup>();
 			for (DataPointGroup queryResult : queryResults)
 			{
+				String groupType = DataPoint.GROUP_NUMBER;
+				//todo May want to make group type a first class citizen in DataPointGropu
+				for (GroupByResult groupByResult : queryResult.getGroupByResult())
+				{
+					if (groupByResult instanceof TypeGroupByResult)
+					{
+						groupType = ((TypeGroupByResult)groupByResult).getType();
+					}
+				}
+
 				DataPointGroup aggregatedGroup = queryResult;
 
 				List<Aggregator> aggregators = m_metric.getAggregators();
@@ -530,7 +540,9 @@ public class KairosDatastore
 				//This will pipe the aggregators together.
 				for (Aggregator aggregator : aggregators)
 				{
-					aggregatedGroup = aggregator.aggregate(aggregatedGroup);
+					//Make sure the aggregator can handle this type of data.
+					if (aggregator.canAggregate(groupType))
+						aggregatedGroup = aggregator.aggregate(aggregatedGroup);
 				}
 
 				m_results.add(aggregatedGroup);

@@ -17,6 +17,7 @@ public class DoubleDataPointTest extends DataPointTestCommon
 		DoubleDataPointFactory doubleFactory = new DoubleDataPointFactoryImpl();
 		factory = doubleFactory;
 
+		dataPointList.clear();
 		dataPointList.add(doubleFactory.createDataPoint(123, 123.0));
 		dataPointList.add(doubleFactory.createDataPoint(1, 12345.67890));
 

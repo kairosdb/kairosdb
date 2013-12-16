@@ -21,6 +21,15 @@ public interface DataPointFactory
 	 */
 	public String getDataStoreType();
 
+	/**
+	 This really is for aggregation purposes.  We know if an aggregator can handle
+	 this type by checking the group type against the aggregator by calling
+	 Aggregator.canAggregate().
+
+	 As of this writing there are two group types used inside Kairos 'number' and
+	 'text'.  This is free formed and you can make up your own.
+	 @return
+	 */
 	public String getGroupType();
 
 	/**

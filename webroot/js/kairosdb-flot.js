@@ -72,8 +72,9 @@ function drawSingleSeriesChart(subTitle, data, flotOptions) {
 				var formattedDate = $.plot.formatDate(timestamp, "%b %e, %Y %H:%M:%S.millis %p");
 				formattedDate = formattedDate.replace("millis", timestamp.getMilliseconds());
 				formattedDate += " " + getTimezone(timestamp);
+				var numberFormat = (y % 1 != 0) ? '0,0[.00]' : '0,0';
 				showTooltip(item.pageX, item.pageY,
-					item.series.label + "<br>" + formattedDate + "<br>" + y);
+					item.series.label + "<br>" + formattedDate + "<br>" + numeral(y).format(numberFormat));
 			}
 		} else {
 			$("#tooltip").remove();

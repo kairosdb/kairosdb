@@ -57,8 +57,6 @@ public class CassandraDatastore implements Datastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
 
-	public static final int STRING_CACHE_SIZE = 1024;
-
 	public static final int LONG_FLAG = 0x0;
 	public static final int FLOAT_FLAG = 0x1;
 
@@ -77,6 +75,7 @@ public class CassandraDatastore implements Datastore
 	public static final String INDEX_READ_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.index_read_consistency_level";
 	public static final String INDEX_WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.index_write_consistency_level";
 	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
+	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
 
 	public static final String KEYSPACE = "kairosdb";
 	public static final String CF_DATA_POINTS = "data_points";
@@ -98,9 +97,9 @@ public class CassandraDatastore implements Datastore
 	private WriteBuffer<String, String, String> m_stringIndexWriteBuffer;
 
 	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
-	private DataCache<String> m_metricNameCache = new DataCache<String>(STRING_CACHE_SIZE);
-	private DataCache<String> m_tagNameCache = new DataCache<String>(STRING_CACHE_SIZE);
-	private DataCache<String> m_tagValueCache = new DataCache<String>(STRING_CACHE_SIZE);
+	private DataCache<String> m_metricNameCache = new DataCache<String>(1024);
+	private DataCache<String> m_tagNameCache = new DataCache<String>(1024);
+	private DataCache<String> m_tagValueCache = new DataCache<String>(1024);
 
 	@Inject
 	@Named(DATA_WRITE_CONSISTENCY_LEVEL)
@@ -122,6 +121,14 @@ public class CassandraDatastore implements Datastore
 	public void setRowKeyCacheSize(@Named(ROW_KEY_CACHE_SIZE_PROPERTY) int size)
 	{
 		m_rowKeyCache = new DataCache<DataPointsRowKey>(size);
+	}
+
+	@Inject
+	public void setStringCacheSize(@Named(STRING_CACHE_SIZE_PROPERTY) int size)
+	{
+		m_metricNameCache = new DataCache<String>(size);
+		m_tagNameCache = new DataCache<String>(size);
+		m_tagValueCache = new DataCache<String>(size);
 	}
 
 	@Inject

@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -56,7 +57,6 @@ public class CassandraDatastore implements Datastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
 
-	public static final int ROW_KEY_CACHE_SIZE = 1024;
 	public static final int STRING_CACHE_SIZE = 1024;
 
 	public static final int LONG_FLAG = 0x0;
@@ -76,6 +76,7 @@ public class CassandraDatastore implements Datastore
 	public static final String DATA_WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.data_write_consistency_level";
 	public static final String INDEX_READ_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.index_read_consistency_level";
 	public static final String INDEX_WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.index_write_consistency_level";
+	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
 
 	public static final String KEYSPACE = "kairosdb";
 	public static final String CF_DATA_POINTS = "data_points";
@@ -96,7 +97,7 @@ public class CassandraDatastore implements Datastore
 	private WriteBuffer<String, DataPointsRowKey, String> m_rowKeyWriteBuffer;
 	private WriteBuffer<String, String, String> m_stringIndexWriteBuffer;
 
-	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(ROW_KEY_CACHE_SIZE);
+	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
 	private DataCache<String> m_metricNameCache = new DataCache<String>(STRING_CACHE_SIZE);
 	private DataCache<String> m_tagNameCache = new DataCache<String>(STRING_CACHE_SIZE);
 	private DataCache<String> m_tagValueCache = new DataCache<String>(STRING_CACHE_SIZE);
@@ -117,6 +118,11 @@ public class CassandraDatastore implements Datastore
 	@Named(INDEX_READ_CONSISTENCY_LEVEL)
 	private ConsitencyLevel m_indexReadLevel = ConsitencyLevel.ONE;
 
+	@Inject
+	public void setRowKeyCacheSize(@Named(ROW_KEY_CACHE_SIZE_PROPERTY) int size)
+	{
+		m_rowKeyCache = new DataCache<DataPointsRowKey>(size);
+	}
 
 	@Inject
 	public CassandraDatastore(@Named(CassandraModule.CASSANDRA_AUTH_MAP) Map<String, String> cassandraAuthentication,
@@ -260,6 +266,22 @@ public class CassandraDatastore implements Datastore
 		m_dataPointWriteBuffer.increaseMaxBufferSize();
 		m_rowKeyWriteBuffer.increaseMaxBufferSize();
 		m_stringIndexWriteBuffer.increaseMaxBufferSize();
+	}
+
+	public void cleanRowKeyCache()
+	{
+		long currentRow = calculateRowTime(System.currentTimeMillis());
+
+		Set<DataPointsRowKey> keys = m_rowKeyCache.getCachedKeys();
+
+		for (DataPointsRowKey key : keys)
+		{
+			if (key.getTimestamp() != currentRow)
+			{
+				m_rowKeyCache.removeKey(key);
+				//System.out.println("Removing key: "+key);
+			}
+		}
 	}
 
 	@Override

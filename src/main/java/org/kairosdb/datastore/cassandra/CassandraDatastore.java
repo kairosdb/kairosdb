@@ -279,7 +279,6 @@ public class CassandraDatastore implements Datastore
 			if (key.getTimestamp() != currentRow)
 			{
 				m_rowKeyCache.removeKey(key);
-				//System.out.println("Removing key: "+key);
 			}
 		}
 	}

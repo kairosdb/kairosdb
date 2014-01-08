@@ -33,7 +33,7 @@ public class CleanRowKeyCache implements KairosDBJob
 		return newTrigger()
 				.withIdentity(this.getClass().getSimpleName())
 				.withSchedule(simpleSchedule()
-						.withIntervalInHours(24)
+						.withIntervalInHours(1)
 						.repeatForever())
 				.build();
 	}

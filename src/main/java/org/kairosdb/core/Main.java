@@ -255,12 +255,6 @@ public class Main
 		{
 			try
 			{
-				main.startServices();
-
-				logger.info("------------------------------------------");
-				logger.info("     KairosDB service started");
-				logger.info("------------------------------------------");
-
 				Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
 				{
 					public void run()
@@ -281,13 +275,19 @@ public class Main
 					}
 				}));
 
+				main.startServices();
+
+				logger.info("------------------------------------------");
+				logger.info("     KairosDB service started");
+				logger.info("------------------------------------------");
+
 				waitForShutdown();
 			}
 			catch (Exception e)
 			{
 				logger.error("Failed starting up services", e);
-				main.stopServices();
-				System.exit(1);
+				//main.stopServices();
+				System.exit(0);
 			}
 			finally
 			{
@@ -295,6 +295,7 @@ public class Main
 				logger.info("     KairosDB service is now down!");
 				logger.info("--------------------------------------");
 			}
+
 		}
 	}
 
@@ -388,10 +389,9 @@ public class Main
 			if (KairosDBService.class.isAssignableFrom(bindingClass))
 			{
 				KairosDBService service = (KairosDBService) m_injector.getInstance(bindingClass);
-				m_services.add(service);
-
 				logger.info("Starting service " + bindingClass);
 				service.start();
+				m_services.add(service);
 			}
 		}
 	}
@@ -402,8 +402,17 @@ public class Main
 		logger.info("Shutting down");
 		for (KairosDBService service : m_services)
 		{
-			logger.info("Stopping " + service.getClass().getName());
-			service.stop();
+			String serviceName = service.getClass().getName();
+			logger.info("Stopping " + serviceName);
+			try
+			{
+				service.stop();
+				logger.info("Stopped  " + serviceName);
+			}
+			catch (Exception e)
+			{
+				logger.error("Error stopping "+serviceName, e);
+			}
 		}
 
 		//Stop the datastore

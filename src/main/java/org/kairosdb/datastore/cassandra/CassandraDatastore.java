@@ -62,6 +62,7 @@ public class CassandraDatastore implements Datastore
 
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
+	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
 	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
 	public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
 	public static final String WRITE_DELAY_PROPERTY = "kairosdb.datastore.cassandra.write_delay";
@@ -77,7 +78,6 @@ public class CassandraDatastore implements Datastore
 	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
 	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
 
-	public static final String KEYSPACE = "kairosdb";
 	public static final String CF_DATA_POINTS = "data_points";
 	public static final String CF_ROW_KEY_INDEX = "row_key_index";
 	public static final String CF_STRING_INDEX = "string_index";
@@ -89,6 +89,7 @@ public class CassandraDatastore implements Datastore
 
 	private Cluster m_cluster;
 	private Keyspace m_keyspace;
+	private String m_keyspaceName;
 	private int m_singleRowReadSize;
 	private int m_multiRowSize;
 	private int m_multiRowReadSize;
@@ -140,6 +141,7 @@ public class CassandraDatastore implements Datastore
 	                          @Named(WRITE_DELAY_PROPERTY) int writeDelay,
 	                          @Named(WRITE_BUFFER_SIZE) int maxWriteSize,
 	                          final @Named("HOSTNAME") String hostname,
+			                    @Named(KEYSPACE_PROPERTY) String keyspaceName,
 	                          HectorConfiguration configuration) throws DatastoreException
 	{
 		try
@@ -147,13 +149,14 @@ public class CassandraDatastore implements Datastore
 			m_singleRowReadSize = singleRowReadSize;
 			m_multiRowSize = multiRowSize;
 			m_multiRowReadSize = multiRowReadSize;
+			m_keyspaceName=keyspaceName;
 
 			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
 
 			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
 					hostConfig, cassandraAuthentication);
 
-			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(KEYSPACE);
+			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
 
 			if (keyspaceDef == null)
 				createSchema(replicationFactor);
@@ -171,7 +174,7 @@ public class CassandraDatastore implements Datastore
 			confConsLevel.setReadCfConsistencyLevels(readLevels);
 			confConsLevel.setWriteCfConsistencyLevels(writeLevels);
 
-			m_keyspace = HFactory.createKeyspace(KEYSPACE, m_cluster, confConsLevel);
+			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
 
 			ReentrantLock mutatorLock = new ReentrantLock();
 			Condition lockCondition = mutatorLock.newCondition();
@@ -253,16 +256,16 @@ public class CassandraDatastore implements Datastore
 		List<ColumnFamilyDefinition> cfDef = new ArrayList<ColumnFamilyDefinition>();
 
 		cfDef.add(HFactory.createColumnFamilyDefinition(
-				KEYSPACE, CF_DATA_POINTS, ComparatorType.BYTESTYPE));
+				m_keyspaceName, CF_DATA_POINTS, ComparatorType.BYTESTYPE));
 
 		cfDef.add(HFactory.createColumnFamilyDefinition(
-				KEYSPACE, CF_ROW_KEY_INDEX, ComparatorType.BYTESTYPE));
+				m_keyspaceName, CF_ROW_KEY_INDEX, ComparatorType.BYTESTYPE));
 
 		cfDef.add(HFactory.createColumnFamilyDefinition(
-				KEYSPACE, CF_STRING_INDEX, ComparatorType.UTF8TYPE));
+				m_keyspaceName, CF_STRING_INDEX, ComparatorType.UTF8TYPE));
 
 		KeyspaceDefinition newKeyspace = HFactory.createKeyspaceDefinition(
-				KEYSPACE, ThriftKsDef.DEF_STRATEGY_CLASS,
+				m_keyspaceName, ThriftKsDef.DEF_STRATEGY_CLASS,
 				replicationFactor, cfDef);
 
 		m_cluster.addKeyspace(newKeyspace, true);

@@ -198,7 +198,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			}
 			catch (Exception e)
 			{
-				logger.error("Error sending data to Cassandra", e);
+				logger.error("Error sending data to Cassandra ("+m_cfName+")", e);
 
 				m_maxBufferSize = m_maxBufferSize * 3 / 4;
 

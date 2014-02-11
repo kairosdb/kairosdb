@@ -29,11 +29,15 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 public class MonitorFilter implements Filter, KairosMetricReporter
 {
+    public static final Logger logger = LoggerFactory.getLogger(MonitorFilter.class);
+    
 	private final String hostname;
 	private final ConcurrentMap<String, AtomicInteger> counterMap = new ConcurrentHashMap<String, AtomicInteger>();
 
@@ -56,14 +60,19 @@ public class MonitorFilter implements Filter, KairosMetricReporter
 		if (index > -1)
 		{
 			String resourceName = path.substring(index + 1);
-			AtomicInteger counter = counterMap.get(resourceName);
-			if (counter == null)
-			{
-				counter = new AtomicInteger();
-				AtomicInteger mapValue = counterMap.putIfAbsent(resourceName, counter);
-				counter = (mapValue != null ? mapValue : counter);
-			}
-			counter.incrementAndGet();
+            
+            //do not store empty method e.g. /api/v1/datapoints/<--- trailing slash
+            if (resourceName.length() > 0)
+            {
+                AtomicInteger counter = counterMap.get(resourceName);
+                if (counter == null)
+                {
+                    counter = new AtomicInteger();
+                    AtomicInteger mapValue = counterMap.putIfAbsent(resourceName, counter);
+                    counter = (mapValue != null ? mapValue : counter);
+                }
+                counter.incrementAndGet();
+            }
 		}
 
 		filterChain.doFilter(servletRequest, servletResponse);

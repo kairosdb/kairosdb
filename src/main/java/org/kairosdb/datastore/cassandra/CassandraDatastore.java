@@ -134,15 +134,15 @@ public class CassandraDatastore implements Datastore
 
 	@Inject
 	public CassandraDatastore(@Named(CassandraModule.CASSANDRA_AUTH_MAP) Map<String, String> cassandraAuthentication,
-	                          @Named(REPLICATION_FACTOR_PROPERTY) int replicationFactor,
-	                          @Named(SINGLE_ROW_READ_SIZE_PROPERTY) int singleRowReadSize,
-	                          @Named(MULTI_ROW_SIZE_PROPERTY) int multiRowSize,
-	                          @Named(MULTI_ROW_READ_SIZE_PROPERTY) int multiRowReadSize,
-	                          @Named(WRITE_DELAY_PROPERTY) int writeDelay,
-	                          @Named(WRITE_BUFFER_SIZE) int maxWriteSize,
-	                          final @Named("HOSTNAME") String hostname,
-			                    @Named(KEYSPACE_PROPERTY) String keyspaceName,
-	                          HectorConfiguration configuration) throws DatastoreException
+							  @Named(REPLICATION_FACTOR_PROPERTY) int replicationFactor,
+							  @Named(SINGLE_ROW_READ_SIZE_PROPERTY) int singleRowReadSize,
+							  @Named(MULTI_ROW_SIZE_PROPERTY) int multiRowSize,
+							  @Named(MULTI_ROW_READ_SIZE_PROPERTY) int multiRowReadSize,
+							  @Named(WRITE_DELAY_PROPERTY) int writeDelay,
+							  @Named(WRITE_BUFFER_SIZE) int maxWriteSize,
+							  final @Named("HOSTNAME") String hostname,
+								@Named(KEYSPACE_PROPERTY) String keyspaceName,
+							  HectorConfiguration configuration) throws DatastoreException
 	{
 		try
 		{
@@ -330,6 +330,12 @@ public class CassandraDatastore implements Datastore
 					//Write metric name if not in cache
 					if (!m_metricNameCache.isCached(dps.getName()))
 					{
+						if (dps.getName().length() == 0)
+						{
+							logger.warn(
+								"Attempted to add empty metric name to string index. Row looks like: "+dps
+							);
+						}
 						m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
 								dps.getName(), "", now);
 					}
@@ -340,6 +346,12 @@ public class CassandraDatastore implements Datastore
 					{
 						if (!m_tagNameCache.isCached(tagName))
 						{
+							if(tagName.length() == 0)
+							{
+								logger.warn(
+									"Attempted to add empty tagName to string cache for metric: "+dps.getName()
+								);
+							}
 							m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_NAMES,
 									tagName, "", now);
 						}
@@ -347,6 +359,12 @@ public class CassandraDatastore implements Datastore
 						String value = tags.get(tagName);
 						if (!m_tagValueCache.isCached(value))
 						{
+							if(value.toString().length() == 0)
+							{
+								logger.warn(
+									"Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+dps.getName()
+								);
+							}
 							m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
 									value, "", now);
 						}

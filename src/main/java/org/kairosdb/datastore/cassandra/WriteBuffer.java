@@ -79,11 +79,18 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		try
 		{
 			waitOnBufferFull();
-
 			m_bufferCount ++;
-			m_mutator.addInsertion(rowKey, m_cfName,
-					new HColumnImpl<ColumnKeyType, ValueType>(columnKey, value,
-							timestamp, m_columnKeySerializer, m_valueSerializer));
+
+			if (columnKey.toString().length() > 0) 
+			{
+				m_mutator.addInsertion(
+					rowKey,
+					m_cfName,
+					new HColumnImpl<ColumnKeyType, ValueType>(columnKey, value, timestamp, m_columnKeySerializer, m_valueSerializer)
+				);
+			} else {
+				logger.info("Discarded "+m_cfName+" row with empty column name. This should never happen.");
+			}
 		}
 		finally
 		{

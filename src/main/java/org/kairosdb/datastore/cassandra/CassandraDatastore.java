@@ -309,10 +309,16 @@ public class CassandraDatastore implements Datastore
 					//Write out the row key if it is not cached
 					if (!m_rowKeyCache.isCached(rowKey))
 						m_rowKeyWriteBuffer.addData(dps.getName(), rowKey, "", now);
-
+                    
 					//Write metric name if not in cache
 					if (!m_metricNameCache.isCached(dps.getName()))
 					{
+                        if (dps.getName().length() == 0) 
+                        {
+                            logger.warn(
+                                "Attempted to add empty metric name to string index. Row looks like: "+dps
+                            );
+                        }
 						m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
 								dps.getName(), "", now);
 					}
@@ -323,6 +329,12 @@ public class CassandraDatastore implements Datastore
 					{
 						if (!m_tagNameCache.isCached(tagName))
 						{
+                            if(tagName.length() == 0)
+                            {
+                                logger.warn(
+                                    "Attempted to add empty tagName to string cache for metric: "+dps.getName()
+                                );
+                            }
 							m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_NAMES,
 									tagName, "", now);
 						}
@@ -330,6 +342,12 @@ public class CassandraDatastore implements Datastore
 						String value = tags.get(tagName);
 						if (!m_tagValueCache.isCached(value))
 						{
+                            if(value.toString().length() == 0)
+                            {
+                                logger.warn(
+                                    "Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+dps.getName()
+                                );
+                            }
 							m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
 									value, "", now);
 						}

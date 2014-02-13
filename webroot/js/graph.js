@@ -103,6 +103,10 @@ function buildKairosDBQuery() {
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				metric.addRate(unit);
 			}
+            else if (name == 'simplify') {
+                var tolerance = $(aggregator).find(".toleranceValue").val();
+                metric.addSimplify(tolerance);
+            }
 			else if (name == 'percentile') {
 				value = $(aggregator).find(".aggregatorSamplingValue").val();
 				if (!isValidInteger(value)) {
@@ -523,6 +527,7 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".scalingFactor").hide();
+            $aggregatorContainer.find(".tolerance").hide();
 
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
@@ -533,6 +538,7 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
 			$aggregatorContainer.find(".scalingFactor").hide();
+            $aggregatorContainer.find(".tolerance").hide();
 		}
 		else if (name == "div") {
 			$aggregatorContainer.find(".aggregatorSampling").hide();
@@ -540,13 +546,23 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
 			$aggregatorContainer.find(".scalingFactor").hide();
 			$aggregatorContainer.find(".divisor").show();
+            $aggregatorContainer.find(".tolerance").hide();
 		}
+        else if (name == "simplify") {
+            $aggregatorContainer.find(".aggregatorSamplingUnit").hide();
+            $aggregatorContainer.find(".aggregatorSampling").hide();
+            $aggregatorContainer.find(".aggregatorPercentile").hide();
+            $aggregatorContainer.find(".divisor").hide();
+            $aggregatorContainer.find(".scalingFactor").hide();
+            $aggregatorContainer.find(".tolerance").show();
+        }
 		else if (name == 'scale') {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();
 			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".scalingFactor").show();
+            $aggregatorContainer.find(".tolerance").hide();
 		}
 		else {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
@@ -554,6 +570,7 @@ function addAggregator(container) {
             $aggregatorContainer.find(".aggregatorPercentile").hide();
 			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".scalingFactor").hide();
+            $aggregatorContainer.find(".tolerance").hide();
 		}
 	});
 }

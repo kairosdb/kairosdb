@@ -72,7 +72,10 @@
 		<dependency org="com.google.code.findbugs" name="jsr305" rev="1.3.9"/>
 
 		<!-- Quartz -->
-		<dependency org="org.quartz-scheduler" name="quartz" rev="2.1.7" />
+    <dependency org="org.quartz-scheduler" name="quartz" rev="2.1.7" />
+
+    <!-- Simplify -->
+    <dependency org="com.goebl" name="simplify" rev="1.0.0" />
 
 
 		<dependency org="org.testng" name="testng" rev="6.8.5" conf="integration->default"/>

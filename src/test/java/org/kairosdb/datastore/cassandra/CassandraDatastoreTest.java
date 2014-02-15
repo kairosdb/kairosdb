@@ -54,6 +54,14 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	private static long s_dataPointTime;
 	public static final HashMultimap<String,String> EMPTY_MAP = HashMultimap.create();
 
+	private static void putDataPoints(DataPointSet dps) throws DatastoreException
+	{
+		for (DataPoint dataPoint : dps.getDataPoints())
+		{
+			s_datastore.putDataPoint(dps.getName(), dps.getTags(), dataPoint);
+		}
+	}
+
 	private static void loadCassandraData() throws DatastoreException
 	{
 		s_dataPointTime = System.currentTimeMillis();
@@ -66,7 +74,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		dpSet.addDataPoint(new LongDataPoint(s_dataPointTime, 42));
 
-		s_datastore.putDataPoints(dpSet);
+		putDataPoints(dpSet);
 
 
 		dpSet = new DataPointSet(ROW_KEY_TEST_METRIC);
@@ -75,7 +83,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		dpSet.addDataPoint(new LongDataPoint(s_dataPointTime, 42));
 
-		s_datastore.putDataPoints(dpSet);
+		putDataPoints(dpSet);
 
 
 		dpSet = new DataPointSet(ROW_KEY_TEST_METRIC);
@@ -84,7 +92,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		dpSet.addDataPoint(new LongDataPoint(s_dataPointTime, 42));
 
-		s_datastore.putDataPoints(dpSet);
+		putDataPoints(dpSet);
 
 
 		dpSet = new DataPointSet(ROW_KEY_TEST_METRIC);
@@ -93,7 +101,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		dpSet.addDataPoint(new LongDataPoint(s_dataPointTime, 42));
 
-		s_datastore.putDataPoints(dpSet);
+		putDataPoints(dpSet);
 
 
 		// Add a row of data that is larger than MAX_ROW_READ_SIZE
@@ -105,7 +113,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 			dpSet.addDataPoint(new LongDataPoint(s_dataPointTime - (long) i, 42));
 		}
 
-		s_datastore.putDataPoints(dpSet);
+		putDataPoints(dpSet);
 
 
 		// NOTE: This data will be deleted by delete tests. Do not expect it to be there.
@@ -120,7 +128,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + 2000, 15));
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + 3000, 16));
 
-		s_datastore.putDataPoints(dpSet);
+		putDataPoints(dpSet);
 
 		// NOTE: This data will be deleted by delete tests. Do not expect it to be there.
 		metricNames.add("OtherMetricToDelete");
@@ -133,7 +141,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * CassandraDatastore.ROW_WIDTH), 15));
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * CassandraDatastore.ROW_WIDTH), 16));
 
-		s_datastore.putDataPoints(dpSet);
+		putDataPoints(dpSet);
 
 		// NOTE: This data will be deleted by delete tests. Do not expect it to be there.
 		metricNames.add("MetricToPartiallyDelete");
@@ -146,7 +154,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * CassandraDatastore.ROW_WIDTH), 15));
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * CassandraDatastore.ROW_WIDTH), 16));
 
-		s_datastore.putDataPoints(dpSet);
+		putDataPoints(dpSet);
 
 		// NOTE: This data will be deleted by delete tests. Do not expect it to be there.
 		metricNames.add("YetAnotherMetricToDelete");
@@ -159,14 +167,14 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + 2000, 15));
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + 3000, 16));
 
-		s_datastore.putDataPoints(dpSet);
+		putDataPoints(dpSet);
 	}
 
 	@BeforeClass
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
 		s_datastore = new CassandraDatastore(null, 1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
-				1000, 50000, "hostname", new HectorConfiguration("localhost:9160"), dataPointFactory);
+				1000, 50000, "hostname", "kairosdb_test", new HectorConfiguration("localhost:9160"), dataPointFactory);
 
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
 				new QueryQueuingManager(1, "hostname"),
@@ -419,7 +427,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		set.addDataPoint(new LongDataPoint(3, 4L));
 		set.addDataPoint(new LongDataPoint(4, 5L));
 		set.addDataPoint(new LongDataPoint(5, 6L));
-		s_datastore.putDataPoints(set);
+		putDataPoints(set);
 	}
 
 	@Test(expected = DatastoreException.class)
@@ -427,7 +435,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	{
 		DataPointSet set = new DataPointSet("testMetric");
 		set.addDataPoint(new LongDataPoint(-1, 1L));
-		s_datastore.putDataPoints(set);
+		putDataPoints(set);
 	}
 
 	private static CachedSearchResult createCache(String metricName) throws IOException

@@ -20,7 +20,6 @@ import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import me.prettyprint.cassandra.model.ConfigurableConsistencyLevel;
-import me.prettyprint.cassandra.serializers.ByteBufferSerializer;
 import me.prettyprint.cassandra.serializers.BytesArraySerializer;
 import me.prettyprint.cassandra.serializers.IntegerSerializer;
 import me.prettyprint.cassandra.serializers.StringSerializer;
@@ -28,7 +27,6 @@ import me.prettyprint.cassandra.service.CassandraHostConfigurator;
 import me.prettyprint.cassandra.service.ColumnSliceIterator;
 import me.prettyprint.cassandra.service.ThriftKsDef;
 import me.prettyprint.hector.api.Cluster;
-import me.prettyprint.hector.api.HConsistencyLevel;
 import me.prettyprint.hector.api.Keyspace;
 import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
 import me.prettyprint.hector.api.ddl.ComparatorType;
@@ -38,7 +36,6 @@ import me.prettyprint.hector.api.factory.HFactory;
 import me.prettyprint.hector.api.query.CountQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
@@ -51,7 +48,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -62,14 +58,12 @@ public class CassandraDatastore implements Datastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
 
-	public static final int ROW_KEY_CACHE_SIZE = 1024;
-	public static final int STRING_CACHE_SIZE = 1024;
-
 	public static final int LONG_FLAG = 0x0;
 	public static final int FLOAT_FLAG = 0x1;
 
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
+	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
 	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
 	public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
 	public static final String WRITE_DELAY_PROPERTY = "kairosdb.datastore.cassandra.write_delay";
@@ -78,12 +72,11 @@ public class CassandraDatastore implements Datastore
 	public static final String SINGLE_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.single_row_read_size";
 	public static final String MULTI_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_read_size";
 	public static final String MULTI_ROW_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_size";
-	public static final String DATA_READ_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.data_read_consistency_level";
-	public static final String DATA_WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.data_write_consistency_level";
-	public static final String INDEX_READ_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.index_read_consistency_level";
-	public static final String INDEX_WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.index_write_consistency_level";
+	public static final String READ_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.read_consistency_level";
+	public static final String WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.write_consistency_level";
+	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
+	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
 
-	public static final String KEYSPACE = "kairosdb";
 	public static final String CF_DATA_POINTS = "data_points";
 	public static final String CF_ROW_KEY_INDEX = "row_key_index";
 	public static final String CF_STRING_INDEX = "string_index";
@@ -95,6 +88,7 @@ public class CassandraDatastore implements Datastore
 
 	private Cluster m_cluster;
 	private Keyspace m_keyspace;
+	private String m_keyspaceName;
 	private int m_singleRowReadSize;
 	private int m_multiRowSize;
 	private int m_multiRowReadSize;
@@ -102,10 +96,10 @@ public class CassandraDatastore implements Datastore
 	private WriteBuffer<String, DataPointsRowKey, String> m_rowKeyWriteBuffer;
 	private WriteBuffer<String, String, String> m_stringIndexWriteBuffer;
 
-	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(ROW_KEY_CACHE_SIZE);
-	private DataCache<String> m_metricNameCache = new DataCache<String>(STRING_CACHE_SIZE);
-	private DataCache<String> m_tagNameCache = new DataCache<String>(STRING_CACHE_SIZE);
-	private DataCache<String> m_tagValueCache = new DataCache<String>(STRING_CACHE_SIZE);
+	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
+	private DataCache<String> m_metricNameCache = new DataCache<String>(1024);
+	private DataCache<String> m_tagNameCache = new DataCache<String>(1024);
+	private DataCache<String> m_tagValueCache = new DataCache<String>(1024);
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
@@ -113,21 +107,26 @@ public class CassandraDatastore implements Datastore
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
-	@Named(DATA_WRITE_CONSISTENCY_LEVEL)
-	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.QUORUM;
+	@Named(WRITE_CONSISTENCY_LEVEL)
+	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.ONE;
 
 	@Inject
-	@Named(DATA_READ_CONSISTENCY_LEVEL)
+	@Named(READ_CONSISTENCY_LEVEL)
 	private ConsitencyLevel m_dataReadLevel = ConsitencyLevel.ONE;
 
 	@Inject
-	@Named(INDEX_WRITE_CONSISTENCY_LEVEL)
-	private ConsitencyLevel m_indexWriteLevel = ConsitencyLevel.QUORUM;
+	public void setRowKeyCacheSize(@Named(ROW_KEY_CACHE_SIZE_PROPERTY) int size)
+	{
+		m_rowKeyCache = new DataCache<DataPointsRowKey>(size);
+	}
 
 	@Inject
-	@Named(INDEX_READ_CONSISTENCY_LEVEL)
-	private ConsitencyLevel m_indexReadLevel = ConsitencyLevel.ONE;
-
+	public void setStringCacheSize(@Named(STRING_CACHE_SIZE_PROPERTY) int size)
+	{
+		m_metricNameCache = new DataCache<String>(size);
+		m_tagNameCache = new DataCache<String>(size);
+		m_tagValueCache = new DataCache<String>(size);
+	}
 
 	@Inject
 	public CassandraDatastore(@Named(CassandraModule.CASSANDRA_AUTH_MAP) Map<String, String> cassandraAuthentication,
@@ -138,6 +137,7 @@ public class CassandraDatastore implements Datastore
 	                          @Named(WRITE_DELAY_PROPERTY) int writeDelay,
 	                          @Named(WRITE_BUFFER_SIZE) int maxWriteSize,
 	                          final @Named("HOSTNAME") String hostname,
+                             @Named(KEYSPACE_PROPERTY) String keyspaceName,
 	                          HectorConfiguration configuration,
                              KairosDataPointFactory kairosDataPointFactory) throws DatastoreException
 	{
@@ -147,31 +147,25 @@ public class CassandraDatastore implements Datastore
 			m_multiRowSize = multiRowSize;
 			m_multiRowReadSize = multiRowReadSize;
 			m_kairosDataPointFactory = kairosDataPointFactory;
+			m_keyspaceName = keyspaceName;
 
 			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
 
 			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
 					hostConfig, cassandraAuthentication);
 
-			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(KEYSPACE);
+			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
 
 			if (keyspaceDef == null)
 				createSchema(replicationFactor);
-
+            
+            //set global consistency level
 			ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
+			confConsLevel.setDefaultReadConsistencyLevel(m_dataReadLevel.getHectorLevel());
+			confConsLevel.setDefaultWriteConsistencyLevel(m_dataWriteLevel.getHectorLevel());
 
-			Map<String, HConsistencyLevel> readLevels = new HashMap<String, HConsistencyLevel>();
-			readLevels.put(CF_DATA_POINTS, m_dataReadLevel.getHectorLevel());
-			readLevels.put(CF_ROW_KEY_INDEX, m_indexReadLevel.getHectorLevel());
-
-			Map <String, HConsistencyLevel> writeLevels = new HashMap<String, HConsistencyLevel>();
-			writeLevels.put(CF_DATA_POINTS, m_dataWriteLevel.getHectorLevel());
-			writeLevels.put(CF_ROW_KEY_INDEX, m_indexWriteLevel.getHectorLevel());
-
-			confConsLevel.setReadCfConsistencyLevels(readLevels);
-			confConsLevel.setWriteCfConsistencyLevels(writeLevels);
-
-			m_keyspace = HFactory.createKeyspace(KEYSPACE, m_cluster, confConsLevel);
+            //create keyspace instance with specified consistency
+			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
 
 			ReentrantLock mutatorLock = new ReentrantLock();
 			Condition lockCondition = mutatorLock.newCondition();
@@ -268,16 +262,16 @@ public class CassandraDatastore implements Datastore
 		List<ColumnFamilyDefinition> cfDef = new ArrayList<ColumnFamilyDefinition>();
 
 		cfDef.add(HFactory.createColumnFamilyDefinition(
-				KEYSPACE, CF_DATA_POINTS, ComparatorType.BYTESTYPE));
+				m_keyspaceName, CF_DATA_POINTS, ComparatorType.BYTESTYPE));
 
 		cfDef.add(HFactory.createColumnFamilyDefinition(
-				KEYSPACE, CF_ROW_KEY_INDEX, ComparatorType.BYTESTYPE));
+				m_keyspaceName, CF_ROW_KEY_INDEX, ComparatorType.BYTESTYPE));
 
 		cfDef.add(HFactory.createColumnFamilyDefinition(
-				KEYSPACE, CF_STRING_INDEX, ComparatorType.UTF8TYPE));
+				m_keyspaceName, CF_STRING_INDEX, ComparatorType.UTF8TYPE));
 
 		KeyspaceDefinition newKeyspace = HFactory.createKeyspaceDefinition(
-				KEYSPACE, ThriftKsDef.DEF_STRATEGY_CLASS,
+				m_keyspaceName, ThriftKsDef.DEF_STRATEGY_CLASS,
 				replicationFactor, cfDef);
 
 		m_cluster.addKeyspace(newKeyspace, true);
@@ -288,6 +282,21 @@ public class CassandraDatastore implements Datastore
 		m_dataPointWriteBuffer.increaseMaxBufferSize();
 		m_rowKeyWriteBuffer.increaseMaxBufferSize();
 		m_stringIndexWriteBuffer.increaseMaxBufferSize();
+	}
+
+	public void cleanRowKeyCache()
+	{
+		long currentRow = calculateRowTime(System.currentTimeMillis());
+
+		Set<DataPointsRowKey> keys = m_rowKeyCache.getCachedKeys();
+
+		for (DataPointsRowKey key : keys)
+		{
+			if (key.getTimestamp() != currentRow)
+			{
+				m_rowKeyCache.removeKey(key);
+			}
+		}
 	}
 
 	@Override
@@ -325,6 +334,12 @@ public class CassandraDatastore implements Datastore
 				//Write metric name if not in cache
 				if (!m_metricNameCache.isCached(metricName))
 				{
+					if (metricName.length() == 0)
+					{
+						logger.warn(
+								"Attempted to add empty metric name to string index. Row looks like: "+dataPoint
+						);
+					}
 					m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
 							metricName, "", now);
 				}
@@ -334,13 +349,26 @@ public class CassandraDatastore implements Datastore
 				{
 					if (!m_tagNameCache.isCached(tagName))
 					{
+						if(tagName.length() == 0)
+						{
+							logger.warn(
+									"Attempted to add empty tagName to string cache for metric: "+metricName
+							);
+						}
 						m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_NAMES,
 								tagName, "", now);
+
 					}
 
 					String value = tags.get(tagName);
 					if (!m_tagValueCache.isCached(value))
 					{
+						if(value.toString().length() == 0)
+						{
+							logger.warn(
+									"Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+metricName
+							);
+						}
 						m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
 								value, "", now);
 					}

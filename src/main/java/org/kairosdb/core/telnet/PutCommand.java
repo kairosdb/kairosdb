@@ -74,10 +74,17 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 			timestamp *= 1000;
 
 		DataPoint dp;
-		if (command[3].contains("."))
-			dp = m_doubleFactory.createDataPoint(timestamp, Double.parseDouble(command[3]));
-		else
-			dp = m_longFactory.createDataPoint(timestamp, Util.parseLong(command[3]));
+		try
+		{
+			if (command[3].contains("."))
+				dp = m_doubleFactory.createDataPoint(timestamp, Double.parseDouble(command[3]));
+			else
+				dp = m_longFactory.createDataPoint(timestamp, Util.parseLong(command[3]));
+		}
+		catch (NumberFormatException e)
+		{
+			throw new ValidationException(e.getMessage());
+		}
 
 		ImmutableSortedMap.Builder<String, String> tags = Tags.create();
 

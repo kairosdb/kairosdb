@@ -13,6 +13,7 @@ kairosdb.Aggregators =
 	MAX: "max",
 	MIN: "min",
 	RATE: "rate",
+	SAMPLER: "sampler",
 	SORT: "sort",
 	SUM: "sum",
 	LEAST_SQUARES: "least_squares",
@@ -65,6 +66,20 @@ kairosdb.Metric = function (name) {
 
 		var rate = {};
 		rate.name = "rate";
+		if (unit) {
+			rate.unit = unit;
+		}
+
+		this.aggregators.push(rate);
+		return this;
+	};
+
+	this.addSampler = function (unit) {
+		if (!this.aggregators)
+			this.aggregators = [];
+
+		var rate = {};
+		rate.name = "sampler";
 		if (unit) {
 			rate.unit = unit;
 		}

@@ -16,8 +16,10 @@
 
 package org.kairosdb.datastore.cassandra;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  Used to keep a limited size cache in memory.  The data type must implement
@@ -66,6 +68,16 @@ public class DataCache<T>
 		}
 
 		return (ret != null);
+	}
+
+	public Set<T> getCachedKeys()
+	{
+		return (new HashSet<T>(m_cache.keySet()));
+	}
+
+	public void removeKey(T key)
+	{
+		m_cache.remove(key);
 	}
 
 	/**

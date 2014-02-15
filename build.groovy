@@ -27,7 +27,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "0.9.3"
+version = "0.9.4"
 release = "1" //package release number
 summary = "KairosDB"
 description = """\
@@ -323,7 +323,8 @@ def doRun(Rule rule)
 
 	//this is to load logback into classpath
 	testClasspath.addPath("src/main/resources");
-	saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${testClasspath} org.kairosdb.core.Main ${args}")
+	ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${testClasspath} org.kairosdb.core.Main ${args}", false)
+	println(ret);
 }
 
 

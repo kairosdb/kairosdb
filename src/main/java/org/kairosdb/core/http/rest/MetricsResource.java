@@ -456,24 +456,43 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
+	private static ResponseBuilder getCorsPreflightResponseBuilder(final String requestHeaders,
+			final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = Response.status(Response.Status.OK);
+		responseBuilder.header("Access-Control-Allow-Origin", "*");
+		responseBuilder.header("Access-Control-Allow-Headers", requestHeaders);
+		responseBuilder.header("Access-Control-Max-Age", "86400"); // Cache for one day
+		if (requestMethod != null)
+		{
+			responseBuilder.header("Access-Control-Allow_Method", requestMethod);
+		}
+
+		return responseBuilder;
+	}
+
 	/**
-	 * Information for this endpoint was taken from
-	 * https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS
-	 * <p/>
-	 * Response to a cors preflight request to access data.
+	 Information for this endpoint was taken from https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS.
+	 <p/>
+	 <p/>Response to a cors preflight request to access data.
 	 */
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/query")
-	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
-	                                   @HeaderParam("Access-Control-Request-Method") String requestMethod)
+	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
 	{
-		ResponseBuilder responseBuilder = Response.status(Response.Status.OK);
-		responseBuilder.header("Access-Control-Allow-Origin", "*");
-		responseBuilder.header("Access-Control-Max-Age", "86400"); //Cache for one day
-		responseBuilder.header("Access-Control-Allow-Headers", requestHeaders);
-		if (requestMethod != null)
-			responseBuilder.header("Access-Control-Allow_Method", requestMethod);
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/query/tags")
+	public Response corsPreflightQueryTags(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
 
@@ -483,7 +502,8 @@ public class MetricsResource implements KairosMetricReporter
 	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
 	                                        @HeaderParam("Access-Control-Request-Method") String requestMethod)
 	{
-		return (corsPreflightQuery(requestHeaders, requestMethod));
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
 	}
 
 	@DELETE

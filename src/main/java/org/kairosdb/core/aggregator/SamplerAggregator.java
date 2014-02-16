@@ -16,8 +16,11 @@
 
 package org.kairosdb.core.aggregator;
 
+import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.DoubleDataPoint;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
@@ -25,58 +28,67 @@ import org.kairosdb.core.datastore.TimeUnit;
 @AggregatorName(name = "sampler", description = "Computes the sampling rate of change for the data points.")
 public class SamplerAggregator implements Aggregator
 {
-    private long m_sampling;
+	private long m_sampling;
+	private DoubleDataPointFactory m_dataPointFactory;
 
-    public SamplerAggregator()
-    {
-        m_sampling = 1L;
-    }
+	@Inject
+	public SamplerAggregator(DoubleDataPointFactory dataPointFactory)
+	{
+		m_dataPointFactory = dataPointFactory;
+		m_sampling = 1L;
+	}
 
-    public DataPointGroup aggregate(DataPointGroup dataPointGroup)
-    {
-        return (new RateDataPointAggregator(dataPointGroup));
-    }
+	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
+	{
+		return (new SamplerDataPointAggregator(dataPointGroup));
+	}
 
-    public void setUnit(TimeUnit timeUnit)
-    {
-        m_sampling = new Sampling(1, timeUnit).getSampling();
-    }
+	@Override
+	public boolean canAggregate(String groupType)
+	{
+		return DataPoint.GROUP_NUMBER.equals(groupType);
+	}
+
+	public void setUnit(TimeUnit timeUnit)
+	{
+		m_sampling = new Sampling(1, timeUnit).getSampling();
+	}
 
 
-    private class RateDataPointAggregator extends AggregatedDataPointGroupWrapper
-    {
-        public RateDataPointAggregator(DataPointGroup innerDataPointGroup)
-        {
-            super(innerDataPointGroup);
-        }
+	private class SamplerDataPointAggregator extends AggregatedDataPointGroupWrapper
+	{
+		public SamplerDataPointAggregator(DataPointGroup innerDataPointGroup)
+		{
+			super(innerDataPointGroup);
+		}
 
-        @Override
-        public DataPoint next()
-        {
-            final double x0 = currentDataPoint.getDoubleValue();
-            final long y0 = currentDataPoint.getTimestamp();
+		@Override
+		public DataPoint next()
+		{
+			final double x0 = currentDataPoint.getDoubleValue();
+			final long y0 = currentDataPoint.getTimestamp();
 
-            //This defaults the rate to 0 if no more data points exists
-            double x1 = 0;
-            long y1 = y0+1;
+			//This defaults the rate to 0 if no more data points exists
+			double x1 = 0;
+			long y1 = y0 + 1;
 
-            if (hasNextInternal())
-            {
-                currentDataPoint = nextInternal();
+			if (hasNextInternal())
+			{
+				currentDataPoint = nextInternal();
 
-                x1 = currentDataPoint.getDoubleValue();
-                y1 = currentDataPoint.getTimestamp();
+				x1 = currentDataPoint.getDoubleValue();
+				y1 = currentDataPoint.getTimestamp();
 
-                if (y1 == y0)
-                {
-                    throw new IllegalStateException(
-                            "The sampler aggregator cannot compute rate for data points with the same time stamp.  "+
-                            "You must precede sampler with another aggregator.");
-                }
-            }
-            double rate = x1 /(y1 - y0) * m_sampling;
+				if (y1 == y0)
+				{
+					throw new IllegalStateException(
+							"The sampler aggregator cannot compute rate for data points with the same time stamp.  " +
+									"You must precede sampler with another aggregator.");
+				}
+			}
+			double rate = x1 / (y1 - y0) * m_sampling;
 
-            return (new DataPoint(y1, rate));
-        }
-    }
+			return (m_dataPointFactory.createDataPoint(y1, rate));
+		}
+	}
 }

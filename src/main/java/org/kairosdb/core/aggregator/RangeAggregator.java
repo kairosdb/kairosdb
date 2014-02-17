@@ -17,6 +17,7 @@
 package org.kairosdb.core.aggregator;
 
 import org.joda.time.DateTime;
+import org.joda.time.Months;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
@@ -35,12 +36,14 @@ public abstract class RangeAggregator implements Aggregator
 {
 	private long m_startTime = 0L;
 	private long m_range = 1L;
+	private long m_currentRange;
 	private long m_dayOfMonthOffset = 0L; //day of month offset in milliseconds
 	private boolean m_alignSampling;
 
 	@NotNull
 	@Valid
 	private Sampling m_sampling;
+	private boolean m_alignStartTime;
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
@@ -60,7 +63,10 @@ public abstract class RangeAggregator implements Aggregator
 					if (tu == TimeUnit.WEEKS)
 						dt = dt.withDayOfWeek(1);
 					else if (tu == TimeUnit.MONTHS)
+					{
 						dt = dt.withDayOfMonth(1);
+						m_dayOfMonthOffset = 0;
+					}
 					else
 						dt = dt.withDayOfYear(1);
                  
@@ -76,6 +82,7 @@ public abstract class RangeAggregator implements Aggregator
 
 			m_startTime = dt.getMillis();
 		}
+		m_currentRange = m_startTime;
 
 		return (new RangeDataPointAggregator(dataPointGroup, getSubAggregator()));
 	}
@@ -86,6 +93,26 @@ public abstract class RangeAggregator implements Aggregator
 		m_range = sampling.getSampling();
 	}
 
+	/**
+	 When set to true the time for the aggregated data point for each range will
+	 fall on the start of the range instead of being the value for the first
+	 data point within that range.
+	 @param align
+	 */
+	public void setAlignStartTime(boolean align)
+	{
+		m_alignStartTime = align;
+	}
+
+	/**
+	 Setting this to true will cause the aggregation range to be aligned based on
+	 the sampling size.  For example if your sample size is either milliseconds,
+	 seconds, minutes or hours then the start of the range will always be at the top
+	 of the hour.  The effect of setting this to true is that your data will
+	 take the same shape when graphed as you refresh the data.
+	 @param align Set to true to align the range on fixed points instead of
+	              the start of the query.
+	 */
 	public void setAlignSampling(boolean align)
 	{
 		m_alignSampling = align;
@@ -150,8 +177,13 @@ public abstract class RangeAggregator implements Aggregator
 		 @param timestamp
 		 @return
 		 */
-		private long getRange(long timestamp)
+		/*private long getRange(long timestamp)
 		{
+			while (timestamp > (m_currentRange + m_range))
+				m_currentRange += m_range;
+
+			return (m_currentRange);
+
 			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
 			{
 				m_calendar.setTimeInMillis(timestamp - m_dayOfMonthOffset);
@@ -164,6 +196,50 @@ public abstract class RangeAggregator implements Aggregator
 			{
 				return ((timestamp - m_startTime) / m_range);
 			}
+		}*/
+
+		private long getStartRange(long timestamp)
+		{
+			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
+			{
+				DateTime start = new DateTime(m_startTime);
+				DateTime dpTime = new DateTime(timestamp);
+
+				Months months = Months.monthsBetween(start, dpTime);
+				Months period = months.dividedBy(m_sampling.getValue());
+
+				long startRange = start.plus(period.multipliedBy(m_sampling.getValue())).getMillis();
+				return (startRange);
+
+				/*m_calendar.setTimeInMillis(timestamp - m_dayOfMonthOffset);
+				int dataPointYear = m_calendar.get(Calendar.YEAR);
+				int dataPointMonth = m_calendar.get(Calendar.MONTH);
+
+				return ((dataPointYear * 12 + dataPointMonth) / m_sampling.getValue());*/
+			}
+			else
+			{
+				return (((timestamp - m_startTime) / m_range) * m_range + m_startTime);
+			}
+		}
+
+		private long getEndRange(long timestamp)
+		{
+			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
+			{
+				DateTime start = new DateTime(m_startTime);
+				DateTime dpTime = new DateTime(timestamp);
+
+				Months months = Months.monthsBetween(start, dpTime);
+				Months period = months.dividedBy(m_sampling.getValue());
+
+				long endRange = start.plus(period.plus(1).multipliedBy(m_sampling.getValue())).getMillis();
+				return (endRange);
+			}
+			else
+			{
+				return ((((timestamp - m_startTime) / m_range) +1) * m_range + m_startTime);
+			}
 		}
 
 		@Override
@@ -171,10 +247,19 @@ public abstract class RangeAggregator implements Aggregator
 		{
 			if (!m_dpIterator.hasNext())
 			{
-				SubRangeIterator subIterator = new SubRangeIterator(
-						getRange(currentDataPoint.getTimestamp()));
+				//We calculate start and end ranges as the ranges may not be
+				//consecutive if data does not show up in each range.
+				long startRange = getStartRange(currentDataPoint.getTimestamp());
+				long endRange = getEndRange(currentDataPoint.getTimestamp());
 
-				m_dpIterator = m_subAggregator.getNextDataPoints(currentDataPoint.getTimestamp(),
+				SubRangeIterator subIterator = new SubRangeIterator(
+						endRange);
+
+				long dataPointTime = currentDataPoint.getTimestamp();
+				if (m_alignStartTime)
+					dataPointTime = startRange;
+
+				m_dpIterator = m_subAggregator.getNextDataPoints(dataPointTime,
 						subIterator).iterator();
 			}
 
@@ -193,17 +278,17 @@ public abstract class RangeAggregator implements Aggregator
 		 */
 		private class SubRangeIterator implements Iterator<DataPoint>
 		{
-			private long m_currentRange;
+			private long m_endRange;
 
-			public SubRangeIterator(long range)
+			public SubRangeIterator(long endRange)
 			{
-				m_currentRange = range;
+				m_endRange = endRange;
 			}
 
 			@Override
 			public boolean hasNext()
 			{
-				return ((currentDataPoint != null) && (getRange(currentDataPoint.getTimestamp()) == m_currentRange));
+				return ((currentDataPoint != null) && (currentDataPoint.getTimestamp() < m_endRange));
 			}
 
 			@Override

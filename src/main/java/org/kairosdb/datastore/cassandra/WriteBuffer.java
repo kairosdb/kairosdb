@@ -114,19 +114,19 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 
 				//if a TTL is set apply it to the column. This will
 				//cause it to be removed after this number of seconds
-				if (ttl > 0) 
+				if (ttl != 0)
 				{
 					col.setTtl(ttl);
 				}
 
-					m_mutator.addInsertion(rowKey, m_cfName, col);
-				} 
-				else 
-				{
-					logger.info(
-						"Discarded "+m_cfName+" row with empty column name. This should never happen."
-					);
-				}
+				m_mutator.addInsertion(rowKey, m_cfName, col);
+			} 
+			else
+			{
+				logger.info(
+					"Discarded "+m_cfName+" row with empty column name. This should never happen."
+				);
+			}
 		}
 		finally
 		{

@@ -45,4 +45,17 @@ public class WordSplitterTest
 		assertArrayEquals(new String[]{"nospace"},
 		                  wordsplitter.splitString("nospace"));
 	}
+
+	/*@Test
+	public void speedTest()
+	{
+		long start = System.currentTimeMillis();
+
+		for (int I = 0; I < 1000000; I++)
+		{
+			WordSplitter.splitString("I like to eat apples and bananas");
+		}
+
+		System.out.println("Time: "+(System.currentTimeMillis() - start));
+	}*/
 }

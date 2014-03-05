@@ -105,7 +105,7 @@ public class RemoteDatastore implements Datastore
 		}
 		catch (JSONException e)
 		{
-			throw new DatastoreException("Unalbe to parse repsone from remote kairos node.", e);
+			throw new DatastoreException("Unable to parse response from remote kairos node.", e);
 		}
 	}
 

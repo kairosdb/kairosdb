@@ -118,6 +118,7 @@ public class MetricsResourceTest
 				bind(LongDataPointFactoryImpl.class).in(Singleton.class);
 
 				bind(LegacyDataPointFactory.class).in(Singleton.class);
+				bind(StringDataPointFactory.class).in(Singleton.class);
 
 			}
 		});

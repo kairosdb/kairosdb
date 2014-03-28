@@ -72,12 +72,20 @@ public class DataCache<T>
 
 	public Set<T> getCachedKeys()
 	{
-		return (new HashSet<T>(m_cache.keySet()));
+		Set<T> ret;
+		synchronized (m_lock)
+		{
+			ret = new HashSet<T>(m_cache.keySet());
+		}
+		return (ret);
 	}
 
 	public void removeKey(T key)
 	{
-		m_cache.remove(key);
+		synchronized (m_lock)
+		{
+			m_cache.remove(key);
+		}
 	}
 
 	/**

@@ -37,9 +37,13 @@
 		<dependency org="com.chargebee" name="chargebee-java" rev="1.1.11" />
 
 		<!--Genormous dependencies-->
-		<dependency org="dom4j" name="dom4j" rev="1.6.1" />
+		<dependency org="org.agileclick.genorm" name="genormous" rev="1.6.0.jdbc4"/>
+		<dependency org="jaxen" name="jaxen" rev="1.1.6" transitive="false">
+			<artifact name="jaxen" type="jar"/>
+		</dependency>
+		<!--<dependency org="dom4j" name="dom4j" rev="1.6.1" />
 		<dependency org="jaxen" name="jaxen" rev="1.1.4" />
-		<dependency org="org.antlr" name="stringtemplate" rev="3.2.1" />
+		<dependency org="org.antlr" name="stringtemplate" rev="3.2.1" />-->
 
 		<dependency org="org.hectorclient" name="hector-core" rev="1.1-4" />
 		<dependency org="org.hectorclient" name="hector-object-mapper" rev="3.1-09" transitive="false"/>

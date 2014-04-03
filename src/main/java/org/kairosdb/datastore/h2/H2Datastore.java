@@ -19,7 +19,7 @@ package org.kairosdb.datastore.h2;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import genorm.runtime.GenOrmQueryResultSet;
+import org.agileclick.genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
 import org.kairosdb.core.*;
 import org.kairosdb.core.datastore.Datastore;

@@ -5,7 +5,7 @@ import javax.sql.DataSource;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedList;
-import genorm.runtime.*;
+import org.agileclick.genorm.runtime.*;
 
 /**
 	<p>This class is at the heart of handling database connections for all Genormous

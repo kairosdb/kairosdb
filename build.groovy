@@ -52,7 +52,9 @@ new DirectoryRule("build")
 rpmDirRule = new DirectoryRule(rpmDir)
 rpmNoDepDirRule = new DirectoryRule(rpmNoDepDir)
 
-ivy = new IvyAddon().setup()
+ivy = new IvyAddon()
+		.setSettingsFile("ivysettings.xml")
+		.setup()
 
 buildLibraries = new RegExFileSet("lib", ".*\\.jar").recurse()
 		.addExcludeDir("integration")
@@ -62,12 +64,17 @@ jp = new JavaProgram().setProgramName(programName)
 		.setLibraryJars(buildLibraries)
 		.setup()
 
-jp.getCompileRule().getDefinition().set("target", "1.6")
-jp.getCompileRule().getDefinition().set("source", "1.6")
+jc = jp.getCompileRule()
+jc.addDepend(ivy.getResolveRule("default"))
+
+jc.getDefinition().set("target", "1.6")
+jc.getDefinition().set("source", "1.6")
 
 additionalFiles = new RegExFileSet("src/main/java", ".*\\.sql").recurse()
 jp.getJarRule().addFileSet(additionalFiles)
 jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
+
+
 
 //Set information in the manifest file
 manifest = jp.getJarRule().getManifest().getMainAttributes()
@@ -134,8 +141,8 @@ rpmFile = "$programName-$version-${release}.rpm"
 srcRpmFile = "$programName-$version-${release}.src.rpm"
 libFileSets = [
 		new RegExFileSet("build/jar", ".*\\.jar"),
-		new RegExFileSet("lib", ".*\\.jar"),
-		new RegExFileSet("lib/ivy/default", ".*\\.jar")
+		new RegExFileSet("lib", ".*\\.jar")
+		//new RegExFileSet("lib/ivy/default", ".*\\.jar")
 	]
 
 scriptsFileSet = new RegExFileSet("src/scripts", ".*").addExcludeFile("kairosdb-env.sh")
@@ -248,6 +255,7 @@ debRule = new SimpleRule("package-deb").setDescription("Build Deb Package")
 def doDeb(Rule rule)
 {
 	//Prompt the user for the sudo password
+	//TODO: package using jdeb
 	def jpf = new JPasswordField()
 	def resp = JOptionPane.showConfirmDialog(null,
 			jpf, "Enter sudo password:",
@@ -333,11 +341,14 @@ def doRun(Rule rule)
 genormDefinition = saw.getDefinition("genormous")
 genormDefinition.set("genorm")
 new SimpleRule("genorm").setDescription("Generate ORM files")
+		.addDepend(ivy.getResolveRule("default"))
 		.setMakeAction("doGenorm")
 
 def doGenorm(Rule rule)
 {
-	genormClasspath = new Classpath(jp.getLibraryJars())
+	resolve = ivy.getResolveRule("default")
+
+	genormClasspath = new Classpath(resolve.getClasspath())
 	genormDefinition.set("classpath", genormClasspath.toString())
 	genormDefinition.set("source", "src/main/conf/tables.xml");
 	cmd = genormDefinition.getCommand();

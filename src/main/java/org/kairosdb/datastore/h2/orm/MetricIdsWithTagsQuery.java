@@ -13,13 +13,13 @@ import java.util.Iterator;
 import java.sql.Timestamp;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Attributes;
-import genorm.runtime.*;
+import org.agileclick.genorm.runtime.*;
 
 
 /**
 	Returns the metric ids for a specified query. In essence this the initial rows returned. Takes a tags filter
 */
-public class MetricIdsWithTagsQuery extends genorm.runtime.SQLQuery
+public class MetricIdsWithTagsQuery extends org.agileclick.genorm.runtime.SQLQuery
 	{
 	private static final Logger s_logger = LoggerFactory.getLogger(MetricIdsWithTagsQuery.class.getName());
 	

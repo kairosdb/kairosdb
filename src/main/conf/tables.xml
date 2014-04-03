@@ -19,7 +19,7 @@
 			<type custom="version" java="Double" db="DOUBLE PRECISION"/>
 		</type_map>
 
-		<plugin class="genorm.plugins.dbsupport.HSQLDB"/>
+		<plugin class="org.agileclick.genorm.plugins.dbsupport.HSQLDB"/>
 	</configuration>
 
 	<table name="metric">

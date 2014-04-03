@@ -37,7 +37,7 @@ import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 public class MonitorFilter implements Filter, KairosMetricReporter
 {
-    public static final Logger logger = LoggerFactory.getLogger(MonitorFilter.class);
+	private static final Logger logger = LoggerFactory.getLogger(MonitorFilter.class);
     
 	private final String hostname;
 	private final ConcurrentMap<String, AtomicInteger> counterMap = new ConcurrentHashMap<String, AtomicInteger>();

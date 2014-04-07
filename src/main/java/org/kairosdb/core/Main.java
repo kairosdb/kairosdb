@@ -21,7 +21,7 @@ import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import com.google.gson.Gson;
 import com.google.inject.*;
-import jcmdline.*;
+//import jcmdline.*;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONException;
 import org.json.JSONWriter;

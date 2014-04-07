@@ -29,6 +29,7 @@
 		<dependency org="org.slf4j" name="jul-to-slf4j" rev="1.7.2" />
 		<dependency org="org.apache.commons" name="commons-math3" rev="3.2" />
 		<dependency org="commons-io" name="commons-io" rev="2.4" />
+		<dependency org="com.beust" name="jcommander" rev="1.35" />
 		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.2.5" />
 		<dependency org="joda-time" name="joda-time" rev="2.3" />
 

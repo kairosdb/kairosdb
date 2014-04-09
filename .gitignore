@@ -12,3 +12,6 @@ dependency.txt
 .idea
 log/*
 kairosdb.properties
+lib/ivy/default/*
+lib/ivy/test/*
+.DS_Store

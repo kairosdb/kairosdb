@@ -85,6 +85,7 @@
 		<!-- Quartz -->
 		<dependency org="org.quartz-scheduler" name="quartz" rev="2.1.7" />
 
+        <dependency org="com.beust" name="jcommander" rev="1.35" />
 
 		<dependency org="org.testng" name="testng" rev="6.8.5" conf="integration->default"/>
 

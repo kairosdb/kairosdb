@@ -19,10 +19,12 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
 import com.google.gson.Gson;
 import com.google.inject.*;
-//import jcmdline.*;
 import org.apache.commons.io.FileUtils;
+import org.h2.util.StringUtils;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -47,34 +49,9 @@ public class Main
 	public static final Charset UTF_8 = Charset.forName("UTF-8");
 	public static final String SERVICE_PREFIX = "kairosdb.service";
 
-	private static FileParam s_propertiesFile = new FileParam("p",
-			"a custom properties file", FileParam.IS_FILE & FileParam.IS_READABLE,
-			FileParam.OPTIONAL);
-
-	private static FileParam s_exportFile = new FileParam("f",
-			"file to save export to or read from depending on command", FileParam.NO_ATTRIBUTES,
-			FileParam.OPTIONAL);
-
-	private static StringParam s_exportMetricNames = new StringParam("n",
-			"name of metrics to export. If not specified, then all metrics are exported", 1,
-			StringParam.UNSPECIFIED_LENGTH, true, true);
-
-	private static StringParam s_exportRecoveryFile = new StringParam("r",
-			"full path to a recovery file. The file tracks metrics that have been exported. If export fails and is run " +
-					"again it uses this file to pickup where it left off.", 1,
-			StringParam.UNSPECIFIED_LENGTH, true, false);
-
-	private static BooleanParam s_appendToExportFile = new BooleanParam("a",
-			"Appends to the export file. By default, the export file is overwritten.");
-
-	/**
-	 * start is identical to run except that logging data only goes to the log file
-	 * and not to standard out as well
-	 */
-	private static StringParam s_operationCommand = new StringParam("c",
-			"command to run: export, import, run, start", new String[]{"run", "start", "export", "import"}, false);
-
 	private final static Object s_shutdownObject = new Object();
+
+	private static final Arguments arguments = new Arguments();
 
 	private Injector m_injector;
 	private List<KairosDBService> m_services = new ArrayList<KairosDBService>();
@@ -160,7 +137,7 @@ public class Main
 						}
 
 						/*
-						Check if they have a constructor that takes the properties
+					    Check if they have a constructor that takes the properties
 						if not construct using the default constructor
 						 */
 						Module mod;
@@ -185,20 +162,29 @@ public class Main
 
 	public static void main(String[] args) throws Exception
 	{
-		CmdLineHandler cl = new VersionCmdLineHandler("Version 1.0",
-				new HelpCmdLineHandler("KairosDB Help", "kairosdb", "Starts KairosDB",
-						new Parameter[]{s_operationCommand, s_propertiesFile, s_exportFile, s_exportMetricNames,
-								s_exportRecoveryFile, s_appendToExportFile}, null));
-
-		cl.parse(args);
-
 		//This sends jersey java util logging to logback
 		SLF4JBridgeHandler.removeHandlersForRootLogger();
 		SLF4JBridgeHandler.install();
 
-		String operation = s_operationCommand.getValue();
+		JCommander commander = new JCommander(arguments);
+		try
+		{
+			commander.parse(args);
+		}
+		catch (Exception e)
+		{
+			System.out.println(e.getMessage());
+			commander.usage();
+			System.exit(0);
+		}
 
-		if (!operation.equals("run"))
+		if (arguments.helpMessage || arguments.help)
+		{
+			commander.usage();
+			System.exit(0);
+		}
+
+		if (arguments.operationCommand.equals("run"))
 		{
 			//Turn off console logging
 			Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
@@ -213,34 +199,34 @@ public class Main
 		}
 
 		File propertiesFile = null;
-		if (s_propertiesFile.isSet())
-			propertiesFile = s_propertiesFile.getValue();
+		if (!StringUtils.isNullOrEmpty(arguments.propertiesFile))
+			propertiesFile = new File(arguments.propertiesFile);
 
 		final Main main = new Main(propertiesFile);
 
-		if (operation.equals("export"))
+		if (arguments.operationCommand.equals("export"))
 		{
-			if (s_exportFile.isSet())
+			if (!StringUtils.isNullOrEmpty(arguments.exportFile))
 			{
-				Writer ps = new OutputStreamWriter(new FileOutputStream(s_exportFile.getValue(),
-						s_appendToExportFile.isSet()), "UTF-8");
-				main.runExport(ps, s_exportMetricNames.getValues());
+				Writer ps = new OutputStreamWriter(new FileOutputStream(arguments.exportFile,
+						arguments.appendToExportFile), "UTF-8");
+				main.runExport(ps, arguments.exportMetricNames);
 				ps.flush();
 				ps.close();
 			}
 			else
 			{
-				main.runExport(new OutputStreamWriter(System.out, "UTF-8"), s_exportMetricNames.getValues());
+				main.runExport(new OutputStreamWriter(System.out, "UTF-8"), arguments.exportMetricNames);
 				System.out.flush();
 			}
 
 			main.stopServices();
 		}
-		else if (operation.equals("import"))
+		else if (arguments.operationCommand.equals("import"))
 		{
-			if (s_exportFile.isSet())
+			if (!StringUtils.isNullOrEmpty(arguments.exportFile))
 			{
-				FileInputStream fin = new FileInputStream(s_exportFile.getValue());
+				FileInputStream fin = new FileInputStream(arguments.exportFile);
 				main.runImport(fin);
 				fin.close();
 			}
@@ -251,7 +237,7 @@ public class Main
 
 			main.stopServices();
 		}
-		else if (operation.equals("run") || operation.equals("start"))
+		else if (arguments.operationCommand.equals("run") || arguments.operationCommand.equals("start"))
 		{
 			try
 			{
@@ -413,7 +399,7 @@ public class Main
 			}
 			catch (Exception e)
 			{
-				logger.error("Error stopping "+serviceName, e);
+				logger.error("Error stopping " + serviceName, e);
 			}
 		}
 
@@ -431,9 +417,9 @@ public class Main
 
 		public RecoveryFile() throws IOException
 		{
-			if (s_exportRecoveryFile.isSet())
+			if (!StringUtils.isNullOrEmpty(arguments.exportRecoveryFile))
 			{
-				recoveryFile = new File(s_exportRecoveryFile.getValue());
+				recoveryFile = new File(arguments.exportRecoveryFile);
 				logger.info("Tracking exported metric names in " + recoveryFile.getAbsolutePath());
 
 				if (recoveryFile.exists())
@@ -536,5 +522,38 @@ public class Main
 			}
 
 		}
+	}
+
+	@SuppressWarnings("UnusedDeclaration")
+	private static class Arguments
+	{
+		@Parameter(names = "-p", description = "A custom properties file")
+		private String propertiesFile;
+
+		@Parameter(names = "-f", description = "File to save export to or read from depending on command.")
+		private String exportFile;
+
+		@Parameter(names = "-n", description = "Name of metrics to export. If not specified, then all metrics are exported.")
+		private List<String> exportMetricNames;
+
+		@Parameter(names = "-r", description = "Full path to a recovery file. The file tracks metrics that have been exported. " +
+				"If export fails and is run again it uses this file to pickup where it left off.")
+		private String exportRecoveryFile;
+
+		@Parameter(names = "-a", description = "Appends to the export file. By default, the export file is overwritten.")
+		private boolean appendToExportFile;
+
+		@Parameter(names = "--help", description = "Help message.", help = true)
+		private boolean helpMessage;
+
+		@Parameter(names = "-h", description = "Help message.", help = true)
+		private boolean help;
+
+		/**
+		 * start is identical to run except that logging data only goes to the log file
+		 * and not to standard out as well
+		 */
+		@Parameter(names = "-c", description = "Command to run: export, import, run, start.")
+		private String operationCommand;
 	}
 }

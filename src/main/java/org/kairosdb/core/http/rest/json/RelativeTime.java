@@ -18,11 +18,7 @@ package org.kairosdb.core.http.rest.json;
 
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.TimeUnit;
-import org.kairosdb.core.http.rest.validation.TimeUnitRequired;
-import org.codehaus.jackson.annotate.JsonCreator;
-import org.codehaus.jackson.annotate.JsonProperty;
 
-import javax.validation.constraints.Min;
 import java.util.Calendar;
 import java.util.TimeZone;
 

@@ -184,7 +184,7 @@ public class Main
 			System.exit(0);
 		}
 
-		if (arguments.operationCommand.equals("run"))
+		if (!arguments.operationCommand.equals("run"))
 		{
 			//Turn off console logging
 			Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);

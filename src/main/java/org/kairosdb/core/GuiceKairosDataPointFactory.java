@@ -61,7 +61,9 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 				DataPointFactory factory = (DataPointFactory)injector.getInstance(bindingClass);
 				String dsType = factory.getDataStoreType();
 				DataPointFactory registered = m_factoryMapDataStore.put(dsType, factory);
-				if (registered != null)
+				//Check if two different classes were bound to the same data type.
+				//In some cases a class may be bound in more than one place.
+				if (registered != null && registered != factory)
 				{
 					logger.error("Multiple classes registered for data store type.  Registered {} but {} was already registered for type {}",
 							factory.getClass(), registered.getClass(), dsType);

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+SHARE="/usr/share/kairosdb"
+LIB="$SHARE/lib"
+JAR=$(echo $SHARE/kairosdb-*.jar)
+JVMARGS="/etc/kairosdb/kairosdb.jvmargs"
+
+if [[ ! -d $LIB ]]; then
+    echo "Missing lib directory: $LIB"
+    exit 1
+fi
+
+if [[ ! -f $JAR ]]; then
+    echo "Missing kairosdb jar: $JAR"
+    exit 1
+fi
+
+if [[ ! -f $JVMARGS ]]; then
+    echo "Missing jvmargs: $JVMARGS"
+    exit 1
+fi
+
+JAVA_OPTS=$(grep -v '^\s*#' $JVMARGS)
+CP=$(find $LIB -name '*.jar' | paste -sd ':')
+
+exec env CLASSPATH="$CP:$JAR" java $JAVA_OPTS org.kairosdb.core.Main "$@"

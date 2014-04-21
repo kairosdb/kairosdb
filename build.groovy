@@ -65,7 +65,7 @@ jp = new JavaProgram().setProgramName(programName)
 jp.getCompileRule().getDefinition().set("target", "1.6")
 jp.getCompileRule().getDefinition().set("source", "1.6")
 
-additionalFiles = new RegExFileSet("src/main/java", ".*\\.sql").recurse()
+additionalFiles = new RegExFileSet("src/main/resources", ".*\\.sql").recurse()
 jp.getJarRule().addFileSet(additionalFiles)
 jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
 

@@ -1,0 +1,12 @@
+Package: [[name]]
+Version: [[version]]
+Section: misc
+Priority: optional
+Architecture: all
+Depends: default-jdk
+Maintainer: John-John Tedro <udoprog@spotify.com>
+Description: KairosDB is a fast distributed scalable time series database.
+  It is a rewrite of the original OpenTSDB project started at Stumble Upon.
+  Many thanks go out to the original authors for laying the groundwork and
+  direction for this great product.
+Distribution: development

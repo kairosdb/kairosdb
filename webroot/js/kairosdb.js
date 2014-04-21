@@ -13,6 +13,7 @@ kairosdb.Aggregators =
 	MAX: "max",
 	MIN: "min",
 	RATE: "rate",
+    SIMPLIFY: "simplify",
 	SORT: "sort",
 	SUM: "sum",
 	LEAST_SQUARES: "least_squares",
@@ -72,6 +73,21 @@ kairosdb.Metric = function (name) {
 		this.aggregators.push(rate);
 		return this;
 	};
+
+    this.addSimplify = function (tolerance) {
+        if (!this.aggregators)
+            this.aggregators = [];
+        var simplify = {};
+        simplify.name = "simplify";
+        if (tolerance) {
+            simplify.tolerance = tolerance;
+        } else {
+            simplify.tolerance = 1;
+        }
+
+        this.aggregators.push(simplify);
+        return this;
+    };
 
 	this.addPercentile = function (value, unit, percent) {
 		if (!this.aggregators)

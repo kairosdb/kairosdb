@@ -103,7 +103,7 @@ public class CassandraDatastore implements Datastore
 
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
-	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.ONE;
+	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.QUORUM;
 
 	@Inject
 	@Named(READ_CONSISTENCY_LEVEL)

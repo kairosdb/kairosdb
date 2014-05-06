@@ -5,6 +5,7 @@
 		<!--<ibiblio name="my-maven" m2compatible="true" root="http://repo.maven.apache.org/maven2/"/>-->
 		<!--<ibiblio name="staging" m2compatible="true" root="https://oss.sonatype.org/content/repositories/orgagileclick-1008"/>-->
 		<ibiblio name="central" m2compatible="true"/>
+
 		<chain name="default">
 			<!--<resolver ref="local-m2"/>-->
 			<resolver ref="central"/>

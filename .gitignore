@@ -15,3 +15,5 @@ kairosdb.properties
 lib/ivy/default/*
 lib/ivy/test/*
 .DS_Store
+myivysettings.xml
+tablesaw.properties

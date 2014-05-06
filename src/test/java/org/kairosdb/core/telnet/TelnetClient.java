@@ -16,7 +16,6 @@
 
 package org.kairosdb.core.telnet;
 
-import net.razorvine.pickle.Pickler;
 
 import java.io.Closeable;
 import java.io.DataOutputStream;

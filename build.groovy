@@ -12,6 +12,7 @@ import tablesaw.addons.GZipRule
 import tablesaw.addons.TarRule
 import tablesaw.addons.ivy.IvyAddon
 import tablesaw.addons.ivy.PomRule
+import tablesaw.addons.ivy.PublishRule
 import tablesaw.addons.java.Classpath
 import tablesaw.addons.java.JarRule
 import tablesaw.addons.java.JavaCRule
@@ -29,15 +30,14 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "0.9.4"
+version = "0.9.4-SNAPSHOT"
 release = "1" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
 with key/value tags to a nosql data store.  Currently supported
-backends are Cassandra and HBase.  An H2 implementation is provided
+backends are Cassandra and H2.  An H2 implementation is provided
 for development work.
-KairosDB is a rewrite of OpenTSDB to support modular interfaces.
 """
 
 saw.setProperty(JavaProgram.PROGRAM_NAME_PROPERTY, programName)
@@ -61,8 +61,12 @@ rpmNoDepDirRule = new DirectoryRule(rpmNoDepDir)
 //------------------------------------------------------------------------------
 //Setup java rules
 ivy = new IvyAddon()
-		.setSettingsFile("ivysettings.xml")
-		.setup()
+		.addSettingsFile("ivysettings.xml")
+
+if (new File("myivysettings.xml").exists())
+	ivy.addSettingsFile("myivysettings.xml")
+
+ivy.setup()
 
 buildLibraries = new RegExFileSet("lib", ".*\\.jar").recurse()
 		.addExcludeDir("integration")
@@ -83,11 +87,30 @@ jp.getJarRule().addFileSet(additionalFiles)
 jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
 
 
+//------------------------------------------------------------------------------
+//==-- Maven POM Rule --==
 pomRule = ivy.createPomRule("build/jar/pom.xml", ivy.getResolveRule("default"))
 		.addDepend(jp.getJarRule())
 		.addLicense("The Apache Software License, Version 2.0", "http://www.apache.org/licenses/LICENSE-2.0.txt", "repo")
 		.addDeveloper("brianhks", "Brian", "brianhks1+kairos@gmail.com")
 		.addDeveloper("jeff", "Jeff", "jeff.sabin+kairos@gmail.com")
+
+//------------------------------------------------------------------------------
+//==-- Publish Artifacts --==
+PublishRule publishRule = ivy.createPublishRule(saw.getProperty("ivy.publish_resolver"),
+			ivy.getResolveRule("default"))
+		.setName("publish")
+		.setDescription("Publish pom and jar to maven snapshot repo")
+		.publishMavenMetadata()
+		.setOverwrite(true)
+
+publishRule.addArtifact(pomRule.getTarget())
+		.setType("pom")
+		.setExt("pom")
+		.setIsMetadata()
+publishRule.addArtifact(jp.getJarRule().getTarget())
+		.setType("jar")
+		.setExt("jar")
 
 //------------------------------------------------------------------------------
 //==-- Maven Artifacts --==
@@ -145,7 +168,7 @@ testClasspath.addPath(jp.getJarRule().getTarget())
 
 
 testSources = new RegExFileSet("src/test/java", ".*Test\\.java").recurse()
-		.addExcludeFiles("CassandraDatastoreTest.java", "HBaseDatastoreTest.java")
+		.addExcludeFiles("CassandraDatastoreTest.java")
 		.getFilePaths()
 testCompileRule = jp.getTestCompileRule()
 testCompileRule.addDepend(ivy.getResolveRule("test"))

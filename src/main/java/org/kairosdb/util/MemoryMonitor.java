@@ -42,7 +42,7 @@ public class MemoryMonitor
 		}
 		// we do something when we reached 99.9% of memory usage
 		// when we get to this point gc was unable to recover memory.
-		ret.setCollectionUsageThreshold((int) Math.floor(ret.getUsage().getMax() * 0.999));
+		ret.setCollectionUsageThreshold((long) Math.floor(ret.getUsage().getMax() * 0.999));
 
 		return (ret);
 	}

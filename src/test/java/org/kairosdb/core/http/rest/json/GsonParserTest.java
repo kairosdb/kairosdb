@@ -274,14 +274,6 @@ public class GsonParserTest
 	}
 
 	@Test
-	public void test_emptyAggregatorArray_invalid() throws IOException, QueryException
-	{
-		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-empty.json"), Charsets.UTF_8);
-
-		assertBeanValidation(json, "query.metric[0].aggregators[] must have a size of at least 1");
-	}
-
-	@Test
 	public void test_aggregator_missingName_invalid() throws IOException, QueryException
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-no-name.json"), Charsets.UTF_8);

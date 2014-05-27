@@ -76,6 +76,7 @@ public class CassandraDatastore implements Datastore
 	public static final String WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.write_consistency_level";
 	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
 	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
+    public static final String DATAPOINT_TTL = "kairosdb.datastore.cassandra.datapoint_ttl";
 
 	public static final String CF_DATA_POINTS = "data_points";
 	public static final String CF_ROW_KEY_INDEX = "row_key_index";
@@ -108,11 +109,16 @@ public class CassandraDatastore implements Datastore
 
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
-	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.ONE;
+	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.QUORUM;
 
 	@Inject
 	@Named(READ_CONSISTENCY_LEVEL)
 	private ConsitencyLevel m_dataReadLevel = ConsitencyLevel.ONE;
+
+	
+	@Inject(optional=true)
+	@Named(DATAPOINT_TTL)
+	private int m_datapointTtl = 0;
 
 	@Inject
 	public void setRowKeyCacheSize(@Named(ROW_KEY_CACHE_SIZE_PROPERTY) int size)
@@ -158,13 +164,12 @@ public class CassandraDatastore implements Datastore
 
 			if (keyspaceDef == null)
 				createSchema(replicationFactor);
-            
-            //set global consistency level
-			ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
-			confConsLevel.setDefaultReadConsistencyLevel(m_dataReadLevel.getHectorLevel());
-			confConsLevel.setDefaultWriteConsistencyLevel(m_dataWriteLevel.getHectorLevel());
+				//set global consistency level
+				ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
+				confConsLevel.setDefaultReadConsistencyLevel(m_dataReadLevel.getHectorLevel());
+				confConsLevel.setDefaultWriteConsistencyLevel(m_dataWriteLevel.getHectorLevel());
 
-            //create keyspace instance with specified consistency
+			//create keyspace instance with specified consistency
 			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
 
 			ReentrantLock mutatorLock = new ReentrantLock();

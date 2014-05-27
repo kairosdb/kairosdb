@@ -49,12 +49,12 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 	private int m_initialMaxBufferSize;
 
 	public WriteBuffer(Keyspace keyspace, String cfName,
-			int writeDelay, int maxWriteSize, Serializer<RowKeyType> keySerializer,
-			Serializer<ColumnKeyType> columnKeySerializer,
-			Serializer<ValueType> valueSerializer,
-			WriteBufferStats stats,
-			ReentrantLock mutatorLock,
-			Condition lockCondition)
+		int writeDelay, int maxWriteSize, Serializer<RowKeyType> keySerializer,
+		Serializer<ColumnKeyType> columnKeySerializer,
+		Serializer<ValueType> valueSerializer,
+		WriteBufferStats stats,
+		ReentrantLock mutatorLock,
+		Condition lockCondition)
 	{
 		m_keyspace = keyspace;
 		m_cfName = cfName;
@@ -71,19 +71,62 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		m_writeThread = new Thread(this);
 		m_writeThread.start();
 	}
+	
+	/**
+	 * Add a datapoint without a TTL. 
+	 * This datapoint will never be automatically deleted
+	 */
+	public void addData(
+		RowKeyType rowKey, 
+		ColumnKeyType columnKey, 
+		ValueType value, 
+		long timestamp)
+	{
+		addData(rowKey, columnKey, value, timestamp, 0);
+	}
 
-	public void addData(RowKeyType rowKey, ColumnKeyType columnKey, ValueType value,
-			long timestamp)
+	/**
+	 * Add a datapoint with a TTL.
+	 * This datapoint will be removed after ttl seconds
+	 */
+	public void addData(
+		RowKeyType rowKey, 
+		ColumnKeyType columnKey, 
+		ValueType value, 
+		long timestamp, 
+		int ttl)
 	{
 		m_mutatorLock.lock();
 		try
 		{
 			waitOnBufferFull();
-
 			m_bufferCount ++;
-			m_mutator.addInsertion(rowKey, m_cfName,
-					new HColumnImpl<ColumnKeyType, ValueType>(columnKey, value,
-							timestamp, m_columnKeySerializer, m_valueSerializer));
+
+			if (columnKey.toString().length() > 0) 
+			{
+				HColumnImpl col = new HColumnImpl<ColumnKeyType, ValueType>(
+					columnKey, 
+					value, 
+					timestamp, 
+					m_columnKeySerializer, 
+					m_valueSerializer
+				);
+
+				//if a TTL is set apply it to the column. This will
+				//cause it to be removed after this number of seconds
+				if (ttl != 0)
+				{
+					col.setTtl(ttl);
+				}
+
+				m_mutator.addInsertion(rowKey, m_cfName, col);
+			} 
+			else
+			{
+				logger.info(
+					"Discarded "+m_cfName+" row with empty column name. This should never happen."
+				);
+			}
 		}
 		finally
 		{
@@ -157,7 +200,6 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		}
 	}
 
-
 	@Override
 	public void run()
 	{
@@ -198,7 +240,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			}
 			catch (Exception e)
 			{
-				logger.error("Error sending data to Cassandra", e);
+				logger.error("Error sending data to Cassandra ("+m_cfName+")", e);
 
 				m_maxBufferSize = m_maxBufferSize * 3 / 4;
 

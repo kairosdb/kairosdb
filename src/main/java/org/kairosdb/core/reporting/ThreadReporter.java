@@ -16,10 +16,13 @@
 
 package org.kairosdb.core.reporting;
 
+import com.google.common.collect.ImmutableSortedMap;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.util.Tags;
 
 import java.util.LinkedList;
 import java.util.SortedMap;
@@ -38,18 +41,19 @@ public class ThreadReporter
 	{
 		private String m_metricName;
 		private long m_value;
-		private SortedMap<String, String> m_tags;
+		private ImmutableSortedMap.Builder<String, String> m_tags;
 
 		private ReporterDataPoint(String metricName, SortedMap<String, String> tags, long value)
 		{
 			m_metricName = metricName;
 			m_value = value;
-			m_tags = new TreeMap<String, String>(tags);
+			m_tags = Tags.create();
+			m_tags.putAll(tags);
 		}
 
 		public String getMetricName() { return (m_metricName); }
 		public long getValue() { return (m_value); }
-		public SortedMap<String, String> getTags() { return m_tags; }
+		public ImmutableSortedMap<String, String> getTags() { return m_tags.build(); }
 	}
 
 	private static class CurrentTags extends ThreadLocal<SortedMap<String, String>>
@@ -132,16 +136,14 @@ public class ThreadReporter
 		s_reporterData.addDataPoint(new ReporterDataPoint(metric, s_currentTags.get(), value));
 	}
 
-	public static void submitData(KairosDatastore datastore) throws DatastoreException
+	public static void submitData(LongDataPointFactory dataPointFactory, KairosDatastore datastore) throws DatastoreException
 	{
 		while (s_reporterData.getListSize() != 0)
 		{
 			ReporterDataPoint dp = s_reporterData.getNextDataPoint();
 
-			DataPointSet dps = new DataPointSet(dp.getMetricName());
-			dps.setTags(dp.getTags());
-			dps.addDataPoint(new DataPoint(s_reportTime.get(), dp.getValue()));
-			datastore.putDataPoints(dps);
+			datastore.putDataPoint(dp.getMetricName(), dp.getTags(),
+					dataPointFactory.createDataPoint(s_reportTime.get(), dp.getValue()));
 		}
 	}
 

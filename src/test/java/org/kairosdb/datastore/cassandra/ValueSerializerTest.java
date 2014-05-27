@@ -17,12 +17,18 @@
 package org.kairosdb.datastore.cassandra;
 
 import org.junit.Test;
+import org.kairosdb.util.KDataInput;
+import org.kairosdb.util.KDataOutput;
 
+import java.io.DataInput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static junit.framework.Assert.assertTrue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.kairosdb.util.Util.packLong;
+import static org.kairosdb.util.Util.unpackLong;
 
 public class ValueSerializerTest
 {
@@ -97,5 +103,66 @@ public class ValueSerializerTest
 		buf = ValueSerializer.toByteBuffer(-1);
 		assertThat(buf.remaining(), equalTo(8));
 		assertThat(ValueSerializer.getLongFromByteBuffer(buf), equalTo(-1L));
+	}
+
+	private void testValue(long value) throws IOException
+	{
+		KDataOutput bufOutput = new KDataOutput();
+		packLong(value, bufOutput);
+
+		DataInput bufInput = KDataInput.createInput(bufOutput.getBytes());
+		long resp = unpackLong(bufInput);
+
+		assertThat(resp, equalTo(value));
+	}
+
+	@Test
+	public void testPackUnpack() throws IOException
+	{
+		testValue(0L);
+
+		testValue(256);
+
+		for (long I = 1; I < 0x100; I++)
+		{
+			testValue(I);
+		}
+
+		for (long I = 0x100; I < 0x10000; I++)
+		{
+			testValue(I);
+		}
+
+		for (long I = 0x10000; I < 0x1000000; I++)
+		{
+			testValue(I);
+		}
+
+		for (long I = 0x1000000; I < 0x100000000L; I += 0x400000)
+		{
+			testValue(I);
+		}
+
+		for (long I = 0x100000000L; I < 0x10000000000L; I += 0x40000000L)
+		{
+			testValue(I);
+		}
+
+		for (long I = 0x10000000000L; I < 0x1000000000000L; I += 0x4000000000L)
+		{
+			testValue(I);
+		}
+
+		for (long I = 0x1000000000000L; I < 0x100000000000000L; I += 0x400000000000L)
+		{
+			testValue(I);
+		}
+
+		for (long I = 0x100000000000000L; I < 0x7000000000000000L; I += 0x40000000000000L)
+		{
+			testValue(I);
+		}
+
+		testValue(-1);
 	}
 }

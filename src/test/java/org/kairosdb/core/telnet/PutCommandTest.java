@@ -15,11 +15,13 @@
  */
 package org.kairosdb.core.telnet;
 
+import com.google.common.collect.ImmutableSortedMap;
 import org.jboss.netty.channel.*;
 import org.junit.Before;
 import org.junit.Test;
-import org.kairosdb.core.DataPointListener;
-import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.*;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.util.ValidationException;
@@ -41,8 +43,9 @@ public class PutCommandTest
 	{
 		datastore = new FakeDatastore();
 		KairosDatastore kairosDatastore = new KairosDatastore(datastore, new QueryQueuingManager(1, "test"),
-				Collections.<DataPointListener>emptyList(), "test");
-		command = new PutCommand(kairosDatastore, "test");
+				Collections.<DataPointListener>emptyList(), "test", new TestDataPointFactory());
+		command = new PutCommand(kairosDatastore, "test", new LongDataPointFactoryImpl(),
+				new DoubleDataPointFactoryImpl());
 	}
 
 	@Test
@@ -357,10 +360,19 @@ public class PutCommandTest
 		}
 
 		@Override
+		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+		{
+			if (set == null)
+				set = new DataPointSet(metricName, tags, Collections.EMPTY_LIST);
+
+			set.addDataPoint(dataPoint);
+		}
+
+		/*@Override
 		public void putDataPoints(DataPointSet dps) throws DatastoreException
 		{
 			this.set = dps;
-		}
+		}*/
 
 		@Override
 		public Iterable<String> getMetricNames() throws DatastoreException

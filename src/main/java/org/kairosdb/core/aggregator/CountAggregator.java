@@ -15,8 +15,10 @@
  */
 package org.kairosdb.core.aggregator;
 
+import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -24,26 +26,40 @@ import java.util.Iterator;
 @AggregatorName(name = "count", description = "Counts the number of data points.")
 public class CountAggregator extends RangeAggregator
 {
-    @Override
-    protected RangeSubAggregator getSubAggregator()
-    {
-        return (new CountDataPointAggregator());
-    }
+	LongDataPointFactory m_dataPointFactory;
 
-    private class CountDataPointAggregator implements RangeSubAggregator
-    {
-        @Override
-        public Iterable<DataPoint> getNextDataPoints(long returnTime, Iterator<DataPoint> dataPointRange)
-        {
-            long count = 0;
-            while (dataPointRange.hasNext())
-            {
-                count++;
+	@Inject
+	public CountAggregator(LongDataPointFactory dataPointFactory)
+	{
+		m_dataPointFactory = dataPointFactory;
+	}
 
-                dataPointRange.next();
-            }
+	@Override
+	protected RangeSubAggregator getSubAggregator()
+	{
+		return (new CountDataPointAggregator());
+	}
 
-            return Collections.singletonList(new DataPoint(returnTime, count));
-        }
-    }
+	@Override
+	public boolean canAggregate(String groupType)
+	{
+		return true;
+	}
+
+	private class CountDataPointAggregator implements RangeSubAggregator
+	{
+		@Override
+		public Iterable<DataPoint> getNextDataPoints(long returnTime, Iterator<DataPoint> dataPointRange)
+		{
+			long count = 0;
+			while (dataPointRange.hasNext())
+			{
+				count++;
+
+				dataPointRange.next();
+			}
+
+			return Collections.singletonList(m_dataPointFactory.createDataPoint(returnTime, count));
+		}
+	}
 }

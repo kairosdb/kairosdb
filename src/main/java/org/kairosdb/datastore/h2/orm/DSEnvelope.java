@@ -3,7 +3,7 @@ package org.kairosdb.datastore.h2.orm;
 import java.util.*;
 import javax.sql.*;
 
-import genorm.runtime.*;
+import org.agileclick.genorm.runtime.*;
 
 public class DSEnvelope implements GenOrmDSEnvelope
 	{

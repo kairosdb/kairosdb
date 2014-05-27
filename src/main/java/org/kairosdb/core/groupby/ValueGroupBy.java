@@ -50,10 +50,12 @@ public class ValueGroupBy implements GroupBy
 	@Override
 	public int getGroupId(DataPoint dataPoint, Map<String, String> tags)
 	{
-		if (dataPoint.isInteger())
+		if (dataPoint.isLong())
 			return (int) (dataPoint.getLongValue() / rangeSize);
-		else
+		else if (dataPoint.isDouble())
 			return (int) dataPoint.getDoubleValue() / rangeSize;
+		else
+			return -1;
 	}
 
 	@Override

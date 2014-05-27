@@ -21,6 +21,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.kairosdb.core.DataPointListener;
+import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreTestHelper;
@@ -62,8 +64,11 @@ public class H2DatastoreTest extends DatastoreTestHelper
 	@BeforeClass
 	public static void setupDatabase() throws DatastoreException
 	{
-		s_datastore = new KairosDatastore(new H2Datastore(DB_PATH), new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
+		KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
+
+		s_datastore = new KairosDatastore(new H2Datastore(DB_PATH, dataPointFactory),
+				new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
 
 		loadData();
 	}

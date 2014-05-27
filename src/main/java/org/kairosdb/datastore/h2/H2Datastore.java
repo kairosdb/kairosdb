@@ -16,21 +16,26 @@
 
 package org.kairosdb.datastore.h2;
 
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import genorm.runtime.GenOrmQueryResultSet;
+import org.agileclick.genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
-import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.*;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.h2.orm.*;
+import org.kairosdb.datastore.h2.orm.DataPoint;
+import org.kairosdb.util.KDataInput;
+import org.kairosdb.util.KDataOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -43,10 +48,13 @@ public class H2Datastore implements Datastore
 	public static final String DATABASE_PATH_PROPERTY = "kairosdb.datastore.h2.database_path";
 
 	private Connection m_holdConnection;  //Connection that holds the database open
+	private KairosDataPointFactory m_dataPointFactory;
 
 	@Inject
-	public H2Datastore(@Named(DATABASE_PATH_PROPERTY) String dbPath) throws DatastoreException
+	public H2Datastore(@Named(DATABASE_PATH_PROPERTY) String dbPath, 
+			KairosDataPointFactory dataPointFactory) throws DatastoreException
 	{
+		m_dataPointFactory = dataPointFactory;
 		logger.info("Starting H2 database in " + dbPath);
 		boolean createDB = false;
 
@@ -116,16 +124,17 @@ public class H2Datastore implements Datastore
 		}
 	}
 
-	public void putDataPoints(DataPointSet dps)
+	@Override
+	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, org.kairosdb.core.DataPoint dataPoint) throws DatastoreException
 	{
 		GenOrmDataSource.attachAndBegin();
 		try
 		{
-			String key = createMetricKey(dps);
+			String key = createMetricKey(metricName, tags, dataPoint.getDataStoreDataType());
 			Metric m = Metric.factory.findOrCreate(key);
-			m.setName(dps.getName());
+			m.setName(metricName);
+			m.setType(dataPoint.getDataStoreDataType());
 
-			SortedMap<String, String> tags = dps.getTags();
 			for (String name : tags.keySet())
 			{
 				String value = tags.get(name);
@@ -135,28 +144,24 @@ public class H2Datastore implements Datastore
 
 			GenOrmDataSource.flush();
 
-			for (org.kairosdb.core.DataPoint dataPoint : dps.getDataPoints())
-			{
-				if ( dataPoint.isInteger())
-				{
-					new InsertLongDataPointQuery(m.getId(), new Timestamp(dataPoint.getTimestamp()),
-							dataPoint.getLongValue()).runUpdate();
-				}
-				else
-				{
-					new InsertDoubleDataPointQuery(m.getId(), new Timestamp(dataPoint.getTimestamp()),
-							dataPoint.getDoubleValue()).runUpdate();
-				}
-			}
+			KDataOutput dataOutput = new KDataOutput();
+			dataPoint.writeValueToBuffer(dataOutput);
+
+			new InsertDataPointQuery(m.getId(), new Timestamp(dataPoint.getTimestamp()),
+					dataOutput.getBytes()).runUpdate();
 
 			GenOrmDataSource.commit();
+		}
+		catch (IOException e)
+		{
+			throw new DatastoreException(e);
 		}
 		finally
 		{
 			GenOrmDataSource.close();
 		}
-
 	}
+
 
 	@Override
 	public Iterable<String> getMetricNames()
@@ -262,7 +267,10 @@ public class H2Datastore implements Datastore
 		{
 			while (idQuery.next())
 			{
-				String metricId = idQuery.getRecord().getMetricId();
+				MetricIdResults result = idQuery.getRecord();
+
+				String metricId = result.getMetricId();
+				String type = result.getType();
 
 				//Collect the tags in the results
 				MetricTag.ResultSet tags = MetricTag.factory.getByMetric(metricId);
@@ -274,7 +282,7 @@ public class H2Datastore implements Datastore
 					tagMap.put(mtag.getTagName(), mtag.getTagValue());
 				}
 
-				queryCallback.startDataPointSet(tagMap);
+				queryCallback.startDataPointSet(type, tagMap);
 
 				Timestamp startTime = new Timestamp(query.getStartTime());
 				Timestamp endTime = new Timestamp(query.getEndTime());
@@ -295,10 +303,15 @@ public class H2Datastore implements Datastore
 				{
 					DataPoint record = resultSet.getRecord();
 
-					if (!record.isLongValueNull())
+					queryCallback.addDataPoint(m_dataPointFactory.createDataPoint(type,
+							record.getTimestamp().getTime(),
+							KDataInput.createInput(record.getValue())));
+
+					/*if (!record.isLongValueNull())
 						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getLongValue());
 					else
 						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getDoubleValue());
+						*/
 				}
 			}
 			queryCallback.endDataPoints();
@@ -369,12 +382,14 @@ public class H2Datastore implements Datastore
 		return tagSet;
 	}
 
-	private String createMetricKey(DataPointSet dps)
+	private String createMetricKey(String metricName, SortedMap<String, String> tags,
+			String type)
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append(dps.getName()).append(":");
+		sb.append(metricName).append(":");
 
-		SortedMap<String, String> tags = dps.getTags();
+		sb.append(type).append(":");
+
 		for (String name : tags.keySet())
 		{
 			sb.append(name).append("=");

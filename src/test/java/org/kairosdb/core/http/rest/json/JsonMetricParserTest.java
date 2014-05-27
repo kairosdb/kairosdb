@@ -16,12 +16,12 @@
 package org.kairosdb.core.http.rest.json;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.junit.Test;
-import org.kairosdb.core.DataPointListener;
-import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.*;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 
@@ -38,6 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
 public class JsonMetricParserTest
 {
+	private static KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
 	@Test
 	public void test_emptyJson_Invalid() throws DatastoreException, IOException
 	{
@@ -45,9 +46,10 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
+				Collections.<DataPointListener>emptyList(), "hostname", new TestDataPointFactory());
 
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson(),
+				dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -62,9 +64,10 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
 
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -79,8 +82,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -95,8 +99,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -111,8 +116,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -120,36 +126,38 @@ public class JsonMetricParserTest
 		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].timestamp cannot be null or empty."));
 	}
 
-	@Test(expected = JsonSyntaxException.class)
+	@Test
 	public void test_datapoints_empty_value_Invalid() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[2,]]}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].datapoints[0].value cannot be null or empty."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].value may not be empty."));
 	}
 
-	@Test(expected = JsonSyntaxException.class)
+	@Test
 	public void test_datapoints_empty_timestamp_Invalid() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[,2]]}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0].datapoints[0].value cannot be null or empty."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].value cannot be null or empty, must be greater than or equal to 1."));
 	}
 
 	@Test
@@ -159,13 +167,14 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].value cannot be null or empty. must be greater than or equal to 1."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].value cannot be null or empty, must be greater than or equal to 1."));
 	}
 
 	@Test
@@ -175,8 +184,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -191,8 +201,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -208,8 +219,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -224,8 +236,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -240,8 +253,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -257,8 +271,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -273,8 +288,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -290,8 +306,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -307,8 +324,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -332,8 +350,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -356,8 +375,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -383,8 +403,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -420,8 +441,9 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson());
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
 
@@ -449,16 +471,17 @@ public class JsonMetricParserTest
 //
 //		FakeDataStore fakeds = new FakeDataStore();
 //		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-//				Collections.<DataPointListener>emptyList(), "hostname");
+//				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
 //
-//		JsonMetricParser parser = new JsonMetricParser(datastore, skipReader, new Gson());
+//		JsonMetricParser parser = new JsonMetricParser(datastore, skipReader,
+//				new Gson(), dataPointFactory);
 //		ValidationErrors validationErrors = parser.parse();
 //
 //		System.out.println(parser.getDataPointCount());
 //		System.out.println("No Validation");
 //		System.out.println(parser.getIngestTime());
 //
-//		parser = new JsonMetricParser(datastore, reader, new Gson());
+//		parser = new JsonMetricParser(datastore, reader, new Gson(), dataPointFactory);
 //		validationErrors = parser.parse();
 //		System.out.println("With Validation");
 //		System.out.println(parser.getIngestTime());
@@ -467,6 +490,7 @@ public class JsonMetricParserTest
 	private static class FakeDataStore implements Datastore
 	{
 		List<DataPointSet> dataPointSetList = new ArrayList<DataPointSet>();
+		private DataPointSet lastDataPointSet;
 
 		protected FakeDataStore() throws DatastoreException
 		{
@@ -483,10 +507,23 @@ public class JsonMetricParserTest
 		}
 
 		@Override
+		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+		{
+			if ((lastDataPointSet == null) || (!lastDataPointSet.getName().equals(metricName)) ||
+					(!lastDataPointSet.getTags().equals(tags)))
+			{
+				lastDataPointSet = new DataPointSet(metricName, tags, Collections.EMPTY_LIST);
+				dataPointSetList.add(lastDataPointSet);
+			}
+
+			lastDataPointSet.addDataPoint(dataPoint);
+		}
+
+		/*@Override
 		public void putDataPoints(DataPointSet dps) throws DatastoreException
 		{
 			dataPointSetList.add(dps);
-		}
+		}*/
 
 		@Override
 		public Iterable<String> getMetricNames() throws DatastoreException

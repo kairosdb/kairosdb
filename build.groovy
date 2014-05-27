@@ -5,16 +5,19 @@ import org.freecompany.redline.header.RpmType
 import org.freecompany.redline.payload.Directive
 import tablesaw.AbstractFileSet
 import tablesaw.RegExFileSet
+import tablesaw.SimpleFileSet
 import tablesaw.Tablesaw
 import tablesaw.TablesawException
 import tablesaw.addons.GZipRule
 import tablesaw.addons.TarRule
 import tablesaw.addons.ivy.IvyAddon
+import tablesaw.addons.ivy.PomRule
+import tablesaw.addons.ivy.PublishRule
 import tablesaw.addons.java.Classpath
+import tablesaw.addons.java.JarRule
 import tablesaw.addons.java.JavaCRule
 import tablesaw.addons.java.JavaProgram
 import tablesaw.addons.junit.JUnitRule
-import tablesaw.ant.AntTask
 import tablesaw.rules.DirectoryRule
 import tablesaw.rules.Rule
 import tablesaw.rules.SimpleRule
@@ -27,18 +30,21 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "0.9.3"
-release = "2" //package release number
+version = "0.9.4-SNAPSHOT"
+release = "1" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
 with key/value tags to a nosql data store.  Currently supported
-backends are Cassandra and HBase.  An H2 implementation is provided
+backends are Cassandra and H2.  An H2 implementation is provided
 for development work.
-KairosDB is a rewrite of OpenTSDB to support modular interfaces.
 """
-versionSourceDir = "build/src/org/kairosdb"
-versionSource = "$versionSourceDir/KairosVersion.java"
+
+saw.setProperty(JavaProgram.PROGRAM_NAME_PROPERTY, programName)
+saw.setProperty(JavaProgram.PROGRAM_DESCRIPTION_PROPERTY, description)
+saw.setProperty(JavaProgram.PROGRAM_VERSION_PROPERTY, version)
+saw.setProperty(PomRule.GROUP_ID_PROPERTY, "org.kairosdb")
+saw.setProperty(PomRule.URL_PROPERTY, "http://kairosdb.org")
 
 saw = Tablesaw.getCurrentTablesaw()
 saw.includeDefinitionFile("definitions.xml")
@@ -52,23 +58,83 @@ new DirectoryRule("build")
 rpmDirRule = new DirectoryRule(rpmDir)
 rpmNoDepDirRule = new DirectoryRule(rpmNoDepDir)
 
-ivy = new IvyAddon().setup()
+//------------------------------------------------------------------------------
+//Setup java rules
+ivy = new IvyAddon()
+		.addSettingsFile("ivysettings.xml")
+
+if (new File("myivysettings.xml").exists())
+	ivy.addSettingsFile("myivysettings.xml")
+
+ivy.setup()
 
 buildLibraries = new RegExFileSet("lib", ".*\\.jar").recurse()
 		.addExcludeDir("integration")
 		.getFullFilePaths()
 
-jp = new JavaProgram().setProgramName(programName)
+jp = new JavaProgram()
 		.setLibraryJars(buildLibraries)
 		.setup()
 
-jp.getCompileRule().getDefinition().set("target", "1.6")
-jp.getCompileRule().getDefinition().set("source", "1.6")
+jc = jp.getCompileRule()
+jc.addDepend(ivy.getResolveRule("default"))
+
+jc.getDefinition().set("target", "1.6")
+jc.getDefinition().set("source", "1.6")
 
 additionalFiles = new RegExFileSet("src/main/java", ".*\\.sql").recurse()
 jp.getJarRule().addFileSet(additionalFiles)
 jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
 
+
+//------------------------------------------------------------------------------
+//==-- Maven POM Rule --==
+pomRule = ivy.createPomRule("build/jar/pom.xml", ivy.getResolveRule("default"))
+		.addDepend(jp.getJarRule())
+		.addLicense("The Apache Software License, Version 2.0", "http://www.apache.org/licenses/LICENSE-2.0.txt", "repo")
+		.addDeveloper("brianhks", "Brian", "brianhks1+kairos@gmail.com")
+		.addDeveloper("jeff", "Jeff", "jeff.sabin+kairos@gmail.com")
+
+//------------------------------------------------------------------------------
+//==-- Publish Artifacts --==
+PublishRule publishRule = ivy.createPublishRule(saw.getProperty("ivy.publish_resolver"),
+			ivy.getResolveRule("default"))
+		.setName("publish")
+		.setDescription("Publish pom and jar to maven snapshot repo")
+		.publishMavenMetadata()
+		.setOverwrite(true)
+
+publishRule.addArtifact(pomRule.getTarget())
+		.setType("pom")
+		.setExt("pom")
+		.setIsMetadata()
+publishRule.addArtifact(jp.getJarRule().getTarget())
+		.setType("jar")
+		.setExt("jar")
+
+//------------------------------------------------------------------------------
+//==-- Maven Artifacts --==
+mavenArtifactsRule = new SimpleRule("maven-artifacts").setDescription("Create maven artifacts for maven central")
+		.addSource(jp.getJarRule().getTarget())
+		.addSource(jp.getJavaDocJarRule().getTarget())
+		.addSource(jp.getSourceJarRule().getTarget())
+		.addSource("build/jar/pom.xml")
+		.setMakeAction("signArtifacts")
+
+void signArtifacts(Rule rule)
+{
+	for (String source : rule.getSources())
+	{
+		cmd = "gpg -ab "+source
+		saw.exec(cmd)
+	}
+}
+
+new JarRule("maven-bundle", "build/bundle.jar").setDescription("Create bundle for uploading to maven central")
+		.addDepend(mavenArtifactsRule)
+		.addFileSet(new RegExFileSet(saw.getProperty(JavaProgram.JAR_DIRECTORY_PROPERTY), ".*"))
+
+//------------------------------------------------------------------------------
 //Set information in the manifest file
 manifest = jp.getJarRule().getManifest().getMainAttributes()
 manifest.putValue("Manifest-Version", "1.0")
@@ -94,17 +160,18 @@ new File(gitRevisionFile).delete()
 if (ret == 0)
 	manifest.putValue("Git-Revision", revision);
 
-saw.setDefaultTarget("jar")
 
-
+//------------------------------------------------------------------------------
+//Setup unit tests
 testClasspath = new Classpath(jp.getLibraryJars())
 testClasspath.addPath(jp.getJarRule().getTarget())
 
 
 testSources = new RegExFileSet("src/test/java", ".*Test\\.java").recurse()
-		.addExcludeFiles("CassandraDatastoreTest.java", "HBaseDatastoreTest.java")
+		.addExcludeFiles("CassandraDatastoreTest.java")
 		.getFilePaths()
 testCompileRule = jp.getTestCompileRule()
+testCompileRule.addDepend(ivy.getResolveRule("test"))
 
 junitClasspath = new Classpath(testCompileRule.getClasspath())
 junitClasspath.addPaths(testClasspath)
@@ -112,7 +179,7 @@ junitClasspath.addPath("src/main/java")
 junitClasspath.addPath("src/test/resources")
 junitClasspath.addPath("src/main/resources")
 
-junit = new JUnitRule().addSources(testSources)
+junit = new JUnitRule("junit-test").addSources(testSources)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
 
@@ -132,10 +199,29 @@ if (saw.getProperty("jacoco", "false").equals("true"))
 //Build zip deployable application
 rpmFile = "$programName-$version-${release}.rpm"
 srcRpmFile = "$programName-$version-${release}.src.rpm"
+ivyFileSet = new SimpleFileSet()
+
+//Resolve dependencies for package
+ivyResolve = ivy.getResolveRule("default")
+resolveIvyFileSetRule = new SimpleRule()
+		.addDepend(ivyResolve)
+		.setMakeAction("doIvyResolve")
+
+def doIvyResolve(Rule rule)
+{
+	classpath = ivyResolve.getClasspath()
+
+	for (String jar in classpath.getPaths())
+	{
+		file = new File(jar)
+		ivyFileSet.addFile(file.getParent(), file.getName())
+	}
+}
+
 libFileSets = [
 		new RegExFileSet("build/jar", ".*\\.jar"),
 		new RegExFileSet("lib", ".*\\.jar"),
-		new RegExFileSet("lib/ivy/default", ".*\\.jar")
+		ivyFileSet
 	]
 
 scriptsFileSet = new RegExFileSet("src/scripts", ".*").addExcludeFile("kairosdb-env.sh")
@@ -148,6 +234,7 @@ zipConfLoggingDir = "$zipConfDir/logging"
 zipWebRootDir = "$programName/webroot"
 tarRule = new TarRule("build/${programName}-${version}.tar")
 		.addDepend(jp.getJarRule())
+		.addDepend(resolveIvyFileSetRule)
 		.addFileSetTo(zipBinDir, scriptsFileSet)
 		.addFileSetTo(zipWebRootDir, webrootFileSet)
 		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.properties")
@@ -168,6 +255,7 @@ gzipRule = new GZipRule("package").setSource(tarRule.getTarget())
 rpmBaseInstallDir = "/opt/$programName"
 rpmRule = new SimpleRule("package-rpm").setDescription("Build RPM Package")
 		.addDepend(jp.getJarRule())
+		.addDepend(resolveIvyFileSetRule)
 		.addDepend(rpmDirRule)
 		.addTarget("$rpmDir/$rpmFile")
 		.setMakeAction("doRPM")
@@ -175,6 +263,7 @@ rpmRule = new SimpleRule("package-rpm").setDescription("Build RPM Package")
 
 new SimpleRule("package-rpm-nodep").setDescription("Build RPM Package with no dependencies")
 		.addDepend(jp.getJarRule())
+		.addDepend(resolveIvyFileSetRule)
 		.addDepend(rpmNoDepDirRule)
 		.addTarget("${rpmNoDepDir}/$rpmFile")
 		.setMakeAction("doRPM")
@@ -248,6 +337,7 @@ debRule = new SimpleRule("package-deb").setDescription("Build Deb Package")
 def doDeb(Rule rule)
 {
 	//Prompt the user for the sudo password
+	//TODO: package using jdeb
 	def jpf = new JPasswordField()
 	def resp = JOptionPane.showConfirmDialog(null,
 			jpf, "Enter sudo password:",
@@ -322,8 +412,10 @@ def doRun(Rule rule)
 		debug = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
 
 	//this is to load logback into classpath
-	testClasspath.addPath("src/main/resources");
-	saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${testClasspath} org.kairosdb.core.Main ${args}")
+	runClasspath = jc.getClasspath()
+	runClasspath.addPath("src/main/resources")
+	ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
+	println(ret);
 }
 
 
@@ -332,11 +424,14 @@ def doRun(Rule rule)
 genormDefinition = saw.getDefinition("genormous")
 genormDefinition.set("genorm")
 new SimpleRule("genorm").setDescription("Generate ORM files")
+		.addDepend(ivy.getResolveRule("default"))
 		.setMakeAction("doGenorm")
 
 def doGenorm(Rule rule)
 {
-	genormClasspath = new Classpath(jp.getLibraryJars())
+	resolve = ivy.getResolveRule("default")
+
+	genormClasspath = new Classpath(resolve.getClasspath())
 	genormDefinition.set("classpath", genormClasspath.toString())
 	genormDefinition.set("source", "src/main/conf/tables.xml");
 	cmd = genormDefinition.getCommand();
@@ -366,17 +461,6 @@ def doIntegration(Rule rule)
 }
 
 
-//------------------------------------------------------------------------------
-//Rules for deploying to maven central
-initAnt = new SimpleRule().setMakeAction({rule: saw.initializeAnt()})
-
-new SimpleRule("makepom").setDescription("Generate maven pom file")
-		.addDepend(initAnt)
-		.setMakeAction(
-{rule:
-	saw.initializeAnt()
-	makepom = new AntTask("org.apache.ivy.ant.IvyMakePom").set("ivyfile", "ivy.xml").set("pomfile", "build/kairosdb.pom")
-	makepom.execute()
-})
 
 
+saw.setDefaultTarget("jar")

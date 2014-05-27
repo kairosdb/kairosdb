@@ -15,12 +15,16 @@
  */
 package org.kairosdb.core.reporting;
 
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.scheduler.KairosDBJob;
+import org.kairosdb.util.Tags;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -47,6 +51,8 @@ public class MetricReporterService implements KairosDBJob
 	private final String m_hostname;
 	private final String m_schedule;
 
+	@Inject
+	private LongDataPointFactory m_dataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
 	public MetricReporterService(KairosDatastore datastore,
@@ -93,22 +99,26 @@ public class MetricReporterService implements KairosDBJob
 				List<DataPointSet> dpList = reporter.getMetrics(timestamp);
 				for (DataPointSet dataPointSet : dpList)
 				{
-					m_datastore.putDataPoints(dataPointSet);
+					for (DataPoint dataPoint : dataPointSet.getDataPoints())
+					{
+						m_datastore.putDataPoint(dataPointSet.getName(),
+								dataPointSet.getTags(), dataPoint);
+					}
 				}
 			}
 
 
 			Runtime runtime = Runtime.getRuntime();
-			Map<String, String> tags = new HashMap<String, String>();
-			tags.put("host", m_hostname);
-			m_datastore.putDataPoints(new DataPointSet("kairosdb.jvm.free_memory",
-					tags, Collections.singletonList(new DataPoint(timestamp, runtime.freeMemory()))));
-			m_datastore.putDataPoints(new DataPointSet("kairosdb.jvm.total_memory",
-					tags, Collections.singletonList(new DataPoint(timestamp, runtime.totalMemory()))));
-			m_datastore.putDataPoints(new DataPointSet("kairosdb.jvm.max_memory",
-					tags, Collections.singletonList(new DataPoint(timestamp, runtime.maxMemory()))));
-			m_datastore.putDataPoints(new DataPointSet("kairosdb.jvm.thread_count",
-					tags, Collections.singletonList(new DataPoint(timestamp, getThreadCount()))));
+			ImmutableSortedMap<String, String> tags = Tags.create()
+					.put("host", m_hostname).build();
+			m_datastore.putDataPoint("kairosdb.jvm.free_memory",
+					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.freeMemory()));
+			m_datastore.putDataPoint("kairosdb.jvm.total_memory",
+					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.totalMemory()));
+			m_datastore.putDataPoint("kairosdb.jvm.max_memory",
+					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.maxMemory()));
+			m_datastore.putDataPoint("kairosdb.jvm.thread_count",
+					tags, m_dataPointFactory.createDataPoint(timestamp, getThreadCount()));
 		}
 		catch (Throwable e)
 		{

@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
@@ -38,7 +39,7 @@ public class GsonParserTest
 	private GsonParser parser;
 
 	@Before
-	public void setup()
+	public void setup() throws KairosDBException
 	{
 		parser = new GsonParser(new TestAggregatorFactory(), new TestGroupByFactory());
 	}
@@ -270,14 +271,6 @@ public class GsonParserTest
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-tag-empty-value.json"), Charsets.UTF_8);
 
 		assertBeanValidation(json, "query.metric[0].tags[0].host value must not be null or empty");
-	}
-
-	@Test
-	public void test_emptyAggregatorArray_invalid() throws IOException, QueryException
-	{
-		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-empty.json"), Charsets.UTF_8);
-
-		assertBeanValidation(json, "query.metric[0].aggregators[] must have a size of at least 1");
 	}
 
 	@Test

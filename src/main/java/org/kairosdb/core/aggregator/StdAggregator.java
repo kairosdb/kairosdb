@@ -15,8 +15,10 @@
  */
 package org.kairosdb.core.aggregator;
 
+import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -37,6 +39,20 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @AggregatorName(name="dev", description = "Calculates the standard deviation of the time series.")
 public class StdAggregator extends RangeAggregator
 {
+	private DoubleDataPointFactory m_dataPointFactory;
+
+	@Inject
+	public StdAggregator(DoubleDataPointFactory dataPointFactory)
+	{
+		m_dataPointFactory = dataPointFactory;
+	}
+
+	@Override
+	public boolean canAggregate(String groupType)
+	{
+		return DataPoint.GROUP_NUMBER.equals(groupType);
+	}
+
 	@Override
 	protected RangeSubAggregator getSubAggregator()
 	{
@@ -62,7 +78,7 @@ public class StdAggregator extends RangeAggregator
 				stdDev = Math.sqrt((pwrSumAvg * count - count * average * average) / (count - 1));
 			}
 
-			return Collections.singletonList(new DataPoint(returnTime, Double.isNaN(stdDev) ? 0 : stdDev));
+			return Collections.singletonList(m_dataPointFactory.createDataPoint(returnTime, Double.isNaN(stdDev) ? 0 : stdDev));
 		}
 	}
 

@@ -16,8 +16,10 @@
 
 package org.kairosdb.core.aggregator;
 
+import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.http.rest.validation.NonZero;
 import org.kairosdb.util.Reservoir;
 import org.kairosdb.util.UniformReservoir;
@@ -35,6 +37,20 @@ public class PercentileAggregator extends RangeAggregator
 {
 	public static final Logger logger = LoggerFactory.getLogger(PercentileAggregator.class);
 
+	private DoubleDataPointFactory m_dataPointFactory;
+
+	@Inject
+	public PercentileAggregator(DoubleDataPointFactory dataPointFactory)
+	{
+		m_dataPointFactory = dataPointFactory;
+	}
+
+	@Override
+	public boolean canAggregate(String groupType)
+	{
+		return DataPoint.GROUP_NUMBER.equals(groupType);
+	}
+
 	@NonZero
 	private double percentile;
 
@@ -42,7 +58,6 @@ public class PercentileAggregator extends RangeAggregator
 	{
 		this.percentile = percentile;
 	}
-
 
 	@Override
 	protected RangeSubAggregator getSubAggregator()
@@ -74,7 +89,7 @@ public class PercentileAggregator extends RangeAggregator
 				logger.debug("Aggregating the " + percentile + " percentile");
 			}
 
-			return Collections.singletonList(new DataPoint(returnTime, percentileValue));
+			return Collections.singletonList(m_dataPointFactory.createDataPoint(returnTime, percentileValue));
 		}
 
 		private void getAndSortValues(double[] values){

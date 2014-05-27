@@ -16,6 +16,9 @@
 
 package org.kairosdb.datastore.remote;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.http.HttpResponse;
@@ -28,7 +31,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.datastore.QueryCallback;
@@ -38,8 +42,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.zip.GZIPOutputStream;
+
 
 public class RemoteDatastore implements Datastore
 {
@@ -61,11 +67,18 @@ public class RemoteDatastore implements Datastore
 	private String m_remoteUrl;
 	private int m_dataPointCounter;
 
-	private HttpClient m_client;
+	private volatile Multimap<DataPointKey, DataPoint> m_dataPointMultimap;
+	private Object m_mapLock = new Object();  //Lock for the above map
 
-	@javax.inject.Inject
+	private HttpClient m_client;
+	private boolean m_running;
+
+	@Inject
 	@Named("HOSTNAME")
 	private String m_hostName = "localhost";
+
+	@Inject
+	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 
 	@Inject
@@ -76,11 +89,113 @@ public class RemoteDatastore implements Datastore
 		m_remoteUrl = remoteUrl;
 		m_client = new DefaultHttpClient();
 
+		createNewMap();
+
 		//This is to check and make sure the remote kairos is there and properly configured.
 		getKairosVersion();
 
 		sendAllZipfiles();
 		openDataFile();
+		m_running = true;
+
+		Thread flushThread = new Thread(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				while (m_running)
+				{
+					try
+					{
+						flushMap();
+
+						Thread.sleep(2000);
+					}
+					catch (Exception e)
+					{
+						logger.error("Error flushing map", e);
+					}
+				}
+			}
+		});
+
+	}
+
+	private Multimap<DataPointKey, DataPoint> createNewMap()
+	{
+		Multimap<DataPointKey, DataPoint> ret;
+		synchronized (m_mapLock)
+		{
+			ret = m_dataPointMultimap;
+
+			m_dataPointMultimap = ArrayListMultimap.<DataPointKey, DataPoint>create();
+		}
+
+		return ret;
+	}
+
+	private void flushMap()
+	{
+		Multimap<DataPointKey, DataPoint> flushMap = createNewMap();
+
+		synchronized (m_dataFileLock)
+		{
+			try
+			{
+				if (!m_firstDataPoint)
+				{
+					m_dataWriter.write(",\n");
+				}
+				m_firstDataPoint = false;
+
+				JSONWriter writer = new JSONWriter(m_dataWriter);
+				try
+				{
+					for (DataPointKey dataPointKey : flushMap.keySet())
+					{
+						writer.object();
+
+						writer.key("name").value(dataPointKey.getName());
+						writer.key("skip_validate").value(true);
+						writer.key("tags").object();
+						SortedMap<String, String> tags = dataPointKey.getTags();
+						for (String tag : tags.keySet())
+						{
+							writer.key(tag).value(tags.get(tag));
+						}
+						writer.endObject();
+
+						writer.key("datapoints").array();
+						for (DataPoint dataPoint : flushMap.get(dataPointKey))
+						{
+							m_dataPointCounter ++;
+							writer.array();
+							writer.value(dataPoint.getTimestamp());
+							dataPoint.writeValueToJson(writer);
+							writer.value(dataPoint.getApiDataType());
+							/*if (dataPoint.isLong())
+								writer.value(dataPoint.getLongValue());
+							else
+								writer.value(dataPoint.getDoubleValue());*/
+							writer.endArray();
+						}
+						writer.endArray();
+
+						writer.endObject();
+					}
+				}
+				catch (JSONException e)
+				{
+					logger.error("Unable to write datapoints to file", e);
+				}
+
+				m_dataWriter.flush();
+			}
+			catch (IOException e)
+			{
+				logger.error("Unable to write datapoints to file", e);
+			}
+		}
 	}
 
 	private void getKairosVersion() throws DatastoreException
@@ -105,7 +220,7 @@ public class RemoteDatastore implements Datastore
 		}
 		catch (JSONException e)
 		{
-			throw new DatastoreException("Unalbe to parse repsone from remote kairos node.", e);
+			throw new DatastoreException("Unable to parse response from remote kairos node.", e);
 		}
 	}
 
@@ -131,6 +246,8 @@ public class RemoteDatastore implements Datastore
 	{
 		try
 		{
+			m_running = false;
+			flushMap();
 			synchronized (m_dataFileLock)
 			{
 				closeDataFile();
@@ -146,68 +263,14 @@ public class RemoteDatastore implements Datastore
 	}
 
 	@Override
-	public void putDataPoints(DataPointSet dps) throws DatastoreException
+	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
 	{
-		CharArrayWriter caw = new CharArrayWriter();
-		JSONWriter writer = new JSONWriter(caw);
-		int dataPointsWritten = 0;
-		try
+		DataPointKey key = new DataPointKey(metricName, tags, dataPoint.getApiDataType());
+
+		synchronized (m_mapLock)
 		{
-			writer.object();
-
-			writer.key("name").value(dps.getName());
-			writer.key("skip_validate").value(true);
-			writer.key("tags").object();
-			Map<String, String> tags = dps.getTags();
-			for (String tag : tags.keySet())
-			{
-				writer.key(tag).value(tags.get(tag));
-			}
-			writer.endObject();
-
-			writer.key("datapoints").array();
-			for (DataPoint dataPoint :dps.getDataPoints())
-			{
-				dataPointsWritten ++;
-				writer.array();
-				writer.value(dataPoint.getTimestamp());
-				if (dataPoint.isInteger())
-					writer.value(dataPoint.getLongValue());
-				else
-					writer.value(dataPoint.getDoubleValue());
-				writer.endArray();
-			}
-			writer.endArray();
-
-			writer.endObject();
+			m_dataPointMultimap.put(key, dataPoint);
 		}
-		catch (JSONException e)
-		{
-			logger.error("Unable to write datapoints to CharArrayWriter", e);
-		}
-
-		synchronized (m_dataFileLock)
-		{
-			m_dataPointCounter += dataPointsWritten;
-			try
-			{
-				if (!m_firstDataPoint)
-				{
-					m_dataWriter.write(",\n");
-				}
-				m_firstDataPoint = false;
-
-				caw.flush();
-				caw.writeTo(m_dataWriter);
-				m_dataWriter.flush();
-			}
-			catch (IOException e)
-			{
-				logger.error("Unable to write datapoints: %s", caw.toString());
-				logger.error("Unable to write datapoints to file", e);
-			}
-		}
-
 	}
 
 	/**
@@ -309,13 +372,9 @@ public class RemoteDatastore implements Datastore
 
 			long fileSize = (new File(m_dataFileName)).length();
 
-			DataPointSet dpsFileSize = new DataPointSet(FILE_SIZE_METRIC);
-			dpsFileSize.addTag("host", m_hostName);
-			dpsFileSize.addDataPoint(new DataPoint(now, fileSize));
-
-			DataPointSet dpsWriteSize = new DataPointSet(WRITE_SIZE_METRIC);
-			dpsWriteSize.addTag("host", m_hostName);
-			dpsWriteSize.addDataPoint(new DataPoint(now, m_dataPointCounter));
+			ImmutableSortedMap<String, String> tags = ImmutableSortedMap.<String, String>naturalOrder()
+					.put("host", m_hostName)
+					.build();
 
 			synchronized (m_dataFileLock)
 			{
@@ -325,24 +384,16 @@ public class RemoteDatastore implements Datastore
 
 			long zipSize = zipFile(oldDataFile);
 
-			DataPointSet dpsZipFileSize = new DataPointSet(ZIP_FILE_SIZE_METRIC);
-			dpsZipFileSize.addTag("host", m_hostName);
-			dpsZipFileSize.addDataPoint(new DataPoint(now, zipSize));
-
 			sendAllZipfiles();
 
 			long timeToSend = System.currentTimeMillis() - now;
 
-			DataPointSet dpsTimeToSend = new DataPointSet(TIME_TO_SEND_METRIC);
-			dpsTimeToSend.addTag("host", m_hostName);
-			dpsTimeToSend.addDataPoint(new DataPoint(now, timeToSend));
-
 			try
 			{
-				putDataPoints(dpsFileSize);
-				putDataPoints(dpsWriteSize);
-				putDataPoints(dpsTimeToSend);
-				putDataPoints(dpsZipFileSize);
+				putDataPoint(FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, fileSize));
+				putDataPoint(WRITE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, m_dataPointCounter));
+				putDataPoint(ZIP_FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, zipSize));
+				putDataPoint(TIME_TO_SEND_METRIC, tags, m_longDataPointFactory.createDataPoint(now, timeToSend));
 			}
 			catch (DatastoreException e)
 			{

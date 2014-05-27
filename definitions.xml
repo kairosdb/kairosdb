@@ -7,8 +7,8 @@
 		<command name="genquery">java</command> -->
 
 		<option name="classpath" pattern="(.+)">-cp $1</option>
-		<option name="genorm">genorm.Genormous</option>
-		<option name="genquery">genorm.QueryGen</option>
+		<option name="genorm">org.agileclick.genorm.Genormous</option>
+		<option name="genquery">org.agileclick.genorm.QueryGen</option>
 
 		<option name="source" pattern="(.+)">-s $1</option>
 	</definition>

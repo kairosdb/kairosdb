@@ -18,13 +18,15 @@ package org.kairosdb.core.datastore;
 
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.TestDataPointFactory;
+import org.kairosdb.core.datapoints.*;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -32,46 +34,47 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CachedSearchResultTest
 {
+	private static KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
 	@Test
 	public void test_createCachedSearchResult() throws IOException
 	{
 
 		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
 		CachedSearchResult csResult =
-				CachedSearchResult.createCachedSearchResult("metric1", tempFile);
+				CachedSearchResult.createCachedSearchResult("metric1", tempFile, dataPointFactory);
 
 		long now = System.currentTimeMillis();
 
 		Map<String, String> tags = new HashMap();
 		tags.put("host", "A");
 		tags.put("client", "foo");
-		csResult.startDataPointSet(tags);
+		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
 
-		csResult.addDataPoint(now, 42);
-		csResult.addDataPoint(now+1, 42.1);
-		csResult.addDataPoint(now+2, 43);
-		csResult.addDataPoint(now+3, 43.1);
+		csResult.addDataPoint(new LegacyLongDataPoint(now, 42));
+		csResult.addDataPoint(new LegacyDoubleDataPoint(now+1, 42.1));
+		csResult.addDataPoint(new LegacyLongDataPoint(now+2, 43));
+		csResult.addDataPoint(new LegacyDoubleDataPoint(now+3, 43.1));
 
 
 		tags = new HashMap();
 		tags.put("host", "B");
 		tags.put("client", "foo");
-		csResult.startDataPointSet(tags);
+		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
 
-		csResult.addDataPoint(now, 1);
-		csResult.addDataPoint(now+1, 1.1);
-		csResult.addDataPoint(now+2, 2);
-		csResult.addDataPoint(now+3, 2.1);
+		csResult.addDataPoint(new LegacyLongDataPoint(now, 1));
+		csResult.addDataPoint(new LegacyDoubleDataPoint(now+1, 1.1));
+		csResult.addDataPoint(new LegacyLongDataPoint(now+2, 2));
+		csResult.addDataPoint(new LegacyDoubleDataPoint(now+3, 2.1));
 
 		tags = new HashMap();
 		tags.put("host", "A");
 		tags.put("client", "bar");
-		csResult.startDataPointSet(tags);
+		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
 
-		csResult.addDataPoint(now, 3);
-		csResult.addDataPoint(now+1, 3.1);
-		csResult.addDataPoint(now+2, 4);
-		csResult.addDataPoint(now+3, 4.1);
+		csResult.addDataPoint(new LegacyLongDataPoint(now, 3));
+		csResult.addDataPoint(new LegacyDoubleDataPoint(now+1, 3.1));
+		csResult.addDataPoint(new LegacyLongDataPoint(now+2, 4));
+		csResult.addDataPoint(new LegacyDoubleDataPoint(now+3, 4.1));
 
 		csResult.endDataPoints();
 
@@ -90,15 +93,16 @@ public class CachedSearchResultTest
 	public void test_AddLongsBeyondBufferSize() throws IOException
 	{
 		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
-		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult("metric2", tempFile);
+		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult(
+				"metric2", tempFile, dataPointFactory);
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
-		csResult.startDataPointSet(Collections.<String, String>emptyMap());
+		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
 
 		long now = System.currentTimeMillis();
 		for (int i = 0; i < numberOfDataPoints; i++)
 		{
-			csResult.addDataPoint(now, 42);
+			csResult.addDataPoint(new LegacyLongDataPoint(now, 42));
 		}
 
 		csResult.endDataPoints();
@@ -122,15 +126,16 @@ public class CachedSearchResultTest
 	public void test_AddDoublesBeyondBufferSize() throws IOException
 	{
 		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
-		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult("metric3", tempFile);
+		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult(
+				"metric3", tempFile, dataPointFactory);
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
-		csResult.startDataPointSet(Collections.<String, String>emptyMap());
+		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
 
 		long now = System.currentTimeMillis();
 		for (int i = 0; i < numberOfDataPoints; i++)
 		{
-			csResult.addDataPoint(now, 42.2);
+			csResult.addDataPoint(new LegacyDoubleDataPoint(now, 42.2));
 		}
 
 		csResult.endDataPoints();
@@ -157,7 +162,7 @@ public class CachedSearchResultTest
 		{
 			DataPoint dp = dataPoints.next();
 
-			if (dp.isInteger())
+			if (dp.isLong())
 			{
 				Long value = (Long)numbers[count];
 				assertEquals(value.longValue(), dp.getLongValue());

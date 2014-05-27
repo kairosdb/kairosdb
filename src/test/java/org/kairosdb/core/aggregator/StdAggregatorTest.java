@@ -16,6 +16,8 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.testing.ListDataPointGroup;
 import org.junit.Test;
@@ -34,10 +36,10 @@ public class StdAggregatorTest
 		ListDataPointGroup group = new ListDataPointGroup("group");
 		for (int i = 0; i < 10000; i++)
 		{
-			group.addDataPoint(new DataPoint(1, i));
+			group.addDataPoint(new LongDataPoint(1, i));
 		}
 
-		StdAggregator aggregator = new StdAggregator();
+		StdAggregator aggregator = new StdAggregator(new DoubleDataPointFactoryImpl());
 
 		DataPointGroup dataPointGroup = aggregator.aggregate(group);
 
@@ -56,11 +58,11 @@ public class StdAggregatorTest
 		for (int i = 0; i < values.length; i++)
 		{
 			long randomValue = random.nextLong();
-			group.addDataPoint(new DataPoint(1, randomValue));
+			group.addDataPoint(new LongDataPoint(1, randomValue));
 			values[i] = randomValue;
 		}
 
-		StdAggregator aggregator = new StdAggregator();
+		StdAggregator aggregator = new StdAggregator(new DoubleDataPointFactoryImpl());
 
 		DataPointGroup dataPointGroup = aggregator.aggregate(group);
 

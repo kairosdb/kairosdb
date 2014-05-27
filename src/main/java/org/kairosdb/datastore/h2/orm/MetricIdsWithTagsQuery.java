@@ -13,22 +13,23 @@ import java.util.Iterator;
 import java.sql.Timestamp;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Attributes;
-import genorm.runtime.*;
+import org.agileclick.genorm.runtime.*;
 
 
 /**
 	Returns the metric ids for a specified query. In essence this the initial rows returned. Takes a tags filter
 */
-public class MetricIdsWithTagsQuery extends genorm.runtime.SQLQuery
+public class MetricIdsWithTagsQuery extends org.agileclick.genorm.runtime.SQLQuery
 	{
 	private static final Logger s_logger = LoggerFactory.getLogger(MetricIdsWithTagsQuery.class.getName());
 	
 	public static final String QUERY_NAME = "metric_ids_with_tags";
-	public static final String QUERY = "select m.\"id\" as metric_id from metric m, metric_tag mt\n				where\n				mt.\"metric_id\" = m.\"id\"\n				and m.\"name\" = ?\n				%tags%\n				group by m.\"id\" having count(0) = ?";
-	private static final int ATTRIBUTE_COUNT = 1;
+	public static final String QUERY = "select m.\"id\" as metric_id, m.\"type\" from metric m, metric_tag mt\n				where\n				mt.\"metric_id\" = m.\"id\"\n				and m.\"name\" = ?\n				%tags%\n				group by m.\"id\" having count(0) = ?";
+	private static final int ATTRIBUTE_COUNT = 2;
 	private static Map<String, Integer> s_attributeIndex;
 	private static String[] s_attributeNames = {
-			"metricId" };
+			"metricId",
+			"type" };
 			
 	static
 		{
@@ -386,6 +387,7 @@ public class MetricIdsWithTagsQuery extends genorm.runtime.SQLQuery
 	public class Record implements GenOrmQueryRecord, Attributes
 		{
 		protected String m_metricId;
+		protected String m_type;
 
 		protected String[] m_attrValues;
 		
@@ -393,17 +395,20 @@ public class MetricIdsWithTagsQuery extends genorm.runtime.SQLQuery
 				throws java.sql.SQLException
 			{
 			m_metricId = (String)rs.getString(1);
+			m_type = (String)rs.getString(2);
 
 			if (m_serializable)
 				{
 				m_attrValues = new String[ATTRIBUTE_COUNT];
 				
 				m_attrValues[0] = MetricIdsWithTagsQuery.this.m_formatter.toString(s_attributeNames[0], m_metricId);
+				m_attrValues[1] = MetricIdsWithTagsQuery.this.m_formatter.toString(s_attributeNames[1], m_type);
 
 				}
 			}
 			
 		public String getMetricId() { return (m_metricId); }
+		public String getType() { return (m_type); }
  
 		
 		//------------------------------------------------------------------------
@@ -412,6 +417,9 @@ public class MetricIdsWithTagsQuery extends genorm.runtime.SQLQuery
 			StringBuilder sb = new StringBuilder();
 			sb.append(" metric_id=\"");
 			sb.append(m_metricId);
+			sb.append("\"");
+			sb.append(" type=\"");
+			sb.append(m_type);
 			sb.append("\"");
 
 			return (sb.toString().trim());

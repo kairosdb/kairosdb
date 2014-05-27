@@ -11,12 +11,15 @@ import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,6 +32,9 @@ public class DataPointsMonitor implements DataPointListener, KairosMetricReporte
 
 	private volatile ConcurrentMap<String, AtomicInteger> m_metricCounters;
 	private String m_hostName;
+
+	@Inject
+	private LongDataPointFactory m_dataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
 	public DataPointsMonitor(@Named("HOSTNAME") String hostName)
@@ -51,17 +57,6 @@ public class DataPointsMonitor implements DataPointListener, KairosMetricReporte
 		ai.addAndGet(count);
 	}
 
-	@Override
-	public void dataPoints(DataPointSet pds)
-	{
-		String metricName = pds.getName();
-		if (metricName.startsWith("kairosdb"))
-			return; //Skip our own metrics.
-
-		int count = pds.getDataPoints().size();
-
-		addCounter(metricName, count);
-	}
 
 	private Map<String, AtomicInteger> getAndClearCounters()
 	{
@@ -85,11 +80,20 @@ public class DataPointsMonitor implements DataPointListener, KairosMetricReporte
 			DataPointSet dps = new DataPointSet(METRIC_NAME);
 			dps.addTag("host", m_hostName);
 			dps.addTag("metric_name", name);
-			dps.addDataPoint(new DataPoint(now, counters.get(name).longValue()));
+			dps.addDataPoint(m_dataPointFactory.createDataPoint(now, counters.get(name).longValue()));
 
 			ret.add(dps);
 		}
 
 		return (ret);
+	}
+
+	@Override
+	public void dataPoint(String metricName, SortedMap<String, String> tags, DataPoint dataPoint)
+	{
+		if (metricName.startsWith("kairosdb"))
+			return; //Skip our own metrics.
+
+		addCounter(metricName, 1);
 	}
 }

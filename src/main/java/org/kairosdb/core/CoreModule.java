@@ -22,6 +22,7 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import org.kairosdb.core.aggregator.*;
+import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryQueuingManager;
 import org.kairosdb.core.groupby.*;
@@ -32,15 +33,35 @@ import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.Util;
 
 import java.util.List;
+import java.util.MissingResourceException;
 import java.util.Properties;
 
 public class CoreModule extends AbstractModule
 {
+	public static final String DATAPOINTS_FACTORY_LONG = "kairosdb.datapoints.factory.long";
+	public static final String DATAPOINTS_FACTORY_DOUBLE = "kairosdb.datapoints.factory.double";
 	private Properties m_props;
 
 	public CoreModule(Properties props)
 	{
 		m_props = props;
+	}
+
+	private Class getClassForProperty(String property)
+	{
+		String className = m_props.getProperty(property);
+
+		Class klass = null;
+		try
+		{
+			klass = getClass().getClassLoader().loadClass(className);
+		}
+		catch (ClassNotFoundException e)
+		{
+			throw new MissingResourceException("Unable to load class", className, property);
+		}
+
+		return (klass);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -62,6 +83,7 @@ public class CoreModule extends AbstractModule
 		bind(AvgAggregator.class);
 		bind(StdAggregator.class);
 		bind(RateAggregator.class);
+		bind(SamplerAggregator.class);
 		bind(LeastSquaresAggregator.class);
 		bind(PercentileAggregator.class);
 		bind(DivideAggregator.class);
@@ -73,15 +95,31 @@ public class CoreModule extends AbstractModule
 		bind(TagGroupBy.class);
 
 		Names.bindProperties(binder(), m_props);
+		bind(Properties.class).toInstance(m_props);
 
 		String hostname = m_props.getProperty("kairosdb.hostname");
 		bindConstant().annotatedWith(Names.named("HOSTNAME")).to(hostname != null ? hostname: Util.getHostName());
 
+		bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
+
+		//bind datapoint default impls
+		bind(DoubleDataPointFactory.class)
+				.to(getClassForProperty(DATAPOINTS_FACTORY_DOUBLE)).in(Singleton.class);
+		//This is required in case someone overwrites our factory property
+		bind(DoubleDataPointFactoryImpl.class).in(Singleton.class);
+
+		bind(LongDataPointFactory.class)
+				.to(getClassForProperty(DATAPOINTS_FACTORY_LONG)).in(Singleton.class);
+		//This is required in case someone overwrites our factory property
+		bind(LongDataPointFactoryImpl.class).in(Singleton.class);
+
+		bind(LegacyDataPointFactory.class).in(Singleton.class);
+
+		bind(StringDataPointFactory.class).in(Singleton.class);
+
+		bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class).in(Singleton.class);
+
 		String hostIp = m_props.getProperty("kairosdb.host_ip");
 		bindConstant().annotatedWith(Names.named("HOST_IP")).to(hostIp != null ? hostIp: InetAddresses.toAddrString(Util.findPublicIp()));
-
-		bind(new TypeLiteral<List<DataPointListener>>()
-		{
-		}).toProvider(DataPointListenerProvider.class);
 	}
 }

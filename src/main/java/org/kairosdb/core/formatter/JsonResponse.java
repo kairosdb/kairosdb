@@ -109,7 +109,9 @@ public class JsonResponse
 					DataPoint dataPoint = group.next();
 
 					m_jsonWriter.array().value(dataPoint.getTimestamp());
-					if (dataPoint.isInteger())
+					dataPoint.writeValueToJson(m_jsonWriter);
+
+					/*if (dataPoint.isInteger())
 					{
 						m_jsonWriter.value(dataPoint.getLongValue());
 					}
@@ -121,7 +123,7 @@ public class JsonResponse
 							throw new IllegalStateException("NaN or Infinity:" + value + " data point=" + dataPoint);
 						}
 						m_jsonWriter.value(value);
-					}
+					}*/
 					m_jsonWriter.endArray();
 				}
 				m_jsonWriter.endArray();

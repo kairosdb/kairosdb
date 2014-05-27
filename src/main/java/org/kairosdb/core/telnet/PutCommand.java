@@ -16,20 +16,26 @@
 
 package org.kairosdb.core.telnet;
 
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.util.Tags;
 import org.kairosdb.util.Util;
 import org.kairosdb.util.ValidationException;
 import org.kairosdb.util.Validator;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
@@ -39,13 +45,18 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 	private KairosDatastore m_datastore;
 	private AtomicInteger m_counter = new AtomicInteger();
 	private String m_hostName;
+	private LongDataPointFactory m_longFactory;
+	private DoubleDataPointFactory m_doubleFactory;
 
 	@Inject
-	public PutCommand(KairosDatastore datastore, @Named("HOSTNAME") String hostname)
+	public PutCommand(KairosDatastore datastore, @Named("HOSTNAME") String hostname,
+			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
 		checkNotNullOrEmpty(hostname);
 		m_hostName = hostname;
 		m_datastore = datastore;
+		m_longFactory = longFactory;
+		m_doubleFactory = doubleFactory;
 	}
 
 	@Override
@@ -54,7 +65,7 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 		Validator.validateNotNullOrEmpty("metricName", command[1]);
 		Validator.validateCharacterSet("metricName", command[1]);
 
-		DataPointSet dps = new DataPointSet(command[1]);
+		String metricName = command[1];
 
 		long timestamp = Util.parseLong(command[2]);
 		//Backwards compatible hack for the next 30 years
@@ -63,12 +74,19 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 			timestamp *= 1000;
 
 		DataPoint dp;
-		if (command[3].contains("."))
-			dp = new DataPoint(timestamp, Double.parseDouble(command[3]));
-		else
-			dp = new DataPoint(timestamp, Util.parseLong(command[3]));
+		try
+		{
+			if (command[3].contains("."))
+				dp = m_doubleFactory.createDataPoint(timestamp, Double.parseDouble(command[3]));
+			else
+				dp = m_longFactory.createDataPoint(timestamp, Util.parseLong(command[3]));
+		}
+		catch (NumberFormatException e)
+		{
+			throw new ValidationException(e.getMessage());
+		}
 
-		dps.addDataPoint(dp);
+		ImmutableSortedMap.Builder<String, String> tags = Tags.create();
 
 		int tagCount = 0;
 		for (int i = 4; i < command.length; i++)
@@ -76,15 +94,15 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 			String[] tag = command[i].split("=");
 			validateTag(tagCount, tag);
 
-			dps.addTag(tag[0], tag[1]);
+			tags.put(tag[0], tag[1]);
 			tagCount++;
 		}
 
 		if (tagCount == 0)
-			dps.addTag("add", "tag");
+			tags.put("add", "tag");
 
 		m_counter.incrementAndGet();
-		m_datastore.putDataPoints(dps);
+		m_datastore.putDataPoint(metricName, tags.build(), dp);
 	}
 
 	private void validateTag(int tagCount, String[] tag) throws ValidationException
@@ -111,7 +129,7 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
 		dps.addTag("host", m_hostName);
 		dps.addTag("method", "put");
-		dps.addDataPoint(new DataPoint(now, m_counter.getAndSet(0)));
+		dps.addDataPoint(m_longFactory.createDataPoint(now, m_counter.getAndSet(0)));
 
 		return (Collections.singletonList(dps));
 	}

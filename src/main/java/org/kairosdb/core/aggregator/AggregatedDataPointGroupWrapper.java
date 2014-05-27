@@ -93,4 +93,5 @@ public abstract class AggregatedDataPointGroupWrapper implements DataPointGroup
 	{
 		return innerDataPointGroup.getGroupByResult();
 	}
+
 }

@@ -21,6 +21,7 @@ import com.google.inject.name.Named;
 import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 
@@ -33,13 +34,15 @@ import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 public class VersionCommand implements TelnetCommand, KairosMetricReporter
 {
 	private AtomicInteger m_counter = new AtomicInteger();
+	private final LongDataPointFactory m_dataPointFactory;
 	private String m_hostName;
 
 	@Inject
-	public VersionCommand(@Named("HOSTNAME") String hostname)
+	public VersionCommand(@Named("HOSTNAME") String hostname, LongDataPointFactory factory)
 	{
 		checkNotNullOrEmpty(hostname);
 		m_hostName = hostname;
+		m_dataPointFactory = factory;
 	}
 
 	@Override
@@ -66,7 +69,7 @@ public class VersionCommand implements TelnetCommand, KairosMetricReporter
 		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
 		dps.addTag("host", m_hostName);
 		dps.addTag("method", "version");
-		dps.addDataPoint(new DataPoint(now, m_counter.getAndSet(0)));
+		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, m_counter.getAndSet(0)));
 
 		return (Collections.singletonList(dps));
 	}

@@ -22,6 +22,8 @@ import com.google.gson.JsonParser;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.datapoints.DoubleDataPoint;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.ValueGroupBy;
 import org.kairosdb.testing.ListDataPointGroup;
@@ -59,17 +61,17 @@ public class JsonResponseTest
 		group1.addTag("tag1", "value1");
 		group1.addTag("tag2", "value2");
 		group1.addGroupByResult(groupBy.getGroupByResult(0));
-		group1.addDataPoint(new DataPoint(12345, 1));
-		group1.addDataPoint(new DataPoint(56789, 2));
-		group1.addDataPoint(new DataPoint(98765, 2.9));
+		group1.addDataPoint(new LongDataPoint(12345, 1));
+		group1.addDataPoint(new LongDataPoint(56789, 2));
+		group1.addDataPoint(new DoubleDataPoint(98765, 2.9));
 
 		ListDataPointGroup group2 = new ListDataPointGroup("metric2");
 		group2.addTag("tag3", "value3");
 		group2.addTag("tag4", "value4");
 		group2.addGroupByResult(groupBy.getGroupByResult(1));
-		group2.addDataPoint(new DataPoint(12345, 5));
-		group2.addDataPoint(new DataPoint(56789, 6));
-		group2.addDataPoint(new DataPoint(98765, 7.9));
+		group2.addDataPoint(new LongDataPoint(12345, 5));
+		group2.addDataPoint(new LongDataPoint(56789, 6));
+		group2.addDataPoint(new DoubleDataPoint(98765, 7.9));
 
 		groups.add(group1);
 		groups.add(group2);
@@ -93,17 +95,17 @@ public class JsonResponseTest
 		group1.addTag("tag1", "value1");
 		group1.addTag("tag2", "value2");
 		group1.addGroupByResult(groupBy.getGroupByResult(0));
-		group1.addDataPoint(new DataPoint(12345, 1));
-		group1.addDataPoint(new DataPoint(56789, 2));
-		group1.addDataPoint(new DataPoint(98765, 2.9));
+		group1.addDataPoint(new LongDataPoint(12345, 1));
+		group1.addDataPoint(new LongDataPoint(56789, 2));
+		group1.addDataPoint(new DoubleDataPoint(98765, 2.9));
 
 		ListDataPointGroup group2 = new ListDataPointGroup("metric2");
 		group2.addTag("tag3", "value3");
 		group2.addTag("tag4", "value4");
 		group2.addGroupByResult(groupBy.getGroupByResult(1));
-		group2.addDataPoint(new DataPoint(12345, 5));
-		group2.addDataPoint(new DataPoint(56789, 6));
-		group2.addDataPoint(new DataPoint(98765, 7.9));
+		group2.addDataPoint(new LongDataPoint(12345, 5));
+		group2.addDataPoint(new LongDataPoint(56789, 6));
+		group2.addDataPoint(new DoubleDataPoint(98765, 7.9));
 
 		groups.add(group1);
 		groups.add(group2);
@@ -125,9 +127,9 @@ public class JsonResponseTest
 		group1.addTag("tag1", "value1");
 		group1.addTag("tag2", "value2");
 		group1.addGroupByResult(groupBy.getGroupByResult(0));
-		group1.addDataPoint(new DataPoint(12345, 1));
-		group1.addDataPoint(new DataPoint(56789, 2));
-		group1.addDataPoint(new DataPoint(98765, Double.POSITIVE_INFINITY));
+		group1.addDataPoint(new LongDataPoint(12345, 1));
+		group1.addDataPoint(new LongDataPoint(56789, 2));
+		group1.addDataPoint(new DoubleDataPoint(98765, Double.POSITIVE_INFINITY));
 
 		groups.add(group1);
 

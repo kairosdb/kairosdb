@@ -15,8 +15,9 @@
  */
 package org.kairosdb.core.formatter;
 
-import com.chargebee.org.json.JSONException;
-import com.chargebee.org.json.JSONWriter;
+
+import org.json.JSONException;
+import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
@@ -104,6 +105,10 @@ public class JsonFormatter implements DataFormatter
 						DataPoint dataPoint = group.next();
 
 						jsonWriter.array().value(dataPoint.getTimestamp());
+
+						dataPoint.writeValueToJson(jsonWriter);
+
+						/*
 						if (dataPoint.isInteger())
 						{
 							jsonWriter.value(dataPoint.getLongValue());
@@ -116,7 +121,9 @@ public class JsonFormatter implements DataFormatter
 								throw new IllegalStateException("NaN or Infinity:" + value + " data point=" + dataPoint);
 							}
 							jsonWriter.value(value);
-						}
+						}*/
+
+						//jsonWriter.value(dataPoint.getApiDataType());
 						jsonWriter.endArray();
 					}
 					jsonWriter.endArray();

@@ -15,8 +15,10 @@
  */
 package org.kairosdb.core.aggregator;
 
+import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -29,6 +31,19 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @AggregatorName(name = "max", description = "Returns the maximum value data point for the time range.")
 public class MaxAggregator extends RangeAggregator
 {
+	private DoubleDataPointFactory m_dataPointFactory;
+
+	@Inject
+	public MaxAggregator(DoubleDataPointFactory dataPointFactory)
+	{
+		m_dataPointFactory = dataPointFactory;
+	}
+
+	@Override
+	public boolean canAggregate(String groupType)
+	{
+		return DataPoint.GROUP_NUMBER.equals(groupType);
+	}
 
 	@Override
 	protected RangeSubAggregator getSubAggregator()
@@ -47,7 +62,7 @@ public class MaxAggregator extends RangeAggregator
 				max = Math.max(max, dataPointRange.next().getDoubleValue());
 			}
 
-			return Collections.singletonList(new DataPoint(returnTime, max));
+			return Collections.singletonList(m_dataPointFactory.createDataPoint(returnTime, max));
 		}
 	}
 }

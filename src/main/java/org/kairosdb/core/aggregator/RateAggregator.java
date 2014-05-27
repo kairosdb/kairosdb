@@ -16,8 +16,10 @@
 
 package org.kairosdb.core.aggregator;
 
+import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
@@ -26,10 +28,19 @@ import org.kairosdb.core.datastore.TimeUnit;
 public class RateAggregator implements Aggregator
 {
 	private long m_sampling;
+	private DoubleDataPointFactory m_dataPointFactory;
 
-	public RateAggregator()
+	@Inject
+	public RateAggregator(DoubleDataPointFactory dataPointFactory)
 	{
 		m_sampling = 1L;
+		m_dataPointFactory = dataPointFactory;
+	}
+
+	@Override
+	public boolean canAggregate(String groupType)
+	{
+		return DataPoint.GROUP_NUMBER.equals(groupType);
 	}
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
@@ -77,7 +88,7 @@ public class RateAggregator implements Aggregator
 
 			double rate = (x1 - x0)/(y1 - y0) * m_sampling;
 
-			return (new DataPoint(y1, rate));
+			return (m_dataPointFactory.createDataPoint(y1, rate));
 		}
 	}
 }

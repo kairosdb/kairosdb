@@ -13,13 +13,13 @@ import java.util.Iterator;
 import java.sql.Timestamp;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Attributes;
-import genorm.runtime.*;
+import org.agileclick.genorm.runtime.*;
 
 
 /**
 	Counts the data points for a metric query.
 */
-public class CountDataPointsForMetricQuery extends genorm.runtime.SQLQuery
+public class CountDataPointsForMetricQuery extends org.agileclick.genorm.runtime.SQLQuery
 	{
 	private static final Logger s_logger = LoggerFactory.getLogger(CountDataPointsForMetricQuery.class.getName());
 	

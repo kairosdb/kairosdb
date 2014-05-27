@@ -18,8 +18,10 @@ package org.kairosdb.util;
 
 import com.google.common.collect.ImmutableList;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.net.*;
 import java.util.Collections;
 import java.util.List;
@@ -130,6 +132,52 @@ public class Util
 		{
 			return "";
 		}
+	}
+
+	public static void packUnsignedLong(long value, DataOutput buffer) throws IOException
+	{
+		/* Encodes a value using the variable-length encoding from
+		<a href="http://code.google.com/apis/protocolbuffers/docs/encoding.html">
+		Google Protocol Buffers</a>. Zig-zag is not used, so input must not be negative.
+		If values can be negative, use {@link #writeSignedVarLong(long, DataOutput)}
+		instead. This method treats negative input as like a large unsigned value. */
+		while ((value & ~0x7FL) != 0L)
+		{
+			buffer.writeByte((int) ((value & 0x7F) | 0x80));
+			value >>>= 7;
+		}
+		buffer.writeByte((int) value);
+	}
+
+	public static long unpackUnsignedLong(DataInput buffer) throws IOException
+	{
+		int shift = 0;
+		long result = 0;
+		while (shift < 64)
+		{
+			final byte b = buffer.readByte();
+			result |= (long)(b & 0x7F) << shift;
+			if ((b & 0x80) == 0)
+			{
+				return result;
+			}
+			shift += 7;
+		}
+		throw new IllegalArgumentException("Variable length quantity is too long");
+	}
+
+	public static void packLong(long value, DataOutput buffer) throws IOException
+	{
+		// Great trick from http://code.google.com/apis/protocolbuffers/docs/encoding.html#types
+		packUnsignedLong((value << 1) ^ (value >> 63), buffer);
+
+	}
+
+	public static long unpackLong(DataInput buffer) throws IOException
+	{
+		long value = unpackUnsignedLong(buffer);
+
+		return ((value >>> 1) ^ -(value & 1));
 	}
 
 	public static InetAddress findPublicIp()

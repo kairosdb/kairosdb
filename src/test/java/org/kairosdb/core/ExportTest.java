@@ -26,6 +26,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.kairosdb.core.aggregator.SumAggregator;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
@@ -142,7 +143,7 @@ public class ExportTest
 		KairosDatastore ds = s_injector.getInstance(KairosDatastore.class);
 
 		QueryMetric queryMetric = new QueryMetric(0, 0, METRIC_NAME);
-		SumAggregator sum = new SumAggregator();
+		SumAggregator sum = new SumAggregator(new DoubleDataPointFactoryImpl());
 		sum.setSampling(new Sampling(100, TimeUnit.YEARS));
 		queryMetric.addAggregator(sum);
 		DatastoreQuery query = ds.createQuery(queryMetric);

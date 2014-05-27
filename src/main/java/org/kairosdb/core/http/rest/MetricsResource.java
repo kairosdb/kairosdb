@@ -24,6 +24,9 @@ import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -78,18 +81,25 @@ public class MetricsResource implements KairosMetricReporter
 	private final Gson gson;
 
 	//These two are used to track rate of ingestion
-	private AtomicInteger m_ingestedDataPoints = new AtomicInteger();
-	private AtomicInteger m_ingestTime = new AtomicInteger();
+	private final AtomicInteger m_ingestedDataPoints = new AtomicInteger();
+	private final AtomicInteger m_ingestTime = new AtomicInteger();
+
+	private final KairosDataPointFactory m_kairosDataPointFactory;
+
+	@Inject
+	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
 	@Named("HOSTNAME")
 	private String hostName = "localhost";
 
 	@Inject
-	public MetricsResource(KairosDatastore datastore, GsonParser gsonParser)
+	public MetricsResource(KairosDatastore datastore, GsonParser gsonParser,
+			KairosDataPointFactory dataPointFactory)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.gsonParser = checkNotNull(gsonParser);
+		m_kairosDataPointFactory = dataPointFactory;
 		formatters.put("json", new JsonFormatter());
 
 		GsonBuilder builder = new GsonBuilder();
@@ -166,7 +176,8 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		try
 		{
-			JsonMetricParser parser = new JsonMetricParser(datastore, new InputStreamReader(json, "UTF-8"), gson);
+			JsonMetricParser parser = new JsonMetricParser(datastore, new InputStreamReader(json, "UTF-8"),
+					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 
 			m_ingestedDataPoints.addAndGet(parser.getDataPointCount());
@@ -345,7 +356,7 @@ public class MetricsResource implements KairosMetricReporter
 			ThreadReporter.addTag("request", QUERY_URL);
 			ThreadReporter.addDataPoint(REQUEST_TIME, System.currentTimeMillis() - ThreadReporter.getReportTime());
 
-			ThreadReporter.submitData(datastore);
+			ThreadReporter.submitData(m_longDataPointFactory, datastore);
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new FileStreamingOutput(respFile));
@@ -445,24 +456,43 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
+	private static ResponseBuilder getCorsPreflightResponseBuilder(final String requestHeaders,
+			final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = Response.status(Response.Status.OK);
+		responseBuilder.header("Access-Control-Allow-Origin", "*");
+		responseBuilder.header("Access-Control-Allow-Headers", requestHeaders);
+		responseBuilder.header("Access-Control-Max-Age", "86400"); // Cache for one day
+		if (requestMethod != null)
+		{
+			responseBuilder.header("Access-Control-Allow_Method", requestMethod);
+		}
+
+		return responseBuilder;
+	}
+
 	/**
-	 * Information for this endpoint was taken from
-	 * https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS
-	 * <p/>
-	 * Response to a cors preflight request to access data.
+	 Information for this endpoint was taken from https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS.
+	 <p/>
+	 <p/>Response to a cors preflight request to access data.
 	 */
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/query")
-	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
-	                                   @HeaderParam("Access-Control-Request-Method") String requestMethod)
+	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
 	{
-		ResponseBuilder responseBuilder = Response.status(Response.Status.OK);
-		responseBuilder.header("Access-Control-Allow-Origin", "*");
-		responseBuilder.header("Access-Control-Max-Age", "86400"); //Cache for one day
-		responseBuilder.header("Access-Control-Allow-Headers", requestHeaders);
-		if (requestMethod != null)
-			responseBuilder.header("Access-Control-Allow_Method", requestMethod);
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/query/tags")
+	public Response corsPreflightQueryTags(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
 
@@ -472,7 +502,8 @@ public class MetricsResource implements KairosMetricReporter
 	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
 	                                        @HeaderParam("Access-Control-Request-Method") String requestMethod)
 	{
-		return (corsPreflightQuery(requestHeaders, requestMethod));
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
 	}
 
 	@DELETE
@@ -544,8 +575,8 @@ public class MetricsResource implements KairosMetricReporter
 		dpsCount.addTag("host", hostName);
 		dpsTime.addTag("host", hostName);
 
-		dpsCount.addDataPoint(new DataPoint(now, count));
-		dpsTime.addDataPoint(new DataPoint(now, time));
+		dpsCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, count));
+		dpsTime.addDataPoint(m_longDataPointFactory.createDataPoint(now, time));
 		List<DataPointSet> ret = new ArrayList<DataPointSet>();
 		ret.add(dpsCount);
 		ret.add(dpsTime);

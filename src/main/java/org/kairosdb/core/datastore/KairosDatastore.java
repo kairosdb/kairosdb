@@ -17,18 +17,18 @@ package org.kairosdb.core.datastore;
 
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.LimitAggregator;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.groupby.GroupBy;
-import org.kairosdb.core.groupby.Grouper;
-import org.kairosdb.core.groupby.TagGroupBy;
-import org.kairosdb.core.groupby.TagGroupByResult;
+import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
@@ -57,6 +57,7 @@ public class KairosDatastore
 	private final QueryQueuingManager m_queuingManager;
 	private final List<DataPointListener> m_dataPointListeners;
 	private final String m_hostname;
+	private final KairosDataPointFactory m_dataPointFactory;
 
 	private String m_baseCacheDir;
 	private volatile String m_cacheDir;
@@ -64,13 +65,15 @@ public class KairosDatastore
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-	                       List<DataPointListener> dataPointListeners, @Named("HOSTNAME") String hostname)
+	      List<DataPointListener> dataPointListeners, @Named("HOSTNAME") String hostname,
+			KairosDataPointFactory dataPointFactory)
 			throws DatastoreException
 	{
 		m_datastore = checkNotNull(datastore);
 		m_dataPointListeners = checkNotNull(dataPointListeners);
 		m_queuingManager = checkNotNull(queuingManager);
 		m_hostname = checkNotNullOrEmpty(hostname);
+		m_dataPointFactory = dataPointFactory;
 
 		m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
 
@@ -160,16 +163,17 @@ public class KairosDatastore
 		m_datastore.close();
 	}
 
-	public void putDataPoints(DataPointSet dps) throws DatastoreException
+	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
 	{
 		//Add to datastore first.
-		m_datastore.putDataPoints(dps);
+		m_datastore.putDataPoint(metricName, tags, dataPoint);
 
 		for (DataPointListener dataPointListener : m_dataPointListeners)
 		{
-			dataPointListener.dataPoints(dps);
+			dataPointListener.dataPoint(metricName, tags, dataPoint);
 		}
 	}
+
 
 	public Iterable<String> getMetricNames() throws DatastoreException
 	{
@@ -199,6 +203,7 @@ public class KairosDatastore
 
 		m_datastore.queryDatabase(metric, callback);
 	}
+
 
 	public List<DataPointGroup> queryTags(QueryMetric metric) throws DatastoreException
 	{
@@ -283,6 +288,64 @@ public class KairosDatastore
 
 		return (ret);
 	}
+
+	private List<DataPointGroup> groupByTypeAndTag(String metricName,
+			List<DataPointRow> rows, TagGroupBy tagGroupBy, Order order)
+	{
+		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
+		MemoryMonitor mm = new MemoryMonitor(20);
+
+		if (rows.isEmpty())
+		{
+			ret.add(new SortingDataPointGroup(metricName, order));
+		}
+		else
+		{
+			ListMultimap<String, DataPointGroup> typeGroups = ArrayListMultimap.create();
+
+			for (DataPointRow row : rows)
+			{
+				String groupType = m_dataPointFactory.getGroupType(row.getDatastoreType());
+
+				typeGroups.put(groupType, new DataPointGroupRowWrapper(row));
+				mm.checkMemoryAndThrowException();
+			}
+
+			for (String type : typeGroups.keySet())
+			{
+				if (tagGroupBy != null)
+				{
+					ListMultimap<String, DataPointGroup> groups = ArrayListMultimap.create();
+					Map<String, TagGroupByResult> groupByResults = new HashMap<String, TagGroupByResult>();
+
+					for (DataPointGroup dataPointGroup : typeGroups.get(type))
+					{
+						//Todo: Add code to datastore implementations to filter by the group by tag
+
+						LinkedHashMap<String, String> matchingTags = getMatchingTags(dataPointGroup, tagGroupBy.getTagNames());
+						String tagsKey = getTagsKey(matchingTags);
+						groups.put(tagsKey, dataPointGroup);
+						groupByResults.put(tagsKey, new TagGroupByResult(tagGroupBy, matchingTags));
+						mm.checkMemoryAndThrowException();
+					}
+
+					for (String key : groups.keySet())
+					{
+						SortingDataPointGroup sdpGroup = new SortingDataPointGroup(groups.get(key), groupByResults.get(key), order);
+						sdpGroup.addGroupByResult(new TypeGroupByResult(type));
+						ret.add(sdpGroup);
+					}
+				}
+				else
+				{
+					ret.add(new SortingDataPointGroup(typeGroups.get(type), new TypeGroupByResult(type), order));
+				}
+			}
+		}
+
+		return ret;
+	}
+
 
 	private static List<DataPointGroup> groupByTags(String metricName,
 			List<DataPointGroup> dataPointsList, TagGroupBy tagGroupBy, Order order)
@@ -411,7 +474,7 @@ public class KairosDatastore
 				if (m_metric.getCacheTime() > 0)
 				{
 					cachedResults = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
-							tempFile, m_metric.getCacheTime());
+							tempFile, m_metric.getCacheTime(), m_dataPointFactory);
 					if (cachedResults != null)
 					{
 						returnedRows = cachedResults.getRows();
@@ -423,7 +486,7 @@ public class KairosDatastore
 				{
 					logger.debug("Cache MISS!");
 					cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
-							tempFile);
+							tempFile, m_dataPointFactory);
 					m_datastore.queryDatabase(m_metric, cachedResults);
 					returnedRows = cachedResults.getRows();
 				}
@@ -439,12 +502,18 @@ public class KairosDatastore
 				m_dataPointCount += returnedRow.getDataPointCount();
 			}
 
-			// It is more efficient to group by tags using the cached results because we have pointers to each tag.
-			List<DataPointGroup> queryResults = groupByTags(m_metric.getName(),
-					wrapRows(returnedRows), getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
+			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
+					returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
+
+			/*if (m_metric.getGroupBys() != null)
+			{
+				// It is more efficient to group by tags using the cached results because we have pointers to each tag.
+				queryResults = groupByTags(m_metric.getName(),
+						queryResults, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
+			}*/
 
 			// Now group for all other types of group bys.
-			Grouper grouper = new Grouper();
+			Grouper grouper = new Grouper(m_dataPointFactory);
 			try
 			{
 				queryResults = grouper.group(removeTagGroupBy(m_metric.getGroupBys()), queryResults);
@@ -457,6 +526,16 @@ public class KairosDatastore
 			m_results = new ArrayList<DataPointGroup>();
 			for (DataPointGroup queryResult : queryResults)
 			{
+				String groupType = DataPoint.GROUP_NUMBER;
+				//todo May want to make group type a first class citizen in DataPointGropu
+				for (GroupByResult groupByResult : queryResult.getGroupByResult())
+				{
+					if (groupByResult instanceof TypeGroupByResult)
+					{
+						groupType = ((TypeGroupByResult)groupByResult).getType();
+					}
+				}
+
 				DataPointGroup aggregatedGroup = queryResult;
 
 				List<Aggregator> aggregators = m_metric.getAggregators();
@@ -469,7 +548,9 @@ public class KairosDatastore
 				//This will pipe the aggregators together.
 				for (Aggregator aggregator : aggregators)
 				{
-					aggregatedGroup = aggregator.aggregate(aggregatedGroup);
+					//Make sure the aggregator can handle this type of data.
+					if (aggregator.canAggregate(groupType))
+						aggregatedGroup = aggregator.aggregate(aggregatedGroup);
 				}
 
 				m_results.add(aggregatedGroup);

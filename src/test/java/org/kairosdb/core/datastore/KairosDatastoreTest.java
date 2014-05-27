@@ -15,18 +15,19 @@
  */
 package org.kairosdb.core.datastore;
 
+import com.google.common.collect.ImmutableSortedMap;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
-import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
+import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -40,14 +41,19 @@ import static org.junit.Assert.assertThat;
 
 public class KairosDatastoreTest
 {
-	private AggregatorFactory aggFactory = new TestAggregatorFactory();
+	private AggregatorFactory aggFactory;
+
+	public KairosDatastoreTest() throws KairosDBException
+	{
+		aggFactory = new TestAggregatorFactory();
+	}
 
 	@Test(expected = NullPointerException.class)
 	public void test_query_nullMetricInvalid() throws KairosDBException
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
+				Collections.<DataPointListener>emptyList(), "hostname", new TestDataPointFactory());
 
 		datastore.createQuery(null);
 	}
@@ -57,7 +63,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
+				Collections.<DataPointListener>emptyList(), "hostname", new TestDataPointFactory());
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 		metric.addAggregator(aggFactory.createAggregator("sum"));
 
@@ -86,7 +92,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
+				Collections.<DataPointListener>emptyList(), "hostname", new TestDataPointFactory());
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 
 		DatastoreQuery dq = datastore.createQuery(metric);
@@ -160,7 +166,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname");
+				Collections.<DataPointListener>emptyList(), "hostname", new TestDataPointFactory());
 
 		// Create files in the cache directory
 		File cacheDir = new File(datastore.getCacheDir());
@@ -192,7 +198,7 @@ public class KairosDatastoreTest
 		}
 
 		@Override
-		public void putDataPoints(DataPointSet dps)
+		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
 		{
 		}
 
@@ -228,23 +234,23 @@ public class KairosDatastoreTest
 
 			try
 			{
-				queryCallback.startDataPointSet(Collections.<String, String>emptyMap());
-				queryCallback.addDataPoint(1, 3);
-				queryCallback.addDataPoint(1, 10);
-				queryCallback.addDataPoint(1, 20);
-				queryCallback.addDataPoint(2, 1);
-				queryCallback.addDataPoint(2, 3);
-				queryCallback.addDataPoint(2, 5);
-				queryCallback.addDataPoint(3, 25);
+				queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
+				queryCallback.addDataPoint(new LegacyLongDataPoint(1, 3));
+				queryCallback.addDataPoint(new LegacyLongDataPoint(1, 10));
+				queryCallback.addDataPoint(new LegacyLongDataPoint(1, 20));
+				queryCallback.addDataPoint(new LegacyLongDataPoint(2, 1));
+				queryCallback.addDataPoint(new LegacyLongDataPoint(2, 3));
+				queryCallback.addDataPoint(new LegacyLongDataPoint(2, 5));
+				queryCallback.addDataPoint(new LegacyLongDataPoint(3, 25));
 
-				queryCallback.startDataPointSet(Collections.<String, String>emptyMap());
-				queryCallback.addDataPoint(1, 5);
-				queryCallback.addDataPoint(1, 14);
-				queryCallback.addDataPoint(1, 20);
-				queryCallback.addDataPoint(2, 6);
-				queryCallback.addDataPoint(2, 8);
-				queryCallback.addDataPoint(2, 9);
-				queryCallback.addDataPoint(3, 7);
+				queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
+				queryCallback.addDataPoint(new LegacyLongDataPoint(1, 5));
+				queryCallback.addDataPoint(new LegacyLongDataPoint(1, 14));
+				queryCallback.addDataPoint(new LegacyLongDataPoint(1, 20));
+				queryCallback.addDataPoint(new LegacyLongDataPoint(2, 6));
+				queryCallback.addDataPoint(new LegacyLongDataPoint(2, 8));
+				queryCallback.addDataPoint(new LegacyLongDataPoint(2, 9));
+				queryCallback.addDataPoint(new LegacyLongDataPoint(3, 7));
 
 				queryCallback.endDataPoints();
 			}

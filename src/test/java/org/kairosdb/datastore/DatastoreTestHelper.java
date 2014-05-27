@@ -17,11 +17,13 @@
 package org.kairosdb.datastore;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -76,68 +78,68 @@ public abstract class DatastoreTestHelper
 	protected static void loadData() throws DatastoreException
 	{
 		metricNames.add("metric1");
-		DataPointSet dpSet = new DataPointSet("metric1");
-		dpSet.addTag("host", "A");
-		dpSet.addTag("client", "foo");
-		dpSet.addTag("month", "April");
+		ImmutableSortedMap<String, String> tags;
+		String metricName = "metric1";
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("host", "A")
+				.put("client", "foo")
+				.put("month", "April")
+				.build();
 
 		s_startTime = System.currentTimeMillis();
-		dpSet.addDataPoint(new DataPoint(s_startTime, 1));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 1000, 2));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 2000, 3));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 3000, 4));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 1));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime + 1000, 2));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime + 2000, 3));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime + 3000, 4));
 
-		s_datastore.putDataPoints(dpSet);
 
-		dpSet = new DataPointSet("metric1");
-		dpSet.addTag("host", "B");
-		dpSet.addTag("client", "foo");
-		dpSet.addTag("month", "April");
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("host", "B")
+				.put("client", "foo")
+				.put("month", "April")
+				.build();
 
-		dpSet.addDataPoint(new DataPoint(s_startTime, 5));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 1000, 6));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 2000, 7));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 3000, 8));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 5));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime + 1000, 6));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime + 2000, 7));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime + 3000, 8));
 
-		s_datastore.putDataPoints(dpSet);
 
-		dpSet = new DataPointSet("metric1");
-		dpSet.addTag("host", "A");
-		dpSet.addTag("client", "bar");
-		dpSet.addTag("month", "April");
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("host", "A")
+				.put("client", "bar")
+				.put("month", "April")
+				.build();
 
-		dpSet.addDataPoint(new DataPoint(s_startTime, 9));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 1000, 10));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 2000, 11));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 3000, 12));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 9));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime + 1000, 10));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime + 2000, 11));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime + 3000, 12));
 
-		s_datastore.putDataPoints(dpSet);
 
 		metricNames.add("metric2");
-		dpSet = new DataPointSet("metric2");
-		dpSet.addTag("host", "B");
-		dpSet.addTag("client", "bar");
-		dpSet.addTag("month", "April");
+		metricName = "metric2";
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("host", "B")
+				.put("client", "bar")
+				.put("month", "April")
+				.build();
 
-		dpSet.addDataPoint(new DataPoint(s_startTime, 13));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 1000, 14));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 2000, 15));
-		dpSet.addDataPoint(new DataPoint(s_startTime + 3000, 16));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 13));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime + 1000, 14));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime + 2000, 15));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime + 3000, 16));
 
-		s_datastore.putDataPoints(dpSet);
 
 		metricNames.add("duplicates");
-		dpSet = new DataPointSet("duplicates");
-		dpSet.addTag("host", "A");
-		dpSet.addDataPoint(new DataPoint(s_startTime, 4));
+		metricName = "duplicates";
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("host", "A")
+				.build();
 
-		s_datastore.putDataPoints(dpSet);
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 4));
 
-		dpSet = new DataPointSet("duplicates");
-		dpSet.addTag("host", "A");
-		dpSet.addDataPoint(new DataPoint(s_startTime, 42));
-
-		s_datastore.putDataPoints(dpSet);
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 42));
 	}
 
 	@Test

@@ -62,6 +62,7 @@ public class SortingDataPointGroup extends AbstractDataPointGroup
 		m_taggedDataPointsList.add(taggedDataPoints);
 	}
 
+
 	@Override
 	public void close()
 	{
@@ -89,7 +90,17 @@ public class SortingDataPointGroup extends AbstractDataPointGroup
 		@Override
 		public int compare(DataPoint point1, DataPoint point2)
 		{
-			return point1.compareTo(point2);
+			long ret = point1.getTimestamp() - point2.getTimestamp();
+
+			if (ret == 0L)
+				ret = Double.compare(point1.getDoubleValue(), point2.getDoubleValue());
+
+			if (ret == 0L)
+			{  //Simple hack to break a tie.
+				ret = System.identityHashCode(point1) - System.identityHashCode(point2);
+			}
+
+			return (ret < 0L ? -1 : 1);
 		}
 	}
 }

@@ -103,6 +103,10 @@ function buildKairosDBQuery() {
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				metric.addRate(unit);
 			}
+			else if (name == 'sampler') {
+				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				metric.addSampler(unit);
+			}
 			else if (name == 'percentile') {
 				value = $(aggregator).find(".aggregatorSamplingValue").val();
 				if (!isValidInteger(value)) {
@@ -516,7 +520,7 @@ function addAggregator(container) {
 	$aggregatorContainer.find(".aggregatorName").change(function () {
 		var name = $aggregatorContainer.find(".aggregatorName").val();
 
-		if (name == "rate") {
+		if (name == "rate" || name == "sampler") {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();
@@ -695,9 +699,17 @@ function showChart(subTitle, queries, metricData) {
 
 			var groupByMessage = "";
 			var groupBy = queryResult.group_by;
+            var groupType;
+            //debugger;
 			if (groupBy) {
 				$.each(groupBy, function (index, group) {
 					groupByMessage += '<br>(' + group.name + ': ';
+
+					if (group.name == 'type')
+					{
+						groupType = group.type;
+						return;
+					}
 
 					var first = true;
 					$.each(group.group, function (key, value) {
@@ -711,6 +723,9 @@ function showChart(subTitle, queries, metricData) {
 
 				});
 			}
+
+			if (groupType != 'number')
+				return;
 
 			var result = {};
 			result.name = queryResult.name + groupByMessage;

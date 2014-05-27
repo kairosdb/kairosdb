@@ -193,9 +193,8 @@ public class GsonParser
 				if (aggregators != null)
 				{
 					JsonArray asJsonArray = aggregators.getAsJsonArray();
-					if (asJsonArray.size() < 1)
-						throw new BeanValidationException(new SimpleConstraintViolation("aggregators[]", "must have a size of at least 1"), context);
-					parseAggregators(context, queryMetric, asJsonArray);
+					if (asJsonArray.size() > 0)
+						parseAggregators(context, queryMetric, asJsonArray);
 				}
 
 				JsonElement group_by = jsMetric.get("group_by");

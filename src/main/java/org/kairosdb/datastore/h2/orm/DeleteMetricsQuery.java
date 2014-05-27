@@ -13,12 +13,12 @@ import java.util.Iterator;
 import java.sql.Timestamp;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Attributes;
-import genorm.runtime.*;
+import org.agileclick.genorm.runtime.*;
 
 
 /**
 */
-public class DeleteMetricsQuery extends genorm.runtime.SQLQuery
+public class DeleteMetricsQuery extends org.agileclick.genorm.runtime.SQLQuery
 	{
 	private static final Logger s_logger = LoggerFactory.getLogger(DeleteMetricsQuery.class.getName());
 	

@@ -21,6 +21,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.datapoints.DoubleDataPoint;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.testing.ListDataPointGroup;
 
@@ -42,7 +45,7 @@ public class PercentileAggregatorTest
 	@Before
 	public void setUp()
 	{
-		aggregator = new PercentileAggregator();
+		aggregator = new PercentileAggregator(new DoubleDataPointFactoryImpl());
 	}
 
 	@Test(expected = NullPointerException.class)
@@ -99,7 +102,7 @@ public class PercentileAggregatorTest
 		for (int i = 0; i < testSize; i++)
 		{
 			double j = random.nextDouble();
-			group.addDataPoint(new DataPoint(1, j));
+			group.addDataPoint(new DoubleDataPoint(1, j));
 			values[i] = j;
 		}
 		DataPointGroup results = aggregator.aggregate(group);
@@ -123,7 +126,7 @@ public class PercentileAggregatorTest
 		for (int i = 0; i < testSize; i++)
 		{
 			long j = (long)(random.nextDouble()*range);
-			group.addDataPoint(new DataPoint(1, j));
+			group.addDataPoint(new LongDataPoint(1, j));
 			values[i] = j;
 		}
 		DataPointGroup results = aggregator.aggregate(group);
@@ -150,13 +153,13 @@ public class PercentileAggregatorTest
 			if(rand ==0)
 			{
 				long j = (long)(random.nextDouble()*range);
-				group.addDataPoint(new DataPoint(1, j));
+				group.addDataPoint(new LongDataPoint(1, j));
 				values[i] = j;
 			}
 			else
 			{
 				double j = (random.nextDouble()*range);
-				group.addDataPoint(new DataPoint(1, j));
+				group.addDataPoint(new DoubleDataPoint(1, j));
 				values[i] = j;
 			}
 		}

@@ -16,12 +16,15 @@
 
 package org.kairosdb.core.http.rest.json;
 
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
+import org.apache.bval.model.Validation;
 import org.json.JSONTokener;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.util.Validator;
@@ -29,9 +32,7 @@ import org.kairosdb.util.Validator;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -42,9 +43,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class JsonMetricParser
 {
-	private KairosDatastore datastore;
-	private Reader inputStream;
-	private Gson gson;
+	private final KairosDatastore datastore;
+	private final Reader inputStream;
+	private final Gson gson;
+	private final KairosDataPointFactory dataPointFactory;
 
 	public int getDataPointCount()
 	{
@@ -59,11 +61,13 @@ public class JsonMetricParser
 	private int dataPointCount;
 	private int ingestTime;
 
-	public JsonMetricParser(KairosDatastore datastore, Reader stream, Gson gson)
+	public JsonMetricParser(KairosDatastore datastore, Reader stream, Gson gson,
+			KairosDataPointFactory dataPointFactory)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.inputStream = checkNotNull(stream);
 		this.gson = gson;
+		this.dataPointFactory = dataPointFactory;
 	}
 
 	public ValidationErrors parse() throws IOException, DatastoreException
@@ -72,7 +76,6 @@ public class JsonMetricParser
 		ValidationErrors validationErrors = new ValidationErrors();
 
 		JsonReader reader = new JsonReader(inputStream);
-		JsonParser parser = new JsonParser();
 
 		try
 		{
@@ -244,8 +247,18 @@ public class JsonMetricParser
 		}
 	}
 
+	private String findType(JsonElement value)
+	{
+		double v = value.getAsDouble();
 
-	private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) throws DatastoreException
+		if (v % 1 == 0)
+			return ("long");
+		else
+			return ("double");
+	}
+
+
+	private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) throws DatastoreException, IOException
 	{
 		ValidationErrors validationErrors = new ValidationErrors();
 
@@ -260,8 +273,9 @@ public class JsonMetricParser
 
 			if (metric.getTimestamp() > 0)
 				Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("value"), metric.getValue());
-			if (metric.getValue() != null && !metric.getValue().isEmpty())
+			else if (metric.getValue() != null && !metric.getValue().isJsonNull())
 				Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp(), 1);
+
 
 			if (Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("tags count"), metric.getTags().size(), 1))
 			{
@@ -287,49 +301,73 @@ public class JsonMetricParser
 
 		if (!validationErrors.hasErrors())
 		{
-			DataPointSet dataPointSet = new DataPointSet(metric.getName(), metric.getTags(), Collections.<DataPoint>emptyList());
+			//DataPointSet dataPointSet = new DataPointSet(metric.getName(), metric.getTags(), Collections.<DataPoint>emptyList());
+			ImmutableSortedMap<String, String> tags = ImmutableSortedMap.copyOf(metric.getTags());
 
-			if (metric.getTimestamp() > 0 && metric.getValue() != null && !metric.getValue().isEmpty())
+			if (metric.getTimestamp() > 0 && metric.getValue() != null)
 			{
-				dataPointSet.addDataPoint(new DataPoint(metric.getTimestamp(), metric.getValue()));
+				String type = metric.getType();
+				if (type == null)
+					type = findType(metric.getValue());
+
+				if (dataPointFactory.isRegisteredType(type))
+				{
+					datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
+							type, metric.getTimestamp(), metric.getValue()));
+				}
+				else
+					validationErrors.addErrorMessage("Unregistered data point type '"+type+"'");
 			}
 
 			if (metric.getDatapoints() != null && metric.getDatapoints().length > 0)
 			{
-				int dataPointCount = 0;
+				int contextCount = 0;
 				SubContext dataPointContext = new SubContext(context, "datapoints");
-				for (double[] dataPoint : metric.getDatapoints())
+				for (JsonElement[] dataPoint : metric.getDatapoints())
 				{
-					dataPointContext.setCount(dataPointCount);
+					dataPointContext.setCount(contextCount);
 					if (dataPoint.length < 1)
 					{
 						validationErrors.addErrorMessage(dataPointContext.setAttribute("timestamp") +" cannot be null or empty.");
-						break;
+						continue;
 					}
 					else if (dataPoint.length < 2)
 					{
 						validationErrors.addErrorMessage(dataPointContext.setAttribute("value") + " cannot be null or empty.");
-						break;
+						continue;
 					}
 					else
 					{
-						long timestamp = (long) dataPoint[0];
-						if (metric.validate())
-							Validator.isGreaterThanOrEqualTo(validationErrors, dataPointContext.setAttribute("value") + " cannot be null or empty.", timestamp, 1);
+						long timestamp = 0L;
+						if (!dataPoint[0].isJsonNull())
+							timestamp = dataPoint[0].getAsLong();
 
-						if (dataPoint[1] % 1 == 0)
-							dataPointSet.addDataPoint(new DataPoint(timestamp, (long) dataPoint[1]));
-						else
-							dataPointSet.addDataPoint(new DataPoint(timestamp, dataPoint[1]));
+						if (metric.validate() && !Validator.isGreaterThanOrEqualTo(validationErrors, dataPointContext.setAttribute("value") + " cannot be null or empty,", timestamp, 1))
+							continue;
+
+						String type = metric.getType();
+						if (dataPoint.length > 2)
+							type = dataPoint[2].getAsString();
+
+						if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
+							continue;
+
+						if (type == null)
+							type = findType(dataPoint[1]);
+
+						if (!dataPointFactory.isRegisteredType(type))
+						{
+							validationErrors.addErrorMessage("Unregistered data point type '"+type+"'");
+							continue;
+						}
+
+						datastore.putDataPoint(metric.getName(), tags,
+								dataPointFactory.createDataPoint(type, timestamp, dataPoint[1]));
+						dataPointCount ++;
 					}
-					dataPointCount++;
+					contextCount++;
 				}
 			}
-
-			dataPointCount += dataPointSet.getDataPoints().size();
-
-			if (dataPointSet.getDataPoints().size() > 0)
-				datastore.putDataPoints(dataPointSet);
 		}
 
 		errors.add(validationErrors);
@@ -343,10 +381,11 @@ public class JsonMetricParser
 		private String name;
 		private long timestamp = 0;
 		private long time = 0;
-		private String value;
+		private JsonElement value;
 		private Map<String, String> tags;
-		private double[][] datapoints;
+		private JsonElement[][] datapoints;
 		private boolean skip_validate = false;
+		private String type;
 
 		private String getName()
 		{
@@ -361,7 +400,7 @@ public class JsonMetricParser
 				return timestamp;
 		}
 
-		public String getValue()
+		public JsonElement getValue()
 		{
 			return value;
 		}
@@ -371,7 +410,7 @@ public class JsonMetricParser
 			return tags != null ? tags : Collections.<String, String>emptyMap();
 		}
 
-		private double[][] getDatapoints()
+		private JsonElement[][] getDatapoints()
 		{
 			return datapoints;
 		}
@@ -380,5 +419,7 @@ public class JsonMetricParser
 		{
 			return !skip_validate;
 		}
+
+		public String getType() { return type; }
 	}
 }

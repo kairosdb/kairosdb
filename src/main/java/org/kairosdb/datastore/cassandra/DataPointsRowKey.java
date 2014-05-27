@@ -15,6 +15,7 @@
  */
 package org.kairosdb.datastore.cassandra;
 
+import java.nio.ByteBuffer;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -24,6 +25,8 @@ public class DataPointsRowKey
 	private long m_timestamp;
 	private String m_dataType;
 	private SortedMap<String, String> m_tags;
+
+	private ByteBuffer m_serializedBuffer;
 
 	public DataPointsRowKey(String metricName, long timestamp, String dataType)
 	{
@@ -105,5 +108,15 @@ public class DataPointsRowKey
 				", m_dataType='" + m_dataType + '\'' +
 				", m_tags=" + m_tags +
 				'}';
+	}
+
+	public ByteBuffer getSerializedBuffer()
+	{
+		return m_serializedBuffer;
+	}
+
+	public void setSerializedBuffer(ByteBuffer serializedBuffer)
+	{
+		m_serializedBuffer = serializedBuffer;
 	}
 }

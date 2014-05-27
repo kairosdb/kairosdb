@@ -156,6 +156,7 @@ public class CassandraDatastore implements Datastore
 			m_keyspaceName = keyspaceName;
 
 			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
+			int threadCount = hostConfig.buildCassandraHosts().length +3;
 
 			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
 					hostConfig, cassandraAuthentication);
@@ -196,7 +197,7 @@ public class CassandraDatastore implements Datastore
 							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
 									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
 						}
-					}, mutatorLock, lockCondition);
+					}, mutatorLock, lockCondition, threadCount);
 
 			m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
 					m_keyspace, CF_ROW_KEY_INDEX, writeDelay, maxWriteSize,
@@ -219,7 +220,7 @@ public class CassandraDatastore implements Datastore
 							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
 									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
 						}
-					}, mutatorLock, lockCondition);
+					}, mutatorLock, lockCondition, threadCount);
 
 			m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
 					m_keyspace, CF_STRING_INDEX, writeDelay, maxWriteSize,
@@ -242,7 +243,7 @@ public class CassandraDatastore implements Datastore
 							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
 									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
 						}
-					}, mutatorLock, lockCondition);
+					}, mutatorLock, lockCondition, threadCount);
 		}
 		catch (HectorException e)
 		{
@@ -317,66 +318,70 @@ public class CassandraDatastore implements Datastore
 	{
 		try
 		{
-			long rowTime = -1L;
 			DataPointsRowKey rowKey = null;
 			//time the data is written.
 			long writeTime = System.currentTimeMillis();
 
 			if (dataPoint.getTimestamp() < 0)
 				throw new DatastoreException("Timestamp must be greater than or equal to zero.");
-			long newRowTime = calculateRowTime(dataPoint.getTimestamp());
-			if (newRowTime != rowTime)
+			long rowTime= calculateRowTime(dataPoint.getTimestamp());
+
+			rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
+					tags);
+
+
+			long now = System.currentTimeMillis();
+
+			//Write out the row key if it is not cached
+			DataPointsRowKey cachedKey = m_rowKeyCache.cacheItem(rowKey);
+			if (cachedKey == null)
+				m_rowKeyWriteBuffer.addData(metricName, rowKey, "", now);
+			else
+				rowKey = cachedKey;
+
+			//Write metric name if not in cache
+			String cachedName = m_metricNameCache.cacheItem(metricName);
+			if (cachedName == null)
 			{
-				rowTime = newRowTime;
-				rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
-						tags);
-
-				long now = System.currentTimeMillis();
-				//Write out the row key if it is not cached
-				if (!m_rowKeyCache.isCached(rowKey))
-					m_rowKeyWriteBuffer.addData(metricName, rowKey, "", now);
-
-				//Write metric name if not in cache
-				if (!m_metricNameCache.isCached(metricName))
+				if (metricName.length() == 0)
 				{
-					if (metricName.length() == 0)
+					logger.warn(
+							"Attempted to add empty metric name to string index. Row looks like: "+dataPoint
+					);
+				}
+				m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
+						metricName, "", now);
+			}
+
+			//Check tag names and values to write them out
+			for (String tagName : tags.keySet())
+			{
+				String cachedTagName = m_tagNameCache.cacheItem(tagName);
+				if (cachedTagName == null)
+				{
+					if(tagName.length() == 0)
 					{
 						logger.warn(
-								"Attempted to add empty metric name to string index. Row looks like: "+dataPoint
+								"Attempted to add empty tagName to string cache for metric: "+metricName
 						);
 					}
-					m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
-							metricName, "", now);
+					m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_NAMES,
+							tagName, "", now);
+
 				}
 
-				//Check tag names and values to write them out
-				for (String tagName : tags.keySet())
+				String value = tags.get(tagName);
+				String cachedValue = m_tagValueCache.cacheItem(value);
+				if (cachedValue == null)
 				{
-					if (!m_tagNameCache.isCached(tagName))
+					if(value.toString().length() == 0)
 					{
-						if(tagName.length() == 0)
-						{
-							logger.warn(
-									"Attempted to add empty tagName to string cache for metric: "+metricName
-							);
-						}
-						m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_NAMES,
-								tagName, "", now);
-
+						logger.warn(
+								"Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+metricName
+						);
 					}
-
-					String value = tags.get(tagName);
-					if (!m_tagValueCache.isCached(value))
-					{
-						if(value.toString().length() == 0)
-						{
-							logger.warn(
-									"Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+metricName
-							);
-						}
-						m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
-								value, "", now);
-					}
+					m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
+							value, "", now);
 				}
 			}
 

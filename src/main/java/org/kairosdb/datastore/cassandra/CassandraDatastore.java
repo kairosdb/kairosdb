@@ -118,7 +118,7 @@ public class CassandraDatastore implements Datastore
 	
 	@Inject(optional=true)
 	@Named(DATAPOINT_TTL)
-	private int m_datapointTtl = 0;
+	private int m_datapointTtl = 0; //Zero ttl means data lives forever.
 
 	@Inject
 	public void setRowKeyCacheSize(@Named(ROW_KEY_CACHE_SIZE_PROPERTY) int size)
@@ -332,9 +332,15 @@ public class CassandraDatastore implements Datastore
 						tags);
 
 				long now = System.currentTimeMillis();
+
+				int rowKeyTtl = 0;
+				//Row key will expire 3 weeks after the data in the row expires
+				if (m_datapointTtl != 0)
+					rowKeyTtl = m_datapointTtl + ((int)(ROW_WIDTH / 1000));
+
 				//Write out the row key if it is not cached
 				if (!m_rowKeyCache.isCached(rowKey))
-					m_rowKeyWriteBuffer.addData(metricName, rowKey, "", now);
+					m_rowKeyWriteBuffer.addData(metricName, rowKey, "", now, rowKeyTtl);
 
 				//Write metric name if not in cache
 				if (!m_metricNameCache.isCached(metricName))
@@ -384,7 +390,7 @@ public class CassandraDatastore implements Datastore
 			KDataOutput kDataOutput = new KDataOutput();
 			dataPoint.writeValueToBuffer(kDataOutput);
 			m_dataPointWriteBuffer.addData(rowKey, columnTime,
-					kDataOutput.getBytes(), writeTime);
+					kDataOutput.getBytes(), writeTime, m_datapointTtl);
 
 		}
 		catch (DatastoreException e)

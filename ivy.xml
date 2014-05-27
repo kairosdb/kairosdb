@@ -54,6 +54,9 @@
 			<exclude org="javax.servlet" module="servlet-api"/>
 		</dependency>
 
+        <dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="2.0.2">
+        </dependency>
+
 		<!--<dependency org="org.hectorclient" name="hector-object-mapper" rev="3.1-09" transitive="false">
 		</dependency>-->
 

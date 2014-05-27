@@ -15,6 +15,7 @@
  */
 package org.kairosdb.datastore.cassandra;
 
+import com.datastax.driver.core.*;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
@@ -48,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -103,6 +105,10 @@ public class CassandraDatastore implements Datastore
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
+	private com.datastax.driver.core.Cluster cluster;
+	private Session session;
+	private PreparedStatement datapointStatement;
+
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
@@ -128,6 +134,26 @@ public class CassandraDatastore implements Datastore
 		m_tagValueCache = new DataCache<String>(size);
 	}
 
+	public void connect(String node)
+	{
+		cluster = com.datastax.driver.core.Cluster.builder()
+				.addContactPoint(node)
+				.build();
+		Metadata metadata = cluster.getMetadata();
+		System.out.printf("Connected to cluster: %s\n",
+				metadata.getClusterName());
+		for (Host host : metadata.getAllHosts())
+		{
+			System.out.printf("Datacenter: %s; Host: %s; Rack: %s\n",
+					host.getDatacenter(), host.getAddress(), host.getRack());
+		}
+
+		session = cluster.connect();
+
+		datapointStatement = session.prepare("INSERT INTO " + m_keyspaceName + ".data_points (\"key\", \"column1\", \"value\") VALUES(?,?,?);");
+	}
+
+
 	@Inject
 	public CassandraDatastore(@Named(CassandraModule.CASSANDRA_AUTH_MAP) Map<String, String> cassandraAuthentication,
 	                          @Named(REPLICATION_FACTOR_PROPERTY) int replicationFactor,
@@ -137,9 +163,9 @@ public class CassandraDatastore implements Datastore
 	                          @Named(WRITE_DELAY_PROPERTY) int writeDelay,
 	                          @Named(WRITE_BUFFER_SIZE) int maxWriteSize,
 	                          final @Named("HOSTNAME") String hostname,
-                             @Named(KEYSPACE_PROPERTY) String keyspaceName,
+	                          @Named(KEYSPACE_PROPERTY) String keyspaceName,
 	                          HectorConfiguration configuration,
-                             KairosDataPointFactory kairosDataPointFactory) throws DatastoreException
+	                          KairosDataPointFactory kairosDataPointFactory) throws DatastoreException
 	{
 		try
 		{
@@ -158,17 +184,19 @@ public class CassandraDatastore implements Datastore
 
 			if (keyspaceDef == null)
 				createSchema(replicationFactor);
-            
-            //set global consistency level
+
+			//set global consistency level
 			ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
 			confConsLevel.setDefaultReadConsistencyLevel(m_dataReadLevel.getHectorLevel());
 			confConsLevel.setDefaultWriteConsistencyLevel(m_dataWriteLevel.getHectorLevel());
 
-            //create keyspace instance with specified consistency
+			//create keyspace instance with specified consistency
 			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
 
 			ReentrantLock mutatorLock = new ReentrantLock();
 			Condition lockCondition = mutatorLock.newCondition();
+
+			connect("localhost");
 
 			m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, byte[]>(
 					m_keyspace, CF_DATA_POINTS, writeDelay, maxWriteSize,
@@ -178,6 +206,7 @@ public class CassandraDatastore implements Datastore
 					new WriteBufferStats()
 					{
 						private ImmutableSortedMap m_tags;
+
 						{
 							m_tags = ImmutableSortedMap.naturalOrder()
 									.put("host", hostname)
@@ -191,7 +220,8 @@ public class CassandraDatastore implements Datastore
 							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
 									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
 						}
-					}, mutatorLock, lockCondition);
+					}, mutatorLock, lockCondition
+			);
 
 			m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
 					m_keyspace, CF_ROW_KEY_INDEX, writeDelay, maxWriteSize,
@@ -201,6 +231,7 @@ public class CassandraDatastore implements Datastore
 					new WriteBufferStats()
 					{
 						private ImmutableSortedMap m_tags;
+
 						{
 							m_tags = ImmutableSortedMap.naturalOrder()
 									.put("host", hostname)
@@ -214,7 +245,8 @@ public class CassandraDatastore implements Datastore
 							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
 									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
 						}
-					}, mutatorLock, lockCondition);
+					}, mutatorLock, lockCondition
+			);
 
 			m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
 					m_keyspace, CF_STRING_INDEX, writeDelay, maxWriteSize,
@@ -224,6 +256,7 @@ public class CassandraDatastore implements Datastore
 					new WriteBufferStats()
 					{
 						private ImmutableSortedMap m_tags;
+
 						{
 							m_tags = ImmutableSortedMap.naturalOrder()
 									.put("host", hostname)
@@ -237,7 +270,8 @@ public class CassandraDatastore implements Datastore
 							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
 									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
 						}
-					}, mutatorLock, lockCondition);
+					}, mutatorLock, lockCondition
+			);
 		}
 		catch (HectorException e)
 		{
@@ -337,7 +371,7 @@ public class CassandraDatastore implements Datastore
 					if (metricName.length() == 0)
 					{
 						logger.warn(
-								"Attempted to add empty metric name to string index. Row looks like: "+dataPoint
+								"Attempted to add empty metric name to string index. Row looks like: " + dataPoint
 						);
 					}
 					m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
@@ -349,10 +383,10 @@ public class CassandraDatastore implements Datastore
 				{
 					if (!m_tagNameCache.isCached(tagName))
 					{
-						if(tagName.length() == 0)
+						if (tagName.length() == 0)
 						{
 							logger.warn(
-									"Attempted to add empty tagName to string cache for metric: "+metricName
+									"Attempted to add empty tagName to string cache for metric: " + metricName
 							);
 						}
 						m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_NAMES,
@@ -363,10 +397,10 @@ public class CassandraDatastore implements Datastore
 					String value = tags.get(tagName);
 					if (!m_tagValueCache.isCached(value))
 					{
-						if(value.toString().length() == 0)
+						if (value.toString().length() == 0)
 						{
 							logger.warn(
-									"Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+metricName
+									"Attempted to add empty tagValue (tag name " + tagName + ") to string cache for metric: " + metricName
 							);
 						}
 						m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
@@ -375,11 +409,24 @@ public class CassandraDatastore implements Datastore
 				}
 			}
 
-			int columnTime = getColumnName(rowTime, dataPoint.getTimestamp());
-			KDataOutput kDataOutput = new KDataOutput();
-			dataPoint.writeValueToBuffer(kDataOutput);
-			m_dataPointWriteBuffer.addData(rowKey, columnTime,
-					kDataOutput.getBytes(), writeTime);
+			KDataOutput dataOutput = new KDataOutput();
+			dataPoint.writeValueToBuffer(dataOutput);
+
+			ByteBuffer serializedKey = new DataPointsRowKeySerializer().toByteBuffer(rowKey);
+			int columnName = getColumnName(rowTime, dataPoint.getTimestamp());
+
+			KDataOutput otherDataOutput = new KDataOutput();
+			otherDataOutput.writeInt(columnName);
+
+			session.execute(datapointStatement.bind(serializedKey, ByteBuffer.wrap(otherDataOutput.getBytes()), ByteBuffer.wrap(dataOutput.getBytes())));
+
+//			session.execute("INSERT INTO " + m_keyspaceName + ".data_points (\"key\", \"column1\", \"value\") VALUES(?,?,?);",
+//					serializedKey, columnName, ByteBuffer.wrap(dataOutput.getBytes()));
+
+//			KDataOutput kDataOutput = new KDataOutput();
+//			dataPoint.writeValueToBuffer(kDataOutput);
+//			m_dataPointWriteBuffer.addData(rowKey, columnName,
+//					kDataOutput.getBytes(), writeTime);
 
 		}
 		catch (DatastoreException e)
@@ -483,7 +530,7 @@ public class CassandraDatastore implements Datastore
 	}
 
 	private void queryWithRowKeys(DatastoreMetricQuery query,
-			QueryCallback queryCallback, Iterator<DataPointsRowKey> rowKeys)
+	                              QueryCallback queryCallback, Iterator<DataPointsRowKey> rowKeys)
 	{
 		long startTime = System.currentTimeMillis();
 		long currentTimeTier = 0L;
@@ -632,11 +679,12 @@ public class CassandraDatastore implements Datastore
 
 
 	/**
-	 This is just for the delete operation of old data points.
-	 @param rowTime
-	 @param timestamp
-	 @param isInteger
-	 @return
+	 * This is just for the delete operation of old data points.
+	 *
+	 * @param rowTime
+	 * @param timestamp
+	 * @param isInteger
+	 * @return
 	 */
 	@SuppressWarnings("PointlessBitwiseExpression")
 	private static int getColumnName(long rowTime, long timestamp, boolean isInteger)
@@ -679,7 +727,7 @@ public class CassandraDatastore implements Datastore
 		private SetMultimap<String, String> m_filterTags;
 
 		public FilteredRowKeyIterator(String metricName, long startTime, long endTime,
-				SetMultimap<String, String> filterTags)
+		                              SetMultimap<String, String> filterTags)
 		{
 			m_filterTags = filterTags;
 			SliceQuery<String, DataPointsRowKey, String> sliceQuery =

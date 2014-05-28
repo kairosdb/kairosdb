@@ -3,11 +3,7 @@ import org.freecompany.redline.header.Architecture
 import org.freecompany.redline.header.Os
 import org.freecompany.redline.header.RpmType
 import org.freecompany.redline.payload.Directive
-import tablesaw.AbstractFileSet
-import tablesaw.RegExFileSet
-import tablesaw.SimpleFileSet
-import tablesaw.Tablesaw
-import tablesaw.TablesawException
+import tablesaw.*
 import tablesaw.addons.GZipRule
 import tablesaw.addons.TarRule
 import tablesaw.addons.ivy.IvyAddon
@@ -30,7 +26,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "0.9.5-SNAPSHOT"
+version = "0.9.4"
 release = "1" //package release number
 summary = "KairosDB"
 description = """\
@@ -53,6 +49,7 @@ ivyConfig = ["default", "integration"]
 
 
 rpmDir = "build/rpm"
+docsDir = "build/docs"
 rpmNoDepDir = "build/rpm-nodep"
 new DirectoryRule("build")
 rpmDirRule = new DirectoryRule(rpmDir)
@@ -460,7 +457,19 @@ def doIntegration(Rule rule)
 	saw.exec("java  -Dhost=${host} -Dport=${port} -cp ${integrationBuildRule.classpath} org.testng.TestNG src/integration-test/testng.xml")
 }
 
+//------------------------------------------------------------------------------
+//Build Docs
+rpmRule = new SimpleRule("docs").setDescription("Build Sphinx Documentation")
+        .setMakeAction("doDocs")
 
+def doDocs(Rule rule)
+{
+    sudo = saw.createAsyncProcess(".", "sphinx-build -b html src/docs ${docsDir}")
+    sudo.run()
+    sudo.waitForProcess()
+    if (sudo.getExitCode() != 0)
+        throw new TablesawException("Unable to run sphinx-build")
+}
 
 
 saw.setDefaultTarget("jar")

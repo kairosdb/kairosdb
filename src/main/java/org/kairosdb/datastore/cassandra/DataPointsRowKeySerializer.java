@@ -61,10 +61,10 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 		size += metricName.length;
 		size++; //Add one for null at end of string
 
-		//if the data type is null then we are creating a row key for the old
-		//format - this is for delete operations
+		//if the data type is "" then we are creating a row key for the old
+		//format - this is for delete/search operations
 		byte[] dataType = null;
-		if (dataPointsRowKey.getDataType() != null)
+		if (!dataPointsRowKey.getDataType().equals(""))
 		{
 			dataType = dataPointsRowKey.getDataType().getBytes(UTF8);
 			size += dataType.length;

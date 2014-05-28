@@ -596,7 +596,6 @@ public class CassandraDatastore implements Datastore
 			}
 			else
 			{
-//				if (rowKey.getDataType() == null)
 				partialRows.add(rowKey);
 			}
 		}

@@ -16,6 +16,7 @@
 package org.kairosdb.datastore.cassandra;
 
 import me.prettyprint.cassandra.serializers.AbstractSerializer;
+import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.util.StringPool;
 
 import java.nio.ByteBuffer;
@@ -63,7 +64,8 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 		//if the data type is "" then we are creating a row key for the old
 		//format - this is for delete/search operations
 		byte[] dataType = null;
-		if (!dataPointsRowKey.getDataType().equals(""))
+		String dataTypeStr = dataPointsRowKey.getDataType();
+		if (!dataTypeStr.equals("") && !dataTypeStr.equals(LegacyDataPointFactory.DATASTORE_TYPE))
 		{
 			dataType = dataPointsRowKey.getDataType().getBytes(UTF8);
 			size += dataType.length;

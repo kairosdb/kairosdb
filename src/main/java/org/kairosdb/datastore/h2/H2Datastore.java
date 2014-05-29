@@ -125,7 +125,7 @@ public class H2Datastore implements Datastore
 	}
 
 	@Override
-	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, org.kairosdb.core.DataPoint dataPoint) throws DatastoreException
+	public synchronized void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, org.kairosdb.core.DataPoint dataPoint) throws DatastoreException
 	{
 		GenOrmDataSource.attachAndBegin();
 		try

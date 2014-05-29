@@ -37,6 +37,7 @@ import me.prettyprint.hector.api.query.CountQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
@@ -768,25 +769,6 @@ public class CassandraDatastore implements Datastore
 		}
 
 
-		private void deleteDataPoint(long time, boolean isInteger)
-		{
-			long rowTime = calculateRowTime(time);
-			if (m_currentRow == null)
-			{
-				m_currentRow = new DataPointsRowKey(m_metric, rowTime, m_currentType, m_currentTags);
-			}
-
-			int columnName;
-			//Handle old column name format.
-			if (m_currentType == null)
-				columnName = getColumnName(rowTime, time, isInteger);
-			else
-				columnName = getColumnName(rowTime, time);
-
-			m_dataPointWriteBuffer.deleteColumn(m_currentRow, columnName, m_now);
-		}
-
-
 		@Override
 		public void addDataPoint(DataPoint datapoint) throws IOException
 		{
@@ -800,8 +782,11 @@ public class CassandraDatastore implements Datastore
 
 			int columnName;
 			//Handle old column name format.
-			if (m_currentType == null)
+			//We get the type after it has been translated from "" to kairos_legacy
+			if (m_currentType.equals(LegacyDataPointFactory.DATASTORE_TYPE))
+			{
 				columnName = getColumnName(rowTime, time, datapoint.isLong());
+			}
 			else
 				columnName = getColumnName(rowTime, time);
 

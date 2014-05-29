@@ -39,7 +39,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'KairosDB'
-copyright = u'2014, Jeff Sabin'
+copyright = u'2014, KairosDB.org'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

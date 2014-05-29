@@ -22,7 +22,6 @@ import org.kairosdb.util.StringPool;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.SortedMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRowKey>
 {
@@ -43,8 +42,8 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 
 	/**
 	 If we are pooling strings the string from the pool will be returned.
-	 @param str
-	 @return
+	 @param str string
+	 @return returns the string or what's in the string pool if using a string pool
 	 */
 	private String getString(String str)
 	{

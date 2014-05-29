@@ -18,12 +18,15 @@ package org.kairosdb.datastore.cassandra;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+
 public class DataPointsRowKey
 {
-	private String m_metricName;
-	private long m_timestamp;
-	private String m_dataType;
-	private SortedMap<String, String> m_tags;
+	private final String m_metricName;
+	private final long m_timestamp;
+	private final String m_dataType;
+	private final SortedMap<String, String> m_tags;
 
 	public DataPointsRowKey(String metricName, long timestamp, String dataType)
 	{
@@ -33,10 +36,11 @@ public class DataPointsRowKey
 	public DataPointsRowKey(String metricName, long timestamp, String datatype,
 			SortedMap<String, String> tags)
 	{
-		m_metricName = metricName;
+		m_metricName = checkNotNullOrEmpty(metricName);
 		m_timestamp = timestamp;
-		m_dataType = datatype;
+		m_dataType = checkNotNull(datatype);
 		m_tags = tags;
+
 	}
 
 	public void addTag(String name, String value)

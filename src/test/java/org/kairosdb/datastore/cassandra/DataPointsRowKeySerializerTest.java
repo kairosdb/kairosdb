@@ -1,6 +1,7 @@
 package org.kairosdb.datastore.cassandra;
 
 import org.junit.Test;
+import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 
 import java.nio.ByteBuffer;
 import java.util.SortedMap;
@@ -21,6 +22,24 @@ public class DataPointsRowKeySerializerTest
 
 		DataPointsRowKeySerializer serializer = new DataPointsRowKeySerializer();
 		ByteBuffer buffer = serializer.toByteBuffer(new DataPointsRowKey("myMetric", 12345L, "", map));
+
+		DataPointsRowKey rowKey = serializer.fromByteBuffer(buffer);
+
+		assertThat(rowKey.getMetricName(), equalTo("myMetric"));
+		assertThat(rowKey.getDataType(), equalTo(""));
+		assertThat(rowKey.getTimestamp(), equalTo(12345L));
+	}
+
+	@Test
+	public void test_toByteBuffer_legacyType()
+	{
+		SortedMap<String, String> map = new TreeMap<String, String>();
+		map.put("a", "b");
+		map.put("c", "d");
+		map.put("e", "f");
+
+		DataPointsRowKeySerializer serializer = new DataPointsRowKeySerializer();
+		ByteBuffer buffer = serializer.toByteBuffer(new DataPointsRowKey("myMetric", 12345L, LegacyDataPointFactory.DATASTORE_TYPE, map));
 
 		DataPointsRowKey rowKey = serializer.fromByteBuffer(buffer);
 

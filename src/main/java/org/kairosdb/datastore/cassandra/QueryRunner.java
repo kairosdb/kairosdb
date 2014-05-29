@@ -164,9 +164,6 @@ public class QueryRunner
 			Map<String, String> tags = rowKey.getTags();
 			String type = rowKey.getDataType();
 
-			if ("".equals(type))
-				type = LegacyDataPointFactory.DATASTORE_TYPE;
-
 			m_queryCallback.startDataPointSet(type, tags);
 
 			DataPointFactory dataPointFactory = null;

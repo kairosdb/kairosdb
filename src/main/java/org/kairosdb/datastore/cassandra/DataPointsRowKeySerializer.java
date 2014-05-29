@@ -65,7 +65,7 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 		//format - this is for delete/search operations
 		byte[] dataType = null;
 		String dataTypeStr = dataPointsRowKey.getDataType();
-		if (!dataTypeStr.equals("") && !dataTypeStr.equals(LegacyDataPointFactory.DATASTORE_TYPE))
+		if (!dataTypeStr.equals(LegacyDataPointFactory.DATASTORE_TYPE))
 		{
 			dataType = dataPointsRowKey.getDataType().getBytes(UTF8);
 			size += dataType.length;
@@ -156,7 +156,8 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 
 		//Check for datatype marker which ia a null
 		byteBuffer.mark();
-		String dataType = "";
+		//default to legacy type
+		String dataType = LegacyDataPointFactory.DATASTORE_TYPE;
 		if (byteBuffer.get() == 0x0)
 		{
 			int dtSize = byteBuffer.get();

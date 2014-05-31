@@ -53,8 +53,9 @@ public class DataGapsMarkingAggregatorTest
 
         DataPointGroup results = aggregator.aggregate(group);
 
+        results.next();
         DataPoint dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(0L));
+        assertThat(dataPoint.getTimestamp(), equalTo(2L));
         assertThat(dataPoint.getLongValue(), equalTo(10L));
 
         
@@ -127,10 +128,6 @@ public class DataGapsMarkingAggregatorTest
         DataPointGroup results = aggregator.aggregate(group);
 
         DataPoint dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(0L));
-        assertThat(dataPoint instanceof NullDataPoint, equalTo(true));
-
-        dataPoint = results.next();
         assertThat(dataPoint.getTimestamp(), equalTo(1L));
         assertThat(dataPoint.getLongValue(), equalTo(10L));
 

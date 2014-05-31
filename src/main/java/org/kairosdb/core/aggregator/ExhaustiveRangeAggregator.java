@@ -40,6 +40,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class ExhaustiveRangeAggregator implements Aggregator
 {
 	private long m_startTime = 0L;
+        private boolean m_started = false;
+        
 	private long m_range = 1L;
 	private long m_currentRange;
 	private long m_dayOfMonthOffset = 0L; //day of month offset in milliseconds
@@ -177,8 +179,10 @@ public abstract class ExhaustiveRangeAggregator implements Aggregator
 		}
 
 
+                
 		private long getStartRange(long timestamp)
 		{
+                        
 			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
 			{
 				DateTime start = new DateTime(m_startTime);
@@ -228,6 +232,10 @@ public abstract class ExhaustiveRangeAggregator implements Aggregator
 				//We calculate start and end ranges as the ranges may not be
 				//consecutive if data does not show up in each range.
 				long startTime = m_nextExpectedRangeStartTime;
+                                if( !m_started ){
+                                    m_started=true;
+                                    startTime=currentDataPoint.getTimestamp();
+                                }
                                 long startRange = getStartRange(startTime);       
 				long endRange = getEndRange(startTime);
                                 

@@ -1,6 +1,4 @@
 /*
- * Copyright 2013 Proofpoint Inc.
- *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
  *    You may obtain a copy of the License at
@@ -35,7 +33,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Similar to RangeAggregator, this class calls the subAggregator for all subranges,
  * even if no data point is available within the range. This is quite useful for gap filling.
- * @author lcoulet
+ * @author lcoulet, from Proofpoint code
  */
 public abstract class ExhaustiveRangeAggregator implements Aggregator
 {

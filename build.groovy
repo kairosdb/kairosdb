@@ -459,12 +459,20 @@ def doIntegration(Rule rule)
 
 //------------------------------------------------------------------------------
 //Build Docs
-rpmRule = new SimpleRule("docs").setDescription("Build Sphinx Documentation")
+new SimpleRule("docs").setDescription("Build Sphinx Documentation")
         .setMakeAction("doDocs")
+        .setProperty("all", false)
+
+new SimpleRule("docs-rebuild").setDescription("Rebuild Sphinx Documentation. All docs are built even if not changed.")
+        .setMakeAction("doDocs")
+        .setProperty("all", true)
 
 def doDocs(Rule rule)
 {
-    sudo = saw.createAsyncProcess(".", "sphinx-build -b html src/docs ${docsDir}")
+    command = "sphinx-build"
+    if (rule.getProperty("all"))
+        command += " -a"
+    sudo = saw.createAsyncProcess(".", "${command} -b html src/docs ${docsDir}")
     sudo.run()
     sudo.waitForProcess()
     if (sudo.getExitCode() != 0)

@@ -5,6 +5,7 @@ import org.kairosdb.core.groupby.GroupByResult;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -51,7 +52,7 @@ public class EmptyDataPointGroup implements DataPointGroup
 	@Override
 	public DataPoint next()
 	{
-		return null;
+		throw new NoSuchElementException();
 	}
 
 	@Override

@@ -746,7 +746,10 @@ public class CassandraDatastore implements Datastore
 		@Override
 		public DataPointsRowKey next()
 		{
-			return m_nextKey;
+			if (m_nextKey != null) {
+                return m_nextKey;
+            }
+            throw new NoSuchElementException();
 		}
 
 		@Override

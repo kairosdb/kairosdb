@@ -176,7 +176,7 @@ public class QueryRunner
 				byte[] value = column.getValue();
 				long timestamp = getColumnTimestamp(rowKey.getTimestamp(), columnTime);
 
-				if (type == LegacyDataPointFactory.DATASTORE_TYPE)
+				if (type.equals(LegacyDataPointFactory.DATASTORE_TYPE))
 				{
 					if (isLongValue(columnTime))
 					{

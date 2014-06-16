@@ -57,9 +57,9 @@ public abstract class AbstractDataPointGroup implements DataPointGroup
 
 	public void addTags(Map<String, String> tags)
 	{
-		for (String key : tags.keySet())
+		for (Map.Entry<String, String> entry : tags.entrySet())
 		{
-			this.tags.put(key, tags.get(key));
+			this.tags.put(entry.getKey(), entry.getValue());
 		}
 	}
 

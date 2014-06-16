@@ -42,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.zip.GZIPOutputStream;
@@ -68,7 +69,7 @@ public class RemoteDatastore implements Datastore
 	private int m_dataPointCounter;
 
 	private volatile Multimap<DataPointKey, DataPoint> m_dataPointMultimap;
-	private Object m_mapLock = new Object();  //Lock for the above map
+	private final Object m_mapLock = new Object();  //Lock for the above map
 
 	private HttpClient m_client;
 	private boolean m_running;
@@ -159,9 +160,9 @@ public class RemoteDatastore implements Datastore
 						writer.key("skip_validate").value(true);
 						writer.key("tags").object();
 						SortedMap<String, String> tags = dataPointKey.getTags();
-						for (String tag : tags.keySet())
+						for (Map.Entry<String, String> entry : tags.entrySet())
 						{
-							writer.key(tag).value(tags.get(tag));
+							writer.key(entry.getKey()).value(entry.getValue());
 						}
 						writer.endObject();
 

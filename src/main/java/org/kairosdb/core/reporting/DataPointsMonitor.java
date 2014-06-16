@@ -75,12 +75,12 @@ public class DataPointsMonitor implements DataPointListener, KairosMetricReporte
 
 		Map<String, AtomicInteger> counters = getAndClearCounters();
 
-		for (String name : counters.keySet())
+		for (Map.Entry<String, AtomicInteger> entry : counters.entrySet())
 		{
 			DataPointSet dps = new DataPointSet(METRIC_NAME);
 			dps.addTag("host", m_hostName);
-			dps.addTag("metric_name", name);
-			dps.addDataPoint(m_dataPointFactory.createDataPoint(now, counters.get(name).longValue()));
+			dps.addTag("metric_name", entry.getKey());
+			dps.addDataPoint(m_dataPointFactory.createDataPoint(now, entry.getValue().longValue()));
 
 			ret.add(dps);
 		}

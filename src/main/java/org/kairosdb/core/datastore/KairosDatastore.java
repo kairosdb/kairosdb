@@ -117,7 +117,7 @@ public class KairosDatastore
 			return;
 		File[] list = directory.listFiles();
 
-		if (list.length > 0)
+		if (list != null && list.length > 0)
 		{
 			for (File aList : list)
 			{
@@ -392,9 +392,9 @@ public class KairosDatastore
 	private static String getTagsKey(LinkedHashMap<String, String> tags)
 	{
 		StringBuilder builder = new StringBuilder();
-		for (String name : tags.keySet())
+		for (String value : tags.values())
 		{
-			builder.append(tags.get(name));
+			builder.append(value);
 		}
 
 		return builder.toString();

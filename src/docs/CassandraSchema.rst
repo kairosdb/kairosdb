@@ -7,6 +7,7 @@ The cassandra schema consists of 3 column families
   * row_key_index - index to lookup what rows to get during a query.
   * string_index - used to answer the query of what tags and metrics are in the system.
 
+
 ---------------
 Column Families
 ---------------

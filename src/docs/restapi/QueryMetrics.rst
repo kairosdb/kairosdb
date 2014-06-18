@@ -55,9 +55,10 @@ Body
         {
             "tags": {
                 "host": ["foo", "foo2"],
-                "type": ["bar"]
+                "customer": ["bar"]
             },
             "name": "abc.123",
+            "limit": 10000
             "aggregators": [
                 {
                     "name": "sum",
@@ -71,7 +72,7 @@ Body
         {
             "tags": {
                 "host": ["foo", "foo2"],
-                "type": ["bar"]
+                "customer": ["bar"]
             },
             "name": "xyz.123",
             "aggregators": [
@@ -171,12 +172,24 @@ Note that grouping by a time range or by value can slow down the query.
 
 By default, the result of the query includes tags and tag values associated with the data points. If *exclude_tags* is set to true, the tags will be excluded from the response.
 
+*limit*
+
+Limits the number of data points returned from the data store. The limit is applied before any aggregator is executed.
+
+*order*
+
+Orders the returned data points. Values for *order* are "asc" for ascending or "desc" for descending. Defaults to ascending. This
+ sorting is done before any aggregators are executed.
+
 --------
 Response
 --------
 *Success*
 
   The response contains either the metric values or possible error values. Returns 200 for successful queries.
+
+  Version 0.9.4 includes a group_by named "type". The type is the custom data type. If the data returned is not a custom
+  type then "number" is returned.
 
   ::
 
@@ -188,6 +201,10 @@ Response
                   {
                       "name": "abc_123",
                       "group_by": [
+                          {
+                             "name": "type",
+                             "type": "number"
+                          },
                           {
                               "name": "tag",
                               "tags": [
@@ -202,7 +219,7 @@ Response
                           "host": [
                               "server1"
                           ],
-                          "type": [
+                          "customer": [
                               "bar"
                           ]
                       },

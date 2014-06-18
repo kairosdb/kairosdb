@@ -23,24 +23,48 @@ Body
 ^^^^
 ::
 
-	[
-	    {
-	        "name": "archive_file_tracked",
-	        "datapoints": [[1359788400000, 123], [1359788300000, 13.2], [1359788410000, 23.1]],
-	        "tags": {
-	            "host": "server1",
-	            "data_center": "DC1"
-	        }
-	    },
-	    {
-	        "name": "archive_file_search",
-	        "timestamp": 1359786400000,
-	        "value": 321,
-	        "tags": {
-	            "host": "server2"
-	        }
-	    }
-	]
+  [
+    {
+        "name": "archive_file_tracked",
+        "datapoints": [[1359788400000, 123], [1359788300000, 13.2], [1359788410000, 23.1]],
+        "tags": {
+            "host": "server1",
+            "data_center": "DC1"
+        }
+    },
+    {
+        "name": "impedance",
+        "type": "complex-number",
+        "datapoints": [
+            [
+                1359788400000,
+                {
+                    "real": 2.3,
+                    "imaginary": 3.4
+                }
+            ],
+            [
+                1359788300000,
+                {
+                    "real": 1.1,
+                    "imaginary": 5
+                }
+            ]
+        ],
+        "tags": {
+            "host": "server1",
+            "data_center": "DC1"
+        }
+    },
+    {
+        "name": "archive_file_search",
+        "timestamp": 1359786400000,
+        "value": 321,
+        "tags": {
+            "host": "server2"
+        }
+    }
+  ]
 
 ^^^^^^^^^^^
 Description
@@ -70,6 +94,11 @@ The tags field is a list of named properties. At least one tag is required. The 
 metrics to narrow down the search. For example, if multiple metrics are measured on server1, you could
 add the "host":"server1" tag to each of the metrics and queries could return all metrics for the "host"
 tagged with the value of "server1".
+
+**type**
+
+Type identifies custom data types. This field is only needed if the data value is something other than a number.
+The type field is the name of the registered type for the custom data.
 
 
 ^^^^^^^^

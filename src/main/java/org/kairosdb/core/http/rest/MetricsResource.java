@@ -51,6 +51,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static javax.ws.rs.core.Response.ResponseBuilder;
@@ -264,7 +265,7 @@ public class MetricsResource implements KairosMetricReporter
 			writer.close();
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
-					new FileStreamingOutput(respFile));
+					new FileStreamingOutput(respFile, false));
 
 			setHeaders(responseBuilder);
 			return responseBuilder.build();
@@ -302,11 +303,8 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
-	@POST
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path(QUERY_URL)
-	public Response get(String json) throws Exception
-	{
+	private Response get(String json, boolean compress) throws Exception
+	{		
 		checkNotNull(json);
 		logger.debug(json);
 
@@ -359,7 +357,7 @@ public class MetricsResource implements KairosMetricReporter
 			ThreadReporter.submitData(m_longDataPointFactory, datastore);
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
-					new FileStreamingOutput(respFile));
+					new FileStreamingOutput(respFile, compress));
 
 			setHeaders(responseBuilder);
 			return responseBuilder.build();
@@ -400,6 +398,22 @@ public class MetricsResource implements KairosMetricReporter
 		{
 			ThreadReporter.clear();
 		}
+	}
+	
+	@POST
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path(QUERY_URL)
+	public Response getWithoutCompression(String json) throws Exception
+	{
+		return get(json, false);
+	}
+	
+	@POST
+	@Produces("application/gzip; charset=UTF-8")
+	@Path(QUERY_URL)
+	public Response getWithCompression(String json) throws Exception
+	{	
+		return get(json, true);
 	}
 
 	@POST
@@ -616,10 +630,12 @@ public class MetricsResource implements KairosMetricReporter
 	public class FileStreamingOutput implements StreamingOutput
 	{
 		private File m_responseFile;
+		private boolean m_compress;
 
-		public FileStreamingOutput(File responseFile)
+		public FileStreamingOutput(File responseFile, boolean zip)
 		{
 			m_responseFile = responseFile;
+			m_compress = zip;
 		}
 
 		@SuppressWarnings("ResultOfMethodCallIgnored")
@@ -628,6 +644,10 @@ public class MetricsResource implements KairosMetricReporter
 		{
 			try
 			{
+				if (m_compress) {
+					output = new GZIPOutputStream(output);
+				}
+				
 				InputStream reader = new FileInputStream(m_responseFile);
 
 				byte[] buffer = new byte[1024];
@@ -639,6 +659,10 @@ public class MetricsResource implements KairosMetricReporter
 				}
 
 				reader.close();
+				
+				if (m_compress) {
+					((GZIPOutputStream) output).finish();
+				}
 				output.flush();
 			}
 			finally

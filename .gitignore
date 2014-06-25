@@ -17,11 +17,3 @@ lib/ivy/test/*
 .DS_Store
 myivysettings.xml
 tablesaw.properties
-.project
-.classpath
-bin
-.settings
-bundles
-jars
-orbits
-lib/orbits

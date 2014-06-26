@@ -22,6 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.junit.Test;
 import org.kairosdb.core.*;
+import org.kairosdb.core.datapoints.StringDataPoint;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 
@@ -33,6 +34,7 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
@@ -451,6 +453,57 @@ public class JsonMetricParserTest
 		assertThat(dataPointSetList.get(1).getDataPoints().size(), equalTo(1));
 		assertThat(dataPointSetList.get(1).getDataPoints().get(0).getTimestamp(), equalTo(1349109378L));
 		assertThat(dataPointSetList.get(1).getDataPoints().get(0).getLongValue(), equalTo(321L));
+	}
+
+	@Test
+	public void test_validJsonWithTypes() throws IOException, DatastoreException
+	{
+		String json = Resources.toString(Resources.getResource("json-metric-parser-metrics-with-type.json"), Charsets.UTF_8);
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.hasErrors(), equalTo(false));
+
+		List<DataPointSet> dataPointSetList = fakeds.getDataPointSetList();
+		assertThat(dataPointSetList.size(), equalTo(3));
+
+		assertThat(dataPointSetList.get(0).getName(), equalTo("archive_file_tracked"));
+		assertThat(dataPointSetList.get(0).getTags().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getTags().get("host"), equalTo("server1"));
+		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(4));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1349109376L));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getLongValue(), equalTo(123L));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(1).getTimestamp(), equalTo(1349109377L));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(1).getDoubleValue(), equalTo(13.2));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(2).getTimestamp(), equalTo(1349109378L));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(2).getDoubleValue(), equalTo(23.1));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(3).getTimestamp(), equalTo(1349109378L));
+		DataPoint dataPoint = dataPointSetList.get(0).getDataPoints().get(3);
+		assertThat(dataPoint, instanceOf(StringDataPoint.class));
+		assertThat(((StringDataPoint)dataPoint).getValue(), equalTo("string_data"));
+
+		assertThat(dataPointSetList.get(1).getName(), equalTo("archive_file_search"));
+		assertThat(dataPointSetList.get(1).getTags().size(), equalTo(2));
+		assertThat(dataPointSetList.get(1).getTags().get("host"), equalTo("server2"));
+		assertThat(dataPointSetList.get(1).getTags().get("customer"), equalTo("Acme"));
+		assertThat(dataPointSetList.get(1).getDataPoints().size(), equalTo(1));
+		assertThat(dataPointSetList.get(1).getDataPoints().get(0).getTimestamp(), equalTo(1349109378L));
+		assertThat(dataPointSetList.get(1).getDataPoints().get(0).getLongValue(), equalTo(321L));
+
+		assertThat(dataPointSetList.get(2).getName(), equalTo("archive_file_search_text"));
+		assertThat(dataPointSetList.get(2).getTags().size(), equalTo(2));
+		assertThat(dataPointSetList.get(2).getTags().get("host"), equalTo("server2"));
+		assertThat(dataPointSetList.get(2).getTags().get("customer"), equalTo("Acme"));
+		assertThat(dataPointSetList.get(2).getDataPoints().size(), equalTo(1));
+		DataPoint stringData = dataPointSetList.get(2).getDataPoints().get(0);
+		assertThat(stringData.getTimestamp(), equalTo(1349109378L));
+		assertThat(((StringDataPoint)stringData).getValue(), equalTo("sweet"));
 	}
 
 	@Test

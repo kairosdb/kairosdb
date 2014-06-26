@@ -1,10 +1,7 @@
 package org.kairosdb.core;
 
 import com.google.gson.JsonElement;
-import org.kairosdb.core.datapoints.DataPointFactory;
-import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
-import org.kairosdb.core.datapoints.LegacyDataPointFactory;
-import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.*;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -35,6 +32,7 @@ public class TestDataPointFactory implements KairosDataPointFactory
 		addFactory("long", new LongDataPointFactoryImpl());
 		addFactory("double", new DoubleDataPointFactoryImpl());
 		addFactory("legacy", new LegacyDataPointFactory());
+		addFactory("string", new StringDataPointFactory());
 	}
 
 	@Override

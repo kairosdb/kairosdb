@@ -1,4 +1,3 @@
-==================
 Kairos Development
 ==================
 
@@ -8,6 +7,7 @@ Contents:
    :maxdepth: 2
 
    Plugins
+   CustomData
    IntelliJSetup
 
 

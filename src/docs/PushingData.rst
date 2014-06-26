@@ -2,7 +2,9 @@
 Pushing data
 ============
 
-You can submit data either with the telnet protocol on port 4242 or the rest protocol on port 8080 (ports can be changed in the kairosdb.properties file)
+You can submit data either with the telnet protocol on port 4242 or the rest protocol on port 8080 (ports can be changed in the kairosdb.properties file).  Other mechanisms exist for getting data into KairosDB.  A list of plugins and external projects can be found on the `external projects page`_.
+
+	**Note:** Of the two default protocols only the rest protocol handles custom data types.
 
 A great client for testing data in and out is [http://code.google.com/p/rest-client/]
 
@@ -17,7 +19,7 @@ The format of the data is
 
 **Metric name** must be one word and is limited to alpha numerics with "-_.".
 
-**Time stamp** can either be in milliseconds or in seconds since Jan 1, 1970 (unix epoch) - seconds are for backwards compatibility with the original opentsdb.  The Cassandra datastore supports milliseconds where as the HBase datastore only supports seconds.
+**Time stamp** can either be in milliseconds or in seconds since Jan 1, 1970 (unix epoch) - seconds are for backwards compatibility with the original opentsdb.  The Cassandra datastore supports milliseconds.
 
 	**Note:** The REST API only supports a timestamp in milliseconds.
 
@@ -51,13 +53,15 @@ The url for submitting data is http://localhost:8080/api/v1/datapoints
 	[{
 	    "name": "archive.file.tracked",
 	    "timestamp": 1349109376,
+	    "type": "long",
 	    "value": 123,
 	    "tags":{"host":"test"}
 	},
 	{
 	    "name": "archive.file.search",
 	    "timestamp": 999,
-	    "value": 321,
+	    "type: "double",
+	    "value": 32.1,
 	    "tags":{"host":"test"}
 	}]
 
@@ -69,4 +73,6 @@ See the :doc:`REST API documentation <restapi/AddDataPoints>` for more details
 Graphite protocol
 -----------------
 
-KairosDB now supports the Graphite plaintext and pickle protocol as explained [https://graphite.readthedocs.org/en/latest/feeding-carbon.html here].  This lets you integrate KairosDB with existing applications that push data to Graphite.
+KairosDB now supports the Graphite plaintext and pickle protocol as explained `here <https://graphite.readthedocs.org/en/latest/feeding-carbon.html>`_.  This lets you integrate KairosDB with existing applications that push data to Graphite.  Please see the `external projects page`_ for a link to the plugin.
+
+.. _external projects page: https://github.com/proofpoint/kairosdb/wiki/External-projects,-libraries-and-stuff.

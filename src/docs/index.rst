@@ -11,9 +11,10 @@ Contents:
 
 .. toctree::
    :glob:
-   :maxdepth: 2 
+   :maxdepth: 3 
 
    GettingStarted
+   FAQ
    PushingData
    QueryingData
    ImportExport

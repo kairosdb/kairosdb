@@ -21,9 +21,9 @@ To create a plugin you need to do the following things
 ----------------------
 Plugin Loading Process
 ----------------------
-Here is how the load process works:
+Here is how KairosDB loads libraries and plugins:
   #. All jar files in lib are automatically added to the classpath by the startup script.
-  #. Properties in kairosdb.properties are loaded.
+  #. Properties in kairosdb.properties are loaded first from the classpath and then from the file.
   #. For every .properties file in the conf directory besides kairosdb.properties, the following happens:
 
     #. Kairos attempts to load the file from the classpath.  (this lets you add default values to future releases of your plugin)
@@ -34,3 +34,7 @@ Here is how the load process works:
   #. Look through Guice bindings for implementations of KairosDBService and start them.
 
 There is in essence only one Properties object in Kairos so, plugins can overwrite properties set in kairosdb.properties with their own.
+
+For clarity lets look at an example of how things get loaded.  Say I create a new plugin called xplugin, my install places two files, xpluing.jar in /opt/kairosdb/lib and xplugin.properties in /opt/kairosdb/conf.
+
+When KairosDB starts it first loads kairosdb.properties and then scans the conf directory for other .properties files.  KairosDB sees xplugin.properties and tries to find the file on the classpath.  This lets me as a plugin developer create a xplugin.properties that placed within my xplugin.jar file and contains default settings.  After loading the properties file on the classpath KairosDB loads the file from the conf directory.

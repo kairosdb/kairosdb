@@ -20,15 +20,15 @@ Changing File Handle Limit on Linux
 
 If you have a lot of clients pushing metrics, you may run out of file handles. We recommend increasing the number of file handles. Here is an example of [http://tech-torch.blogspot.com/2009/07/linux-ubuntu-tomcat-too-many-open-files.html changing file handles on CentOS].
 
-^^^^^^^^^^^^^^^^^^
+------------------
 Changing Datastore
-^^^^^^^^^^^^^^^^^^
+------------------
 
 KairosDB can be configured to use one of several backends for storing data.  By default KairosDB is configured to use an in memory H2 database to store datapoints.  To change the datastore that is used change the ``kairosdb.service.datastore`` property in the kairosdb.properties file.
 
-^^^^^^^^^^^^^
+-------------
 Using with H2
-^^^^^^^^^^^^^
+-------------
 
 ``kairosdb.service.datastore=org.kairosdb.datastore.h2.H2Module``
 
@@ -45,9 +45,9 @@ Configuration Options
 Deleting the database folder and restarting KairosDB will cause the database to be recreated with no data.
 
 
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 Using with Cassandra
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 ``kairosdb.service.datastore=org.kairosdb.datastore.cassandra.CassandraModule``
 
@@ -85,42 +85,16 @@ For a complete list of options please see the Cassandra section in kairosdb.prop
 | kairosdb.datastore.cassandra.multi_row_read_size  | The number of columns read on the initial multi get for a query.  If your data has very few tags make this number big.  If your metrics have lots of tag combinations then back this number down or you may run into out of memory issues.         |
 +---------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
-^^^^^^^^^^^^^^^^^
+-----------------
 Configuring HBase
-^^^^^^^^^^^^^^^^^
+-----------------
 
-``kairosdb.service.datastore=net.opentsdb.kairosdb.HBaseModule``
+HBase is not longer supported.  Originally the HBase support was achieved by forking the OpenTSDB code base and making it into a Datastore plugin for KairosDB.  The functionality of KairosDB has moved beyond what HBase code can support.
 
-You will need to create the tables in HBase manually.  The create table script is located in the bin directory you can run it like so:
-::
 
-	> env COMPRESSION=none HBASE_HOME=path/to/hbase-0.94.X ./src/create_table.sh
-
-Have a look at the original [http://opentsdb.net/getting-started.html OpenTSDB documentation] for explanations on setting up HBase.
-
-The HBase code was taken directly from the original [http://opentsdb.net/index.html OpenTSDB] project.  Database layout and the finer points of configuration can be found on their web site.
-
-<font color="red">Note:  HBase currently only supports per second data.</font>
-
-"""""""""""""""""""""
-Configuration Options
-"""""""""""""""""""""
-
-+----------------------------------------------+---------------------------------------------------------------------------------------+
-| kairosdb.datastore.hbase.timeseries_table    | Name of the time series table within HBase                                            |
-+----------------------------------------------+---------------------------------------------------------------------------------------+
-| kairosdb.datastore.hbase.uinqueids_table     | Name of the unique id table within HBase.                                             |
-+----------------------------------------------+---------------------------------------------------------------------------------------+
-| kairosdb.datastore.hbase.zoo_keeper_quorum   | Host name of the zoo keeper quorum                                                    |
-+----------------------------------------------+---------------------------------------------------------------------------------------+
-| kairosdb.datastore.hbase.zoo_keeper_base_dir |                                                                                       |
-+----------------------------------------------+---------------------------------------------------------------------------------------+
-| kairosdb.datastore.hbase.auto_create_metrics | You need to leave this as true for now as there is no api for adding metric names.    |
-+----------------------------------------------+---------------------------------------------------------------------------------------+
-
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Configuring as a Remote Datastore
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
+Using as a Remote Datastore
+---------------------------
 
 ``kairosdb.service.datastore=org.kairosdb.datastore.remote.RemoteModule``
 

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+<meta charset="UTF-8">
+<title>CORS Test</title>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+<script type="text/javascript">
+
+function postData() {
+	var url = $('#server_url').val();
+	var metricName = $('#metric_name').val();
+	var value = $('#metric_value').val();
+
+	var data = {
+		"name": metricName,
+		"timestamp": (new Date).getTime(),
+		"value": value,
+		"tags": {
+			"host": "CORS_TEST"
+		}
+	}
+
+	$.ajax({
+		type: "POST",
+		url: url+'/api/v1/datapoints',
+		data: JSON.stringify(data),
+		contentType: "application/json",
+		dataType: "json",
+		success: function(data) { alert(data); },
+		failure: function(errMsg) { alert(errMsg); }
+	});
+
+}
+
+function queryData() {
+	var url = $('#server_url').val();
+	var metricName = $('#metric_name').val();
+
+	var query = {
+		metrics: [
+			{
+				tags: {},
+				name: metricName,
+				aggregators: [
+					{
+						name: "sum",
+						align_sampling: true,
+						sampling: {
+							value: "1",
+							unit: "milliseconds"
+						}
+					}
+				]
+			}
+		],
+		cache_time: 0,
+		start_relative: {
+			value: "1",
+			unit: "hours"
+		}
+	};
+
+	$.ajax({
+		type: "POST",
+		url: url+'/api/v1/datapoints/query',
+		data: JSON.stringify(query),
+		contentType: "application/json",
+		dataType: "json",
+		success: function(data) {
+			$('#output').text(JSON.stringify(data));
+		},
+		failure: function(errMsg) { alert(errMsg); },
+		error : function(xhr, status, ex) {
+
+			console.log("ex=" + ex);
+
+			console.log("status=" + status);
+
+		}
+	});
+
+}
+</script>
+
+
+</head>
+<body>
+KairosDB Server URL: <input id="server_url" type="text"/><br/>
+Metric Name: <input id="metric_name" type="text"/><br/>
+Metric Value: <input id="metric_value" type="text"/><br/>
+<input type="button" value="Push Data" onclick="postData()"/>
+<input type="button" value="Query Data" onclick="queryData()"/>
+
+<div id="output"></div>
+</body>
+</html>

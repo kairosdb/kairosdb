@@ -14,6 +14,7 @@ import tablesaw.addons.java.JarRule
 import tablesaw.addons.java.JavaCRule
 import tablesaw.addons.java.JavaProgram
 import tablesaw.addons.junit.JUnitRule
+import tablesaw.definitions.Definition
 import tablesaw.rules.DirectoryRule
 import tablesaw.rules.Rule
 import tablesaw.rules.SimpleRule
@@ -482,3 +483,37 @@ def doDocs(Rule rule)
 
 
 saw.setDefaultTarget("jar")
+
+
+//------------------------------------------------------------------------------
+//Build notification
+def printMessage(String title, String message) {
+	osName = saw.getProperty("os.name")
+
+	Definition notifyDef;
+	if (osName.startsWith("Linux"))
+	{
+		notifyDef = saw.getDefinition("linux-notify")
+	}
+	else if (osName.startsWith("Mac"))
+	{
+		notifyDef = saw.getDefinition("mac-notify")
+	}
+
+	if (notifyDef != null)
+	{
+		notifyDef.set("title", title)
+		notifyDef.set("message", message)
+		saw.exec(notifyDef.getCommand())
+	}
+}
+
+def buildFailure(Exception e)
+{
+	printMessage("Build Failure", e.getMessage())
+}
+
+def buildSuccess(String target)
+{
+	printMessage("Build Success", target)
+}

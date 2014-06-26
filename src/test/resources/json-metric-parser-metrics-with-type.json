@@ -1,0 +1,29 @@
+[
+	{
+		"name": "archive_file_tracked",
+		"datapoints": [[1349109376, 123, "long"], [1349109377, 13.2, "double"], [1349109378, 23.1, "double"], [1349109378, "string_data", "string"]],
+		"tags": {
+			"host": "server1"
+		}
+	},
+	{
+		"name": "archive_file_search",
+		"type": "long",
+		"time": 1349109378,
+		"value": 321,
+		"tags": {
+			"host": "server2",
+			"customer": "Acme"
+		}
+	},
+	{
+		"name": "archive_file_search_text",
+		"type": "string",
+		"time": 1349109378,
+		"value": "sweet",
+		"tags": {
+			"host": "server2",
+			"customer": "Acme"
+		}
+	}
+]

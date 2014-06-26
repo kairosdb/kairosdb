@@ -68,4 +68,9 @@ public class StringDataPoint extends DataPointHelper
 	{
 		return 0;
 	}
+
+	public String getValue()
+	{
+		return (m_value);
+	}
 }

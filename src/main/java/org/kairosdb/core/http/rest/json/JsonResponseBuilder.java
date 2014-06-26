@@ -52,6 +52,7 @@ public class JsonResponseBuilder
 
 		return Response
 				.status(status)
+				.header("Access-Control-Allow-Origin", "*")
 				.type(MediaType.APPLICATION_JSON_TYPE)
 				.entity(responseJson).build();
 	}

@@ -23,5 +23,12 @@
 		<option name="title" pattern="(.+)">"$1"</option>
 		<option name="message" pattern="(.+)">"$1"</option>
 	</definition>
+	
+	<definition name="mac-notify" command="osascript">
+		<option>-e "display notification</option>
+		<option name="message" pattern="(.+)">\\"$1\\"</option>
+		<option name="title" pattern="(.+)">with title \\"$1\\"</option>
+		<option>"</option>
+	</definition>
 
 </definitions>

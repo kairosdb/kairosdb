@@ -15,18 +15,17 @@
  */
 package org.kairosdb.core.datastore;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
-import org.kairosdb.core.aggregator.Aggregator;
-import org.kairosdb.core.groupby.GroupBy;
-import org.kairosdb.util.Preconditions;
-
+import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.kairosdb.core.aggregator.Aggregator;
+import org.kairosdb.core.groupby.GroupBy;
+import org.kairosdb.util.Preconditions;
 
 public class QueryMetric implements DatastoreMetricQuery
 {
@@ -41,6 +40,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	private boolean excludeTags = false;
 	private int limit;
 	private Order order = Order.ASC;
+        private JsonObject query;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
@@ -84,6 +84,15 @@ public class QueryMetric implements DatastoreMetricQuery
 
 	return this;
 	}
+
+        public void setQueryObject(JsonObject query){
+            this.query = query;
+        }
+        
+        public JsonObject getQueryObject(){
+            return query;
+        }
+        
 
 	public QueryMetric addTag(String name, String value)
 	{

@@ -16,6 +16,8 @@
 
 package org.kairosdb.core.formatter;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
@@ -25,6 +27,7 @@ import org.kairosdb.core.groupby.GroupByResult;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
+import java.util.Map;
 
 public class JsonResponse
 {
@@ -142,6 +145,138 @@ public class JsonResponse
 		}
 	}
 
+        
+        
+        
+        
+        /**
+	 * Formats the query results
+	 *
+	 * @param queryResults results of the query
+	 * @param excludeTags if true do not include tag information
+         * @param queryObject the object representing the query for this metric
+	 * @param sampleSize   Passing a sample size of -1 will cause the attribute to not show up
+	 * @throws FormatterException
+	 */
+	public void formatQuery(List<DataPointGroup> queryResults, boolean excludeTags, JsonObject queryObject, int sampleSize) throws FormatterException
+	{
+		try
+		{
+			m_jsonWriter.object();
+
+			if (sampleSize != -1)
+				m_jsonWriter.key("sample_size").value(sampleSize);
+
+                        m_jsonWriter.key("query");
+                        writeRecursively(queryObject);
+                        
+                        
+			m_jsonWriter.key("results").array();
+
+			for (DataPointGroup group : queryResults)
+			{
+				final String metric = group.getName();
+
+				m_jsonWriter.object();
+				m_jsonWriter.key("name").value(metric);
+
+				if (!group.getGroupByResult().isEmpty())
+				{
+					m_jsonWriter.key("group_by");
+					m_jsonWriter.array();
+					boolean first = true;
+					for (GroupByResult groupByResult : group.getGroupByResult())
+					{
+						if (!first)
+							m_writer.write(",");
+						m_writer.write(groupByResult.toJson());
+						first = false;
+					}
+					m_jsonWriter.endArray();
+				}
+
+				if (!excludeTags)
+				{
+					m_jsonWriter.key("tags").object();
+
+					for (String tagName : group.getTagNames())
+					{
+						m_jsonWriter.key(tagName);
+						m_jsonWriter.value(group.getTagValues(tagName));
+					}
+					m_jsonWriter.endObject();
+				}
+
+				m_jsonWriter.key("values").array();
+				while (group.hasNext())
+				{
+					DataPoint dataPoint = group.next();
+
+					m_jsonWriter.array().value(dataPoint.getTimestamp());
+					dataPoint.writeValueToJson(m_jsonWriter);
+
+					/*if (dataPoint.isInteger())
+					{
+						m_jsonWriter.value(dataPoint.getLongValue());
+					}
+					else
+					{
+						final double value = dataPoint.getDoubleValue();
+						if (value != value || Double.isInfinite(value))
+						{
+							throw new IllegalStateException("NaN or Infinity:" + value + " data point=" + dataPoint);
+						}
+						m_jsonWriter.value(value);
+					}*/
+					m_jsonWriter.endArray();
+				}
+				m_jsonWriter.endArray();
+				m_jsonWriter.endObject();
+			}
+
+			m_jsonWriter.endArray().endObject();
+		}
+		catch (JSONException e)
+		{
+			throw new FormatterException(e);
+		}
+		catch (IOException e)
+		{
+			throw new FormatterException(e);
+		}
+	}
+        
+        private void writeRecursively(JsonElement queryElement) throws JSONException{
+            if(queryElement.isJsonArray()){
+                m_jsonWriter.array();
+                for(JsonElement element : queryElement.getAsJsonArray()){
+                    writeRecursively(element);
+                }
+                m_jsonWriter.endArray();
+            }else if(queryElement.isJsonPrimitive()){
+                if(queryElement.getAsJsonPrimitive().isNumber())
+                    m_jsonWriter.value(queryElement.getAsJsonPrimitive().getAsNumber());
+                else if(queryElement.getAsJsonPrimitive().isString())
+                    m_jsonWriter.value(queryElement.getAsJsonPrimitive().getAsString());
+                else if(queryElement.getAsJsonPrimitive().isBoolean())  
+                    m_jsonWriter.value(queryElement.getAsJsonPrimitive().getAsBoolean());
+            }else if(queryElement.isJsonObject()){
+                m_jsonWriter.object();
+                for(Map.Entry<String,JsonElement> entry : queryElement.getAsJsonObject().entrySet()){
+                    m_jsonWriter.key(entry.getKey());
+                    writeRecursively(entry.getValue());
+                }
+                m_jsonWriter.endObject();
+            }
+            
+        }
+        
+        
+        
+        
+        
+        
+        
 	public void end() throws FormatterException
 	{
 		try

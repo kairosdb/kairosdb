@@ -32,9 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
@@ -317,6 +315,25 @@ public class JsonMetricParserTest
 		assertThat(validationErrors.size(), equalTo(2));
 		assertThat(validationErrors.getErrors(), hasItem("metric[0](name=metricName).tag[name].value may not be empty."));
 		assertThat(validationErrors.getErrors(), hasItem("metric[0](name=metricName).value may not be empty."));
+	}
+
+	/**
+	 * Zero is a special case.
+	 */
+	@Test
+	public void test_value_decimal_with_zeros() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metricName\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[1, \"0.000000\"]]}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.size(), equalTo(0));
 	}
 
 	@Test

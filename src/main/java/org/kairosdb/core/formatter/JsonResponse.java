@@ -55,6 +55,7 @@ public class JsonResponse
 
 	/**
 	 * Formats the query results
+         * Used when querying for meta data.
 	 *
 	 * @param queryResults results of the query
 	 * @param excludeTags if true do not include tag information
@@ -150,7 +151,9 @@ public class JsonResponse
         
         
         /**
-	 * Formats the query results
+	 * Formats the query results.
+         * This writes the query into the response Json. 
+         * Useful when querying multiple times for the same metric with different aggregators.
 	 *
 	 * @param queryResults results of the query
 	 * @param excludeTags if true do not include tag information

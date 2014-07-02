@@ -8,7 +8,7 @@ Plugins provide a way to extend Kairos in various ways.  With plugins you can:
   #. Add a new protocol handler
   #. Add a custom system monitor
 
-For a good example of a simple plugin, see the [kairos-announce https://github.com/proofpoint/kairos-announce] project.  
+For a good example of a simple plugin, see the `kairos-announce <https://github.com/proofpoint/kairos-announce>`_ project.
 
 -------------------
 Plugin Requirements

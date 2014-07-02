@@ -189,7 +189,8 @@ Response
   The response contains either the metric values or possible error values. Returns 200 for successful queries.
 
   Version 0.9.4 includes a group_by named "type". The type is the custom data type. If the data returned is not a custom
-  type then "number" is returned.
+  type then "number" is returned. See :doc:`Custom Types <../kairosdevelopment/CustomData>` for
+  information on custom types.
 
   ::
 

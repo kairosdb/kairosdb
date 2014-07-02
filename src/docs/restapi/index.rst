@@ -6,7 +6,7 @@ Contents:
 
 .. toctree::
    :glob:
-   :maxdepth: 2 
+   :maxdepth: 1 
 
    Overview
    AddDataPoints

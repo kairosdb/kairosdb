@@ -17,22 +17,14 @@ Data Points Column Family
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The row key is made up of 3 parts all concatenated together.
-  # Metric name (UTF-8)
-  # Row time stamp.  The time stamp for the row to begin at.
-  # Concatenated string of tags (tag1=val1:tag2=val2...)
+  1. Metric name (UTF-8)
+  2. Row time stamp.  The time stamp for the row to begin at.
+  3. Datastore type.
+  4. Concatenated string of tags (tag1=val1:tag2=val2...)
 
-The column name is 32 bits of data.  The first 31 bits is the unsigned time offset from the row key (in milliseconds).  The last bit is used to identify the type of value stored.  (long = 0x0, float = 0x1)
+The column name is 32 bits of data.  The first 31 bits is the unsigned time offset from the row key (in milliseconds).  The last bit is unused.
 
-The value of the column varies depending on the type of value.
-
-+---------------+--------------------------------------------------------------------------------------------------------------------------------------------------+
-| Type of value | Description                                                                                                                                      |
-+===============+==================================================================================================================================================+
-| long          | Only significant bytes are stored.  If the value is 1-255 then only one byte is stored, etc.                                                     |
-+---------------+--------------------------------------------------------------------------------------------------------------------------------------------------+
-| float         | The value is stored as either 5 or 9 bytes.  The first byte identifies the value as either float or double and the remaining bytes are the data. |
-+---------------+--------------------------------------------------------------------------------------------------------------------------------------------------+
-
+The value of the column varies depending on the type of value.  The exact format is defined by the ``writeValueToBuffer`` method on the DataPoint.
 
 The length of the row is set to exactly three weeks of data or 1,814,400,000 columns.
 

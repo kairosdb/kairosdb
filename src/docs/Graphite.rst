@@ -2,7 +2,7 @@
 Graphite Protocol
 =================
 
-Kairos accepts both the Graphite plaintext and pickle protocol as explained [https://graphite.readthedocs.org/en/latest/feeding-carbon.html here].  This feature is for ingesting data only.  This lets you push data to Kairos from applications that normally push to Graphite.  You can also configure Carbon relay servers to send data to Kairos for long term storage.
+Kairos accepts both the Graphite plaintext and pickle protocol as explained `here <https://graphite.readthedocs.org/en/latest/feeding-carbon.html>`_.  This feature is for ingesting data only.  This lets you push data to Kairos from applications that normally push to Graphite.  You can also configure Carbon relay servers to send data to Kairos for long term storage.
 
 --------------------------
 Enabling Graphite Protocol

@@ -98,7 +98,7 @@ tagged with the value of "server1".
 **type**
 
 Type identifies custom data types. This field is only needed if the data value is something other than a number.
-The type field is the name of the registered type for the custom data.
+The type field is the name of the registered type for the custom data. See :doc:`Custom Types <../kairosdevelopment/CustomData>` for information on custom types.
 
 
 ^^^^^^^^

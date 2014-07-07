@@ -52,6 +52,8 @@ public class KairosDatastore
 	public static final String QUERY_CACHE_DIR = "kairosdb.query_cache.cache_dir";
 	public static final String QUERY_METRIC_TIME = "kairosdb.datastore.query_time";
 	public static final String QUERIES_WAITING_METRIC_NAME = "kairosdb.datastore.queries_waiting";
+    public static final String QUERY_SAMPLE_SIZE = "kairosdb.datastore.query_sample_size";
+    public static final String QUERY_ROW_COUNT = "kairosdb.datastore.query_row_count";
 
 	private final Datastore m_datastore;
 	private final QueryQueuingManager m_queuingManager;
@@ -436,6 +438,7 @@ public class KairosDatastore
 		private QueryMetric m_metric;
 		private List<DataPointGroup> m_results;
 		private int m_dataPointCount;
+        private int m_rowCount;
 		
 		public DatastoreQueryImpl(QueryMetric metric)
 				throws UnsupportedEncodingException, NoSuchAlgorithmException,
@@ -457,6 +460,7 @@ public class KairosDatastore
 		{
 			return m_dataPointCount;
 		}
+        public int getRowCount() { return m_rowCount; }
 
 		@Override
 		public List<DataPointGroup> execute() throws DatastoreException
@@ -501,6 +505,11 @@ public class KairosDatastore
 			{
 				m_dataPointCount += returnedRow.getDataPointCount();
 			}
+
+            m_rowCount = returnedRows.size();
+
+            ThreadReporter.addDataPoint(QUERY_SAMPLE_SIZE, m_dataPointCount);
+            ThreadReporter.addDataPoint(QUERY_ROW_COUNT, m_rowCount);
 
 			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
 					returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());

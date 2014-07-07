@@ -119,6 +119,8 @@ public class RemoteDatastore implements Datastore
 			}
 		});
 
+		flushThread.start();
+
 	}
 
 	private Multimap<DataPointKey, DataPoint> createNewMap()
@@ -142,17 +144,20 @@ public class RemoteDatastore implements Datastore
 		{
 			try
 			{
-				if (!m_firstDataPoint)
-				{
-					m_dataWriter.write(",\n");
-				}
-				m_firstDataPoint = false;
-
-				JSONWriter writer = new JSONWriter(m_dataWriter);
 				try
 				{
 					for (DataPointKey dataPointKey : flushMap.keySet())
 					{
+						//We have to reset the writer every time or it gets confused
+						//because we are only writing partial json each time.
+						JSONWriter writer = new JSONWriter(m_dataWriter);
+
+						if (!m_firstDataPoint)
+						{
+							m_dataWriter.write(",\n");
+						}
+						m_firstDataPoint = false;
+
 						writer.object();
 
 						writer.key("name").value(dataPointKey.getName());

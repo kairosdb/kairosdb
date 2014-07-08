@@ -15,15 +15,16 @@
  */
 package org.kairosdb.core.aggregator;
 
+import org.junit.Before;
+import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LegacyLongDataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.testing.ListDataPointGroup;
-import org.junit.Before;
-import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.closeTo;
@@ -128,6 +129,27 @@ public class AvgAggregatorTest
 		dataPoint = results.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(3L));
 		assertThat(dataPoint.getDoubleValue(), equalTo(25.1));
+
+		assertThat(results.hasNext(), equalTo(false));
+	}
+
+	@Test
+	public void test_legacyLongValues()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new LegacyLongDataPoint(1, 10));
+		group.addDataPoint(new LegacyLongDataPoint(1, 20));
+		group.addDataPoint(new LegacyLongDataPoint(1, 3));
+		group.addDataPoint(new LegacyLongDataPoint(1, 1));
+		group.addDataPoint(new LegacyLongDataPoint(1, 3));
+		group.addDataPoint(new LegacyLongDataPoint(1, 5));
+		group.addDataPoint(new LegacyLongDataPoint(1, 25));
+
+		DataPointGroup results = aggregator.aggregate(group);
+
+		DataPoint dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(1L));
+		assertThat(dataPoint.getDoubleValue(), closeTo(9.57,.01));
 
 		assertThat(results.hasNext(), equalTo(false));
 	}

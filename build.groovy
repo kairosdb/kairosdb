@@ -28,7 +28,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
 version = "0.9.4"
-release = "4" //package release number
+release = "5" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -39,7 +39,7 @@ for development work.
 
 saw.setProperty(JavaProgram.PROGRAM_NAME_PROPERTY, programName)
 saw.setProperty(JavaProgram.PROGRAM_DESCRIPTION_PROPERTY, description)
-saw.setProperty(JavaProgram.PROGRAM_VERSION_PROPERTY, version)
+saw.setProperty(JavaProgram.PROGRAM_VERSION_PROPERTY, version+'-'+release)
 saw.setProperty(PomRule.GROUP_ID_PROPERTY, "org.kairosdb")
 saw.setProperty(PomRule.URL_PROPERTY, "http://kairosdb.org")
 
@@ -147,7 +147,7 @@ buildNumberFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
 buildNumber = buildNumberFormat.format(new Date())
 manifest.putValue("Implementation-Title", "KairosDB")
 manifest.putValue("Implementation-Vendor", "Proofpoint Inc.")
-manifest.putValue("Implementation-Version", "${version}.${buildNumber}")
+manifest.putValue("Implementation-Version", "${version}-${release}.${buildNumber}")
 
 //Add git revision information
 gitRevisionFile= ".gitrevision"
@@ -230,7 +230,7 @@ zipBinDir = "$programName/bin"
 zipConfDir = "$programName/conf"
 zipConfLoggingDir = "$zipConfDir/logging"
 zipWebRootDir = "$programName/webroot"
-tarRule = new TarRule("build/${programName}-${version}.tar")
+tarRule = new TarRule("build/${programName}-${version}-${release}.tar")
 		.addDepend(jp.getJarRule())
 		.addDepend(resolveIvyFileSetRule)
 		.addFileSetTo(zipBinDir, scriptsFileSet)
@@ -245,7 +245,7 @@ for (AbstractFileSet fs in libFileSets)
 
 gzipRule = new GZipRule("package").setSource(tarRule.getTarget())
 		.setDescription("Create deployable tar file")
-		.setTarget("build/${programName}-${version}.tar.gz")
+		.setTarget("build/${programName}-${version}-${release}.tar.gz")
 		.addDepend(tarRule)
 
 //------------------------------------------------------------------------------

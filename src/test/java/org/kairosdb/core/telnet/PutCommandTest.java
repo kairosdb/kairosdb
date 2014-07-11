@@ -19,7 +19,10 @@ import com.google.common.collect.ImmutableSortedMap;
 import org.jboss.netty.channel.*;
 import org.junit.Before;
 import org.junit.Test;
-import org.kairosdb.core.*;
+import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointListener;
+import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
@@ -43,7 +46,7 @@ public class PutCommandTest
 	{
 		datastore = new FakeDatastore();
 		KairosDatastore kairosDatastore = new KairosDatastore(datastore, new QueryQueuingManager(1, "test"),
-				Collections.<DataPointListener>emptyList(), "test", new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
 		command = new PutCommand(kairosDatastore, "test", new LongDataPointFactoryImpl(),
 				new DoubleDataPointFactoryImpl());
 	}

@@ -46,7 +46,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
 
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json), new Gson(),
 				dataPointFactory);
@@ -64,7 +64,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
@@ -82,7 +82,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -99,7 +99,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -116,7 +116,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -133,7 +133,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -150,7 +150,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -167,7 +167,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -184,7 +184,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -201,7 +201,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -219,7 +219,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -236,7 +236,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -253,7 +253,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -271,7 +271,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -288,7 +288,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -306,7 +306,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -327,7 +327,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -343,7 +343,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -369,7 +369,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -394,7 +394,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -422,7 +422,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -460,7 +460,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -511,7 +511,7 @@ public class JsonMetricParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 

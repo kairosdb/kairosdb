@@ -23,7 +23,6 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.LimitAggregator;
@@ -44,7 +43,6 @@ import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 public class KairosDatastore
 {
@@ -58,7 +56,6 @@ public class KairosDatastore
 	private final Datastore m_datastore;
 	private final QueryQueuingManager m_queuingManager;
 	private final List<DataPointListener> m_dataPointListeners;
-	private final String m_hostname;
 	private final KairosDataPointFactory m_dataPointFactory;
 
 	private String m_baseCacheDir;
@@ -67,14 +64,12 @@ public class KairosDatastore
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-	      List<DataPointListener> dataPointListeners, @Named("HOSTNAME") String hostname,
-			KairosDataPointFactory dataPointFactory)
+	      List<DataPointListener> dataPointListeners, KairosDataPointFactory dataPointFactory)
 			throws DatastoreException
 	{
 		m_datastore = checkNotNull(datastore);
 		m_dataPointListeners = checkNotNull(dataPointListeners);
 		m_queuingManager = checkNotNull(queuingManager);
-		m_hostname = checkNotNullOrEmpty(hostname);
 		m_dataPointFactory = dataPointFactory;
 
 		m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";

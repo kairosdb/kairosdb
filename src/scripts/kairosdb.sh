@@ -30,7 +30,11 @@ fi
 # Load up the classpath
 CLASSPATH="conf/logging"
 for jar in $KAIROSDB_LIB_DIR/*.jar; do
-	CLASSPATH="$CLASSPATH:$jar"
+	if [[ `uname` =~ "CYGWIN" ]] ; then
+		CLASSPATH="$CLASSPATH;$jar"
+	else 
+		CLASSPATH="$CLASSPATH:$jar"
+	fi
 done
 
 

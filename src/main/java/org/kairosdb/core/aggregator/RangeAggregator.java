@@ -25,10 +25,9 @@ import org.kairosdb.core.datastore.TimeUnit;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Iterator;
-import java.util.TimeZone;
+import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -89,7 +88,7 @@ public abstract class RangeAggregator implements Aggregator
 
 	public void setSampling(Sampling sampling)
 	{
-		m_sampling = sampling;
+        m_sampling = sampling;
 		m_range = sampling.getSampling();
 	}
 
@@ -249,8 +248,13 @@ public abstract class RangeAggregator implements Aggregator
 			{
 				//We calculate start and end ranges as the ranges may not be
 				//consecutive if data does not show up in each range.
+                // TODO fix sampling for DST
 				long startRange = getStartRange(currentDataPoint.getTimestamp());
 				long endRange = getEndRange(currentDataPoint.getTimestamp());
+
+//                Logger logger = Logger.getLogger(this.getClass().getName());
+//                logger.info((new Date(startRange)).toString());
+//                logger.info((new Date(endRange)).toString());
 
 				SubRangeIterator subIterator = new SubRangeIterator(
 						endRange);

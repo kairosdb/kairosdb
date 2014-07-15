@@ -78,6 +78,7 @@ public class GsonParser
 		GsonBuilder builder = new GsonBuilder();
 		builder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
 		builder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
+        builder.registerTypeAdapter(TimeZone.class, new TimeZoneDeserializer());
 		builder.registerTypeAdapter(Metric.class, new MetricDeserializer());
 
 		m_gson = builder.create();
@@ -605,6 +606,31 @@ public class GsonParser
 			return tu;
 		}
 	}
+
+    //===========================================================================
+    private class TimeZoneDeserializer implements JsonDeserializer<TimeZone>
+    {
+        public TimeZone deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+                throws JsonParseException
+        {
+            if(json.isJsonNull())
+                return null;
+            String tz = json.getAsString();
+            TimeZone timeZone;
+
+            try
+            {
+                timeZone = TimeZone.getTimeZone(tz);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new ContextualJsonSyntaxException(tz,
+                        "is not a valid time zone, must be one of " + TimeZone.getAvailableIDs());
+            }
+            return timeZone;
+        }
+    }
+
 
 	//===========================================================================
 	private class MetricDeserializer implements JsonDeserializer<Metric>

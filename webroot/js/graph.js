@@ -101,6 +101,7 @@ function buildKairosDBQuery() {
 			var unit;
 			if (name == 'rate') {
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+                // TODO add tz
 				metric.addRate(unit);
 			}
 			else if (name == 'sampler') {
@@ -117,6 +118,7 @@ function buildKairosDBQuery() {
 				if (!isValidPercentile(percentile)) {
 					return true;
 				}
+                // TODO add tz
 				metric.addPercentile(value, unit, percentile);
 			}
 			else if (name == 'div') {
@@ -139,7 +141,8 @@ function buildKairosDBQuery() {
 					return true;
 				}
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-				metric.addAggregator(name, value, unit);
+                var timeZone = $(aggregator).find(".aggregatorSamplingTimeZone").val();
+				metric.addAggregator(name, value, unit, timeZone);
 			}
 		});
 

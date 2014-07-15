@@ -119,7 +119,11 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
-	this.addAggregator = function (name, value, unit) {
+    this.addAggregator = function (name, value, unit) {
+        return this.addAggregator(name, value, unit, null);
+    };
+
+	this.addAggregator = function (name, value, unit, timeZone) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
@@ -131,11 +135,12 @@ kairosdb.Metric = function (name) {
 			aggregator.sampling = {};
 			aggregator.sampling.value = value;
 			aggregator.sampling.unit = unit;
+            aggregator.sampling.timeZone = timeZone;
 		}
 
 		this.aggregators.push(aggregator);
 		return this;
-	}
+	};
 
 	this.addScaleAggregator = function (scalingFactor) {
 		if (!this.aggregators)

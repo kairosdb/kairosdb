@@ -28,6 +28,7 @@ import com.google.gson.stream.JsonWriter;
 import com.google.inject.Inject;
 import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
+import org.joda.time.DateTimeZone;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.RangeAggregator;
@@ -608,24 +609,25 @@ public class GsonParser
 	}
 
     //===========================================================================
-    private class TimeZoneDeserializer implements JsonDeserializer<TimeZone>
+    private class DateTimeZoneDeserializer implements JsonDeserializer<DateTimeZone>
     {
-        public TimeZone deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+        public DateTimeZone deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
                 throws JsonParseException
         {
             if(json.isJsonNull())
                 return null;
             String tz = json.getAsString();
-            TimeZone timeZone;
+            DateTimeZone timeZone;
 
             try
             {
-                timeZone = TimeZone.getTimeZone(tz);
+                // check if time zone is valid
+                timeZone = DateTimeZone.forID(tz);
             }
             catch (IllegalArgumentException e)
             {
                 throw new ContextualJsonSyntaxException(tz,
-                        "is not a valid time zone, must be one of " + TimeZone.getAvailableIDs());
+                        "is not a valid time zone, must be one of " + DateTimeZone.getAvailableIDs());
             }
             return timeZone;
         }

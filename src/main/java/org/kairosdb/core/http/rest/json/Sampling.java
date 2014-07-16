@@ -17,6 +17,7 @@
 package org.kairosdb.core.http.rest.json;
 
 
+import org.joda.time.DateTimeZone;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.http.rest.validation.TimeUnitRequired;
 import org.apache.bval.constraints.NotEmpty;
@@ -31,7 +32,7 @@ import java.util.logging.Logger;
 
 public class Sampling
 {
-    private final String timeZone;
+    private final DateTimeZone timeZone;
     @Min(1)
 	private int duration;
 
@@ -51,7 +52,8 @@ public class Sampling
 		this.duration = duration;
 		this.unit = unit;
 		this.aggregate = aggregate;
-        this.timeZone = timeZone;
+        if (timeZone != null)
+            this.timeZone = DateTimeZone.forID(timeZone);
     }
 
 	public int getDuration()
@@ -69,22 +71,17 @@ public class Sampling
 		return aggregate;
 	}
 
-    public TimeZone getTimeZone() {
-        if (timeZone != null) {
-            return TimeZone.getTimeZone(timeZone);
-        }
-        else {
-            return null;
-        }
+    public DateTimeZone getTimeZone() {
+        return timeZone;
     }
 
     @Override
     public String toString() {
         return "Sampling{" +
-                "timeZone='" + timeZone + '\'' +
-                ", duration=" + duration +
+                "duration=" + duration +
                 ", unit='" + unit + '\'' +
                 ", aggregate='" + aggregate + '\'' +
+                ", timeZone='" + timeZone + '\'' +
                 '}';
     }
 }

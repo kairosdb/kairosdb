@@ -252,8 +252,8 @@ public abstract class RangeAggregator implements Aggregator
 				long startRange = getStartRange(currentDataPoint.getTimestamp());
 				long endRange = getEndRange(currentDataPoint.getTimestamp());
 
-//                Logger logger = Logger.getLogger(this.getClass().getName());
-//                logger.info((new Date(startRange)).toString());
+                Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+                logger.info((new Date(startRange)).toString());
 //                logger.info((new Date(endRange)).toString());
 
 				SubRangeIterator subIterator = new SubRangeIterator(

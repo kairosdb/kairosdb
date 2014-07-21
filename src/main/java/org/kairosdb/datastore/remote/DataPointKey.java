@@ -51,5 +51,14 @@ public class DataPointKey
 		return m_type;
 	}
 
-
+	@Override
+	public String toString()
+	{
+		return "DataPointKey{" +
+				"m_key='" + m_key + '\'' +
+				", m_name='" + m_name + '\'' +
+				", m_tags=" + m_tags +
+				", m_type='" + m_type + '\'' +
+				'}';
+	}
 }

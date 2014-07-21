@@ -17,13 +17,12 @@
 package org.kairosdb.core.http.rest.json;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
-import org.apache.bval.model.Validation;
-import org.json.JSONTokener;
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
@@ -32,7 +31,9 @@ import org.kairosdb.util.Validator;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -249,14 +250,13 @@ public class JsonMetricParser
 
 	private String findType(JsonElement value)
 	{
-		double v = value.getAsDouble();
+		String v = value.getAsString();
 
-		if (v % 1 == 0)
-			return ("long");
+		if (!v.contains("."))
+			return "long";
 		else
-			return ("double");
+			return "double";
 	}
-
 
 	private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) throws DatastoreException, IOException
 	{

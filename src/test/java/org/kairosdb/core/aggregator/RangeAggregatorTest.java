@@ -61,15 +61,15 @@ public class RangeAggregatorTest
 		for (int I = 1; I <= 32; I++)
 		{
 			cal.clear();
-			cal.set(2012, 0, I, 1, 1, 1);
+			cal.set(2012, Calendar.JANUARY, I, 1, 1, 1);
 			dpGroup.addDataPoint(new LongDataPoint(cal.getTimeInMillis(), 1));
 		}
 
 		SumAggregator agg = new SumAggregator(new DoubleDataPointFactoryImpl());
 		agg.setSampling(new Sampling(1, TimeUnit.MONTHS));
-		agg.setAlignSampling(true);
+		agg.setAlignSampling(false);
 		cal.clear();
-		cal.set(2012, 0, 1, 0, 0, 0);
+		cal.set(2012, Calendar.JANUARY, 1, 1, 1, 1);
 		agg.setStartTime(cal.getTimeInMillis());
 
 		DataPointGroup dpg = agg.aggregate(dpGroup);
@@ -95,15 +95,16 @@ public class RangeAggregatorTest
 		for (int I = 1; I <= 70; I++)
 		{
 			cal.clear();
-			cal.set(2012, 0, I, 1, 1, 1);
+			cal.set(2012, Calendar.JANUARY, I, 1, 1, 1);
 			dpGroup.addDataPoint(new LongDataPoint(cal.getTimeInMillis(), 1));
 		}
 
 		SumAggregator agg = new SumAggregator(new DoubleDataPointFactoryImpl());
 		agg.setSampling(new Sampling(2, TimeUnit.MONTHS));
-		agg.setAlignSampling(true);
+		agg.setAlignSampling(false);
 		cal.clear();
-		cal.set(2012, 0, 1, 0, 0, 0);
+		cal.set(2012, Calendar.JANUARY, 1, 0, 0, 0);
+		System.out.println(cal.getTime());
 		agg.setStartTime(cal.getTimeInMillis());
 
 		DataPointGroup dpg = agg.aggregate(dpGroup);

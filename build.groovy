@@ -3,11 +3,7 @@ import org.freecompany.redline.header.Architecture
 import org.freecompany.redline.header.Os
 import org.freecompany.redline.header.RpmType
 import org.freecompany.redline.payload.Directive
-import tablesaw.AbstractFileSet
-import tablesaw.RegExFileSet
-import tablesaw.SimpleFileSet
-import tablesaw.Tablesaw
-import tablesaw.TablesawException
+import tablesaw.*
 import tablesaw.addons.GZipRule
 import tablesaw.addons.TarRule
 import tablesaw.addons.ivy.IvyAddon
@@ -18,6 +14,7 @@ import tablesaw.addons.java.JarRule
 import tablesaw.addons.java.JavaCRule
 import tablesaw.addons.java.JavaProgram
 import tablesaw.addons.junit.JUnitRule
+import tablesaw.definitions.Definition
 import tablesaw.rules.DirectoryRule
 import tablesaw.rules.Rule
 import tablesaw.rules.SimpleRule
@@ -30,8 +27,8 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "0.9.4-SNAPSHOT"
-release = "1" //package release number
+version = "0.9.4"
+release = "5" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -42,7 +39,7 @@ for development work.
 
 saw.setProperty(JavaProgram.PROGRAM_NAME_PROPERTY, programName)
 saw.setProperty(JavaProgram.PROGRAM_DESCRIPTION_PROPERTY, description)
-saw.setProperty(JavaProgram.PROGRAM_VERSION_PROPERTY, version)
+saw.setProperty(JavaProgram.PROGRAM_VERSION_PROPERTY, version+'-'+release)
 saw.setProperty(PomRule.GROUP_ID_PROPERTY, "org.kairosdb")
 saw.setProperty(PomRule.URL_PROPERTY, "http://kairosdb.org")
 
@@ -53,6 +50,7 @@ ivyConfig = ["default", "integration"]
 
 
 rpmDir = "build/rpm"
+docsDir = "build/docs"
 rpmNoDepDir = "build/rpm-nodep"
 new DirectoryRule("build")
 rpmDirRule = new DirectoryRule(rpmDir)
@@ -149,7 +147,7 @@ buildNumberFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
 buildNumber = buildNumberFormat.format(new Date())
 manifest.putValue("Implementation-Title", "KairosDB")
 manifest.putValue("Implementation-Vendor", "Proofpoint Inc.")
-manifest.putValue("Implementation-Version", "${version}.${buildNumber}")
+manifest.putValue("Implementation-Version", "${version}-${release}.${buildNumber}")
 
 //Add git revision information
 gitRevisionFile= ".gitrevision"
@@ -232,7 +230,7 @@ zipBinDir = "$programName/bin"
 zipConfDir = "$programName/conf"
 zipConfLoggingDir = "$zipConfDir/logging"
 zipWebRootDir = "$programName/webroot"
-tarRule = new TarRule("build/${programName}-${version}.tar")
+tarRule = new TarRule("build/${programName}-${version}-${release}.tar")
 		.addDepend(jp.getJarRule())
 		.addDepend(resolveIvyFileSetRule)
 		.addFileSetTo(zipBinDir, scriptsFileSet)
@@ -247,7 +245,7 @@ for (AbstractFileSet fs in libFileSets)
 
 gzipRule = new GZipRule("package").setSource(tarRule.getTarget())
 		.setDescription("Create deployable tar file")
-		.setTarget("build/${programName}-${version}.tar.gz")
+		.setTarget("build/${programName}-${version}-${release}.tar.gz")
 		.addDepend(tarRule)
 
 //------------------------------------------------------------------------------
@@ -460,7 +458,62 @@ def doIntegration(Rule rule)
 	saw.exec("java  -Dhost=${host} -Dport=${port} -cp ${integrationBuildRule.classpath} org.testng.TestNG src/integration-test/testng.xml")
 }
 
+//------------------------------------------------------------------------------
+//Build Docs
+new SimpleRule("docs").setDescription("Build Sphinx Documentation")
+        .setMakeAction("doDocs")
+        .setProperty("all", false)
 
+new SimpleRule("docs-rebuild").setDescription("Rebuild Sphinx Documentation. All docs are built even if not changed.")
+        .setMakeAction("doDocs")
+		.addSources(new RegExFileSet("src/docs", ".*").recurse().getFullFilePaths())
+        .setProperty("all", true)
+
+def doDocs(Rule rule)
+{
+    command = "sphinx-build"
+    if (rule.getProperty("all"))
+        command += " -a"
+    sudo = saw.createAsyncProcess(".", "${command} -b html src/docs ${docsDir}")
+    sudo.run()
+    sudo.waitForProcess()
+    if (sudo.getExitCode() != 0)
+        throw new TablesawException("Unable to run sphinx-build")
+}
 
 
 saw.setDefaultTarget("jar")
+
+
+//------------------------------------------------------------------------------
+//Build notification
+def printMessage(String title, String message) {
+	osName = saw.getProperty("os.name")
+
+	Definition notifyDef;
+	if (osName.startsWith("Linux"))
+	{
+		notifyDef = saw.getDefinition("linux-notify")
+	}
+	else if (osName.startsWith("Mac"))
+	{
+		notifyDef = saw.getDefinition("mac-notify")
+	}
+
+	if (notifyDef != null)
+	{
+		notifyDef.set("title", title)
+		notifyDef.set("message", message)
+		saw.exec(notifyDef.getCommand())
+	}
+}
+
+def buildFailure(Exception e)
+{
+	printMessage("Build Failure", e.getMessage())
+}
+
+def buildSuccess(String target)
+{
+	printMessage("Build Success", target)
+}

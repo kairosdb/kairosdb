@@ -32,6 +32,7 @@ import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPoint;
+import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
@@ -66,6 +67,7 @@ public class CassandraDatastore implements Datastore
 	public static final String WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.write_consistency_level";
 	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
 	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
+    public static final String DATAPOINT_TTL = "kairosdb.datastore.cassandra.datapoint_ttl";
 
 	public static final String CF_DATA_POINTS = "data_points";
 	public static final String CF_ROW_KEY_INDEX = "row_key_index";
@@ -102,11 +104,16 @@ public class CassandraDatastore implements Datastore
 
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
-	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.ONE;
+	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.QUORUM;
 
 	@Inject
 	@Named(READ_CONSISTENCY_LEVEL)
 	private ConsitencyLevel m_dataReadLevel = ConsitencyLevel.ONE;
+
+	
+	@Inject(optional=true)
+	@Named(DATAPOINT_TTL)
+	private int m_datapointTtl = 0; //Zero ttl means data lives forever.
 
 	@Inject
 	public void setRowKeyCacheSize(@Named(ROW_KEY_CACHE_SIZE_PROPERTY) int size)
@@ -388,6 +395,30 @@ public class CassandraDatastore implements Datastore
 				rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
 						tags);
 
+//				long now = System.currentTimeMillis();
+//
+//				int rowKeyTtl = 0;
+//				//Row key will expire 3 weeks after the data in the row expires
+//				if (m_datapointTtl != 0)
+//					rowKeyTtl = m_datapointTtl + ((int)(ROW_WIDTH / 1000));
+//				
+//				//Write out the row key if it is not cached
+//				if (!m_rowKeyCache.isCached(rowKey))
+//					m_rowKeyWriteBuffer.addData(metricName, rowKey, "", rowKeyTtl);
+//
+//				//Write metric name if not in cache
+//				if (!m_metricNameCache.isCached(metricName))
+//				{
+//					if (metricName.length() == 0)
+//					{
+//						logger.warn(
+//								"Attempted to add empty metric name to string index. Row looks like: "+dataPoint
+//						);
+//					}
+//					m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
+//							metricName, "", now);
+//				}
+
 				boolean first = true;
 				//Check tag names and values to write them out
 				for (String tagName : tags.keySet())
@@ -653,7 +684,6 @@ public class CassandraDatastore implements Datastore
 			}
 			else
 			{
-//				if (rowKey.getDataType() == null)
 				partialRows.add(rowKey);
 			}
 		}
@@ -827,25 +857,6 @@ public class CassandraDatastore implements Datastore
 		}
 
 
-		private void deleteDataPoint(long time, boolean isInteger)
-		{
-			long rowTime = calculateRowTime(time);
-			if (m_currentRow == null)
-			{
-				m_currentRow = new DataPointsRowKey(m_metric, rowTime, m_currentType, m_currentTags);
-			}
-
-			int columnName;
-			//Handle old column name format.
-			if (m_currentType == null)
-				columnName = getColumnName(rowTime, time, isInteger);
-			else
-				columnName = getColumnName(rowTime, time);
-
-			m_dataPointWriteBuffer.deleteColumn(m_currentRow, columnName, m_now);
-		}
-
-
 		@Override
 		public void addDataPoint(DataPoint datapoint) throws IOException
 		{
@@ -859,8 +870,11 @@ public class CassandraDatastore implements Datastore
 
 			int columnName;
 			//Handle old column name format.
-			if (m_currentType == null)
+			//We get the type after it has been translated from "" to kairos_legacy
+			if (m_currentType.equals(LegacyDataPointFactory.DATASTORE_TYPE))
+			{
 				columnName = getColumnName(rowTime, time, datapoint.isLong());
+			}
 			else
 				columnName = getColumnName(rowTime, time);
 

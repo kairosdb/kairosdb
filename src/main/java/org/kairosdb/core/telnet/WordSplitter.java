@@ -16,12 +16,16 @@
 
 package org.kairosdb.core.telnet;
 
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Splitter;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
 public class WordSplitter extends OneToOneDecoder
 {
@@ -42,22 +46,22 @@ public class WordSplitter extends OneToOneDecoder
 		return splitString(((ChannelBuffer) msg).toString(CHARSET));
 	}
 
-	private String[] splitString(final String s)
-	{
-		final char c = ' ';
 
+	protected static String[] splitString(final String s)
+	{
 		final char[] chars = s.trim().toCharArray();
-		int num_substrings = 1;
-		char last = 'A';
+		int num_substrings = 0;
+		boolean last_was_space = true;
 		for (final char x : chars)
 		{
-			if (x == c)
+			if (Character.isWhitespace(x))
+			    last_was_space = true;
+			else
 			{
-				if (x != last) //skip double whitespace
+				if (last_was_space)
 					num_substrings++;
+				last_was_space = false;
 			}
-
-			last = x;
 		}
 
 		final String[] result = new String[num_substrings];
@@ -65,20 +69,24 @@ public class WordSplitter extends OneToOneDecoder
 		int start = 0;  // starting index in chars of the current substring.
 		int pos = 0;    // current index in chars.
 		int i = 0;      // number of the current substring.
-		last = 'A';
+		last_was_space = true;
 		for (; pos < len; pos++)
 		{
-			if (chars[pos] == c)
+			if (Character.isWhitespace(chars[pos]))
 			{
-				if (chars[pos] != last)
+				if (!last_was_space)
 					result[i++] = new String(chars, start, pos - start);
-
-				start = pos + 1;
+				last_was_space = true;
 			}
-
-			last = chars[pos];
+			else
+			{
+				if (last_was_space)
+					start = pos;
+				last_was_space = false;
+			}
 		}
-		result[i] = new String(chars, start, pos - start);
+		if (!last_was_space)
+			result[i] = new String(chars, start, pos - start);
 		return result;
 	}
 }

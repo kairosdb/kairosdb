@@ -16,12 +16,12 @@
 package org.kairosdb.datastore.cassandra;
 
 import me.prettyprint.cassandra.serializers.AbstractSerializer;
+import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.util.StringPool;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.SortedMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRowKey>
 {
@@ -42,8 +42,8 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 
 	/**
 	 If we are pooling strings the string from the pool will be returned.
-	 @param str
-	 @return
+	 @param str string
+	 @return returns the string or what's in the string pool if using a string pool
 	 */
 	private String getString(String str)
 	{
@@ -61,10 +61,11 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 		size += metricName.length;
 		size++; //Add one for null at end of string
 
-		//if the data type is null then we are creating a row key for the old
-		//format - this is for delete operations
+		//if the data type is "" then we are creating a row key for the old
+		//format - this is for delete/search operations
 		byte[] dataType = null;
-		if (dataPointsRowKey.getDataType() != null)
+		String dataTypeStr = dataPointsRowKey.getDataType();
+		if (!dataTypeStr.equals(LegacyDataPointFactory.DATASTORE_TYPE))
 		{
 			dataType = dataPointsRowKey.getDataType().getBytes(UTF8);
 			size += dataType.length;
@@ -155,7 +156,8 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 
 		//Check for datatype marker which ia a null
 		byteBuffer.mark();
-		String dataType = "";
+		//default to legacy type
+		String dataType = LegacyDataPointFactory.DATASTORE_TYPE;
 		if (byteBuffer.get() == 0x0)
 		{
 			int dtSize = byteBuffer.get();

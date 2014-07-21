@@ -22,7 +22,6 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.name.Named;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;

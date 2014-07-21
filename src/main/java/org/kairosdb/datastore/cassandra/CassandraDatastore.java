@@ -31,8 +31,8 @@ import me.prettyprint.hector.api.query.CountQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
@@ -346,9 +346,9 @@ public class CassandraDatastore implements Datastore
 
 	public void increaseMaxBufferSizes()
 	{
-		m_dataPointWriteBuffer.increaseMaxBufferSize();
-		m_rowKeyWriteBuffer.increaseMaxBufferSize();
-		m_stringIndexWriteBuffer.increaseMaxBufferSize();
+//		m_dataPointWriteBuffer.increaseMaxBufferSize();
+//		m_rowKeyWriteBuffer.increaseMaxBufferSize();
+//		m_stringIndexWriteBuffer.increaseMaxBufferSize();
 	}
 
 	public void cleanRowKeyCache()
@@ -516,17 +516,17 @@ public class CassandraDatastore implements Datastore
 	public TagSet queryMetricTags(DatastoreMetricQuery query)
 	{
 		TagSetImpl set = new TagSetImpl();
-		ResultSet resultSet = session.execute("select metric_name, tags from timeseries.partition_key_index " +
-				"where metric_name='" + query.getName() + "' AND time < " + System.currentTimeMillis() + ";");
-		for (Row row : resultSet)
-		{
-			String[] tags = row.getString("tags").split(",");
-			for (String tag : tags)
-			{
-				String[] tagParts = tag.split("=");
-				set.addTag(tagParts[0], tagParts[1]);
-			}
-		}
+//		ResultSet resultSet = session.execute("select metric_name, tags from timeseries.partition_key_index " +
+//				"where metric_name='" + query.getName() + "' AND time < " + System.currentTimeMillis() + ";");
+//		for (Row row : resultSet)
+//		{
+//			String[] tags = row.getString("tags").split(",");
+//			for (String tag : tags)
+//			{
+//				String[] tagParts = tag.split("=");
+//				set.addTag(tagParts[0], tagParts[1]);
+//			}
+//		}
 		return (set);
 	}
 

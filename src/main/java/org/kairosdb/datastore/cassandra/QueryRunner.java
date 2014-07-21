@@ -15,7 +15,6 @@
  */
 package org.kairosdb.datastore.cassandra;
 
-import me.prettyprint.cassandra.serializers.ByteBufferSerializer;
 import me.prettyprint.cassandra.serializers.BytesArraySerializer;
 import me.prettyprint.cassandra.serializers.IntegerSerializer;
 import me.prettyprint.hector.api.Keyspace;
@@ -27,7 +26,6 @@ import me.prettyprint.hector.api.query.MultigetSliceQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.*;
-import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.Order;
 import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.util.KDataInput;

@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 
-<definitions xmlns="http://www.cpmake.org" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<definitions xmlns="http://www.cpmake.org">
 
 	<definition name="genormous" command="java">
 		<!-- <command name="genorm">java</command>

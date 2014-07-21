@@ -43,8 +43,8 @@ import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
+import static org.junit.Assert.assertThat;
 
 
 /*

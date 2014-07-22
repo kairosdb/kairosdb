@@ -40,18 +40,15 @@ public class Sampling extends Duration
     }
 
 	/**
-	 Works for any time unit except month.  Months are special cased in
+	 Works for any time unit except month and years.  Months and years are special cased in
 	 the RangeAggregator
-
-	 Note this does not account for leap years
-	 @return
+	 @return the number of milliseconds in the sampling range
 	 */
 	public long getSampling()
 	{
 		long val = value;
 		switch (unit)
 		{
-			case YEARS: val *= 52;
 			case WEEKS: val *= 7;
 			case DAYS: val *= 24;
 			case HOURS: val *= 60;

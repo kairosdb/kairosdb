@@ -26,9 +26,6 @@ import org.codehaus.jackson.annotate.JsonProperty;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import java.util.TimeZone;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Sampling
 {
@@ -54,6 +51,8 @@ public class Sampling
 		this.aggregate = aggregate;
         if (timeZone != null)
             this.timeZone = DateTimeZone.forID(timeZone);
+        else
+            this.timeZone = null;
     }
 
 	public int getDuration()

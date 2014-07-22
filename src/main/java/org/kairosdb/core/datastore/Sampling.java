@@ -16,9 +16,15 @@
 
 package org.kairosdb.core.datastore;
 
+import org.joda.time.DateTimeZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Sampling extends Duration
 {
-	public Sampling()
+    private DateTimeZone timeZone;
+
+    public Sampling()
 	{
 		super();
 	}
@@ -27,6 +33,11 @@ public class Sampling extends Duration
 	{
 		super(value, unit);
 	}
+
+    public Sampling(int value, TimeUnit unit, DateTimeZone timeZone) {
+        super(value, unit);
+        this.timeZone = timeZone;
+    }
 
 	/**
 	 Works for any time unit except month.  Months are special cased in
@@ -51,4 +62,8 @@ public class Sampling extends Duration
 
 		return (val);
 	}
+
+    public DateTimeZone getTimeZone() {
+        return timeZone;
+    }
 }

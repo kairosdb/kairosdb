@@ -79,7 +79,7 @@ public class GsonParser
 		GsonBuilder builder = new GsonBuilder();
 		builder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
 		builder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
-        builder.registerTypeAdapter(TimeZone.class, new TimeZoneDeserializer());
+        builder.registerTypeAdapter(DateTimeZone.class, new DateTimeZoneDeserializer());
 		builder.registerTypeAdapter(Metric.class, new MetricDeserializer());
 
 		m_gson = builder.create();
@@ -617,6 +617,8 @@ public class GsonParser
             if(json.isJsonNull())
                 return null;
             String tz = json.getAsString();
+            if (tz.isEmpty()) // defaults to server time
+                return DateTimeZone.getDefault();
             DateTimeZone timeZone;
 
             try

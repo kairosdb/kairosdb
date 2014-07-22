@@ -217,7 +217,12 @@ public abstract class RangeAggregator implements Aggregator
 
 		private long getEndRange(long timestamp)
 		{
-			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
+			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.YEARS)) {
+                DateTime startRange = new DateTime(timestamp);
+                DateTime endRange = startRange.plusYears(m_sampling.getValue());
+                return endRange.getMillis();
+            }
+			else if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
 			{
 				DateTime start = new DateTime(m_startTime);
 				DateTime dpTime = new DateTime(timestamp);
@@ -262,7 +267,7 @@ public abstract class RangeAggregator implements Aggregator
                 }
 
                 m_logger.info("startRange:" + (new Date(startRange)).toString());
-//                m_logger.info("  endRange:" + (new Date(endRange)).toString());
+                m_logger.info("  endRange:" + (new Date(endRange)).toString());
 
 
 				SubRangeIterator subIterator = new SubRangeIterator(endRange);

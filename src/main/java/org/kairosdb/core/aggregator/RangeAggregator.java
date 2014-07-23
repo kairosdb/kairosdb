@@ -17,8 +17,6 @@
 package org.kairosdb.core.aggregator;
 
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.Months;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
@@ -50,38 +48,57 @@ public abstract class RangeAggregator implements Aggregator
 		if (m_alignSampling)
 		{
 			TimeUnit tu = m_sampling.getUnit();
-
-			DateTime dt = new DateTime(m_startTime);
-			switch (tu)
-			{
-				case YEARS:
-				case MONTHS:
-				case WEEKS:
-				case DAYS:
-					if (tu == TimeUnit.WEEKS)
-						dt = dt.withDayOfWeek(1);
-					else if (tu == TimeUnit.MONTHS)
-					{
-						dt = dt.withDayOfMonth(1);
-					}
-					else
-						dt = dt.withDayOfYear(1);
-                 
-				case HOURS:
-				case MINUTES:
-				case SECONDS:
-				case MILLISECONDS:
-					dt = dt.withHourOfDay(0);
-					dt = dt.withMinuteOfHour(0);
-					dt = dt.withSecondOfMinute(0);
-					dt = dt.withMillisOfSecond(0);
-			}
-
-			m_startTime = dt.getMillis();
+            m_startTime = alignRangeBoundary(m_startTime);
 		}
 
 		return (new RangeDataPointAggregator(dataPointGroup, getSubAggregator()));
 	}
+
+    /**
+     * For YEARS, MONTHS, WEEKS, DAYS:
+     *     Computes the timestamp of the first millisecond of the day
+     *     of the timestamp.
+     * For HOURS,
+     *     Computes the timestamp of the first millisecond of the hour
+     *     of the timestamp.
+     * For MINUTES,
+     *     Computes the timestamp of the first millisecond of the minute
+     *     of the timestamp.
+     * For SECONDS,
+     *     Computes the timestamp of the first millisecond of the second
+     *     of the timestamp.
+     * For MILLISECONDS,
+     *     returns the timestamp
+     * @param timestamp
+     * @return
+     */
+    private long alignRangeBoundary(long timestamp) {
+            DateTime dt = new DateTime(timestamp, m_sampling.getTimeZone());
+            TimeUnit tu = m_sampling.getUnit();
+            switch (tu) {
+                case YEARS:
+                case MONTHS:
+                case WEEKS:
+                case DAYS:
+                    dt = dt.withMillisOfDay(0);
+                    break;
+                case HOURS:
+                    dt = dt.withMinuteOfHour(0);
+                    dt = dt.withSecondOfMinute(0);
+                    dt = dt.withMillisOfSecond(0);
+                    break;
+                case MINUTES:
+                    dt = dt.withSecondOfMinute(0);
+                    dt = dt.withMillisOfSecond(0);
+                    break;
+                case SECONDS:
+                    dt = dt.withMillisOfSecond(0);
+                    break;
+                case MILLISECONDS:
+                    break;
+            }
+            return dt.getMillis();
+        }
 
 	public void setSampling(Sampling sampling)
 	{
@@ -151,94 +168,62 @@ public abstract class RangeAggregator implements Aggregator
 	private class RangeDataPointAggregator extends AggregatedDataPointGroupWrapper
 	{
 		private RangeSubAggregator m_subAggregator;
-		private Calendar m_calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		private Iterator<DataPoint> m_dpIterator;
         Logger m_logger = LoggerFactory.getLogger(this.getClass());
+        private int m_rangeIteration;
+        private DateTime m_dtStartTime;
+        private DateTime.Property m_dtProperty;
 
 
-		public RangeDataPointAggregator(DataPointGroup innerDataPointGroup,
+        public RangeDataPointAggregator(DataPointGroup innerDataPointGroup,
 				RangeSubAggregator subAggregator)
 		{
 			super(innerDataPointGroup);
+            m_rangeIteration = 0;
 			m_subAggregator = subAggregator;
 			m_dpIterator = new ArrayList<DataPoint>().iterator();
-		}
+            m_dtStartTime = new DateTime(m_startTime);
 
-        private long alignRangeBoundary(long timestamp) {
-            DateTime dt = new DateTime(timestamp, m_sampling.getTimeZone());
             TimeUnit tu = m_sampling.getUnit();
             switch (tu) {
                 case YEARS:
+                    m_dtProperty = m_dtStartTime.year();
+                    break;
                 case MONTHS:
+                    m_dtProperty = m_dtStartTime.monthOfYear();
+                    break;
                 case WEEKS:
+                    m_dtProperty = m_dtStartTime.weekOfWeekyear();
+                    break;
                 case DAYS:
-                    dt = dt.withHourOfDay(0);
-                    dt = dt.withMinuteOfHour(0);
-                    dt = dt.withSecondOfMinute(0);
-                    dt = dt.withMillisOfSecond(0);
+                    m_dtProperty = m_dtStartTime.dayOfMonth();
                     break;
                 case HOURS:
-                    dt = dt.withMinuteOfHour(0);
-                    dt = dt.withSecondOfMinute(0);
-                    dt = dt.withMillisOfSecond(0);
+                    m_dtProperty = m_dtStartTime.hourOfDay();
                     break;
                 case MINUTES:
-                    dt = dt.withSecondOfMinute(0);
-                    dt = dt.withMillisOfSecond(0);
+                    m_dtProperty = m_dtStartTime.minuteOfHour();
                     break;
                 case SECONDS:
-                    dt = dt.withMillisOfSecond(0);
+                    m_dtProperty = m_dtStartTime.secondOfMinute();
                     break;
                 case MILLISECONDS:
+                    m_dtProperty = m_dtStartTime.millisOfSecond();
                     break;
             }
-            return dt.getMillis();
-        }
-
-		private long getStartRange(long timestamp)
-		{
-			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
-			{
-				DateTime start = new DateTime(m_startTime);
-				DateTime dpTime = new DateTime(timestamp);
-
-				Months months = Months.monthsBetween(start, dpTime);
-				Months period = months.dividedBy(m_sampling.getValue());
-
-				long startRange = start.plus(period.multipliedBy(m_sampling.getValue())).getMillis();
-				return (startRange);
-            }
-			else
-			{
-                return alignRangeBoundary(timestamp);
-//				return (((timestamp - m_startTime) / m_range) * m_range + m_startTime);
-			}
 		}
 
-		private long getEndRange(long timestamp)
+
+		private long getStartRange()
 		{
-			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.YEARS)) {
-                DateTime startRange = new DateTime(timestamp);
-                DateTime endRange = startRange.plusYears(m_sampling.getValue());
-                return endRange.getMillis();
-            }
-			else if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
-			{
-				DateTime start = new DateTime(m_startTime);
-				DateTime dpTime = new DateTime(timestamp);
+            DateTime startRange = m_dtProperty.addToCopy(m_sampling.getValue() * m_rangeIteration);
+            return startRange.getMillis();
+        }
 
-				Months months = Months.monthsBetween(start, dpTime);
-				Months period = months.dividedBy(m_sampling.getValue());
-
-				long endRange = start.plus(period.plus(1).multipliedBy(m_sampling.getValue())).getMillis();
-				return (endRange);
-			}
-			else
-			{
-                return timestamp + m_range; //timestamp + m_range; // TODO test if this does not mess with other time units
-//                normalizes range eg in weeks, starts on monday and not on specified day
-//				return ((((timestamp - m_startTime) / m_range) +1) * m_range + m_startTime);
-			}
+		private long getEndRange()
+		{
+			DateTime endRange = m_dtProperty.addToCopy(m_sampling.getValue() * (m_rangeIteration + 1));
+            return endRange.getMillis();
 		}
 
         /**
@@ -250,38 +235,43 @@ public abstract class RangeAggregator implements Aggregator
 		{
 			if (!m_dpIterator.hasNext())
 			{
-				//We calculate start and end ranges as the ranges may not be
-				//consecutive if data does not show up in each range.
-                long startRange = getStartRange(currentDataPoint.getTimestamp());
-				long endRange = getEndRange(startRange);
+                long startRange = getStartRange();
+                SubRangeIterator subIterator = null;
+                do {
+                    //We calculate start and end ranges as the ranges may not be
+                    //consecutive if data does not show up in each range.
+                    long endRange = getEndRange();
 
-                // fix for dst
-                if (m_sampling.getUnit() == TimeUnit.MONTHS ||
-                        m_sampling.getUnit() == TimeUnit.WEEKS ||
-                        m_sampling.getUnit() == TimeUnit.DAYS) {
-                    DateTimeZone zone = m_sampling.getTimeZone();
-                    if (zone.isStandardOffset(startRange) && !zone.isStandardOffset(endRange)) // from standard to DST
-                        endRange -= 3600000; // 1 hour
-                    else if (!zone.isStandardOffset(startRange) && zone.isStandardOffset(endRange)) // from DST to standard
-                        endRange += 3600000; // 1 hour
-                }
+                    m_logger.info("startRange:" + (new Date(startRange)).toString());
+                    m_logger.info("  endRange:" + (new Date(endRange)).toString());
 
-                m_logger.info("startRange:" + (new Date(startRange)).toString());
-                m_logger.info("  endRange:" + (new Date(endRange)).toString());
+                    subIterator = new SubRangeIterator(endRange);
+                    m_rangeIteration++;
 
+                } while (!subIterator.hasNext()); // skip over empty sub ranges
 
-				SubRangeIterator subIterator = new SubRangeIterator(endRange);
+				long dataPointTime = getDataPointTime();
 
-				long dataPointTime = currentDataPoint.getTimestamp();
-				if (m_alignStartTime)
-					dataPointTime = startRange;
-
-				m_dpIterator = m_subAggregator.getNextDataPoints(dataPointTime,
+                m_dpIterator = m_subAggregator.getNextDataPoints(dataPointTime,
 						subIterator).iterator();
+
 			}
 
 			return (m_dpIterator.next());
 		}
+
+        /**
+         * Computes the data point time for the aggregated value.
+         * Different strategies could be added here such as
+         * datapoint time = range start time
+         *                = range end time
+         *                = range median
+         *                = current datapoint time
+         * @return
+         */
+        private long getDataPointTime() {
+            return currentDataPoint.getTimestamp();
+        }
 
         /**
          *

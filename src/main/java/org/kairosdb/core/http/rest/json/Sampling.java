@@ -55,6 +55,17 @@ public class Sampling
             this.timeZone = null;
     }
 
+	@JsonCreator
+	public Sampling(@JsonProperty("duration") int duration,
+	                @JsonProperty("unit") String unit,
+	                @JsonProperty("aggregate") String aggregate)
+	{
+		this.duration = duration;
+		this.unit = unit;
+		this.aggregate = aggregate;
+        this.timeZone = null;
+    }
+
 	public int getDuration()
 	{
 		return duration;

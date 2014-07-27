@@ -31,6 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.Executors;
 
 public class TelnetServer extends SimpleChannelUpstreamHandler implements ChannelPipelineFactory,
@@ -40,15 +42,32 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 
 
 	private int m_port;
+	private InetAddress m_address;
 	private CommandProvider m_commands;
 	private ServerBootstrap m_serverBootstrap;
 
+	public TelnetServer(@Named("kairosdb.telnetserver.port") int port,
+	                    CommandProvider commandProvider)
+	{
+		this(port, null, commandProvider);
+	}
+
 	@Inject
 	public TelnetServer(@Named("kairosdb.telnetserver.port") int port,
+	                    @Named("kairosdb.telnetserver.address") String address,
 	                    CommandProvider commandProvider)
 	{
 		m_commands = commandProvider;
 		m_port = port;
+		m_address = null;
+        try
+        {
+            m_address = InetAddress.getByName(address);
+        }
+        catch (UnknownHostException e)
+        {
+			logger.error("Unknown host name " + address + ", will bind to 0.0.0.0");
+        }
 	}
 
 
@@ -139,7 +158,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 		m_serverBootstrap.setOption("reuseAddress", true);
 
 		// Bind and start to accept incoming connections.
-		m_serverBootstrap.bind(new InetSocketAddress(m_port));
+		m_serverBootstrap.bind(new InetSocketAddress(m_address, m_port));
 	}
 
 	@Override

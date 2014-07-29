@@ -703,15 +703,15 @@ function showChart(subTitle, queries, metricData) {
             //debugger;
 			if (groupBy) {
 				$.each(groupBy, function (index, group) {
-					groupByMessage += '<br>(' + group.name + ': ';
-
 					if (group.name == 'type')
 					{
 						groupType = group.type;
 						return;
 					}
 
-					var first = true;
+                    groupByMessage += '<br>(' + group.name + ': ';
+
+                    var first = true;
 					$.each(group.group, function (key, value) {
 						if (!first)
 							groupByMessage += ", ";

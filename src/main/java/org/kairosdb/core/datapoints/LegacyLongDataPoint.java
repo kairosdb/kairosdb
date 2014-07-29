@@ -40,7 +40,7 @@ public class LegacyLongDataPoint extends LegacyDataPoint
 	@Override
 	public void writeValueToJson(JSONWriter writer) throws JSONException
 	{
-		//To change body of implemented methods use File | Settings | File Templates.
+		writer.value(m_value);
 	}
 
 	@Override

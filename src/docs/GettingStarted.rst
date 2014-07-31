@@ -8,11 +8,13 @@ Install
 
 KairosDB runs with java 1.6 or later.
 
-  #. Download the tar.gz file from the Downloads section
+  #. Download the tar.gz file from the Releases_ page
   #. Extract to where you wish to run from
   #. In conf/kairosdb.properties change the kairosdb.service.datastore property to the datastore you wish to use.  It defaults to an in memory H2 database (that is slow)
   #. Make sure that JAVA_HOME is set to your java install.
   #. Change to the bin directory and run ``>./kairosdb.sh run``
+
+.. _Releases: https://github.com/kairosdb/kairosdb/releases
 
 -----------------------------------
 Changing File Handle Limit on Linux

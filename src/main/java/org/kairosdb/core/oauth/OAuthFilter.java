@@ -147,10 +147,7 @@ public class OAuthFilter implements Filter
 			String[] values = m_request.getParameterValues(s);
 			List<String> ret = new ArrayList<String>();
 
-			for (String value : values)
-			{
-				ret.add(value);
-			}
+            Collections.addAll(ret, values);
 
 			return (ret);
 		}

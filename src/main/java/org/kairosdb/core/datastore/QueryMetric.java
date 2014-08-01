@@ -77,9 +77,9 @@ public class QueryMetric implements DatastoreMetricQuery
 	{
 		this.tags.clear();
 
-		for (String s : tags.keySet())
+		for (Map.Entry<String, String> entry : tags.entrySet())
 		{
-			this.tags.put(s, tags.get(s));
+			this.tags.put(entry.getKey(), entry.getValue());
 		}
 
 	return this;

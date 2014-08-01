@@ -390,10 +390,10 @@ public class H2Datastore implements Datastore
 
 		sb.append(type).append(":");
 
-		for (String name : tags.keySet())
+		for (Map.Entry<String, String> entry : tags.entrySet())
 		{
-			sb.append(name).append("=");
-			sb.append(tags.get(name)).append(":");
+			sb.append(entry.getKey()).append("=");
+			sb.append(entry.getValue()).append(":");
 		}
 
 		return (sb.toString());

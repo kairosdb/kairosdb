@@ -375,7 +375,7 @@ public class CassandraDatastore implements Datastore
 					String value = tags.get(tagName);
 					if (!m_tagValueCache.isCached(value))
 					{
-						if(value.toString().length() == 0)
+						if(value.length() == 0)
 						{
 							logger.warn(
 									"Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+metricName
@@ -746,7 +746,10 @@ public class CassandraDatastore implements Datastore
 		@Override
 		public DataPointsRowKey next()
 		{
-			return m_nextKey;
+			if (m_nextKey != null) {
+                return m_nextKey;
+            }
+            throw new NoSuchElementException();
 		}
 
 		@Override

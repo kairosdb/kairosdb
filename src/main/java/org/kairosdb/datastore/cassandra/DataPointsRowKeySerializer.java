@@ -21,6 +21,7 @@ import org.kairosdb.util.StringPool;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.SortedMap;
 
 public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRowKey>
@@ -96,10 +97,10 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 	private String generateTagString(SortedMap<String, String> tags)
 	{
 		StringBuilder sb = new StringBuilder();
-		for (String key : tags.keySet())
+		for (Map.Entry<String, String> entry : tags.entrySet())
 		{
-			sb.append(key).append("=");
-			sb.append(tags.get(key)).append(":");
+			sb.append(entry.getKey()).append("=");
+			sb.append(entry.getValue()).append(":");
 		}
 
 		return (sb.toString());

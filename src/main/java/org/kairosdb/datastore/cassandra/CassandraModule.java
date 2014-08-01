@@ -38,21 +38,21 @@ public class CassandraModule extends AbstractModule
 
 	public CassandraModule(Properties props)
 	{
-		for (Object key : props.keySet())
+		for (Map.Entry<Object, Object> entry : props.entrySet())
 		{
-			String strKey = (String)key;
+			String key = (String)entry.getKey();
 
-			if (strKey.startsWith(AUTH_PREFIX))
+			if (key.startsWith(AUTH_PREFIX))
 			{
-				String consumerKey = strKey.substring(AUTH_PREFIX.length());
-				String consumerToken = (String)props.get(key);
+				String consumerKey = key.substring(AUTH_PREFIX.length());
+				String consumerToken = (String)entry.getValue();
 
 				m_authMap.put(consumerKey, consumerToken);
 			}
-			else if (strKey.startsWith(HECTOR_PREFIX))
+			else if (key.startsWith(HECTOR_PREFIX))
 			{
-				String configKey = strKey.substring(HECTOR_PREFIX.length());
-				m_hectorMap.put(configKey, props.get(key));
+				String configKey = key.substring(HECTOR_PREFIX.length());
+				m_hectorMap.put(configKey, entry.getValue());
 			}
 		}
 	}

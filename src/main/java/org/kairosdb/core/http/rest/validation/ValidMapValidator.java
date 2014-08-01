@@ -29,18 +29,18 @@ public class ValidMapValidator implements ConstraintValidator<ValidMapRequired, 
 	@Override
 	public boolean isValid(Map<String, String> map, ConstraintValidatorContext context)
 	{
-		for (String key : map.keySet())
+		for (Map.Entry<String, String> entry : map.entrySet())
 		{
-			if (key == null || key.isEmpty())
+			if (entry.getKey() == null || entry.getKey().isEmpty())
 			{
 				context.disableDefaultConstraintViolation(); // disable violation message
 				context.buildConstraintViolationWithTemplate("key value cannot be null or empty").addConstraintViolation();  // add message
 				return false;
 			}
-			if (map.get(key) == null || map.get(key).isEmpty())
+			if (entry.getValue() == null || entry.getValue().isEmpty())
 			{
 				context.disableDefaultConstraintViolation(); // disable violation message
-				context.buildConstraintViolationWithTemplate("value cannot be null or empty for key: " + key).addConstraintViolation();  // add message
+				context.buildConstraintViolationWithTemplate("value cannot be null or empty for key: " + entry.getKey()).addConstraintViolation();  // add message
 				return false;
 			}
 		}

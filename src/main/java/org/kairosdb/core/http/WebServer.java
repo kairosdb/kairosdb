@@ -39,6 +39,9 @@ import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.exception.KairosDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.net.InetSocketAddress;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
@@ -48,6 +51,7 @@ public class WebServer implements KairosDBService
 	public static final Logger logger = LoggerFactory.getLogger(WebServer.class);
 
 	public static final String JETTY_PORT_PROPERTY = "kairosdb.jetty.port";
+	public static final String JETTY_ADDRESS_PROPERTY = "kairosdb.jetty.address";
 	public static final String JETTY_WEB_ROOT_PROPERTY = "kairosdb.jetty.static_web_root";
 	public static final String JETTY_AUTH_USER_PROPERTY = "kairosdb.jetty.basic_auth.user";
 	public static final String JETTY_AUTH_PASSWORD_PROPERTY = "kairosdb.jetty.basic_auth.password";
@@ -56,6 +60,7 @@ public class WebServer implements KairosDBService
 	public static final String JETTY_SSL_KEYSTORE_PASSWORD = "kairosdb.jetty.ssl.keystore.password";
 
 	private int m_port;
+	private InetAddress m_address;
 	private String m_webRoot;
 	private Server m_server;
 	private String m_authUser = null;
@@ -65,12 +70,28 @@ public class WebServer implements KairosDBService
 	private String m_keyStorePassword;
 
 
+	public WebServer(@Named(JETTY_PORT_PROPERTY) int port,
+	                 @Named(JETTY_WEB_ROOT_PROPERTY) String webRoot)
+	{
+		this(port, null, webRoot);
+	}
+
 	@Inject
 	public WebServer(@Named(JETTY_PORT_PROPERTY) int port,
+	                 @Named(JETTY_ADDRESS_PROPERTY) String address,
 	                 @Named(JETTY_WEB_ROOT_PROPERTY) String webRoot)
 	{
 		m_port = port;
 		m_webRoot = webRoot;
+		m_address = null;
+        try
+        {
+            m_address = InetAddress.getByName(address);
+        }
+        catch (UnknownHostException e)
+        {
+			logger.error("Unknown host name " + address + ", will bind to 0.0.0.0");
+        }
 	}
 
 	@Inject(optional = true)
@@ -97,7 +118,7 @@ public class WebServer implements KairosDBService
 		try
 		{
 			if (m_port > 0)
-				m_server = new Server(m_port);
+				m_server = new Server(new InetSocketAddress(m_address, m_port));
 			else
 				m_server = new Server();
 

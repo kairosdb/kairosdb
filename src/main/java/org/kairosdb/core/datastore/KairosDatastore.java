@@ -77,6 +77,7 @@ public class KairosDatastore
 		setupCacheDirectory();
 	}
 
+	@SuppressWarnings("UnusedDeclaration")
 	@Inject(optional = true)
 	public void setBaseCacheDir(@Named(QUERY_CACHE_DIR) String cacheTempDir)
 	{
@@ -87,6 +88,7 @@ public class KairosDatastore
 		}
 	}
 
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private void setupCacheDirectory()
 	{
 		cleanDirectory(new File(m_baseCacheDir));
@@ -101,6 +103,7 @@ public class KairosDatastore
 		return (m_cacheDir);
 	}
 
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private void newCacheDirectory()
 	{
 		m_cacheDir = m_baseCacheDir + "/" + System.currentTimeMillis() + "/";
@@ -108,13 +111,14 @@ public class KairosDatastore
 		cacheDirectory.mkdirs();
 	}
 
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private void cleanDirectory(File directory)
 	{
 		if (!directory.exists())
 			return;
 		File[] list = directory.listFiles();
 
-		if (list.length > 0)
+		if (list != null && list.length > 0)
 		{
 			for (File aList : list)
 			{
@@ -191,7 +195,6 @@ public class KairosDatastore
 	 * Exports the data for a metric query without doing any aggregation or sorting
 	 *
 	 * @param metric metric
-	 * @return list of data point rows
 	 * @throws DatastoreException
 	 */
 	public void export(QueryMetric metric, QueryCallback callback) throws DatastoreException
@@ -272,20 +275,6 @@ public class KairosDatastore
 		return null;
 	}
 
-	private static List<DataPointGroup> wrapRows(List<DataPointRow> rows)
-	{
-		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
-
-		MemoryMonitor mm = new MemoryMonitor(100);
-		for (DataPointRow row : rows)
-		{
-			ret.add(new DataPointGroupRowWrapper(row));
-			mm.checkMemoryAndThrowException();
-		}
-
-		return (ret);
-	}
-
 	private List<DataPointGroup> groupByTypeAndTag(String metricName,
 			List<DataPointRow> rows, TagGroupBy tagGroupBy, Order order)
 	{
@@ -343,48 +332,6 @@ public class KairosDatastore
 		return ret;
 	}
 
-
-	private static List<DataPointGroup> groupByTags(String metricName,
-			List<DataPointGroup> dataPointsList, TagGroupBy tagGroupBy, Order order)
-	{
-		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
-		MemoryMonitor mm = new MemoryMonitor(20);
-
-		if (dataPointsList.isEmpty())
-		{
-			ret.add(new SortingDataPointGroup(metricName, order));
-		}
-		else
-		{
-			if (tagGroupBy != null)
-			{
-				ListMultimap<String, DataPointGroup> groups = ArrayListMultimap.create();
-				Map<String, TagGroupByResult> groupByResults = new HashMap<String, TagGroupByResult>();
-
-				for (DataPointGroup dataPointGroup : dataPointsList)
-				{
-					//Todo: Add code to datastore implementations to filter by the group by tag
-
-					LinkedHashMap<String, String> matchingTags = getMatchingTags(dataPointGroup, tagGroupBy.getTagNames());
-					String tagsKey = getTagsKey(matchingTags);
-					groups.put(tagsKey, dataPointGroup);
-					groupByResults.put(tagsKey, new TagGroupByResult(tagGroupBy, matchingTags));
-					mm.checkMemoryAndThrowException();
-				}
-
-				for (String key : groups.keySet())
-				{
-					ret.add(new SortingDataPointGroup(groups.get(key), groupByResults.get(key), order));
-				}
-			}
-			else
-			{
-				ret.add(new SortingDataPointGroup(dataPointsList, order));
-			}
-		}
-
-		return ret;
-	}
 
 	private static String getTagsKey(LinkedHashMap<String, String> tags)
 	{
@@ -455,7 +402,6 @@ public class KairosDatastore
 		{
 			return m_dataPointCount;
 		}
-        public int getRowCount() { return m_rowCount; }
 
 		@Override
 		public List<DataPointGroup> execute() throws DatastoreException

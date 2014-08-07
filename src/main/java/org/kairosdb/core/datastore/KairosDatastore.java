@@ -275,7 +275,7 @@ public class KairosDatastore
 		return null;
 	}
 
-	private List<DataPointGroup> groupByTypeAndTag(String metricName,
+	protected List<DataPointGroup> groupByTypeAndTag(String metricName,
 			List<DataPointRow> rows, TagGroupBy tagGroupBy, Order order)
 	{
 		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
@@ -333,12 +333,15 @@ public class KairosDatastore
 	}
 
 
+	/**
+	 * Create a unique identifier for this combination of tags to be used as the key of a hash map.
+	 */
 	private static String getTagsKey(LinkedHashMap<String, String> tags)
 	{
 		StringBuilder builder = new StringBuilder();
 		for (String name : tags.keySet())
 		{
-			builder.append(tags.get(name));
+			builder.append(name).append(tags.get(name));
 		}
 
 		return builder.toString();

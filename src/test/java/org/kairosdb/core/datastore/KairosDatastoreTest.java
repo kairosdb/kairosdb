@@ -19,23 +19,32 @@ import com.google.common.collect.ImmutableSortedMap;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
+import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyLongDataPoint;
+import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.core.formatter.FormatterException;
+import org.kairosdb.core.groupby.GroupByResult;
+import org.kairosdb.core.groupby.TagGroupBy;
+import org.kairosdb.core.groupby.TagGroupByResult;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.Assert.assertThat;
 
 public class KairosDatastoreTest
@@ -181,6 +190,132 @@ public class KairosDatastoreTest
 
 		assertFalse(file1.exists());
 		assertFalse(file2.exists());
+	}
+
+	@Test
+	public void test_groupByTypeAndTag_SameTagValue() throws DatastoreException, FormatterException
+	{
+		TestKairosDatastore datastore = new TestKairosDatastore(new TestDatastore(), new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+
+		TagGroupBy groupBy = new TagGroupBy("tag1", "tag2");
+		List<DataPointRow> rows = new ArrayList<DataPointRow>();
+
+		DataPointRowImpl row1 = new DataPointRowImpl();
+		row1.addTag("tag1", "value");
+		row1.addDataPoint(new LongDataPoint(1234, 1));
+
+		DataPointRowImpl row2 = new DataPointRowImpl();
+		row2.addTag("tag2", "value");
+		row2.addDataPoint(new LongDataPoint(1235, 2));
+
+		rows.add(row1);
+		rows.add(row2);
+
+		List<DataPointGroup> dataPointsGroup = datastore.groupByTypeAndTag("metricName", rows, groupBy, Order.ASC);
+
+		assertThat(dataPointsGroup.size(), equalTo(2));
+
+		assertThat(getTagGroupMap(dataPointsGroup.get(0)), hasEntry("tag1", ""));
+		assertThat(getTagGroupMap(dataPointsGroup.get(0)), hasEntry("tag2", "value"));
+
+		assertThat(getTagGroupMap(dataPointsGroup.get(1)), hasEntry("tag1", "value"));
+		assertThat(getTagGroupMap(dataPointsGroup.get(1)), hasEntry("tag2", ""));
+	}
+
+	@Test
+	public void test_groupByTypeAndTag_DifferentTagValues() throws DatastoreException, FormatterException
+	{
+		TestKairosDatastore datastore = new TestKairosDatastore(new TestDatastore(), new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+
+		TagGroupBy groupBy = new TagGroupBy("tag1", "tag2");
+		List<DataPointRow> rows = new ArrayList<DataPointRow>();
+
+		DataPointRowImpl row1 = new DataPointRowImpl();
+		row1.addTag("tag1", "value1");
+		row1.addDataPoint(new LongDataPoint(1234, 1));
+
+		DataPointRowImpl row2 = new DataPointRowImpl();
+		row2.addTag("tag2", "value2");
+		row2.addDataPoint(new LongDataPoint(1235, 2));
+
+		rows.add(row1);
+		rows.add(row2);
+
+		List<DataPointGroup> dataPoints = datastore.groupByTypeAndTag("metricName", rows, groupBy, Order.ASC);
+
+		assertThat(dataPoints.size(), equalTo(2));
+
+		assertThat(getTagGroupMap(dataPoints.get(0)), hasEntry("tag1", ""));
+		assertThat(getTagGroupMap(dataPoints.get(0)), hasEntry("tag2", "value2"));
+
+		assertThat(getTagGroupMap(dataPoints.get(1)), hasEntry("tag1", "value1"));
+		assertThat(getTagGroupMap(dataPoints.get(1)), hasEntry("tag2", ""));
+	}
+
+	@Test
+	public void test_groupByTypeAndTag_MultipleTags() throws DatastoreException, FormatterException
+	{
+		TestKairosDatastore datastore = new TestKairosDatastore(new TestDatastore(), new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+
+		TagGroupBy groupBy = new TagGroupBy("tag1", "tag2");
+		List<DataPointRow> rows = new ArrayList<DataPointRow>();
+
+		DataPointRowImpl row1 = new DataPointRowImpl();
+		row1.addTag("tag1", "value1");
+		row1.addTag("tag2", "value2");
+		row1.addDataPoint(new LongDataPoint(1234, 1));
+
+		DataPointRowImpl row2 = new DataPointRowImpl();
+		row2.addTag("tag1", "value1");
+		row2.addTag("tag2", "value3");
+		row2.addDataPoint(new LongDataPoint(1235, 2));
+
+		DataPointRowImpl row3 = new DataPointRowImpl();
+		row3.addTag("tag1", "value4");
+		row3.addTag("tag2", "value2");
+		row3.addDataPoint(new LongDataPoint(1235, 2));
+
+		rows.add(row1);
+		rows.add(row2);
+		rows.add(row3);
+
+		List<DataPointGroup> dataPoints = datastore.groupByTypeAndTag("metricName", rows, groupBy, Order.ASC);
+
+		assertThat(dataPoints.size(), equalTo(3));
+
+		assertThat(getTagGroupMap(dataPoints.get(0)), hasEntry("tag1", "value4"));
+		assertThat(getTagGroupMap(dataPoints.get(0)), hasEntry("tag2", "value2"));
+
+		assertThat(getTagGroupMap(dataPoints.get(1)), hasEntry("tag1", "value1"));
+		assertThat(getTagGroupMap(dataPoints.get(1)), hasEntry("tag2", "value3"));
+
+		assertThat(getTagGroupMap(dataPoints.get(2)), hasEntry("tag1", "value1"));
+		assertThat(getTagGroupMap(dataPoints.get(2)), hasEntry("tag2", "value2"));
+	}
+
+	private Map<String, String> getTagGroupMap(DataPointGroup dataPointGroup)
+	{
+		for (GroupByResult groupByResult : dataPointGroup.getGroupByResult())
+		{
+			if (groupByResult instanceof TagGroupByResult)
+				return ((TagGroupByResult)groupByResult).getTagResults();
+		}
+
+		return null;
+	}
+
+	private class TestKairosDatastore extends KairosDatastore
+	{
+
+		public TestKairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
+		                           List<DataPointListener> dataPointListeners,
+		                           KairosDataPointFactory dataPointFactory) throws DatastoreException
+		{
+			super(datastore, queuingManager, dataPointListeners, dataPointFactory);
+		}
 	}
 
 	private class TestDatastore implements Datastore

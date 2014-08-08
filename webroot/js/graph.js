@@ -713,10 +713,12 @@ function showChart(subTitle, queries, metricData) {
 
                     var first = true;
 					$.each(group.group, function (key, value) {
-						if (!first)
-							groupByMessage += ", ";
-						groupByMessage += key + '=' + value;
-						first = false;
+                        if (value.length > 0) {
+                            if (!first)
+                                groupByMessage += ", ";
+                            groupByMessage += key + '=' + value;
+                            first = false;
+                        }
 					});
 
 					groupByMessage += ')';

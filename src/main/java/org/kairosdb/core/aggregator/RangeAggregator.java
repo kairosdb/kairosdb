@@ -24,9 +24,8 @@ import org.kairosdb.core.datastore.TimeUnit;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -43,11 +42,12 @@ public abstract class RangeAggregator implements Aggregator
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
+        if (m_sampling == null) // TODO is this clean?
+            m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
 		checkNotNull(dataPointGroup);
 
 		if (m_alignSampling)
 		{
-			TimeUnit tu = m_sampling.getUnit();
             m_startTime = alignRangeBoundary(m_startTime);
 		}
 
@@ -94,7 +94,7 @@ public abstract class RangeAggregator implements Aggregator
                 case SECONDS:
                     dt = dt.withMillisOfSecond(0);
                     break;
-                case MILLISECONDS:
+                default:
                     break;
             }
             return dt.getMillis();
@@ -139,11 +139,7 @@ public abstract class RangeAggregator implements Aggregator
 	public void setStartTime(long startTime)
 	{
 		m_startTime = startTime;
-		//Get the day of the month for month calculations
-		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-		cal.setTimeInMillis(startTime);
     }
-
 
 	/**
 	 Return a RangeSubAggregator that will be used to aggregate data over a
@@ -169,10 +165,10 @@ public abstract class RangeAggregator implements Aggregator
 	{
 		private RangeSubAggregator m_subAggregator;
 		private Iterator<DataPoint> m_dpIterator;
-        Logger m_logger = LoggerFactory.getLogger(this.getClass());
         private int m_rangeIteration;
         private DateTime m_dtStartTime;
-        private DateTime.Property m_dtProperty;
+        /* used for generic range computations */
+        private DateTime.Property m_dateTimeProperty;
 
 
         public RangeDataPointAggregator(DataPointGroup innerDataPointGroup,
@@ -187,28 +183,28 @@ public abstract class RangeAggregator implements Aggregator
             TimeUnit tu = m_sampling.getUnit();
             switch (tu) {
                 case YEARS:
-                    m_dtProperty = m_dtStartTime.year();
+                    m_dateTimeProperty = m_dtStartTime.year();
                     break;
                 case MONTHS:
-                    m_dtProperty = m_dtStartTime.monthOfYear();
+                    m_dateTimeProperty = m_dtStartTime.monthOfYear();
                     break;
                 case WEEKS:
-                    m_dtProperty = m_dtStartTime.weekOfWeekyear();
+                    m_dateTimeProperty = m_dtStartTime.weekOfWeekyear();
                     break;
                 case DAYS:
-                    m_dtProperty = m_dtStartTime.dayOfMonth();
+                    m_dateTimeProperty = m_dtStartTime.dayOfMonth();
                     break;
                 case HOURS:
-                    m_dtProperty = m_dtStartTime.hourOfDay();
+                    m_dateTimeProperty = m_dtStartTime.hourOfDay();
                     break;
                 case MINUTES:
-                    m_dtProperty = m_dtStartTime.minuteOfHour();
+                    m_dateTimeProperty = m_dtStartTime.minuteOfHour();
                     break;
                 case SECONDS:
-                    m_dtProperty = m_dtStartTime.secondOfMinute();
+                    m_dateTimeProperty = m_dtStartTime.secondOfMinute();
                     break;
-                case MILLISECONDS:
-                    m_dtProperty = m_dtStartTime.millisOfSecond();
+                default:
+                    m_dateTimeProperty = m_dtStartTime.millisOfSecond();
                     break;
             }
 		}
@@ -216,13 +212,17 @@ public abstract class RangeAggregator implements Aggregator
 
 		private long getStartRange()
 		{
-            DateTime startRange = m_dtProperty.addToCopy(m_sampling.getValue() * m_rangeIteration);
+            DateTime startRange = m_dateTimeProperty.addToCopy(
+                    m_sampling.getValue() * m_rangeIteration
+            );
             return startRange.getMillis();
         }
 
 		private long getEndRange()
 		{
-			DateTime endRange = m_dtProperty.addToCopy(m_sampling.getValue() * (m_rangeIteration + 1));
+			DateTime endRange = m_dateTimeProperty.addToCopy(
+                    m_sampling.getValue() * (m_rangeIteration + 1)
+            );
             return endRange.getMillis();
 		}
 
@@ -242,8 +242,8 @@ public abstract class RangeAggregator implements Aggregator
                     //consecutive if data does not show up in each range.
                     long endRange = getEndRange();
 
-                    m_logger.info("startRange:" + (new Date(startRange)).toString());
-                    m_logger.info("  endRange:" + (new Date(endRange)).toString());
+//                    m_logger.info("startRange:" + (new Date(startRange)).toString());
+//                    m_logger.info("  endRange:" + (new Date(endRange)).toString());
 
                     subIterator = new SubRangeIterator(endRange);
                     m_rangeIteration++;
@@ -252,13 +252,15 @@ public abstract class RangeAggregator implements Aggregator
 
 				long dataPointTime = getDataPointTime();
 
-                m_dpIterator = m_subAggregator.getNextDataPoints(dataPointTime,
-						subIterator).iterator();
+                m_dpIterator = m_subAggregator
+                        .getNextDataPoints(dataPointTime, subIterator)
+                        .iterator();
 
 			}
 
 			return (m_dpIterator.next());
 		}
+
 
         /**
          * Computes the data point time for the aggregated value.
@@ -280,9 +282,7 @@ public abstract class RangeAggregator implements Aggregator
 		@Override
 		public boolean hasNext()
 		{
-            if (!(m_dpIterator.hasNext() || super.hasNext()))
-                m_logger.info("-----");
-			return (m_dpIterator.hasNext() || super.hasNext());
+            return (m_dpIterator.hasNext() || super.hasNext());
 		}
 
 		//========================================================================

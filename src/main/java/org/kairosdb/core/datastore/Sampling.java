@@ -17,8 +17,6 @@
 package org.kairosdb.core.datastore;
 
 import org.joda.time.DateTimeZone;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Sampling extends Duration
 {
@@ -49,6 +47,7 @@ public class Sampling extends Duration
 		long val = value;
 		switch (unit)
 		{
+            case YEARS: val *= 52;
 			case WEEKS: val *= 7;
 			case DAYS: val *= 24;
 			case HOURS: val *= 60;

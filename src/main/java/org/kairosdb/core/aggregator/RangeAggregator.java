@@ -242,9 +242,6 @@ public abstract class RangeAggregator implements Aggregator
                     //consecutive if data does not show up in each range.
                     long endRange = getEndRange();
 
-//                    m_logger.info("startRange:" + (new Date(startRange)).toString());
-//                    m_logger.info("  endRange:" + (new Date(endRange)).toString());
-
                     subIterator = new SubRangeIterator(endRange);
                     m_rangeIteration++;
 

@@ -32,7 +32,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class RangeAggregator implements Aggregator
 {
 	private long m_startTime = 0L;
-	private long m_range = 1L;
 	private boolean m_alignSampling;
 
 	@NotNull
@@ -103,7 +102,6 @@ public abstract class RangeAggregator implements Aggregator
 	public void setSampling(Sampling sampling)
 	{
         m_sampling = sampling;
-		m_range = sampling.getSampling();
 	}
 
 	/**

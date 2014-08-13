@@ -176,7 +176,7 @@ public abstract class RangeAggregator implements Aggregator
             m_rangeIteration = 0;
 			m_subAggregator = subAggregator;
 			m_dpIterator = new ArrayList<DataPoint>().iterator();
-            m_dtStartTime = new DateTime(m_startTime);
+            m_dtStartTime = new DateTime(m_startTime, m_sampling.getTimeZone());
 
             TimeUnit tu = m_sampling.getUnit();
             switch (tu) {

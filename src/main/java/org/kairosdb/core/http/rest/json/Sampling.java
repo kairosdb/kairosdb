@@ -17,6 +17,7 @@
 package org.kairosdb.core.http.rest.json;
 
 
+import org.joda.time.DateTimeZone;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.http.rest.validation.TimeUnitRequired;
 import org.apache.bval.constraints.NotEmpty;
@@ -28,7 +29,8 @@ import javax.validation.constraints.NotNull;
 
 public class Sampling
 {
-	@Min(1)
+    private final DateTimeZone timeZone;
+    @Min(1)
 	private int duration;
 
 	@TimeUnitRequired
@@ -41,12 +43,28 @@ public class Sampling
 	@JsonCreator
 	public Sampling(@JsonProperty("duration") int duration,
 	                @JsonProperty("unit") String unit,
+	                @JsonProperty("aggregate") String aggregate,
+                    @JsonProperty("timeZone") String timeZone)
+	{
+		this.duration = duration;
+		this.unit = unit;
+		this.aggregate = aggregate;
+        if (timeZone != null)
+            this.timeZone = DateTimeZone.forID(timeZone);
+        else
+            this.timeZone = null;
+    }
+
+	@JsonCreator
+	public Sampling(@JsonProperty("duration") int duration,
+	                @JsonProperty("unit") String unit,
 	                @JsonProperty("aggregate") String aggregate)
 	{
 		this.duration = duration;
 		this.unit = unit;
 		this.aggregate = aggregate;
-	}
+        this.timeZone = null;
+    }
 
 	public int getDuration()
 	{
@@ -62,4 +80,18 @@ public class Sampling
 	{
 		return aggregate;
 	}
+
+    public DateTimeZone getTimeZone() {
+        return timeZone;
+    }
+
+    @Override
+    public String toString() {
+        return "Sampling{" +
+                "duration=" + duration +
+                ", unit='" + unit + '\'' +
+                ", aggregate='" + aggregate + '\'' +
+                ", timeZone='" + timeZone + '\'' +
+                '}';
+    }
 }

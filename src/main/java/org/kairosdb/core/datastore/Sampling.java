@@ -16,9 +16,15 @@
 
 package org.kairosdb.core.datastore;
 
+import org.joda.time.DateTimeZone;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Sampling extends Duration
 {
-	public Sampling()
+    private DateTimeZone timeZone;
+
+    public Sampling()
 	{
 		super();
 	}
@@ -28,19 +34,21 @@ public class Sampling extends Duration
 		super(value, unit);
 	}
 
-	/**
-	 Works for any time unit except month.  Months are special cased in
-	 the RangeAggregator
+    public Sampling(int value, TimeUnit unit, DateTimeZone timeZone) {
+        super(value, unit);
+        this.timeZone = timeZone;
+    }
 
-	 Note this does not account for leap years
-	 @return
+	/**
+	 Works for any time unit except month and years.  Months and years are special cased in
+	 the RangeAggregator
+	 @return the number of milliseconds in the sampling range
 	 */
 	public long getSampling()
 	{
 		long val = value;
 		switch (unit)
 		{
-			case YEARS: val *= 52;
 			case WEEKS: val *= 7;
 			case DAYS: val *= 24;
 			case HOURS: val *= 60;
@@ -51,4 +59,8 @@ public class Sampling extends Duration
 
 		return (val);
 	}
+
+    public DateTimeZone getTimeZone() {
+        return timeZone;
+    }
 }

@@ -6,7 +6,6 @@ import org.kairosdb.core.DataPoint;
 
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  Created with IntelliJ IDEA.
@@ -41,7 +40,7 @@ public class LegacyLongDataPoint extends LegacyDataPoint
 	@Override
 	public void writeValueToJson(JSONWriter writer) throws JSONException
 	{
-		//To change body of implemented methods use File | Settings | File Templates.
+		writer.value(m_value);
 	}
 
 	@Override
@@ -52,6 +51,12 @@ public class LegacyLongDataPoint extends LegacyDataPoint
 
 	@Override
 	public boolean isLong()
+	{
+		return true;
+	}
+
+	@Override
+	public boolean isDouble()
 	{
 		return true;
 	}

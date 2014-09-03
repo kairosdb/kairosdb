@@ -19,34 +19,19 @@ package org.kairosdb.util;
 import com.google.common.collect.ImmutableList;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.net.*;
 import java.util.Collections;
 import java.util.List;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class Util
 {
-	public static int compareLong(long l1, long l2)
-	{
-		long ret = l1 - l2;
-
-		if (ret == 0L)
-			return (0);
-		else if (ret < 0L)
-			return (-1);
-		else
-			return (1);
-	}
-
-
-
 	/**
 	 Special thanks to Nadeau software consulting for publishing this code.
 	 http://nadeausoftware.com/node/97
 	 @param s string representation of number to parse
-	 @return
+	 @return number
 	 */
 	public static long parseLong( final CharSequence s )
 	{
@@ -220,6 +205,43 @@ public class Util
 		// just return the local host address
 		// it is most likely that this is a disconnected developer machine
 		return localAddress;
+	}
+
+	/**
+	 Returns true if the string contains a number. This means it contains only digits, the minus sign, plus sign
+	 and a period.
+
+	 @param s string to test
+	 @return true if only contains a number value
+	 */
+	public static boolean isNumber(String s)
+	{
+		checkNotNull(s);
+
+		if (s.isEmpty())
+			return false;
+
+		int start = 0;
+		char firstChar = s.charAt(0);
+		if (firstChar == '+' || firstChar == '-' || firstChar == '.')
+		{
+			start = 1;
+			if (s.length() == 1)
+				return false;
+		}
+
+		for (int i = start; i < s.length(); i++)
+		{
+			char c = s.charAt(i);
+			if (!Character.isDigit(c) && c != '.')
+				return false;
+		}
+
+		//noinspection RedundantIfStatement
+		if (s.charAt(s.length() - 1) == '.')
+			return false; // can't have trailing period
+
+		return true;
 	}
 
 	private static List<NetworkInterface> getGoodNetworkInterfaces()

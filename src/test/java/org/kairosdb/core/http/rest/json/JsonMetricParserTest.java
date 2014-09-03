@@ -27,10 +27,13 @@ import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -530,32 +533,136 @@ public class JsonMetricParserTest
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getLongValue(), equalTo(4321L));
 	}
 
-//	@Test
-//	public void test_parserSpeed() throws DatastoreException, IOException
-//	{
-//		Reader skipReader = new InputStreamReader(
-//				new GZIPInputStream(ClassLoader.getSystemResourceAsStream("large_import_skip.gz")));
-//
-//		Reader reader = new InputStreamReader(
-//				new GZIPInputStream(ClassLoader.getSystemResourceAsStream("large_import.gz")));
-//
-//		FakeDataStore fakeds = new FakeDataStore();
-//		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-//				Collections.<DataPointListener>emptyList(), "hostname", dataPointFactory);
-//
-//		JsonMetricParser parser = new JsonMetricParser(datastore, skipReader,
-//				new Gson(), dataPointFactory);
-//		ValidationErrors validationErrors = parser.parse();
-//
-//		System.out.println(parser.getDataPointCount());
-//		System.out.println("No Validation");
-//		System.out.println(parser.getIngestTime());
-//
-//		parser = new JsonMetricParser(datastore, reader, new Gson(), dataPointFactory);
-//		validationErrors = parser.parse();
-//		System.out.println("With Validation");
-//		System.out.println(parser.getIngestTime());
-//	}
+	@Test
+	public void test_stringWithNoType_valid() throws DatastoreException, IOException
+	{
+		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": \"The Value\", \"tags\":{\"foo\":\"bar\"}}";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.hasErrors(), equalTo(false));
+
+		List<DataPointSet> dataPointSetList = fakeds.getDataPointSetList();
+		assertThat(dataPointSetList.size(), equalTo(1));
+
+		assertThat(dataPointSetList.get(0).getName(), equalTo("metric1"));
+		assertThat(dataPointSetList.get(0).getTags().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getTags().get("foo"), equalTo("bar"));
+		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
+		assertThat(((StringDataPoint)dataPointSetList.get(0).getDataPoints().get(0)).getValue(), equalTo("The Value"));
+	}
+
+	@Test
+	public void test_stringWithNoTypeAsArray_valid() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metric1\",\"datapoints\": [[1234, \"The Value\"]],\"tags\": {\"foo\": \"bar\"}}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.hasErrors(), equalTo(false));
+
+		List<DataPointSet> dataPointSetList = fakeds.getDataPointSetList();
+		assertThat(dataPointSetList.size(), equalTo(1));
+
+		assertThat(dataPointSetList.get(0).getName(), equalTo("metric1"));
+		assertThat(dataPointSetList.get(0).getTags().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getTags().get("foo"), equalTo("bar"));
+		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
+        assertThat(((StringDataPoint)dataPointSetList.get(0).getDataPoints().get(0)).getValue(), equalTo("The Value"));
+	}
+
+	@Test
+	public void test_stringContainsInteger_valid() throws DatastoreException, IOException
+	{
+		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": \"123\", \"tags\":{\"foo\":\"bar\"}}";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.hasErrors(), equalTo(false));
+
+		List<DataPointSet> dataPointSetList = fakeds.getDataPointSetList();
+		assertThat(dataPointSetList.size(), equalTo(1));
+
+		assertThat(dataPointSetList.get(0).getName(), equalTo("metric1"));
+		assertThat(dataPointSetList.get(0).getTags().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getTags().get("foo"), equalTo("bar"));
+		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getLongValue(), equalTo(123L));
+	}
+
+	@Test
+	public void test_stringContainsDouble_valid() throws DatastoreException, IOException
+	{
+		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": \"123.3\", \"tags\":{\"foo\":\"bar\"}}";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.hasErrors(), equalTo(false));
+
+		List<DataPointSet> dataPointSetList = fakeds.getDataPointSetList();
+		assertThat(dataPointSetList.size(), equalTo(1));
+
+		assertThat(dataPointSetList.get(0).getName(), equalTo("metric1"));
+		assertThat(dataPointSetList.get(0).getTags().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getTags().get("foo"), equalTo("bar"));
+		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getDoubleValue(), equalTo(123.3));
+	}
+
+	@Test
+	public void test_parserSpeed() throws DatastoreException, IOException
+	{
+		Reader skipReader = new InputStreamReader(
+				new GZIPInputStream(ClassLoader.getSystemResourceAsStream("large_import_skip.gz")));
+
+		Reader reader = new InputStreamReader(
+				new GZIPInputStream(ClassLoader.getSystemResourceAsStream("large_import.gz")));
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
+
+		JsonMetricParser parser = new JsonMetricParser(datastore, skipReader,
+				new Gson(), dataPointFactory);
+		ValidationErrors validationErrors = parser.parse();
+
+		System.out.println(parser.getDataPointCount());
+		System.out.println("No Validation");
+		System.out.println(parser.getIngestTime());
+
+		parser = new JsonMetricParser(datastore, reader, new Gson(), dataPointFactory);
+		validationErrors = parser.parse();
+		System.out.println("With Validation");
+		System.out.println(parser.getIngestTime());
+	}
 
 	private static class FakeDataStore implements Datastore
 	{

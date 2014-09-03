@@ -20,12 +20,14 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.util.Util;
 import org.kairosdb.util.Validator;
 
 import java.io.EOFException;
@@ -36,6 +38,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Originally used Jackson to parse, but this approach failed for a very large JSON because
@@ -250,12 +253,24 @@ public class JsonMetricParser
 
 	private String findType(JsonElement value)
 	{
-		String v = value.getAsString();
+		checkState(value.isJsonPrimitive());
 
-		if (!v.contains("."))
-			return "long";
+		JsonPrimitive primitiveValue = (JsonPrimitive) value;
+		if (primitiveValue.isNumber() || (primitiveValue.isString() && Util.isNumber(value.getAsString())))
+		{
+			String v = value.getAsString();
+
+			if (!v.contains("."))
+			{
+				return "long";
+			}
+			else
+			{
+				return "double";
+			}
+		}
 		else
-			return "double";
+			return "string";
 	}
 
 	private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) throws DatastoreException, IOException

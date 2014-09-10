@@ -178,8 +178,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
 				new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname",
-				dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 
 		loadCassandraData();
 		loadData();

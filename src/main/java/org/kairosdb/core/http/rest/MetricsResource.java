@@ -339,7 +339,17 @@ public class MetricsResource implements KairosMetricReporter
 				try
 				{
 					List<DataPointGroup> results = dq.execute();
-					jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
+					int totalPoints = dq.getSampleSize();
+					int seriesToDeplete = 0;
+					while (totalPoints > 100000) {
+							DataPointGroup deplete = results.get(seriesToDeplete);
+							while(deplete.hasNext() && totalPoints > 100000) {
+									deplete.next();
+									totalPoints--;
+							}
+							seriesToDeplete++;
+					}
+					jsonResponse.formatQuery(results, query.isExcludeTags(), totalPoints);
 
 					ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
 				}

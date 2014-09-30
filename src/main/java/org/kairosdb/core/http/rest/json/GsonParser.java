@@ -38,6 +38,7 @@ import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
+import org.kairosdb.rollup.RollUpTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,6 +82,11 @@ public class GsonParser
 		builder.registerTypeAdapter(Metric.class, new MetricDeserializer());
 
 		m_gson = builder.create();
+	}
+
+	public Gson getGson()
+	{
+		return m_gson;
 	}
 
 	private PropertyDescriptor getPropertyDescriptor(Class objClass, String property) throws IntrospectionException
@@ -219,6 +225,13 @@ public class GsonParser
 		}
 
 		return (ret);
+	}
+
+	public List<RollUpTask> parseRollUpTask(String json)
+	{
+		List<RollUpTask> tasks = m_gson.fromJson(json, new TypeToken<HashSet<RollUpTask>>() {}.getType());
+
+		return tasks;
 	}
 
 	private void parseAggregators(String context, QueryMetric queryMetric, JsonArray aggregators) throws QueryException, BeanValidationException

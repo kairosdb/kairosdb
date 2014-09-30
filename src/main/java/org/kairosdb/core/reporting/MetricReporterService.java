@@ -32,9 +32,8 @@ import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 import static org.quartz.TriggerBuilder.newTrigger;
@@ -66,7 +65,6 @@ public class MetricReporterService implements KairosDBJob
 		m_schedule = schedule;
 	}
 
-
 	private int getThreadCount()
 	{
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
@@ -85,6 +83,11 @@ public class MetricReporterService implements KairosDBJob
 				.withIdentity(this.getClass().getSimpleName())
 				.withSchedule(CronScheduleBuilder.cronSchedule(m_schedule)) //Schedule to run every minute
 				.build());
+	}
+
+	@Override
+	public void interrupt()
+	{
 	}
 
 	@Override

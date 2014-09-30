@@ -1,0 +1,15 @@
+package org.kairosdb.rollup;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Scopes;
+import org.kairosdb.core.http.rest.RollUpResource;
+
+public class RollUpModule extends AbstractModule
+{
+	@Override
+	protected void configure()
+	{
+		bind(RollUpResource.class).in(Scopes.SINGLETON);
+		bind(RollUpManager.class).in(Scopes.SINGLETON);
+	}
+}

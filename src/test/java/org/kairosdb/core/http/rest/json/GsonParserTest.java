@@ -442,6 +442,14 @@ public class GsonParserTest
 		assertBeanValidation(json, "query.metric[0].group_by[0].range_size.value must be greater than or equal to 1");
 	}
 
+	@Test
+	public void test_parseRollUpTask() throws IOException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-group_by-value-range_size.json"), Charsets.UTF_8);
+
+		parser.parseRollUpTask(json);
+	}
+
 	private void assertBeanValidation(String json, String expectedMessage)
 	{
 		try

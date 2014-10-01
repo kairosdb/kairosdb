@@ -85,31 +85,28 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 				{
 					telnetCommand.execute(msgevent.getChannel(), command);
 				}
-				catch(ValidationException e)
+				catch(Exception e)
 				{
-					log("Failed to execute command: " + formatCommand(command), e);
-				}
-				catch (Exception e)
-				{
-					logger.error("", e);
+					log("Failed to execute command: " + formatCommand(command)+ " Reason: " + e.getMessage(), ctx, e);
 				}
 			}
 			else
-				log("Unknown command: " + command[0]);
+				log("Unknown command: " + command[0], ctx);
 		}
 		else
 		{
-			log("Invalid message. Must be of type String.");
+			log("Invalid message. Must be of type String.", ctx);
 		}
 	}
 
-	private static void log(String message)
+	private static void log(String message, ChannelHandlerContext ctx)
 	{
-		log(message, null);
+		log(message, ctx, null);
 	}
 
-	private static void log(String message, Exception e)
+	private static void log(String message, ChannelHandlerContext ctx, Exception e)
 	{
+        message += " From: "+((InetSocketAddress)ctx.getChannel().getRemoteAddress()).getAddress().getHostAddress();
 		if (logger.isDebugEnabled())
 			if (e != null)
 				logger.debug(message, e);
@@ -117,8 +114,6 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 				logger.debug(message);
 		else
 		{
-			if (e instanceof ValidationException)
-				message = message + " Reason: " + e.getMessage();
 			logger.warn(message);
 		}
 	}

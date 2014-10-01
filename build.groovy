@@ -411,8 +411,7 @@ def doRun(Rule rule)
 
 	//this is to load logback into classpath
 	runClasspath = jc.getClasspath()
-	runClasspath.addPath("src/main/resources")
-	runClasspath.addPath("src/main/java")
+	runClasspath.addPath("src/main/resources").addPath("src/main/java")
 	ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
 	println(ret);
 }

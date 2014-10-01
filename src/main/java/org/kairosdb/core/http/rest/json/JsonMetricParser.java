@@ -363,7 +363,7 @@ public class JsonMetricParser
 						String type = metric.getType();
 						if (dataPoint.length > 2)
 							type = dataPoint[2].getAsString();
-
+						
 						if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
 							continue;
 

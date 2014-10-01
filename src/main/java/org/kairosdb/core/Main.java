@@ -210,7 +210,8 @@ public class Main
 			{
 				Writer ps = new OutputStreamWriter(new FileOutputStream(arguments.exportFile,
 						arguments.appendToExportFile), "UTF-8");
-				main.runExport(ps, arguments.exportMetricNames);
+                System.out.println(arguments.exportMetricNames);
+                main.runExport(ps, arguments.exportMetricNames);
 				ps.flush();
 				ps.close();
 			}

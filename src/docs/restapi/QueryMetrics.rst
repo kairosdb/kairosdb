@@ -48,7 +48,7 @@ Body
  {
     "start_absolute": 1357023600000,
     "end_relative": {
-        "value": "5",
+        "value": 5,
         "unit": "days"
     },
     "metrics": [
@@ -58,7 +58,7 @@ Body
                 "customer": ["bar"]
             },
             "name": "abc.123",
-            "limit": 10000
+            "limit": 10000,
             "aggregators": [
                 {
                     "name": "sum",

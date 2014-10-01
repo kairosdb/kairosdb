@@ -106,7 +106,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 
 	private static void log(String message, ChannelHandlerContext ctx, Exception e)
 	{
-        message += " From: "+((InetSocketAddress)ctx.getChannel().getRemoteAddress()).getAddress().getHostAddress();
+		message += " From: "+((InetSocketAddress)ctx.getChannel().getRemoteAddress()).getAddress().getHostAddress();
 		if (logger.isDebugEnabled())
 			if (e != null)
 				logger.debug(message, e);

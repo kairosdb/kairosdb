@@ -31,7 +31,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class QueryMetric implements DatastoreMetricQuery
 {
 	private long startTime;
-	private long endTime = -1;
+	private long endTime;
+	private boolean endTimeSet;
 	private int cacheTime;
 	private String name;
 	private SetMultimap<String, String> tags = HashMultimap.create();
@@ -55,6 +56,7 @@ public class QueryMetric implements DatastoreMetricQuery
 		this.aggregators = new ArrayList<Aggregator>();
 		this.startTime = start_time;
 		this.endTime = end_time;
+		this.endTimeSet = true;
 		this.cacheTime = cacheTime;
 		this.name = Preconditions.checkNotNullOrEmpty(name);
 	}
@@ -117,7 +119,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	@Override
 	public long getEndTime()
 	{
-		if (endTime == -1)
+		if (!endTimeSet)
 			endTime = System.currentTimeMillis();
 
 		return endTime;
@@ -131,6 +133,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	public void setEndTime(long endTime)
 	{
 		this.endTime = endTime;
+		this.endTimeSet = true;
 	}
 
 	public List<GroupBy> getGroupBys()

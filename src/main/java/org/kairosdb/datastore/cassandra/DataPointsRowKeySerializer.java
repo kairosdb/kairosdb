@@ -81,7 +81,10 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 		buffer.putLong(dataPointsRowKey.getTimestamp());
 		if (dataType != null)
 		{
-			buffer.put((byte)0x0); //Marks the beginning of datatype
+			if (dataPointsRowKey.isEndSearchKey())
+				buffer.put((byte)0xFF); //Only used for serialization of end search keys
+			else
+				buffer.put((byte)0x0); //Marks the beginning of datatype
 			buffer.put((byte)dataType.length);
 			buffer.put(dataType);
 		}

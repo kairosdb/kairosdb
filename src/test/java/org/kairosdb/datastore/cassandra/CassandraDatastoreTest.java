@@ -429,14 +429,6 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		putDataPoints(set);
 	}
 
-	@Test(expected = DatastoreException.class)
-	public void test_TimestampsNegative() throws DatastoreException
-	{
-		DataPointSet set = new DataPointSet("testMetric");
-		set.addDataPoint(new LongDataPoint(-1, 1L));
-		putDataPoints(set);
-	}
-
 	private static CachedSearchResult createCache(String metricName) throws IOException
 	{
 		String tempFile = System.getProperty("java.io.tmpdir");

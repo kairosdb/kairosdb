@@ -323,8 +323,8 @@ public class CassandraDatastore implements Datastore
 			//time the data is written.
 			long writeTime = System.currentTimeMillis();
 
-			if (dataPoint.getTimestamp() < 0)
-				throw new DatastoreException("Timestamp must be greater than or equal to zero.");
+			/*if (dataPoint.getTimestamp() < 0)
+				throw new DatastoreException("Timestamp must be greater than or equal to zero.");*/
 			long newRowTime = calculateRowTime(dataPoint.getTimestamp());
 			if (newRowTime != rowTime)
 			{
@@ -393,10 +393,6 @@ public class CassandraDatastore implements Datastore
 			m_dataPointWriteBuffer.addData(rowKey, columnTime,
 					kDataOutput.getBytes(), writeTime, m_datapointTtl);
 
-		}
-		catch (DatastoreException e)
-		{
-			throw e;
 		}
 		catch (Exception e)
 		{
@@ -638,7 +634,7 @@ public class CassandraDatastore implements Datastore
 
 	public static long calculateRowTime(long timestamp)
 	{
-		return (timestamp - (timestamp % ROW_WIDTH));
+		return (timestamp - (Math.abs(timestamp) % ROW_WIDTH));
 	}
 
 
@@ -686,6 +682,13 @@ public class CassandraDatastore implements Datastore
 	private class FilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 	{
 		private ColumnSliceIterator<String, DataPointsRowKey, String> m_sliceIterator;
+
+		/**
+		 Used when a query spans positive and negative time values, we have to
+		 query the positive separate from the negative times as negative times
+		 are sorted after the positive ones.
+		 */
+		private ColumnSliceIterator<String, DataPointsRowKey, String> m_continueSliceIterator;
 		private DataPointsRowKey m_nextKey;
 		private SetMultimap<String, String> m_filterTags;
 
@@ -697,36 +700,57 @@ public class CassandraDatastore implements Datastore
 					HFactory.createSliceQuery(m_keyspace, StringSerializer.get(),
 							new DataPointsRowKeySerializer(true), StringSerializer.get());
 
-			DataPointsRowKey startKey = new DataPointsRowKey(metricName,
-					calculateRowTime(startTime), "");
-
-			/*
-			Adding 1 to the end time ensures we get all the keys that have end time and
-			have tags in the key.
-			 */
-			DataPointsRowKey endKey = new DataPointsRowKey(metricName,
-					calculateRowTime(endTime) + 1, "");
-
-
 			sliceQuery.setColumnFamily(CF_ROW_KEY_INDEX)
 					.setKey(metricName);
 
-			m_sliceIterator =
-					new ColumnSliceIterator<String, DataPointsRowKey, String>(sliceQuery,
-							startKey, endKey, false, m_singleRowReadSize);
+			if ((startTime < 0) && (endTime >= 0))
+			{
+				m_sliceIterator = createSliceIterator(sliceQuery, metricName,
+						startTime, -1L);
+
+				SliceQuery<String, DataPointsRowKey, String> sliceQuery2 =
+						HFactory.createSliceQuery(m_keyspace, StringSerializer.get(),
+								new DataPointsRowKeySerializer(true), StringSerializer.get());
+
+				sliceQuery2.setColumnFamily(CF_ROW_KEY_INDEX)
+						.setKey(metricName);
+
+				m_continueSliceIterator = createSliceIterator(sliceQuery2, metricName,
+						0, endTime);
+			}
+			else
+			{
+				m_sliceIterator = createSliceIterator(sliceQuery, metricName,
+						startTime, endTime);
+			}
 
 		}
 
-
-		@Override
-		public boolean hasNext()
+		private ColumnSliceIterator<String, DataPointsRowKey, String> createSliceIterator(
+				SliceQuery<String, DataPointsRowKey, String> sliceQuery,
+				String metricName, long startTime, long endTime)
 		{
-			m_nextKey = null;
+			DataPointsRowKey startKey = new DataPointsRowKey(metricName,
+					calculateRowTime(startTime), "");
+
+			DataPointsRowKey endKey = new DataPointsRowKey(metricName,
+					calculateRowTime(endTime), "");
+			endKey.setEndSearchKey(true);
+
+			ColumnSliceIterator<String, DataPointsRowKey, String> iterator = new ColumnSliceIterator<String, DataPointsRowKey, String>(sliceQuery,
+					startKey, endKey, false, m_singleRowReadSize);
+
+			return (iterator);
+		}
+
+		private DataPointsRowKey nextKeyFromIterator(ColumnSliceIterator<String, DataPointsRowKey, String> iterator)
+		{
+			DataPointsRowKey next = null;
 
 			outer:
-			while (m_sliceIterator.hasNext())
+			while (iterator.hasNext())
 			{
-				DataPointsRowKey rowKey = m_sliceIterator.next().getName();
+				DataPointsRowKey rowKey = iterator.next().getName();
 
 				Map<String, String> keyTags = rowKey.getTags();
 				for (String tag : m_filterTags.keySet())
@@ -736,9 +760,20 @@ public class CassandraDatastore implements Datastore
 						continue outer; //Don't want this key
 				}
 
-				m_nextKey = rowKey;
+				next = rowKey;
 				break;
 			}
+
+			return (next);
+		}
+
+		@Override
+		public boolean hasNext()
+		{
+			m_nextKey = nextKeyFromIterator(m_sliceIterator);
+
+			if ((m_nextKey == null) && (m_continueSliceIterator != null))
+				m_nextKey = nextKeyFromIterator(m_continueSliceIterator);
 
 			return (m_nextKey != null);
 		}

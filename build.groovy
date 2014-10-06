@@ -185,7 +185,7 @@ if (saw.getProperty("jacoco", "false").equals("true"))
 	junit.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
 
 testSourcesAll = new RegExFileSet("src/test/java", ".*Test\\.java").recurse().getFilePaths()
-junitAll = new JUnitRule("junit-test-all").setDescription("Run unit tests including Cassandra and HBase tests")
+junitAll = new JUnitRule("junit-test-all").setDescription("Run unit tests including Cassandra tests")
 		.addSources(testSourcesAll)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)

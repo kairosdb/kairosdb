@@ -27,6 +27,8 @@ public class DataPointsRowKey
 	private final long m_timestamp;
 	private final String m_dataType;
 	private final SortedMap<String, String> m_tags;
+	private boolean m_endSearchKey; //Only used for end slice operations.  Serialization
+		//adds a 0xFF after the timestamp to make sure we get all data for that timestamp.
 
 	public DataPointsRowKey(String metricName, long timestamp, String dataType)
 	{
@@ -61,6 +63,16 @@ public class DataPointsRowKey
 	public long getTimestamp()
 	{
 		return m_timestamp;
+	}
+
+	public boolean isEndSearchKey()
+	{
+		return m_endSearchKey;
+	}
+
+	public void setEndSearchKey(boolean endSearchKey)
+	{
+		m_endSearchKey = endSearchKey;
 	}
 
 	/**

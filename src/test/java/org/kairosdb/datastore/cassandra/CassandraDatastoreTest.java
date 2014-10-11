@@ -277,7 +277,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public void test_deleteDataPoints_DeleteEntireRow() throws IOException, DatastoreException, InterruptedException
 	{
 		String metricToDelete = "MetricToDelete";
-		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
+		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, Long.MIN_VALUE, Long.MAX_VALUE);
 
 		CachedSearchResult res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
@@ -306,7 +306,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public void test_deleteDataPoints_DeleteColumnsSpanningRows() throws IOException, DatastoreException, InterruptedException
 	{
 		String metricToDelete = "OtherMetricToDelete";
-		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
+		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, Long.MIN_VALUE, Long.MAX_VALUE);
 
 		CachedSearchResult res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);

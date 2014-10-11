@@ -568,14 +568,9 @@ public class CassandraDatastore implements Datastore
 
 		long now = System.currentTimeMillis();
 
-		// Get number of columns in the row key
-		// We do this up front to avoid waiting for a sync of cassandra to see
-		// if they are all gone.
-		CountQuery<String, DataPointsRowKey> countQuery = HFactory.createCountQuery(m_keyspace, StringSerializer.get(), DATA_POINTS_ROW_KEY_SERIALIZER);
-		countQuery.setColumnFamily(CF_ROW_KEY_INDEX).
-				setKey(deleteQuery.getName()).
-				setRange(new DataPointsRowKey(deleteQuery.getName(), 0L, ""), new DataPointsRowKey(deleteQuery.getName(), Long.MAX_VALUE, ""), Integer.MAX_VALUE);
-		int rowKeyColumnCount = countQuery.execute().get();
+		boolean deleteAll = false;
+		if (deleteQuery.getStartTime() == Long.MIN_VALUE && deleteQuery.getEndTime() == Long.MAX_VALUE)
+			deleteAll = true;
 
 		Iterator<DataPointsRowKey> rowKeyIterator = getKeysForQueryIterator(deleteQuery);
 		List<DataPointsRowKey> partialRows = new ArrayList<DataPointsRowKey>();
@@ -589,7 +584,6 @@ public class CassandraDatastore implements Datastore
 				m_dataPointWriteBuffer.deleteRow(rowKey, now);  // delete the whole row
 				m_rowKeyWriteBuffer.deleteColumn(rowKey.getMetricName(), rowKey, now); // Delete the index
 				m_rowKeyCache.clear();
-				rowKeyColumnCount--;
 			}
 			else
 			{
@@ -600,7 +594,7 @@ public class CassandraDatastore implements Datastore
 		queryWithRowKeys(deleteQuery, new DeletingCallback(deleteQuery.getName()), partialRows.iterator());
 
 		// If index is gone, delete metric name from Strings column family
-		if (rowKeyColumnCount < 1)
+		if (deleteAll)
 		{
 			m_rowKeyWriteBuffer.deleteRow(deleteQuery.getName(), now);
 			m_stringIndexWriteBuffer.deleteColumn(ROW_KEY_METRIC_NAMES, deleteQuery.getName(), now);

@@ -513,7 +513,7 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		try
 		{
-			QueryMetric query = new QueryMetric(0L, Long.MAX_VALUE, 0, metricName);
+			QueryMetric query = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, metricName);
 			datastore.delete(query);
 
 

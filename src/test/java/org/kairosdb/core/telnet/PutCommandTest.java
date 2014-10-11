@@ -83,21 +83,9 @@ public class PutCommandTest
 	}
 
 	@Test
-	public void test_metricName_characters_invalid() throws DatastoreException, ValidationException
+	public void test_metricName_characters_valid() throws DatastoreException, ValidationException
 	{
-		try
-		{
-			command.execute(new FakeChannel(), new String[]{"telnet", "foo:bar", "12345678999", "789", "foo=bar", "fum=barfum"});
-			fail("ValidationException expected");
-		}
-		catch (DatastoreException e)
-		{
-			fail("ValidationException expected");
-		}
-		catch (ValidationException e)
-		{
-			assertThat(e.getMessage(), equalTo("metricName may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
-		}
+		command.execute(new FakeChannel(), new String[]{"telnet", "你好", "12345678999", "789", "foo=bar", "fum=barfum"});
 	}
 
 	@Test
@@ -132,7 +120,7 @@ public class PutCommandTest
 		}
 		catch (ValidationException e)
 		{
-			assertThat(e.getMessage(), equalTo("tag[1].name may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+			assertThat(e.getMessage(), equalTo("tag[1].name may contain any character except colon ':', and equals '='."));
 		}
 	}
 
@@ -168,7 +156,7 @@ public class PutCommandTest
 		}
 		catch (ValidationException e)
 		{
-			assertThat(e.getMessage(), equalTo("tag[1].value may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+			assertThat(e.getMessage(), equalTo("tag[1].value may contain any character except colon ':', and equals '='."));
 		}
 	}
 

@@ -198,9 +198,9 @@ public class JsonMetricParserTest
 	}
 
 	@Test
-	public void test_metricName_invalidCharacters() throws DatastoreException, IOException
+	public void test_metricName_validCharacters() throws DatastoreException, IOException
 	{
-		String json = "[{\"name\": \"bad:name\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[1,2]]}]";
+		String json = "[{\"name\": \"bad:你好name\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[1,2]]}]";
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
@@ -210,9 +210,7 @@ public class JsonMetricParserTest
 
 		ValidationErrors validationErrors = parser.parse();
 
-		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(),
-				equalTo("metric[0](name=bad:name) may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+		assertThat(validationErrors.size(), equalTo(0));
 	}
 
 	@Test
@@ -264,7 +262,7 @@ public class JsonMetricParserTest
 
 		assertThat(validationErrors.size(), equalTo(1));
 		assertThat(validationErrors.getFirstError(),
-				equalTo("metric[0](name=metricName).tag[bad:name] may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+				equalTo("metric[0](name=metricName).tag[bad:name] may contain any character except colon ':', and equals '='."));
 	}
 
 	@Test
@@ -299,7 +297,7 @@ public class JsonMetricParserTest
 
 		assertThat(validationErrors.size(), equalTo(1));
 		assertThat(validationErrors.getFirstError(),
-				equalTo("metric[0](name=metricName).tag[foo].value may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+				equalTo("metric[0](name=metricName).tag[foo].value may contain any character except colon ':', and equals '='."));
 	}
 
 	@Test

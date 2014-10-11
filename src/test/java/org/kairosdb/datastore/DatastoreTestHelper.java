@@ -47,6 +47,8 @@ public abstract class DatastoreTestHelper
 	protected static KairosDatastore s_datastore;
 	protected static final List<String> metricNames = new ArrayList<String>();
 	private static long s_startTime;
+	private static String s_unicodeNameWithSpace = "你好 means hello";
+	private static String s_unicodeName = "你好";
 
 	private static List<String> listFromIterable(Iterable<String> iterable)
 	{
@@ -155,6 +157,16 @@ public abstract class DatastoreTestHelper
 		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(-100L, 20));
 		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(0L, 3));
 		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(2000000000L, 33));
+
+
+		//Adding a metric with unicode and spaces
+		metricNames.add(s_unicodeNameWithSpace);
+		metricName = s_unicodeNameWithSpace;
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("host", s_unicodeName)
+				.put("space", "space is cool").build();
+
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 42));
 	}
 
 	@Test
@@ -632,6 +644,43 @@ public abstract class DatastoreTestHelper
 			assertThat(resTags, is(expectedTags));
 
 			assertValues(dpg, 80, 40, 20);
+		}
+		finally
+		{
+			dq.close();
+		}
+	}
+
+	@Test
+	public void test_queryWithUnicode() throws DatastoreException
+	{
+		SetMultimap<String, String> tags = HashMultimap.create();
+		QueryMetric query = new QueryMetric(s_startTime, 0, s_unicodeNameWithSpace);
+		query.setEndTime(s_startTime + 3000);
+
+		tags.put("host", s_unicodeName);
+		query.setTags(tags);
+
+		DatastoreQuery dq = s_datastore.createQuery(query);
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
+
+			assertThat(results.size(), equalTo(1));
+
+			DataPointGroup dpg = results.get(0);
+
+			assertThat(dpg.getName(), is(s_unicodeNameWithSpace));
+			SetMultimap<String, String> resTags = extractTags(dpg);
+
+			assertThat(resTags.size(), is(2));
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", s_unicodeName);
+			expectedTags.put("space", "space is cool");
+
+			assertThat(resTags, is(expectedTags));
+
+			assertValues(dpg, 42);
 		}
 		finally
 		{

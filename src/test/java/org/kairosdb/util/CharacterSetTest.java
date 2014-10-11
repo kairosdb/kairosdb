@@ -26,31 +26,37 @@ public class CharacterSetTest
 	@Test
 	public void test_isValid_valid()
 	{
-		assertTrue(CharacterSet.isValid("ABC-123_xyz/456.789"));
+		assertTrue(CharacterSet.isValidTagNameValue("ABC-123_xyz/456.789"));
 	}
 
 	@Test
 	public void test_isValid_colon_invalid()
 	{
-		assertFalse(CharacterSet.isValid("abc:123"));
+		assertFalse(CharacterSet.isValidTagNameValue("abc:123"));
 	}
 
 	@Test
-	public void test_isValid_backslash_invalid()
+	public void test_isValid_equal_invalid()
 	{
-		assertFalse(CharacterSet.isValid("abc\\123"));
+		assertFalse(CharacterSet.isValidTagNameValue("abc=123"));
 	}
 
 	@Test
-	public void test_isValid_space_invalid()
+	public void test_isValid_backslash_valid()
 	{
-		assertFalse(CharacterSet.isValid("abc 123"));
+		assertTrue(CharacterSet.isValidTagNameValue("abc\\123"));
 	}
 
 	@Test
-	public void test_isValid_tab_invalid()
+	public void test_isValid_space_valid()
 	{
-		assertFalse(CharacterSet.isValid("abc   123"));
+		assertTrue(CharacterSet.isValidTagNameValue("abc 123"));
+	}
+
+	@Test
+	public void test_isValid_tab_valid()
+	{
+		assertTrue(CharacterSet.isValidTagNameValue("abc   123"));
 	}
 
 }

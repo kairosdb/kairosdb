@@ -63,7 +63,7 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 	public void execute(Channel chan, String[] command) throws DatastoreException, ValidationException
 	{
 		Validator.validateNotNullOrEmpty("metricName", command[1]);
-		Validator.validateCharacterSet("metricName", command[1]);
+		//Validator.validateCharacterSet("metricName", command[1]);
 
 		String metricName = command[1];
 

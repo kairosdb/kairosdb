@@ -283,7 +283,7 @@ public class JsonMetricParser
 			if (Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("name"), metric.getName()))
 			{
 				context.setName(metric.getName());
-				Validator.isValidateCharacterSet(validationErrors, context, metric.getName());
+				//Validator.isValidateCharacterSet(validationErrors, context, metric.getName());
 			}
 
 			if (metric.getTimestamp() > 0)

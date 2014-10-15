@@ -404,8 +404,13 @@ public class CassandraDatastore implements Datastore
 		}
 	}
 
+    @Override
+    public void putDataPoints(String metricName, ImmutableSortedMap<String, String> tags, List<DataPoint> dataPoints) throws DatastoreException {
 
-	@Override
+    }
+
+
+    @Override
 	public Iterable<String> getMetricNames()
 	{
 		SliceQuery<String, String, String> sliceQuery =

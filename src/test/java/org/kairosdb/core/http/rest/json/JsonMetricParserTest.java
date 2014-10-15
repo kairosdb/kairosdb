@@ -591,6 +591,11 @@ public class JsonMetricParserTest
 			lastDataPointSet.addDataPoint(dataPoint);
 		}
 
+        @Override
+        public void putDataPoints(String metricName, ImmutableSortedMap<String, String> tags, List<DataPoint> dataPoints) throws DatastoreException {
+
+        }
+
 		/*@Override
 		public void putDataPoints(DataPointSet dps) throws DatastoreException
 		{

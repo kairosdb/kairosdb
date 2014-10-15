@@ -27,10 +27,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.io.DataInput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  Created with IntelliJ IDEA.
@@ -111,7 +108,56 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 		return (dp);
 	}
 
-	/**
+    @Override
+    public List<DataPoint> createDataPoints(Map<Long, Map<JsonElement, String>> dataPointsMap) throws IOException {
+        DataPointFactory factoryLong = m_factoryMapRegistered.get("long");
+        DataPointFactory factoryDouble = m_factoryMapRegistered.get("double");
+        DataPointFactory factoryComplex = m_factoryMapRegistered.get("complex");
+        DataPointFactory factoryString = m_factoryMapRegistered.get("string");
+        List<DataPoint> dataPoints = new ArrayList<DataPoint>();
+
+        for (Long timestamp : dataPointsMap.keySet()) {
+            Map<JsonElement, String> map = dataPointsMap.get(timestamp);
+            for (JsonElement element : map.keySet()) {
+                String s = map.get(element);
+                if (s.equals("long")) {
+                    dataPoints.add(factoryLong.getDataPoint(timestamp, element));
+                }
+            }
+        }
+
+        for (Long timestamp : dataPointsMap.keySet()) {
+            Map<JsonElement, String> map = dataPointsMap.get(timestamp);
+            for (JsonElement element : map.keySet()) {
+                if (map.get(element).equals("double")) {
+                    dataPoints.add(factoryDouble.getDataPoint(timestamp, element));
+                }
+            }
+        }
+
+        for (Long timestamp : dataPointsMap.keySet()) {
+            Map<JsonElement, String> map = dataPointsMap.get(timestamp);
+            for (JsonElement element : map.keySet()) {
+                if (map.get(element).equals("complex")) {
+                    dataPoints.add(factoryComplex.getDataPoint(timestamp, element));
+                }
+            }
+        }
+
+        for (Long timestamp : dataPointsMap.keySet()) {
+            Map<JsonElement, String> map = dataPointsMap.get(timestamp);
+            for (JsonElement element : map.keySet()) {
+                if (map.get(element).equals("string")) {
+                    dataPoints.add(factoryString.getDataPoint(timestamp, element));
+                }
+            }
+        }
+
+        return dataPoints;
+    }
+
+
+    /**
 	 Creates a DataPoint using the data store type.
 	 @param dataStoreType Internal data store type.
 	 @param timestamp

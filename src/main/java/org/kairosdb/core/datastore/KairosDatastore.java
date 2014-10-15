@@ -23,13 +23,13 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.LimitAggregator;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.datastore.h2.H2Datastore;
 import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,6 +81,10 @@ public class KairosDatastore
 
 		setupCacheDirectory();
 	}
+
+    public boolean h2DatabaseUsed() {
+        return m_datastore.getClass() == H2Datastore.class;
+    }
 
 	@Inject(optional = true)
 	public void setBaseCacheDir(@Named(QUERY_CACHE_DIR) String cacheTempDir)
@@ -175,6 +179,18 @@ public class KairosDatastore
 			dataPointListener.dataPoint(metricName, tags, dataPoint);
 		}
 	}
+
+    public void putDataPoints(String metricName, ImmutableSortedMap<String, String> tags, List<DataPoint> dataPoints) throws DatastoreException
+    {
+        //Add to datastore first.
+        m_datastore.putDataPoints(metricName, tags, dataPoints);
+
+        for (DataPoint dataPoint : dataPoints) {
+            for (DataPointListener dataPointListener : m_dataPointListeners) {
+                dataPointListener.dataPoint(metricName, tags, dataPoint);
+            }
+        }
+    }
 
 
 	public Iterable<String> getMetricNames() throws DatastoreException

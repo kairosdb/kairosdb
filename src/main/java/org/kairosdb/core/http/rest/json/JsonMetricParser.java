@@ -31,9 +31,7 @@ import org.kairosdb.util.Validator;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -48,6 +46,7 @@ public class JsonMetricParser
 	private final Reader inputStream;
 	private final Gson gson;
 	private final KairosDataPointFactory dataPointFactory;
+    private final ValidationErrors validationErrors = new ValidationErrors();
 
 	public int getDataPointCount()
 	{
@@ -71,10 +70,13 @@ public class JsonMetricParser
 		this.dataPointFactory = dataPointFactory;
 	}
 
+    public ValidationErrors parseWhenH2IsUsed() throws IOException, DatastoreException
+    {
+        return null;
+    }
 	public ValidationErrors parse() throws IOException, DatastoreException
 	{
 		long start = System.currentTimeMillis();
-		ValidationErrors validationErrors = new ValidationErrors();
 
 		JsonReader reader = new JsonReader(inputStream);
 
@@ -91,7 +93,12 @@ public class JsonMetricParser
 					while (reader.hasNext())
 					{
 						NewMetric metric = parseMetric(reader);
-						validateAndAddDataPoints(metric, validationErrors, metricCount);
+						if (validate(metric, metricCount)) {
+                            if (datastore.h2DatabaseUsed()) {
+                                addDataPointsInBulk(metric, metricCount);
+                            }
+                            addDataPoints(metric, metricCount);
+                        }
 						metricCount++;
 					}
 				}
@@ -105,7 +112,12 @@ public class JsonMetricParser
 			else if (reader.peek().equals(JsonToken.BEGIN_OBJECT))
 			{
 				NewMetric metric = parseMetric(reader);
-				validateAndAddDataPoints(metric, validationErrors, 0);
+                if (validate(metric, 0)) {
+                    if (datastore.h2DatabaseUsed()) {
+                        addDataPointsInBulk(metric, 0);
+                    }
+                    addDataPoints(metric, 0);
+                }
 			}
 			else
 				validationErrors.addErrorMessage("Invalid start of json.");
@@ -258,122 +270,182 @@ public class JsonMetricParser
 			return "double";
 	}
 
-	private boolean validateAndAddDataPoints(NewMetric metric, ValidationErrors errors, int count) throws DatastoreException, IOException
-	{
-		ValidationErrors validationErrors = new ValidationErrors();
+	private boolean validate(NewMetric metric, int count) throws DatastoreException, IOException {
 
-		Context context = new Context(count);
-		if (metric.validate())
-		{
-			if (Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("name"), metric.getName()))
-			{
-				context.setName(metric.getName());
-				Validator.isValidateCharacterSet(validationErrors, context, metric.getName());
-			}
+        Context context = new Context(count);
+        if (metric.validate()) {
+            if (Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("name"), metric.getName())) {
+                context.setName(metric.getName());
+                Validator.isValidateCharacterSet(validationErrors, context, metric.getName());
+            }
 
-			if (metric.getTimestamp() > 0)
-				Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("value"), metric.getValue());
-			else if (metric.getValue() != null && !metric.getValue().isJsonNull())
-				Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp(), 1);
+            if (metric.getTimestamp() > 0)
+                Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("value"), metric.getValue());
+            else if (metric.getValue() != null && !metric.getValue().isJsonNull())
+                Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp(), 1);
 
 
-			if (Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("tags count"), metric.getTags().size(), 1))
-			{
-				int tagCount = 0;
-				SubContext tagContext = new SubContext(context.setAttribute(null), "tag");
+            if (Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("tags count"), metric.getTags().size(), 1)) {
+                int tagCount = 0;
+                SubContext tagContext = new SubContext(context.setAttribute(null), "tag");
 
-				for (Map.Entry<String, String> entry : metric.getTags().entrySet())
-				{
-					tagContext.setCount(tagCount);
-					if (Validator.isNotNullOrEmpty(validationErrors, tagContext.setAttribute("name"), entry.getKey()))
-					{
-						tagContext.setName(entry.getKey());
-						Validator.isValidateCharacterSet(validationErrors, tagContext, entry.getKey());
-					}
-					if (Validator.isNotNullOrEmpty(validationErrors, tagContext.setAttribute("value"), entry.getValue()))
-						Validator.isValidateCharacterSet(validationErrors, tagContext, entry.getValue());
+                for (Map.Entry<String, String> entry : metric.getTags().entrySet()) {
+                    tagContext.setCount(tagCount);
+                    if (Validator.isNotNullOrEmpty(validationErrors, tagContext.setAttribute("name"), entry.getKey())) {
+                        tagContext.setName(entry.getKey());
+                        Validator.isValidateCharacterSet(validationErrors, tagContext, entry.getKey());
+                    }
+                    if (Validator.isNotNullOrEmpty(validationErrors, tagContext.setAttribute("value"), entry.getValue()))
+                        Validator.isValidateCharacterSet(validationErrors, tagContext, entry.getValue());
 
-					tagCount++;
-				}
-			}
-		}
+                    tagCount++;
+                }
+            }
+        }
+
+        if (metric.getTimestamp() > 0 && metric.getValue() != null) {
+            String type = metric.getType();
+            if (type == null)
+                type = findType(metric.getValue());
+
+            if (!dataPointFactory.isRegisteredType(type)) {
+                validationErrors.addErrorMessage("Unregistered data point type '" + type + "'");
+            }
+
+        }
+        SubContext dataPointContext = new SubContext(context, "datapoints");
+        for (JsonElement[] dataPoint : metric.getDatapoints()) {
+             if (dataPoint.length < 1) {
+                validationErrors.addErrorMessage(dataPointContext.setAttribute("timestamp") + " cannot be null or empty.");
+
+            } else if (dataPoint.length < 2) {
+                validationErrors.addErrorMessage(dataPointContext.setAttribute("value") + " cannot be null or empty.");
+
+            }
+            if (dataPoint.length < 1) {
+                validationErrors.addErrorMessage(dataPointContext.setAttribute("timestamp") + " cannot be null or empty.");
+
+            } if (dataPoint.length < 2) {
+                validationErrors.addErrorMessage(dataPointContext.setAttribute("value") + " cannot be null or empty.");
+                }
+        }
+
+        return !validationErrors.hasErrors();
+    }
+    private void addDataPoints(NewMetric metric, int count) throws DatastoreException, IOException
+    {
+        {
+            //DataPointSet dataPointSet = new DataPointSet(metric.getName(), metric.getTags(), Collections.<DataPoint>emptyList());
+            ImmutableSortedMap<String, String> tags = ImmutableSortedMap.copyOf(metric.getTags());
+            Context context = new Context(count);
+
+            if (metric.getTimestamp() > 0 && metric.getValue() != null) {
+                String type = metric.getType();
+                if (type == null)
+                    type = findType(metric.getValue());
+                    datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
+                            type, metric.getTimestamp(), metric.getValue()));
+            }
+
+            if (metric.getDatapoints() != null && metric.getDatapoints().length > 0) {
+                int contextCount = 0;
+                SubContext dataPointContext = new SubContext(context, "datapoints");
+                for (JsonElement[] dataPoint : metric.getDatapoints()) {
+                    dataPointContext.setCount(contextCount);
+
+                        long timestamp = 0L;
+                        if (!dataPoint[0].isJsonNull())
+                            timestamp = dataPoint[0].getAsLong();
+
+                        if (metric.validate() && !Validator.isGreaterThanOrEqualTo(validationErrors, dataPointContext.setAttribute("value") + " cannot be null or empty,", timestamp, 1))
+                            continue;
+
+                        String type = metric.getType();
+                        if (dataPoint.length > 2)
+                            type = dataPoint[2].getAsString();
+
+                        if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
+                            continue;
+
+                        if (type == null)
+                            type = findType(dataPoint[1]);
+
+                        if (!dataPointFactory.isRegisteredType(type)) {
+                            validationErrors.addErrorMessage("Unregistered data point type '" + type + "'");
+                            continue;
+                        }
+
+                        datastore.putDataPoint(metric.getName(), tags,
+                                dataPointFactory.createDataPoint(type, timestamp, dataPoint[1]));
+                        dataPointCount++;
+
+                    contextCount++;
+                }
+            }
+        }
 
 
-		if (!validationErrors.hasErrors())
-		{
-			//DataPointSet dataPointSet = new DataPointSet(metric.getName(), metric.getTags(), Collections.<DataPoint>emptyList());
-			ImmutableSortedMap<String, String> tags = ImmutableSortedMap.copyOf(metric.getTags());
-
-			if (metric.getTimestamp() > 0 && metric.getValue() != null)
-			{
-				String type = metric.getType();
-				if (type == null)
-					type = findType(metric.getValue());
-
-				if (dataPointFactory.isRegisteredType(type))
-				{
-					datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
-							type, metric.getTimestamp(), metric.getValue()));
-				}
-				else
-					validationErrors.addErrorMessage("Unregistered data point type '"+type+"'");
-			}
-
-			if (metric.getDatapoints() != null && metric.getDatapoints().length > 0)
-			{
-				int contextCount = 0;
-				SubContext dataPointContext = new SubContext(context, "datapoints");
-				for (JsonElement[] dataPoint : metric.getDatapoints())
-				{
-					dataPointContext.setCount(contextCount);
-					if (dataPoint.length < 1)
-					{
-						validationErrors.addErrorMessage(dataPointContext.setAttribute("timestamp") +" cannot be null or empty.");
-						continue;
-					}
-					else if (dataPoint.length < 2)
-					{
-						validationErrors.addErrorMessage(dataPointContext.setAttribute("value") + " cannot be null or empty.");
-						continue;
-					}
-					else
-					{
-						long timestamp = 0L;
-						if (!dataPoint[0].isJsonNull())
-							timestamp = dataPoint[0].getAsLong();
-
-						if (metric.validate() && !Validator.isGreaterThanOrEqualTo(validationErrors, dataPointContext.setAttribute("value") + " cannot be null or empty,", timestamp, 1))
-							continue;
-
-						String type = metric.getType();
-						if (dataPoint.length > 2)
-							type = dataPoint[2].getAsString();
-
-						if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
-							continue;
-
-						if (type == null)
-							type = findType(dataPoint[1]);
-
-						if (!dataPointFactory.isRegisteredType(type))
-						{
-							validationErrors.addErrorMessage("Unregistered data point type '"+type+"'");
-							continue;
-						}
-
-						datastore.putDataPoint(metric.getName(), tags,
-								dataPointFactory.createDataPoint(type, timestamp, dataPoint[1]));
-						dataPointCount ++;
-					}
-					contextCount++;
-				}
-			}
-		}
-
-		errors.add(validationErrors);
-
-		return !validationErrors.hasErrors();
 	}
+
+    private void addDataPointsInBulk(NewMetric metric, int count) throws DatastoreException, IOException
+    {
+        {
+            //DataPointSet dataPointSet = new DataPointSet(metric.getName(), metric.getTags(), Collections.<DataPoint>emptyList());
+            ImmutableSortedMap<String, String> tags = ImmutableSortedMap.copyOf(metric.getTags());
+            Context context = new Context(count);
+
+            if (metric.getTimestamp() > 0 && metric.getValue() != null) {
+                String type = metric.getType();
+                if (type == null)
+                    type = findType(metric.getValue());
+                datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
+                        type, metric.getTimestamp(), metric.getValue()));
+            }
+
+            if (metric.getDatapoints() != null && metric.getDatapoints().length > 0) {
+                int contextCount = 0;
+                String type = null;
+                long timestamp = 0L;
+                SubContext dataPointContext = new SubContext(context, "datapoints");
+                Map<Long, Map<JsonElement, String>> dataPoints = new HashMap<Long, Map<JsonElement, String>>();
+                for (JsonElement[] dataPoint : metric.getDatapoints()) {
+                    dataPointContext.setCount(contextCount);
+
+                    timestamp = 0L;
+                    if (!dataPoint[0].isJsonNull())
+                        timestamp = dataPoint[0].getAsLong();
+
+                    if (metric.validate() && !Validator.isGreaterThanOrEqualTo(validationErrors, dataPointContext.setAttribute("value") + " cannot be null or empty,", timestamp, 1))
+                        continue;
+
+                    type = metric.getType();
+                    if (dataPoint.length > 2)
+                        type = dataPoint[2].getAsString();
+
+                    if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
+                        continue;
+
+                    if (type == null)
+                        type = findType(dataPoint[1]);
+
+                    if (!dataPointFactory.isRegisteredType(type)) {
+                        validationErrors.addErrorMessage("Unregistered data point type '" + type + "'");
+                        continue;
+                    }
+                    Map<JsonElement, String> jsonTypeMap = new HashMap<JsonElement, String>();
+                    jsonTypeMap.put(dataPoint[1], type);
+                    dataPoints.put(timestamp, jsonTypeMap);
+
+                    contextCount++;
+                }
+                datastore.putDataPoints(metric.getName(), tags,
+                        dataPointFactory.createDataPoints(dataPoints));
+                dataPointCount++;
+            }
+        }
+
+
+    }
 
 	@SuppressWarnings({"MismatchedReadAndWriteOfArray", "UnusedDeclaration"})
 	private class NewMetric

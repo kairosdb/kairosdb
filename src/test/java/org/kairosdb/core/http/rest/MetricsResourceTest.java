@@ -326,7 +326,12 @@ public class MetricsResourceTest
 		{
 		}
 
-		@Override
+        @Override
+        public void putDataPoints(String metricName, ImmutableSortedMap<String, String> tags, List<DataPoint> dataPoints) throws DatastoreException {
+
+        }
+
+        @Override
 		public Iterable<String> getMetricNames()
 		{
 			return Arrays.asList("cpu", "memory", "disk", "network");

@@ -613,6 +613,12 @@ public class CassandraDatastore implements Datastore
 		}
 	}
 
+
+    @Override
+    public void closeGenOrmConnection() {
+        // Empty - implementation needed for H2 only
+    }
+
 	private SortedMap<String, String> getTags(DataPointRow row)
 	{
 		TreeMap<String, String> map = new TreeMap<String, String>();

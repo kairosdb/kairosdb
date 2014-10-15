@@ -23,7 +23,6 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.LimitAggregator;
@@ -176,6 +175,9 @@ public class KairosDatastore
 		}
 	}
 
+    public void closeGenOrmConnection() {
+        m_datastore.closeGenOrmConnection();
+    }
 
 	public Iterable<String> getMetricNames() throws DatastoreException
 	{

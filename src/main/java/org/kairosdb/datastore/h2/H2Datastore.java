@@ -21,21 +21,19 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.agileclick.genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
-import org.kairosdb.core.*;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.h2.orm.*;
-import org.kairosdb.datastore.h2.orm.DataPoint;
 import org.kairosdb.util.KDataInput;
 import org.kairosdb.util.KDataOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.*;
-import java.nio.ByteBuffer;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -156,12 +154,16 @@ public class H2Datastore implements Datastore
 		{
 			throw new DatastoreException(e);
 		}
-		finally
-		{
-			GenOrmDataSource.close();
-		}
+//		finally
+//		{
+//			GenOrmDataSource.close();
+//		}
 	}
 
+    @Override
+    public void closeGenOrmConnection() {
+        GenOrmDataSource.close();
+    }
 
 	@Override
 	public Iterable<String> getMetricNames()

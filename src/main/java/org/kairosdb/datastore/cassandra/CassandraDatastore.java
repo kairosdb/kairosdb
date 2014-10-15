@@ -107,15 +107,10 @@ public class CassandraDatastore implements Datastore
 
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
+	
+	private final ConsistencyLevel m_dataWriteLevel;
 
-	@Inject
-	@Named(WRITE_CONSISTENCY_LEVEL)
-	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.QUORUM;
-
-	@Inject
-	@Named(READ_CONSISTENCY_LEVEL)
-	private ConsitencyLevel m_dataReadLevel = ConsitencyLevel.ONE;
-
+	private final ConsistencyLevel m_dataReadLevel;
 	
 	@Inject(optional=true)
 	@Named(DATAPOINT_TTL)
@@ -144,9 +139,11 @@ public class CassandraDatastore implements Datastore
 	                          @Named(WRITE_DELAY_PROPERTY) int writeDelay,
 	                          @Named(WRITE_BUFFER_SIZE) int maxWriteSize,
 	                          final @Named("HOSTNAME") String hostname,
-                             @Named(KEYSPACE_PROPERTY) String keyspaceName,
+                              @Named(KEYSPACE_PROPERTY) String keyspaceName,
+                              @Named(WRITE_CONSISTENCY_LEVEL) ConsistencyLevel dataWriteLevel,
+                              @Named(READ_CONSISTENCY_LEVEL) ConsistencyLevel dataReadLevel,
 	                          HectorConfiguration configuration,
-                             KairosDataPointFactory kairosDataPointFactory) throws DatastoreException
+                              KairosDataPointFactory kairosDataPointFactory) throws DatastoreException
 	{
 		try
 		{
@@ -155,6 +152,9 @@ public class CassandraDatastore implements Datastore
 			m_multiRowReadSize = multiRowReadSize;
 			m_kairosDataPointFactory = kairosDataPointFactory;
 			m_keyspaceName = keyspaceName;
+
+			m_dataWriteLevel = dataWriteLevel;
+			m_dataReadLevel = dataReadLevel;
 
 			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
 

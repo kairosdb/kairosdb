@@ -440,12 +440,13 @@ def doGenorm(Rule rule)
 //------------------------------------------------------------------------------
 //Build Integration tests
 integrationClassPath = new Classpath(jp.getLibraryJars())
-		.addPaths(new RegExFileSet("lib/ivy/integration", ".*\\.jar").getFullFilePaths())
+		//.addPaths(new RegExFileSet("lib/ivy/integration", ".*\\.jar").getFullFilePaths())
 		.addPath("src/integration-test/resources")
 
 integrationBuildRule = new JavaCRule("build/integration")
 		.addSourceDir("src/integration-test/java")
 		.addClasspath(integrationClassPath)
+		.addDepend(ivy.getResolveRule("integration"))
 
 new SimpleRule("integration")
 		.setMakeAction("doIntegration")

@@ -66,6 +66,7 @@ public class CassandraModule extends AbstractModule
 		bind(IncreaseMaxBufferSizesJob.class).in(Scopes.SINGLETON);
 		bind(CleanRowKeyCache.class).in(Scopes.SINGLETON);
 		bind(HectorConfiguration.class).in(Scopes.SINGLETON);
+		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);
 
 		bind(new TypeLiteral<Map<String, String>>(){}).annotatedWith(Names.named(CASSANDRA_AUTH_MAP))
 				.toInstance(m_authMap);

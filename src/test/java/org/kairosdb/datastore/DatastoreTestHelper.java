@@ -293,9 +293,6 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		boolean test1 = false;
-		boolean test2 = false;
-
 		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
@@ -303,39 +300,31 @@ public abstract class DatastoreTestHelper
 
 			assertThat(results.size(), is(2));
 
-			for (int I = 0; I < 2; I++)
-			{
-				DataPointGroup dpg = results.get(I);
-				assertThat(dpg.getName(), is("metric1"));
-				SetMultimap<String, String> resTags = extractTags(dpg);
+			DataPointGroup dpg = results.get(0);
+			assertThat(dpg.getName(), is("metric1"));
+			SetMultimap<String, String> resTags = extractTags(dpg);
+
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
+			expectedTags.put("client", "foo");
+			expectedTags.put("client", "bar");
+			expectedTags.put("month", "April");
+
+			assertThat(resTags, equalTo(expectedTags));
+			assertValues(dpg, 1, 9, 2, 10, 3, 11, 4, 12);
 
 
-				SetMultimap<String, String> expectedTags = TreeMultimap.create();
-				expectedTags.put("host", "A");
-				expectedTags.put("client", "foo");
-				expectedTags.put("client", "bar");
-				expectedTags.put("month", "April");
-				if (resTags.equals(expectedTags))
-				{
-					assertValues(dpg, 1, 9, 2, 10, 3, 11, 4, 12);
-					test1 = true;
-				}
+			dpg = results.get(1);
+			assertThat(dpg.getName(), is("metric1"));
+			resTags = extractTags(dpg);
 
-				expectedTags = TreeMultimap.create();
-				expectedTags = TreeMultimap.create();
-				expectedTags.put("host", "B");
-				expectedTags.put("client", "foo");
-				expectedTags.put("month", "April");
+			expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "B");
+			expectedTags.put("client", "foo");
+			expectedTags.put("month", "April");
 
-				if (resTags.equals(expectedTags))
-				{
-					assertValues(dpg, 5, 6, 7, 8);
-					test2 = true;
-				}
-			}
-
-			assertTrue(test1);
-			assertTrue(test2);
+			assertThat(resTags, equalTo(expectedTags));
+			assertValues(dpg, 5, 6, 7, 8);
 		}
 		finally
 		{
@@ -360,55 +349,50 @@ public abstract class DatastoreTestHelper
 
 			assertThat(results.size(), is(3));
 
-			boolean test1 = false;
-			boolean test2 = false;
-			boolean test3 = false;
+			DataPointGroup dpg = results.get(0);
+			assertThat(dpg.getName(), is("metric1"));
 
-			for (int I = 0; I < 3; I++)
-			{
-				DataPointGroup dpg = results.get(I);
-				assertThat(dpg.getName(), is("metric1"));
+			SetMultimap<String, String> resTags = extractTags(dpg);
+			assertThat(resTags.keySet().size(), is(3));
 
-				SetMultimap<String, String> resTags = extractTags(dpg);
-				assertThat(resTags.keySet().size(), is(3));
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
+			expectedTags.put("client", "bar");
+			expectedTags.put("month", "April");
 
-				SetMultimap<String, String> expectedTags = TreeMultimap.create();
-				expectedTags.put("host", "A");
-				expectedTags.put("client", "foo");
-				expectedTags.put("month", "April");
+			assertThat(resTags, equalTo(expectedTags));
+			assertValues(dpg, 9, 10, 11, 12);
 
-				if (resTags.equals(expectedTags))
-				{
-					assertValues(dpg, 1, 2, 3, 4);
-					test1 = true;
-				}
 
-				expectedTags = TreeMultimap.create();
-				expectedTags.put("host", "A");
-				expectedTags.put("client", "bar");
-				expectedTags.put("month", "April");
+			dpg = results.get(1);
+			assertThat(dpg.getName(), is("metric1"));
 
-				if (resTags.equals(expectedTags))
-				{
-					assertValues(dpg, 9, 10, 11, 12);
-					test2 = true;
-				}
+			resTags = extractTags(dpg);
+			assertThat(resTags.keySet().size(), is(3));
 
-				expectedTags = TreeMultimap.create();
-				expectedTags.put("host", "B");
-				expectedTags.put("client", "foo");
-				expectedTags.put("month", "April");
+			expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
+			expectedTags.put("client", "foo");
+			expectedTags.put("month", "April");
 
-				if (resTags.equals(expectedTags))
-				{
-					assertValues(dpg, 5, 6, 7, 8);
-					test3 = true;
-				}
-			}
+			assertThat(resTags, equalTo(expectedTags));
+			assertValues(dpg, 1, 2, 3, 4);
 
-			assertTrue(test1);
-			assertTrue(test2);
-			assertTrue(test3);
+
+			dpg = results.get(2);
+			assertThat(dpg.getName(), is("metric1"));
+
+			resTags = extractTags(dpg);
+			assertThat(resTags.keySet().size(), is(3));
+
+			expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "B");
+			expectedTags.put("client", "foo");
+			expectedTags.put("month", "April");
+
+			assertThat(resTags, equalTo(expectedTags));
+			assertValues(dpg, 5, 6, 7, 8);
+
 		}
 		finally
 		{

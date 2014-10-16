@@ -25,7 +25,7 @@ import me.prettyprint.hector.api.HConsistencyLevel;
  Time: 8:42 AM
  To change this template use File | Settings | File Templates.
  */
-public enum ConsitencyLevel
+public enum ConsistencyLevel
 {
 	ANY (HConsistencyLevel.ANY),
 	ONE (HConsistencyLevel.ONE),
@@ -38,7 +38,7 @@ public enum ConsitencyLevel
 
 	private final HConsistencyLevel m_level;
 
-	ConsitencyLevel(HConsistencyLevel level)
+	ConsistencyLevel(HConsistencyLevel level)
 	{
 		m_level = level;
 	}

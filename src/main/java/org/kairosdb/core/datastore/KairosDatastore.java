@@ -289,6 +289,7 @@ public class KairosDatastore
 		{
 			ListMultimap<String, DataPointGroup> typeGroups = ArrayListMultimap.create();
 
+			//Go through each row grouping them by type
 			for (DataPointRow row : rows)
 			{
 				String groupType = m_dataPointFactory.getGroupType(row.getDatastoreType());
@@ -297,7 +298,11 @@ public class KairosDatastore
 				mm.checkMemoryAndThrowException();
 			}
 
-			for (String type : typeGroups.keySet())
+			//Sort the types for predictable results
+			TreeSet<String> sortedTypes = new TreeSet<String>(typeGroups.keySet());
+
+			//Now go through each type group and group by tag if needed.
+			for (String type : sortedTypes)
 			{
 				if (tagGroupBy != null)
 				{
@@ -315,7 +320,10 @@ public class KairosDatastore
 						mm.checkMemoryAndThrowException();
 					}
 
-					for (String key : groups.keySet())
+					//Sort groups by tags
+					TreeSet<String> sortedGroups = new TreeSet<String>(groups.keySet());
+
+					for (String key : sortedGroups)
 					{
 						SortingDataPointGroup sdpGroup = new SortingDataPointGroup(groups.get(key), groupByResults.get(key), order);
 						sdpGroup.addGroupByResult(new TypeGroupByResult(type));
@@ -347,6 +355,14 @@ public class KairosDatastore
 		return builder.toString();
 	}
 
+	/**
+	 Tags are inserted in the order specified in tagNames which is the order
+	 from the query.  We use a linked hashmap so that order is preserved and
+	 the group by responses are sorted in the order specified in the query.
+	 @param datapointGroup
+	 @param tagNames
+	 @return
+	 */
 	private static LinkedHashMap<String, String> getMatchingTags(DataPointGroup datapointGroup, List<String> tagNames)
 	{
 		LinkedHashMap<String, String> matchingTags = new LinkedHashMap<String, String>();
@@ -458,12 +474,6 @@ public class KairosDatastore
 			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
 					returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
 
-			/*if (m_metric.getGroupBys() != null)
-			{
-				// It is more efficient to group by tags using the cached results because we have pointers to each tag.
-				queryResults = groupByTags(m_metric.getName(),
-						queryResults, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
-			}*/
 
 			// Now group for all other types of group bys.
 			Grouper grouper = new Grouper(m_dataPointFactory);

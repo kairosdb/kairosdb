@@ -260,6 +260,10 @@ public class KairosDatastoreTest
 		TestKairosDatastore datastore = new TestKairosDatastore(new TestDatastore(), new QueryQueuingManager(1, "hostname"),
 				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
 
+		/*
+		The order of the returned data must be stored first by tag1 and
+		then by tag 2 as specified in the caller group by.
+		 */
 		TagGroupBy groupBy = new TagGroupBy("tag1", "tag2");
 		List<DataPointRow> rows = new ArrayList<DataPointRow>();
 
@@ -286,14 +290,15 @@ public class KairosDatastoreTest
 
 		assertThat(dataPoints.size(), equalTo(3));
 
-		assertThat(getTagGroupMap(dataPoints.get(0)), hasEntry("tag1", "value4"));
+		assertThat(getTagGroupMap(dataPoints.get(0)), hasEntry("tag1", "value1"));
 		assertThat(getTagGroupMap(dataPoints.get(0)), hasEntry("tag2", "value2"));
 
 		assertThat(getTagGroupMap(dataPoints.get(1)), hasEntry("tag1", "value1"));
 		assertThat(getTagGroupMap(dataPoints.get(1)), hasEntry("tag2", "value3"));
 
-		assertThat(getTagGroupMap(dataPoints.get(2)), hasEntry("tag1", "value1"));
+		assertThat(getTagGroupMap(dataPoints.get(2)), hasEntry("tag1", "value4"));
 		assertThat(getTagGroupMap(dataPoints.get(2)), hasEntry("tag2", "value2"));
+
 	}
 
 	private Map<String, String> getTagGroupMap(DataPointGroup dataPointGroup)

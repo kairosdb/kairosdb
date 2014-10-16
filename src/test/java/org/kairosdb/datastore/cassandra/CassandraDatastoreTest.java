@@ -173,8 +173,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@BeforeClass
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
-		s_datastore = new CassandraDatastore(null, 1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
-				1000, 50000, "hostname", "kairosdb_test", new HectorConfiguration("localhost:9160"), dataPointFactory);
+		s_datastore = new CassandraDatastore("hostname", new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
+				1000, 50000, "kairosdb_test"), new HectorConfiguration("localhost:9160"), dataPointFactory);
 
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
 				new QueryQueuingManager(1, "hostname"),

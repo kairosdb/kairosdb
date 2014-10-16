@@ -3,7 +3,7 @@
 	<info organisation="kairosd.org" module="kairosdb"/>
 	<configurations defaultconf="default" >
 		<conf name="default"/>
-		<conf name="integration"/>
+		<conf name="integration" extends="test"/>
 		<conf name="test" extends="default"/>
 	</configurations>
 	<dependencies>

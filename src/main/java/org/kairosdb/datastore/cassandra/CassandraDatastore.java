@@ -64,20 +64,12 @@ public class CassandraDatastore implements Datastore
 
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
-	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
-	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
+
 	public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
-	public static final String WRITE_DELAY_PROPERTY = "kairosdb.datastore.cassandra.write_delay";
+
 	public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
-	public static final String WRITE_BUFFER_SIZE = "kairosdb.datastore.cassandra.write_buffer_max_size";
-	public static final String SINGLE_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.single_row_read_size";
-	public static final String MULTI_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_read_size";
-	public static final String MULTI_ROW_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_size";
-	public static final String READ_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.read_consistency_level";
-	public static final String WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.write_consistency_level";
-	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
-	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
-    public static final String DATAPOINT_TTL = "kairosdb.datastore.cassandra.datapoint_ttl";
+
+
 
 	public static final String CF_DATA_POINTS = "data_points";
 	public static final String CF_ROW_KEY_INDEX = "row_key_index";
@@ -105,70 +97,45 @@ public class CassandraDatastore implements Datastore
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
+	private CassandraConfiguration m_cassandraConfiguration;
+
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
-	@Inject
-	@Named(WRITE_CONSISTENCY_LEVEL)
-	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.QUORUM;
 
 	@Inject
-	@Named(READ_CONSISTENCY_LEVEL)
-	private ConsitencyLevel m_dataReadLevel = ConsitencyLevel.ONE;
-
-	
-	@Inject(optional=true)
-	@Named(DATAPOINT_TTL)
-	private int m_datapointTtl = 0; //Zero ttl means data lives forever.
-
-	@Inject
-	public void setRowKeyCacheSize(@Named(ROW_KEY_CACHE_SIZE_PROPERTY) int size)
-	{
-		m_rowKeyCache = new DataCache<DataPointsRowKey>(size);
-	}
-
-	@Inject
-	public void setStringCacheSize(@Named(STRING_CACHE_SIZE_PROPERTY) int size)
-	{
-		m_metricNameCache = new DataCache<String>(size);
-		m_tagNameCache = new DataCache<String>(size);
-		m_tagValueCache = new DataCache<String>(size);
-	}
-
-	@Inject
-	public CassandraDatastore(@Named(CassandraModule.CASSANDRA_AUTH_MAP) Map<String, String> cassandraAuthentication,
-	                          @Named(REPLICATION_FACTOR_PROPERTY) int replicationFactor,
-	                          @Named(SINGLE_ROW_READ_SIZE_PROPERTY) int singleRowReadSize,
-	                          @Named(MULTI_ROW_SIZE_PROPERTY) int multiRowSize,
-	                          @Named(MULTI_ROW_READ_SIZE_PROPERTY) int multiRowReadSize,
-	                          @Named(WRITE_DELAY_PROPERTY) int writeDelay,
-	                          @Named(WRITE_BUFFER_SIZE) int maxWriteSize,
-	                          final @Named("HOSTNAME") String hostname,
-                             @Named(KEYSPACE_PROPERTY) String keyspaceName,
+	public CassandraDatastore(@Named("HOSTNAME")final String hostname,
+	                          CassandraConfiguration cassandraConfiguration,
 	                          HectorConfiguration configuration,
                              KairosDataPointFactory kairosDataPointFactory) throws DatastoreException
 	{
 		try
 		{
-			m_singleRowReadSize = singleRowReadSize;
-			m_multiRowSize = multiRowSize;
-			m_multiRowReadSize = multiRowReadSize;
+			m_cassandraConfiguration = cassandraConfiguration;
+			m_singleRowReadSize = m_cassandraConfiguration.getSingleRowReadSize();
+			m_multiRowSize = m_cassandraConfiguration.getMultiRowSize();
+			m_multiRowReadSize = m_cassandraConfiguration.getMultiRowReadSize();
 			m_kairosDataPointFactory = kairosDataPointFactory;
-			m_keyspaceName = keyspaceName;
+			m_keyspaceName = m_cassandraConfiguration.getKeyspaceName();
+
+			m_rowKeyCache = new DataCache<DataPointsRowKey>(m_cassandraConfiguration.getRowKeyCacheSize());
+			m_metricNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
+			m_tagNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
+			m_tagValueCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
 
 			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
 
 			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
-					hostConfig, cassandraAuthentication);
+					hostConfig, m_cassandraConfiguration.getCassandraAuthentication());
 
 			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
 
 			if (keyspaceDef == null)
-				createSchema(replicationFactor);
+				createSchema(m_cassandraConfiguration.getReplicationFactor());
 				//set global consistency level
 				ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
-				confConsLevel.setDefaultReadConsistencyLevel(m_dataReadLevel.getHectorLevel());
-				confConsLevel.setDefaultWriteConsistencyLevel(m_dataWriteLevel.getHectorLevel());
+				confConsLevel.setDefaultReadConsistencyLevel(m_cassandraConfiguration.getDataReadLevel().getHectorLevel());
+				confConsLevel.setDefaultWriteConsistencyLevel(m_cassandraConfiguration.getDataWriteLevel().getHectorLevel());
 
 			//create keyspace instance with specified consistency
 			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
@@ -177,7 +144,8 @@ public class CassandraDatastore implements Datastore
 			Condition lockCondition = mutatorLock.newCondition();
 
 			m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, byte[]>(
-					m_keyspace, CF_DATA_POINTS, writeDelay, maxWriteSize,
+					m_keyspace, CF_DATA_POINTS, m_cassandraConfiguration.getWriteDelay(),
+					m_cassandraConfiguration.getMaxWriteSize(),
 					DATA_POINTS_ROW_KEY_SERIALIZER,
 					IntegerSerializer.get(),
 					BytesArraySerializer.get(),
@@ -200,7 +168,8 @@ public class CassandraDatastore implements Datastore
 					}, mutatorLock, lockCondition);
 
 			m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
-					m_keyspace, CF_ROW_KEY_INDEX, writeDelay, maxWriteSize,
+					m_keyspace, CF_ROW_KEY_INDEX, m_cassandraConfiguration.getWriteDelay(),
+					m_cassandraConfiguration.getMaxWriteSize(),
 					StringSerializer.get(),
 					DATA_POINTS_ROW_KEY_SERIALIZER,
 					StringSerializer.get(),
@@ -223,7 +192,9 @@ public class CassandraDatastore implements Datastore
 					}, mutatorLock, lockCondition);
 
 			m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
-					m_keyspace, CF_STRING_INDEX, writeDelay, maxWriteSize,
+					m_keyspace, CF_STRING_INDEX,
+					m_cassandraConfiguration.getWriteDelay(),
+					m_cassandraConfiguration.getMaxWriteSize(),
 					StringSerializer.get(),
 					StringSerializer.get(),
 					StringSerializer.get(),
@@ -322,6 +293,7 @@ public class CassandraDatastore implements Datastore
 			DataPointsRowKey rowKey = null;
 			//time the data is written.
 			long writeTime = System.currentTimeMillis();
+			int ttl = m_cassandraConfiguration.getDatapointTtl();
 
 			/*if (dataPoint.getTimestamp() < 0)
 				throw new DatastoreException("Timestamp must be greater than or equal to zero.");*/
@@ -336,8 +308,8 @@ public class CassandraDatastore implements Datastore
 
 				int rowKeyTtl = 0;
 				//Row key will expire 3 weeks after the data in the row expires
-				if (m_datapointTtl != 0)
-					rowKeyTtl = m_datapointTtl + ((int)(ROW_WIDTH / 1000));
+				if (ttl != 0)
+					rowKeyTtl = ttl + ((int)(ROW_WIDTH / 1000));
 
 				//Write out the row key if it is not cached
 				if (!m_rowKeyCache.isCached(rowKey))
@@ -391,7 +363,7 @@ public class CassandraDatastore implements Datastore
 			KDataOutput kDataOutput = new KDataOutput();
 			dataPoint.writeValueToBuffer(kDataOutput);
 			m_dataPointWriteBuffer.addData(rowKey, columnTime,
-					kDataOutput.getBytes(), writeTime, m_datapointTtl);
+					kDataOutput.getBytes(), writeTime, ttl);
 
 		}
 		catch (Exception e)

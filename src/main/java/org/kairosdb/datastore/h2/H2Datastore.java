@@ -282,8 +282,6 @@ public class H2Datastore implements Datastore
 					tagMap.put(mtag.getTagName(), mtag.getTagValue());
 				}
 
-				queryCallback.startDataPointSet(type, tagMap);
-
 				Timestamp startTime = new Timestamp(query.getStartTime());
 				Timestamp endTime = new Timestamp(query.getEndTime());
 
@@ -299,8 +297,15 @@ public class H2Datastore implements Datastore
 							startTime, endTime, query.getLimit(), query.getOrder().getText());
 				}
 
+				boolean startedDataPointSet = false;
 				while (resultSet.next())
 				{
+					if (!startedDataPointSet)
+					{
+						queryCallback.startDataPointSet(type, tagMap);
+						startedDataPointSet = true;
+					}
+
 					DataPoint record = resultSet.getRecord();
 
 					queryCallback.addDataPoint(m_dataPointFactory.createDataPoint(type,

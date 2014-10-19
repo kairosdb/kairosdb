@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 import junit.framework.TestCase;
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
@@ -167,6 +168,15 @@ public abstract class DatastoreTestHelper
 				.put("space", "space is cool").build();
 
 		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 42));
+
+
+		//Data that will be deleted in test
+		metricName = "delete_me";
+		metricNames.add(metricName);
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("ghost", "tag").build();
+
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 50));
 	}
 
 	@Test
@@ -665,6 +675,35 @@ public abstract class DatastoreTestHelper
 			assertThat(resTags, is(expectedTags));
 
 			assertValues(dpg, 42);
+		}
+		finally
+		{
+			dq.close();
+		}
+	}
+
+	@Test
+	public void test_notReturningTagsForEmptyData() throws DatastoreException, InterruptedException
+	{
+		QueryMetric query = new QueryMetric(s_startTime -1, 0, "delete_me");
+		query.setEndTime(s_startTime + 1);
+
+		s_datastore.delete(query);
+
+		Thread.sleep(1500);
+		//Now query for the data
+		DatastoreQuery dq = s_datastore.createQuery(query);
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
+
+			assertThat(results.size(), equalTo(1));
+
+			DataPointGroup dpg = results.get(0);
+			SetMultimap<String, String> resTags = extractTags(dpg);
+			assertThat(resTags.size(), is(0));
+
+			assertThat(dpg.hasNext(), is(false));
 		}
 		finally
 		{

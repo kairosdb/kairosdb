@@ -216,8 +216,9 @@ public class Main
 			}
 			else
 			{
-				main.runExport(new OutputStreamWriter(System.out, "UTF-8"), arguments.exportMetricNames);
-				System.out.flush();
+				OutputStreamWriter writer = new OutputStreamWriter(System.out, "UTF-8");
+				main.runExport(writer, arguments.exportMetricNames);
+				writer.flush();
 			}
 
 			main.stopServices();

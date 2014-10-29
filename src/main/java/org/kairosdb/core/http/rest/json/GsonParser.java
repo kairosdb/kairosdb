@@ -80,6 +80,8 @@ public class GsonParser
 		builder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
 		builder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
 		builder.registerTypeAdapter(Metric.class, new MetricDeserializer());
+		builder.registerTypeAdapter(SetMultimap.class, new SetMultimapDeserializer());
+		builder.registerTypeAdapter(SetMultimap.class, new SetMultimapSerializer());
 
 		m_gson = builder.create();
 	}
@@ -227,10 +229,11 @@ public class GsonParser
 		return (ret);
 	}
 
-	public List<RollUpTask> parseRollUpTask(String json)
+	public Set<RollUpTask> parseRollUpTask(String json) throws BeanValidationException
 	{
-		List<RollUpTask> tasks = m_gson.fromJson(json, new TypeToken<HashSet<RollUpTask>>() {}.getType());
+		Set<RollUpTask> tasks = m_gson.fromJson(json, new TypeToken<HashSet<RollUpTask>>() {}.getType());
 
+		// todo validate and throw bean validation exception if error occurs
 		return tasks;
 	}
 

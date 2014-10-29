@@ -1,13 +1,16 @@
 package org.kairosdb.rollup;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
 import com.google.gson.annotations.SerializedName;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.http.rest.json.RelativeTime;
-import org.testng.collections.SetMultiMap;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
@@ -18,7 +21,6 @@ public class RollUpTask
 {
 	// todo regular expressions
 	// todo one time go back and redo option
-
 	// todo setup annontations for validation
 
 	private final String id;
@@ -26,39 +28,63 @@ public class RollUpTask
 	private final String metricName;
 	@SerializedName("start_time")
 	private final RelativeTime startTime;
-	@SerializedName("end_time")
-	private final RelativeTime endTime;
-	private final SetMultiMap filter;
-	private final List<GroupBy> groupBys;
-	private final List<RollupTaskTarget> targets;
+	private final SetMultimap<String, String> filters = HashMultimap.create();
+	@SerializedName("group_bys")
+	private final List<GroupBy> groupBys = new ArrayList<GroupBy>();
+	private final List<RollupTaskTarget> targets = new ArrayList<RollupTaskTarget>();
 	private final String schedule;
+	private long timestamp;
 
-	private final RelativeTime backfill; // todo this class is in core.http.rest is this ok?
+	@SerializedName("end_time")
+	private RelativeTime endTime;
+	private RelativeTime backfill; // todo this class is in core.http.rest is this ok?
 
-	private final long timestamp;
-
-	// todo handle grouping
-
-	// todo make back fill optional
 	public RollUpTask(String metricName, RelativeTime startTime,
-			RelativeTime endTime, SetMultiMap filter, List<GroupBy> groupBys,
-			String schedule, List<RollupTaskTarget> targets, RelativeTime backfill)
+			List<RollupTaskTarget> targets, String schedule)
 	{
 		checkNotNullOrEmpty(metricName);
+		checkNotNull(startTime);
+		checkNotNull(targets);
+		checkArgument(targets.size() > 0);
 		checkNotNullOrEmpty(schedule);
-		checkNotNull(backfill);
 
 		this.id = UUID.randomUUID().toString();
 		this.metricName = metricName;
-		this.schedule = schedule;
 		this.startTime = startTime;
-		this.endTime = endTime;
-		this.filter = filter;
-		this.groupBys = groupBys;
-		this.targets = targets;
-		this.backfill = backfill;
-
+		this.targets.addAll(targets);
+		this.schedule = schedule;
 		this.timestamp = System.currentTimeMillis();
+	}
+
+	public RollUpTask setEndTime(RelativeTime time)
+	{
+		checkNotNull(time);
+		this.endTime = time;
+		return this;
+	}
+
+	public RollUpTask addFilter(String name, String value)
+	{
+		checkNotNullOrEmpty(name);
+		checkNotNullOrEmpty(value);
+
+		filters.put(name, value);
+		return this;
+	}
+
+	public RollUpTask addGroupBy(GroupBy groupBy)
+	{
+		checkNotNull(groupBy);
+
+		groupBys.add(groupBy);
+		return this;
+	}
+
+	public void setBackfill(RelativeTime backfill)
+	{
+		checkNotNull(backfill);
+
+		this.backfill = backfill;
 	}
 
 	public String getId()
@@ -84,6 +110,31 @@ public class RollUpTask
 	public RelativeTime getBackfill()
 	{
 		return backfill;
+	}
+
+	public RelativeTime getStartTime()
+	{
+		return startTime;
+	}
+
+	public SetMultimap<String, String> getFilters()
+	{
+		return filters;
+	}
+
+	public List<GroupBy> getGroupBys()
+	{
+		return groupBys;
+	}
+
+	public List<RollupTaskTarget> getTargets()
+	{
+		return targets;
+	}
+
+	public RelativeTime getEndTime()
+	{
+		return endTime;
 	}
 
 	@Override

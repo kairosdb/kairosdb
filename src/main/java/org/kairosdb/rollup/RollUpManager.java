@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 import static org.quartz.TriggerBuilder.newTrigger;
 
+// todo need test
 public class RollUpManager implements KairosDBJob
 {
 	public static final Logger logger = LoggerFactory.getLogger(RollUpManager.class);
@@ -80,6 +81,7 @@ public class RollUpManager implements KairosDBJob
 	@Override
 	public void interrupt()
 	{
+		// todo?
 	}
 
 	private void updateScheduledTasks(Set<RollUpTask> updatedTasks)

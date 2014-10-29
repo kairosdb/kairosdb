@@ -2,8 +2,13 @@ package org.kairosdb.rollup;
 
 import org.kairosdb.core.aggregator.Aggregator;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 /**
  Target for a roll up task. The target identifies new metric that will be
@@ -13,14 +18,44 @@ import java.util.Map;
 public class RollupTaskTarget
 {
 	private final String name;
-	private final Map<String, String> tags;
-	private final List<Aggregator> aggregators;
+	private final Map<String, String> tags = new HashMap<String, String>();
+	private final List<Aggregator> aggregators = new ArrayList<Aggregator>();
 
-	public RollupTaskTarget(String name, Map<String, String> tags, List<Aggregator> aggregators)
+	public RollupTaskTarget(String name)
 	{
+		checkNotNullOrEmpty(name);
 		this.name = name;
-		this.tags = tags;
-		this.aggregators = aggregators;
 	}
 
+	public RollupTaskTarget addTag(String name, String value)
+	{
+		checkNotNullOrEmpty(name);
+		checkNotNullOrEmpty(value);
+
+		tags.put(name, value);
+		return this;
+	}
+
+	public RollupTaskTarget addAggregator(Aggregator aggregator)
+	{
+		checkNotNull(aggregator);
+
+		aggregators.add(aggregator);
+		return this;
+	}
+
+	public String getName()
+	{
+		return name;
+	}
+
+	public Map<String, String> getTags()
+	{
+		return tags;
+	}
+
+	public List<Aggregator> getAggregators()
+	{
+		return aggregators;
+	}
 }

@@ -35,7 +35,7 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 		checkNotNullOrEmpty(storeDirectory);
 		checkNotNull(parser);
 
-		configFile = new File(storeDirectory, FILE_NAME);
+		configFile = new File(storeDirectory, FILE_NAME); // todo need to create the dir if it doesn't exist?
 		this.parser = parser;
 	}
 
@@ -66,7 +66,7 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 		try
 		{
 			String json = FileUtils.readFileToString(configFile, Charset.forName("UTF-8"));
-			return parser.parseRollUpTask(json, new TypeToken<HashSet<RollUpTask>>() {}.getType());
+			return parser.parseRollUpTask(json);
 		}
 		catch (IOException e)
 		{

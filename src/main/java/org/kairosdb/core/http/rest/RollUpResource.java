@@ -1,41 +1,100 @@
 package org.kairosdb.core.http.rest;
 
+import com.google.inject.Inject;
+import org.apache.http.entity.StringEntity;
+import org.kairosdb.core.formatter.DataFormatter;
+import org.kairosdb.core.formatter.FormatterException;
+import org.kairosdb.core.http.rest.json.ErrorResponse;
 import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
+import org.kairosdb.rollup.RollUpManager;
 import org.kairosdb.rollup.RollUpTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.*;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 @Path("/api/v1/rollups")
 public class RollUpResource
 {
-	private final GsonParser parser;
+	private static final Logger logger = LoggerFactory.getLogger(MetricsResource.class);
 
-	public RollUpResource(GsonParser parser)
+	private final GsonParser parser;
+	private final RollUpManager manager;
+
+	@Inject
+	public RollUpResource(GsonParser parser, RollUpManager manager)
 	{
 		this.parser = checkNotNull(parser);
+		this.manager = checkNotNull(manager);
 	}
 
+	/**
+	 Creates roll up tasks from the specified JSON.
+	 <p/>
+	 Returns information in JSON format about the created tasks. For example:
+	 <p/>
+	 <pre>
+	 "rollup_tasks": [
+	 {
+	 "id": "393939393",
+	 "name": "foo",
+	 "attributes":
+	 {
+	 "url": "/api/v1/rollups/393939393"
+	 }
+	 },
+	 {
+	 "id": "12345",
+	 "name": "bar",
+	 "attributes":
+	 {
+	 "url": "/api/v1/rollups/12345"
+	 }
+	 }
+	 ]
+	 </pre>
+
+	 @param json tasks in json format
+	 @return information about the created tasks
+	 */
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/rollup")
 	public Response create(String json)
 	{
-		ValidationErrors validationErrors = null;
-
-		RollUpTask task = parser.parseRollUpTask(json);
-
-		JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-		for (String errorMessage : validationErrors.getErrors())
+		try
 		{
-			builder.addError(errorMessage);
+			// todo parsers needs to return a rollup task for each target??
+			// todo because we need a task for each target
+			Set<RollUpTask> tasks = parser.parseRollUpTask(json);
+			//			manager.addTasks(tasks);
+
+			List<RollupResponse> rollup_tasks = new ArrayList<RollupResponse>();
+			for (RollUpTask task : tasks)
+			{
+				rollup_tasks.add(new RollupResponse(task.getId(), "todo", "/api/v1/rollups/" + task.getId()));
+			}
+
+//			Response.ok(parser.getGson().toJson(rollup_tasks), MediaType.APPLICATION_JSON).build();
+			Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
+					parser.getGson().toJson(rollup_tasks));
+			setHeaders(responseBuilder);
+			return responseBuilder.build();
 		}
-		return builder.build();
+		catch (BeanValidationException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addErrors(e.getErrorMessages()).build();
+		}
 	}
 
 	@GET
@@ -73,6 +132,7 @@ public class RollUpResource
 	@Path("delete/{id}")
 	public Response delete(@PathParam("id") String id) throws Exception
 	{
+		//		manager.removeTask(id);
 		return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
 	}
 
@@ -93,5 +153,49 @@ public class RollUpResource
 		responseBuilder.header("Expires", 0);
 
 		return (responseBuilder);
+	}
+
+	// todo also used in Metrics Resource.Should this be defined in a common place
+	public class ValuesStreamingOutput implements StreamingOutput
+	{
+		private DataFormatter m_formatter;
+		private Iterable<String> m_values;
+
+		public ValuesStreamingOutput(DataFormatter formatter, Iterable<String> values)
+		{
+			m_formatter = formatter;
+			m_values = values;
+		}
+
+		@SuppressWarnings("ResultOfMethodCallIgnored")
+		public void write(OutputStream output) throws IOException, WebApplicationException
+		{
+			Writer writer = new OutputStreamWriter(output, "UTF-8");
+
+			try
+			{
+				m_formatter.format(writer, m_values);
+			}
+			catch (FormatterException e)
+			{
+				logger.error("Description of what failed:", e);
+			}
+
+			writer.flush();
+		}
+	}
+
+	private class RollupResponse
+	{
+		private String id;
+		private String name;
+		private Map<String, String> attributes = new HashMap<String, String>();
+
+		private RollupResponse(String id, String name, String url)
+		{
+			this.id = id;
+			this.name = name;
+			attributes.put("url", url);
+		}
 	}
 }

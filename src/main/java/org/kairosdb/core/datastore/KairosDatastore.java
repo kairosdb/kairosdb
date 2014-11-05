@@ -106,9 +106,10 @@ public class KairosDatastore
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private void newCacheDirectory()
 	{
-		m_cacheDir = m_baseCacheDir + "/" + System.currentTimeMillis() + "/";
-		File cacheDirectory = new File(m_cacheDir);
+		String newCacheDir = m_baseCacheDir + "/" + System.currentTimeMillis() + "/";
+		File cacheDirectory = new File(newCacheDir);
 		cacheDirectory.mkdirs();
+		m_cacheDir = newCacheDir;
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")

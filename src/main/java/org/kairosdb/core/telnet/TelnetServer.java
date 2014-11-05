@@ -26,7 +26,6 @@ import org.jboss.netty.handler.codec.frame.Delimiters;
 import org.jboss.netty.handler.codec.string.StringEncoder;
 import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.exception.KairosDBException;
-import org.kairosdb.util.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,21 +35,23 @@ import java.util.concurrent.Executors;
 public class TelnetServer extends SimpleChannelUpstreamHandler implements ChannelPipelineFactory,
 		KairosDBService
 {
-	public static final Logger logger = LoggerFactory.getLogger(TelnetServer.class);
+	private static final Logger logger = LoggerFactory.getLogger(TelnetServer.class);
 
+	private final int m_port;
+	private final CommandProvider m_commands;
+	private final int maxCommandLength;
 
-	private int m_port;
-	private CommandProvider m_commands;
 	private ServerBootstrap m_serverBootstrap;
 
 	@Inject
 	public TelnetServer(@Named("kairosdb.telnetserver.port") int port,
-	                    CommandProvider commandProvider)
+			@Named("kairosdb.telnetserver.max_command_size") int maxCommandLength,
+			CommandProvider commandProvider)
 	{
 		m_commands = commandProvider;
 		m_port = port;
+		this.maxCommandLength = maxCommandLength;
 	}
-
 
 	@Override
 	public ChannelPipeline getPipeline() throws Exception
@@ -59,7 +60,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 
 		// Add the text line codec combination first,
 		DelimiterBasedFrameDecoder frameDecoder = new DelimiterBasedFrameDecoder(
-				1024, Delimiters.lineDelimiter());
+				maxCommandLength, Delimiters.lineDelimiter());
 		pipeline.addLast("framer", frameDecoder);
 		pipeline.addLast("decoder", new WordSplitter());
 		pipeline.addLast("encoder", new StringEncoder());
@@ -72,7 +73,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 
 	@Override
 	public void messageReceived(final ChannelHandlerContext ctx,
-	                            final MessageEvent msgevent)
+			final MessageEvent msgevent)
 	{
 		final Object message = msgevent.getMessage();
 		if (message instanceof String[])
@@ -85,9 +86,9 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 				{
 					telnetCommand.execute(msgevent.getChannel(), command);
 				}
-				catch(Exception e)
+				catch (Exception e)
 				{
-					log("Failed to execute command: " + formatCommand(command)+ " Reason: " + e.getMessage(), ctx, e);
+					log("Failed to execute command: " + formatCommand(command) + " Reason: " + e.getMessage(), ctx, e);
 				}
 			}
 			else
@@ -106,7 +107,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 
 	private static void log(String message, ChannelHandlerContext ctx, Exception e)
 	{
-		message += " From: "+((InetSocketAddress)ctx.getChannel().getRemoteAddress()).getAddress().getHostAddress();
+		message += " From: " + ((InetSocketAddress) ctx.getChannel().getRemoteAddress()).getAddress().getHostAddress();
 		if (logger.isDebugEnabled())
 			if (e != null)
 				logger.debug(message, e);

@@ -13,9 +13,6 @@ import org.kairosdb.core.DataPoint;
  */
 public interface QueryCallback
 {
-	//public void addDataPoint(long timestamp, long value) throws IOException;
-	//public void addDataPoint(long timestamp, double value) throws IOException;
-	//public void addDataPoint(long timestamp, Object value);
 	public void addDataPoint(DataPoint datapoint) throws IOException;
 	
 	public void startDataPointSet(String dataType, Map<String, String> tags) throws IOException;

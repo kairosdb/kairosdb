@@ -102,6 +102,9 @@ public class CassandraDatastore implements Datastore
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
+	@Inject
+	private List<RowKeyListener> m_rowKeyListeners;
+
 
 	@Inject
 	public CassandraDatastore(@Named("HOSTNAME")final String hostname,
@@ -310,7 +313,11 @@ public class CassandraDatastore implements Datastore
 			//Write out the row key if it is not cached
 			DataPointsRowKey cachedKey = m_rowKeyCache.cacheItem(rowKey);
 			if (cachedKey == null)
+			{
 				m_rowKeyWriteBuffer.addData(metricName, rowKey, "", now, rowKeyTtl);
+				for (RowKeyListener rowKeyListener : m_rowKeyListeners)
+					rowKeyListener.addRowKey(metricName, rowKey, rowKeyTtl);
+			}
 			else
 				rowKey = cachedKey;
 

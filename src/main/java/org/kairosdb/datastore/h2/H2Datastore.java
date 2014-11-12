@@ -19,6 +19,7 @@ package org.kairosdb.datastore.h2;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.mchange.v2.c3p0.DataSources;
 import org.agileclick.genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
 import org.kairosdb.core.*;
@@ -66,7 +67,14 @@ public class H2Datastore implements Datastore
 		ds.setURL("jdbc:h2:" + dbPath + "/kairosdb");
 		ds.setUser("sa");
 
-		GenOrmDataSource.setDataSource(new DSEnvelope(ds));
+		try
+		{
+			GenOrmDataSource.setDataSource(new DSEnvelope(DataSources.pooledDataSource(ds)));
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
 
 		try
 		{

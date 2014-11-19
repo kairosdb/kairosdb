@@ -86,6 +86,14 @@ jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
 
 
 //------------------------------------------------------------------------------
+//==-- Generate Project Pom --==
+ivy.createPomRule("pom.xml", ivy.getResolveRule("default"), ivy.getResolveRule("test"))
+		.addDepend("ivy.xml")
+		.addDepend("ivysettings.xml")
+		.setName("project-pom")
+		.setDescription("Use this target to generate a pom used for opening project in IDE")
+
+//------------------------------------------------------------------------------
 //==-- Maven POM Rule --==
 pomRule = ivy.createPomRule("build/jar/pom.xml", ivy.getResolveRule("default"))
 		.addDepend(jp.getJarRule())

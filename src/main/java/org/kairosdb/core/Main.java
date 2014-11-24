@@ -27,6 +27,7 @@ import org.apache.commons.io.FileUtils;
 import org.h2.util.StringUtils;
 import org.json.JSONException;
 import org.json.JSONWriter;
+import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.QueryMetric;
@@ -268,6 +269,7 @@ public class Main
 				logger.info("     KairosDB service started");
 				logger.info("------------------------------------------");
 
+				//main.runMissTest();
 				waitForShutdown();
 			}
 			catch (Exception e)
@@ -289,6 +291,35 @@ public class Main
 	public Injector getInjector()
 	{
 		return (m_injector);
+	}
+
+	public void runMissTest()
+	{
+		try
+		{
+			KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
+
+			long start = System.currentTimeMillis();
+			int I;
+
+			for (I = 0; I < 100000; I++)
+			{
+				String metricName = UUID.randomUUID().toString();
+				DatastoreQuery query = ds.createQuery(new QueryMetric(0, 0, "abc123" + metricName));
+				query.execute();
+				query.close();
+			}
+
+			long stop = System.currentTimeMillis();
+			long time = stop - start;
+			System.out.println(time);
+			System.out.println((I * 1000) / time);
+
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	public void runExport(Writer out, List<String> metricNames) throws DatastoreException, IOException

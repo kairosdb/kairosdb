@@ -16,7 +16,10 @@
 
 package org.kairosdb.core.aggregator;
 
+import org.joda.time.Chronology;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeField;
+import org.joda.time.chrono.GregorianChronology;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
@@ -36,21 +39,16 @@ public abstract class RangeAggregator implements Aggregator
 
 	@NotNull
 	@Valid
-	private Sampling m_sampling;
+	private Sampling m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
 	private boolean m_alignStartTime;
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
-        if (m_sampling == null) // TODO is this clean?
-            m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
 		checkNotNull(dataPointGroup);
 
 		if (m_alignSampling)
-		{
             m_startTime = alignRangeBoundary(m_startTime);
-		}
-
-		return (new RangeDataPointAggregator(dataPointGroup, getSubAggregator()));
+        return (new RangeDataPointAggregator(dataPointGroup, getSubAggregator()));
 	}
 
     /**
@@ -72,32 +70,32 @@ public abstract class RangeAggregator implements Aggregator
      * @return
      */
     private long alignRangeBoundary(long timestamp) {
-            DateTime dt = new DateTime(timestamp, m_sampling.getTimeZone());
-            TimeUnit tu = m_sampling.getUnit();
-            switch (tu) {
-                case YEARS:
-                case MONTHS:
-                case WEEKS:
-                case DAYS:
-                    dt = dt.withMillisOfDay(0);
-                    break;
-                case HOURS:
-                    dt = dt.withMinuteOfHour(0);
-                    dt = dt.withSecondOfMinute(0);
-                    dt = dt.withMillisOfSecond(0);
-                    break;
-                case MINUTES:
-                    dt = dt.withSecondOfMinute(0);
-                    dt = dt.withMillisOfSecond(0);
-                    break;
-                case SECONDS:
-                    dt = dt.withMillisOfSecond(0);
-                    break;
-                default:
-                    break;
-            }
-            return dt.getMillis();
+        DateTime dt = new DateTime(timestamp, m_sampling.getTimeZone());
+        TimeUnit tu = m_sampling.getUnit();
+        switch (tu) {
+            case YEARS:
+                dt = dt.withDayOfYear(1).withMillisOfDay(0);
+                break;
+            case MONTHS:
+                dt = dt.withDayOfMonth(1).withMillisOfDay(0);
+                break;
+            case WEEKS:
+                dt = dt.withDayOfWeek(1).withMillisOfDay(0);
+                break;
+            case DAYS:
+                dt = dt.withHourOfDay(0);
+            case HOURS:
+                dt = dt.withMinuteOfHour(0);
+            case MINUTES:
+                dt = dt.withSecondOfMinute(0);
+            case SECONDS:
+                dt = dt.withMillisOfSecond(0);
+                break;
+            default:
+                break;
         }
+        return dt.getMillis();
+    }
 
 	public void setSampling(Sampling sampling)
 	{
@@ -163,46 +161,43 @@ public abstract class RangeAggregator implements Aggregator
 	{
 		private RangeSubAggregator m_subAggregator;
 		private Iterator<DataPoint> m_dpIterator;
-        private int m_rangeIteration;
-        private DateTime m_dtStartTime;
         /* used for generic range computations */
-        private DateTime.Property m_dateTimeProperty;
-
+        private DateTimeField m_unitField;
 
         public RangeDataPointAggregator(DataPointGroup innerDataPointGroup,
 				RangeSubAggregator subAggregator)
 		{
 			super(innerDataPointGroup);
-            m_rangeIteration = 0;
 			m_subAggregator = subAggregator;
 			m_dpIterator = new ArrayList<DataPoint>().iterator();
-            m_dtStartTime = new DateTime(m_startTime, m_sampling.getTimeZone());
+
+            Chronology chronology = GregorianChronology.getInstance(m_sampling.getTimeZone());
 
             TimeUnit tu = m_sampling.getUnit();
             switch (tu) {
                 case YEARS:
-                    m_dateTimeProperty = m_dtStartTime.year();
+                    m_unitField = chronology.year();
                     break;
                 case MONTHS:
-                    m_dateTimeProperty = m_dtStartTime.monthOfYear();
+                    m_unitField = chronology.monthOfYear();
                     break;
                 case WEEKS:
-                    m_dateTimeProperty = m_dtStartTime.weekOfWeekyear();
+                    m_unitField = chronology.weekOfWeekyear();
                     break;
                 case DAYS:
-                    m_dateTimeProperty = m_dtStartTime.dayOfMonth();
+                    m_unitField = chronology.dayOfMonth();
                     break;
                 case HOURS:
-                    m_dateTimeProperty = m_dtStartTime.hourOfDay();
+                    m_unitField = chronology.hourOfDay();
                     break;
                 case MINUTES:
-                    m_dateTimeProperty = m_dtStartTime.minuteOfHour();
+                    m_unitField = chronology.minuteOfHour();
                     break;
                 case SECONDS:
-                    m_dateTimeProperty = m_dtStartTime.secondOfMinute();
+                    m_unitField = chronology.secondOfDay();
                     break;
                 default:
-                    m_dateTimeProperty = m_dtStartTime.millisOfSecond();
+                    m_unitField = chronology.millisOfSecond();
                     break;
             }
 		}
@@ -210,18 +205,16 @@ public abstract class RangeAggregator implements Aggregator
 
 		private long getStartRange()
 		{
-            DateTime startRange = m_dateTimeProperty.addToCopy(
-                    m_sampling.getValue() * m_rangeIteration
-            );
-            return startRange.getMillis();
+            int samplingValue = m_sampling.getValue();
+            long numberOfPastPeriods = m_unitField.getDifference(getDataPointTime(), m_startTime) / samplingValue;
+            return m_unitField.add(m_startTime, numberOfPastPeriods * samplingValue);
         }
 
 		private long getEndRange()
 		{
-			DateTime endRange = m_dateTimeProperty.addToCopy(
-                    m_sampling.getValue() * (m_rangeIteration + 1)
-            );
-            return endRange.getMillis();
+            int samplingValue = m_sampling.getValue();
+            long numberOfPastPeriods = m_unitField.getDifference(getDataPointTime(), m_startTime) / samplingValue;
+            return m_unitField.add(m_startTime, (numberOfPastPeriods + 1) * samplingValue);
 		}
 
         /**
@@ -241,16 +234,16 @@ public abstract class RangeAggregator implements Aggregator
                     long endRange = getEndRange();
 
                     subIterator = new SubRangeIterator(endRange);
-                    m_rangeIteration++;
 
                 } while (!subIterator.hasNext()); // skip over empty sub ranges
 
-				long dataPointTime = getDataPointTime();
+                long dataPointTime = getDataPointTime();
+                if (m_alignSampling)
+                    dataPointTime = alignRangeBoundary(dataPointTime);
 
                 m_dpIterator = m_subAggregator
                         .getNextDataPoints(dataPointTime, subIterator)
                         .iterator();
-
 			}
 
 			return (m_dpIterator.next());
@@ -302,11 +295,11 @@ public abstract class RangeAggregator implements Aggregator
 			@Override
 			public DataPoint next()
 			{
-				DataPoint ret = currentDataPoint;
+				DataPoint returnedDataPoint = currentDataPoint;
 				if (hasNextInternal())
 					currentDataPoint = nextInternal(); // set to null by hasNextInternal if no next
 
-				return (ret);
+                return returnedDataPoint;
 			}
 
 			@Override

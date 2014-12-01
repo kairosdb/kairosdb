@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.datastore;
 
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
 public class Sampling extends Duration
@@ -30,6 +31,7 @@ public class Sampling extends Duration
 	public Sampling(int value, TimeUnit unit)
 	{
 		super(value, unit);
+        this.timeZone = DateTimeZone.UTC;
 	}
 
     public Sampling(int value, TimeUnit unit, DateTimeZone timeZone) {
@@ -40,23 +42,30 @@ public class Sampling extends Duration
 	/**
 	 Works for any time unit except month and years.  Months and years are special cased in
 	 the RangeAggregator
+     // TODO get Sampling for a given time (eg. sampling is different in January (31d) or February (28-29d)
 	 @return the number of milliseconds in the sampling range
 	 */
 	public long getSampling()
 	{
-		long val = value;
+        long sampling = value;
 		switch (unit)
 		{
-            case YEARS: val *= 52;
-			case WEEKS: val *= 7;
-			case DAYS: val *= 24;
-			case HOURS: val *= 60;
-			case MINUTES: val *= 60;
-			case SECONDS: val *= 1000;
+            case YEARS:
+                sampling =  value * new DateTime(timeZone).year().getDurationField().getUnitMillis();
+			case WEEKS:
+                sampling =  value * new DateTime(timeZone).weekOfWeekyear().getDurationField().getUnitMillis();
+			case DAYS:
+                sampling =  value * new DateTime(timeZone).dayOfMonth().getDurationField().getUnitMillis();
+			case HOURS:
+                sampling =  value * new DateTime(timeZone).hourOfDay().getDurationField().getUnitMillis();
+			case MINUTES:
+                sampling =  value * new DateTime(timeZone).minuteOfHour().getDurationField().getUnitMillis();
+			case SECONDS:
+                sampling =  value * new DateTime(timeZone).secondOfMinute().getDurationField().getUnitMillis();
 			case MILLISECONDS:
+                sampling =  value * new DateTime(timeZone).millisOfDay().getDurationField().getUnitMillis();
 		}
-
-		return (val);
+        return sampling;
 	}
 
     public DateTimeZone getTimeZone() {

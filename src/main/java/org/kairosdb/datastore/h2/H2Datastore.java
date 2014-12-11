@@ -289,6 +289,7 @@ public class H2Datastore implements Datastore
 					MetricTag mtag = tags.getRecord();
 					tagMap.put(mtag.getTagName(), mtag.getTagValue());
 				}
+				tags.close();
 
 				Timestamp startTime = new Timestamp(query.getStartTime());
 				Timestamp endTime = new Timestamp(query.getEndTime());
@@ -305,26 +306,27 @@ public class H2Datastore implements Datastore
 							startTime, endTime, query.getLimit(), query.getOrder().getText());
 				}
 
-				boolean startedDataPointSet = false;
-				while (resultSet.next())
+				try
 				{
-					if (!startedDataPointSet)
+					boolean startedDataPointSet = false;
+					while (resultSet.next())
 					{
-						queryCallback.startDataPointSet(type, tagMap);
-						startedDataPointSet = true;
+						if (!startedDataPointSet)
+						{
+							queryCallback.startDataPointSet(type, tagMap);
+							startedDataPointSet = true;
+						}
+
+						DataPoint record = resultSet.getRecord();
+
+						queryCallback.addDataPoint(m_dataPointFactory.createDataPoint(type,
+								record.getTimestamp().getTime(),
+								KDataInput.createInput(record.getValue())));
 					}
-
-					DataPoint record = resultSet.getRecord();
-
-					queryCallback.addDataPoint(m_dataPointFactory.createDataPoint(type,
-							record.getTimestamp().getTime(),
-							KDataInput.createInput(record.getValue())));
-
-					/*if (!record.isLongValueNull())
-						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getLongValue());
-					else
-						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getDoubleValue());
-						*/
+				}
+				finally
+				{
+					resultSet.close();
 				}
 			}
 			queryCallback.endDataPoints();
@@ -332,6 +334,10 @@ public class H2Datastore implements Datastore
 		catch (IOException e)
 		{
 			throw new DatastoreException(e);
+		}
+		finally
+		{
+			idQuery.close();
 		}
 	}
 

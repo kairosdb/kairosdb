@@ -23,6 +23,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.google.gson.Gson;
 import com.google.inject.*;
+import com.google.inject.util.Modules;
 import org.apache.commons.io.FileUtils;
 import org.h2.util.StringUtils;
 import org.json.JSONException;
@@ -146,7 +147,12 @@ public class Main
 						else
 							mod = (Module) aClass.newInstance();
 
-						moduleList.add(mod);
+						if(mod instanceof CoreModule){
+                            mod = Modules.override(moduleList).with(mod);
+                            moduleList.set(0, mod);
+                        }
+                        else
+                            moduleList.add(mod);
 					}
 				}
 				catch (Exception e)

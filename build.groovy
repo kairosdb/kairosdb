@@ -80,9 +80,8 @@ jc.addDepend(ivy.getResolveRule("default"))
 jc.getDefinition().set("target", "1.6")
 jc.getDefinition().set("source", "1.6")
 
-additionalFiles = new RegExFileSet("src/main/java", ".*\\.sql").recurse()
-jp.getJarRule().addFileSet(additionalFiles)
 jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
+jp.getJarRule().addFiles("src/main/resources", "create.sql")
 
 
 //------------------------------------------------------------------------------

@@ -103,7 +103,7 @@ public class H2Datastore implements Datastore
 
 		StringBuilder sb = new StringBuilder();
 		InputStreamReader reader = new InputStreamReader(getClass().getClassLoader()
-				.getResourceAsStream("org/kairosdb/datastore/h2/orm/create.sql"));
+				.getResourceAsStream("create.sql"));
 
 		int ch;
 		while ((ch = reader.read()) != -1)

@@ -147,12 +147,13 @@ public class Main
 						else
 							mod = (Module) aClass.newInstance();
 
-						if(mod instanceof CoreModule){
-                            mod = Modules.override(moduleList).with(mod);
-                            moduleList.set(0, mod);
-                        }
-                        else
-                            moduleList.add(mod);
+						if (mod instanceof CoreModule)
+						{
+							mod = Modules.override(moduleList).with(mod);
+							moduleList.set(0, mod);
+						}
+						else
+							moduleList.add(mod);
 					}
 				}
 				catch (Exception e)

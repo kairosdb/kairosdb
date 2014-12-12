@@ -199,6 +199,7 @@ junitAll = new JUnitRule("junit-test-all").setDescription("Run unit tests includ
 		.addSources(testSourcesAll)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
+		.addDepends(ivyTestResolve)
 
 if (saw.getProperty("jacoco", "false").equals("true"))
 	junitAll.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")

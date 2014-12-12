@@ -15,7 +15,7 @@
 
 	<!-- We are overriding the tablesaw defintion for junit so we can increase
 		memory needed for running tests -->
-	<definition name="junit4" command="java -Xmx500k">
+	<definition name="junit4" command="java -Xmx500M">
 		<option name="jvm_arg" pattern="(.*)">$1</option>
 		<option name="debug" pattern="(.+)">-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=$1</option>
 		<option name="classpath" pattern="(.+)">-cp $1</option>

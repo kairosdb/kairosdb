@@ -73,7 +73,6 @@
 		<dependency org="com.sun.jersey.contribs" name="jersey-guice" rev="1.15" />
 		<dependency org="com.sun.jersey" name="jersey-server" rev="1.15"/>
 		<dependency org="com.sun.jersey" name="jersey-json" rev="1.15"/>
-		<dependency org="com.sun.jersey.contribs" name="jersey-guice" rev="1.15"/>
 		<dependency org="com.sun.jersey" name="jersey-core" rev="1.15" />
 		<dependency org="com.sun.jersey" name="jersey-servlet" rev="1.15" transitive="false"/>
 		<dependency org="com.sun.jersey.oauth" name="oauth-signature" rev="1.1.1-ea" />
@@ -87,8 +86,6 @@
 
 		<!-- Quartz -->
 		<dependency org="org.quartz-scheduler" name="quartz" rev="2.1.7" />
-
-        <dependency org="com.beust" name="jcommander" rev="1.35" />
 
 		<dependency org="org.testng" name="testng" rev="6.8.5" conf="integration->default"/>
 

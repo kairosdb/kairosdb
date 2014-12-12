@@ -75,7 +75,8 @@ jp = new JavaProgram()
 		.setup()
 
 jc = jp.getCompileRule()
-jc.addDepend(ivy.getResolveRule("default"))
+ivyDefaultResolve = ivy.getResolveRule("default")
+jc.addDepend(ivyDefaultResolve)
 
 jc.getDefinition().set("target", "1.6")
 jc.getDefinition().set("source", "1.6")
@@ -176,7 +177,8 @@ testSources = new RegExFileSet("src/test/java", ".*Test\\.java").recurse()
 		.addExcludeFiles("CassandraDatastoreTest.java")
 		.getFilePaths()
 testCompileRule = jp.getTestCompileRule()
-testCompileRule.addDepend(ivy.getResolveRule("test"))
+ivyTestResolve = ivy.getResolveRule("test")
+testCompileRule.addDepend(ivyTestResolve)
 
 junitClasspath = new Classpath(testCompileRule.getClasspath())
 junitClasspath.addPaths(testClasspath)
@@ -187,6 +189,7 @@ junitClasspath.addPath("src/main/resources")
 junit = new JUnitRule("junit-test").addSources(testSources)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
+		.addDepends(ivyTestResolve)
 
 if (saw.getProperty("jacoco", "false").equals("true"))
 	junit.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
@@ -418,6 +421,7 @@ def doRun(Rule rule)
 
 	//this is to load logback into classpath
 	runClasspath = jc.getClasspath()
+	runClasspath.addPaths(ivyDefaultResolve.getClasspath())
 	runClasspath.addPath("src/main/resources").addPath("src/main/java")
 	ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
 	println(ret);

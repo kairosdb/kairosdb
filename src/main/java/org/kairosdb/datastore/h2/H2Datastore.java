@@ -140,17 +140,20 @@ public class H2Datastore implements Datastore
 		{
 			String key = createMetricKey(metricName, tags, dataPoint.getDataStoreDataType());
 			Metric m = Metric.factory.findOrCreate(key);
-			m.setName(metricName);
-			m.setType(dataPoint.getDataStoreDataType());
-
-			for (String name : tags.keySet())
+			if (m.isNew())
 			{
-				String value = tags.get(name);
-				Tag.factory.findOrCreate(name, value);
-				MetricTag.factory.findOrCreate(key, name, value);
-			}
+				m.setName(metricName);
+				m.setType(dataPoint.getDataStoreDataType());
 
-			GenOrmDataSource.flush();
+				for (String name : tags.keySet())
+				{
+					String value = tags.get(name);
+					Tag.factory.findOrCreate(name, value);
+					MetricTag.factory.findOrCreate(key, name, value);
+				}
+
+				GenOrmDataSource.flush();
+			}
 
 			KDataOutput dataOutput = new KDataOutput();
 			dataPoint.writeValueToBuffer(dataOutput);

@@ -1,18 +1,20 @@
-===
-Put
-===
+====
+Putm
+====
+
+This is identical to the put command except it always expects millisecond timestamps.
 
 You can submit data either with the telnet protocol on port 4242. The port can be changed in the kairosdb.properties file.
 
 The format of the data is
 ::
 
-	put <metric name> <time stamp> <value> <tag> <tag>... /n
+	putm <metric name> <time stamp> <value> <tag> <tag>... /n
 
 
-**Metric name** must be one word and is limited to alpha numerics with "-_.".
+**Metric name** must be one word and is limited to utf8 characters.
 
-**Time stamp** can either be in milliseconds or in seconds since Jan 1, 1970 (unix epoch) - seconds are for backwards compatibility with the original opentsdb.  If the value is less than 3,000,000,000 it is considered seconds.  If you want to send milliseconds you may want to consider using putm.
+**Time stamp** milliseconds since Jan 1, 1970 (unix epoch)
 
 **Value** can either be a long or double value.
 
@@ -31,4 +33,4 @@ Here is a simple shell script that inserts data using netcat.
 	value=42
 	host=10.92.4.4
 
-	echo "put $metric $now $value host=A" | nc -w 30 $host 4242
+	echo "putm $metric $now $value host=A" | nc -w 30 $host 4242

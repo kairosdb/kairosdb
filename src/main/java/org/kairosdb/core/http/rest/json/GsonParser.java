@@ -617,7 +617,7 @@ public class GsonParser
             if(json.isJsonNull())
                 return null;
             String tz = json.getAsString();
-            if (tz.isEmpty()) // defaults to server time
+            if (tz.isEmpty()) // defaults to UTC
                 return DateTimeZone.UTC;
             DateTimeZone timeZone;
 

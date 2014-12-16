@@ -34,6 +34,19 @@
 	<!--<script src="js/highcharts.js"></script>-->
 	<script src="js/combobox.js"></script>
 	<script src="js/numeral.min.js"></script>
+    <script src="js/jstz-1.0.4.min.js"></script>
+
+    <script language="javascript">
+        function getTimezoneName() {
+            timezone = jstz.determine_timezone();
+            return timezone.name();
+        }
+
+        function getAllZones() {
+            timezones = jstz.olson.timezones;
+
+        }
+    </script>
 
 	<script>
 		var metricNames = [];

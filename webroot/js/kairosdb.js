@@ -60,15 +60,17 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
-	this.addRate = function (unit, timeZone) {
+	this.addRate = function (unit, time_zone) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
 		var rate = {};
 		rate.name = "rate";
 		if (unit) {
-			rate.unit = unit;
-            rate.timeZone = timeZone;
+            rate.sampling = {};
+			rate.sampling.unit = unit;
+			rate.sampling.value = 1;
+            rate.sampling.time_zone = time_zone;
 		}
 
 		this.aggregators.push(rate);
@@ -89,7 +91,7 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
-	this.addPercentile = function (value, unit, percent, timeZone) {
+	this.addPercentile = function (value, unit, percent, time_zone) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
@@ -100,7 +102,7 @@ kairosdb.Metric = function (name) {
 			percentile.sampling = {};
 			percentile.sampling.unit = unit;
 			percentile.sampling.value = value;
-            percentile.sampling.timeZone = timeZone;
+            percentile.sampling.time_zone = time_zone;
 		}
 
 		this.aggregators.push(percentile);
@@ -122,7 +124,7 @@ kairosdb.Metric = function (name) {
 	};
 
 
-	this.addAggregator = function (name, value, unit, timeZone) {
+	this.addAggregator = function (name, value, unit, time_zone) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
@@ -134,7 +136,7 @@ kairosdb.Metric = function (name) {
 			aggregator.sampling = {};
 			aggregator.sampling.value = value;
 			aggregator.sampling.unit = unit;
-            aggregator.sampling.timeZone = timeZone;
+            aggregator.sampling.time_zone = time_zone;
 		}
 
 		this.aggregators.push(aggregator);

@@ -101,8 +101,8 @@ function buildKairosDBQuery() {
 			var unit;
 			if (name == 'rate') {
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-                var timeZone = $(aggregator).find(".aggregatorSamplingTimeZone").val();
-				metric.addRate(unit, timeZone);
+                var time_zone = $(aggregator).find(".aggregatorSamplingTimeZone").val();
+				metric.addRate(unit, time_zone);
 			}
 			else if (name == 'sampler') {
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
@@ -118,8 +118,8 @@ function buildKairosDBQuery() {
 				if (!isValidPercentile(percentile)) {
 					return true;
 				}
-                var timeZone = $(aggregator).find(".aggregatorSamplingTimeZone").val();
-				metric.addPercentile(value, unit, percentile, timeZone);
+                var time_zone = $(aggregator).find(".aggregatorSamplingTimeZone").val();
+				metric.addPercentile(value, unit, percentile, time_zone);
 			}
 			else if (name == 'div') {
 				var divisor = $(aggregator).find(".divisorValue").val();
@@ -141,8 +141,8 @@ function buildKairosDBQuery() {
 					return true;
 				}
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-                var timeZone = $(aggregator).find(".aggregatorSamplingTimeZone").val();
-				metric.addAggregator(name, value, unit, timeZone);
+                var time_zone = $(aggregator).find(".aggregatorSamplingTimeZone").val();
+				metric.addAggregator(name, value, unit, time_zone);
 			}
 		});
 
@@ -530,7 +530,7 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".scalingFactor").hide();
-			$aggregatorContainer.find(".aggregatorSamplingTimeZone").hide();
+			$aggregatorContainer.find(".aggregatorSamplingTimeZone").show();
 
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
@@ -541,7 +541,7 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
 			$aggregatorContainer.find(".scalingFactor").hide();
-            			$aggregatorContainer.find(".aggregatorSamplingTimeZone").show();
+            $aggregatorContainer.find(".aggregatorSamplingTimeZone").show();
 		}
 		else if (name == "div") {
 			$aggregatorContainer.find(".aggregatorSampling").hide();

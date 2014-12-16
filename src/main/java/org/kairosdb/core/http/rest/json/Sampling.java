@@ -44,7 +44,7 @@ public class Sampling
 	public Sampling(@JsonProperty("duration") int duration,
 	                @JsonProperty("unit") String unit,
 	                @JsonProperty("aggregate") String aggregate,
-                    @JsonProperty("timeZone") String timeZone)
+                    @JsonProperty("time_zone") String timeZone)
 	{
 		this.duration = duration;
 		this.unit = unit;

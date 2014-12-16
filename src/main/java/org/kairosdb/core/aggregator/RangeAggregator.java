@@ -83,15 +83,14 @@ public abstract class RangeAggregator implements Aggregator
                 dt = dt.withDayOfWeek(1).withMillisOfDay(0);
                 break;
             case DAYS:
-                dt = dt.withHourOfDay(0);
             case HOURS:
-                dt = dt.withMinuteOfHour(0);
+                dt = dt.withHourOfDay(0);
             case MINUTES:
-                dt = dt.withSecondOfMinute(0);
+                dt = dt.withMinuteOfHour(0);
             case SECONDS:
-                dt = dt.withMillisOfSecond(0);
-                break;
+                dt = dt.withSecondOfMinute(0);
             default:
+                dt = dt.withMillisOfSecond(0);
                 break;
         }
         return dt.getMillis();

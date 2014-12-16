@@ -8,13 +8,11 @@ package org.kairosdb.core.aggregator;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.DurationField;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.testing.ListDataPointGroup;

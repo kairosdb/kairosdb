@@ -25,6 +25,7 @@ public class InternalMetricsServer implements KairosDBService {
     public static final String GRAPHITE_INTERVAL = "kairosdb.internal.graphite.interval";
     public static final String GRAPHITE_TIME_UNIT = "kairosdb.internal.graphite.timeUnit";
 
+    public static final String METRIC_PREFIX = "kairosdb.internal.metric.prefix";
     public static final String METRIC_GC = "kairosdb.internal.metric.gc";
     public static final String METRIC_BP = "kairosdb.internal.metric.bufferPool";
     public static final String METRIC_CACHED_TS = "kairosdb.internal.metric.cachedThreadStates";
@@ -43,6 +44,7 @@ public class InternalMetricsServer implements KairosDBService {
                                  @Named(GRAPHITE_PORT) int port,
                                  @Named(GRAPHITE_INTERVAL) int interval,
                                  @Named(GRAPHITE_TIME_UNIT) TimeUnit timeUnit,
+                                 @Named(METRIC_PREFIX) String metricPrefix,
                                  @Named(METRIC_GC) boolean gc,
                                  @Named(METRIC_BP) boolean bp,
                                  @Named(METRIC_CACHED_TS) boolean cachedTS,
@@ -53,7 +55,7 @@ public class InternalMetricsServer implements KairosDBService {
         logger.warn("Constructing InternalMetricsServer with ".concat(hostname));
         if(hostname != null && hostname.length() > 0) {
             graphite = new Graphite(hostname, port);
-            init_internal_metrics(interval, timeUnit,
+            init_internal_metrics(interval, timeUnit, metricPrefix,
                     gc, bp, cachedTS, fdRatio, memUsage, cl, ts);
         }
         else{
@@ -62,7 +64,7 @@ public class InternalMetricsServer implements KairosDBService {
     }
 
 
-    private void init_internal_metrics(Integer interval, TimeUnit timeUnit,
+    private void init_internal_metrics(Integer interval, TimeUnit timeUnit, String metricPrefix,
                                        boolean gc,
                                        boolean bp,
                                        boolean cachedTS,
@@ -102,7 +104,7 @@ public class InternalMetricsServer implements KairosDBService {
         }
 
         reporter = GraphiteReporter.forRegistry(metrics)
-                .prefixedWith("ubic")
+                .prefixedWith(metricPrefix)
                 .convertRatesTo(TimeUnit.SECONDS)
                 .convertDurationsTo(TimeUnit.MILLISECONDS)
                 .filter(MetricFilter.ALL)

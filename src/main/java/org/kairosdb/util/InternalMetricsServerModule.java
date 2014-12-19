@@ -26,7 +26,6 @@ public class InternalMetricsServerModule extends AbstractModule
         {
             logger.info("Configuring module InternalMetricsServerModule");
 
-            System.out.println("Binding InternalMetricsServer NOW!!!");
             bind(InternalMetricsServer.class).in(Singleton.class);
         }
     }

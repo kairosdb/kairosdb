@@ -90,5 +90,10 @@
 
 		<dependency org="org.testng" name="testng" rev="6.8.5" conf="integration->default"/>
 
-	</dependencies>
+        <!-- Metrics -->
+        <dependency org="io.dropwizard.metrics" name="metrics-core" rev="3.1.0" />
+        <dependency org="io.dropwizard.metrics" name="metrics-graphite" rev="3.1.0" />
+        <dependency org="io.dropwizard.metrics" name="metrics-jvm" rev="3.1.0" />
+
+    </dependencies>
 </ivy-module>

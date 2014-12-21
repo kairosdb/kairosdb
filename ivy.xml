@@ -51,16 +51,11 @@
 		<dependency org="jaxen" name="jaxen" rev="1.1.4" />
 		<dependency org="org.antlr" name="stringtemplate" rev="3.2.1" />-->
 
-		<dependency org="org.hectorclient" name="hector-core" rev="1.1-4">
+		<dependency org="org.hectorclient" name="hector-core" rev="2.0-0">
 			<artifact name="hector-core" type="bundle" ext="jar"/>
 			<exclude org="javax.servlet" module="servlet-api"/>
 		</dependency>
 
-		<!--<dependency org="org.hectorclient" name="hector-object-mapper" rev="3.1-09" transitive="false">
-		</dependency>-->
-
-		<!--<dependency org="me.prettyprint" name="hector-core" rev="1.0-5"/>
-		<dependency org="me.prettyprint" name="hector-object-mapper" rev="3.0-04" transitive="false" />-->
 
 		<!-- Jetty server stuff -->
 		<dependency org="org.eclipse.jetty" name="jetty-server" rev="8.1.13.v20130916" />

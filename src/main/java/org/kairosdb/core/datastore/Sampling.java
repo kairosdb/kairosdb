@@ -16,9 +16,14 @@
 
 package org.kairosdb.core.datastore;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
 public class Sampling extends Duration
 {
-	public Sampling()
+    private DateTimeZone timeZone;
+
+    public Sampling()
 	{
 		super();
 	}
@@ -26,29 +31,54 @@ public class Sampling extends Duration
 	public Sampling(int value, TimeUnit unit)
 	{
 		super(value, unit);
+        this.timeZone = DateTimeZone.UTC;
 	}
 
-	/**
-	 Works for any time unit except month.  Months are special cased in
-	 the RangeAggregator
+    public Sampling(int value, TimeUnit unit, DateTimeZone timeZone) {
+        super(value, unit);
+        this.timeZone = timeZone;
+    }
 
-	 Note this does not account for leap years
-	 @return
-	 */
-	public long getSampling()
+    public DateTimeZone getTimeZone() {
+        return timeZone;
+    }
+
+    /**
+     * Computes the duration of the sampling (value * unit) starting at timestamp.
+     * @param timestamp unix timestamp of the start time.
+     * @return the duration of the sampling in millisecond.
+     */
+	public long getSamplingDuration(long timestamp)
 	{
-		long val = value;
+        long sampling = (long) value;
+        DateTime dt = new DateTime(timestamp, timeZone);
 		switch (unit)
 		{
-			case YEARS: val *= 52;
-			case WEEKS: val *= 7;
-			case DAYS: val *= 24;
-			case HOURS: val *= 60;
-			case MINUTES: val *= 60;
-			case SECONDS: val *= 1000;
+            case YEARS:
+                sampling = new org.joda.time.Duration(dt, dt.plusYears(value)).getMillis();
+                break;
+            case MONTHS:
+                sampling = new org.joda.time.Duration(dt, dt.plusMonths(value)).getMillis();
+                break;
+			case WEEKS:
+                sampling = new org.joda.time.Duration(dt, dt.plusWeeks(value)).getMillis();
+                break;
+			case DAYS:
+                sampling = new org.joda.time.Duration(dt, dt.plusDays(value)).getMillis();
+                break;
+			case HOURS:
+                sampling = new org.joda.time.Duration(dt, dt.plusHours(value)).getMillis();
+                break;
+			case MINUTES:
+                sampling = new org.joda.time.Duration(dt, dt.plusMinutes(value)).getMillis();
+                break;
+			case SECONDS:
+                sampling = new org.joda.time.Duration(dt, dt.plusSeconds(value)).getMillis();
+                break;
 			case MILLISECONDS:
+                sampling = (long) value;
+                break;
 		}
-
-		return (val);
+        return sampling;
 	}
 }

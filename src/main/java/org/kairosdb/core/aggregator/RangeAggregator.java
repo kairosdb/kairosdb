@@ -16,8 +16,10 @@
 
 package org.kairosdb.core.aggregator;
 
+import org.joda.time.Chronology;
 import org.joda.time.DateTime;
-import org.joda.time.Months;
+import org.joda.time.DateTimeField;
+import org.joda.time.chrono.GregorianChronology;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
@@ -26,23 +28,18 @@ import org.kairosdb.core.datastore.TimeUnit;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Iterator;
-import java.util.TimeZone;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class RangeAggregator implements Aggregator
 {
 	private long m_startTime = 0L;
-	private long m_range = 1L;
-	private long m_currentRange;
-	private long m_dayOfMonthOffset = 0L; //day of month offset in milliseconds
 	private boolean m_alignSampling;
 
 	@NotNull
 	@Valid
-	private Sampling m_sampling;
+	private Sampling m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
 	private boolean m_alignStartTime;
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
@@ -50,47 +47,58 @@ public abstract class RangeAggregator implements Aggregator
 		checkNotNull(dataPointGroup);
 
 		if (m_alignSampling)
-		{
-			TimeUnit tu = m_sampling.getUnit();
-
-			DateTime dt = new DateTime(m_startTime);
-			switch (tu)
-			{
-				case YEARS:
-				case MONTHS:
-				case WEEKS:
-				case DAYS:
-					if (tu == TimeUnit.WEEKS)
-						dt = dt.withDayOfWeek(1);
-					else if (tu == TimeUnit.MONTHS)
-					{
-						dt = dt.withDayOfMonth(1);
-						m_dayOfMonthOffset = 0;
-					}
-					else
-						dt = dt.withDayOfYear(1);
-                 
-				case HOURS:
-				case MINUTES:
-				case SECONDS:
-				case MILLISECONDS:
-					dt = dt.withHourOfDay(0);
-					dt = dt.withMinuteOfHour(0);
-					dt = dt.withSecondOfMinute(0);
-					dt = dt.withMillisOfSecond(0);
-			}
-
-			m_startTime = dt.getMillis();
-		}
-		m_currentRange = m_startTime;
-
-		return (new RangeDataPointAggregator(dataPointGroup, getSubAggregator()));
+            m_startTime = alignRangeBoundary(m_startTime);
+        return (new RangeDataPointAggregator(dataPointGroup, getSubAggregator()));
 	}
+
+    /**
+     * For YEARS, MONTHS, WEEKS, DAYS:
+     *     Computes the timestamp of the first millisecond of the day
+     *     of the timestamp.
+     * For HOURS,
+     *     Computes the timestamp of the first millisecond of the hour
+     *     of the timestamp.
+     * For MINUTES,
+     *     Computes the timestamp of the first millisecond of the minute
+     *     of the timestamp.
+     * For SECONDS,
+     *     Computes the timestamp of the first millisecond of the second
+     *     of the timestamp.
+     * For MILLISECONDS,
+     *     returns the timestamp
+     * @param timestamp
+     * @return
+     */
+    private long alignRangeBoundary(long timestamp) {
+        DateTime dt = new DateTime(timestamp, m_sampling.getTimeZone());
+        TimeUnit tu = m_sampling.getUnit();
+        switch (tu) {
+            case YEARS:
+                dt = dt.withDayOfYear(1).withMillisOfDay(0);
+                break;
+            case MONTHS:
+                dt = dt.withDayOfMonth(1).withMillisOfDay(0);
+                break;
+            case WEEKS:
+                dt = dt.withDayOfWeek(1).withMillisOfDay(0);
+                break;
+            case DAYS:
+            case HOURS:
+                dt = dt.withHourOfDay(0);
+            case MINUTES:
+                dt = dt.withMinuteOfHour(0);
+            case SECONDS:
+                dt = dt.withSecondOfMinute(0);
+            default:
+                dt = dt.withMillisOfSecond(0);
+                break;
+        }
+        return dt.getMillis();
+    }
 
 	public void setSampling(Sampling sampling)
 	{
-		m_sampling = sampling;
-		m_range = sampling.getSampling();
+        m_sampling = sampling;
 	}
 
 	/**
@@ -126,14 +134,7 @@ public abstract class RangeAggregator implements Aggregator
 	public void setStartTime(long startTime)
 	{
 		m_startTime = startTime;
-		//Get the day of the month for month calculations
-		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-		cal.setTimeInMillis(startTime);
-		int dayOfMonth = cal.get(Calendar.DAY_OF_MONTH);
-		dayOfMonth -= 1; //offset this value so when we subtract it from the data point tome it wont do anything for 1
-		m_dayOfMonthOffset = dayOfMonth * 24L * 60L * 60L * 1000L;
-	}
-
+    }
 
 	/**
 	 Return a RangeSubAggregator that will be used to aggregate data over a
@@ -158,118 +159,117 @@ public abstract class RangeAggregator implements Aggregator
 	private class RangeDataPointAggregator extends AggregatedDataPointGroupWrapper
 	{
 		private RangeSubAggregator m_subAggregator;
-		private Calendar m_calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		private Iterator<DataPoint> m_dpIterator;
+        /* used for generic range computations */
+        private DateTimeField m_unitField;
 
-
-		public RangeDataPointAggregator(DataPointGroup innerDataPointGroup,
+        public RangeDataPointAggregator(DataPointGroup innerDataPointGroup,
 				RangeSubAggregator subAggregator)
 		{
 			super(innerDataPointGroup);
 			m_subAggregator = subAggregator;
 			m_dpIterator = new ArrayList<DataPoint>().iterator();
+
+            Chronology chronology = GregorianChronology.getInstance(m_sampling.getTimeZone());
+
+            TimeUnit tu = m_sampling.getUnit();
+            switch (tu) {
+                case YEARS:
+                    m_unitField = chronology.year();
+                    break;
+                case MONTHS:
+                    m_unitField = chronology.monthOfYear();
+                    break;
+                case WEEKS:
+                    m_unitField = chronology.weekOfWeekyear();
+                    break;
+                case DAYS:
+                    m_unitField = chronology.dayOfMonth();
+                    break;
+                case HOURS:
+                    m_unitField = chronology.hourOfDay();
+                    break;
+                case MINUTES:
+                    m_unitField = chronology.minuteOfHour();
+                    break;
+                case SECONDS:
+                    m_unitField = chronology.secondOfDay();
+                    break;
+                default:
+                    m_unitField = chronology.millisOfSecond();
+                    break;
+            }
 		}
 
-		/**
-		 This returns some value that represents the range the timestamp falls into
-		 The actual value returned is not considered just as long as it is unique
-		 for the time range.
-		 @param timestamp
-		 @return
-		 */
-		/*private long getRange(long timestamp)
+
+		private long getStartRange()
 		{
-			while (timestamp > (m_currentRange + m_range))
-				m_currentRange += m_range;
+            int samplingValue = m_sampling.getValue();
+            long numberOfPastPeriods = m_unitField.getDifference(getDataPointTime(), m_startTime) / samplingValue;
+            return m_unitField.add(m_startTime, numberOfPastPeriods * samplingValue);
+        }
 
-			return (m_currentRange);
-
-			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
-			{
-				m_calendar.setTimeInMillis(timestamp - m_dayOfMonthOffset);
-				int dataPointYear = m_calendar.get(Calendar.YEAR);
-				int dataPointMonth = m_calendar.get(Calendar.MONTH);
-
-				return ((dataPointYear * 12 + dataPointMonth) / m_sampling.getValue());
-			}
-			else
-			{
-				return ((timestamp - m_startTime) / m_range);
-			}
-		}*/
-
-		private long getStartRange(long timestamp)
+		private long getEndRange()
 		{
-			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
-			{
-				DateTime start = new DateTime(m_startTime);
-				DateTime dpTime = new DateTime(timestamp);
-
-				Months months = Months.monthsBetween(start, dpTime);
-				Months period = months.dividedBy(m_sampling.getValue());
-
-				long startRange = start.plus(period.multipliedBy(m_sampling.getValue())).getMillis();
-				return (startRange);
-
-				/*m_calendar.setTimeInMillis(timestamp - m_dayOfMonthOffset);
-				int dataPointYear = m_calendar.get(Calendar.YEAR);
-				int dataPointMonth = m_calendar.get(Calendar.MONTH);
-
-				return ((dataPointYear * 12 + dataPointMonth) / m_sampling.getValue());*/
-			}
-			else
-			{
-				return (((timestamp - m_startTime) / m_range) * m_range + m_startTime);
-			}
+            int samplingValue = m_sampling.getValue();
+            long numberOfPastPeriods = m_unitField.getDifference(getDataPointTime(), m_startTime) / samplingValue;
+            return m_unitField.add(m_startTime, (numberOfPastPeriods + 1) * samplingValue);
 		}
 
-		private long getEndRange(long timestamp)
-		{
-			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
-			{
-				DateTime start = new DateTime(m_startTime);
-				DateTime dpTime = new DateTime(timestamp);
-
-				Months months = Months.monthsBetween(start, dpTime);
-				Months period = months.dividedBy(m_sampling.getValue());
-
-				long endRange = start.plus(period.plus(1).multipliedBy(m_sampling.getValue())).getMillis();
-				return (endRange);
-			}
-			else
-			{
-				return ((((timestamp - m_startTime) / m_range) +1) * m_range + m_startTime);
-			}
-		}
-
+        /**
+         * Iterates over the next subrange and computes the aggregated value.
+         * @return a data point with the aggregated value
+         */
 		@Override
 		public DataPoint next()
 		{
 			if (!m_dpIterator.hasNext())
 			{
-				//We calculate start and end ranges as the ranges may not be
-				//consecutive if data does not show up in each range.
-				long startRange = getStartRange(currentDataPoint.getTimestamp());
-				long endRange = getEndRange(currentDataPoint.getTimestamp());
+                long startRange = getStartRange();
+                SubRangeIterator subIterator = null;
+                do {
+                    //We calculate start and end ranges as the ranges may not be
+                    //consecutive if data does not show up in each range.
+                    long endRange = getEndRange();
 
-				SubRangeIterator subIterator = new SubRangeIterator(
-						endRange);
+                    subIterator = new SubRangeIterator(endRange);
 
-				long dataPointTime = currentDataPoint.getTimestamp();
-				if (m_alignStartTime)
-					dataPointTime = startRange;
+                } while (!subIterator.hasNext()); // skip over empty sub ranges
 
-				m_dpIterator = m_subAggregator.getNextDataPoints(dataPointTime,
-						subIterator).iterator();
+                long dataPointTime = getDataPointTime();
+                if (m_alignSampling)
+                    dataPointTime = alignRangeBoundary(dataPointTime);
+
+                m_dpIterator = m_subAggregator
+                        .getNextDataPoints(dataPointTime, subIterator)
+                        .iterator();
 			}
 
 			return (m_dpIterator.next());
 		}
 
+
+        /**
+         * Computes the data point time for the aggregated value.
+         * Different strategies could be added here such as
+         * datapoint time = range start time
+         *                = range end time
+         *                = range median
+         *                = current datapoint time
+         * @return
+         */
+        private long getDataPointTime() {
+            return currentDataPoint.getTimestamp();
+        }
+
+        /**
+         *
+         * @return true if there is a subrange left
+         */
 		@Override
 		public boolean hasNext()
 		{
-			return (m_dpIterator.hasNext() || super.hasNext());
+            return (m_dpIterator.hasNext() || super.hasNext());
 		}
 
 		//========================================================================
@@ -294,11 +294,11 @@ public abstract class RangeAggregator implements Aggregator
 			@Override
 			public DataPoint next()
 			{
-				DataPoint ret = currentDataPoint;
+				DataPoint returnedDataPoint = currentDataPoint;
 				if (hasNextInternal())
-					currentDataPoint = nextInternal();
+					currentDataPoint = nextInternal(); // set to null by hasNextInternal if no next
 
-				return (ret);
+                return returnedDataPoint;
 			}
 
 			@Override
@@ -316,7 +316,7 @@ public abstract class RangeAggregator implements Aggregator
 	public interface RangeSubAggregator
 	{
 		/**
-		 Returns an aggregated data point from a ragne that is passed in
+		 Returns an aggregated data point from a range that is passed in
 		 as dataPointRange.
 		 @return
 

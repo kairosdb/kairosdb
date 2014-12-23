@@ -28,6 +28,7 @@ import com.google.gson.stream.JsonWriter;
 import com.google.inject.Inject;
 import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
+import org.joda.time.DateTimeZone;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.RangeAggregator;
@@ -78,6 +79,7 @@ public class GsonParser
 		GsonBuilder builder = new GsonBuilder();
 		builder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
 		builder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
+        builder.registerTypeAdapter(DateTimeZone.class, new DateTimeZoneDeserializer());
 		builder.registerTypeAdapter(Metric.class, new MetricDeserializer());
 
 		m_gson = builder.create();
@@ -605,6 +607,34 @@ public class GsonParser
 			return tu;
 		}
 	}
+
+    //===========================================================================
+    private class DateTimeZoneDeserializer implements JsonDeserializer<DateTimeZone>
+    {
+        public DateTimeZone deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+                throws JsonParseException
+        {
+            if(json.isJsonNull())
+                return null;
+            String tz = json.getAsString();
+            if (tz.isEmpty()) // defaults to UTC
+                return DateTimeZone.UTC;
+            DateTimeZone timeZone;
+
+            try
+            {
+                // check if time zone is valid
+                timeZone = DateTimeZone.forID(tz);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new ContextualJsonSyntaxException(tz,
+                        "is not a valid time zone, must be one of " + DateTimeZone.getAvailableIDs());
+            }
+            return timeZone;
+        }
+    }
+
 
 	//===========================================================================
 	private class MetricDeserializer implements JsonDeserializer<Metric>

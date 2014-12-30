@@ -33,8 +33,6 @@ public class CachedSearchResult implements QueryCallback
 {
 	public static final Logger logger = LoggerFactory.getLogger(CachedSearchResult.class);
 
-	public static final int DATA_POINT_SIZE = 8 + 1 + 8; //timestamp + type flag + value
-	public static final int MAX_READ_BUFFER_SIZE = 60; //The number of datapoints to read into each buffer we could potentially have a lot of these so we keep them smaller
 	public static final int WRITE_BUFFER_SIZE = 500;
 
 	public static final byte LONG_FLAG = 0x1;
@@ -52,7 +50,6 @@ public class CachedSearchResult implements QueryCallback
 	private boolean m_readFromCache = false;
 	private KairosDataPointFactory m_dataPointFactory;
 	private StringPool m_stringPool;
-	private int m_readBufferSize = MAX_READ_BUFFER_SIZE;
 
 
 	private static File getIndexFile(String baseFileName)
@@ -74,8 +71,6 @@ public class CachedSearchResult implements QueryCallback
 			throws FileNotFoundException
 	{
 		m_metricName = metricName;
-		/*m_writeBuffer = ByteBuffer.allocate(DATA_POINT_SIZE * WRITE_BUFFER_SIZE);
-		m_writeBuffer.clear();*/
 		m_indexFile = indexFile;
 		m_dataPointSets = new ArrayList<FilePositionMarker>();
 		m_dataFile = dataFile;
@@ -99,7 +94,6 @@ public class CachedSearchResult implements QueryCallback
 	{
 		ObjectInputStream in = new ObjectInputStream(new FileInputStream(m_indexFile));
 		int size = in.readInt();
-		int avgRowWidth = 0;
 		for (int I = 0; I < size; I++)
 		{
 			//open the cache file only if there will be data point groups returned
@@ -109,12 +103,8 @@ public class CachedSearchResult implements QueryCallback
 			FilePositionMarker marker = new FilePositionMarker();
 			marker.readExternal(in);
 			m_dataPointSets.add(marker);
-			avgRowWidth += marker.getDataPointCount();
 		}
 
-		avgRowWidth /= size;
-
-		m_readBufferSize = Math.min(m_readBufferSize, avgRowWidth);
 
 		m_readFromCache = true;
 		in.close();
@@ -139,11 +129,6 @@ public class CachedSearchResult implements QueryCallback
 		out.close();
 	}
 
-	/*private void clearDataFile() throws IOException
-	{
-		if (m_randomAccessFile != null)
-			m_randomAccessFile.getChannel().truncate(0);
-	}*/
 
 	public static CachedSearchResult createCachedSearchResult(String metricName,
 			String baseFileName, KairosDataPointFactory dataPointFactory)
@@ -158,8 +143,6 @@ public class CachedSearchResult implements QueryCallback
 
 		CachedSearchResult ret = new CachedSearchResult(metricName, dataFile,
 				indexFile, dataPointFactory);
-
-		//ret.clearDataFile();
 
 		return (ret);
 	}
@@ -254,54 +237,11 @@ public class CachedSearchResult implements QueryCallback
 		m_dataPointSets.add(m_currentFilePositionMarker);
 	}
 
-	/*private void flushWriteBuffer() throws IOException
-	{
-		if (m_writeBuffer.position() != 0)
-		{
-			m_writeBuffer.flip();
-
-			while (m_writeBuffer.hasRemaining())
-				m_randomAccessFile.write(m_writeBuffer);
-
-			m_writeBuffer.clear();
-		}
-	}*/
-
-	/*public void addDataPoint(long timestamp, long value) throws IOException
-	{
-		if (!m_writeBuffer.hasRemaining())
-		{
-			flushWriteBuffer();
-		}
-		m_writeBuffer.putLong(timestamp);
-		m_writeBuffer.put(LONG_FLAG);
-		m_writeBuffer.putLong(value);
-
-		m_currentFilePositionMarker.incrementDataPointCount();
-	}
-
-	public void addDataPoint(long timestamp, double value) throws IOException
-	{
-		if (!m_writeBuffer.hasRemaining())
-		{
-			flushWriteBuffer();
-		}
-		m_writeBuffer.putLong(timestamp);
-		m_writeBuffer.put(DOUBLE_FLAG);
-		m_writeBuffer.putDouble(value);
-
-		m_currentFilePositionMarker.incrementDataPointCount();
-	}*/
 
 	@Override
 	public void addDataPoint(DataPoint datapoint) throws IOException
 	{
-		/*if ((double)m_writeBuffer.remaining() < ((double)m_writeBuffer.limit() * 0.20))
-		{
-			flushWriteBuffer();
-		}*/
 		m_dataOutputStream.writeLong(datapoint.getTimestamp());
-		//m_writeBuffer.putLong(datapoint.getTimestamp());
 		datapoint.writeValueToBuffer(m_dataOutputStream);
 
 		m_currentFilePositionMarker.incrementDataPointCount();
@@ -309,29 +249,6 @@ public class CachedSearchResult implements QueryCallback
 
 	public List<DataPointRow> getRows()
 	{
-		//Calculate read buffer size
-		int avgRowWidth = 1;
-		for (FilePositionMarker marker : m_dataPointSets)
-		{
-			avgRowWidth += marker.getDataPointCount();
-		}
-		//todo: check for zero in m_dataPointSets
-		if (m_dataPointSets.size() != 0)
-		{
-			avgRowWidth /= m_dataPointSets.size();
-
-			m_readBufferSize = Math.min(avgRowWidth, MAX_READ_BUFFER_SIZE);
-
-			//Try to max out at 100M
-			m_readBufferSize = (int)Math.min(m_readBufferSize,
-					(100000000L / (DATA_POINT_SIZE * m_dataPointSets.size())));
-		}
-
-		if (m_readBufferSize == 0)
-			m_readBufferSize = 1;
-
-		//System.out.println("Read Buffer size "+m_readBufferSize);
-
 		List<DataPointRow> ret = new ArrayList<DataPointRow>();
 		MemoryMonitor mm = new MemoryMonitor(20);
 
@@ -404,6 +321,7 @@ public class CachedSearchResult implements QueryCallback
 		{
 			out.writeLong(m_startPosition);
 			out.writeLong(m_endPosition);
+			out.writeInt(m_dataPointCount);
 			out.writeObject(m_dataType);
 			out.writeInt(m_tags.size());
 			for (String s : m_tags.keySet())
@@ -418,8 +336,9 @@ public class CachedSearchResult implements QueryCallback
 		{
 			m_startPosition = in.readLong();
 			m_endPosition = in.readLong();
+			m_dataPointCount = in.readInt();
 			m_dataType = (String)in.readObject();
-			m_dataPointCount = (int)((m_endPosition - m_startPosition) / DATA_POINT_SIZE);
+			//m_dataPointCount = (int)((m_endPosition - m_startPosition) / DATA_POINT_SIZE);
 
 			int tagCount = in.readInt();
 			for (int I = 0; I < tagCount; I++)
@@ -456,20 +375,6 @@ public class CachedSearchResult implements QueryCallback
 			m_dataPointCount = dataPointCount;
 		}
 
-		/*private void readMorePoints() throws IOException
-		{
-			m_readBuffer.clear();
-
-			if ((m_endPostition - m_currentPosition) < m_readBuffer.limit())
-				m_readBuffer.limit((int)(m_endPostition - m_currentPosition));
-
-			int sizeRead = m_randomAccessFile.read(m_readBuffer, m_currentPosition);
-			if (sizeRead == -1)
-				throw new IOException("Prematurely reached the end of the file");
-
-			m_currentPosition += sizeRead;
-			m_readBuffer.flip();
-		}*/
 
 		@Override
 		public boolean hasNext()
@@ -485,12 +390,6 @@ public class CachedSearchResult implements QueryCallback
 
 			try
 			{
-				/*if (!m_readBuffer.hasRemaining())
-					readMorePoints();
-
-				if (!m_readBuffer.hasRemaining())
-					return (null);*/
-
 				long timestamp = m_readBuffer.readLong();
 
 				ret = m_dataPointFactory.createDataPoint(m_dataType, timestamp, m_readBuffer);

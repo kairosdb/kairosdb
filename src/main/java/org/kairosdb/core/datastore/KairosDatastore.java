@@ -491,7 +491,7 @@ public class KairosDatastore
 			for (DataPointGroup queryResult : queryResults)
 			{
 				String groupType = DataPoint.GROUP_NUMBER;
-				//todo May want to make group type a first class citizen in DataPointGropu
+				//todo May want to make group type a first class citizen in DataPointGroup
 				for (GroupByResult groupByResult : queryResult.getGroupByResult())
 				{
 					if (groupByResult instanceof TypeGroupByResult)

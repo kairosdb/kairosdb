@@ -2,10 +2,9 @@ package org.kairosdb.core.health;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.google.inject.Inject;
+import org.kairosdb.core.http.rest.MetricsResource;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -28,6 +27,16 @@ public class HealthCheckResource
 		this.healthCheckService = checkNotNull(healthCheckService);
 	}
 
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("check")
+	public Response corsPreflightCheck(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") String requestMethod)
+	{
+		Response.ResponseBuilder responseBuilder = MetricsResource.getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
 	/**
 	 * Health check
 	 * @return 204 if healthy otherwise 500
@@ -48,6 +57,18 @@ public class HealthCheckResource
 
 		return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
 	}
+
+
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("status")
+	public Response corsPreflightStatus(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") String requestMethod)
+	{
+		Response.ResponseBuilder responseBuilder = MetricsResource.getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
 
 	/**
 	 * Returns the status of each health check.

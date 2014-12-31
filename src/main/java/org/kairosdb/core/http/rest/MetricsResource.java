@@ -115,6 +115,16 @@ public class MetricsResource implements KairosMetricReporter
 		return (responseBuilder);
 	}
 
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/version")
+	public Response corsPreflightVersion(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/version")
@@ -127,12 +137,32 @@ public class MetricsResource implements KairosMetricReporter
 		return responseBuilder.build();
 	}
 
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/metricnames")
+	public Response corsPreflightMetricNames(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/metricnames")
 	public Response getMetricNames()
 	{
 		return executeNameQuery(NameType.METRIC_NAMES);
+	}
+
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/tagnames")
+	public Response corsPreflightTagNames(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
 	}
 
 	@GET
@@ -143,12 +173,33 @@ public class MetricsResource implements KairosMetricReporter
 		return executeNameQuery(NameType.TAG_KEYS);
 	}
 
+
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/tagvalues")
+	public Response corsPreflightTagValues(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/tagvalues")
 	public Response getTagValues()
 	{
 		return executeNameQuery(NameType.TAG_VALUES);
+	}
+
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints")
+	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
 	}
 
 	@POST
@@ -223,6 +274,15 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/query/tags")
+	public Response corsPreflightQueryTags(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
@@ -301,6 +361,21 @@ public class MetricsResource implements KairosMetricReporter
 			logger.error("Out of memory error.", e);
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}
+	}
+
+	/**
+	 Information for this endpoint was taken from https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS.
+	 <p/>
+	 <p/>Response to a cors preflight request to access data.
+	 */
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path(QUERY_URL)
+	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
 	}
 
 	@GET
@@ -468,7 +543,7 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
-	private static ResponseBuilder getCorsPreflightResponseBuilder(final String requestHeaders,
+	public static ResponseBuilder getCorsPreflightResponseBuilder(final String requestHeaders,
 			final String requestMethod)
 	{
 		ResponseBuilder responseBuilder = Response.status(Response.Status.OK);
@@ -483,36 +558,12 @@ public class MetricsResource implements KairosMetricReporter
 		return responseBuilder;
 	}
 
-	/**
-	 Information for this endpoint was taken from https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS.
-	 <p/>
-	 <p/>Response to a cors preflight request to access data.
-	 */
-	@OPTIONS
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/datapoints/query")
-	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
-	{
-		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
-		return (responseBuilder.build());
-	}
 
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/datapoints/query/tags")
-	public Response corsPreflightQueryTags(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
-	{
-		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
-		return (responseBuilder.build());
-	}
-
-	@OPTIONS
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/datapoints")
-	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
-	                                        @HeaderParam("Access-Control-Request-Method") String requestMethod)
+	@Path("/metric/{metricName}")
+	public Response corsPreflightMetricDelete(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") String requestMethod)
 	{
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());

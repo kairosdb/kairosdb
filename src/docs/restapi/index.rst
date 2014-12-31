@@ -12,6 +12,7 @@ Contents:
    AddDataPoints
    DeleteDataPoints
    DeleteMetric
+   Health
    ListMetricNames
    ListTagNames
    ListTagValues

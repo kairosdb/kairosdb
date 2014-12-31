@@ -360,6 +360,11 @@ public class H2Datastore implements Datastore
 				new DeleteMetricsQuery(metricId,
 						new Timestamp(deleteQuery.getStartTime()),
 						new Timestamp(deleteQuery.getEndTime())).runUpdate();
+
+				if (DataPoint.factory.getWithMetricId(metricId) == null)
+				{
+					Metric.factory.find(metricId).delete();
+				}
 			}
 
 			idQuery.close();

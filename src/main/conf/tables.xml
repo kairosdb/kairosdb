@@ -85,12 +85,25 @@
 				limit ?
 			</sql>
 		</table_query>
+
+		<table_query name="with_metric_id" result_type="single">
+			<comment>Check for at least a single data point for a given metric id</comment>
+			<input>
+				<param name="metric_id" type="string" test="foo"/>
+			</input>
+			<sql>
+				from data_point this
+				where
+				this."metric_id" = ?
+				limit 1
+			</sql>
+		</table_query>
 	</table>
 
 	<table name="metric_tag">
 		<property key="hsqldb_tableType" value="CACHED"/>
 		<col name="metric_id" type="string" primary_key="true">
-			<reference table="metric" column="id"/>
+			<reference table="metric" column="id" on_delete="cascade"/>
 		</col>
 		<col name="tag_name" type="string" primary_key="true">
 			<reference table="tag" column="name"/>

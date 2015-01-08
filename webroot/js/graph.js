@@ -99,7 +99,10 @@ function buildKairosDBQuery() {
 			var name = $(aggregator).find(".aggregatorName").val();
 
 			var unit;
-			if (name == 'rate') {
+			if (name == 'diff') {
+				metric.addAggregator(name);
+			}
+			else if (name == 'rate') {
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				metric.addRate(unit);
 			}
@@ -139,7 +142,7 @@ function buildKairosDBQuery() {
 					return true;
 				}
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-				metric.addAggregator(name, value, unit);
+				metric.addRangeAggregator(name, value, unit);
 			}
 		});
 
@@ -520,7 +523,14 @@ function addAggregator(container) {
 	$aggregatorContainer.find(".aggregatorName").change(function () {
 		var name = $aggregatorContainer.find(".aggregatorName").val();
 
-		if (name == "rate" || name == "sampler") {
+		if (name == "diff" ) {
+			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
+			$aggregatorContainer.find(".aggregatorSampling").hide();
+			$aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".divisor").hide();
+			$aggregatorContainer.find(".scalingFactor").hide();
+		}
+		else if (name == "rate" || name == "sampler") {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();

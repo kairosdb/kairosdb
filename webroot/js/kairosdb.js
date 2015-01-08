@@ -119,7 +119,19 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
-	this.addAggregator = function (name, value, unit) {
+	this.addAggregator = function (name)
+	{
+		if (!this.aggregators)
+			this.aggregators = [];
+
+		var aggregator = {};
+		aggregator.name = name;
+
+		this.aggregators.push(aggregator);
+		return this;
+	};
+
+	this.addRangeAggregator = function (name, value, unit) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
@@ -135,7 +147,7 @@ kairosdb.Metric = function (name) {
 
 		this.aggregators.push(aggregator);
 		return this;
-	}
+	};
 
 	this.addScaleAggregator = function (scalingFactor) {
 		if (!this.aggregators)

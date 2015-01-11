@@ -81,6 +81,7 @@ public class MetricsResourceTest
 			@Override
 			protected void configure()
 			{
+				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_ADDRESS_PROPERTY)).toInstance("0.0.0.0");
 				bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9001);
 				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
 				bind(Datastore.class).toInstance(datastore);

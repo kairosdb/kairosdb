@@ -21,7 +21,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
-
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
@@ -31,7 +30,10 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.util.Tags;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
@@ -39,7 +41,6 @@ import static org.mockito.Mockito.*;
  User: bhawkins
  Date: 10/7/13
  Time: 11:30 AM
- To change this template use File | Settings | File Templates.
  */
 public class TelnetServerTest
 {
@@ -48,13 +49,13 @@ public class TelnetServerTest
 	private KairosDatastore m_datastore;
 	private TelnetServer m_server;
 	private TelnetClient m_client;
-
+	private TestCommandProvider commandProvider;
 
 	@Before
 	public void setupDatastore() throws KairosDBException, IOException
 	{
 		m_datastore = mock(KairosDatastore.class);
-		TestCommandProvider commandProvider = new TestCommandProvider();
+		commandProvider = new TestCommandProvider();
 		commandProvider.putCommand("put", new PutCommand(m_datastore, "localhost",
 				new LongDataPointFactoryImpl(), new DoubleDataPointFactoryImpl()));
 
@@ -69,6 +70,40 @@ public class TelnetServerTest
 	{
 		m_server.stop();
 		m_client.close();
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void test_constructorMaxCommandLengthLessThanOneInvalid() throws UnknownHostException
+	{
+		new TelnetServer("0:0:0:0", 80, 0, commandProvider);
+	}
+
+	@Test(expected = NullPointerException.class)
+	public void test_constructorNullCommandProviderInvalid() throws UnknownHostException
+	{
+		new TelnetServer("0:0:0:0", 80, 80, null);
+	}
+
+	@Test(expected = UnknownHostException.class)
+	public void test_constructorInvalidAddress() throws UnknownHostException
+	{
+		new TelnetServer("0:0:", 80, 80, commandProvider);
+	}
+
+	@Test
+	public void test_emptyAddressValid() throws UnknownHostException
+	{
+		TelnetServer telnetServer = new TelnetServer("", 80, 80, commandProvider);
+
+		assertThat(telnetServer.getAddress().getHostName(), equalTo("localhost"));
+	}
+
+	@Test
+	public void test_nullAddressValid() throws UnknownHostException
+	{
+		TelnetServer telnetServer = new TelnetServer(null, 80, 80, commandProvider);
+
+		assertThat(telnetServer.getAddress().getHostName(), equalTo("localhost"));
 	}
 
 	@Test

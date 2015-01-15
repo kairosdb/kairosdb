@@ -24,11 +24,10 @@ import static org.kairosdb.core.DataPoint.GROUP_NUMBER;
 
 public class NullDataPointFactory implements DataPointFactory
 {
-	
+
 	public static final String DATASTORE_TYPE = "null";
 	public static final String API_TYPE = "null";
 
-	
 
 	public static void writeToByteBuffer(DataOutput buffer, NullDataPoint dataPoint) throws IOException
 	{
@@ -56,7 +55,6 @@ public class NullDataPointFactory implements DataPointFactory
 	@Override
 	public DataPoint getDataPoint(long timestamp, DataInput buffer) throws IOException
 	{
-		
 		return new NullDataPoint(timestamp);
 	}
 }

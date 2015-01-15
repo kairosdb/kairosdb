@@ -16,7 +16,10 @@
 
 package org.kairosdb.core.aggregator;
 
-import com.google.inject.*;
+import com.google.inject.Binding;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Key;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 
 import java.util.*;
@@ -26,12 +29,8 @@ public class GuiceAggregatorFactory implements AggregatorFactory
 	private Map<String, Class<Aggregator>> m_aggregators = new HashMap<String, Class<Aggregator>>();
 	private Injector m_injector;
 
-	@Inject
-	public GuiceAggregatorFactory(Set<Aggregator> aggregators)
-	{
-	}
 
-	//@Inject
+	@Inject
 	public GuiceAggregatorFactory(Injector injector)
 	{
 		m_injector = injector;

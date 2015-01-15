@@ -26,128 +26,128 @@ import static org.junit.Assert.assertThat;
 
 public class DataGapsMarkingAggregatorTest
 {
-    private DataGapsMarkingAggregator aggregator;
+	private DataGapsMarkingAggregator aggregator;
 
-    @Before
-    public void setup()
-    {
-        aggregator = new DataGapsMarkingAggregator();
-    }
+	@Before
+	public void setup()
+	{
+		aggregator = new DataGapsMarkingAggregator();
+	}
 
-    @Test(expected = NullPointerException.class)
-    public void test_nullSet_invalid()
-    {
-        aggregator.aggregate(null);
-    }
-    
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void test_getValueFromNullDpIsIllegal()
-    {
-        ListDataPointGroup group = new ListDataPointGroup("group");
-        group.addDataPoint(new LongDataPoint(1, 10));
-        group.addDataPoint(new LongDataPoint(4, 5));
-        group.addDataPoint(new LongDataPoint(5, 25));
+	@Test(expected = NullPointerException.class)
+	public void test_nullSet_invalid()
+	{
+		aggregator.aggregate(null);
+	}
 
-        DataPointGroup results = aggregator.aggregate(group);
 
-        results.next();
-        DataPoint dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(2L));
-        assertThat(dataPoint.getLongValue(), equalTo(10L));
+	@Test(expected = IllegalArgumentException.class)
+	public void test_getValueFromNullDpIsIllegal()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new LongDataPoint(1, 10));
+		group.addDataPoint(new LongDataPoint(4, 5));
+		group.addDataPoint(new LongDataPoint(5, 25));
 
-        
-    }
+		DataPointGroup results = aggregator.aggregate(group);
 
-    @Test
-    public void test_withAGapShouldProvideOneNullDP()
-    {
-        ListDataPointGroup group = new ListDataPointGroup("group");
-        group.addDataPoint(new LongDataPoint(0, 1));
-        group.addDataPoint(new LongDataPoint(1, 10));
-        group.addDataPoint(new LongDataPoint(1, 20));
-        group.addDataPoint(new LongDataPoint(1, 3));
-        group.addDataPoint(new LongDataPoint(2, 1));
-        group.addDataPoint(new LongDataPoint(2, 3));
-        group.addDataPoint(new LongDataPoint(4, 5));
-        group.addDataPoint(new LongDataPoint(5, 25));
+		results.next();
+		DataPoint dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(2L));
+		assertThat(dataPoint.getLongValue(), equalTo(10L));
 
-        DataPointGroup results = aggregator.aggregate(group);
 
-        DataPoint dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(0L));
-        assertThat(dataPoint.getLongValue(), equalTo(1L));
+	}
 
-        dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(1L));
-        assertThat(dataPoint.getLongValue(), equalTo(10L));
+	@Test
+	public void test_withAGapShouldProvideOneNullDP()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new LongDataPoint(0, 1));
+		group.addDataPoint(new LongDataPoint(1, 10));
+		group.addDataPoint(new LongDataPoint(1, 20));
+		group.addDataPoint(new LongDataPoint(1, 3));
+		group.addDataPoint(new LongDataPoint(2, 1));
+		group.addDataPoint(new LongDataPoint(2, 3));
+		group.addDataPoint(new LongDataPoint(4, 5));
+		group.addDataPoint(new LongDataPoint(5, 25));
 
-        dataPoint = results.next();        
-        assertThat(dataPoint.getTimestamp(), equalTo(1L));
-        assertThat(dataPoint.getLongValue(), equalTo(20L));
-        
-        dataPoint = results.next();        
-        assertThat(dataPoint.getTimestamp(), equalTo(1L));
-        assertThat(dataPoint.getLongValue(), equalTo(3L));
-        
-        dataPoint = results.next();        
-        assertThat(dataPoint.getTimestamp(), equalTo(2L));
-        assertThat(dataPoint.getLongValue(), equalTo(1L));
-        
-        dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(2L));
-        assertThat(dataPoint.getLongValue(), equalTo(3L));
-        
-        dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(3L));
-        assertThat(dataPoint instanceof NullDataPoint, equalTo(true));
-        assertThat(dataPoint.isDouble(), equalTo(false));
-        assertThat(dataPoint.isLong(), equalTo(false));
-        
-        dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(4L));
-        assertThat(dataPoint.getLongValue(), equalTo(5L));
+		DataPointGroup results = aggregator.aggregate(group);
 
-        dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(5L));
-        assertThat(dataPoint.getLongValue(), equalTo(25L));
+		DataPoint dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(0L));
+		assertThat(dataPoint.getLongValue(), equalTo(1L));
 
-        assertThat(results.hasNext(), equalTo(false));
-    }
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(1L));
+		assertThat(dataPoint.getLongValue(), equalTo(10L));
 
-    @Test
-    public void test_withSeveralGapsShouldProvideNullDPs()
-    {
-        ListDataPointGroup group = new ListDataPointGroup("group");
-        group.addDataPoint(new LongDataPoint(1, 10));
-        group.addDataPoint(new LongDataPoint(4, 5));
-        group.addDataPoint(new LongDataPoint(5, 25));
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(1L));
+		assertThat(dataPoint.getLongValue(), equalTo(20L));
 
-        DataPointGroup results = aggregator.aggregate(group);
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(1L));
+		assertThat(dataPoint.getLongValue(), equalTo(3L));
 
-        DataPoint dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(1L));
-        assertThat(dataPoint.getLongValue(), equalTo(10L));
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(2L));
+		assertThat(dataPoint.getLongValue(), equalTo(1L));
 
-        dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(2L));
-        assertThat(dataPoint instanceof NullDataPoint, equalTo(true));
-        
-        
-        dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(3L));
-        assertThat(dataPoint instanceof NullDataPoint, equalTo(true));
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(2L));
+		assertThat(dataPoint.getLongValue(), equalTo(3L));
 
-        
-        dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(4L));
-        assertThat(dataPoint.getLongValue(), equalTo(5L));
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(3L));
+		assertThat(dataPoint instanceof NullDataPoint, equalTo(true));
+		assertThat(dataPoint.isDouble(), equalTo(false));
+		assertThat(dataPoint.isLong(), equalTo(false));
 
-        dataPoint = results.next();
-        assertThat(dataPoint.getTimestamp(), equalTo(5L));
-        assertThat(dataPoint.getLongValue(), equalTo(25L));
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(4L));
+		assertThat(dataPoint.getLongValue(), equalTo(5L));
 
-        assertThat(results.hasNext(), equalTo(false));
-    }
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(5L));
+		assertThat(dataPoint.getLongValue(), equalTo(25L));
+
+		assertThat(results.hasNext(), equalTo(false));
+	}
+
+	@Test
+	public void test_withSeveralGapsShouldProvideNullDPs()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new LongDataPoint(1, 10));
+		group.addDataPoint(new LongDataPoint(4, 5));
+		group.addDataPoint(new LongDataPoint(5, 25));
+
+		DataPointGroup results = aggregator.aggregate(group);
+
+		DataPoint dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(1L));
+		assertThat(dataPoint.getLongValue(), equalTo(10L));
+
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(2L));
+		assertThat(dataPoint instanceof NullDataPoint, equalTo(true));
+
+
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(3L));
+		assertThat(dataPoint instanceof NullDataPoint, equalTo(true));
+
+
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(4L));
+		assertThat(dataPoint.getLongValue(), equalTo(5L));
+
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(5L));
+		assertThat(dataPoint.getLongValue(), equalTo(25L));
+
+		assertThat(results.hasNext(), equalTo(false));
+	}
 
 }

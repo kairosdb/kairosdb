@@ -1,6 +1,4 @@
 /*
- * Copyright 2013 Proofpoint Inc.
- *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
  *    You may obtain a copy of the License at
@@ -35,15 +33,28 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class RangeAggregator implements Aggregator
 {
 	private long m_startTime = 0L;
+	private boolean m_started = false;
+        
 	private long m_range = 1L;
 	private long m_currentRange;
 	private long m_dayOfMonthOffset = 0L; //day of month offset in milliseconds
 	private boolean m_alignSampling;
+	private boolean m_exhaustive;
 
 	@NotNull
 	@Valid
 	private Sampling m_sampling;
 	private boolean m_alignStartTime;
+
+	public RangeAggregator()
+	{
+		this(false);
+	}
+
+	public RangeAggregator(boolean exhaustive)
+	{
+		m_exhaustive = exhaustive;
+	}
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
@@ -84,7 +95,10 @@ public abstract class RangeAggregator implements Aggregator
 		}
 		m_currentRange = m_startTime;
 
-		return (new RangeDataPointAggregator(dataPointGroup, getSubAggregator()));
+		if (m_exhaustive)
+			return (new ExhaustiveRangeDataPointAggregator(dataPointGroup, getSubAggregator()));
+		else
+			return (new RangeDataPointAggregator(dataPointGroup, getSubAggregator()));
 	}
 
 	public void setSampling(Sampling sampling)
@@ -157,9 +171,9 @@ public abstract class RangeAggregator implements Aggregator
 	 */
 	private class RangeDataPointAggregator extends AggregatedDataPointGroupWrapper
 	{
-		private RangeSubAggregator m_subAggregator;
-		private Calendar m_calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-		private Iterator<DataPoint> m_dpIterator;
+		protected RangeSubAggregator m_subAggregator;
+		protected Calendar m_calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		protected Iterator<DataPoint> m_dpIterator;
 
 
 		public RangeDataPointAggregator(DataPointGroup innerDataPointGroup,
@@ -170,35 +184,9 @@ public abstract class RangeAggregator implements Aggregator
 			m_dpIterator = new ArrayList<DataPoint>().iterator();
 		}
 
-		/**
-		 This returns some value that represents the range the timestamp falls into
-		 The actual value returned is not considered just as long as it is unique
-		 for the time range.
-		 @param timestamp
-		 @return
-		 */
-		/*private long getRange(long timestamp)
-		{
-			while (timestamp > (m_currentRange + m_range))
-				m_currentRange += m_range;
 
-			return (m_currentRange);
-
-			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
-			{
-				m_calendar.setTimeInMillis(timestamp - m_dayOfMonthOffset);
-				int dataPointYear = m_calendar.get(Calendar.YEAR);
-				int dataPointMonth = m_calendar.get(Calendar.MONTH);
-
-				return ((dataPointYear * 12 + dataPointMonth) / m_sampling.getValue());
-			}
-			else
-			{
-				return ((timestamp - m_startTime) / m_range);
-			}
-		}*/
-
-		private long getStartRange(long timestamp)
+                
+		protected long getStartRange(long timestamp)
 		{
 			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
 			{
@@ -211,11 +199,6 @@ public abstract class RangeAggregator implements Aggregator
 				long startRange = start.plus(period.multipliedBy(m_sampling.getValue())).getMillis();
 				return (startRange);
 
-				/*m_calendar.setTimeInMillis(timestamp - m_dayOfMonthOffset);
-				int dataPointYear = m_calendar.get(Calendar.YEAR);
-				int dataPointMonth = m_calendar.get(Calendar.MONTH);
-
-				return ((dataPointYear * 12 + dataPointMonth) / m_sampling.getValue());*/
 			}
 			else
 			{
@@ -223,7 +206,7 @@ public abstract class RangeAggregator implements Aggregator
 			}
 		}
 
-		private long getEndRange(long timestamp)
+		protected long getEndRange(long timestamp)
 		{
 			if ((m_sampling != null) && (m_sampling.getUnit() == TimeUnit.MONTHS))
 			{
@@ -276,7 +259,7 @@ public abstract class RangeAggregator implements Aggregator
 		/**
 		 This class provides an iterator over a discrete range of data points
 		 */
-		private class SubRangeIterator implements Iterator<DataPoint>
+		protected class SubRangeIterator implements Iterator<DataPoint>
 		{
 			private long m_endRange;
 
@@ -306,6 +289,54 @@ public abstract class RangeAggregator implements Aggregator
 			{
 				throw new UnsupportedOperationException();
 			}
+		}
+	}
+
+	//========================================================================
+	private class ExhaustiveRangeDataPointAggregator extends RangeDataPointAggregator
+	{
+		private long m_nextExpectedRangeStartTime;
+
+		public ExhaustiveRangeDataPointAggregator(DataPointGroup innerDataPointGroup, RangeSubAggregator subAggregator)
+		{
+			super(innerDataPointGroup, subAggregator);
+			m_nextExpectedRangeStartTime = m_startTime;
+		}
+
+		private void setNextStartTime( long timeStamp)
+		{
+			m_nextExpectedRangeStartTime = timeStamp;
+		}
+
+		@Override
+		public DataPoint next()
+		{
+			if (!m_dpIterator.hasNext())
+			{
+				//We calculate start and end ranges as the ranges may not be
+				//consecutive if data does not show up in each range.
+				long startTime = m_nextExpectedRangeStartTime;
+				if( !m_started ){
+					m_started=true;
+					startTime=currentDataPoint.getTimestamp();
+				}
+				long startRange = getStartRange(startTime);
+				long endRange = getEndRange(startTime);
+
+				// Next expected range starts just after this end range
+				setNextStartTime(endRange);
+				SubRangeIterator subIterator = new SubRangeIterator(
+						endRange);
+
+				long dataPointTime = currentDataPoint.getTimestamp();
+				if (m_alignStartTime || startRange < dataPointTime)
+					dataPointTime = startRange;
+
+				m_dpIterator = m_subAggregator.getNextDataPoints(dataPointTime,
+						subIterator).iterator();
+			}
+
+			return (m_dpIterator.next());
 		}
 	}
 

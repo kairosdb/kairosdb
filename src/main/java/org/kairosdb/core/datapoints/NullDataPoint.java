@@ -20,6 +20,7 @@ import org.kairosdb.core.datapoints.DataPointHelper;
 import org.kairosdb.core.datapoints.LongDataPoint;
 
 import java.nio.ByteBuffer;
+
 import org.kairosdb.core.aggregator.DataGapsMarkingAggregator;
 import org.kairosdb.core.exception.KairosDBException;
 
@@ -29,8 +30,8 @@ import java.io.IOException;
 
 public class NullDataPoint extends DataPointHelper
 {
-        public static final String API_TYPE = "null";
-        
+	public static final String API_TYPE = "null";
+
 	public NullDataPoint(long timestamp)
 	{
 		super(timestamp);
@@ -42,8 +43,8 @@ public class NullDataPoint extends DataPointHelper
 	{
 		return "null";
 	}
-        
-        @Override
+
+	@Override
 	public void writeValueToBuffer(DataOutput buffer) throws IOException
 	{
 		// write nothing - only used for query results
@@ -54,7 +55,7 @@ public class NullDataPoint extends DataPointHelper
 	{
 		writer.value(null);
 	}
-        
+
 	@Override
 	public boolean isLong()
 	{
@@ -78,8 +79,8 @@ public class NullDataPoint extends DataPointHelper
 	{
 		throw new IllegalArgumentException("No aggregator can be chained after " + DataGapsMarkingAggregator.class.getName());
 	}
-        
-        @Override
+
+	@Override
 	public String getApiDataType()
 	{
 		return API_TYPE;

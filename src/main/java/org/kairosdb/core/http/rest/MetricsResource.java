@@ -491,6 +491,16 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/delete")
+	public Response corsPreflightDelete(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/delete")

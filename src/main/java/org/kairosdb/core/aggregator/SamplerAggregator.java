@@ -19,7 +19,6 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.datapoints.DoubleDataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
@@ -28,14 +27,14 @@ import org.kairosdb.core.datastore.TimeUnit;
 @AggregatorName(name = "sampler", description = "Computes the sampling rate of change for the data points.")
 public class SamplerAggregator implements Aggregator
 {
-	private long m_sampling;
+	private Sampling m_sampling;
 	private DoubleDataPointFactory m_dataPointFactory;
 
 	@Inject
 	public SamplerAggregator(DoubleDataPointFactory dataPointFactory)
 	{
 		m_dataPointFactory = dataPointFactory;
-		m_sampling = 1L;
+		m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
 	}
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
@@ -51,7 +50,7 @@ public class SamplerAggregator implements Aggregator
 
 	public void setUnit(TimeUnit timeUnit)
 	{
-		m_sampling = new Sampling(1, timeUnit).getSampling();
+		m_sampling = new Sampling(1, timeUnit);
 	}
 
 
@@ -86,7 +85,7 @@ public class SamplerAggregator implements Aggregator
 									"You must precede sampler with another aggregator.");
 				}
 			}
-			double rate = x1 / (y1 - y0) * m_sampling;
+			double rate = x1 / (y1 - y0) * m_sampling.getSamplingDuration(y0);
 
 			return (m_dataPointFactory.createDataPoint(y1, rate));
 		}

@@ -106,9 +106,10 @@ public class KairosDatastore
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private void newCacheDirectory()
 	{
-		m_cacheDir = m_baseCacheDir + "/" + System.currentTimeMillis() + "/";
-		File cacheDirectory = new File(m_cacheDir);
+		String newCacheDir = m_baseCacheDir + "/" + System.currentTimeMillis() + "/";
+		File cacheDirectory = new File(newCacheDir);
 		cacheDirectory.mkdirs();
+		m_cacheDir = newCacheDir;
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
@@ -490,7 +491,7 @@ public class KairosDatastore
 			for (DataPointGroup queryResult : queryResults)
 			{
 				String groupType = DataPoint.GROUP_NUMBER;
-				//todo May want to make group type a first class citizen in DataPointGropu
+				//todo May want to make group type a first class citizen in DataPointGroup
 				for (GroupByResult groupByResult : queryResult.getGroupByResult())
 				{
 					if (groupByResult instanceof TypeGroupByResult)

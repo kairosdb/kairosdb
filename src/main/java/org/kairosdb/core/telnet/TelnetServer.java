@@ -29,28 +29,47 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.Executors;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class TelnetServer extends SimpleChannelUpstreamHandler implements ChannelPipelineFactory,
 		KairosDBService
 {
 	private static final Logger logger = LoggerFactory.getLogger(TelnetServer.class);
 
-	private final int m_port;
-	private final CommandProvider m_commands;
+	private final int port;
+	private final CommandProvider commandProvider;
 	private final int maxCommandLength;
 
-	private ServerBootstrap m_serverBootstrap;
+	private InetAddress address;
+	private ServerBootstrap serverBootstrap;
+
+	public TelnetServer(int port,
+	                    int maxCommandLength,
+	                    CommandProvider commandProvider)
+			throws UnknownHostException
+	{
+		this(null, port, maxCommandLength, commandProvider);
+	}
 
 	@Inject
-	public TelnetServer(@Named("kairosdb.telnetserver.port") int port,
-			@Named("kairosdb.telnetserver.max_command_size") int maxCommandLength,
-			CommandProvider commandProvider)
+	public TelnetServer(@Named("kairosdb.telnetserver.address") String address,
+	                    @Named("kairosdb.telnetserver.port") int port,
+	                    @Named("kairosdb.telnetserver.max_command_size") int maxCommandLength,
+	                    CommandProvider commandProvider)
+			throws UnknownHostException
 	{
-		m_commands = commandProvider;
-		m_port = port;
+		checkArgument(maxCommandLength > 0, "command length must be greater than zero");
+
+		this.port = port;
 		this.maxCommandLength = maxCommandLength;
+		this.commandProvider = checkNotNull(commandProvider);
+		this.address = InetAddress.getByName(address);
 	}
 
 	@Override
@@ -73,13 +92,13 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 
 	@Override
 	public void messageReceived(final ChannelHandlerContext ctx,
-			final MessageEvent msgevent)
+	                            final MessageEvent msgevent)
 	{
 		final Object message = msgevent.getMessage();
 		if (message instanceof String[])
 		{
 			String[] command = (String[]) message;
-			TelnetCommand telnetCommand = m_commands.getCommand(command[0]);
+			TelnetCommand telnetCommand = commandProvider.getCommand(command[0]);
 			if (telnetCommand != null)
 			{
 				try
@@ -123,26 +142,31 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 	public void start() throws KairosDBException
 	{
 		// Configure the server.
-		m_serverBootstrap = new ServerBootstrap(
+		serverBootstrap = new ServerBootstrap(
 				new NioServerSocketChannelFactory(
 						Executors.newCachedThreadPool(),
 						Executors.newCachedThreadPool()));
 
 		// Configure the pipeline factory.
-		m_serverBootstrap.setPipelineFactory(this);
-		m_serverBootstrap.setOption("child.tcpNoDelay", true);
-		m_serverBootstrap.setOption("child.keepAlive", true);
-		m_serverBootstrap.setOption("reuseAddress", true);
+		serverBootstrap.setPipelineFactory(this);
+		serverBootstrap.setOption("child.tcpNoDelay", true);
+		serverBootstrap.setOption("child.keepAlive", true);
+		serverBootstrap.setOption("reuseAddress", true);
 
 		// Bind and start to accept incoming connections.
-		m_serverBootstrap.bind(new InetSocketAddress(m_port));
+		serverBootstrap.bind(new InetSocketAddress(address, port));
+	}
+
+	public InetAddress getAddress()
+	{
+		return address;
 	}
 
 	@Override
 	public void stop()
 	{
-		if (m_serverBootstrap != null)
-			m_serverBootstrap.shutdown();
+		if (serverBootstrap != null)
+			serverBootstrap.shutdown();
 	}
 
 	private static String formatCommand(String[] command)

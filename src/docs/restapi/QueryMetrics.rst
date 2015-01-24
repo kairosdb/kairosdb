@@ -27,6 +27,37 @@ Aggregators are processed in the order they are specified in the JSON. The outpu
 
 It is possible to filter the data returned by specifying a tag. The data returned will only contain data points associated with the specified tag. Filtering is done using the "tags" property.
 
+---------------
+Request Methods
+---------------
+
+Queries can be done using either a GET or POST method.
+
+--------------------------------------------------------------------------------------------
+
+The GET version requires that the JSON is encoded and passed to the "query" parameter.
+
+------
+Method
+------
+
+  GET
+
+-------
+Request
+-------
+
+  http://[host]:[port]/api/v1/datapoints/query?query=[encoded_JSON]
+
+----
+Body
+----
+  NONE
+
+--------------------------------------------------------------------------------------------
+
+The POST version takes the query JSON in the body of the request.
+
 ------
 Method
 ------

@@ -123,7 +123,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	public long getEndTime()
 	{
 		if (!endTimeSet)
-			endTime = System.currentTimeMillis();
+			endTime = Long.MAX_VALUE;
 
 		return endTime;
 	}

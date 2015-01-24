@@ -306,11 +306,12 @@ public class GsonParserTest
 	}
 
 	@Test
-	public void test_aggregator_sum_noSampling_invalid() throws IOException, QueryException
+	public void test_aggregator_sum_noSampling_valid() throws IOException, QueryException
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sum-no-sampling.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].aggregators[0].m_sampling may not be null");
+		List<QueryMetric> queryMetrics = parser.parseQueryMetric(json);
+		//assertBeanValidation(json, "query.metric[0].aggregators[0].m_sampling may not be null");
 	}
 
 	@Test

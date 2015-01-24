@@ -69,6 +69,7 @@ public class JsonResponse
 
 			m_jsonWriter.key("results").array();
 
+			//This loop must call close on each group at the end.
 			for (DataPointGroup group : queryResults)
 			{
 				final String metric = group.getName();
@@ -128,6 +129,8 @@ public class JsonResponse
 				}
 				m_jsonWriter.endArray();
 				m_jsonWriter.endObject();
+
+				group.close();
 			}
 
 			m_jsonWriter.endArray().endObject();

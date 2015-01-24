@@ -53,7 +53,7 @@ public class MetricTag_base extends GenOrmRecord
 	public static class MetricTagFactoryImpl //Inherit interfaces
 			implements MetricTagFactory 
 		{
-		public static final String CREATE_SQL = "CREATE CACHED TABLE metric_tag (\n	\"metric_id\" VARCHAR  NOT NULL,\n	\"tag_name\" VARCHAR  NOT NULL,\n	\"tag_value\" VARCHAR  NOT NULL,\n	PRIMARY KEY (\"metric_id\", \"tag_name\", \"tag_value\"),\n	CONSTRAINT metric_tag_metric_id_fkey FOREIGN KEY (\"metric_id\")\n		REFERENCES metric (\"id\"),\n	CONSTRAINT metric_tag_tag_name_fkey FOREIGN KEY (\"tag_name\", \"tag_value\")\n		REFERENCES tag (\"name\", \"value\") \n	)";
+		public static final String CREATE_SQL = "CREATE CACHED TABLE metric_tag (\n	\"metric_id\" VARCHAR  NOT NULL,\n	\"tag_name\" VARCHAR  NOT NULL,\n	\"tag_value\" VARCHAR  NOT NULL,\n	PRIMARY KEY (\"metric_id\", \"tag_name\", \"tag_value\"),\n	CONSTRAINT metric_tag_metric_id_fkey FOREIGN KEY (\"metric_id\")\n		REFERENCES metric (\"id\") ON DELETE CASCADE,\n	CONSTRAINT metric_tag_tag_name_fkey FOREIGN KEY (\"tag_name\", \"tag_value\")\n		REFERENCES tag (\"name\", \"value\") \n	)";
 
 		private ArrayList<GenOrmFieldMeta> m_fieldMeta;
 		private ArrayList<GenOrmConstraint> m_foreignKeyConstraints;
@@ -66,7 +66,7 @@ public class MetricTag_base extends GenOrmRecord
 			m_fieldMeta.add(TAG_VALUE_FIELD_META);
 
 			m_foreignKeyConstraints = new ArrayList<GenOrmConstraint>();
-			m_foreignKeyConstraints.add(new GenOrmConstraint("metric", "metric_tag_metric_id_fkey", "CONSTRAINT metric_tag_metric_id_fkey FOREIGN KEY (\"metric_id\")\n	REFERENCES metric (\"id\")"));
+			m_foreignKeyConstraints.add(new GenOrmConstraint("metric", "metric_tag_metric_id_fkey", "CONSTRAINT metric_tag_metric_id_fkey FOREIGN KEY (\"metric_id\")\n	REFERENCES metric (\"id\") ON DELETE CASCADE"));
 			m_foreignKeyConstraints.add(new GenOrmConstraint("tag", "metric_tag_tag_name_fkey", "CONSTRAINT metric_tag_tag_name_fkey FOREIGN KEY (\"tag_name\", \"tag_value\")\n	REFERENCES tag (\"name\", \"value\")"));
 
 			}

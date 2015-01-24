@@ -13,15 +13,21 @@ function exportCsvQueryData() {
 					var groupBy = queryResult.group_by;
 					if (groupBy) {
 						$.each(groupBy, function (index, group) {
-							groupByMessage += "group_by:" + group.name + ',';
-
-							var first = true;
-							$.each(group.group, function (key, value) {
-								if (!first)
-									groupByMessage += ", ";
-								groupByMessage += key + '=' + value;
-								first = false;
-							});
+							if (group.group) {
+								if (groupByMessage != "")
+									groupByMessage += "," + group.name;
+								else
+									groupByMessage += "group_by:" + group.name;
+								var first = true;
+								groupByMessage += "(";
+								$.each(group.group, function (key, value) {
+									if (!first)
+										groupByMessage += ", ";
+									groupByMessage += key + '=' + value;
+									first = false;
+								});
+								groupByMessage += ")";
+							}
 						});
 					}
 

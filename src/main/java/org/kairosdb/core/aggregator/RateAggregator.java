@@ -27,13 +27,13 @@ import org.kairosdb.core.datastore.TimeUnit;
 @AggregatorName(name = "rate", description = "Computes the rate of change for the data points.")
 public class RateAggregator implements Aggregator
 {
-	private long m_sampling;
+	private Sampling m_sampling;
 	private DoubleDataPointFactory m_dataPointFactory;
 
 	@Inject
 	public RateAggregator(DoubleDataPointFactory dataPointFactory)
 	{
-		m_sampling = 1L;
+		m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
 		m_dataPointFactory = dataPointFactory;
 	}
 
@@ -48,9 +48,14 @@ public class RateAggregator implements Aggregator
 		return (new RateDataPointAggregator(dataPointGroup));
 	}
 
+	public void setSampling(Sampling sampling)
+	{
+		m_sampling = sampling;
+	}
+
 	public void setUnit(TimeUnit timeUnit)
 	{
-		m_sampling = new Sampling(1, timeUnit).getSampling();
+		m_sampling = new Sampling(1, timeUnit);
 	}
 
 
@@ -59,6 +64,13 @@ public class RateAggregator implements Aggregator
 		public RateDataPointAggregator(DataPointGroup innerDataPointGroup)
 		{
 			super(innerDataPointGroup);
+		}
+
+		@Override
+		public boolean hasNext()
+		{
+			//Ensure we have two data points to mess with
+			return currentDataPoint != null && hasNextInternal();
 		}
 
 		@Override
@@ -86,7 +98,7 @@ public class RateAggregator implements Aggregator
 				}
 			}
 
-			double rate = (x1 - x0)/(y1 - y0) * m_sampling;
+			double rate = (x1 - x0)/(y1 - y0) * m_sampling.getSamplingDuration(y0);
 
 			return (m_dataPointFactory.createDataPoint(y1, rate));
 		}

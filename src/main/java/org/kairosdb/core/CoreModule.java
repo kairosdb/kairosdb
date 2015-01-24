@@ -92,6 +92,8 @@ public class CoreModule extends AbstractModule
 		bind(DivideAggregator.class);
 		bind(ScaleAggregator.class);
 		bind(CountAggregator.class);
+		bind(DiffAggregator.class);
+		bind(DataGapsMarkingAggregator.class);
 
 		bind(ValueGroupBy.class);
 		bind(TimeGroupBy.class);
@@ -119,6 +121,10 @@ public class CoreModule extends AbstractModule
 		bind(LegacyDataPointFactory.class).in(Singleton.class);
 
 		bind(StringDataPointFactory.class).in(Singleton.class);
+                
+		bind(StringDataPointFactory.class).in(Singleton.class);
+
+		bind(NullDataPointFactory.class).in(Singleton.class);
 
 		bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class).in(Singleton.class);
 

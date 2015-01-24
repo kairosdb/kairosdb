@@ -1,6 +1,7 @@
 package org.kairosdb.core.datapoints;
 
 
+import org.joda.time.DateTime;
 import org.json.JSONException;
 import org.json.JSONWriter;
 
@@ -110,7 +111,8 @@ public class LongDataPoint extends DataPointHelper
 	public String toString()
 	{
 		return "LongDataPoint{" +
-				"m_value=" + m_value +
+                "m_timestamp=" + new DateTime(m_timestamp) +
+				" m_value=" + m_value +
 				'}';
 	}
 }

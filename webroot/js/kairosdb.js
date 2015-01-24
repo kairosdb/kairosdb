@@ -14,6 +14,7 @@ kairosdb.Aggregators =
 	MIN: "min",
 	RATE: "rate",
 	SAMPLER: "sampler",
+    SIMPLIFY: "simplify",
 	SORT: "sort",
 	SUM: "sum",
 	LEAST_SQUARES: "least_squares",
@@ -92,6 +93,21 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
+	this.addSimplify = function (tolerance) {
+		if (!this.aggregators)
+			this.aggregators = [];
+		var simplify = {};
+		simplify.name = "simplify";
+		if (tolerance) {
+			simplify.tolerance = tolerance;
+		} else {
+			simplify.tolerance = 1;
+		}
+
+		this.aggregators.push(simplify);
+		return this;
+	};
+
 	this.addPercentile = function (value, unit, percent, time_zone) {
 		if (!this.aggregators)
 			this.aggregators = [];
@@ -162,7 +178,7 @@ kairosdb.Metric = function (name) {
 		var aggregator = {};
 		aggregator.name = 'scale';
 		if (scalingFactor) {
-            aggregator.factor = scalingFactor;
+			aggregator.factor = scalingFactor;
 		}
 
         this.aggregators.push(aggregator);

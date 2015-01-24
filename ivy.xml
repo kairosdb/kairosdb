@@ -83,6 +83,9 @@
 		<!-- Quartz -->
 		<dependency org="org.quartz-scheduler" name="quartz" rev="2.1.7" />
 
+		<!-- Simplify -->
+		<dependency org="com.goebl" name="simplify" rev="1.0.0" />
+
         <!-- Codehale Metrics -->
         <dependency org="com.codahale.metrics" name="metrics-healthchecks" rev="3.0.2" />
         <dependency org="com.codahale.metrics" name="metrics-jvm" rev="3.0.2" />

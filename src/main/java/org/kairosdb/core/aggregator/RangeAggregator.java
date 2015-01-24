@@ -226,14 +226,14 @@ public abstract class RangeAggregator implements Aggregator
 		protected long getStartRange(long timestamp)
 		{
 			int samplingValue = m_sampling.getValue();
-			long numberOfPastPeriods = m_unitField.getDifference(timestamp/*getDataPointTime()*/, m_startTime) / samplingValue;
+			long numberOfPastPeriods = m_unitField.getDifferenceAsLong(timestamp/*getDataPointTime()*/, m_startTime) / samplingValue;
 			return m_unitField.add(m_startTime, numberOfPastPeriods * samplingValue);
 		}
 
 		protected long getEndRange(long timestamp)
 		{
 			int samplingValue = m_sampling.getValue();
-			long numberOfPastPeriods = m_unitField.getDifference(timestamp/*getDataPointTime()*/, m_startTime) / samplingValue;
+			long numberOfPastPeriods = m_unitField.getDifferenceAsLong(timestamp/*getDataPointTime()*/, m_startTime) / samplingValue;
 			return m_unitField.add(m_startTime, (numberOfPastPeriods + 1) * samplingValue);
 		}
 

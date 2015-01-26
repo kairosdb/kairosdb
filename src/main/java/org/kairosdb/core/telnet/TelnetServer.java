@@ -98,7 +98,12 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 		if (message instanceof String[])
 		{
 			String[] command = (String[]) message;
-			TelnetCommand telnetCommand = commandProvider.getCommand(command[0]);
+
+			String cmd = "";
+			if (command.length >= 1)
+				cmd = command[0];
+
+			TelnetCommand telnetCommand = commandProvider.getCommand(cmd);
 			if (telnetCommand != null)
 			{
 				try
@@ -111,7 +116,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 				}
 			}
 			else
-				log("Unknown command: " + command[0], ctx);
+				log("Unknown command: '" + cmd +"'", ctx);
 		}
 		else
 		{

@@ -1,5 +1,20 @@
-KairosDB is a fast distributed scalable time series database written primarily for Cassandra but works with HBase as well.
+![KairosDB](webroot/img/logoSmall.png)
 
-Because it is written on top of Cassandra (or HBase) it is very fast and scalable. With a single node we are able to capture 40,000 points of data per second.
+KairosDB is a fast distributed scalable time series database written on top of Cassandra.
 
-Documentation is found [here](http://code.google.com/p/kairosdb/).
+## Documentation
+
+Documentation is found [here](http://kairosdb.github.io).
+
+## Installing
+
+Download the latest [KairosDB release](https://github.com/kairosdb/kairosdb/releases).
+
+Installation instructions are found [here](http://kairosdb.github.io/kairosdocs/GettingStarted.html)
+
+## Getting Involved
+
+Join the [KairosDB discussion group](https://groups.google.com/forum/#!forum/kairosdb-group).
+
+## License
+The license is the [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0)

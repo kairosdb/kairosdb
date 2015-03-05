@@ -134,7 +134,7 @@
 			// Autocomplete for GroupBy dialog
 			$("#autocompleteTagName").combobox().combobox({source: function (request, response) {
 					var selectedTabIndex = $("#tabs").tabs("option", "active");
-					var metricName = $('#metricContainer' + selectedTabIndex).find(".metricName").combobox("value");
+					var metricName = $('#metricContainer' + tabContainerMap[selectedTabIndex]).find(".metricName").combobox("value");
 					if (metricName){
 						var tags = [];
 						$.each(metricToTags[metricName], function(tag){

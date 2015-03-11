@@ -95,6 +95,7 @@ public class CoreModule extends AbstractModule
 		bind(ValueGroupBy.class);
 		bind(TimeGroupBy.class);
 		bind(TagGroupBy.class);
+        bind(BinGroupBy.class);
 
 		Names.bindProperties(binder(), m_props);
 		bind(Properties.class).toInstance(m_props);

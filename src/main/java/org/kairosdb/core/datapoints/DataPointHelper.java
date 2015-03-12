@@ -1,6 +1,7 @@
 package org.kairosdb.core.datapoints;
 
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.datastore.DataPointGroup;
 
 /**
  Created with IntelliJ IDEA.
@@ -12,6 +13,7 @@ import org.kairosdb.core.DataPoint;
 public abstract class DataPointHelper implements DataPoint
 {
 	protected long m_timestamp;
+	private DataPointGroup m_dataPointGroup;
 
 	public DataPointHelper(long timestamp)
 	{
@@ -52,5 +54,22 @@ public abstract class DataPointHelper implements DataPoint
 		return "DataPointHelper{" +
 				"m_timestamp=" + m_timestamp +
 				'}';
+	}
+
+	/**
+	 Returns the data point group for this data point if one is set.
+	 Some aggregators may strip off this information
+	 @return The DataPointGroup or null if one is not set.
+	 */
+	@Override
+	public DataPointGroup getDataPointGroup()
+	{
+		return m_dataPointGroup;
+	}
+
+	@Override
+	public void setDataPointGroup(DataPointGroup dataPointGroup)
+	{
+		m_dataPointGroup = dataPointGroup;
 	}
 }

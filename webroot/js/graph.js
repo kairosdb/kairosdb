@@ -712,6 +712,26 @@ function showChart(subTitle, queries, metricData) {
 		}
 
 		sampleSize += resultSet.sample_size;
+                var aggregatorList = "";
+                if(resultSet.query && resultSet.query.aggregators){
+                    $.each(resultSet.query.aggregators,function (index,aggregator) {
+                        if(aggregatorList) aggregatorList += "|";
+                        else aggregatorList = ":";
+                        aggregatorList+= aggregator.name;
+                        if(aggregator.sampling)
+                            aggregatorList+='('+aggregator.sampling.value+aggregator.sampling.unit+')';
+                        else if(aggregator.unit)
+                            aggregatorList+='('+aggregator.unit+')';
+                        else if(aggregator.factor)
+                            aggregatorList+='('+aggregator.factor+')';
+                        else if(aggregator.divisor)
+                            aggregatorList+='('+aggregator.divisor+')';
+                    });
+                }
+                
+                
+                
+                
 		resultSet.results.forEach(function (queryResult) {
 
 			var groupByMessage = "";
@@ -747,8 +767,8 @@ function showChart(subTitle, queries, metricData) {
 				return;
 
 			var result = {};
-			result.name = queryResult.name + groupByMessage;
-			result.label = queryResult.name + groupByMessage;
+			result.name = queryResult.name + aggregatorList + groupByMessage;
+			result.label = queryResult.name + aggregatorList + groupByMessage;
 			result.data = queryResult.values;
 			result.yaxis = axisCount; // Flot
 			result.yAxis = axisCount - 1; // Highcharts

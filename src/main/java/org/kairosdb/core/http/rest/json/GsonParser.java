@@ -177,7 +177,7 @@ public class GsonParser
 						metric.getName());
 				queryMetric.setExcludeTags(metric.isExcludeTags());
 				queryMetric.setLimit(metric.getLimit());
-
+                                queryMetric.setQueryObject(metricsArray.get(I).getAsJsonObject());
 				long endTime = getEndTime(query);
 				if (endTime > -1)
 					queryMetric.setEndTime(endTime);

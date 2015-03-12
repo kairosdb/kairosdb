@@ -421,7 +421,7 @@ public class MetricsResource implements KairosMetricReporter
 				try
 				{
 					List<DataPointGroup> results = dq.execute();
-					jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
+					jsonResponse.formatQuery(results, query.isExcludeTags(), query.getQueryObject(), dq.getSampleSize());
 
 					ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
 				}

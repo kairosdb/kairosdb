@@ -17,6 +17,7 @@ package org.kairosdb.core.formatter;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.Before;
@@ -65,7 +66,7 @@ public class JsonResponseTest
 		group1.addDataPoint(new LongDataPoint(56789, 2));
 		group1.addDataPoint(new DoubleDataPoint(98765, 2.9));
 
-		ListDataPointGroup group2 = new ListDataPointGroup("metric2");
+		ListDataPointGroup group2 = new ListDataPointGroup("metric1");
 		group2.addTag("tag3", "value3");
 		group2.addTag("tag4", "value4");
 		group2.addGroupByResult(groupBy.getGroupByResult(1));
@@ -75,9 +76,31 @@ public class JsonResponseTest
 
 		groups.add(group1);
 		groups.add(group2);
+                
+                JsonObject queryObject = new JsonObject();
+                queryObject.addProperty("name", "metric1");
+                queryObject.add("tags", new JsonObject());
+                // groupBy
+                JsonArray groupBys = new JsonArray();
+                JsonObject groupByValue = new JsonObject();
+                groupByValue.addProperty("name", "value");
+                groupByValue.addProperty("range_size", "10");
+                groupBys.add(groupByValue);
+                queryObject.add("group_by", groupBys);
+                // aggregators
+                JsonArray aggregators = new JsonArray();
+                JsonObject sumaggregator = new JsonObject();
+                sumaggregator.addProperty("name", "sum");
+                sumaggregator.addProperty("align_sampling", true);
+                JsonObject sampling = new JsonObject();
+                sampling.addProperty("value", "1");
+                sampling.addProperty("unit", "milliseconds");
+                sumaggregator.add("sampling", sampling);
+                aggregators.add(sumaggregator);
+                queryObject.add("aggregators", aggregators);
 
 		response.begin();
-		response.formatQuery(groups, false, 10);
+		response.formatQuery(groups, false,queryObject, 10);
 		response.end();
 
 		assertJson(writer.toString(), json);

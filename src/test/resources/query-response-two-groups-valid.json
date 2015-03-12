@@ -2,6 +2,27 @@
 	"queries": [
 		{
             "sample_size": 10,
+			"query":{
+				"name": "metric1",
+				"tags":{},
+				"group_by":[
+					{
+						"name":"value",
+						"range_size":"10"
+					}
+				],
+				"aggregators":[
+					{
+						"name":"sum",
+						"align_sampling":true,
+						"sampling":
+							{
+								"value":"1",
+								"unit":"milliseconds"
+							}
+					}
+				]
+			},
 			"results": [
 				{
 					"name": "metric1",
@@ -21,7 +42,7 @@
 					"values": [[12345, 1 ], [56789, 2], [98765, 2.9]]
 				},
 				{
-					"name": "metric2",
+					"name": "metric1",
 					"group_by": [
 						{
 							"name": "value",

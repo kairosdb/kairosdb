@@ -27,8 +27,8 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "0.9.5"
-release = "0.1beta" //package release number
+version = "0.9.5-SNAPSHOT"
+release = "0.2beta" //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -104,7 +104,11 @@ pomRule = ivy.createPomRule("build/jar/pom.xml", ivy.getResolveRule("default"))
 
 //------------------------------------------------------------------------------
 //==-- Publish Artifacts --==
-PublishRule publishRule = ivy.createPublishRule(saw.getProperty("ivy.publish_resolver"),
+if (version.contains("SNAPSHOT"))
+	defaultResolver = "local-m2-publish-snapshot"
+else
+	defaultResolver = "local-m2-publish"
+PublishRule publishRule = ivy.createPublishRule(saw.getProperty("ivy.publish_resolver", defaultResolver),
 			ivy.getResolveRule("default"))
 		.setName("publish")
 		.setDescription("Publish pom and jar to maven snapshot repo")

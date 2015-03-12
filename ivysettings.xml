@@ -6,6 +6,14 @@
 		<!--<ibiblio name="staging" m2compatible="true" root="https://oss.sonatype.org/content/repositories/orgagileclick-1008"/>-->
 		<ibiblio name="central" m2compatible="true"/>
 
+		<filesystem name="local-m2-publish" m2compatible="true">
+			<artifact pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]"/>
+		</filesystem>
+
+		<filesystem name="local-m2-publish-snapshot" m2compatible="true">
+			<artifact pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision]-SNAPSHOT.[ext]"/>
+		</filesystem>
+
 		<chain name="default">
 			<!--<resolver ref="local-m2"/>-->
 			<resolver ref="central"/>

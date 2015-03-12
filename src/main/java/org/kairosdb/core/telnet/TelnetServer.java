@@ -90,6 +90,15 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 		return pipeline;
 	}
 
+	private String formatMessage(String[] msg)
+	{
+		StringBuilder sb = new StringBuilder();
+		for (String s : msg)
+			sb.append(s).append(" ");
+
+		return (sb.toString());
+	}
+
 	@Override
 	public void messageReceived(final ChannelHandlerContext ctx,
 	                            final MessageEvent msgevent)
@@ -112,14 +121,19 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 				}
 				catch (Exception e)
 				{
+					log("Message: '" + formatMessage(command) + "'", ctx);
 					log("Failed to execute command: " + formatCommand(command) + " Reason: " + e.getMessage(), ctx, e);
 				}
 			}
 			else
-				log("Unknown command: '" + cmd +"'", ctx);
+			{
+				log("Message: '" + formatMessage(command) + "'", ctx);
+				log("Unknown command: '" + cmd + "'", ctx);
+			}
 		}
 		else
 		{
+			log("Message: '" + message.toString() + "'", ctx);
 			log("Invalid message. Must be of type String.", ctx);
 		}
 	}

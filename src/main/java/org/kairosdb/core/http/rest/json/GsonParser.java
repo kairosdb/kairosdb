@@ -203,7 +203,7 @@ public class GsonParser
 				JsonElement plugins = jsMetric.get("plugins");
 				if (plugins != null)
 				{
-					JsonArray pluginArray = aggregators.getAsJsonArray();
+					JsonArray pluginArray = plugins.getAsJsonArray();
 					if (pluginArray.size() > 0)
 						parsePlugins(context, queryMetric, pluginArray);
 				}

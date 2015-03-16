@@ -6,6 +6,7 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.annotation.PluginName;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,12 +28,12 @@ public class GuiceQueryPluginFactory implements QueryPluginFactory
 		for (Key<?> key : bindings.keySet())
 		{
 			Class bindingClass = key.getTypeLiteral().getRawType();
-			if (Aggregator.class.isAssignableFrom(bindingClass))
+			if (QueryPlugin.class.isAssignableFrom(bindingClass))
 			{
-				AggregatorName ann = (AggregatorName)bindingClass.getAnnotation(AggregatorName.class);
+				PluginName ann = (PluginName)bindingClass.getAnnotation(PluginName.class);
 				if (ann == null)
 					throw new IllegalStateException("Aggregator class "+bindingClass.getName()+
-							" does not have required annotation "+AggregatorName.class.getName());
+							" does not have required annotation "+PluginName.class.getName());
 
 				m_plugins.put(ann.name(), bindingClass);
 			}

@@ -7,14 +7,14 @@
 		<ibiblio name="central" m2compatible="true"/>
 
 		<filesystem name="local-m2-publish" m2compatible="true">
-			<artifact pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision](-[classifier]).[ext]"/>
+			<artifact pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision]-SNAPSHOT.[ext]"/>
 		</filesystem>
 
 
 		<chain name="default">
 			<resolver ref="central"/>
 			<!--<resolver ref="staging"/>-->
-			<resolver ref="local-m2"/>
+			<!--<resolver ref="local-m2"/>-->
 		</chain>
 	</resolvers>
 </ivysettings>

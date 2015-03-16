@@ -36,11 +36,15 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.http.rest.json.JsonMetricParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
+import org.kairosdb.util.PluginClassLoader;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.util.*;
 
@@ -49,7 +53,8 @@ public class Main
 	public static final Logger logger = (Logger) LoggerFactory.getLogger(Main.class);
 
 	public static final Charset UTF_8 = Charset.forName("UTF-8");
-	public static final String SERVICE_PREFIX = "kairosdb.service";
+	public static final String SERVICE_PREFIX = "kairosdb.service.";
+	public static final String SERVICE_FOLDER_PREFIX = "kairosdb.service_folder.";
 
 	private final static Object s_shutdownObject = new Object();
 
@@ -95,6 +100,23 @@ public class Main
 		}
 	}
 
+	private URL[] getJarsInPath(String path) throws MalformedURLException
+	{
+		List<URL> jars = new ArrayList<URL>();
+		File libDir = new File(path);
+		File[] fileList = libDir.listFiles();
+		for (File f : fileList)
+		{
+			if (f.getName().endsWith(".jar"))
+			{
+				jars.add(f.toURI().toURL());
+			}
+		}
+
+		System.out.println(jars);
+		return jars.toArray(new URL[0]);
+	}
+
 
 	public Main(File propertiesFile) throws IOException
 	{
@@ -125,7 +147,17 @@ public class Main
 					if ("".equals(props.getProperty(propName)))
 						continue;
 
-					aClass = Class.forName(props.getProperty(propName));
+					String serviceName = propName.substring(SERVICE_PREFIX.length());
+
+					String pluginFolder = props.getProperty(SERVICE_FOLDER_PREFIX+serviceName);
+
+					ClassLoader pluginLoader = this.getClass().getClassLoader();
+					if (pluginFolder != null)
+					{
+						pluginLoader = new PluginClassLoader(getJarsInPath(pluginFolder), pluginLoader);
+					}
+
+					aClass = pluginLoader.loadClass(props.getProperty(propName));
 					if (Module.class.isAssignableFrom(aClass))
 					{
 						Constructor<?> constructor = null;

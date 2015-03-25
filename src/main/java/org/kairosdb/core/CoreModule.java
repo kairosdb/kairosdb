@@ -23,7 +23,9 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.datapoints.*;
+import org.kairosdb.core.datastore.GuiceQueryPluginFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryPluginFactory;
 import org.kairosdb.core.datastore.QueryQueuingManager;
 import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.http.rest.json.GsonParser;
@@ -72,6 +74,7 @@ public class CoreModule extends AbstractModule
 		bind(KairosDatastore.class).in(Singleton.class);
 		bind(AggregatorFactory.class).to(GuiceAggregatorFactory.class).in(Singleton.class);
 		bind(GroupByFactory.class).to(GuiceGroupByFactory.class).in(Singleton.class);
+		bind(QueryPluginFactory.class).to(GuiceQueryPluginFactory.class).in(Singleton.class);
 		bind(GsonParser.class).in(Singleton.class);
 		bind(CacheFileCleaner.class).in(Singleton.class);
 		bind(KairosDBScheduler.class).in(Singleton.class);

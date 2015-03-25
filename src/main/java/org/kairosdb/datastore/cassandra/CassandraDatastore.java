@@ -102,6 +102,9 @@ public class CassandraDatastore implements Datastore
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
+	@Inject
+	private List<RowKeyListener> m_rowKeyListeners;
+
 
 	@Inject
 	public CassandraDatastore(@Named("HOSTNAME")final String hostname,
@@ -310,7 +313,11 @@ public class CassandraDatastore implements Datastore
 			//Write out the row key if it is not cached
 			DataPointsRowKey cachedKey = m_rowKeyCache.cacheItem(rowKey);
 			if (cachedKey == null)
+			{
 				m_rowKeyWriteBuffer.addData(metricName, rowKey, "", now, rowKeyTtl);
+				for (RowKeyListener rowKeyListener : m_rowKeyListeners)
+					rowKeyListener.addRowKey(metricName, rowKey, rowKeyTtl);
+			}
 			else
 				rowKey = cachedKey;
 
@@ -593,10 +600,30 @@ public class CassandraDatastore implements Datastore
 	 * @param query query
 	 * @return row keys for the query
 	 */
-	/*package*/ Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query)
+	public Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query)
 	{
-		return (new FilteredRowKeyIterator(query.getName(), query.getStartTime(),
-				query.getEndTime(), query.getTags()));
+		Iterator<DataPointsRowKey> ret = null;
+
+		List<QueryPlugin> plugins = query.getPlugins();
+
+		//First plugin that works gets it.
+		for (QueryPlugin plugin : plugins)
+		{
+			if (plugin instanceof CassandraRowKeyPlugin)
+			{
+				ret = ((CassandraRowKeyPlugin) plugin).getKeysForQueryIterator(query);
+				break;
+			}
+		}
+
+		//Default to old behavior if no plugin was provided
+		if (ret == null)
+		{
+			ret = new FilteredRowKeyIterator(query.getName(), query.getStartTime(),
+					query.getEndTime(), query.getTags());
+		}
+
+		return (ret);
 	}
 
 	public static long calculateRowTime(long timestamp)

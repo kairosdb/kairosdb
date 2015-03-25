@@ -66,7 +66,7 @@ if (new File("myivysettings.xml").exists())
 
 ivy.setup()
 
-buildLibraries = new RegExFileSet("lib", ".*\\.jar").recurse()
+buildLibraries = new RegExFileSet("lib", ".*\\.jar")
 		.addExcludeDir("integration")
 		.getFullFilePaths()
 

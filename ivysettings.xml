@@ -15,9 +15,9 @@
 		</filesystem>
 
 		<chain name="default">
-			<!--<resolver ref="local-m2"/>-->
 			<resolver ref="central"/>
 			<!--<resolver ref="staging"/>-->
+			<!--<resolver ref="local-m2"/>-->
 		</chain>
 	</resolvers>
 </ivysettings>

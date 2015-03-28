@@ -111,7 +111,7 @@ public class RangeAggregatorTest
 
 		SumAggregator agg = new SumAggregator(new DoubleDataPointFactoryImpl());
 		agg.setSampling(new Sampling(3, TimeUnit.MONTHS, utc));
-		agg.setAlignSampling(false);
+		agg.setAlignSampling(true);
 		agg.setAlignStartTime(true);
 		agg.setStartTime(startDate.getMillis());
 

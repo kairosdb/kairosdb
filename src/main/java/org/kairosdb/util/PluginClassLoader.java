@@ -1,7 +1,5 @@
 package org.kairosdb.util;
 
-import sun.misc.CompoundEnumeration;
-
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;

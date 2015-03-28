@@ -252,7 +252,7 @@ public abstract class RangeAggregator implements Aggregator
 
 				long dataPointTime = currentDataPoint.getTimestamp();
 				if (m_alignStartTime)
-					dataPointTime = alignRangeBoundary(dataPointTime);
+					dataPointTime = startRange;
 
 				m_dpIterator = m_subAggregator.getNextDataPoints(dataPointTime,
 						subIterator).iterator();

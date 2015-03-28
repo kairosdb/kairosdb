@@ -103,7 +103,7 @@ public class CassandraDatastore implements Datastore
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
-	private List<RowKeyListener> m_rowKeyListeners;
+	private List<RowKeyListener> m_rowKeyListeners = Collections.EMPTY_LIST;
 
 
 	@Inject

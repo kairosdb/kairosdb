@@ -41,7 +41,7 @@ public class GsonParserTest
 	@Before
 	public void setup() throws KairosDBException
 	{
-		parser = new GsonParser(new TestAggregatorFactory(), new TestGroupByFactory());
+		parser = new GsonParser(new TestAggregatorFactory(), new TestGroupByFactory(), new TestQueryPluginFactory());
 	}
 
 	@Test
@@ -302,7 +302,7 @@ public class GsonParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sampling-value.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].aggregator[0].sampling.value must be greater than or equal to 1");
+		assertBeanValidation(json, "query.metric[0].aggregators[0].sampling.value must be greater than or equal to 1");
 	}
 
 	@Test
@@ -351,7 +351,7 @@ public class GsonParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-percentile-percentile.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].aggregator[0].percentile multiple points");
+		assertBeanValidation(json, "query.metric[0].aggregators[0].percentile multiple points");
 	}
 
 	@Test
@@ -360,7 +360,7 @@ public class GsonParserTest
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sampling-unit.json"), Charsets.UTF_8);
 
 		assertBeanValidation(json,
-				"query.metric[0].aggregator[0].bogus is not a valid time unit, must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS");
+				"query.metric[0].aggregators[0].bogus is not a valid time unit, must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS");
 	}
 
 	@Test

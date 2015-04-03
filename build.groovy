@@ -27,7 +27,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "0.9.5-SNAPSHOT"
+version = "0.9.5"
 release = "0.2beta" //package release number
 summary = "KairosDB"
 description = """\

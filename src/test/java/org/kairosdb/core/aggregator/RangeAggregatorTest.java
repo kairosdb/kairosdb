@@ -520,4 +520,39 @@ public class RangeAggregatorTest
 
 		assertThat(dayCount.hasNext(), is(false));
 	}
+
+	/**
+	 This makes test makes the RangeAggregator do time calculations larger than an
+	 int.
+	 @throws Exception
+	 */
+	@Test
+	public void test_aggregationByMilliSecondOverLongRange() throws Exception
+	{
+		DateTimeZone utc = DateTimeZone.UTC;
+		DateTime startDate = new DateTime(2014, 1, 1, 0, 0, 0, 0, utc);
+		DateTime endDate = new DateTime(2014, 3, 1, 0, 0, 0, 0, utc);
+		ListDataPointGroup group = new ListDataPointGroup("aggregationByDay");
+
+		for (DateTime milliSecond = startDate;
+		     milliSecond.isBefore(endDate);
+		     milliSecond = milliSecond.plus(1000))
+		{
+			group.addDataPoint(new LongDataPoint(milliSecond.getMillis(), 1L));
+			group.addDataPoint(new LongDataPoint(milliSecond.getMillis(), 1L));
+		}
+
+		SumAggregator aggregator = new SumAggregator(new DoubleDataPointFactoryImpl());
+		aggregator.setSampling(new Sampling(1, TimeUnit.MILLISECONDS));
+		aggregator.setAlignSampling(false);
+		aggregator.setStartTime(startDate.getMillis());
+
+		DataPointGroup dpg = aggregator.aggregate(group);
+
+		while (dpg.hasNext())
+			dpg.next();
+
+
+
+	}
 }

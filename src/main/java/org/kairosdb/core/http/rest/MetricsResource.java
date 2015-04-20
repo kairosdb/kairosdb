@@ -22,7 +22,6 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.name.Named;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
@@ -77,7 +76,7 @@ public class MetricsResource implements KairosMetricReporter
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
 	private final GsonParser gsonParser;
 
-	//Used for parsing incomming metrices
+	//Used for parsing incoming metrics
 	private final Gson gson;
 
 	//These two are used to track rate of ingestion
@@ -566,7 +565,7 @@ public class MetricsResource implements KairosMetricReporter
 		int count = m_ingestedDataPoints.getAndSet(0);
 
 		if (count == 0)
-			return Collections.EMPTY_LIST;
+			return Collections.emptyList();
 
 		DataPointSet dpsCount = new DataPointSet(INGEST_COUNT);
 		DataPointSet dpsTime = new DataPointSet(INGEST_TIME);

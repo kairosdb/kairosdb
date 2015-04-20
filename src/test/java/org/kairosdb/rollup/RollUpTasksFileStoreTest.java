@@ -68,7 +68,7 @@ public class RollUpTasksFileStoreTest
 		tasks.add(task2);
 
 		store.write(tasks);
-		Set<RollUpTask> rollUpTasks = store.read();
+		List<RollUpTask> rollUpTasks = store.read();
 
 		assertThat(rollUpTasks.size(), equalTo(2));
 		assertRollupTasksContain(rollUpTasks, task2);
@@ -98,7 +98,7 @@ public class RollUpTasksFileStoreTest
 		assertThat(store.lastModifiedTime(), greaterThan(time1));
 	}
 
-	private void assertRollupTasksContain(Set<RollUpTask> tasks, RollUpTask expected)
+	private void assertRollupTasksContain(List<RollUpTask> tasks, RollUpTask expected)
 	{
 		for (RollUpTask task : tasks)
 		{

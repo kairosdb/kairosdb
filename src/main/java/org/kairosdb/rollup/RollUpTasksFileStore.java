@@ -60,7 +60,7 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 	}
 
 	@Override
-	public Set<RollUpTask> read() throws RollUpException
+	public List<RollUpTask> read() throws RollUpException
 	{
 		lock.lock();
 		try

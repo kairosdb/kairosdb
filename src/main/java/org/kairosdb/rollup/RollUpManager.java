@@ -13,10 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
@@ -63,7 +60,7 @@ public class RollUpManager implements KairosDBJob
 			long lastModified = taskStore.lastModifiedTime();
 			if (lastModified > tasksLastModified)
 			{
-				Set<RollUpTask> updatedTasks = taskStore.read();
+				List<RollUpTask> updatedTasks = taskStore.read();
 
 				scheduleNewTasks(updatedTasks);
 				unscheduledRemovedTasks(updatedTasks);
@@ -84,7 +81,7 @@ public class RollUpManager implements KairosDBJob
 		// todo?
 	}
 
-	private void updateScheduledTasks(Set<RollUpTask> updatedTasks)
+	private void updateScheduledTasks(List<RollUpTask> updatedTasks)
 	{
 		for (RollUpTask task : updatedTasks)
 		{
@@ -116,7 +113,7 @@ public class RollUpManager implements KairosDBJob
 		}
 	}
 
-	private void unscheduledRemovedTasks(Set<RollUpTask> tasks)
+	private void unscheduledRemovedTasks(List<RollUpTask> tasks)
 	{
 		// todo more elegant way to do this
 		Iterator<String> iterator = taskIdToTimeMap.keySet().iterator();
@@ -149,7 +146,7 @@ public class RollUpManager implements KairosDBJob
 		}
 	}
 
-	private void scheduleNewTasks(Set<RollUpTask> tasks)
+	private void scheduleNewTasks(List<RollUpTask> tasks)
 	{
 		for (RollUpTask task : tasks)
 		{

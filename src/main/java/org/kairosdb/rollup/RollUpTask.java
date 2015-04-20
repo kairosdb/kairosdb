@@ -21,23 +21,33 @@ public class RollUpTask
 {
 	// todo regular expressions
 	// todo one time go back and redo option
-	// todo setup annontations for validation
+	// todo setup annotations for validation
 
-	private final String id;
 	@SerializedName("metric_name")
-	private final String metricName;
-	@SerializedName("start_time")
-	private final RelativeTime startTime;
+	private String metricName;
+
+	@SerializedName("start_relative")
+	private RelativeTime startTime;
+
+	@SerializedName("end_relative")
+	private RelativeTime endTime;
+
 	private final SetMultimap<String, String> filters = HashMultimap.create();
 	@SerializedName("group_bys")
+
+	private String schedule;
+
+	private final String id = UUID.randomUUID().toString();
 	private final List<GroupBy> groupBys = new ArrayList<GroupBy>();
 	private final List<RollupTaskTarget> targets = new ArrayList<RollupTaskTarget>();
-	private final String schedule;
 	private long timestamp;
 
-	@SerializedName("end_time")
-	private RelativeTime endTime;
+
 	private RelativeTime backfill; // todo this class is in core.http.rest is this ok?
+
+	public RollUpTask()
+	{
+	}
 
 	public RollUpTask(String metricName, RelativeTime startTime,
 			List<RollupTaskTarget> targets, String schedule)
@@ -48,7 +58,6 @@ public class RollUpTask
 		checkArgument(targets.size() > 0);
 		checkNotNullOrEmpty(schedule);
 
-		this.id = UUID.randomUUID().toString();
 		this.metricName = metricName;
 		this.startTime = startTime;
 		this.targets.addAll(targets);

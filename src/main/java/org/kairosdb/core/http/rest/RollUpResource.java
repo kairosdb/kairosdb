@@ -8,12 +8,15 @@ import org.kairosdb.core.http.rest.json.ErrorResponse;
 import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
+import org.kairosdb.rollup.RollUpException;
 import org.kairosdb.rollup.RollUpManager;
 import org.kairosdb.rollup.RollUpTask;
+import org.kairosdb.rollup.RollUpTasksStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
+import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -29,12 +32,14 @@ public class RollUpResource
 
 	private final GsonParser parser;
 	private final RollUpManager manager;
+	private final RollUpTasksStore store;
 
 	@Inject
-	public RollUpResource(GsonParser parser, RollUpManager manager)
+	public RollUpResource(GsonParser parser, RollUpManager manager, RollUpTasksStore store)
 	{
 		this.parser = checkNotNull(parser);
 		this.manager = checkNotNull(manager);
+		this.store = checkNotNull(store);
 	}
 
 	/**
@@ -75,7 +80,7 @@ public class RollUpResource
 		{
 			// todo parsers needs to return a rollup task for each target??
 			// todo because we need a task for each target
-			Set<RollUpTask> tasks = parser.parseRollUpTask(json);
+			List<RollUpTask> tasks = parser.parseRollUpTask(json);
 			//			manager.addTasks(tasks);
 
 			List<RollupResponse> rollup_tasks = new ArrayList<RollupResponse>();
@@ -83,6 +88,8 @@ public class RollUpResource
 			{
 				rollup_tasks.add(new RollupResponse(task.getId(), "todo", "/api/v1/rollups/" + task.getId()));
 			}
+
+			store.write(tasks);
 
 //			Response.ok(parser.getGson().toJson(rollup_tasks), MediaType.APPLICATION_JSON).build();
 			Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
@@ -95,6 +102,11 @@ public class RollUpResource
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addErrors(e.getErrorMessages()).build();
 		}
+		catch (RollUpException e)
+		{
+			logger.error("Failed to add roll ups.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
 	}
 
 	@GET
@@ -102,14 +114,19 @@ public class RollUpResource
 	@Path("rollup")
 	public Response list()
 	{
-		ValidationErrors validationErrors = null;
-
-		JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-		for (String errorMessage : validationErrors.getErrors())
+		try
 		{
-			builder.addError(errorMessage);
+			List<RollUpTask> tasks = store.read();
+			Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(tasks);
+			setHeaders(responseBuilder);
+			return responseBuilder.build();
 		}
-		return builder.build();
+		catch (RollUpException e)
+		{
+			// todo
+			logger.error("Failed to list roll ups.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
 	}
 
 	@GET

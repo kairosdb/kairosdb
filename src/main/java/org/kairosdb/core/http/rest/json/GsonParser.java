@@ -229,9 +229,9 @@ public class GsonParser
 		return (ret);
 	}
 
-	public Set<RollUpTask> parseRollUpTask(String json) throws BeanValidationException
+	public List<RollUpTask> parseRollUpTask(String json) throws BeanValidationException
 	{
-		Set<RollUpTask> tasks = m_gson.fromJson(json, new TypeToken<HashSet<RollUpTask>>() {}.getType());
+		List<RollUpTask> tasks = m_gson.fromJson(json, new TypeToken<List<RollUpTask>>() {}.getType());
 
 		// todo validate and throw bean validation exception if error occurs
 		return tasks;

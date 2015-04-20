@@ -20,7 +20,7 @@ public interface RollUpTasksStore
 	 *
 	 * @return all roll up tasks
 	 */
-	public Set<RollUpTask> read() throws RollUpException;
+	public List<RollUpTask> read() throws RollUpException;
 
 	/**
 	 * Returns the time the store was last modified.

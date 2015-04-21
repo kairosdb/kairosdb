@@ -98,8 +98,20 @@ public class KairosDatastore
 		checkState(cacheDirectory.exists(), "Cache directory not created");
 	}
 
+	/**
+	 Make sure the folder exists
+	 @param path
+	 */
+	private static void ensureFolder(String path)
+	{
+		File fPath = new File(path);
+		if (!fPath.exists())
+			fPath.mkdirs();
+	}
+
 	public String getCacheDir()
 	{
+		ensureFolder(m_cacheDir);
 		return (m_cacheDir);
 	}
 
@@ -107,8 +119,7 @@ public class KairosDatastore
 	private void newCacheDirectory()
 	{
 		String newCacheDir = m_baseCacheDir + "/" + System.currentTimeMillis() + "/";
-		File cacheDirectory = new File(newCacheDir);
-		cacheDirectory.mkdirs();
+		ensureFolder(newCacheDir);
 		m_cacheDir = newCacheDir;
 	}
 

@@ -1,7 +1,6 @@
 package org.kairosdb.core.http.rest;
 
 import com.google.inject.Inject;
-import org.apache.http.entity.StringEntity;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.http.rest.json.ErrorResponse;
@@ -16,12 +15,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -31,14 +35,12 @@ public class RollUpResource
 	private static final Logger logger = LoggerFactory.getLogger(MetricsResource.class);
 
 	private final GsonParser parser;
-	private final RollUpManager manager;
 	private final RollUpTasksStore store;
 
 	@Inject
 	public RollUpResource(GsonParser parser, RollUpManager manager, RollUpTasksStore store)
 	{
 		this.parser = checkNotNull(parser);
-		this.manager = checkNotNull(manager);
 		this.store = checkNotNull(store);
 	}
 
@@ -78,8 +80,6 @@ public class RollUpResource
 	{
 		try
 		{
-			// todo parsers needs to return a rollup task for each target??
-			// todo because we need a task for each target
 			List<RollUpTask> tasks = parser.parseRollUpTask(json);
 			//			manager.addTasks(tasks);
 
@@ -102,9 +102,14 @@ public class RollUpResource
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addErrors(e.getErrorMessages()).build();
 		}
-		catch (RollUpException e)
+		catch (RollUpException e) // todo combine with Exception?
 		{
 			logger.error("Failed to add roll ups.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+		catch (Exception e)
+		{
+			logger.error("Failed to add metric.", e);
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}
 	}
@@ -116,8 +121,10 @@ public class RollUpResource
 	{
 		try
 		{
+			// todo need to check for null and return empty list
 			List<RollUpTask> tasks = store.read();
-			Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(tasks);
+			String json = parser.getGson().toJson(tasks);
+			Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(json);
 			setHeaders(responseBuilder);
 			return responseBuilder.build();
 		}

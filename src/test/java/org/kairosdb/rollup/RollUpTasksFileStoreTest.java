@@ -44,13 +44,13 @@ public class RollUpTasksFileStoreTest
 	}
 
 	@Test(expected = NullPointerException.class)
-	public void test_constructor_nullStoreDirectory_invalid()
+	public void test_constructor_nullStoreDirectory_invalid() throws IOException
 	{
 		new RollUpTasksFileStore(null, parser);
 	}
 
 	@Test
-	public void test_read_write() throws DatastoreException, RollUpException
+	public void test_read_write() throws DatastoreException, RollUpException, IOException
 	{
 		RollUpTasksStore store = new RollUpTasksFileStore(DIRECTORY, parser);
 
@@ -76,7 +76,7 @@ public class RollUpTasksFileStoreTest
 	}
 
 	@Test
-	public void test_lastModified() throws DatastoreException, InterruptedException, RollUpException
+	public void test_lastModified() throws DatastoreException, InterruptedException, RollUpException, IOException
 	{
 		RollUpTasksStore store = new RollUpTasksFileStore(DIRECTORY, parser);
 		List<RollupTaskTarget> targets = new ArrayList<RollupTaskTarget>();

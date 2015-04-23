@@ -81,6 +81,7 @@ public class GsonParser
 		builder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
 		builder.registerTypeAdapter(Metric.class, new MetricDeserializer());
 		builder.registerTypeAdapter(SetMultimap.class, new SetMultimapDeserializer());
+		builder.registerTypeAdapter(RelativeTime.class, new RelativeTimeSerializer());
 		builder.registerTypeAdapter(SetMultimap.class, new SetMultimapSerializer());
 
 		m_gson = builder.create();

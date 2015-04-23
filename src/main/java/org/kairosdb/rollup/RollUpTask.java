@@ -32,8 +32,8 @@ public class RollUpTask
 	@SerializedName("end_relative")
 	private RelativeTime endTime;
 
-	private final SetMultimap<String, String> filters = HashMultimap.create();
 	@SerializedName("group_bys")
+	private final SetMultimap<String, String> filters = HashMultimap.create();
 
 	private String schedule;
 

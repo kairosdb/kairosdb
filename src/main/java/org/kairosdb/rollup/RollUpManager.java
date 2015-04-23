@@ -55,11 +55,13 @@ public class RollUpManager implements KairosDBJob
 	@Override
 	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
 	{
+//		logger.info("Rollup manager running");
 		try
 		{
 			long lastModified = taskStore.lastModifiedTime();
 			if (lastModified > tasksLastModified)
 			{
+				logger.info("Reading rollup task config");
 				List<RollUpTask> updatedTasks = taskStore.read();
 
 				scheduleNewTasks(updatedTasks);
@@ -100,6 +102,7 @@ public class RollUpManager implements KairosDBJob
 
 				try
 				{
+					logger.info("Updating schedule for rollup " + task.getMetricName());
 					scheduler.schedule(new RollUpJob(task));
 				}
 				catch (KairosDBException e)
@@ -135,6 +138,7 @@ public class RollUpManager implements KairosDBJob
 			{
 				try
 				{
+					logger.info("Scheduling rollup " + foundTask.getMetricName());
 					iterator.remove();
 					scheduler.cancel(id);
 				}
@@ -154,7 +158,8 @@ public class RollUpManager implements KairosDBJob
 			{
 				try
 				{
-					scheduler.schedule(new RollUpJob(task));
+					logger.info("Scheduling rollup " + task.getMetricName());
+					scheduler.schedule("Rollup:" + task.getId(), new RollUpJob(task));
 					taskIdToTimeMap.put(task.getId(), task.getTimestamp());
 				}
 				catch (KairosDBException e)

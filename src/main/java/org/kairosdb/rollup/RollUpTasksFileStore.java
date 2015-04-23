@@ -28,14 +28,16 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 	private final GsonParser parser;
 	private final File configFile;
 
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public RollUpTasksFileStore(@Named("STORE_DIRECTORY") String storeDirectory,
-			GsonParser parser)
+			GsonParser parser) throws IOException
 	{
 		checkNotNullOrEmpty(storeDirectory);
 		checkNotNull(parser);
 
 		configFile = new File(storeDirectory, FILE_NAME); // todo need to create the dir if it doesn't exist?
+		configFile.createNewFile();
 		this.parser = parser;
 	}
 
@@ -66,6 +68,7 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 		try
 		{
 			String json = FileUtils.readFileToString(configFile, Charset.forName("UTF-8"));
+
 			return parser.parseRollUpTask(json);
 		}
 		catch (IOException e)

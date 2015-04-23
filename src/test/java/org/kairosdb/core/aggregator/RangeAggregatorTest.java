@@ -536,7 +536,7 @@ public class RangeAggregatorTest
 
 		for (DateTime milliSecond = startDate;
 		     milliSecond.isBefore(endDate);
-		     milliSecond = milliSecond.plus(1000))
+		     milliSecond = milliSecond.plus(10000))
 		{
 			group.addDataPoint(new LongDataPoint(milliSecond.getMillis(), 1L));
 			group.addDataPoint(new LongDataPoint(milliSecond.getMillis(), 1L));

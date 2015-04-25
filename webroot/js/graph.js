@@ -92,6 +92,15 @@ function buildKairosDBQuery() {
 				}
 				metric.addGroupBy(new kairosdb.ValueGroupBy(size));
 			}
+			else if(name == "bin"){
+			    var bins = $(groupBy).find(".groupByBinValue").val().split(',');
+			    if(bins.length < 1){
+			        showErrorMessage("Missing Bin Group By size. Values must be separated by commas.");
+                    hasError = true;
+                    return true;
+			    }
+			    metric.addGroupBy(new kairosdb.BinGroupBy(bins));
+			}
 		});
 
 		// Add aggregators
@@ -435,6 +444,11 @@ function addGroupBy(container) {
 			$groupBy = $("#groupByValueTemplate").clone();
 			$groupBy.removeAttr("id").appendTo(groupByContainer);
 			$groupBy.show();
+		}
+		else if(newName == "bin"){
+		    $groupBy = $("#groupByBinTemplate").clone();
+            $groupBy.removeAttr("id").appendTo(groupByContainer);
+            $groupBy.show();
 		}
 	});
 

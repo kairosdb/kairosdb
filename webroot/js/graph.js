@@ -1,4 +1,5 @@
 var metricToTags = {};
+var tabContainerMap = [];
 
 function displayQuery() {
 	var queryString = $('#query-hidden-text').val();
@@ -264,8 +265,14 @@ function removeMetric(removeButton) {
 	if (metricCount == 0) {
 		return;
 	}
-
+	
 	var count = removeButton.data("metricCount");
+	for (var index = 0; index < tabContainerMap.length; ++index) {
+		if(tabContainerMap[index]===count) {
+			tabContainerMap.splice(index,1);
+			break;
+		}
+	}
 	$('#metricContainer' + count).remove();
 	$('#metricTab' + count).remove();
 	$("#tabs").tabs("refresh");
@@ -401,9 +408,9 @@ function addMetric() {
 	// Tell tabs object to update changes
 	var $tabs = $("#tabs");
 	$tabs.tabs("refresh");
-
 	// Activate newly added tab
 	var lastTab = $(".ui-tabs-nav").children().size() - 1;
+	tabContainerMap[lastTab] = metricCount;
 	$tabs.tabs({active: lastTab});
 }
 

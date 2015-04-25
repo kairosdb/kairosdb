@@ -80,8 +80,9 @@ public class GsonParser
 		GsonBuilder builder = new GsonBuilder();
 		builder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
 		builder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
-        builder.registerTypeAdapter(DateTimeZone.class, new DateTimeZoneDeserializer());
+		builder.registerTypeAdapter(DateTimeZone.class, new DateTimeZoneDeserializer());
 		builder.registerTypeAdapter(Metric.class, new MetricDeserializer());
+		builder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES);
 
 		m_gson = builder.create();
 	}

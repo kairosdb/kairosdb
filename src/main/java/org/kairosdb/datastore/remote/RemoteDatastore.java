@@ -42,8 +42,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.List;
 import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.zip.GZIPOutputStream;
 
 
@@ -276,6 +276,11 @@ public class RemoteDatastore implements Datastore
 		{
 			m_dataPointMultimap.put(key, dataPoint);
 		}
+	}
+
+    @Override
+    public void putDataPoints(String metricName, ImmutableSortedMap<String, String> tags, List<DataPoint> dataPoints) throws DatastoreException {
+
 	}
 
 	/**

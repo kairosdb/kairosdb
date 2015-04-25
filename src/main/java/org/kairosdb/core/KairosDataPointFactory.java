@@ -21,7 +21,8 @@ import org.kairosdb.core.datapoints.DataPointFactory;
 
 import java.io.DataInput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Map;
 
 /**
  Created with IntelliJ IDEA.
@@ -34,7 +35,9 @@ public interface KairosDataPointFactory
 {
 	public DataPoint createDataPoint(String type, long timestamp, JsonElement json) throws IOException;
 
-	public DataPoint createDataPoint(String type, long timestamp, DataInput buffer) throws IOException;
+    public List<DataPoint> createDataPoints(Map<Long, Map<JsonElement, String>> dataPointsMap) throws IOException;
+
+    public DataPoint createDataPoint(String type, long timestamp, DataInput buffer) throws IOException;
 
 	//public DataPoint createDataPoint(byte type, long timestamp, ByteBuffer buffer);
 

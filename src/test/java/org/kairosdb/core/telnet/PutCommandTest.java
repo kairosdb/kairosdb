@@ -28,6 +28,7 @@ import org.kairosdb.util.ValidationException;
 
 import java.net.SocketAddress;
 import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -367,6 +368,11 @@ public class PutCommandTest
 
 			set.addDataPoint(dataPoint);
 		}
+
+        @Override
+        public void putDataPoints(String metricName, ImmutableSortedMap<String, String> tags, List<DataPoint> dataPoints) throws DatastoreException {
+
+        }
 
 		/*@Override
 		public void putDataPoints(DataPointSet dps) throws DatastoreException

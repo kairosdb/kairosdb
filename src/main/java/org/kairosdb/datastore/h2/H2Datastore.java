@@ -21,21 +21,19 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.agileclick.genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
-import org.kairosdb.core.*;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.h2.orm.*;
-import org.kairosdb.datastore.h2.orm.DataPoint;
 import org.kairosdb.util.KDataInput;
 import org.kairosdb.util.KDataOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.*;
-import java.nio.ByteBuffer;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -141,16 +139,13 @@ public class H2Datastore implements Datastore
 				Tag.factory.findOrCreate(name, value);
 				MetricTag.factory.findOrCreate(key, name, value);
 			}
-
 			GenOrmDataSource.flush();
-
 			KDataOutput dataOutput = new KDataOutput();
 			dataPoint.writeValueToBuffer(dataOutput);
-
 			new InsertDataPointQuery(m.getId(), new Timestamp(dataPoint.getTimestamp()),
 					dataOutput.getBytes()).runUpdate();
-
 			GenOrmDataSource.commit();
+
 		}
 		catch (IOException e)
 		{
@@ -161,6 +156,45 @@ public class H2Datastore implements Datastore
 			GenOrmDataSource.close();
 		}
 	}
+
+    @Override
+    public synchronized void putDataPoints(String metricName, ImmutableSortedMap<String, String> tags, List<org.kairosdb.core.DataPoint> dataPoints) throws DatastoreException
+    {
+        GenOrmDataSource.attachAndBegin();
+        InsertDataPointQuery query = new InsertDataPointQuery();
+        try
+        {
+
+            for (org.kairosdb.core.DataPoint dataPoint : dataPoints) {
+                String key = createMetricKey(metricName, tags, dataPoint.getDataStoreDataType());
+                Metric m = Metric.factory.findOrCreate(key);
+                m.setName(metricName);
+                m.setType(dataPoint.getDataStoreDataType());
+
+                for (String name : tags.keySet()) {
+                    String value = tags.get(name);
+                    Tag.factory.findOrCreate(name, value);
+                    MetricTag.factory.findOrCreate(key, name, value);
+                }
+                GenOrmDataSource.flush();
+                KDataOutput dataOutput = new KDataOutput();
+                dataPoint.writeValueToBuffer(dataOutput);
+
+                query.addBatch(m.getId(), new Timestamp(dataPoint.getTimestamp()),
+                        dataOutput.getBytes());
+                }
+            query.executeBatch();
+            GenOrmDataSource.commit();
+        }
+        catch (IOException e)
+        {
+            throw new DatastoreException(e);
+        }
+        finally
+        {
+            GenOrmDataSource.close();
+        }
+    }
 
 
 	@Override

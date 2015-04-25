@@ -32,6 +32,7 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import org.joda.time.DateTimeZone;
 import static org.junit.Assert.fail;
 
 public class GsonParserTest
@@ -304,7 +305,15 @@ public class GsonParserTest
 
 		assertBeanValidation(json, "query.metric[0].aggregators[0].sampling.value must be greater than or equal to 1");
 	}
-
+        
+        @Test
+	public void test_aggregator_sampling_timezone_invalid() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sampling-timezone.json"), Charsets.UTF_8);
+		
+		assertBeanValidation(json, "query.metric[0].aggregators[0].bogus is not a valid time zone, must be one of " + DateTimeZone.getAvailableIDs());
+	}
+	
 	@Test
 	public void test_aggregator_sum_noSampling_valid() throws IOException, QueryException
 	{

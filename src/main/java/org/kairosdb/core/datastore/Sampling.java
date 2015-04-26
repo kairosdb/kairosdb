@@ -21,7 +21,7 @@ import org.joda.time.DateTimeZone;
 
 public class Sampling extends Duration
 {
-	private DateTimeZone timeZone;
+	private DateTimeZone timeZone = DateTimeZone.UTC;
 
 	public Sampling()
 	{

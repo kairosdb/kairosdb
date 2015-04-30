@@ -631,5 +631,10 @@ public class JsonMetricParserTest
 		{
 			return null;
 		}
-	}
+
+        @Override
+        public void closeGenOrmConnection() {
+            // Empty - implementation needed for H2 only
+        }
+    }
 }

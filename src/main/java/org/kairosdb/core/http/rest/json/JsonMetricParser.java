@@ -323,50 +323,47 @@ public class JsonMetricParser
 			{
 				int contextCount = 0;
 				SubContext dataPointContext = new SubContext(context, "datapoints");
-				for (JsonElement[] dataPoint : metric.getDatapoints())
-				{
-					dataPointContext.setCount(contextCount);
-					if (dataPoint.length < 1)
-					{
-						validationErrors.addErrorMessage(dataPointContext.setAttribute("timestamp") +" cannot be null or empty.");
-						continue;
-					}
-					else if (dataPoint.length < 2)
-					{
-						validationErrors.addErrorMessage(dataPointContext.setAttribute("value") + " cannot be null or empty.");
-						continue;
-					}
-					else
-					{
-						long timestamp = 0L;
-						if (!dataPoint[0].isJsonNull())
-							timestamp = dataPoint[0].getAsLong();
+                try {
+                    for (JsonElement[] dataPoint : metric.getDatapoints()) {
+                        dataPointContext.setCount(contextCount);
+                        if (dataPoint.length < 1) {
+                            validationErrors.addErrorMessage(dataPointContext.setAttribute("timestamp") + " cannot be null or empty.");
+                            continue;
+                        } else if (dataPoint.length < 2) {
+                            validationErrors.addErrorMessage(dataPointContext.setAttribute("value") + " cannot be null or empty.");
+                            continue;
+                        } else {
+                            long timestamp = 0L;
+                            if (!dataPoint[0].isJsonNull())
+                                timestamp = dataPoint[0].getAsLong();
 
-						if (metric.validate() && !Validator.isGreaterThanOrEqualTo(validationErrors, dataPointContext.setAttribute("value") + " cannot be null or empty,", timestamp, 1))
-							continue;
+                            if (metric.validate() && !Validator.isGreaterThanOrEqualTo(validationErrors, dataPointContext.setAttribute("value") + " cannot be null or empty,", timestamp, 1))
+                                continue;
 
-						String type = metric.getType();
-						if (dataPoint.length > 2)
-							type = dataPoint[2].getAsString();
+                            String type = metric.getType();
+                            if (dataPoint.length > 2)
+                                type = dataPoint[2].getAsString();
 
-						if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
-							continue;
+                            if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
+                                continue;
 
-						if (type == null)
-							type = findType(dataPoint[1]);
+                            if (type == null)
+                                type = findType(dataPoint[1]);
 
-						if (!dataPointFactory.isRegisteredType(type))
-						{
-							validationErrors.addErrorMessage("Unregistered data point type '"+type+"'");
-							continue;
-						}
+                            if (!dataPointFactory.isRegisteredType(type)) {
+                                validationErrors.addErrorMessage("Unregistered data point type '" + type + "'");
+                                continue;
+                            }
 
-						datastore.putDataPoint(metric.getName(), tags,
-								dataPointFactory.createDataPoint(type, timestamp, dataPoint[1]));
-						dataPointCount ++;
-					}
-					contextCount++;
-				}
+                            datastore.putDataPoint(metric.getName(), tags,
+                                    dataPointFactory.createDataPoint(type, timestamp, dataPoint[1]));
+                            dataPointCount++;
+                        }
+                        contextCount++;
+                    }
+                } finally {
+                    datastore.closeGenOrmConnection();
+                }
 			}
 		}
 

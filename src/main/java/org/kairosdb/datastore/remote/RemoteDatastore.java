@@ -43,7 +43,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.zip.GZIPOutputStream;
 
 
@@ -443,4 +442,10 @@ public class RemoteDatastore implements Datastore
 	{
 		return null;  //To change body of implemented methods use File | Settings | File Templates.
 	}
+
+    @Override
+    public void closeGenOrmConnection() {
+        // Empty - implementation needed for H2 only
+    }
+
 }

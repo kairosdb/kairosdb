@@ -8,29 +8,27 @@ package org.kairosdb.core.datastore;
 
 import com.google.common.collect.ImmutableSortedMap;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.exception.DatastoreException;
 
-import java.util.List;
-import java.util.SortedMap;
+public interface Datastore {
+    public void close() throws InterruptedException, DatastoreException;
 
-public interface Datastore
-{
-	public void close() throws InterruptedException, DatastoreException;
+    public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException;
 
-	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException;
+    //public void putDataPoints(DataPointSet dps) throws DatastoreException;
 
-	//public void putDataPoints(DataPointSet dps) throws DatastoreException;
+    public Iterable<String> getMetricNames() throws DatastoreException;
 
-	public Iterable<String> getMetricNames() throws DatastoreException;
+    public Iterable<String> getTagNames() throws DatastoreException;
 
-	public Iterable<String> getTagNames() throws DatastoreException;
+    public Iterable<String> getTagValues() throws DatastoreException;
 
-	public Iterable<String> getTagValues() throws DatastoreException;
+    public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException;
 
-	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException;
+    public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException;
 
-	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException;
+    public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException;
 
-	public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException;
+    // Implementation needed for H2 only
+    public void closeGenOrmConnection();
 }

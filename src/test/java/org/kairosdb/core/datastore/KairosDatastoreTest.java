@@ -22,7 +22,8 @@ import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
-import org.kairosdb.core.datapoints.*;
+import org.kairosdb.core.datapoints.LegacyDataPointFactory;
+import org.kairosdb.core.datapoints.LegacyLongDataPoint;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
 
@@ -31,8 +32,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.fail;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -270,5 +269,10 @@ public class KairosDatastoreTest
 		{
 			return null;  //To change body of implemented methods use File | Settings | File Templates.
 		}
-	}
+
+        @Override
+        public void closeGenOrmConnection() {
+            // Empty - implementation needed for H2 only
+        }
+    }
 }

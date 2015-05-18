@@ -13,6 +13,7 @@ public class RollUpModule extends AbstractModule
 		bind(RollUpResource.class).in(Scopes.SINGLETON);
 		bind(RollUpManager.class).in(Scopes.SINGLETON);
 		bind(RollUpTasksStore.class).to(RollUpTasksFileStore.class).in(Scopes.SINGLETON);
+		bind(RollUpJob.class);
 		bindConstant().annotatedWith(Names.named("STORE_DIRECTORY")).to("/tmp");
 	}
 }

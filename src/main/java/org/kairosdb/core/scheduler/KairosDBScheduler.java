@@ -1,6 +1,8 @@
 package org.kairosdb.core.scheduler;
 
 import org.kairosdb.core.exception.KairosDBException;
+import org.quartz.JobDetail;
+import org.quartz.Trigger;
 
 import java.util.Set;
 
@@ -11,21 +13,13 @@ public interface KairosDBScheduler
 	void stop();
 
 	/**
-	 Schedules a job with an id of the class name
+	 Schedules a job with the specified id and trigger
 
-	 @param job job to schedule
-	 @throws KairosDBException if the job could not be scheduled
-	 */
-	void schedule(KairosDBJob job) throws KairosDBException;
-
-	/**
-	 Schedules a job with the specified id
-
-	 @param id job id
-	 @param job job to schedule
+	 @param jobDetail job id
+	 @param trigger   job trigger
 	 @throws KairosDBException if the job could not be schedule
 	 */
-	void schedule(String id, KairosDBJob job) throws KairosDBException;
+	void schedule(JobDetail jobDetail, Trigger trigger) throws KairosDBException;
 
 	/**
 	 Cancels a scheduled job.
@@ -37,6 +31,7 @@ public interface KairosDBScheduler
 
 	/**
 	 Returns a list of schedule job ids
+
 	 @return list of scheduled job ids
 	 @throws KairosDBException if could not get the list
 	 */

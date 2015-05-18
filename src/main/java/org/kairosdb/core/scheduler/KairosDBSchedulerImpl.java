@@ -102,39 +102,18 @@ public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
 	}
 
 	@Override
-	public void schedule(KairosDBJob job) throws KairosDBException
+	public void schedule(JobDetail jobDetail, Trigger trigger) throws KairosDBException
 	{
-		checkNotNull(job);
+		checkNotNull(jobDetail);
+		checkNotNull(trigger);
 
 		try
 		{
-			JobDetail jobDetail = newJob(job.getClass())
-					.withIdentity(job.getClass().getName()).build();
-
-			scheduler.scheduleJob(jobDetail, job.getTrigger());
+			scheduler.scheduleJob(jobDetail, trigger);
 		}
 		catch (SchedulerException e)
 		{
-			throw new KairosDBException("Failed to schedule job " + job.getClass().getName(), e);
-		}
-	}
-
-	@Override
-	public void schedule(String id, KairosDBJob job) throws KairosDBException
-	{
-		checkNotNullOrEmpty(id);
-		checkNotNull(job);
-
-		try
-		{
-			JobDetail jobDetail = newJob(job.getClass())
-					.withIdentity(id).build();
-
-			scheduler.scheduleJob(jobDetail, job.getTrigger());
-		}
-		catch (SchedulerException e)
-		{
-			throw new KairosDBException("Failed to schedule job " + id, e);
+			throw new KairosDBException("Failed to schedule trigger " + jobDetail, e);
 		}
 	}
 

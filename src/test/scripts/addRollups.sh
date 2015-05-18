@@ -10,8 +10,8 @@ curl -s http://localhost:8080/api/v1/rollups/rollup -XPOST -H'Content-type:appli
 	            "unit": "minutes"
 	        },
 	        "end_relative": {
-	            "value": 10,
-	            "unit": "years"
+	            "value": 6,
+	            "unit": "minutes"
 	        },
 	        "targets": [
 	            {"name": "rollup1"}

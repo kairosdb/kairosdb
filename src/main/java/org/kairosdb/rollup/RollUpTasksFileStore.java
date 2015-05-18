@@ -1,6 +1,5 @@
 package org.kairosdb.rollup;
 
-import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.io.FileUtils;
@@ -9,9 +8,8 @@ import org.kairosdb.core.http.rest.json.GsonParser;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -69,7 +67,10 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 		{
 			String json = FileUtils.readFileToString(configFile, Charset.forName("UTF-8"));
 
-			return parser.parseRollUpTask(json);
+			List<RollUpTask> rollUpTasks = parser.parseRollUpTask(json);
+			if (rollUpTasks == null)
+				rollUpTasks = Collections.emptyList();
+			return rollUpTasks;
 		}
 		catch (IOException e)
 		{

@@ -4,10 +4,11 @@ import com.google.inject.Guice;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.rollup.RollUpJob;
 import org.quartz.*;
+import org.quartz.impl.JobDetailImpl;
 
 import java.util.Set;
-import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -25,21 +26,15 @@ public class KairosDBSchedulerImplTest
 	}
 
 	@Test(expected = NullPointerException.class)
-	public void testScheduleNullJobInvalid() throws KairosDBException
+	public void testScheduleNullJobDetailInvalid() throws KairosDBException
 	{
-		scheduler.schedule(null);
+		scheduler.schedule(null, newTrigger().build());
 	}
 
 	@Test(expected = NullPointerException.class)
-	public void testScheduleNullIdInvalid() throws KairosDBException
+	public void testScheduleNullTriggerInvalid() throws KairosDBException
 	{
-		scheduler.schedule(null, new TestJob());
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void testScheduleEmptyIdInvalid() throws KairosDBException
-	{
-		scheduler.schedule("", new TestJob());
+		scheduler.schedule(new JobDetailImpl(), null);
 	}
 
 	@Test(expected = NullPointerException.class)
@@ -51,8 +46,9 @@ public class KairosDBSchedulerImplTest
 	@Test
 	public void test() throws KairosDBException
 	{
-		scheduler.schedule("1",new TestJob());
-		scheduler.schedule("2",new TestJob());
+
+		scheduler.schedule(createJobDetail("1"), createTrigger("1"));
+		scheduler.schedule(createJobDetail("2"), createTrigger("2"));
 
 		Set<String> scheduledJobIds = scheduler.getScheduledJobIds();
 		assertThat(scheduledJobIds.size(), equalTo(2));
@@ -70,25 +66,19 @@ public class KairosDBSchedulerImplTest
 		assertThat(scheduler.getScheduledJobIds().size(), equalTo(0));
 	}
 
-	private class TestJob implements KairosDBJob
+	private JobDetail createJobDetail(String key)
 	{
-		@Override
-		public Trigger getTrigger()
-		{
-			return newTrigger()
-					.withIdentity(UUID.randomUUID() + "-" + this.getClass().getSimpleName())
-					.withSchedule(CronScheduleBuilder.cronSchedule("0 */1 * * * ?"))
-					.build();
-		}
+		JobDetailImpl jobDetail = new JobDetailImpl();
+		jobDetail.setJobClass(RollUpJob.class);
+		jobDetail.setKey(new JobKey(key));
+		return jobDetail;
+	}
 
-		@Override
-		public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
-		{
-		}
-
-		@Override
-		public void interrupt()
-		{
-		}
+	private Trigger createTrigger(String key)
+	{
+		return newTrigger()
+				.withIdentity(key + "-" + this.getClass().getSimpleName())
+				.withSchedule(CronScheduleBuilder.cronSchedule("0 */1 * * * ?"))
+				.build();
 	}
 }

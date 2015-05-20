@@ -182,7 +182,7 @@ public class Main
 
 						if (mod instanceof CoreModule)
 						{
-							mod = Modules.override(moduleList).with(mod);
+							mod = Modules.override(moduleList.get(0)).with(mod);
 							moduleList.set(0, mod);
 						}
 						else

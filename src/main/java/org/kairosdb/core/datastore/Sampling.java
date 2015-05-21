@@ -21,30 +21,30 @@ import org.joda.time.DateTimeZone;
 
 public class Sampling extends Duration
 {
-	private DateTimeZone m_timeZone;
+	private DateTimeZone timeZone = DateTimeZone.UTC;
 
 	public Sampling()
 	{
 		super();
 	}
-
+	
 	public Sampling(int value, TimeUnit unit)
 	{
 		super(value, unit);
-		this.m_timeZone = DateTimeZone.UTC;
+		this.timeZone = DateTimeZone.UTC;
 	}
-
+	
 	public Sampling(int value, TimeUnit unit, DateTimeZone timeZone)
 	{
 		super(value, unit);
-		this.m_timeZone = timeZone;
+		this.timeZone = timeZone;
 	}
-
+	
 	public DateTimeZone getTimeZone()
 	{
-		return m_timeZone;
+		return timeZone;
 	}
-
+	
 	/**
 	 Computes the duration of the sampling (value * unit) starting at timestamp.
 
@@ -54,7 +54,7 @@ public class Sampling extends Duration
 	public long getSamplingDuration(long timestamp)
 	{
 		long sampling = (long) value;
-		DateTime dt = new DateTime(timestamp, m_timeZone);
+		DateTime dt = new DateTime(timestamp, timeZone);
 		switch (unit)
 		{
 			case YEARS:
@@ -83,5 +83,13 @@ public class Sampling extends Duration
 				break;
 		}
 		return sampling;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "Sampling{" +
+				"timeZone=" + timeZone +
+				"} " + super.toString();
 	}
 }

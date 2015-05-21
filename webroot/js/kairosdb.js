@@ -209,6 +209,14 @@ kairosdb.TimeGroupBy = function (groupSizeValue, groupSizeUnit, groupCount) {
 };
 
 /**
+ * Bin groupBy
+ * @param groupSize
+ */
+kairosdb.BinGroupBy = function(groupSize){
+    this.name = "bin";
+    this.bins = groupSize;
+}
+/**
  cacheTime: the amount of time in seconds to cache the query
  */
 kairosdb.MetricQuery = function (cacheTime) {

@@ -73,6 +73,7 @@
 			$("#groupByTagsTemplate").hide();
 			$("#groupByTimeTemplate").hide();
 			$("#groupByValueTemplate").hide();
+			$("#groupByBinTemplate").hide();
             $(".aggregatorPercentile").hide();
             $(".divisor").hide();
             $(".scalingFactor").hide();
@@ -134,7 +135,7 @@
 			// Autocomplete for GroupBy dialog
 			$("#autocompleteTagName").combobox().combobox({source: function (request, response) {
 					var selectedTabIndex = $("#tabs").tabs("option", "active");
-					var metricName = $('#metricContainer' + selectedTabIndex).find(".metricName").combobox("value");
+					var metricName = $('#metricContainer' + tabContainerMap[selectedTabIndex]).find(".metricName").combobox("value");
 					if (metricName){
 						var tags = [];
 						$.each(metricToTags[metricName], function(tag){
@@ -335,6 +336,7 @@
 				<option value="tags">Tags</option>
 				<option value="time">Time</option>
 				<option value="value">Value</option>
+                <option value="bin">Bin</option>
 			</select>
 		</div>
 		<div class="groupByContent"></div>
@@ -395,6 +397,18 @@
 	<div style="display: table-cell">
 		<input class="ui-widget groupByValueValue" style="width: 40px; margin-left: 10px;" type="text">
 	</div>
+</div>
+
+<!-- Hidden GroupBy div used for cloning -->
+<div id="groupByBinTemplate">
+    <div style="display: table-cell">
+        <span class="header" style="margin-left: 30px; vertical-align: top;">Bin Values</span>
+    </div>
+    <div style="display: table-cell">
+        <input class="ui-widget groupByBinValue" style="width: 100%; margin-left: 10px;" type="text">
+        <br>
+        <span class="ui-widget" style="font-size: xx-small;margin-left: 10px;">*Comma separated list</span>
+    </div>
 </div>
 
 <!-- Hidden GroupBy Dialog. Used for auto-completion of tag name -->

@@ -60,7 +60,7 @@ The url for submitting data is http://localhost:8080/api/v1/datapoints
 	{
 	    "name": "archive.file.search",
 	    "timestamp": 999,
-	    "type: "double",
+	    "type": "double",
 	    "value": 32.1,
 	    "tags":{"host":"test"}
 	}]

@@ -50,6 +50,7 @@ public class CachedSearchResult implements QueryCallback
 	private boolean m_readFromCache = false;
 	private KairosDataPointFactory m_dataPointFactory;
 	private StringPool m_stringPool;
+	private int m_maxReadBufferSize = 8192;  //Default value in BufferedInputStream
 
 
 	private static File getIndexFile(String baseFileName)
@@ -86,6 +87,17 @@ public class CachedSearchResult implements QueryCallback
 		m_dataOutputStream = BufferedDataOutputStream.create(m_randomAccessFile, 0L);
 	}
 
+	private void calculateMaxReadBufferSize()
+	{
+		//Reduce the max buffer size when we have a lot of rows to conserve memory
+		if (m_dataPointSets.size() > 100000)
+			m_maxReadBufferSize = 1024;
+		else if (m_dataPointSets.size() > 75000)
+			m_maxReadBufferSize = 1024 * 2;
+		else if (m_dataPointSets.size() > 50000)
+			m_maxReadBufferSize = 1024 * 4;
+	}
+
 
 	/**
 	 Reads the index file into memory
@@ -108,6 +120,8 @@ public class CachedSearchResult implements QueryCallback
 
 		m_readFromCache = true;
 		in.close();
+
+		calculateMaxReadBufferSize();
 	}
 
 	private void saveIndex() throws IOException
@@ -193,6 +207,8 @@ public class CachedSearchResult implements QueryCallback
 		long curPosition = m_dataOutputStream.getPosition();
 		if (m_dataPointSets.size() != 0)
 			m_dataPointSets.get(m_dataPointSets.size() -1).setEndPosition(curPosition);
+
+		calculateMaxReadBufferSize();
 	}
 
 	/**
@@ -355,7 +371,7 @@ public class CachedSearchResult implements QueryCallback
 	{
 		private long m_currentPosition;
 		private long m_endPostition;
-		private DataInputStream m_readBuffer;
+		private DataInputStream m_readBuffer = null;
 		private Map<String, String> m_tags;
 		private final String m_dataType;
 		private final int m_dataPointCount;
@@ -366,13 +382,18 @@ public class CachedSearchResult implements QueryCallback
 		{
 			m_currentPosition = startPosition;
 			m_endPostition = endPostition;
-			m_readBuffer = new BufferedDataInputStream(m_randomAccessFile, startPosition);
-			//m_readBuffer = ByteBuffer.allocate(DATA_POINT_SIZE * m_readBufferSize);
-			//m_readBuffer.clear();
-			//m_readBuffer.limit(0);
+
 			m_tags = tags;
 			m_dataType = dataType;
 			m_dataPointCount = dataPointCount;
+		}
+
+		private void allocateReadBuffer()
+		{
+			int rowSize = (int)(m_endPostition - m_currentPosition);
+			int bufferSize = (rowSize < m_maxReadBufferSize ? rowSize : m_maxReadBufferSize);
+
+			m_readBuffer = new BufferedDataInputStream(m_randomAccessFile, m_currentPosition, bufferSize);
 		}
 
 
@@ -390,6 +411,10 @@ public class CachedSearchResult implements QueryCallback
 
 			try
 			{
+				//Lazy allocation of buffer to conserve memory when using group by's
+				if (m_readBuffer == null)
+					allocateReadBuffer();
+
 				long timestamp = m_readBuffer.readLong();
 
 				ret = m_dataPointFactory.createDataPoint(m_dataType, timestamp, m_readBuffer);
@@ -401,6 +426,22 @@ public class CachedSearchResult implements QueryCallback
 			}
 
 			m_dataPointsRead ++;
+
+			//Clean up buffer.  In cases where we are grouping not all rows are read
+			//at once so this will save memory
+			if (m_dataPointsRead == m_dataPointCount)
+			{
+				try
+				{
+					m_readBuffer.close();
+					m_readBuffer = null;
+				}
+				catch (IOException e)
+				{
+					e.printStackTrace();
+				}
+			}
+
 			return (ret);
 		}
 

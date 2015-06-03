@@ -5,10 +5,6 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.groupby.GroupByResult;
-
-import java.util.List;
-import java.util.Set;
 
 /**
  Created by bhawkins on 12/16/14.
@@ -17,11 +13,18 @@ import java.util.Set;
 public class DiffAggregator implements Aggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;
+	private boolean m_negativeFilter;
 
 	@Inject
 	public DiffAggregator(DoubleDataPointFactory dataPointFactory)
 	{
 		m_dataPointFactory = dataPointFactory;
+		m_negativeFilter = false;
+	}
+
+	public void setNegativeFilter(boolean filter)
+	{
+		m_negativeFilter = filter;
 	}
 
 	@Override
@@ -38,10 +41,14 @@ public class DiffAggregator implements Aggregator
 
 	private class DiffDataPointGroup extends AggregatedDataPointGroupWrapper
 	{
+		double m_lastValue;
 
 		public DiffDataPointGroup(DataPointGroup innerDataPointGroup)
 		{
 			super(innerDataPointGroup);
+
+			if (currentDataPoint != null)
+				m_lastValue = currentDataPoint.getDoubleValue();
 		}
 
 		@Override
@@ -53,10 +60,10 @@ public class DiffAggregator implements Aggregator
 		@Override
 		public DataPoint next()
 		{
-			final double lastValue = currentDataPoint.getDoubleValue();
+			//final double lastValue = currentDataPoint.getDoubleValue();
 
 			//This defaults the rate to 0 if no more data points exists
-			double newValue = lastValue;
+			double newValue = m_lastValue;
 
 			if (hasNextInternal())
 			{
@@ -65,7 +72,15 @@ public class DiffAggregator implements Aggregator
 				newValue = currentDataPoint.getDoubleValue();
 			}
 
-			double diff = newValue - lastValue;
+			double diff = newValue - m_lastValue;
+
+			if (m_negativeFilter && (diff < 0))
+			{
+				diff = 0.0;
+			}
+			else
+				m_lastValue = newValue;
+
 
 			return (m_dataPointFactory.createDataPoint(currentDataPoint.getTimestamp(), diff));
 		}

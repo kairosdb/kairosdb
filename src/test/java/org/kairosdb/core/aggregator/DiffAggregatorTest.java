@@ -140,4 +140,65 @@ public class DiffAggregatorTest
 
 		assertThat(results.hasNext(), equalTo(false));
 	}
+
+	@Test
+	public void test_negativeFilterOnWithNoNegative()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("rate");
+		group.addDataPoint(new LongDataPoint(1, 10));
+		group.addDataPoint(new LongDataPoint(3, 20));
+		group.addDataPoint(new LongDataPoint(5, 30));
+		group.addDataPoint(new LongDataPoint(7, 40));
+
+		DiffAggregator rateAggregator = new DiffAggregator(new DoubleDataPointFactoryImpl());
+		rateAggregator.setNegativeFilter(true);
+		DataPointGroup results = rateAggregator.aggregate(group);
+
+		DataPoint dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(3L));
+		assertThat(dp.getDoubleValue(), equalTo(10.0));
+
+		dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(5L));
+		assertThat(dp.getDoubleValue(), equalTo(10.0));
+
+		dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(7L));
+		assertThat(dp.getDoubleValue(), equalTo(10.0));
+
+		assertThat(results.hasNext(), equalTo(false));
+	}
+
+	@Test
+	public void test_negativeFilterOnWithNegative()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("rate");
+		group.addDataPoint(new LongDataPoint(1, 10));
+		group.addDataPoint(new LongDataPoint(3, 20));
+		group.addDataPoint(new LongDataPoint(5, 15));
+		group.addDataPoint(new LongDataPoint(7, 40));
+		group.addDataPoint(new LongDataPoint(9, 50));
+
+		DiffAggregator rateAggregator = new DiffAggregator(new DoubleDataPointFactoryImpl());
+		rateAggregator.setNegativeFilter(true);
+		DataPointGroup results = rateAggregator.aggregate(group);
+
+		DataPoint dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(3L));
+		assertThat(dp.getDoubleValue(), equalTo(10.0));
+
+		dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(5L));
+		assertThat(dp.getDoubleValue(), equalTo(0.0));
+
+		dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(7L));
+		assertThat(dp.getDoubleValue(), equalTo(20.0));
+
+		dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(9L));
+		assertThat(dp.getDoubleValue(), equalTo(10.0));
+
+		assertThat(results.hasNext(), equalTo(false));
+	}
 }

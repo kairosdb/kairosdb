@@ -117,7 +117,7 @@ function buildKairosDBQuery() {
 				if (!isValidPercentile(percentile)) {
 					return true;
 				}
-				var align_start_time = $(aggregator).find(".aggregatorAlignStartTime").prop("checked");
+				var align_start_time = $(aggregator).find(".aggregatorAlignStartTimeValue").prop("checked");
 				metric.addPercentile(value, unit, percentile, align_start_time);
 			}
 			else if (name == 'div') {
@@ -140,7 +140,7 @@ function buildKairosDBQuery() {
 					return true;
 				}
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-				var align_start_time = $(aggregator).find(".aggregatorAlignStartTime").prop("checked");
+				var align_start_time = $(aggregator).find(".aggregatorAlignStartTimeValue").prop("checked");
 				metric.addAggregator(name, value, unit, align_start_time);
 			}
 		});

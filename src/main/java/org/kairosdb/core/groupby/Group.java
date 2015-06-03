@@ -188,9 +188,10 @@ public class Group
 			try
 			{
 				m_dataInputStream.close();
-				//Calling delete on temp file always returns false even though the file is deleted
-				//so ignoring return value
-				m_groupCacheFile.delete();
+				boolean fileDeleted = m_groupCacheFile.delete();
+
+				if (!fileDeleted)
+					logger.error("Could not delete group file: " + m_groupCacheFile.getAbsolutePath());
 
 			}
 			catch (IOException e)

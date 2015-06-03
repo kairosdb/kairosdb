@@ -18,7 +18,9 @@ kairosdb.Aggregators =
 	SUM: "sum",
 	LEAST_SQUARES: "least_squares",
 	PERCENTILE: "percentile",
-	SCALE: "scale"
+	SCALE: "scale",
+	FIRST: "first",
+	LAST: "last"
 };
 
 kairosdb.Unit =  //Values used for Aggregator sampling and Relative time

@@ -38,8 +38,10 @@ case "$1" in
         if [ -n "$pid" ]
           then
           echo "KairosDB is running at PID: $pid"
+          exit 0
         else
           echo "KairosDB is not Running"
+          exit 3
         fi
         ;;
   restart|reload|condrestart)

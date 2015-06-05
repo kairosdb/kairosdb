@@ -110,7 +110,8 @@ public class RangeAggregatorTest
 		}
 
 		SumAggregator agg = new SumAggregator(new DoubleDataPointFactoryImpl());
-		agg.setSampling(new Sampling(3, TimeUnit.MONTHS, utc));
+		agg.setTimeZone(utc);
+		agg.setSampling(new Sampling(3, TimeUnit.MONTHS));
 		agg.setAlignSampling(true);
 		agg.setAlignStartTime(true);
 		agg.setStartTime(startDate.getMillis());
@@ -276,7 +277,8 @@ public class RangeAggregatorTest
 
 
 		SumAggregator aggregator = new SumAggregator(new DoubleDataPointFactoryImpl());
-		aggregator.setSampling(new Sampling(1, TimeUnit.MONTHS, paris));
+		aggregator.setTimeZone(paris);
+		aggregator.setSampling(new Sampling(1, TimeUnit.MONTHS));
 		aggregator.setAlignSampling(true);
 
 		DataPointGroup hourCount = aggregator.aggregate(group);
@@ -301,7 +303,8 @@ public class RangeAggregatorTest
 
 
 		SumAggregator aggregator = new SumAggregator(new DoubleDataPointFactoryImpl());
-		aggregator.setSampling(new Sampling(1, TimeUnit.MONTHS, paris));
+		aggregator.setTimeZone(paris);
+		aggregator.setSampling(new Sampling(1, TimeUnit.MONTHS));
 		aggregator.setAlignSampling(true);
 
 		DataPointGroup hourCount = aggregator.aggregate(group);

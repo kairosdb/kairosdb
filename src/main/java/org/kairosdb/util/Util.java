@@ -17,6 +17,9 @@ package org.kairosdb.util;
 
 
 import com.google.common.collect.ImmutableList;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.kairosdb.core.datastore.Sampling;
 
 import java.io.*;
 import java.net.*;
@@ -277,5 +280,46 @@ public class Util
 				!address.isAnyLocalAddress() &&
 				!address.isLoopbackAddress() &&
 				!address.isMulticastAddress();
+	}
+
+
+	/**
+	 Computes the duration of the sampling (value * unit) starting at timestamp.
+
+	 @param timestamp unix timestamp of the start time.
+	 @return the duration of the sampling in millisecond.
+	 */
+	public static long getSamplingDuration(long timestamp, Sampling sampling, DateTimeZone timeZone)
+	{
+		long ret = (long) sampling.getValue();
+		DateTime dt = new DateTime(timestamp, timeZone);
+		switch (sampling.getUnit())
+		{
+			case YEARS:
+				ret = new org.joda.time.Duration(dt, dt.plusYears(sampling.getValue())).getMillis();
+				break;
+			case MONTHS:
+				ret = new org.joda.time.Duration(dt, dt.plusMonths(sampling.getValue())).getMillis();
+				break;
+			case WEEKS:
+				ret = new org.joda.time.Duration(dt, dt.plusWeeks(sampling.getValue())).getMillis();
+				break;
+			case DAYS:
+				ret = new org.joda.time.Duration(dt, dt.plusDays(sampling.getValue())).getMillis();
+				break;
+			case HOURS:
+				ret = new org.joda.time.Duration(dt, dt.plusHours(sampling.getValue())).getMillis();
+				break;
+			case MINUTES:
+				ret = new org.joda.time.Duration(dt, dt.plusMinutes(sampling.getValue())).getMillis();
+				break;
+			case SECONDS:
+				ret = new org.joda.time.Duration(dt, dt.plusSeconds(sampling.getValue())).getMillis();
+				break;
+			case MILLISECONDS:
+				ret = (long) sampling.getValue();
+				break;
+		}
+		return ret;
 	}
 }

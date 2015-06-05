@@ -17,6 +17,7 @@ package org.kairosdb.core.aggregator;
 import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeField;
+import org.joda.time.DateTimeZone;
 import org.joda.time.chrono.GregorianChronology;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -32,12 +33,13 @@ import java.util.TimeZone;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public abstract class RangeAggregator implements Aggregator
+public abstract class RangeAggregator implements Aggregator, TimezoneAware
 {
 	private long m_startTime = 0L;
 	private boolean m_started = false;
 	private boolean m_alignSampling;
 	private boolean m_exhaustive;
+	private DateTimeZone m_timeZone = DateTimeZone.UTC;;
 
 	@NotNull
 	@Valid
@@ -88,7 +90,7 @@ public abstract class RangeAggregator implements Aggregator
 	 */
 	private long alignRangeBoundary(long timestamp)
 	{
-		DateTime dt = new DateTime(timestamp, m_sampling.getTimeZone());
+		DateTime dt = new DateTime(timestamp, m_timeZone);
 		TimeUnit tu = m_sampling.getUnit();
 		switch (tu)
 		{
@@ -170,6 +172,17 @@ public abstract class RangeAggregator implements Aggregator
 	 */
 	protected abstract RangeSubAggregator getSubAggregator();
 
+	/**
+	 Sets the time zone to use for range calculations
+	 @param timeZone
+	 */
+	public void setTimeZone(DateTimeZone timeZone)
+	{
+		m_timeZone = timeZone;
+	}
+
+
+
 
 	//===========================================================================
 	/**
@@ -190,7 +203,7 @@ public abstract class RangeAggregator implements Aggregator
 			m_subAggregator = subAggregator;
 			m_dpIterator = new ArrayList<DataPoint>().iterator();
 
-			Chronology chronology = GregorianChronology.getInstance(m_sampling.getTimeZone());
+			Chronology chronology = GregorianChronology.getInstance(m_timeZone);
 
 			TimeUnit tu = m_sampling.getUnit();
 			switch (tu)

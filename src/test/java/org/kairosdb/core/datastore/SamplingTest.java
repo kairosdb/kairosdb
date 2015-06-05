@@ -17,6 +17,7 @@ package org.kairosdb.core.datastore;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Test;
+import org.kairosdb.util.Util;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -28,7 +29,7 @@ public class SamplingTest {
         DateTimeZone timezone = DateTimeZone.forID("Europe/Brussels");
         DateTime dt = new DateTime(2014, 12, 18, 1, 2, 3, 4, timezone);
 
-        assertThat(sampling.getSamplingDuration(dt.getMillis()), is(365 * 24 * 60 * 60 * 1000L));
+        assertThat(Util.getSamplingDuration(dt.getMillis(), sampling, timezone), is(365 * 24 * 60 * 60 * 1000L));
     }
 
     @Test
@@ -37,7 +38,7 @@ public class SamplingTest {
         DateTimeZone timezone = DateTimeZone.forID("Europe/Brussels");
         DateTime dt = new DateTime(2012, 2, 18, 1, 2, 3, 4, timezone);
 
-        assertThat(sampling.getSamplingDuration(dt.getMillis()), is(366 * 24 * 60 * 60 * 1000L));
+        assertThat(Util.getSamplingDuration(dt.getMillis(), sampling, timezone), is(366 * 24 * 60 * 60 * 1000L));
     }
 
     @Test
@@ -46,7 +47,7 @@ public class SamplingTest {
         DateTimeZone timezone = DateTimeZone.forID("Europe/Brussels");
         DateTime dt = new DateTime(2014, 1, 18, 1, 2, 3, 4, timezone);
 
-        assertThat(sampling.getSamplingDuration(dt.getMillis()), is(31 * 24 * 60 * 60 * 1000L));
+        assertThat(Util.getSamplingDuration(dt.getMillis(), sampling, timezone), is(31 * 24 * 60 * 60 * 1000L));
     }
     
     @Test
@@ -55,7 +56,7 @@ public class SamplingTest {
         DateTimeZone timezone = DateTimeZone.forID("Europe/Brussels");
         DateTime dt = new DateTime(2014, 2, 18, 1, 2, 3, 4, timezone);
 
-        assertThat(sampling.getSamplingDuration(dt.getMillis()), is(28 * 24 * 60 * 60 * 1000L));
+        assertThat(Util.getSamplingDuration(dt.getMillis(), sampling, timezone), is(28 * 24 * 60 * 60 * 1000L));
     }
 
     @Test
@@ -64,7 +65,7 @@ public class SamplingTest {
         DateTimeZone timezone = DateTimeZone.forID("Europe/Brussels");
         DateTime dt = new DateTime(2014, 12, 18, 1, 2, 3, 4, timezone);
 
-        assertThat(sampling.getSamplingDuration(dt.getMillis()), is(7 * 24 * 60 * 60 * 1000L));
+        assertThat(Util.getSamplingDuration(dt.getMillis(), sampling, timezone), is(7 * 24 * 60 * 60 * 1000L));
     }
 
     @Test
@@ -73,7 +74,7 @@ public class SamplingTest {
         DateTimeZone timezone = DateTimeZone.forID("Europe/Brussels");
         DateTime dt = new DateTime(2014, 12, 18, 1, 2, 3, 4, timezone);
 
-        assertThat(sampling.getSamplingDuration(dt.getMillis()), is(24 * 60 * 60 * 1000L));
+        assertThat(Util.getSamplingDuration(dt.getMillis(), sampling, timezone), is(24 * 60 * 60 * 1000L));
     }
 
     @Test
@@ -82,7 +83,7 @@ public class SamplingTest {
         DateTimeZone timezone = DateTimeZone.forID("Europe/Brussels");
         DateTime dt = new DateTime(2014, 12, 18, 1, 2, 3, 4, timezone);
 
-        assertThat(sampling.getSamplingDuration(dt.getMillis()), is(60 * 60 * 1000L));
+        assertThat(Util.getSamplingDuration(dt.getMillis(), sampling, timezone), is(60 * 60 * 1000L));
     }
 
     @Test
@@ -91,7 +92,7 @@ public class SamplingTest {
         DateTimeZone timezone = DateTimeZone.forID("Europe/Brussels");
         DateTime dt = new DateTime(2014, 12, 18, 1, 2, 3, 4, timezone);
 
-        assertThat(sampling.getSamplingDuration(dt.getMillis()), is(1000 * 60L));
+        assertThat(Util.getSamplingDuration(dt.getMillis(), sampling, timezone), is(1000 * 60L));
     }
 
     @Test
@@ -100,7 +101,7 @@ public class SamplingTest {
         DateTimeZone timezone = DateTimeZone.forID("Europe/Brussels");
         DateTime dt = new DateTime(2014, 12, 18, 1, 2, 3, 4, timezone);
 
-        assertThat(sampling.getSamplingDuration(dt.getMillis()), is(1000L));
+        assertThat(Util.getSamplingDuration(dt.getMillis(), sampling, timezone), is(1000L));
     }
 
     @Test
@@ -109,6 +110,6 @@ public class SamplingTest {
         DateTimeZone timezone = DateTimeZone.forID("Europe/Brussels");
         DateTime dt = new DateTime(2014, 12, 18, 1, 2, 3, 4, timezone);
         
-        assertThat(sampling.getSamplingDuration(dt.getMillis()), is(1L));
+        assertThat(Util.getSamplingDuration(dt.getMillis(), sampling, timezone), is(1L));
     }
 }

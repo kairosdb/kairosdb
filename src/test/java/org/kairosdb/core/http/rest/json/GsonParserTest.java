@@ -311,7 +311,7 @@ public class GsonParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sampling-timezone.json"), Charsets.UTF_8);
 		
-		assertBeanValidation(json, "query.metric[0].aggregators[0].bogus is not a valid time zone, must be one of " + DateTimeZone.getAvailableIDs());
+		assertBeanValidation(json, "query.bogus is not a valid time zone, must be one of " + DateTimeZone.getAvailableIDs());
 	}
 	
 	@Test

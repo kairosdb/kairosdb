@@ -32,6 +32,7 @@ import org.joda.time.DateTimeZone;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.RangeAggregator;
+import org.kairosdb.core.aggregator.TimezoneAware;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByFactory;
@@ -198,7 +199,7 @@ public class GsonParser
 				{
 					JsonArray asJsonArray = aggregators.getAsJsonArray();
 					if (asJsonArray.size() > 0)
-						parseAggregators(context, queryMetric, asJsonArray);
+						parseAggregators(context, queryMetric, asJsonArray, query.getTimeZone());
 				}
 
 				JsonElement plugins = jsMetric.get("plugins");
@@ -258,7 +259,8 @@ public class GsonParser
 		}
 	}
 
-	private void parseAggregators(String context, QueryMetric queryMetric, JsonArray aggregators) throws QueryException, BeanValidationException
+	private void parseAggregators(String context, QueryMetric queryMetric,
+			JsonArray aggregators, DateTimeZone timeZone) throws QueryException, BeanValidationException
 	{
 		for (int J = 0; J < aggregators.size(); J++)
 		{
@@ -281,6 +283,12 @@ public class GsonParser
 			{
 				RangeAggregator ra = (RangeAggregator) aggregator;
 				ra.setStartTime(queryMetric.getStartTime());
+			}
+
+			if (aggregator instanceof TimezoneAware)
+			{
+				TimezoneAware ta = (TimezoneAware) aggregator;
+				ta.setTimeZone(timeZone);
 			}
 
 			deserializeProperties(aggContext, jsAggregator, aggName, aggregator);
@@ -510,6 +518,10 @@ public class GsonParser
 		@SerializedName("end_relative")
 		private RelativeTime end_relative;
 
+		@Valid
+		@SerializedName("time_zone")
+		private DateTimeZone m_timeZone;// = DateTimeZone.UTC;;
+
 
 		public Long getStartAbsolute()
 		{
@@ -534,6 +546,11 @@ public class GsonParser
 		public RelativeTime getEndRelative()
 		{
 			return end_relative;
+		}
+
+		public DateTimeZone getTimeZone()
+		{
+			return m_timeZone;
 		}
 
 		public String getCacheString()

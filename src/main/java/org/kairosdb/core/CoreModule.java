@@ -94,11 +94,14 @@ public class CoreModule extends AbstractModule
 		bind(CountAggregator.class);
 		bind(DiffAggregator.class);
 		bind(DataGapsMarkingAggregator.class);
+		bind(FirstAggregator.class);
+		bind(LastAggregator.class);
+
 
 		bind(ValueGroupBy.class);
 		bind(TimeGroupBy.class);
 		bind(TagGroupBy.class);
-        bind(BinGroupBy.class);
+		bind(BinGroupBy.class);
 
 		Names.bindProperties(binder(), m_props);
 		bind(Properties.class).toInstance(m_props);
@@ -106,7 +109,9 @@ public class CoreModule extends AbstractModule
 		String hostname = m_props.getProperty("kairosdb.hostname");
 		bindConstant().annotatedWith(Names.named("HOSTNAME")).to(hostname != null ? hostname: Util.getHostName());
 
-		bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
+		bind(new TypeLiteral<List<DataPointListener>>()
+		{
+		}).toProvider(DataPointListenerProvider.class);
 
 		//bind datapoint default impls
 		bind(DoubleDataPointFactory.class)

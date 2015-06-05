@@ -23,6 +23,10 @@ function clear()
 	$("#chartContainer").html("");
 }
 
+function showQuery() {
+	$(".query-window").toggle();
+}
+
 function updateChart() {
 	clear();
 	var query=buildKairosDBQuery();
@@ -114,7 +118,6 @@ function buildKairosDBQuery() {
 			}
 			else if (name == 'rate') {
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-				var time_zone = $(aggregator).find(".aggregatorSamplingTimeZone").val();
 				metric.addRate(unit, time_zone);
 			}
 			else if (name == 'sampler') {
@@ -131,7 +134,6 @@ function buildKairosDBQuery() {
 				if (!isValidPercentile(percentile)) {
 					return true;
 				}
-                		var time_zone = $(aggregator).find(".aggregatorSamplingTimeZone").val();
 				metric.addPercentile(value, unit, percentile, time_zone);
 			}
 			else if (name == 'div') {
@@ -154,7 +156,6 @@ function buildKairosDBQuery() {
 					return true;
 				}
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-		                var time_zone = $(aggregator).find(".aggregatorSamplingTimeZone").val();
 				metric.addRangeAggregator(name, value, unit, time_zone);
 			}
 		});
@@ -211,7 +212,7 @@ function buildKairosDBQuery() {
 
 	var startTimeAbsolute = $("#startTime").datepicker("getDate");
 	var startTimeRelativeValue = $("#startRelativeValue").val();
-
+	
 	if (startTimeAbsolute != null) {
 		query.setStartAbsolute(startTimeAbsolute.getTime());
 	}
@@ -234,6 +235,10 @@ function buildKairosDBQuery() {
 			query.setEndRelative(endRelativeValue, $("#endRelativeUnit").val())
 		}
 	}
+	
+	var time_zone = $(".timeZone").val();
+	if (time_zone != '')
+		query.setTimeZone(time_zone)
 
 	return hasError ? null : query;
 }
@@ -553,7 +558,6 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".aggregatorPercentile").hide();
 			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".scalingFactor").hide();
-			$aggregatorContainer.find(".aggregatorSamplingTimeZone").hide();
 		}
 		else if (name == "rate" || name == "sampler") {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
@@ -562,7 +566,6 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".scalingFactor").hide();
-			$aggregatorContainer.find(".aggregatorSamplingTimeZone").show();
 
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
@@ -573,7 +576,6 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
 			$aggregatorContainer.find(".scalingFactor").hide();
-            		$aggregatorContainer.find(".aggregatorSamplingTimeZone").show();
 		}
 		else if (name == "div") {
 			$aggregatorContainer.find(".aggregatorSampling").hide();
@@ -592,10 +594,9 @@ function addAggregator(container) {
 		else {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
-            $aggregatorContainer.find(".aggregatorPercentile").hide();
+			$aggregatorContainer.find(".aggregatorPercentile").hide();
 			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".scalingFactor").hide();
-            		$aggregatorContainer.find(".aggregatorSamplingTimeZone").show();
 		}
 	});
 }

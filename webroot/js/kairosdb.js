@@ -19,7 +19,9 @@ kairosdb.Aggregators =
 	LEAST_SQUARES: "least_squares",
 	PERCENTILE: "percentile",
 	SCALE: "scale",
-	GAPS: "gaps"
+	GAPS: "gaps",
+	FIRST: "first",
+	LAST: "last"
 };
 
 kairosdb.Unit =  //Values used for Aggregator sampling and Relative time
@@ -264,6 +266,13 @@ kairosdb.MetricQuery = function (cacheTime) {
 			throw new kairosdb.MetricException(
 				'You cannot define both end_absolute and end_relative');
 	};
+	
+	/**
+	*/
+	this.setTimeZone = function (timeZone)
+	{
+		this.time_zone = timeZone;
+	}
 
 	/**
 	 Used to add a kairos.Metric object to the MetricQuery

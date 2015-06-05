@@ -220,6 +220,7 @@ ivyResolve = ivy.getResolveRule("default")
 resolveIvyFileSetRule = new SimpleRule()
 		.addDepend(ivyResolve)
 		.setMakeAction("doIvyResolve")
+		.alwaysRun()
 
 def doIvyResolve(Rule rule)
 {

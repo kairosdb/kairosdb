@@ -1,26 +1,26 @@
----------------
+===============
 Add Data Points
----------------
+===============
 
 Records metric data points
 
-^^^^^^
+------
 Method
-^^^^^^
+------
 
   POST
 
-^^^^^^^
+-------
 Request
-^^^^^^^
+-------
 
   http://[host]:[port]/api/v1/datapoints
 
 *Note: you can gzip the json and upload with the content type set to application/gzip if you are batching large amounts of data.*
 
-^^^^
+----
 Body
-^^^^
+----
 ::
 
   [
@@ -66,9 +66,9 @@ Body
     }
   ]
 
-^^^^^^^^^^^
+-----------
 Description
-^^^^^^^^^^^
+-----------
 
 You can either use **"timestamp"** with **"value"** for a single data point or you can use **"datapoints"** to post multiple data points. This example shows both approaches.
 
@@ -101,9 +101,9 @@ Type identifies custom data types. This field is only needed if the data value i
 The type field is the name of the registered type for the custom data. See :doc:`Custom Types <../kairosdevelopment/CustomData>` for information on custom types.
 
 
-^^^^^^^^
+--------
 Response
-^^^^^^^^
+--------
 *Success*
   The response will be 204 NO CONTENT with no body.
 

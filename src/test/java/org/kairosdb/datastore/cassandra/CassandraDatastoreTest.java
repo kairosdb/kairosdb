@@ -173,13 +173,16 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@BeforeClass
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
-		s_datastore = new CassandraDatastore(null, 1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
-				1000, 50000, "hostname", "kairosdb_test", new HectorConfiguration("localhost:9160"), dataPointFactory);
+		String cassandraHost = "localhost:9160";
+		if (System.getenv("CASSANDRA_HOST") != null)
+			cassandraHost = System.getenv("CASSANDRA_HOST");
+
+		s_datastore = new CassandraDatastore("hostname", new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
+				1000, 50000, "kairosdb_test"), new HectorConfiguration(cassandraHost), dataPointFactory);
 
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
 				new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname",
-				dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 
 		loadCassandraData();
 		loadData();
@@ -278,7 +281,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public void test_deleteDataPoints_DeleteEntireRow() throws IOException, DatastoreException, InterruptedException
 	{
 		String metricToDelete = "MetricToDelete";
-		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
+		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, Long.MIN_VALUE, Long.MAX_VALUE);
 
 		CachedSearchResult res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
@@ -307,7 +310,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public void test_deleteDataPoints_DeleteColumnsSpanningRows() throws IOException, DatastoreException, InterruptedException
 	{
 		String metricToDelete = "OtherMetricToDelete";
-		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
+		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, Long.MIN_VALUE, Long.MAX_VALUE);
 
 		CachedSearchResult res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
@@ -427,14 +430,6 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		set.addDataPoint(new LongDataPoint(3, 4L));
 		set.addDataPoint(new LongDataPoint(4, 5L));
 		set.addDataPoint(new LongDataPoint(5, 6L));
-		putDataPoints(set);
-	}
-
-	@Test(expected = DatastoreException.class)
-	public void test_TimestampsNegative() throws DatastoreException
-	{
-		DataPointSet set = new DataPointSet("testMetric");
-		set.addDataPoint(new LongDataPoint(-1, 1L));
 		putDataPoints(set);
 	}
 

@@ -28,12 +28,12 @@ import com.google.gson.stream.JsonWriter;
 import com.google.inject.Inject;
 import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
+import org.joda.time.DateTimeZone;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.RangeAggregator;
-import org.kairosdb.core.datastore.Order;
-import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.datastore.TimeUnit;
+import org.kairosdb.core.aggregator.TimezoneAware;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
@@ -62,23 +62,28 @@ public class GsonParser
 	private static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
 
 	private AggregatorFactory m_aggregatorFactory;
+	private QueryPluginFactory m_pluginFactory;
 	private GroupByFactory m_groupByFactory;
 	private Map<Class, Map<String, PropertyDescriptor>> m_descriptorMap;
 	private final Object m_descriptorMapLock = new Object();
 	private Gson m_gson;
 
 	@Inject
-	public GsonParser(AggregatorFactory aggregatorFactory, GroupByFactory groupByFactory)
+	public GsonParser(AggregatorFactory aggregatorFactory, GroupByFactory groupByFactory,
+			QueryPluginFactory pluginFactory)
 	{
 		m_aggregatorFactory = aggregatorFactory;
 		m_groupByFactory = groupByFactory;
+		m_pluginFactory = pluginFactory;
 
 		m_descriptorMap = new HashMap<Class, Map<String, PropertyDescriptor>>();
 
 		GsonBuilder builder = new GsonBuilder();
 		builder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
 		builder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
+		builder.registerTypeAdapter(DateTimeZone.class, new DateTimeZoneDeserializer());
 		builder.registerTypeAdapter(Metric.class, new MetricDeserializer());
+		builder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES);
 
 		m_gson = builder.create();
 	}
@@ -194,7 +199,15 @@ public class GsonParser
 				{
 					JsonArray asJsonArray = aggregators.getAsJsonArray();
 					if (asJsonArray.size() > 0)
-						parseAggregators(context, queryMetric, asJsonArray);
+						parseAggregators(context, queryMetric, asJsonArray, query.getTimeZone());
+				}
+
+				JsonElement plugins = jsMetric.get("plugins");
+				if (plugins != null)
+				{
+					JsonArray pluginArray = plugins.getAsJsonArray();
+					if (pluginArray.size() > 0)
+						parsePlugins(context, queryMetric, pluginArray);
 				}
 
 				JsonElement group_by = jsMetric.get("group_by");
@@ -221,7 +234,33 @@ public class GsonParser
 		return (ret);
 	}
 
-	private void parseAggregators(String context, QueryMetric queryMetric, JsonArray aggregators) throws QueryException, BeanValidationException
+	private void parsePlugins(String context, QueryMetric queryMetric, JsonArray plugins) throws BeanValidationException, QueryException
+	{
+		for (int I = 0; I < plugins.size(); I++)
+		{
+			JsonObject pluginJson = plugins.get(I).getAsJsonObject();
+
+			JsonElement name = pluginJson.get("name");
+			if (name == null || name.getAsString().isEmpty())
+				throw new BeanValidationException(new SimpleConstraintViolation("plugins[" + I + "]", "must have a name"), context);
+
+			String pluginContext = context + ".plugins[" + I + "]";
+			String pluginName = name.getAsString();
+			QueryPlugin plugin = m_pluginFactory.createQueryPlugin(pluginName);
+
+			if (plugin == null)
+				throw new BeanValidationException(new SimpleConstraintViolation(pluginName, "invalid query plugin name"), pluginContext);
+
+			deserializeProperties(pluginContext, pluginJson, pluginName, plugin);
+
+			validateObject(plugin, pluginContext);
+
+			queryMetric.addPlugin(plugin);
+		}
+	}
+
+	private void parseAggregators(String context, QueryMetric queryMetric,
+			JsonArray aggregators, DateTimeZone timeZone) throws QueryException, BeanValidationException
 	{
 		for (int J = 0; J < aggregators.size(); J++)
 		{
@@ -246,7 +285,13 @@ public class GsonParser
 				ra.setStartTime(queryMetric.getStartTime());
 			}
 
-			deserializeProperties(context + ".aggregator[" + J + "]", jsAggregator, aggName, aggregator);
+			if (aggregator instanceof TimezoneAware)
+			{
+				TimezoneAware ta = (TimezoneAware) aggregator;
+				ta.setTimeZone(timeZone);
+			}
+
+			deserializeProperties(aggContext, jsAggregator, aggName, aggregator);
 
 			validateObject(aggregator, aggContext);
 
@@ -473,6 +518,10 @@ public class GsonParser
 		@SerializedName("end_relative")
 		private RelativeTime end_relative;
 
+		@Valid
+		@SerializedName("time_zone")
+		private DateTimeZone m_timeZone;// = DateTimeZone.UTC;;
+
 
 		public Long getStartAbsolute()
 		{
@@ -497,6 +546,11 @@ public class GsonParser
 		public RelativeTime getEndRelative()
 		{
 			return end_relative;
+		}
+
+		public DateTimeZone getTimeZone()
+		{
+			return m_timeZone;
 		}
 
 		public String getCacheString()
@@ -605,6 +659,34 @@ public class GsonParser
 			return tu;
 		}
 	}
+
+	//===========================================================================
+	private class DateTimeZoneDeserializer implements JsonDeserializer<DateTimeZone>
+	{
+		public DateTimeZone deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+				throws JsonParseException
+		{
+			if (json.isJsonNull())
+				return null;
+			String tz = json.getAsString();
+			if (tz.isEmpty()) // defaults to UTC
+				return DateTimeZone.UTC;
+			DateTimeZone timeZone;
+
+			try
+			{
+				// check if time zone is valid
+				timeZone = DateTimeZone.forID(tz);
+			}
+			catch (IllegalArgumentException e)
+			{
+				throw new ContextualJsonSyntaxException(tz,
+						"is not a valid time zone, must be one of " + DateTimeZone.getAvailableIDs());
+			}
+			return timeZone;
+		}
+	}
+
 
 	//===========================================================================
 	private class MetricDeserializer implements JsonDeserializer<Metric>

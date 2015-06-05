@@ -26,7 +26,7 @@ CREATE CACHED TABLE metric_tag (
 	"tag_value" VARCHAR  NOT NULL,
 	PRIMARY KEY ("metric_id", "tag_name", "tag_value"),
 	CONSTRAINT metric_tag_metric_id_fkey FOREIGN KEY ("metric_id")
-		REFERENCES metric ("id"),
+		REFERENCES metric ("id") ON DELETE CASCADE,
 	CONSTRAINT metric_tag_tag_name_fkey FOREIGN KEY ("tag_name", "tag_value")
 		REFERENCES tag ("name", "value") 
 	);

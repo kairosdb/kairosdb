@@ -16,39 +16,24 @@
 
 package org.kairosdb.core.datastore;
 
+
 public class Sampling extends Duration
 {
 	public Sampling()
 	{
 		super();
 	}
-
+	
 	public Sampling(int value, TimeUnit unit)
 	{
 		super(value, unit);
 	}
+	
 
-	/**
-	 Works for any time unit except month.  Months are special cased in
-	 the RangeAggregator
-
-	 Note this does not account for leap years
-	 @return
-	 */
-	public long getSampling()
+	@Override
+	public String toString()
 	{
-		long val = value;
-		switch (unit)
-		{
-			case YEARS: val *= 52;
-			case WEEKS: val *= 7;
-			case DAYS: val *= 24;
-			case HOURS: val *= 60;
-			case MINUTES: val *= 60;
-			case SECONDS: val *= 1000;
-			case MILLISECONDS:
-		}
-
-		return (val);
+		return "Sampling{" +
+				"} " + super.toString();
 	}
 }

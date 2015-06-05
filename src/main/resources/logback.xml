@@ -27,6 +27,8 @@
 		</encoder>
 	</appender>
 
+	<logger name="com.mchange.v2.c3p0" level="WARN"/>
+
 	<!--<logger name="org.hbase.async.RegionClient" level="DEBUG"/>-->
 
 	<!--<logger name="org.kairosdb.core.aggregator.SumAggregator" level="DEBUG"/>

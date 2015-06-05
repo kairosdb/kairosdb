@@ -1,0 +1,23 @@
+{
+	"start_absolute": 784041330,
+	"end_absolute": 788879730,
+	"time_zone": "bogus",
+	"metrics": [
+		{
+			"name": "abc.123",
+			"tags": {
+				"host": "foo",
+				"type": "bar"
+			},
+			"aggregators": [
+				{
+					"name" : "sum",
+					"sampling": {
+						"value": 1,
+						"unit": "minutes"
+					}
+				}
+			]
+		}
+	]
+}

@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 
 public class CharacterSet
 {
-	private static final Pattern regex = Pattern.compile("^[a-zA-Z0-9\\-\\./_]*$");
+	private static final Pattern regex = Pattern.compile(".*[:=].*");
 
 	private CharacterSet()
 	{
@@ -28,12 +28,13 @@ public class CharacterSet
 
 	/**
 	 * Returns true if the specified string contains a valid set of characters
+	 * For a tag name or value, cannot contain ; or =
 	 * @param s string to test
 	 * @return true if all characters in the string are valid
 	 */
-	public static boolean isValid(String s)
+	public static boolean isValidTagNameValue(String s)
 	{
 		Matcher matcher = regex.matcher(s);
-		return matcher.matches();
+		return !matcher.matches();
 	}
 }

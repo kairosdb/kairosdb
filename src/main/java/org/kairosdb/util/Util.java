@@ -17,36 +17,24 @@ package org.kairosdb.util;
 
 
 import com.google.common.collect.ImmutableList;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.kairosdb.core.datastore.Sampling;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.net.*;
 import java.util.Collections;
 import java.util.List;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class Util
 {
-	public static int compareLong(long l1, long l2)
-	{
-		long ret = l1 - l2;
-
-		if (ret == 0L)
-			return (0);
-		else if (ret < 0L)
-			return (-1);
-		else
-			return (1);
-	}
-
-
-
 	/**
 	 Special thanks to Nadeau software consulting for publishing this code.
 	 http://nadeausoftware.com/node/97
 	 @param s string representation of number to parse
-	 @return
+	 @return number
 	 */
 	public static long parseLong( final CharSequence s )
 	{
@@ -222,6 +210,43 @@ public class Util
 		return localAddress;
 	}
 
+	/**
+	 Returns true if the string contains a number. This means it contains only digits, the minus sign, plus sign
+	 and a period.
+
+	 @param s string to test
+	 @return true if only contains a number value
+	 */
+	public static boolean isNumber(String s)
+	{
+		checkNotNull(s);
+
+		if (s.isEmpty())
+			return false;
+
+		int start = 0;
+		char firstChar = s.charAt(0);
+		if (firstChar == '+' || firstChar == '-' || firstChar == '.')
+		{
+			start = 1;
+			if (s.length() == 1)
+				return false;
+		}
+
+		for (int i = start; i < s.length(); i++)
+		{
+			char c = s.charAt(i);
+			if (!Character.isDigit(c) && c != '.')
+				return false;
+		}
+
+		//noinspection RedundantIfStatement
+		if (s.charAt(s.length() - 1) == '.')
+			return false; // can't have trailing period
+
+		return true;
+	}
+
 	private static List<NetworkInterface> getGoodNetworkInterfaces()
 	{
 		ImmutableList.Builder<NetworkInterface> builder = ImmutableList.builder();
@@ -255,5 +280,46 @@ public class Util
 				!address.isAnyLocalAddress() &&
 				!address.isLoopbackAddress() &&
 				!address.isMulticastAddress();
+	}
+
+
+	/**
+	 Computes the duration of the sampling (value * unit) starting at timestamp.
+
+	 @param timestamp unix timestamp of the start time.
+	 @return the duration of the sampling in millisecond.
+	 */
+	public static long getSamplingDuration(long timestamp, Sampling sampling, DateTimeZone timeZone)
+	{
+		long ret = (long) sampling.getValue();
+		DateTime dt = new DateTime(timestamp, timeZone);
+		switch (sampling.getUnit())
+		{
+			case YEARS:
+				ret = new org.joda.time.Duration(dt, dt.plusYears(sampling.getValue())).getMillis();
+				break;
+			case MONTHS:
+				ret = new org.joda.time.Duration(dt, dt.plusMonths(sampling.getValue())).getMillis();
+				break;
+			case WEEKS:
+				ret = new org.joda.time.Duration(dt, dt.plusWeeks(sampling.getValue())).getMillis();
+				break;
+			case DAYS:
+				ret = new org.joda.time.Duration(dt, dt.plusDays(sampling.getValue())).getMillis();
+				break;
+			case HOURS:
+				ret = new org.joda.time.Duration(dt, dt.plusHours(sampling.getValue())).getMillis();
+				break;
+			case MINUTES:
+				ret = new org.joda.time.Duration(dt, dt.plusMinutes(sampling.getValue())).getMillis();
+				break;
+			case SECONDS:
+				ret = new org.joda.time.Duration(dt, dt.plusSeconds(sampling.getValue())).getMillis();
+				break;
+			case MILLISECONDS:
+				ret = (long) sampling.getValue();
+				break;
+		}
+		return ret;
 	}
 }

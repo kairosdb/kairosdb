@@ -32,6 +32,7 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import org.joda.time.DateTimeZone;
 import static org.junit.Assert.fail;
 
 public class GsonParserTest
@@ -41,7 +42,7 @@ public class GsonParserTest
 	@Before
 	public void setup() throws KairosDBException
 	{
-		parser = new GsonParser(new TestAggregatorFactory(), new TestGroupByFactory());
+		parser = new GsonParser(new TestAggregatorFactory(), new TestGroupByFactory(), new TestQueryPluginFactory());
 	}
 
 	@Test
@@ -302,15 +303,24 @@ public class GsonParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sampling-value.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].aggregator[0].sampling.value must be greater than or equal to 1");
+		assertBeanValidation(json, "query.metric[0].aggregators[0].sampling.value must be greater than or equal to 1");
 	}
-
+        
+        @Test
+	public void test_aggregator_sampling_timezone_invalid() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sampling-timezone.json"), Charsets.UTF_8);
+		
+		assertBeanValidation(json, "query.bogus is not a valid time zone, must be one of " + DateTimeZone.getAvailableIDs());
+	}
+	
 	@Test
-	public void test_aggregator_sum_noSampling_invalid() throws IOException, QueryException
+	public void test_aggregator_sum_noSampling_valid() throws IOException, QueryException
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sum-no-sampling.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].aggregators[0].m_sampling may not be null");
+		List<QueryMetric> queryMetrics = parser.parseQueryMetric(json);
+		//assertBeanValidation(json, "query.metric[0].aggregators[0].m_sampling may not be null");
 	}
 
 	@Test
@@ -350,7 +360,7 @@ public class GsonParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-percentile-percentile.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].aggregator[0].percentile multiple points");
+		assertBeanValidation(json, "query.metric[0].aggregators[0].percentile multiple points");
 	}
 
 	@Test
@@ -359,7 +369,7 @@ public class GsonParserTest
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sampling-unit.json"), Charsets.UTF_8);
 
 		assertBeanValidation(json,
-				"query.metric[0].aggregator[0].bogus is not a valid time unit, must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS");
+				"query.metric[0].aggregators[0].bogus is not a valid time unit, must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS");
 	}
 
 	@Test

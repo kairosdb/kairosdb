@@ -81,6 +81,8 @@ public class Grouper
 				}
 				dataPointGroups.add(group.getDataPointGroup());
 			}
+
+			dataPointGroup.close();
 		}
 
 

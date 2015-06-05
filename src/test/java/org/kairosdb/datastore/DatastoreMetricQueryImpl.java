@@ -19,6 +19,10 @@ package org.kairosdb.datastore;
 import com.google.common.collect.SetMultimap;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.datastore.Order;
+import org.kairosdb.core.datastore.QueryPlugin;
+
+import java.util.Collections;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
@@ -75,4 +79,11 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 	{
 		return Order.ASC;
 	}
+
+	@Override
+	public List<QueryPlugin> getPlugins()
+	{
+		return Collections.EMPTY_LIST;
+	}
+
 }

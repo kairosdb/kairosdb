@@ -31,7 +31,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class QueryMetric implements DatastoreMetricQuery
 {
 	private long startTime;
-	private long endTime = -1;
+	private long endTime;
+	private boolean endTimeSet;
 	private int cacheTime;
 	private String name;
 	private SetMultimap<String, String> tags = HashMultimap.create();
@@ -41,10 +42,12 @@ public class QueryMetric implements DatastoreMetricQuery
 	private boolean excludeTags = false;
 	private int limit;
 	private Order order = Order.ASC;
+	private List<QueryPlugin> plugins;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
 		this.aggregators = new ArrayList<Aggregator>();
+		this.plugins = new ArrayList<QueryPlugin>();
 		this.startTime = start_time;
 		this.cacheTime = cacheTime;
 		this.name = Preconditions.checkNotNullOrEmpty(name);
@@ -53,8 +56,10 @@ public class QueryMetric implements DatastoreMetricQuery
 	public QueryMetric(long start_time, long end_time, int cacheTime, String name)
 	{
 		this.aggregators = new ArrayList<Aggregator>();
+		this.plugins = new ArrayList<QueryPlugin>();
 		this.startTime = start_time;
 		this.endTime = end_time;
+		this.endTimeSet = true;
 		this.cacheTime = cacheTime;
 		this.name = Preconditions.checkNotNullOrEmpty(name);
 	}
@@ -117,8 +122,8 @@ public class QueryMetric implements DatastoreMetricQuery
 	@Override
 	public long getEndTime()
 	{
-		if (endTime == -1)
-			endTime = System.currentTimeMillis();
+		if (!endTimeSet)
+			endTime = Long.MAX_VALUE;
 
 		return endTime;
 	}
@@ -131,6 +136,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	public void setEndTime(long endTime)
 	{
 		this.endTime = endTime;
+		this.endTimeSet = true;
 	}
 
 	public List<GroupBy> getGroupBys()
@@ -181,5 +187,17 @@ public class QueryMetric implements DatastoreMetricQuery
 	public Order getOrder()
 	{
 		return (order);
+	}
+
+	@Override
+	public List<QueryPlugin> getPlugins()
+	{
+		return Collections.unmodifiableList(plugins);
+	}
+
+	public QueryMetric addPlugin(QueryPlugin plugin)
+	{
+		this.plugins.add(plugin);
+		return this;
 	}
 }

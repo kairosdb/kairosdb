@@ -1,7 +1,6 @@
 package org.kairosdb.core.oauth;
 
 import com.google.inject.Inject;
-import com.sun.jersey.oauth.server.OAuthServerRequest;
 import com.sun.jersey.oauth.signature.*;
 import org.kairosdb.util.Util;
 import org.slf4j.Logger;
@@ -105,15 +104,14 @@ public class OAuthFilter implements Filter
 	{
 	}
 
-	public class OAuthServletRequest implements OAuthRequest
+	public static class OAuthServletRequest implements OAuthRequest
 	{
 		private HttpServletRequest m_request;
 
 		public OAuthServletRequest(HttpServletRequest request)
 		{
-			m_request = (HttpServletRequest)request;
+			m_request = request;
 		}
-
 
 		@Override
 		public String getRequestMethod()
@@ -147,10 +145,7 @@ public class OAuthFilter implements Filter
 			String[] values = m_request.getParameterValues(s);
 			List<String> ret = new ArrayList<String>();
 
-			for (String value : values)
-			{
-				ret.add(value);
-			}
+			Collections.addAll(ret, values);
 
 			return (ret);
 		}

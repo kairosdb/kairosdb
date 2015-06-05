@@ -35,6 +35,7 @@ import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.GsonParser;
+import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.util.LoggingUtils;
@@ -81,6 +82,7 @@ public class MetricsResourceTest
 			@Override
 			protected void configure()
 			{
+				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_ADDRESS_PROPERTY)).toInstance("0.0.0.0");
 				bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9001);
 				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
 				bind(Datastore.class).toInstance(datastore);
@@ -93,6 +95,7 @@ public class MetricsResourceTest
 				bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
 				bindConstant().annotatedWith(Names.named("kairosdb.datastore.concurrentQueryThreads")).to(1);
 				bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
+				bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
 
 				Properties props = new Properties();
 				InputStream is = getClass().getClassLoader().getResourceAsStream("kairosdb.properties");

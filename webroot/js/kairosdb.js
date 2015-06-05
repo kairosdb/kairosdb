@@ -44,6 +44,7 @@ kairosdb.Metric = function (name) {
 	this.name = name;
 	this.aggregators;
 	this.group_by;
+	this.limit;
 
 	this.addGroupBy = function (groupBy) {
 		if (!this.group_by) {
@@ -171,6 +172,12 @@ kairosdb.Metric = function (name) {
 
 	    return this;
 	}
+
+    this.setLimit = function (value) {
+
+        this.limit = value;
+        return this;
+    };
 };
 
 /**

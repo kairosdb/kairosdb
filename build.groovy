@@ -354,13 +354,20 @@ def doDeb(Rule rule)
 	//Prompt the user for the sudo password
 	//TODO: package using jdeb
 	def jpf = new JPasswordField()
-	def resp = JOptionPane.showConfirmDialog(null,
-			jpf, "Enter sudo password:",
-			JOptionPane.OK_CANCEL_OPTION)
+	def password = saw.getProperty("sudo")
 
-	if (resp == 0)
+	if (password == null)
 	{
-		def password = jpf.getPassword()
+		def resp = JOptionPane.showConfirmDialog(null,
+				jpf, "Enter sudo password:",
+				JOptionPane.OK_CANCEL_OPTION)
+
+		if (resp == 0)
+			password = jpf.getPassword()
+	}
+
+	if (password != null)
+	{
 		sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --bump=0 --to-deb $rpmFile")
 		sudo.run()
 		//pass the password to the process on stdin

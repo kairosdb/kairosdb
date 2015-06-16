@@ -4,7 +4,7 @@ curl -s http://localhost:8080/api/v1/rollups/rollup -XPOST -H'Content-type:appli
 	[
 	    {
 	        "metric_name": "test_metric",
-	        "schedule": "0 */10 * * * ?",
+	        "schedule": "*/30 * * * * ?",
 	        "start_relative": {
 	            "value": 5,
 	            "unit": "minutes"

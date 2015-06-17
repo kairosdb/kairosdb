@@ -109,7 +109,39 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).timestamp must be greater than or equal to 1."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).timestamp may not be null."));
+	}
+
+	@Test
+	public void test_timestamp_Zero_Valid() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metric1\", \"timestamp\": 0, \"value\": 1234, \"tags\":{\"foo\":\"bar\"}}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.size(), equalTo(0));
+	}
+
+	@Test
+	public void test_Timestamp_Negative_Valid() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metric1\", \"timestamp\": -1, \"value\": 1234, \"tags\":{\"foo\":\"bar\"}}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.size(), equalTo(0));
 	}
 
 	@Test
@@ -160,24 +192,7 @@ public class JsonMetricParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].value cannot be null or empty, must be greater than or equal to 1."));
-	}
-
-	@Test
-	public void test_datapoints_timestamp_Invalid() throws DatastoreException, IOException
-	{
-		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[0, 1234]]}]";
-
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory);
-		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
-				new Gson(), dataPointFactory);
-
-		ValidationErrors validationErrors = parser.parse();
-
-		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].value cannot be null or empty, must be greater than or equal to 1."));
+		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metric1).datapoints[0].timestamp may not be null."));
 	}
 
 	@Test
@@ -228,6 +243,38 @@ public class JsonMetricParserTest
 
 		assertThat(validationErrors.size(), equalTo(1));
 		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metricName).tags count must be greater than or equal to 1."));
+	}
+
+	@Test
+	public void test_datapoints_timestamp_zero_Valid() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[0,2]]}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.size(), equalTo(0));
+	}
+
+	@Test
+	public void test_datapoints_timestamp_negative_Valid() throws DatastoreException, IOException
+	{
+		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[-1,2]]}]";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
+		JsonMetricParser parser = new JsonMetricParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.size(), equalTo(0));
 	}
 
 	@Test

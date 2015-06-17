@@ -17,11 +17,7 @@
 package org.kairosdb.core.http.rest.json;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -286,10 +282,11 @@ public class JsonMetricParser
 				//Validator.isValidateCharacterSet(validationErrors, context, metric.getName());
 			}
 
-			if (metric.getTimestamp() > 0)
+			if (metric.getTimestamp() != null)
 				Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("value"), metric.getValue());
 			else if (metric.getValue() != null && !metric.getValue().isJsonNull())
-				Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp(), 1);
+				Validator.isNotNull(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp());
+//				Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp(), 1);
 
 
 			if (Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("tags count"), metric.getTags().size(), 1))
@@ -319,7 +316,7 @@ public class JsonMetricParser
 			//DataPointSet dataPointSet = new DataPointSet(metric.getName(), metric.getTags(), Collections.<DataPoint>emptyList());
 			ImmutableSortedMap<String, String> tags = ImmutableSortedMap.copyOf(metric.getTags());
 
-			if (metric.getTimestamp() > 0 && metric.getValue() != null)
+			if (metric.getTimestamp() != null && metric.getValue() != null)
 			{
 				String type = metric.getType();
 				if (type == null)
@@ -353,11 +350,11 @@ public class JsonMetricParser
 					}
 					else
 					{
-						long timestamp = 0L;
+						Long timestamp = null;
 						if (!dataPoint[0].isJsonNull())
 							timestamp = dataPoint[0].getAsLong();
 
-						if (metric.validate() && !Validator.isGreaterThanOrEqualTo(validationErrors, dataPointContext.setAttribute("value") + " cannot be null or empty,", timestamp, 1))
+						if (metric.validate() && !Validator.isNotNull(validationErrors, dataPointContext.setAttribute("timestamp"), timestamp))
 							continue;
 
 						String type = metric.getType();
@@ -394,8 +391,8 @@ public class JsonMetricParser
 	private class NewMetric
 	{
 		private String name;
-		private long timestamp = 0;
-		private long time = 0;
+		private Long timestamp = null;
+		private Long time = null;
 		private JsonElement value;
 		private Map<String, String> tags;
 		private JsonElement[][] datapoints;
@@ -407,9 +404,9 @@ public class JsonMetricParser
 			return name;
 		}
 
-		public long getTimestamp()
+		public Long getTimestamp()
 		{
-			if (time > 0)
+			if (time != null)
 				return time;
 			else
 				return timestamp;

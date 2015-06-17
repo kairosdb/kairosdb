@@ -71,6 +71,16 @@ public class Validator
 		return true;
 	}
 
+	public static boolean isNotNull(ValidationErrors validationErrors, Object name, Object value)
+	{
+		if (value == null)
+		{
+			validationErrors.addErrorMessage(name + " may not be null.");
+			return false;
+		}
+		return true;
+	}
+
 	public static boolean isNotNullOrEmpty(ValidationErrors validationErrors, Object name, JsonElement value)
 	{
 		if (value == null)

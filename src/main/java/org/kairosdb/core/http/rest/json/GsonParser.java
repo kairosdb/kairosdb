@@ -188,9 +188,7 @@ public class GsonParser
 				if (queryMetric.getEndTime() < startTime)
 					throw new BeanValidationException(new SimpleConstraintViolation("end_time", "must be greater than the start time"), context);
 
-				StringBuilder sb = new StringBuilder();
-				sb.append(query.getCacheString()).append(metric.getCacheString());
-				queryMetric.setCacheString(sb.toString());
+				queryMetric.setCacheString(query.getCacheString() + metric.getCacheString());
 
 				JsonObject jsMetric = metricsArray.get(I).getAsJsonObject();
 
@@ -397,16 +395,11 @@ public class GsonParser
 	{
 		if (request.getStartAbsolute() != null)
 		{
-			if (request.getStartAbsolute() < 0)
-				throw new BeanValidationException(new SimpleConstraintViolation("start_absolute", "must be not be before Jan 01, 1970"), "query");
 			return request.getStartAbsolute();
 		}
 		else if (request.getStartRelative() != null)
 		{
-			long timeRelativeToNow = request.getStartRelative().getTimeRelativeTo(System.currentTimeMillis());
-			if (timeRelativeToNow < 0)
-				throw new BeanValidationException(new SimpleConstraintViolation("start_relative", "must be not be before Jan 01, 1970"), "query");
-			return timeRelativeToNow;
+			return request.getStartRelative().getTimeRelativeTo(System.currentTimeMillis());
 		}
 		else
 		{
@@ -590,6 +583,7 @@ public class GsonParser
 		public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type)
 
 		{
+			@SuppressWarnings("unchecked")
 			Class<T> rawType = (Class<T>) type.getRawType();
 			if (!rawType.isEnum())
 			{

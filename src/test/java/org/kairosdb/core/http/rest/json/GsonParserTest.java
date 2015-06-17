@@ -173,17 +173,15 @@ public class GsonParserTest
 	@Test
 	public void test_absoluteStartTime_before_epoch_invalid() throws IOException, QueryException
 	{
-		String json = Resources.toString(Resources.getResource("invalid-query-metric-start_absolute-before-epoch.json"), Charsets.UTF_8);
-
-		assertBeanValidation(json, "query.start_absolute must be not be before Jan 01, 1970");
+		String json = Resources.toString(Resources.getResource("query-metric-start_absolute-before-epoch.json"), Charsets.UTF_8);
+		parser.parseQueryMetric(json);
 	}
 
-		@Test
-	public void test_relativeStartTime_before_epoch_invalid() throws IOException, QueryException
+	@Test
+	public void test_relativeStartTime_before_epoch_valid() throws IOException, QueryException
 	{
-		String json = Resources.toString(Resources.getResource("invalid-query-metric-relative-startTime-before-epoch.json"), Charsets.UTF_8);
-
-		assertBeanValidation(json, "query.start_relative must be not be before Jan 01, 1970");
+		String json = Resources.toString(Resources.getResource("query-metric-relative-startTime-before-epoch.json"), Charsets.UTF_8);
+		parser.parseQueryMetric(json);
 	}
 
 	@Test
@@ -319,8 +317,7 @@ public class GsonParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sum-no-sampling.json"), Charsets.UTF_8);
 
-		List<QueryMetric> queryMetrics = parser.parseQueryMetric(json);
-		//assertBeanValidation(json, "query.metric[0].aggregators[0].m_sampling may not be null");
+		parser.parseQueryMetric(json);
 	}
 
 	@Test

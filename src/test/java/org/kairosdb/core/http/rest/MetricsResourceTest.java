@@ -34,7 +34,7 @@ import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
-import org.kairosdb.core.http.rest.json.GsonParser;
+import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
@@ -85,7 +85,7 @@ public class MetricsResourceTest
 				bind(KairosDatastore.class).in(Singleton.class);
 				bind(AggregatorFactory.class).to(TestAggregatorFactory.class);
 				bind(GroupByFactory.class).to(TestGroupByFactory.class);
-				bind(GsonParser.class).in(Singleton.class);
+				bind(QueryParser.class).in(Singleton.class);
 				bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
 				bind(QueryQueuingManager.class).toInstance(queuingManager);
 				bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");

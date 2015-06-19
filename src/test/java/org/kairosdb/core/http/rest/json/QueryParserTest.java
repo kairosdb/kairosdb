@@ -18,6 +18,7 @@ package org.kairosdb.core.http.rest.json;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
@@ -32,17 +33,16 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import org.joda.time.DateTimeZone;
 import static org.junit.Assert.fail;
 
-public class GsonParserTest
+public class QueryParserTest
 {
-	private GsonParser parser;
+	private QueryParser parser;
 
 	@Before
 	public void setup() throws KairosDBException
 	{
-		parser = new GsonParser(new TestAggregatorFactory(), new TestGroupByFactory(), new TestQueryPluginFactory());
+		parser = new QueryParser(new TestAggregatorFactory(), new TestGroupByFactory(), new TestQueryPluginFactory());
 	}
 
 	@Test
@@ -82,9 +82,9 @@ public class GsonParserTest
 	@Test
 	public void test_underscoreConverter()
 	{
-		assertThat(GsonParser.getUnderscorePropertyName("groupBy"), equalTo("group_by"));
-		assertThat(GsonParser.getUnderscorePropertyName("groupByValue"), equalTo("group_by_value"));
-		assertThat(GsonParser.getUnderscorePropertyName("ABC"), equalTo("_a_b_c"));
+		assertThat(QueryParser.getUnderscorePropertyName("groupBy"), equalTo("group_by"));
+		assertThat(QueryParser.getUnderscorePropertyName("groupByValue"), equalTo("group_by_value"));
+		assertThat(QueryParser.getUnderscorePropertyName("ABC"), equalTo("_a_b_c"));
 	}
 
 	@Test(expected = BeanValidationException.class)

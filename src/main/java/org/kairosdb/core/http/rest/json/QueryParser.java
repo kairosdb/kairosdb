@@ -55,9 +55,9 @@ import java.lang.reflect.Type;
 import java.util.*;
 
 
-public class GsonParser
+public class QueryParser
 {
-	private static final Logger logger = LoggerFactory.getLogger(GsonParser.class);
+	private static final Logger logger = LoggerFactory.getLogger(QueryParser.class);
 
 	private static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
 
@@ -69,8 +69,8 @@ public class GsonParser
 	private Gson m_gson;
 
 	@Inject
-	public GsonParser(AggregatorFactory aggregatorFactory, GroupByFactory groupByFactory,
-			QueryPluginFactory pluginFactory)
+	public QueryParser(AggregatorFactory aggregatorFactory, GroupByFactory groupByFactory,
+	                   QueryPluginFactory pluginFactory)
 	{
 		m_aggregatorFactory = aggregatorFactory;
 		m_groupByFactory = groupByFactory;

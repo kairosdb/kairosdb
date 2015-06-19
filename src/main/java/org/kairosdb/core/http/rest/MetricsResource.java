@@ -74,7 +74,7 @@ public class MetricsResource implements KairosMetricReporter
 
 	private final KairosDatastore datastore;
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
-	private final GsonParser gsonParser;
+	private final QueryParser queryParser;
 
 	//Used for parsing incomming metrices
 	private final Gson gson;
@@ -93,11 +93,11 @@ public class MetricsResource implements KairosMetricReporter
 	private String hostName = "localhost";
 
 	@Inject
-	public MetricsResource(KairosDatastore datastore, GsonParser gsonParser,
+	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
 			KairosDataPointFactory dataPointFactory)
 	{
 		this.datastore = checkNotNull(datastore);
-		this.gsonParser = checkNotNull(gsonParser);
+		this.queryParser = checkNotNull(queryParser);
 		m_kairosDataPointFactory = dataPointFactory;
 		formatters.put("json", new JsonFormatter());
 
@@ -301,7 +301,7 @@ public class MetricsResource implements KairosMetricReporter
 
 			jsonResponse.begin();
 
-			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
+			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
 			for (QueryMetric query : queries)
 			{
@@ -406,7 +406,7 @@ public class MetricsResource implements KairosMetricReporter
 
 			jsonResponse.begin();
 
-			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
+			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
 			int queryCount = 0;
 			for (QueryMetric query : queries)
@@ -511,7 +511,7 @@ public class MetricsResource implements KairosMetricReporter
 
 		try
 		{
-			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
+			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
 			for (QueryMetric query : queries)
 			{

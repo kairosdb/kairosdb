@@ -17,7 +17,10 @@
 package org.kairosdb.core.http.rest.json;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -30,7 +33,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -41,7 +43,7 @@ import static com.google.common.base.Preconditions.checkState;
  * everything was in memory and we would run out of memory. This parser adds metrics as it walks
  * through the stream.
  */
-public class JsonMetricParser
+public class DataPointsParser
 {
 	private final KairosDatastore datastore;
 	private final Reader inputStream;
@@ -61,8 +63,8 @@ public class JsonMetricParser
 	private int dataPointCount;
 	private int ingestTime;
 
-	public JsonMetricParser(KairosDatastore datastore, Reader stream, Gson gson,
-			KairosDataPointFactory dataPointFactory)
+	public DataPointsParser(KairosDatastore datastore, Reader stream, Gson gson,
+	                        KairosDataPointFactory dataPointFactory)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.inputStream = checkNotNull(stream);
@@ -139,18 +141,6 @@ public class JsonMetricParser
 		return metric;
 	}
 
-	private Map<String, String> getAsMap(JsonObject object)
-	{
-		Map<String, String> ret = new HashMap<String, String>();
-
-		for (Map.Entry<String, JsonElement> entry : object.entrySet())
-		{
-			ret.put(entry.getKey(), entry.getValue().getAsString());
-		}
-
-		return (ret);
-	}
-
 	private class Context
 	{
 		private int m_count;
@@ -160,12 +150,6 @@ public class JsonMetricParser
 		public Context(int count)
 		{
 			m_count = count;
-		}
-
-		private Context setCount(int count)
-		{
-			m_count = count;
-			return (this);
 		}
 
 		private Context setName(String name)

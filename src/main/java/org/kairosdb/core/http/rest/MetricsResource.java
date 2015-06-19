@@ -228,7 +228,7 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		try
 		{
-			JsonMetricParser parser = new JsonMetricParser(datastore, new InputStreamReader(json, "UTF-8"),
+			DataPointsParser parser = new DataPointsParser(datastore, new InputStreamReader(json, "UTF-8"),
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 
@@ -639,7 +639,7 @@ public class MetricsResource implements KairosMetricReporter
 		int count = m_ingestedDataPoints.getAndSet(0);
 
 		if (count == 0)
-			return Collections.EMPTY_LIST;
+			return Collections.emptyList();
 
 		DataPointSet dpsCount = new DataPointSet(INGEST_COUNT);
 		DataPointSet dpsTime = new DataPointSet(INGEST_TIME);

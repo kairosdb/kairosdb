@@ -34,7 +34,7 @@ import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
-import org.kairosdb.core.http.rest.json.JsonMetricParser;
+import org.kairosdb.core.http.rest.json.DataPointsParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
 import org.kairosdb.util.PluginClassLoader;
 import org.slf4j.LoggerFactory;
@@ -44,7 +44,6 @@ import java.io.*;
 import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.util.*;
 
@@ -406,10 +405,10 @@ public class Main
 		String line;
 		while ((line = reader.readLine()) != null)
 		{
-			JsonMetricParser jsonMetricParser = new JsonMetricParser(ds, new StringReader(line),
+			DataPointsParser dataPointsParser = new DataPointsParser(ds, new StringReader(line),
 					gson, dpFactory);
 
-			ValidationErrors validationErrors = jsonMetricParser.parse();
+			ValidationErrors validationErrors = dataPointsParser.parse();
 
 			for (String error : validationErrors.getErrors())
 			{

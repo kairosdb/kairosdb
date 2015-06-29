@@ -765,7 +765,7 @@ function showChart(subTitle, queries, metricData) {
 				});
 			}
 
-			if (groupType != 'number')
+			if (groupType && groupType != 'number')
 				return;
 
 			var result = {};

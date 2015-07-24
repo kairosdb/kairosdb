@@ -44,9 +44,15 @@ public class RelativeTime extends Duration
 
 	public long getTimeRelativeTo(long time)
 	{
+		int valueToUse = -(int)value;
 		int field = 0;
 		if (getUnit() == TimeUnit.MILLISECONDS)
+		{
 			field = Calendar.MILLISECOND;
+			//we do our own adjustment as calendar cannot handle a long.
+			time -= value;
+			valueToUse = 0;
+		}
 		else if (getUnit() == TimeUnit.SECONDS )
 			field = Calendar.SECOND;
 		else if (getUnit() == TimeUnit.MINUTES)
@@ -63,7 +69,7 @@ public class RelativeTime extends Duration
 			field = Calendar.YEAR;
 
 		calendar.setTimeInMillis(time);
-		calendar.add(field, -value);
+		calendar.add(field, valueToUse);
 
 		return calendar.getTime().getTime();
 	}

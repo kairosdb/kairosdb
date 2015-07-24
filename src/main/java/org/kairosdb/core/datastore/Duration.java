@@ -23,7 +23,7 @@ import javax.validation.constraints.NotNull;
 public class Duration
 {
 	@Min(1)
-	protected int value;
+	protected long value;
 
 	@NotNull
 	protected TimeUnit unit;
@@ -38,7 +38,7 @@ public class Duration
 		this.unit = unit;
 	}
 
-	public int getValue()
+	public long getValue()
 	{
 		return value;
 	}

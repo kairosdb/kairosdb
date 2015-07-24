@@ -238,14 +238,14 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 
 		protected long getStartRange(long timestamp)
 		{
-			int samplingValue = m_sampling.getValue();
+			long samplingValue = m_sampling.getValue();
 			long numberOfPastPeriods = m_unitField.getDifferenceAsLong(timestamp/*getDataPointTime()*/, m_startTime) / samplingValue;
 			return m_unitField.add(m_startTime, numberOfPastPeriods * samplingValue);
 		}
 
 		protected long getEndRange(long timestamp)
 		{
-			int samplingValue = m_sampling.getValue();
+			long samplingValue = m_sampling.getValue();
 			long numberOfPastPeriods = m_unitField.getDifferenceAsLong(timestamp/*getDataPointTime()*/, m_startTime) / samplingValue;
 			return m_unitField.add(m_startTime, (numberOfPastPeriods + 1) * samplingValue);
 		}

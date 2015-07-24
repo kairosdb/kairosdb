@@ -291,30 +291,30 @@ public class Util
 	 */
 	public static long getSamplingDuration(long timestamp, Sampling sampling, DateTimeZone timeZone)
 	{
-		long ret = (long) sampling.getValue();
+		long ret = sampling.getValue();
 		DateTime dt = new DateTime(timestamp, timeZone);
 		switch (sampling.getUnit())
 		{
 			case YEARS:
-				ret = new org.joda.time.Duration(dt, dt.plusYears(sampling.getValue())).getMillis();
+				ret = new org.joda.time.Duration(dt, dt.plusYears((int)sampling.getValue())).getMillis();
 				break;
 			case MONTHS:
-				ret = new org.joda.time.Duration(dt, dt.plusMonths(sampling.getValue())).getMillis();
+				ret = new org.joda.time.Duration(dt, dt.plusMonths((int)sampling.getValue())).getMillis();
 				break;
 			case WEEKS:
-				ret = new org.joda.time.Duration(dt, dt.plusWeeks(sampling.getValue())).getMillis();
+				ret = new org.joda.time.Duration(dt, dt.plusWeeks((int)sampling.getValue())).getMillis();
 				break;
 			case DAYS:
-				ret = new org.joda.time.Duration(dt, dt.plusDays(sampling.getValue())).getMillis();
+				ret = new org.joda.time.Duration(dt, dt.plusDays((int)sampling.getValue())).getMillis();
 				break;
 			case HOURS:
-				ret = new org.joda.time.Duration(dt, dt.plusHours(sampling.getValue())).getMillis();
+				ret = new org.joda.time.Duration(dt, dt.plusHours((int)sampling.getValue())).getMillis();
 				break;
 			case MINUTES:
-				ret = new org.joda.time.Duration(dt, dt.plusMinutes(sampling.getValue())).getMillis();
+				ret = new org.joda.time.Duration(dt, dt.plusMinutes((int)sampling.getValue())).getMillis();
 				break;
 			case SECONDS:
-				ret = new org.joda.time.Duration(dt, dt.plusSeconds(sampling.getValue())).getMillis();
+				ret = new org.joda.time.Duration(dt, dt.plusSeconds((int)sampling.getValue())).getMillis();
 				break;
 			case MILLISECONDS:
 				ret = (long) sampling.getValue();

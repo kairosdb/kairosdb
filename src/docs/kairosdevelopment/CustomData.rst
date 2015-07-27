@@ -1,10 +1,8 @@
-===========
 Custom Data
 ===========
 
 KairosDB provides a means for storing and aggregating custom data types.  By default KairosDB supports long, double and string values.
 
------------------------------------
 Steps for creating custom data type
 -----------------------------------
 
@@ -16,7 +14,6 @@ Steps for creating custom data type
 
 Look at StringDataPointFactory.java and StringDataPoint.java for examples of how to implement.
 
----------------------------------
 Example for creating custom types
 ---------------------------------
 

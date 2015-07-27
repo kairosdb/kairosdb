@@ -13,7 +13,7 @@ The output looks like this
 ::
 
   KairosDB
-  0.9.4
+  1.0.0
 
 
 Here is an simple example using netcat.

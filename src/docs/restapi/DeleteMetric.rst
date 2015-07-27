@@ -28,7 +28,7 @@ Response
 --------
 *Success*
 
-  The response will be 204 NO CONTENT with no body.
+	The response will be 204 NO CONTENT with no body.
 
 *Failure*
 

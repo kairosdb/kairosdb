@@ -7,7 +7,7 @@ You can submit data either with the telnet protocol on port 4242. The port can b
 The format of the data is
 ::
 
-	put <metric name> <time stamp> <value> <tag> <tag>... /n
+	put <metric name> <time stamp> <value> <tag> <tag>... \n
 
 
 **Metric name** must be one word and is limited to alpha numerics with "-_.".

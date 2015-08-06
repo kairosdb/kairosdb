@@ -15,7 +15,7 @@ Submitting data via telnet
 The format of the data is 
 ::
 
-	put <metric name> <time stamp> <value> <tag> <tag>... /n
+	put <metric name> <time stamp> <value> <tag> <tag>... \n
 
 **Metric name** must be one word and is limited to alpha numerics with "-_.".
 

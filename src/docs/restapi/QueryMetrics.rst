@@ -82,6 +82,7 @@ Body
         "value": "5",
         "unit": "days"
     },
+    "time_zone": "Asia/Kabul",
     "metrics": [
         {
             "tags": {
@@ -137,6 +138,9 @@ The time in milliseconds. This must be later in time than the start time. If not
 *end_relative*
 The relative end time is the current date and time minus the specified value and unit. Possible unit values are "milliseconds", "seconds", "minutes", "hours", "days", "weeks", "months", and "years". For example, if the start time is 30 minutes and the end time is 10 minutes, the query returns matching data points that occurred between the last 30 minutes up to and including the last 10 minutes. If not specified, the end time is assumed to the current date and time.
 
+*time_zone*
+The time zone for the time range of the query. If not specified, UTC is used.
+
 *cache_time*
 	The amount of time in seconds to re use the cache from a previous query. When a query is made Kairos looks for the cache file for the query.  If a cache file is found and the timestamp of the cache file is within cache_time seconds from the current query, the cache is used.
 
@@ -158,34 +162,40 @@ The name of the metric(s) to return data points for. The name is required.
 
 This is an ordered array of aggregators. They are processed in the order specified. The output of an aggregator is passed to the input of the next until all have been processed.
 
-Aggregators perform an operation on all data points that exist in the sampling period. Some aggregators do not have a sampling period and simply perform the operation on all data points.
-
 If no aggregator is specified, then all data points are returned.
 
-The default aggregators are:
-
-    * avg - returns the average value
-    * dev - returns the standard deviation
-    * div - returns each data point divided by the a divisor. _
-    * histogram - Calculates a probability distribution and returns the specified percentile for the distribution. The "percentile" value is defined as 0 < percentile <= 1 where .5 is 50% and 1 is 100%. Note that this aggregator has been renamed to *percentile* in release 0.9.2.
-    * least_squares - returns two points for the range which represent the best fit line through the set of points.
-    * max - returns the largest value
-    * min - returns the smallest value
-    * rate - returns the rate of change between pair of data points.
-    * sum - returns the sum of all values
-
-All aggregators allow downsampling except *rate* and *div*.
-
-* The rate aggregator takes a "unit" parameter that tells how to calculate the return data (ie rate in seconds, milliseconds, minutes, etc...).
-* The div aggregator takes a "divisor" which is the value that all data points will be divided by. The "divisor" is an
-
-Downsampling allows you to reduce the sampling rate of the data points and aggregate these values over a longer period
+Most aggregators support downsampling. Downsampling allows you to reduce the sampling rate of the data points and aggregate these values over a longer period
 of time. For example, you could average all daily values over the last week. Rather than getting 7 values you would
 get one value which is the average for the week. Sampling is specified with a "value" and a "unit".
 
-* value - an integer value.
-* unit - possible unit values are "milliseconds", "seconds", "minutes", "hours", "days", "weeks", "months", and "years".
-	
+* value - An integer value.
+* unit - The time range. Possible unit values are "milliseconds", "seconds", "minutes", "hours", "days", "weeks", "months", and "years".
+* align_sampling - An optional property. Setting this to true will cause the aggregation range to be aligned based on the sampling size.  For example if your sample size is either milliseconds, seconds, minutes or hours then the start of the range will always be at the top of the hour.  The effect of setting this to true is that your data will take the same shape when graphed as you refresh the data. This is false by default. *Note that align_sampling and align_start_time are mutually exclusive. If both are set, unexpected results will occur.*
+* align_start_time - An optional property. When set to true the time for the aggregated data point for each range will fall on the start of the range instead of being the value for the first data point within that range. This is false by default. *Note that align_sampling and align_start_time are mutually exclusive. If both are set, unexpected results will occur.*
+* start_time - An optional property. Used along with align_start_time. This is the alignment start time. This defaults to 0.
+
+Aggregators that support downsampling:
+    * avg - Returns the average value.
+    * dev - Returns the standard deviation.
+    * count - Counts the number of data points.
+    * dev - Calculates the standard deviation of the time series.
+    * first - Returns the first data point for the time range.
+    * gaps - Marks gaps in data according to sampling rate with a null data point.
+    * histogram - Calculates a probability distribution and returns the specified percentile for the distribution. The "percentile" value is defined as 0 < percentile <= 1 where .5 is 50% and 1 is 100%. Note that this aggregator has been renamed to *percentile* in release 0.9.2.
+    * last - Returns the last data point for the time range.
+    * least_squares - Returns two points for the range which represent the best fit line through the set of points.
+    * max - Returns the largest value.
+    * min - Returns the smallest value.
+    * percentile - Finds the percentile of the data range. Calculates a probability distribution and returns the specified percentile for the distribution. The “percentile” value is defined as 0 < percentile <= 1 where .5 is 50% and 1 is 100%.
+    * sum - Returns the sum of all values.
+
+Other aggregators:
+    * diff - Computes the difference between successive data points.
+    * div - Returns each data point divided by a divisor. Requires a "divisor" property which is the value that all data points will be divided by.
+    * rate - Returns the rate of change between a pair of data points. Requires a "unit" property which is the sampling duration (ie rate in seconds, milliseconds, minutes, etc...).
+    * sampler - Computes the sampling rate of change for the data points. Requires a "unit" property which is the sampling duration  (ie rate in seconds, milliseconds, minutes, etc...).
+    * scale - Scales each data point by a factor. Requires a "factor" property which is the scaling value.
+
 *tags*
 
 Tags narrow down the search. Only metrics that include the tag and matches one of the values are returned. Tags is optional.
@@ -202,7 +212,10 @@ See :doc:`Grouping by Time <TimeGrouping>` for information on how to group by a 
 
 See :doc:`Grouping by Value <ValueGrouping>` for information on how to group by data point values.
 
-Note that grouping by a time range or by value can slow down the query.
+See :doc:`Grouping by Bins <BinGrouping>` for information on how to group by bins.
+
+
+Note that grouping by a time range, by value, or by bins can slow down the query.
 
 *exclude_tags*
 

@@ -8,6 +8,7 @@ KairosDB Plugins
 -  `Carbon protocol plugin for KairosDB`_
 -  `Kafka reader - reads metrics from a kafka queue`_
 -  `RabitMQ reader - reads from RabitMQ`_
+-  `KISE KairosDB Module - particularly powerful and performant scripted aggregators using Javascript`_
 
 Client Libraries
 ================
@@ -57,6 +58,7 @@ Papers about KairosDB
 .. _Carbon protocol plugin for KairosDB: https://github.com/brianhks/kairos-carbon
 .. _Kafka reader - reads metrics from a kafka queue: https://github.com/brianhks/kairos-kafka
 .. _RabitMQ reader - reads from RabitMQ: https://github.com/hugocore/kairosdb-rabbitmq
+.. _KISE KairosDB Module - particularly powerful and performant scripted aggregators using Javascript: https://github.com/Kratos-ISE/kise-kairosdb-module
 .. _Yammer metrics library plugin for KairosDB: https://github.com/tomvandenberge/metrics-kairosdb
 .. _Python client: https://github.com/pcn/pyKairosDB
 .. _Java Client: https://github.com/proofpoint/kairosdb-client

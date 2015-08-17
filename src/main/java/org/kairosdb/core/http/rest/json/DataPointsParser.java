@@ -310,6 +310,7 @@ public class DataPointsParser
 				{
 					datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
 							type, metric.getTimestamp(), metric.getValue()));
+					dataPointCount++;
 				}
 				else
 					validationErrors.addErrorMessage("Unregistered data point type '"+type+"'");

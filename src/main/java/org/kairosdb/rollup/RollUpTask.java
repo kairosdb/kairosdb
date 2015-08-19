@@ -22,6 +22,7 @@ public class RollUpTask
 	// todo regular expressions
 	// todo one time go back and redo option
 	// todo setup annotations for validation
+	// todo add tags
 
 	@SerializedName("metric_name")
 	private String metricName;

@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import org.kairosdb.core.datapoints.NullDataPoint;
 
-@AggregatorName(name = "gaps", description = "Marks gaps in data according to sampling rate with a null data point")
+@AggregatorName(name = "gaps", description = "Marks gaps in data according to sampling rate with a null data point.")
 public class DataGapsMarkingAggregator extends RangeAggregator
 {
 

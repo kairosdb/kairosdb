@@ -126,6 +126,7 @@ public class DataPointsParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(0));
+		assertThat(parser.getDataPointCount(), equalTo(1));
 	}
 
 	@Test
@@ -142,6 +143,7 @@ public class DataPointsParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(0));
+		assertThat(parser.getDataPointCount(), equalTo(1));
 	}
 
 	@Test
@@ -226,6 +228,7 @@ public class DataPointsParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(0));
+		assertThat(parser.getDataPointCount(), equalTo(1));
 	}
 
 	@Test
@@ -259,6 +262,7 @@ public class DataPointsParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(0));
+		assertThat(parser.getDataPointCount(), equalTo(1));
 	}
 
 	@Test
@@ -275,6 +279,7 @@ public class DataPointsParserTest
 		ValidationErrors validationErrors = parser.parse();
 
 		assertThat(validationErrors.size(), equalTo(0));
+		assertThat(parser.getDataPointCount(), equalTo(1));
 	}
 
 	@Test
@@ -292,6 +297,7 @@ public class DataPointsParserTest
 
 		assertThat(validationErrors.size(), equalTo(1));
 		assertThat(validationErrors.getFirstError(), equalTo("metric[0](name=metricName).tag[0].name may not be empty."));
+		assertThat(parser.getDataPointCount(), equalTo(0));
 	}
 
 	@Test
@@ -461,6 +467,8 @@ public class DataPointsParserTest
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getLongValue(), equalTo(4321L));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(1).getTimestamp(), equalTo(456L));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(1).getLongValue(), equalTo(654L));
+
+		assertThat(parser.getDataPointCount(), equalTo(2));
 	}
 
 	@Test
@@ -499,6 +507,8 @@ public class DataPointsParserTest
 		assertThat(dataPointSetList.get(1).getDataPoints().size(), equalTo(1));
 		assertThat(dataPointSetList.get(1).getDataPoints().get(0).getTimestamp(), equalTo(1349109378L));
 		assertThat(dataPointSetList.get(1).getDataPoints().get(0).getLongValue(), equalTo(321L));
+
+		assertThat(parser.getDataPointCount(), equalTo(4));
 	}
 
 	@Test
@@ -550,6 +560,8 @@ public class DataPointsParserTest
 		DataPoint stringData = dataPointSetList.get(2).getDataPoints().get(0);
 		assertThat(stringData.getTimestamp(), equalTo(1349109378L));
 		assertThat(((StringDataPoint)stringData).getValue(), equalTo("sweet"));
+
+		assertThat(parser.getDataPointCount(), equalTo(6));
 	}
 
 	@Test
@@ -680,6 +692,8 @@ public class DataPointsParserTest
 		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(1));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getDoubleValue(), equalTo(123.3));
+
+		assertThat(parser.getDataPointCount(), equalTo(1));
 	}
 
 	@Test

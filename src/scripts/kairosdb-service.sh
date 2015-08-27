@@ -12,6 +12,9 @@
 KAIROS_SCRIPT_PATH="/opt/kairosdb/bin/kairosdb.sh"
 export KAIROS_PID_FILE="/var/run/kairosdb.pid"
 
+if [ -f /etc/init.d/functions ]
+    . /etc/init.d/functions
+
 start() {
         printf "%-50s" "Starting KairosDB server: "
         $KAIROS_SCRIPT_PATH start

@@ -96,6 +96,8 @@ public class CoreModule extends AbstractModule
 		bind(DataGapsMarkingAggregator.class);
 		bind(FirstAggregator.class);
 		bind(LastAggregator.class);
+		bind(SaveAsAggregator.class);
+		bind(TrimAggregator.class);
 
 
 		bind(ValueGroupBy.class);

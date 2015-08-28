@@ -472,7 +472,7 @@ public class MetricsResource implements KairosMetricReporter
 		}
 		catch (IOException e)
 		{
-			logger.error("Failed to open temp folder "+datastore.getCacheDir(), e);
+			logger.error("Failed to open temp folder " + datastore.getCacheDir(), e);
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}
 		catch (Exception e)

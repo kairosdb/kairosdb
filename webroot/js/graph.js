@@ -97,14 +97,14 @@ function buildKairosDBQuery() {
 				}
 				metric.addGroupBy(new kairosdb.ValueGroupBy(size));
 			}
-			else if(name == "bin"){
-			    var bins = $(groupBy).find(".groupByBinValue").val().split(',');
-			    if(bins.length < 1){
-			        showErrorMessage("Missing Bin Group By size. Values must be separated by commas.");
-                    hasError = true;
-                    return true;
-			    }
-			    metric.addGroupBy(new kairosdb.BinGroupBy(bins));
+			else if (name == "bin") {
+				var bins = $(groupBy).find(".groupByBinValue").val().split(',');
+				if (bins.length < 1) {
+					showErrorMessage("Missing Bin Group By size. Values must be separated by commas.");
+					hasError = true;
+					return true;
+				}
+				metric.addGroupBy(new kairosdb.BinGroupBy(bins));
 			}
 		});
 
@@ -212,7 +212,7 @@ function buildKairosDBQuery() {
 
 	var startTimeAbsolute = $("#startTime").datepicker("getDate");
 	var startTimeRelativeValue = $("#startRelativeValue").val();
-	
+
 	if (startTimeAbsolute != null) {
 		query.setStartAbsolute(startTimeAbsolute.getTime());
 	}
@@ -235,7 +235,7 @@ function buildKairosDBQuery() {
 			query.setEndRelative(endRelativeValue, $("#endRelativeUnit").val())
 		}
 	}
-	
+
 	var time_zone = $(".timeZone").val();
 	if (time_zone != '')
 		query.setTimeZone(time_zone)
@@ -270,11 +270,11 @@ function removeMetric(removeButton) {
 	if (metricCount == 0) {
 		return;
 	}
-	
+
 	var count = removeButton.data("metricCount");
 	for (var index = 0; index < tabContainerMap.length; ++index) {
-		if(tabContainerMap[index]===count) {
-			tabContainerMap.splice(index,1);
+		if (tabContainerMap[index] === count) {
+			tabContainerMap.splice(index, 1);
 			break;
 		}
 	}
@@ -457,10 +457,10 @@ function addGroupBy(container) {
 			$groupBy.removeAttr("id").appendTo(groupByContainer);
 			$groupBy.show();
 		}
-		else if(newName == "bin"){
-		    $groupBy = $("#groupByBinTemplate").clone();
-            $groupBy.removeAttr("id").appendTo(groupByContainer);
-            $groupBy.show();
+		else if (newName == "bin") {
+			$groupBy = $("#groupByBinTemplate").clone();
+			$groupBy.removeAttr("id").appendTo(groupByContainer);
+			$groupBy.show();
 		}
 	});
 
@@ -552,7 +552,7 @@ function addAggregator(container) {
 	$aggregatorContainer.find(".aggregatorName").change(function () {
 		var name = $aggregatorContainer.find(".aggregatorName").val();
 
-		if (name == "diff" ) {
+		if (name == "diff") {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
 			$aggregatorContainer.find(".aggregatorSampling").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").hide();
@@ -752,12 +752,12 @@ function showChart(subTitle, queries, metricData) {
 
                     var first = true;
 					$.each(group.group, function (key, value) {
-                        if (value.length > 0) {
-                            if (!first)
-                                groupByMessage += ", ";
-                            groupByMessage += key + '=' + value;
-                            first = false;
-                        }
+						if (value.length > 0) {
+							if (!first)
+								groupByMessage += ", ";
+							groupByMessage += key + '=' + value;
+							first = false;
+						}
 					});
 
 					groupByMessage += ')';

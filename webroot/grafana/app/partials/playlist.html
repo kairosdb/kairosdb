@@ -15,23 +15,31 @@
 						<tr>
 							<th>Dashboard</th>
 							<th>Include</th>
-							<th style="white-space: nowrap;">Remove as favorite</th>
+							<th style="white-space: nowrap;">Remove as
+								favorite
+							</th>
 						</tr>
 						<tr ng-repeat="dashboard in favDashboards">
 							<td style="white-space: nowrap;">
 								{{dashboard.title}}
 							</td>
 							<td style="text-align: center">
-								<input id="dash-{{$index}}" class="cr1" type="checkbox" ng-model="dashboard.include" ng-checked="dashboard.include" />
-								<label for="dash-{{$index}}" class="cr1"></label>
+								<input id="dash-{{$index}}" class="cr1"
+									   type="checkbox"
+									   ng-model="dashboard.include"
+									   ng-checked="dashboard.include"/>
+								<label for="dash-{{$index}}"
+									   class="cr1"></label>
 							</td>
 							<td style="text-align: center">
-								<i class="icon-remove pointer" ng-click="removeAsFavorite(dashboard)"></i>
+								<i class="icon-remove pointer"
+								   ng-click="removeAsFavorite(dashboard)"></i>
 							</td>
 						</tr>
 						<tr ng-hide="favDashboards.length">
 							<td colspan="3">
-								<i class="icon-warning"></i> No dashboards marked as favorites
+								<i class="icon-warning"></i> No dashboards
+								marked as favorites
 							</td>
 						</tr>
 					</table>
@@ -49,14 +57,18 @@
 					<label>
 						Timespan between change
 					</label>
-					<input type="text" class="input-small" ng-model="timespan" />
+					<input type="text" class="input-small" ng-model="timespan"/>
 				</div>
 			</div>
 		</div>
 	</div>
 
 	<div class="dashboard-editor-footer">
-		<button class="btn btn-success" ng-click="start();dismiss();"><i class="icon-play"></i> Start</button>
-		<button type="button" class="btn btn-success pull-right" ng-click="dismiss();"><i class="icon-ban-circle"></i> Close</button>
+		<button class="btn btn-success" ng-click="start();dismiss();"><i
+				class="icon-play"></i> Start
+		</button>
+		<button type="button" class="btn btn-success pull-right"
+				ng-click="dismiss();"><i class="icon-ban-circle"></i> Close
+		</button>
 	</div>
 </div>

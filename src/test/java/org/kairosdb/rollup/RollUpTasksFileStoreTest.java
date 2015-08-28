@@ -3,23 +3,20 @@ package org.kairosdb.rollup;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
-import org.kairosdb.core.aggregator.SumAggregator;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
-import org.kairosdb.core.http.rest.json.GsonParser;
+import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.RelativeTime;
+import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -28,15 +25,14 @@ public class RollUpTasksFileStoreTest
 {
 	private static final String DIRECTORY = "build/rolluptaskstore";
 
-	private GsonParser parser;
+	private QueryParser parser;
 	private List<RollupTaskTarget> targets = new ArrayList<RollupTaskTarget>();
 
 	@Before
 	public void setup() throws IOException, KairosDBException
 	{
 		FileUtils.deleteDirectory(new File(DIRECTORY));
-		parser = new GsonParser(
-				new TestAggregatorFactory(), new TestGroupByFactory());
+		parser = new QueryParser(new TestAggregatorFactory(), new TestGroupByFactory(), new TestQueryPluginFactory());
 
 		RollupTaskTarget target1 = new RollupTaskTarget("target");
 //		target1.addAggregator(new SumAggregator()); // todo fix this

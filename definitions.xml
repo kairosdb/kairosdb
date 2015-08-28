@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 
-<definitions xmlns="http://www.cpmake.org" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<definitions xmlns="http://www.cpmake.org">
 
 	<definition name="genormous" command="java">
 		<!-- <command name="genorm">java</command>
@@ -17,7 +17,9 @@
 		memory needed for running tests -->
 	<definition name="junit4" command="java -Xmx500M">
 		<option name="jvm_arg" pattern="(.*)">$1</option>
-		<option name="debug" pattern="(.+)">-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=$1</option>
+		<option name="debug" pattern="(.+)">-Xdebug
+			-Xrunjdwp:transport=dt_socket,server=y,address=$1
+		</option>
 		<option name="classpath" pattern="(.+)">-cp $1</option>
 		<option>org.junit.runner.JUnitCore</option>
 		<option name="test_class" pattern="(.+)">$1</option>

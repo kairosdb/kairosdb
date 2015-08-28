@@ -19,7 +19,7 @@ public class RollupTaskTarget
 {
 	private final String name;
 	private final Map<String, String> tags = new HashMap<String, String>();
-	private final List<Aggregator> aggregators = new ArrayList<Aggregator>();
+	private final transient List<Aggregator> aggregators = new ArrayList<Aggregator>();
 
 	public RollupTaskTarget(String name)
 	{

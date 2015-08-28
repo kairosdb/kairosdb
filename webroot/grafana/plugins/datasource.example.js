@@ -1,55 +1,55 @@
 define([
-  'angular',
-  'lodash',
-  'kbn',
-  'moment'
-],
-function (angular, _, kbn) {
-  'use strict';
+		'angular',
+		'lodash',
+		'kbn',
+		'moment'
+	],
+	function (angular, _, kbn) {
+		'use strict';
 
-  var module = angular.module('grafana.services');
+		var module = angular.module('grafana.services');
 
-  module.factory('CustomDatasource', function($q) {
+		module.factory('CustomDatasource', function ($q) {
 
-    // the datasource object passed to constructor
-    // is the same defined in config.js
-    function CustomDatasource(datasource) {
-      this.name = datasource.name;
-      this.supportMetrics = true;
-      this.url = datasource.url;
-    }
+			// the datasource object passed to constructor
+			// is the same defined in config.js
+			function CustomDatasource(datasource) {
+				this.name = datasource.name;
+				this.supportMetrics = true;
+				this.url = datasource.url;
+			}
 
-    CustomDatasource.prototype.query = function(options) {
-      // get from & to in seconds
-      var from = kbn.parseDate(options.range.from).getTime();
-      var to = kbn.parseDate(options.range.to).getTime();
+			CustomDatasource.prototype.query = function (options) {
+				// get from & to in seconds
+				var from = kbn.parseDate(options.range.from).getTime();
+				var to = kbn.parseDate(options.range.to).getTime();
 
-      var series = [];
-      var stepInSeconds = (to - from) / options.maxDataPoints;
+				var series = [];
+				var stepInSeconds = (to - from) / options.maxDataPoints;
 
-      for (var i = 0; i < 3; i++) {
-        var walker = Math.random() * 100;
-        var time = from;
-        var timeSeries = {
-          target: "Series " + i,
-          datapoints: []
-        };
+				for (var i = 0; i < 3; i++) {
+					var walker = Math.random() * 100;
+					var time = from;
+					var timeSeries = {
+						target: "Series " + i,
+						datapoints: []
+					};
 
-        for (var j = 0; j < options.maxDataPoints; j++) {
-          timeSeries.datapoints[j] = [walker, time];
-          walker += Math.random() - 0.5;
-          time += stepInSeconds;
-        }
+					for (var j = 0; j < options.maxDataPoints; j++) {
+						timeSeries.datapoints[j] = [walker, time];
+						walker += Math.random() - 0.5;
+						time += stepInSeconds;
+					}
 
-        series.push(timeSeries);
-      }
+					series.push(timeSeries);
+				}
 
-      return $q.when({data: series });
+				return $q.when({data: series});
 
-    };
+			};
 
-    return CustomDatasource;
+			return CustomDatasource;
 
-  });
+		});
 
-});
+	});

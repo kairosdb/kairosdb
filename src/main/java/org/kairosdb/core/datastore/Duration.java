@@ -77,7 +77,7 @@ public class Duration
 	@Override
 	public int hashCode()
 	{
-		int result = value;
+		int result = (int) (value ^ (value >>> 32));
 		result = 31 * result + (unit != null ? unit.hashCode() : 0);
 		return result;
 	}

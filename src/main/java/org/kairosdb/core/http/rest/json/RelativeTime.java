@@ -44,7 +44,7 @@ public class RelativeTime extends Duration
 
 	public long getTimeRelativeTo(long time)
 	{
-		int valueToUse = -(int)value;
+		int valueToUse = -(int) value;
 		int field = 0;
 		if (getUnit() == TimeUnit.MILLISECONDS)
 		{

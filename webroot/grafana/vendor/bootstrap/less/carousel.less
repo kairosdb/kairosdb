@@ -2,7 +2,6 @@
 // Carousel
 // --------------------------------------------------
 
-
 .carousel {
   position: relative;
   margin-bottom: @baseLineHeight;
@@ -32,7 +31,9 @@
 
   > .active,
   > .next,
-  > .prev { display: block; }
+  > .prev {
+    display: block;
+  }
 
   > .active {
     left: 0;
@@ -125,7 +126,7 @@
     margin-left: 5px;
     text-indent: -999px;
     background-color: #ccc;
-    background-color: rgba(255,255,255,.25);
+    background-color: rgba(255, 255, 255, .25);
     border-radius: 5px;
   }
   .active {
@@ -143,16 +144,19 @@
   bottom: 0;
   padding: 15px;
   background: @grayDark;
-  background: rgba(0,0,0,.75);
+  background: rgba(0, 0, 0, .75);
 }
+
 .carousel-caption h4,
 .carousel-caption p {
   color: @white;
   line-height: @baseLineHeight;
 }
+
 .carousel-caption h4 {
   margin: 0 0 5px;
 }
+
 .carousel-caption p {
   margin-bottom: 0;
 }

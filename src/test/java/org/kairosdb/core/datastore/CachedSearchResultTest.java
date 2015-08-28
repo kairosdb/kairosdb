@@ -20,7 +20,9 @@ import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.TestDataPointFactory;
-import org.kairosdb.core.datapoints.*;
+import org.kairosdb.core.datapoints.LegacyDataPointFactory;
+import org.kairosdb.core.datapoints.LegacyDoubleDataPoint;
+import org.kairosdb.core.datapoints.LegacyLongDataPoint;
 
 import java.io.IOException;
 import java.util.Collections;

@@ -1,17 +1,14 @@
 package org.kairosdb.rollup;
 
-import com.google.inject.Inject;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.http.rest.json.Metric;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
-import org.quartz.*;
+import org.quartz.InterruptableJob;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.inject.internal.util.$Preconditions.checkNotNull;
 import static com.google.inject.internal.util.$Preconditions.checkState;
-import static org.quartz.TriggerBuilder.newTrigger;
 
 public class RollUpJob implements InterruptableJob
 {
@@ -40,7 +37,7 @@ public class RollUpJob implements InterruptableJob
 //		QueryMetric query = new QueryMetric(task.getStartTime().getTimeRelativeTo(now), task.getEndTime().getTimeRelativeTo(now));
 //		datastore.createQuery(task.)
 
-		log.info("Executing job " + task.getMetricName());
+		//		log.info("Executing job " + task.getMetricName());
 
 		// todo
 //		if (interrupted)

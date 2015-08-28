@@ -18,7 +18,6 @@ package org.kairosdb.core.datastore;
 import com.google.common.collect.SetMultimap;
 
 import java.util.List;
-import java.util.Map;
 
 public interface DatastoreMetricQuery
 {

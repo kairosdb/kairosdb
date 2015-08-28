@@ -3,12 +3,12 @@ package org.kairosdb.rollup;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.io.FileUtils;
-import org.kairosdb.core.http.rest.json.GsonParser;
+import org.kairosdb.core.http.rest.json.QueryParser;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -23,13 +23,13 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 	private static final String FILE_NAME = "rollup.config";
 
 	private final ReentrantLock lock = new ReentrantLock();
-	private final GsonParser parser;
+	private final QueryParser parser;
 	private final File configFile;
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public RollUpTasksFileStore(@Named("STORE_DIRECTORY") String storeDirectory,
-			GsonParser parser) throws IOException
+			QueryParser parser) throws IOException
 	{
 		checkNotNullOrEmpty(storeDirectory);
 		checkNotNull(parser);
@@ -42,7 +42,11 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 	@Override
 	public void write(List<RollUpTask> tasks) throws RollUpException
 	{
-		String json = parser.getGson().toJson(tasks);
+		List<RollUpTask> existingTasks = read();
+		existingTasks.removeAll(tasks);
+		existingTasks.addAll(tasks);
+
+		String json = parser.getGson().toJson(existingTasks);
 
 		lock.lock();
 		try
@@ -69,7 +73,7 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 
 			List<RollUpTask> rollUpTasks = parser.parseRollUpTask(json);
 			if (rollUpTasks == null)
-				rollUpTasks = Collections.emptyList();
+				rollUpTasks = new ArrayList<RollUpTask>();
 			return rollUpTasks;
 		}
 		catch (IOException e)

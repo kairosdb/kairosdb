@@ -64,7 +64,7 @@ public class KairosDatastore
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-	      List<DataPointListener> dataPointListeners, KairosDataPointFactory dataPointFactory)
+			List<DataPointListener> dataPointListeners, KairosDataPointFactory dataPointFactory)
 			throws DatastoreException
 	{
 		m_datastore = checkNotNull(datastore);
@@ -100,6 +100,7 @@ public class KairosDatastore
 
 	/**
 	 Make sure the folder exists
+
 	 @param path
 	 */
 	private static void ensureFolder(String path)

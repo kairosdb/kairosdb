@@ -24,6 +24,9 @@ public class RollUpTask
 	// todo setup annotations for validation
 	// todo add tags
 
+	@SerializedName("name")
+	private String name;
+
 	@SerializedName("metric_name")
 	private String metricName;
 
@@ -40,7 +43,7 @@ public class RollUpTask
 
 	private final String id = UUID.randomUUID().toString();
 	private final List<GroupBy> groupBys = new ArrayList<GroupBy>();
-	private final List<RollupTaskTarget> targets = new ArrayList<RollupTaskTarget>();
+	private final transient List<RollupTaskTarget> targets = new ArrayList<RollupTaskTarget>();
 	private long timestamp;
 
 
@@ -95,6 +98,11 @@ public class RollUpTask
 		checkNotNull(backfill);
 
 		this.backfill = backfill;
+	}
+
+	public String getName()
+	{
+		return name;
 	}
 
 	public String getId()

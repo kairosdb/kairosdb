@@ -1,14 +1,14 @@
 /* Pretty handling of time axes.
 
-Copyright (c) 2007-2013 IOLA and Ole Laursen.
-Licensed under the MIT license.
+ Copyright (c) 2007-2013 IOLA and Ole Laursen.
+ Licensed under the MIT license.
 
-Set axis.mode to "time" to enable. See the section "Time series data" in
-API.txt for details.
+ Set axis.mode to "time" to enable. See the section "Time series data" in
+ API.txt for details.
 
-*/
+ */
 
-(function($) {
+(function ($) {
 
 	var options = {
 		xaxis: {
@@ -34,7 +34,7 @@ API.txt for details.
 			return d.strftime(fmt);
 		}
 
-		var leftPad = function(n, pad) {
+		var leftPad = function (n, pad) {
 			n = "" + n;
 			pad = "" + (pad == null ? "0" : pad);
 			return n.length == 1 ? pad + n : n;
@@ -69,25 +69,56 @@ API.txt for details.
 
 			if (escape) {
 				switch (c) {
-					case 'a': c = "" + dayNames[d.getDay()]; break;
-					case 'b': c = "" + monthNames[d.getMonth()]; break;
-					case 'd': c = leftPad(d.getDate(), ""); break;
-					case 'e': c = leftPad(d.getDate(), " "); break;
+					case 'a':
+						c = "" + dayNames[d.getDay()];
+						break;
+					case 'b':
+						c = "" + monthNames[d.getMonth()];
+						break;
+					case 'd':
+						c = leftPad(d.getDate(), "");
+						break;
+					case 'e':
+						c = leftPad(d.getDate(), " ");
+						break;
 					case 'h':	// For back-compat with 0.7; remove in 1.0
-					case 'H': c = leftPad(hours); break;
-					case 'I': c = leftPad(hours12); break;
-					case 'l': c = leftPad(hours12, " "); break;
-					case 'm': c = leftPad(d.getMonth() + 1, ""); break;
-					case 'M': c = leftPad(d.getMinutes()); break;
+					case 'H':
+						c = leftPad(hours);
+						break;
+					case 'I':
+						c = leftPad(hours12);
+						break;
+					case 'l':
+						c = leftPad(hours12, " ");
+						break;
+					case 'm':
+						c = leftPad(d.getMonth() + 1, "");
+						break;
+					case 'M':
+						c = leftPad(d.getMinutes());
+						break;
 					// quarters not in Open Group's strftime specification
 					case 'q':
-						c = "" + (Math.floor(d.getMonth() / 3) + 1); break;
-					case 'S': c = leftPad(d.getSeconds()); break;
-					case 'y': c = leftPad(d.getFullYear() % 100); break;
-					case 'Y': c = "" + d.getFullYear(); break;
-					case 'p': c = (isAM) ? ("" + "am") : ("" + "pm"); break;
-					case 'P': c = (isAM) ? ("" + "AM") : ("" + "PM"); break;
-					case 'w': c = "" + d.getDay(); break;
+						c = "" + (Math.floor(d.getMonth() / 3) + 1);
+						break;
+					case 'S':
+						c = leftPad(d.getSeconds());
+						break;
+					case 'y':
+						c = leftPad(d.getFullYear() % 100);
+						break;
+					case 'Y':
+						c = "" + d.getFullYear();
+						break;
+					case 'p':
+						c = (isAM) ? ("" + "am") : ("" + "pm");
+						break;
+					case 'P':
+						c = (isAM) ? ("" + "AM") : ("" + "PM");
+						break;
+					case 'w':
+						c = "" + d.getDay();
+						break;
 				}
 				r.push(c);
 				escape = false;
@@ -111,7 +142,7 @@ API.txt for details.
 	function makeUtcWrapper(d) {
 
 		function addProxyMethod(sourceObj, sourceMethod, targetObj, targetMethod) {
-			sourceObj[sourceMethod] = function() {
+			sourceObj[sourceMethod] = function () {
 				return targetObj[targetMethod].apply(targetObj, arguments);
 			};
 		};
@@ -196,12 +227,12 @@ API.txt for details.
 
 	function init(plot) {
 		plot.hooks.processOptions.push(function (plot, options) {
-			$.each(plot.getAxes(), function(axisName, axis) {
+			$.each(plot.getAxes(), function (axisName, axis) {
 
 				var opts = axis.options;
 
 				if (opts.mode == "time") {
-					axis.tickGenerator = function(axis) {
+					axis.tickGenerator = function (axis) {
 
 						var ticks = [];
 						var d = dateGenerator(axis.min, opts);
@@ -211,9 +242,9 @@ API.txt for details.
 						// mentioned in either of these options
 
 						var spec = (opts.tickSize && opts.tickSize[1] ===
-							"quarter") ||
-							(opts.minTickSize && opts.minTickSize[1] ===
-							"quarter") ? specQuarters : specMonths;
+						"quarter") ||
+						(opts.minTickSize && opts.minTickSize[1] ===
+						"quarter") ? specQuarters : specMonths;
 
 						if (opts.minTickSize != null) {
 							if (typeof opts.tickSize == "number") {
@@ -225,7 +256,7 @@ API.txt for details.
 
 						for (var i = 0; i < spec.length - 1; ++i) {
 							if (axis.delta < (spec[i][0] * timeUnitSize[spec[i][1]]
-											  + spec[i + 1][0] * timeUnitSize[spec[i + 1][1]]) / 2
+								+ spec[i + 1][0] * timeUnitSize[spec[i + 1][1]]) / 2
 								&& spec[i][0] * timeUnitSize[spec[i][1]] >= minSize) {
 								break;
 							}
@@ -284,7 +315,7 @@ API.txt for details.
 							d.setMonth(floorInBase(d.getMonth(), tickSize));
 						} else if (unit == "quarter") {
 							d.setMonth(3 * floorInBase(d.getMonth() / 3,
-								tickSize));
+									tickSize));
 						} else if (unit == "year") {
 							d.setFullYear(floorInBase(d.getFullYear(), tickSize));
 						}
@@ -369,9 +400,9 @@ API.txt for details.
 						// any of these places
 
 						var useQuarters = (axis.options.tickSize &&
-								axis.options.tickSize[1] == "quarter") ||
+							axis.options.tickSize[1] == "quarter") ||
 							(axis.options.minTickSize &&
-								axis.options.minTickSize[1] == "quarter");
+							axis.options.minTickSize[1] == "quarter");
 
 						var t = axis.tickSize[0] * timeUnitSize[axis.tickSize[1]];
 						var span = axis.max - axis.min;

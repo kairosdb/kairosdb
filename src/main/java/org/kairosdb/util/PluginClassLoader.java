@@ -3,10 +3,7 @@ package org.kairosdb.util;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.URLStreamHandlerFactory;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  Created by bhawkins on 3/13/15.

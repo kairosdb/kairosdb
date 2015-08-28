@@ -303,12 +303,12 @@ public class QueryParserTest
 
 		assertBeanValidation(json, "query.metric[0].aggregators[0].sampling.value must be greater than or equal to 1");
 	}
-        
-        @Test
+
+	@Test
 	public void test_aggregator_sampling_timezone_invalid() throws IOException, QueryException
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sampling-timezone.json"), Charsets.UTF_8);
-		
+
 		assertBeanValidation(json, "query.bogus is not a valid time zone, must be one of " + DateTimeZone.getAvailableIDs());
 	}
 	

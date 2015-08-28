@@ -39,6 +39,7 @@ import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.rollup.RollUpTask;
+import org.kairosdb.rollup.RollupTaskTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +72,7 @@ public class QueryParser
 
 	@Inject
 	public QueryParser(AggregatorFactory aggregatorFactory, GroupByFactory groupByFactory,
-	                   QueryPluginFactory pluginFactory)
+			QueryPluginFactory pluginFactory)
 	{
 		m_aggregatorFactory = aggregatorFactory;
 		m_groupByFactory = groupByFactory;
@@ -243,6 +244,23 @@ public class QueryParser
 
 	public List<RollUpTask> parseRollUpTask(String json) throws BeanValidationException
 	{
+		JsonParser parser = new JsonParser();
+		JsonObject obj = parser.parse(json).getAsJsonObject();
+
+		JsonArray rollupTasks = obj.getAsJsonArray();
+		for (JsonElement rollupTask : rollupTasks)
+		{
+			RollUpTask task = m_gson.fromJson(rollupTask, RollUpTask.class);
+			JsonArray rollupTargets = rollupTask.getAsJsonArray();
+			for (JsonElement rollupTarget : rollupTargets)
+			{
+				RollupTaskTarget target = m_gson.fromJson(rollupTarget, RollupTaskTarget.class);
+				//				parseAggregators("", );
+			}
+
+		}
+
+
 		List<RollUpTask> tasks = m_gson.fromJson(json, new TypeToken<List<RollUpTask>>() {}.getType());
 
 		// todo validate and throw bean validation exception if error occurs

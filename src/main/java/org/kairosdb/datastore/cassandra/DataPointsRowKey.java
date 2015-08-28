@@ -29,7 +29,7 @@ public class DataPointsRowKey
 	private final String m_dataType;
 	private final SortedMap<String, String> m_tags;
 	private boolean m_endSearchKey; //Only used for end slice operations.  Serialization
-		//adds a 0xFF after the timestamp to make sure we get all data for that timestamp.
+	//adds a 0xFF after the timestamp to make sure we get all data for that timestamp.
 
 	private ByteBuffer m_serializedBuffer;
 

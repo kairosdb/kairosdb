@@ -4,8 +4,8 @@ import com.google.inject.Inject;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.http.rest.json.ErrorResponse;
-import org.kairosdb.core.http.rest.json.GsonParser;
 import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
+import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
 import org.kairosdb.rollup.RollUpException;
 import org.kairosdb.rollup.RollUpManager;
@@ -34,11 +34,11 @@ public class RollUpResource
 {
 	private static final Logger logger = LoggerFactory.getLogger(MetricsResource.class);
 
-	private final GsonParser parser;
+	private final QueryParser parser;
 	private final RollUpTasksStore store;
 
 	@Inject
-	public RollUpResource(GsonParser parser, RollUpManager manager, RollUpTasksStore store)
+	public RollUpResource(QueryParser parser, RollUpManager manager, RollUpTasksStore store)
 	{
 		this.parser = checkNotNull(parser);
 		this.store = checkNotNull(store);
@@ -70,6 +70,7 @@ public class RollUpResource
 	 ]
 	 </pre>
 
+	 // todo Fix adding removes existing rollups
 	 @param json tasks in json format
 	 @return information about the created tasks
 	 */

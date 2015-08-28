@@ -84,8 +84,8 @@ public class WebServer implements KairosDBService
 
 	@Inject
 	public WebServer(@Named(JETTY_ADDRESS_PROPERTY) String address,
-	                 @Named(JETTY_PORT_PROPERTY) int port,
-	                 @Named(JETTY_WEB_ROOT_PROPERTY) String webRoot)
+			@Named(JETTY_PORT_PROPERTY) int port,
+			@Named(JETTY_WEB_ROOT_PROPERTY) String webRoot)
 			throws UnknownHostException
 	{
 		checkNotNull(webRoot);
@@ -145,7 +145,7 @@ public class WebServer implements KairosDBService
 				if (m_cipherSuites != null && m_cipherSuites.length > 0)
 					sslContextFactory.setIncludeCipherSuites(m_cipherSuites);
 
-				if (m_protocols!= null && m_protocols.length > 0)
+				if (m_protocols != null && m_protocols.length > 0)
 					sslContextFactory.setIncludeProtocols(m_protocols);
 
 				sslContextFactory.setKeyStorePassword(m_keyStorePassword);

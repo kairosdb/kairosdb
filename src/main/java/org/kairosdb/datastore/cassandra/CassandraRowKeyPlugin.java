@@ -12,6 +12,7 @@ public interface CassandraRowKeyPlugin extends QueryPlugin
 {
 	/**
 	 Must return the row keys for a query grouped by time
+
 	 @param query
 	 @return
 	 */

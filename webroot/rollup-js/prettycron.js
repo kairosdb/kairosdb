@@ -26,14 +26,14 @@ if ((!moment || !later) && (typeof require !== 'undefined')) {
 	var later = require('later');
 }
 
-(function() {
+(function () {
 
 	/*
 	 * For an array of numbers, e.g. a list of hours in a schedule,
 	 * return a string listing out all of the values (complete with
 	 * "and" plus ordinal text on the last item).
 	 */
-	var numberList = function(numbers) {
+	var numberList = function (numbers) {
 		if (numbers.length < 2) {
 			return moment()._locale.ordinal(numbers);
 		}
@@ -46,7 +46,7 @@ if ((!moment || !later) && (typeof require !== 'undefined')) {
 	 * Parse a number into day of week, or a month name;
 	 * used in dateList below.
 	 */
-	var numberToDateName = function(value, type) {
+	var numberToDateName = function (value, type) {
 		if (type == 'dow') {
 			return moment().day(value - 1).format('ddd');
 		} else if (type == 'mon') {
@@ -58,15 +58,15 @@ if ((!moment || !later) && (typeof require !== 'undefined')) {
 	 * From an array of numbers corresponding to dates (given in type: either
 	 * days of the week, or months), return a string listing all the values.
 	 */
-	var dateList = function(numbers, type) {
+	var dateList = function (numbers, type) {
 		if (numbers.length < 2) {
-			return numberToDateName(''+numbers[0], type);
+			return numberToDateName('' + numbers[0], type);
 		}
 
 		var last_val = '' + numbers.pop();
 		var output_text = '';
 
-		for (var i=0, value; value=numbers[i]; i++) {
+		for (var i = 0, value; value = numbers[i]; i++) {
 			if (output_text.length > 0) {
 				output_text += ', ';
 			}
@@ -79,7 +79,7 @@ if ((!moment || !later) && (typeof require !== 'undefined')) {
 	 * Pad to equivalent of sprintf('%02d'). Both moment.js and later.js
 	 * have zero-fill functions, but alas, they're private.
 	 */
-	var zeroPad = function(x) {
+	var zeroPad = function (x) {
 		return (x < 10) ? '0' + x : x;
 	};
 
@@ -89,7 +89,7 @@ if ((!moment || !later) && (typeof require !== 'undefined')) {
 	 * Given a schedule from later.js (i.e. after parsing the cronspec),
 	 * generate a friendly sentence description.
 	 */
-	var scheduleToSentence = function(schedule) {
+	var scheduleToSentence = function (schedule) {
 		var output_text = 'Every ';
 
 		if (schedule['h'] && schedule['m'] && schedule['h'].length <= 2 && schedule['m'].length <= 2) {
@@ -97,8 +97,8 @@ if ((!moment || !later) && (typeof require !== 'undefined')) {
 			// hour or minute, print them in HH:MM format
 
 			var hm = [];
-			for (var i=0; i < schedule['h'].length; i++) {
-				for (var j=0; j < schedule['m'].length; j++) {
+			for (var i = 0; i < schedule['h'].length; i++) {
+				for (var j = 0; j < schedule['m'].length; j++) {
 					hm.push(zeroPad(schedule['h'][i]) + ':' + zeroPad(schedule['m'][j]));
 				}
 			}
@@ -115,13 +115,13 @@ if ((!moment || !later) && (typeof require !== 'undefined')) {
 		} else {
 			// Otherwise, list out every specified hour/minute value.
 
-			if(schedule['h']) { // runs only at specific hours
+			if (schedule['h']) { // runs only at specific hours
 				if (schedule['m']) { // and only at specific minutes
 					output_text += numberList(schedule['m']) + ' minute past the ' + numberList(schedule['h']) + ' hour';
 				} else { // specific hours, but every minute
 					output_text += 'minute of ' + numberList(schedule['h']) + ' hour';
 				}
-			} else if(schedule['m']) { // every hour, but specific minutes
+			} else if (schedule['m']) { // every hour, but specific minutes
 				if (schedule['m'].length == 1 && schedule['m'][0] == 0) {
 					output_text += 'hour, on the hour';
 				} else {
@@ -162,7 +162,7 @@ if ((!moment || !later) && (typeof require !== 'undefined')) {
 	/*
 	 * Given a cronspec, return the human-readable string.
 	 */
-	var toString = function(cronspec, sixth) {
+	var toString = function (cronspec, sixth) {
 		var schedule = later.parse.cron(cronspec, sixth);
 		return scheduleToSentence(schedule['schedules'][0]);
 	};
@@ -171,7 +171,7 @@ if ((!moment || !later) && (typeof require !== 'undefined')) {
 	 * Given a cronspec, return the next date for when it will next run.
 	 * (This is just a wrapper for later.js)
 	 */
-	var getNextDate = function(cronspec, sixth) {
+	var getNextDate = function (cronspec, sixth) {
 		var schedule = later.parse.cron(cronspec, sixth);
 		return later.schedule(schedule).next();
 	};
@@ -180,8 +180,8 @@ if ((!moment || !later) && (typeof require !== 'undefined')) {
 	 * Given a cronspec, return a friendly string for when it will next run.
 	 * (This is just a wrapper for later.js and moment.js)
 	 */
-	var getNext = function(cronspec, sixth) {
-		return moment( getNextDate( cronspec, sixth ) ).calendar();
+	var getNext = function (cronspec, sixth) {
+		return moment(getNextDate(cronspec, sixth)).calendar();
 	};
 
 	//----------------

@@ -129,7 +129,7 @@ public class CoreModule extends AbstractModule
 		bind(LegacyDataPointFactory.class).in(Singleton.class);
 
 		bind(StringDataPointFactory.class).in(Singleton.class);
-                
+
 		bind(StringDataPointFactory.class).in(Singleton.class);
 
 		bind(NullDataPointFactory.class).in(Singleton.class);

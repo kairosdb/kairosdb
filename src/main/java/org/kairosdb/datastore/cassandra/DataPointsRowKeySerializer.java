@@ -56,38 +56,52 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 	@Override
 	public ByteBuffer toByteBuffer(DataPointsRowKey dataPointsRowKey)
 	{
-		int size = 8; //size of timestamp
-		byte[] metricName = dataPointsRowKey.getMetricName().getBytes(UTF8);
-		size += metricName.length;
-		size++; //Add one for null at end of string
-
-		//if the data type is "" then we are creating a row key for the old
-		//format - this is for delete/search operations
-		byte[] dataType = null;
-		String dataTypeStr = dataPointsRowKey.getDataType();
-		if (!dataTypeStr.equals(LegacyDataPointFactory.DATASTORE_TYPE))
+		ByteBuffer buffer = dataPointsRowKey.getSerializedBuffer();
+		if (buffer != null)
 		{
-			dataType = dataPointsRowKey.getDataType().getBytes(UTF8);
-			size += dataType.length;
-			size += 2; //for null marker and datatype size
+			buffer = buffer.duplicate();
 		}
-
-		byte[] tagString = generateTagString(dataPointsRowKey.getTags()).getBytes(UTF8);
-		size += tagString.length;
-
-		ByteBuffer buffer = ByteBuffer.allocate(size);
-		buffer.put(metricName); //Metric name is put in this way for sorting purposes
-		buffer.put((byte)0x0);
-		buffer.putLong(dataPointsRowKey.getTimestamp());
-		if (dataType != null)
+		else
 		{
-			buffer.put((byte)0x0); //Marks the beginning of datatype
-			buffer.put((byte)dataType.length);
-			buffer.put(dataType);
-		}
-		buffer.put(tagString);
+			int size = 8; //size of timestamp
+			byte[] metricName = dataPointsRowKey.getMetricName().getBytes(UTF8);
+			size += metricName.length;
+			size++; //Add one for null at end of string
 
-		buffer.flip();
+			//if the data type is null then we are creating a row key for the old
+			//format - this is for delete operations
+			byte[] dataType = null;
+			String dataTypeStr = dataPointsRowKey.getDataType();
+			if (!dataTypeStr.equals(LegacyDataPointFactory.DATASTORE_TYPE))
+			{
+				dataType = dataPointsRowKey.getDataType().getBytes(UTF8);
+				size += dataType.length;
+				size += 2; //for null marker and datatype size
+			}
+
+			byte[] tagString = generateTagString(dataPointsRowKey.getTags()).getBytes(UTF8);
+			size += tagString.length;
+
+			buffer = ByteBuffer.allocate(size);
+			buffer.put(metricName); //Metric name is put in this way for sorting purposes
+			buffer.put((byte) 0x0);
+			buffer.putLong(dataPointsRowKey.getTimestamp());
+			if (dataType != null)
+			{
+				if (dataPointsRowKey.isEndSearchKey())
+					buffer.put((byte)0xFF); //Only used for serialization of end search keys
+				else
+					buffer.put((byte)0x0); //Marks the beginning of datatype
+				buffer.put((byte) dataType.length);
+				buffer.put(dataType);
+			}
+			buffer.put(tagString);
+
+			buffer.flip();
+
+			dataPointsRowKey.setSerializedBuffer(buffer);
+			buffer = buffer.duplicate();
+		}
 
 		return buffer;
 	}

@@ -72,7 +72,9 @@ public class DataPointGroupRowWrapper implements DataPointGroup
 	@Override
 	public DataPoint next()
 	{
-		return (m_row.next());
+		DataPoint dp = m_row.next();
+		dp.setDataPointGroup(this);
+		return (dp);
 	}
 
 	@Override

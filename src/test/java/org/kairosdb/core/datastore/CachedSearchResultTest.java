@@ -87,6 +87,30 @@ public class CachedSearchResultTest
 		assertValues(rows.get(1), 1L, 1.1, 2L, 2.1);
 
 		assertValues(rows.get(2), 3L, 3.1, 4L, 4.1);
+
+		//Now close rows so data is saved.
+		rows.get(0).close();
+		rows.get(1).close();
+		rows.get(2).close();
+
+		//Re-open cached file and verify the data is the same.
+		csResult =
+				CachedSearchResult.openCachedSearchResult("metric1", tempFile, 100, dataPointFactory);
+
+		rows = csResult.getRows();
+
+		assertEquals(3, rows.size());
+
+		assertValues(rows.get(0), 42L, 42.1, 43L, 43.1);
+
+		assertValues(rows.get(1), 1L, 1.1, 2L, 2.1);
+
+		assertValues(rows.get(2), 3L, 3.1, 4L, 4.1);
+
+		rows.get(0).close();
+		rows.get(1).close();
+		rows.get(2).close();
+
 	}
 
 	@Test

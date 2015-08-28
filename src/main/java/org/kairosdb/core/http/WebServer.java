@@ -40,6 +40,11 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 
@@ -47,30 +52,47 @@ public class WebServer implements KairosDBService
 {
 	public static final Logger logger = LoggerFactory.getLogger(WebServer.class);
 
+	public static final String JETTY_ADDRESS_PROPERTY = "kairosdb.jetty.address";
 	public static final String JETTY_PORT_PROPERTY = "kairosdb.jetty.port";
 	public static final String JETTY_WEB_ROOT_PROPERTY = "kairosdb.jetty.static_web_root";
 	public static final String JETTY_AUTH_USER_PROPERTY = "kairosdb.jetty.basic_auth.user";
 	public static final String JETTY_AUTH_PASSWORD_PROPERTY = "kairosdb.jetty.basic_auth.password";
 	public static final String JETTY_SSL_PORT = "kairosdb.jetty.ssl.port";
+	public static final String JETTY_SSL_PROTOCOLS = "kairosdb.jetty.ssl.protocols";
+	public static final String JETTY_SSL_CIPHER_SUITES = "kairosdb.jetty.ssl.cipherSuites";
 	public static final String JETTY_SSL_KEYSTORE_PATH = "kairosdb.jetty.ssl.keystore.path";
 	public static final String JETTY_SSL_KEYSTORE_PASSWORD = "kairosdb.jetty.ssl.keystore.password";
 
+	private InetAddress m_address;
 	private int m_port;
 	private String m_webRoot;
 	private Server m_server;
 	private String m_authUser = null;
 	private String m_authPassword = null;
 	private int m_sslPort;
+	private String[] m_cipherSuites;
+	private String[] m_protocols;
 	private String m_keyStorePath;
 	private String m_keyStorePassword;
 
 
-	@Inject
-	public WebServer(@Named(JETTY_PORT_PROPERTY) int port,
-	                 @Named(JETTY_WEB_ROOT_PROPERTY) String webRoot)
+	public WebServer(int port, String webRoot)
+			throws UnknownHostException
 	{
+		this(null, port, webRoot);
+	}
+
+	@Inject
+	public WebServer(@Named(JETTY_ADDRESS_PROPERTY) String address,
+	                 @Named(JETTY_PORT_PROPERTY) int port,
+	                 @Named(JETTY_WEB_ROOT_PROPERTY) String webRoot)
+			throws UnknownHostException
+	{
+		checkNotNull(webRoot);
+
 		m_port = port;
 		m_webRoot = webRoot;
+		m_address = InetAddress.getByName(address);
 	}
 
 	@Inject(optional = true)
@@ -91,13 +113,26 @@ public class WebServer implements KairosDBService
 		m_keyStorePassword = checkNotNullOrEmpty(keyStorePassword);
 	}
 
+	@Inject(optional = true)
+	public void setSSLCipherSuites(@Named(JETTY_SSL_CIPHER_SUITES) String cipherSuites)
+	{
+		checkNotNull(cipherSuites);
+		m_cipherSuites = cipherSuites.split("\\s*,\\s*");
+	}
+
+	@Inject(optional = true)
+	public void setSSLProtocols(@Named(JETTY_SSL_PROTOCOLS) String protocols)
+	{
+		m_protocols = protocols.split("\\s*,\\s*");
+	}
+
 	@Override
 	public void start() throws KairosDBException
 	{
 		try
 		{
 			if (m_port > 0)
-				m_server = new Server(m_port);
+				m_server = new Server(new InetSocketAddress(m_address, m_port));
 			else
 				m_server = new Server();
 
@@ -106,6 +141,13 @@ public class WebServer implements KairosDBService
 			{
 				logger.info("Using SSL");
 				SslContextFactory sslContextFactory = new SslContextFactory(m_keyStorePath);
+
+				if (m_cipherSuites != null && m_cipherSuites.length > 0)
+					sslContextFactory.setIncludeCipherSuites(m_cipherSuites);
+
+				if (m_protocols!= null && m_protocols.length > 0)
+					sslContextFactory.setIncludeProtocols(m_protocols);
+
 				sslContextFactory.setKeyStorePassword(m_keyStorePassword);
 				SslSelectChannelConnector selectChannelConnector = new SslSelectChannelConnector(sslContextFactory);
 				selectChannelConnector.setPort(m_sslPort);
@@ -129,6 +171,7 @@ public class WebServer implements KairosDBService
 			resourceHandler.setDirectoriesListed(true);
 			resourceHandler.setWelcomeFiles(new String[]{"index.html"});
 			resourceHandler.setResourceBase(m_webRoot);
+			resourceHandler.setAliases(true);
 
 			HandlerList handlers = new HandlerList();
 			handlers.setHandlers(new Handler[]{servletContextHandler, resourceHandler, new DefaultHandler()});
@@ -157,6 +200,11 @@ public class WebServer implements KairosDBService
 		{
 			logger.error("Error stopping web server", e);
 		}
+	}
+
+	public InetAddress getAddress()
+	{
+		return m_address;
 	}
 
 	private static SecurityHandler basicAuth(String username, String password, String realm)

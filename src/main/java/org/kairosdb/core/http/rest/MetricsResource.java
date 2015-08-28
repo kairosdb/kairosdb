@@ -74,7 +74,7 @@ public class MetricsResource implements KairosMetricReporter
 
 	private final KairosDatastore datastore;
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
-	private final GsonParser gsonParser;
+	private final QueryParser queryParser;
 
 	//Used for parsing incoming metrics
 	private final Gson gson;
@@ -93,11 +93,11 @@ public class MetricsResource implements KairosMetricReporter
 	private String hostName = "localhost";
 
 	@Inject
-	public MetricsResource(KairosDatastore datastore, GsonParser gsonParser,
+	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
 			KairosDataPointFactory dataPointFactory)
 	{
 		this.datastore = checkNotNull(datastore);
-		this.gsonParser = checkNotNull(gsonParser);
+		this.queryParser = checkNotNull(queryParser);
 		m_kairosDataPointFactory = dataPointFactory;
 		formatters.put("json", new JsonFormatter());
 
@@ -115,6 +115,16 @@ public class MetricsResource implements KairosMetricReporter
 		return (responseBuilder);
 	}
 
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/version")
+	public Response corsPreflightVersion(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/version")
@@ -127,12 +137,32 @@ public class MetricsResource implements KairosMetricReporter
 		return responseBuilder.build();
 	}
 
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/metricnames")
+	public Response corsPreflightMetricNames(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/metricnames")
 	public Response getMetricNames()
 	{
 		return executeNameQuery(NameType.METRIC_NAMES);
+	}
+
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/tagnames")
+	public Response corsPreflightTagNames(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
 	}
 
 	@GET
@@ -143,12 +173,33 @@ public class MetricsResource implements KairosMetricReporter
 		return executeNameQuery(NameType.TAG_KEYS);
 	}
 
+
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/tagvalues")
+	public Response corsPreflightTagValues(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/tagvalues")
 	public Response getTagValues()
 	{
 		return executeNameQuery(NameType.TAG_VALUES);
+	}
+
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints")
+	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
 	}
 
 	@POST
@@ -177,7 +228,7 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		try
 		{
-			JsonMetricParser parser = new JsonMetricParser(datastore, new InputStreamReader(json, "UTF-8"),
+			DataPointsParser parser = new DataPointsParser(datastore, new InputStreamReader(json, "UTF-8"),
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 
@@ -223,6 +274,15 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/query/tags")
+	public Response corsPreflightQueryTags(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
@@ -241,7 +301,7 @@ public class MetricsResource implements KairosMetricReporter
 
 			jsonResponse.begin();
 
-			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
+			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
 			for (QueryMetric query : queries)
 			{
@@ -303,6 +363,29 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
+	/**
+	 Information for this endpoint was taken from https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS.
+	 <p/>
+	 <p/>Response to a cors preflight request to access data.
+	 */
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path(QUERY_URL)
+	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path(QUERY_URL)
+	public Response query(@QueryParam("query") String json) throws Exception
+	{
+		return get(json);
+	}
+
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path(QUERY_URL)
@@ -323,7 +406,7 @@ public class MetricsResource implements KairosMetricReporter
 
 			jsonResponse.begin();
 
-			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
+			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
 			int queryCount = 0;
 			for (QueryMetric query : queries)
@@ -387,6 +470,11 @@ public class MetricsResource implements KairosMetricReporter
 			System.gc();
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}
+		catch (IOException e)
+		{
+			logger.error("Failed to open temp folder "+datastore.getCacheDir(), e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
 		catch (Exception e)
 		{
 			logger.error("Query failed.", e);
@@ -403,6 +491,16 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/delete")
+	public Response corsPreflightDelete(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+	{
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/delete")
@@ -413,7 +511,7 @@ public class MetricsResource implements KairosMetricReporter
 
 		try
 		{
-			List<QueryMetric> queries = gsonParser.parseQueryMetric(json);
+			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
 			for (QueryMetric query : queries)
 			{
@@ -455,7 +553,7 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
-	private static ResponseBuilder getCorsPreflightResponseBuilder(final String requestHeaders,
+	public static ResponseBuilder getCorsPreflightResponseBuilder(final String requestHeaders,
 			final String requestMethod)
 	{
 		ResponseBuilder responseBuilder = Response.status(Response.Status.OK);
@@ -470,36 +568,12 @@ public class MetricsResource implements KairosMetricReporter
 		return responseBuilder;
 	}
 
-	/**
-	 Information for this endpoint was taken from https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS.
-	 <p/>
-	 <p/>Response to a cors preflight request to access data.
-	 */
-	@OPTIONS
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/datapoints/query")
-	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
-	{
-		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
-		return (responseBuilder.build());
-	}
 
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/datapoints/query/tags")
-	public Response corsPreflightQueryTags(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
-	{
-		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
-		return (responseBuilder.build());
-	}
-
-	@OPTIONS
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/datapoints")
-	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
-	                                        @HeaderParam("Access-Control-Request-Method") String requestMethod)
+	@Path("/metric/{metricName}")
+	public Response corsPreflightMetricDelete(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
+			@HeaderParam("Access-Control-Request-Method") String requestMethod)
 	{
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
@@ -512,7 +586,7 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		try
 		{
-			QueryMetric query = new QueryMetric(0L, Long.MAX_VALUE, 0, metricName);
+			QueryMetric query = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, metricName);
 			datastore.delete(query);
 
 

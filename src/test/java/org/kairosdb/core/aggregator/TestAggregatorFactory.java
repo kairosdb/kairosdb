@@ -37,6 +37,8 @@ public class TestAggregatorFactory implements AggregatorFactory
 		addAggregator(new StdAggregator(new DoubleDataPointFactoryImpl()));
 		addAggregator(new DivideAggregator(new DoubleDataPointFactoryImpl()));
 		addAggregator(new PercentileAggregator(new DoubleDataPointFactoryImpl()));
+		addAggregator(new FirstAggregator(new DoubleDataPointFactoryImpl()));
+		addAggregator(new LastAggregator(new DoubleDataPointFactoryImpl()));
 	}
 
 	private void addAggregator(Aggregator agg)

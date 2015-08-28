@@ -20,6 +20,8 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
+import junit.framework.TestCase;
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
@@ -34,6 +36,7 @@ import org.kairosdb.core.groupby.TagGroupBy;
 import java.util.*;
 
 import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -45,6 +48,8 @@ public abstract class DatastoreTestHelper
 	protected static KairosDatastore s_datastore;
 	protected static final List<String> metricNames = new ArrayList<String>();
 	private static long s_startTime;
+	private static String s_unicodeNameWithSpace = "你好 means hello";
+	private static String s_unicodeName = "你好";
 
 	private static List<String> listFromIterable(Iterable<String> iterable)
 	{
@@ -140,6 +145,38 @@ public abstract class DatastoreTestHelper
 		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 4));
 
 		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 42));
+
+
+		//Testing pre 1970 data points with negative values
+		metricNames.add("old_data");
+		metricName = "old_data";
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("host", "A").build();
+
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(-2000000000L, 80));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(-1000000000L, 40));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(-100L, 20));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(0L, 3));
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(2000000000L, 33));
+
+
+		//Adding a metric with unicode and spaces
+		metricNames.add(s_unicodeNameWithSpace);
+		metricName = s_unicodeNameWithSpace;
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("host", s_unicodeName)
+				.put("space", "space is cool").build();
+
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 42));
+
+
+		//Data that will be deleted in test
+		metricName = "delete_me";
+		metricNames.add(metricName);
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("ghost", "tag").build();
+
+		s_datastore.putDataPoint(metricName, tags, new LongDataPoint(s_startTime, 50));
 	}
 
 	@Test
@@ -149,6 +186,8 @@ public abstract class DatastoreTestHelper
 
 		assertThat(metrics, hasItem("metric1"));
 		assertThat(metrics, hasItem("metric2"));
+		assertThat(metrics, hasItem("duplicates"));
+		assertThat(metrics, hasItem("old_data"));
 	}
 
 	@Test
@@ -185,28 +224,33 @@ public abstract class DatastoreTestHelper
 
 		DatastoreQuery dq = s_datastore.createQuery(query);
 
-		List<DataPointGroup> results = dq.execute();
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
 
-		assertThat(results.size(), equalTo(1));
+			assertThat(results.size(), equalTo(1));
 
-		DataPointGroup dpg = results.get(0);
+			DataPointGroup dpg = results.get(0);
 
-		assertThat(dpg.getName(), is("metric1"));
-		SetMultimap<String, String> resTags = extractTags(dpg);
+			assertThat(dpg.getName(), is("metric1"));
+			SetMultimap<String, String> resTags = extractTags(dpg);
 
-		assertThat(resTags.size(), is(5));
-		SetMultimap<String, String> expectedTags = TreeMultimap.create();
-		expectedTags.put("host", "A");
-		expectedTags.put("host", "B");
-		expectedTags.put("client", "foo");
-		expectedTags.put("client", "bar");
-		expectedTags.put("month", "April");
+			assertThat(resTags.size(), is(5));
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
+			expectedTags.put("host", "B");
+			expectedTags.put("client", "foo");
+			expectedTags.put("client", "bar");
+			expectedTags.put("month", "April");
 
-		assertThat(resTags, is(expectedTags));
+			assertThat(resTags, is(expectedTags));
 
-		assertValues(dpg, 1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12);
-
-		dq.close();
+			assertValues(dpg, 1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12);
+		}
+		finally
+		{
+			dq.close();
+		}
 	}
 
 	@Test
@@ -221,27 +265,32 @@ public abstract class DatastoreTestHelper
 		query.setTags(tags);
 
 		DatastoreQuery dq = s_datastore.createQuery(query);
-		List<DataPointGroup> results = dq.execute();
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
 
-		assertThat(results.size(), is(1));
+			assertThat(results.size(), is(1));
 
-		DataPointGroup dpg = results.get(0);
+			DataPointGroup dpg = results.get(0);
 
-		assertThat(dpg.getName(), is("metric1"));
-		SetMultimap<String, String> resTags = extractTags(dpg);
+			assertThat(dpg.getName(), is("metric1"));
+			SetMultimap<String, String> resTags = extractTags(dpg);
 
-		assertEquals(4, resTags.size());
-		SetMultimap<String, String> expectedTags = TreeMultimap.create();
-		expectedTags.put("host", "A");
-		expectedTags.put("host", "B");
-		expectedTags.put("client", "foo");
-		expectedTags.put("month", "April");
+			assertEquals(4, resTags.size());
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
+			expectedTags.put("host", "B");
+			expectedTags.put("client", "foo");
+			expectedTags.put("month", "April");
 
-		assertThat(resTags, is(expectedTags));
+			assertThat(resTags, is(expectedTags));
 
-		assertValues(dpg, 1, 5, 2, 6, 3, 7, 4, 8);
-
-		dq.close();
+			assertValues(dpg, 1, 5, 2, 6, 3, 7, 4, 8);
+		}
+		finally
+		{
+			dq.close();
+		}
 	}
 
 	@Test
@@ -255,40 +304,42 @@ public abstract class DatastoreTestHelper
 		query.setTags(tags);
 
 		DatastoreQuery dq = s_datastore.createQuery(query);
-		List<DataPointGroup> results = dq.execute();
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
 
-		assertThat(results.size(), is(2));
+			assertThat(results.size(), is(2));
 
-		DataPointGroup dpg = results.get(0);
-		assertThat(dpg.getName(), is("metric1"));
-		SetMultimap<String, String> resTags = extractTags(dpg);
+			DataPointGroup dpg = results.get(0);
+			assertThat(dpg.getName(), is("metric1"));
+			SetMultimap<String, String> resTags = extractTags(dpg);
 
-		assertThat(resTags.keySet().size(), is(3));
-		SetMultimap<String, String> expectedTags = TreeMultimap.create();
-		expectedTags.put("host", "A");
-		expectedTags.put("client", "foo");
-		expectedTags.put("client", "bar");
-		expectedTags.put("month", "April");
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
+			expectedTags.put("client", "foo");
+			expectedTags.put("client", "bar");
+			expectedTags.put("month", "April");
 
-		assertThat(resTags, is(resTags));
+			assertThat(resTags, equalTo(expectedTags));
+			assertValues(dpg, 1, 9, 2, 10, 3, 11, 4, 12);
 
-		assertValues(dpg, 1, 9, 2, 10, 3, 11, 4, 12);
 
-		dpg = results.get(1);
-		assertThat(dpg.getName(), is("metric1"));
-		resTags = extractTags(dpg);
+			dpg = results.get(1);
+			assertThat(dpg.getName(), is("metric1"));
+			resTags = extractTags(dpg);
 
-		assertThat(resTags.keySet().size(), is(3));
-		expectedTags = TreeMultimap.create();
-		expectedTags.put("host", "B");
-		expectedTags.put("client", "foo");
-		expectedTags.put("month", "April");
+			expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "B");
+			expectedTags.put("client", "foo");
+			expectedTags.put("month", "April");
 
-		assertThat(resTags, is(resTags));
-
-		assertValues(dpg, 5, 6, 7, 8);
-
-		dq.close();
+			assertThat(resTags, equalTo(expectedTags));
+			assertValues(dpg, 5, 6, 7, 8);
+		}
+		finally
+		{
+			dq.close();
+		}
 	}
 
 	@Test
@@ -302,51 +353,61 @@ public abstract class DatastoreTestHelper
 		query.setTags(tags);
 
 		DatastoreQuery dq = s_datastore.createQuery(query);
-		List<DataPointGroup> results = dq.execute();
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
 
-		assertThat(results.size(), is(3));
+			assertThat(results.size(), is(3));
 
-		DataPointGroup dpg = results.get(0);
-		assertThat(dpg.getName(), is("metric1"));
-		SetMultimap<String, String> resTags = extractTags(dpg);
+			DataPointGroup dpg = results.get(0);
+			assertThat(dpg.getName(), is("metric1"));
 
-		assertThat(resTags.keySet().size(), is(3));
-		SetMultimap<String, String> expectedTags = TreeMultimap.create();
-		expectedTags.put("host", "A");
-		expectedTags.put("client", "foo");
-		expectedTags.put("month", "April");
-		assertThat(resTags, is(resTags));
-		assertValues(dpg, 1, 2, 3, 4);
+			SetMultimap<String, String> resTags = extractTags(dpg);
+			assertThat(resTags.keySet().size(), is(3));
 
-		dpg = results.get(1);
-		assertThat(dpg.getName(), is("metric1"));
-		resTags = extractTags(dpg);
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
+			expectedTags.put("client", "bar");
+			expectedTags.put("month", "April");
 
-		assertThat(resTags.keySet().size(), is(3));
-		expectedTags = TreeMultimap.create();
-		expectedTags.put("host", "A");
-		expectedTags.put("client", "bar");
-		expectedTags.put("month", "April");
+			assertThat(resTags, equalTo(expectedTags));
+			assertValues(dpg, 9, 10, 11, 12);
 
-		assertThat(resTags, is(resTags));
 
-		assertValues(dpg, 9, 10, 11, 12);
+			dpg = results.get(1);
+			assertThat(dpg.getName(), is("metric1"));
 
-		dpg = results.get(2);
-		assertThat(dpg.getName(), is("metric1"));
-		resTags = extractTags(dpg);
+			resTags = extractTags(dpg);
+			assertThat(resTags.keySet().size(), is(3));
 
-		assertThat(resTags.keySet().size(), is(3));
-		expectedTags = TreeMultimap.create();
-		expectedTags.put("host", "B");
-		expectedTags.put("client", "foo");
-		expectedTags.put("month", "April");
+			expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
+			expectedTags.put("client", "foo");
+			expectedTags.put("month", "April");
 
-		assertThat(resTags, is(resTags));
+			assertThat(resTags, equalTo(expectedTags));
+			assertValues(dpg, 1, 2, 3, 4);
 
-		assertValues(dpg, 5, 6, 7, 8);
 
-		dq.close();
+			dpg = results.get(2);
+			assertThat(dpg.getName(), is("metric1"));
+
+			resTags = extractTags(dpg);
+			assertThat(resTags.keySet().size(), is(3));
+
+			expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "B");
+			expectedTags.put("client", "foo");
+			expectedTags.put("month", "April");
+
+			assertThat(resTags, equalTo(expectedTags));
+			assertValues(dpg, 5, 6, 7, 8);
+
+		}
+		finally
+		{
+			dq.close();
+		}
 	}
 
 	@Test
@@ -360,25 +421,30 @@ public abstract class DatastoreTestHelper
 		query.setTags(tags);
 
 		DatastoreQuery dq = s_datastore.createQuery(query);
-		List<DataPointGroup> results = dq.execute();
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
 
-		assertThat(results.size(), is(1));
+			assertThat(results.size(), is(1));
 
-		DataPointGroup dpg = results.get(0);
-		assertThat(dpg.getName(), is("metric1"));
-		SetMultimap<String, String> resTags = extractTags(dpg);
+			DataPointGroup dpg = results.get(0);
+			assertThat(dpg.getName(), is("metric1"));
+			SetMultimap<String, String> resTags = extractTags(dpg);
 
-		assertThat(resTags.keySet().size(), is(3));
-		SetMultimap<String, String> expectedTags = TreeMultimap.create();
-		expectedTags.put("host", "A");
-		expectedTags.put("host", "B");
-		expectedTags.put("client", "foo");
-		expectedTags.put("client", "bar");
-		expectedTags.put("month", "April");
-		assertThat(resTags, is(resTags));
-		assertValues(dpg, 1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12);
-
-		dq.close();
+			assertThat(resTags.keySet().size(), is(3));
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
+			expectedTags.put("host", "B");
+			expectedTags.put("client", "foo");
+			expectedTags.put("client", "bar");
+			expectedTags.put("month", "April");
+			assertThat(resTags, is(expectedTags));
+			assertValues(dpg, 1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12);
+		}
+		finally
+		{
+			dq.close();
+		}
 	}
 
 	@Test
@@ -394,13 +460,18 @@ public abstract class DatastoreTestHelper
 		query.setTags(tags);
 
 		DatastoreQuery dq = s_datastore.createQuery(query);
-		List<DataPointGroup> results = dq.execute();
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
 
-		assertThat(results.size(), is(1));
+			assertThat(results.size(), is(1));
 
-		assertValues(results.get(0), 9, 10, 11, 12);
-
-		dq.close();
+			assertValues(results.get(0), 9, 10, 11, 12);
+		}
+		finally
+		{
+			dq.close();
+		}
 	}
 
 	@Test
@@ -415,28 +486,33 @@ public abstract class DatastoreTestHelper
 		query.setTags(tags);
 
 		DatastoreQuery dq = s_datastore.createQuery(query);
-		List<DataPointGroup> results = dq.execute();
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
 
-		assertThat(results.size(), equalTo(1));
+			assertThat(results.size(), equalTo(1));
 
-		DataPointGroup dpg = results.get(0);
+			DataPointGroup dpg = results.get(0);
 
-		assertThat(dpg.getName(), is("metric1"));
-		SetMultimap<String, String> resTags = extractTags(dpg);
+			assertThat(dpg.getName(), is("metric1"));
+			SetMultimap<String, String> resTags = extractTags(dpg);
 
-		assertThat(resTags.size(), is(5));
-		SetMultimap<String, String> expectedTags = TreeMultimap.create();
-		expectedTags.put("host", "A");
-		expectedTags.put("host", "B");
-		expectedTags.put("client", "foo");
-		expectedTags.put("client", "bar");
-		expectedTags.put("month", "April");
+			assertThat(resTags.size(), is(5));
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
+			expectedTags.put("host", "B");
+			expectedTags.put("client", "foo");
+			expectedTags.put("client", "bar");
+			expectedTags.put("month", "April");
 
-		assertThat(resTags, is(expectedTags));
+			assertThat(resTags, is(expectedTags));
 
-		assertValues(dpg, 1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12);
-
-		dq.close();
+			assertValues(dpg, 1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12);
+		}
+		finally
+		{
+			dq.close();
+		}
 	}
 
 	@Test
@@ -449,24 +525,29 @@ public abstract class DatastoreTestHelper
 		query.setTags(tags);
 
 		DatastoreQuery dq = s_datastore.createQuery(query);
-		List<DataPointGroup> results = dq.execute();
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
 
-		assertThat(results.size(), equalTo(1));
+			assertThat(results.size(), equalTo(1));
 
-		DataPointGroup dpg = results.get(0);
+			DataPointGroup dpg = results.get(0);
 
-		assertThat(dpg.getName(), is("duplicates"));
-		SetMultimap<String, String> resTags = extractTags(dpg);
+			assertThat(dpg.getName(), is("duplicates"));
+			SetMultimap<String, String> resTags = extractTags(dpg);
 
-		assertThat(resTags.size(), is(1));
-		SetMultimap<String, String> expectedTags = TreeMultimap.create();
-		expectedTags.put("host", "A");
+			assertThat(resTags.size(), is(1));
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
 
-		assertThat(resTags, is(expectedTags));
+			assertThat(resTags, is(expectedTags));
 
-		assertValues(dpg, 42);
-
-		dq.close();
+			assertValues(dpg, 42);
+		}
+		finally
+		{
+			dq.close();
+		}
 	}
 
 	@Test
@@ -480,15 +561,154 @@ public abstract class DatastoreTestHelper
 		query.setTags(tags);
 
 		DatastoreQuery dq = s_datastore.createQuery(query);
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
 
-		List<DataPointGroup> results = dq.execute();
+			assertThat(results.size(), equalTo(1));
+			DataPointGroup dpg = results.get(0);
+			assertThat(dpg.getName(), is("metric1"));
+			assertFalse(dpg.hasNext());
+		}
+		finally
+		{
+			dq.close();
+		}
+	}
 
-		assertThat(results.size(), equalTo(1));
-		DataPointGroup dpg = results.get(0);
-		assertThat(dpg.getName(), is("metric1"));
-		assertFalse(dpg.hasNext());
+	@Test
+	public void test_queryNegativeAndPositiveTime() throws DatastoreException
+	{
+		SetMultimap<String, String> tags = HashMultimap.create();
+		QueryMetric query = new QueryMetric(-2000000000L, 0, "old_data");
+		query.setEndTime(2000000000L);
 
-		dq.close();
+		DatastoreQuery dq = s_datastore.createQuery(query);
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
+
+			assertThat(results.size(), equalTo(1));
+
+			DataPointGroup dpg = results.get(0);
+
+			assertThat(dpg.getName(), is("old_data"));
+			SetMultimap<String, String> resTags = extractTags(dpg);
+
+			assertThat(resTags.size(), is(1));
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
+
+			assertThat(resTags, is(expectedTags));
+
+			/*while (dpg.hasNext())
+				System.out.println(dpg.next());*/
+
+			assertValues(dpg, 80, 40, 20, 3, 33);
+		}
+		finally
+		{
+			dq.close();
+		}
+	}
+	
+	@Test
+	public void test_queryNegativeTime() throws DatastoreException
+	{
+		SetMultimap<String, String> tags = HashMultimap.create();
+		QueryMetric query = new QueryMetric(-2000000000L, 0, "old_data");
+		query.setEndTime(-1L);
+
+		DatastoreQuery dq = s_datastore.createQuery(query);
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
+
+			assertThat(results.size(), equalTo(1));
+
+			DataPointGroup dpg = results.get(0);
+
+			assertThat(dpg.getName(), is("old_data"));
+			SetMultimap<String, String> resTags = extractTags(dpg);
+
+			assertThat(resTags.size(), is(1));
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", "A");
+
+			assertThat(resTags, is(expectedTags));
+
+			assertValues(dpg, 80, 40, 20);
+		}
+		finally
+		{
+			dq.close();
+		}
+	}
+
+	@Test
+	public void test_queryWithUnicode() throws DatastoreException
+	{
+		SetMultimap<String, String> tags = HashMultimap.create();
+		QueryMetric query = new QueryMetric(s_startTime, 0, s_unicodeNameWithSpace);
+		query.setEndTime(s_startTime + 3000);
+
+		tags.put("host", s_unicodeName);
+		query.setTags(tags);
+
+		DatastoreQuery dq = s_datastore.createQuery(query);
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
+
+			assertThat(results.size(), equalTo(1));
+
+			DataPointGroup dpg = results.get(0);
+
+			assertThat(dpg.getName(), is(s_unicodeNameWithSpace));
+			SetMultimap<String, String> resTags = extractTags(dpg);
+
+			assertThat(resTags.size(), is(2));
+			SetMultimap<String, String> expectedTags = TreeMultimap.create();
+			expectedTags.put("host", s_unicodeName);
+			expectedTags.put("space", "space is cool");
+
+			assertThat(resTags, is(expectedTags));
+
+			assertValues(dpg, 42);
+		}
+		finally
+		{
+			dq.close();
+		}
+	}
+
+	@Test
+	public void test_notReturningTagsForEmptyData() throws DatastoreException, InterruptedException
+	{
+		QueryMetric query = new QueryMetric(s_startTime -1, 0, "delete_me");
+		query.setEndTime(s_startTime + 1);
+
+		s_datastore.delete(query);
+
+		Thread.sleep(1500);
+		//Now query for the data
+		DatastoreQuery dq = s_datastore.createQuery(query);
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
+
+			assertThat(results.size(), equalTo(1));
+
+			DataPointGroup dpg = results.get(0);
+			SetMultimap<String, String> resTags = extractTags(dpg);
+			assertThat(resTags.size(), is(0));
+
+			assertThat(dpg.hasNext(), is(false));
+		}
+		finally
+		{
+			dq.close();
+		}
 	}
 
 
@@ -503,4 +723,6 @@ public abstract class DatastoreTestHelper
 
 		assertThat(group.hasNext(), is(false));
 	}
+
+
 }

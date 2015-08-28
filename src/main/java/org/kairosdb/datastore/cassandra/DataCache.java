@@ -16,86 +16,129 @@
 
 package org.kairosdb.datastore.cassandra;
 
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- Used to keep a limited size cache in memory.  The data type must implement
- hashcode and equal methods.
+ This cache serves two purposes.
+ 1.  Cache recently inserted data
+ 2.  Create a unique store of cached data.
+
+ The primary use of this class is to store row keys so we know if the row key
+ index needs to be updated or not.  Because it uniquely stores row keys we
+ can use the same row key object over and over.  With row keys we store the
+ serialized form of the key so we only have to serialize a row key once.
+
+ The data type must implement hashcode and equal methods.
  */
 public class DataCache<T>
 {
 	private Object m_lock = new Object();
 
-	private class InternalCache extends LinkedHashMap<T, String>
+	private LinkItem<T> m_front = new LinkItem<T>(null);
+	private LinkItem<T> m_back = new LinkItem<T>(null);
+
+	private int m_maxSize;
+
+
+	private class LinkItem<T>
 	{
-		private int m_cacheSize;
+		private LinkItem<T> m_prev;
+		private LinkItem<T> m_next;
 
-		public InternalCache(int cacheSize)
-		{
-			super(16, (float)0.75, true);
-			m_cacheSize = cacheSize;
-		}
+		private final T m_data;
 
-		protected boolean removeEldestEntry(Map.Entry<T, String> entry)
+		public LinkItem(T data)
 		{
-			return (size() > m_cacheSize);
+			m_data = data;
 		}
 	}
 
-	private InternalCache m_cache;
+	//Using a ConcurrentHashMap so we can use the putIfAbsent method.
+	private ConcurrentHashMap<T, LinkItem<T>> m_hashMap;
 
 	public DataCache(int cacheSize)
 	{
-		m_cache = new InternalCache(cacheSize);
+		//m_cache = new InternalCache(cacheSize);
+		m_hashMap = new ConcurrentHashMap();
+		m_maxSize = cacheSize;
+
+		m_front.m_next = m_back;
+		m_back.m_prev = m_front;
 	}
 
 	/**
-	 Returns true if the item is already in the cache.  If the item is not
-	 in the cache the item is added.
-	 @param cacheData Item to check if in cache and or to insert into cache
-	 @return  Returns true if in cache, false otherwise.
+	 returns null if item was not in cache.  If the return is not null the item
+	 from the cache is returned.
+
+	 @param cacheData
+	 @return
 	 */
-	public boolean isCached(T cacheData)
+	public T cacheItem(T cacheData)
 	{
-		String ret;
+		LinkItem<T> mappedItem = null;
 
 		synchronized (m_lock)
 		{
-			ret = m_cache.put(cacheData, "");
+			LinkItem<T> li = new LinkItem<T>(cacheData);
+			mappedItem = m_hashMap.putIfAbsent(cacheData, li);
+
+			if (mappedItem != null)
+			{
+				remove(mappedItem);
+				addItem(mappedItem);
+			}
+			else
+				addItem(li);
+
+			if (m_hashMap.size() > m_maxSize)
+			{
+				LinkItem<T> last = m_back.m_prev;
+				remove(last);
+
+				m_hashMap.remove(last.m_data);
+			}
 		}
 
-		return (ret != null);
+		return (mappedItem == null ? null : mappedItem.m_data);
+	}
+
+	private void remove(LinkItem<T> li)
+	{
+		li.m_prev.m_next = li.m_next;
+		li.m_next.m_prev = li.m_prev;
+	}
+
+	private void addItem(LinkItem<T> li)
+	{
+		li.m_prev = m_front;
+		li.m_next = m_front.m_next;
+
+		m_front.m_next = li;
+		li.m_next.m_prev = li;
 	}
 
 	public Set<T> getCachedKeys()
 	{
-		Set<T> ret;
-		synchronized (m_lock)
-		{
-			ret = new HashSet<T>(m_cache.keySet());
-		}
-		return (ret);
+		return (m_hashMap.keySet());
 	}
 
 	public void removeKey(T key)
 	{
-		synchronized (m_lock)
-		{
-			m_cache.remove(key);
-		}
+		LinkItem<T> li = m_hashMap.remove(key);
+		remove(li);
 	}
 
-	/**
-	 * Remove everything in the cache.
-	 */
 	public void clear()
 	{
 		synchronized (m_lock)
 		{
-			m_cache.clear();
+			m_front.m_next = m_back;
+			m_back.m_prev = m_front;
+
+			m_hashMap.clear();
 		}
 	}
 }

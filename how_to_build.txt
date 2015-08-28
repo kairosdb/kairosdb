@@ -1,7 +1,7 @@
 Building requires JDK 1.6 or later.
 
 To build set your classpath to the tablesaw jar file like so:
->export CLASSPATH=tools/tablesaw-1.2.0.jar
+>export CLASSPATH=tools/tablesaw-1.2.2.jar
 
 Then to build type
 >java make

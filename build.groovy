@@ -27,8 +27,9 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "0.9.4"
-release = "6" //package release number
+version = "1.0.0-SNAPSHOT"
+release = "1" //package release number
+summary = "KairosDB"
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -66,7 +67,7 @@ if (new File("myivysettings.xml").exists())
 
 ivy.setup()
 
-buildLibraries = new RegExFileSet("lib", ".*\\.jar").recurse()
+buildLibraries = new RegExFileSet("lib", ".*\\.jar")
 		.addExcludeDir("integration")
 		.getFullFilePaths()
 
@@ -75,15 +76,24 @@ jp = new JavaProgram()
 		.setup()
 
 jc = jp.getCompileRule()
-jc.addDepend(ivy.getResolveRule("default"))
+ivyDefaultResolve = ivy.getResolveRule("default")
+jc.addDepend(ivyDefaultResolve)
 
-jc.getDefinition().set("target", "1.6")
-jc.getDefinition().set("source", "1.6")
+jc.getDefinition().set("target", "1.7")
+jc.getDefinition().set("source", "1.7")
+jc.getDefinition().set("encoding", "UTF8")
 
-additionalFiles = new RegExFileSet("src/main/java", ".*\\.sql").recurse()
-jp.getJarRule().addFileSet(additionalFiles)
 jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
+jp.getJarRule().addFiles("src/main/resources", "create.sql")
 
+
+//------------------------------------------------------------------------------
+//==-- Generate Project Pom --==
+ivy.createPomRule("pom.xml", ivy.getResolveRule("default"), ivy.getResolveRule("test"))
+		.addDepend("ivy.xml")
+		.addDepend("ivysettings.xml")
+		.setName("project-pom")
+		.setDescription("Use this target to generate a pom used for opening project in IDE")
 
 //------------------------------------------------------------------------------
 //==-- Maven POM Rule --==
@@ -95,7 +105,11 @@ pomRule = ivy.createPomRule("build/jar/pom.xml", ivy.getResolveRule("default"))
 
 //------------------------------------------------------------------------------
 //==-- Publish Artifacts --==
-PublishRule publishRule = ivy.createPublishRule(saw.getProperty("ivy.publish_resolver"),
+if (version.contains("SNAPSHOT"))
+	defaultResolver = "local-m2-publish-snapshot"
+else
+	defaultResolver = "local-m2-publish"
+PublishRule publishRule = ivy.createPublishRule(saw.getProperty("ivy.publish_resolver", defaultResolver),
 			ivy.getResolveRule("default"))
 		.setName("publish")
 		.setDescription("Publish pom and jar to maven snapshot repo")
@@ -169,7 +183,8 @@ testSources = new RegExFileSet("src/test/java", ".*Test\\.java").recurse()
 		.addExcludeFiles("CassandraDatastoreTest.java")
 		.getFilePaths()
 testCompileRule = jp.getTestCompileRule()
-testCompileRule.addDepend(ivy.getResolveRule("test"))
+ivyTestResolve = ivy.getResolveRule("test")
+testCompileRule.addDepend(ivyTestResolve)
 
 junitClasspath = new Classpath(testCompileRule.getClasspath())
 junitClasspath.addPaths(testClasspath)
@@ -180,15 +195,17 @@ junitClasspath.addPath("src/main/resources")
 junit = new JUnitRule("junit-test").addSources(testSources)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
+		.addDepends(ivyTestResolve)
 
 if (saw.getProperty("jacoco", "false").equals("true"))
 	junit.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
 
 testSourcesAll = new RegExFileSet("src/test/java", ".*Test\\.java").recurse().getFilePaths()
-junitAll = new JUnitRule("junit-test-all").setDescription("Run unit tests including Cassandra and HBase tests")
+junitAll = new JUnitRule("junit-test-all").setDescription("Run unit tests including Cassandra tests")
 		.addSources(testSourcesAll)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
+		.addDepends(ivyTestResolve)
 
 if (saw.getProperty("jacoco", "false").equals("true"))
 	junitAll.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
@@ -204,6 +221,7 @@ ivyResolve = ivy.getResolveRule("default")
 resolveIvyFileSetRule = new SimpleRule()
 		.addDepend(ivyResolve)
 		.setMakeAction("doIvyResolve")
+		.alwaysRun()
 
 def doIvyResolve(Rule rule)
 {
@@ -289,7 +307,7 @@ def doRPM(Rule rule)
 			}
 
 	if ("on".equals(rule.getProperty("dependency")))
-		rpmBuilder.addDependencyMore("jre", "1.6")
+		rpmBuilder.addDependencyMore("jre", "1.7")
 
 	rpmBuilder.setPostInstallScript(new File("src/scripts/install/post_install.sh"))
 	rpmBuilder.setPreUninstallScript(new File("src/scripts/install/pre_uninstall.sh"))
@@ -337,13 +355,20 @@ def doDeb(Rule rule)
 	//Prompt the user for the sudo password
 	//TODO: package using jdeb
 	def jpf = new JPasswordField()
-	def resp = JOptionPane.showConfirmDialog(null,
-			jpf, "Enter sudo password:",
-			JOptionPane.OK_CANCEL_OPTION)
+	def password = saw.getProperty("sudo")
 
-	if (resp == 0)
+	if (password == null)
 	{
-		def password = jpf.getPassword()
+		def resp = JOptionPane.showConfirmDialog(null,
+				jpf, "Enter sudo password:",
+				JOptionPane.OK_CANCEL_OPTION)
+
+		if (resp == 0)
+			password = jpf.getPassword()
+	}
+
+	if (password != null)
+	{
 		sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --bump=0 --to-deb $rpmFile")
 		sudo.run()
 		//pass the password to the process on stdin
@@ -411,7 +436,8 @@ def doRun(Rule rule)
 
 	//this is to load logback into classpath
 	runClasspath = jc.getClasspath()
-	runClasspath.addPath("src/main/resources")
+	runClasspath.addPaths(ivyDefaultResolve.getClasspath())
+	runClasspath.addPath("src/main/resources").addPath("src/main/java")
 	ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
 	println(ret);
 }
@@ -440,12 +466,13 @@ def doGenorm(Rule rule)
 //------------------------------------------------------------------------------
 //Build Integration tests
 integrationClassPath = new Classpath(jp.getLibraryJars())
-		.addPaths(new RegExFileSet("lib/ivy/integration", ".*\\.jar").getFullFilePaths())
+		//.addPaths(new RegExFileSet("lib/ivy/integration", ".*\\.jar").getFullFilePaths())
 		.addPath("src/integration-test/resources")
 
 integrationBuildRule = new JavaCRule("build/integration")
 		.addSourceDir("src/integration-test/java")
 		.addClasspath(integrationClassPath)
+		.addDepend(ivy.getResolveRule("integration"))
 
 new SimpleRule("integration")
 		.setMakeAction("doIntegration")

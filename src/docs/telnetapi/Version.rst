@@ -6,14 +6,14 @@ The version command returns the product name (KairosDB) and its version.
 
 ::
 
- version /n
+ version \n
 
 The output looks like this
 
 ::
 
   KairosDB
-  0.9.4
+  1.0.0
 
 
 Here is an simple example using netcat.

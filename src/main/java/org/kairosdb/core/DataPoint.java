@@ -2,6 +2,7 @@ package org.kairosdb.core;
 
 import org.json.JSONException;
 import org.json.JSONWriter;
+import org.kairosdb.core.datastore.DataPointGroup;
 
 import java.io.DataOutput;
 import java.io.IOException;
@@ -49,5 +50,7 @@ public interface DataPoint
 	public long getLongValue();
 	public boolean isDouble();
 	public double getDoubleValue();
+	public DataPointGroup getDataPointGroup();
+	public void setDataPointGroup(DataPointGroup dataPointGroup);
 
 }

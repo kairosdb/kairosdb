@@ -23,22 +23,27 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.google.gson.Gson;
 import com.google.inject.*;
+import com.google.inject.util.Modules;
 import org.apache.commons.io.FileUtils;
 import org.h2.util.StringUtils;
 import org.json.JSONException;
 import org.json.JSONWriter;
+import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
-import org.kairosdb.core.http.rest.json.JsonMetricParser;
+import org.kairosdb.core.http.rest.json.DataPointsParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
+import org.kairosdb.util.PluginClassLoader;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.*;
 
@@ -47,7 +52,8 @@ public class Main
 	public static final Logger logger = (Logger) LoggerFactory.getLogger(Main.class);
 
 	public static final Charset UTF_8 = Charset.forName("UTF-8");
-	public static final String SERVICE_PREFIX = "kairosdb.service";
+	public static final String SERVICE_PREFIX = "kairosdb.service.";
+	public static final String SERVICE_FOLDER_PREFIX = "kairosdb.service_folder.";
 
 	private final static Object s_shutdownObject = new Object();
 
@@ -93,6 +99,23 @@ public class Main
 		}
 	}
 
+	private URL[] getJarsInPath(String path) throws MalformedURLException
+	{
+		List<URL> jars = new ArrayList<URL>();
+		File libDir = new File(path);
+		File[] fileList = libDir.listFiles();
+		for (File f : fileList)
+		{
+			if (f.getName().endsWith(".jar"))
+			{
+				jars.add(f.toURI().toURL());
+			}
+		}
+
+		System.out.println(jars);
+		return jars.toArray(new URL[0]);
+	}
+
 
 	public Main(File propertiesFile) throws IOException
 	{
@@ -123,7 +146,17 @@ public class Main
 					if ("".equals(props.getProperty(propName)))
 						continue;
 
-					aClass = Class.forName(props.getProperty(propName));
+					String serviceName = propName.substring(SERVICE_PREFIX.length());
+
+					String pluginFolder = props.getProperty(SERVICE_FOLDER_PREFIX+serviceName);
+
+					ClassLoader pluginLoader = this.getClass().getClassLoader();
+					if (pluginFolder != null)
+					{
+						pluginLoader = new PluginClassLoader(getJarsInPath(pluginFolder), pluginLoader);
+					}
+
+					aClass = pluginLoader.loadClass(props.getProperty(propName));
 					if (Module.class.isAssignableFrom(aClass))
 					{
 						Constructor<?> constructor = null;
@@ -146,7 +179,13 @@ public class Main
 						else
 							mod = (Module) aClass.newInstance();
 
-						moduleList.add(mod);
+						if (mod instanceof CoreModule)
+						{
+							mod = Modules.override(moduleList.get(0)).with(mod);
+							moduleList.set(0, mod);
+						}
+						else
+							moduleList.add(mod);
 					}
 				}
 				catch (Exception e)
@@ -216,8 +255,9 @@ public class Main
 			}
 			else
 			{
-				main.runExport(new OutputStreamWriter(System.out, "UTF-8"), arguments.exportMetricNames);
-				System.out.flush();
+				OutputStreamWriter writer = new OutputStreamWriter(System.out, "UTF-8");
+				main.runExport(writer, arguments.exportMetricNames);
+				writer.flush();
 			}
 
 			main.stopServices();
@@ -267,6 +307,7 @@ public class Main
 				logger.info("     KairosDB service started");
 				logger.info("------------------------------------------");
 
+				//main.runMissTest();
 				waitForShutdown();
 			}
 			catch (Exception e)
@@ -288,6 +329,35 @@ public class Main
 	public Injector getInjector()
 	{
 		return (m_injector);
+	}
+
+	public void runMissTest()
+	{
+		try
+		{
+			KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
+
+			long start = System.currentTimeMillis();
+			int I;
+
+			for (I = 0; I < 100000; I++)
+			{
+				String metricName = UUID.randomUUID().toString();
+				DatastoreQuery query = ds.createQuery(new QueryMetric(0, 0, "abc123" + metricName));
+				query.execute();
+				query.close();
+			}
+
+			long stop = System.currentTimeMillis();
+			long time = stop - start;
+			System.out.println(time);
+			System.out.println((I * 1000) / time);
+
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	public void runExport(Writer out, List<String> metricNames) throws DatastoreException, IOException
@@ -335,10 +405,10 @@ public class Main
 		String line;
 		while ((line = reader.readLine()) != null)
 		{
-			JsonMetricParser jsonMetricParser = new JsonMetricParser(ds, new StringReader(line),
+			DataPointsParser dataPointsParser = new DataPointsParser(ds, new StringReader(line),
 					gson, dpFactory);
 
-			ValidationErrors validationErrors = jsonMetricParser.parse();
+			ValidationErrors validationErrors = dataPointsParser.parse();
 
 			for (String error : validationErrors.getErrors())
 			{

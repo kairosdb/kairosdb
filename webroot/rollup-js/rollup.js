@@ -2,7 +2,15 @@ var app = angular.module('myApp', []);
 app.controller('rollupController', function ($scope, $http) {
 	$http.get("http://localhost:8080/api/v1/rollups/rollup") //todo don't hard code
 		.success(function (response) {
-			$scope.rollups = response;
+			if (response)
+				$scope.rollups = response;
+			else
+				$scope.rollups = [];
+
+			console.log(response);
+		})
+		.error(function (data, status, headers, config) {
+			alert("failure message: " + JSON.stringify({data: data}));
 		});
 
 	$scope.toHumanReadableCron = function (schedule) {
@@ -51,9 +59,13 @@ app.controller('rollupController', function ($scope, $http) {
 
 	$scope.addRollup = function () {
 		var newRollup = {
-			start_relative: {value: 1, unit: 'hours'},
 			schedule: '0 * * * * ?',
-			targets: [{}]
+			rollups: [{
+				query: {
+					start_relative: {value: 1, unit: 'hours'},
+					metrics: [{}]
+				}
+			}]
 		};
 		newRollup.edit = true;
 		$scope.rollups.push(newRollup);
@@ -69,10 +81,9 @@ app.controller('rollupController', function ($scope, $http) {
 	};
 
 	$scope.postRollup = function (rollup) {
-		var dataObj = [];
-		dataObj.push(rollup);
+		// todo need to remove "edit" property
 
-		var res = $http.post('/api/v1/rollups/rollup', dataObj); // todo don't hardcode?
+		var res = $http.post('/api/v1/rollups/rollup', rollup); // todo don't hardcode?
 		res.success(function (data, status, headers, config) {
 			//$scope.message = data;
 			console.log(status);

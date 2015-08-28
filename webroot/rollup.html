@@ -31,7 +31,7 @@
 			<th data-field="metric-name" data-sortable="true">Metric Name</th>
 			<th data-field="execute" data-sortable="true">Execute</th>
 			<th data-field="look-back" data-sortable="true">Look Back</th>
-			<th data-field="target" data-sortable="true">Target Name</th>
+			<th data-field="target" data-sortable="true">Save As</th>
 			<th></th>
 		</tr>
 		</thead>
@@ -44,8 +44,9 @@
 			</td>
 
 			<td>
-				<span ng-hide="rollup.edit">{{ rollup.metric_name }}</span>
-				<input type='text' ng-model="rollup.metric_name"
+				<span ng-hide="rollup.edit">{{ rollup.rollups[0].query.metrics[0].name }}</span>
+				<input type='text'
+					   ng-model="rollup.rollups[0].query.metrics[0].name"
 					   ng-hide="!rollup.edit"/>
 			</td>
 			<td>
@@ -74,7 +75,8 @@
 							type="button" id="startTimeDropdown"
 							data-toggle="dropdown" aria-haspopup="true"
 							aria-expanded="true" ng-disabled="!rollup.edit">
-						{{ toHumanReadableTimeUnit(rollup.start_relative)}}
+						{{
+						toHumanReadableTimeUnit(rollup.rollups[0].query.start_relative)}}
 						<span class="caret"></span>
 					</button>
 					<ul class="dropdown-menu"
@@ -89,8 +91,8 @@
 				</div>
 			</td>
 			<td>
-				<span ng-hide="rollup.edit">{{ rollup.targets[0].name }}</span>
-				<input type='text' ng-model="rollup.targets[0].name"
+				<span ng-hide="rollup.edit">{{ rollup.rollups[0].save_as}}</span>
+				<input type='text' ng-model="rollup.rollups[0].save_as"
 					   ng-hide="!rollup.edit"/>
 			</td>
 			<td>

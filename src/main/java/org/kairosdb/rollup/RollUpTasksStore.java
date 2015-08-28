@@ -1,7 +1,6 @@
 package org.kairosdb.rollup;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * Manages access to the roll up task store.
@@ -13,20 +12,20 @@ public interface RollUpTasksStore
 	 *
 	 * @param tasks tasks to write to the store.
 	 */
-	public void write(List<RollUpTask> tasks) throws RollUpException;
+	void write(List<RollupTask> tasks) throws RollUpException;
 
 	/**
 	 * Reads all tasks from the store
 	 *
 	 * @return all roll up tasks
 	 */
-	public List<RollUpTask> read() throws RollUpException;
-
+	List<RollupTask> read() throws RollUpException;
 	/**
 	 * Returns the time the store was last modified.
+
 	 *
 	 * @return last modified time
 	 */
-	public long lastModifiedTime() throws RollUpException;
+	long lastModifiedTime() throws RollUpException;
 
 }

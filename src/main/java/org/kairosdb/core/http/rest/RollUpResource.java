@@ -1,5 +1,6 @@
 package org.kairosdb.core.http.rest;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
@@ -9,8 +10,8 @@ import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
 import org.kairosdb.rollup.RollUpException;
 import org.kairosdb.rollup.RollUpManager;
-import org.kairosdb.rollup.RollUpTask;
 import org.kairosdb.rollup.RollUpTasksStore;
+import org.kairosdb.rollup.RollupTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,20 +81,14 @@ public class RollUpResource
 	{
 		try
 		{
-			List<RollUpTask> tasks = parser.parseRollUpTask(json);
-			//			manager.addTasks(tasks);
+			RollupTask task = parser.parseRollUpTask(json);
 
-			List<RollupResponse> rollup_tasks = new ArrayList<RollupResponse>();
-			for (RollUpTask task : tasks)
-			{
-				rollup_tasks.add(new RollupResponse(task.getId(), "todo", "/api/v1/rollups/" + task.getId()));
-			}
+			RollupResponse rollupResponse = new RollupResponse(task.getId(), "todo", "/api/v1/rollups/" + task.getId());
 
-			store.write(tasks);
+			store.write(ImmutableList.of(task));
 
-//			Response.ok(parser.getGson().toJson(rollup_tasks), MediaType.APPLICATION_JSON).build();
 			Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
-					parser.getGson().toJson(rollup_tasks));
+					parser.getGson().toJson(rollupResponse));
 			setHeaders(responseBuilder);
 			return responseBuilder.build();
 		}
@@ -123,9 +117,20 @@ public class RollUpResource
 		try
 		{
 			// todo need to check for null and return empty list
-			List<RollUpTask> tasks = store.read();
-			String json = parser.getGson().toJson(tasks);
-			Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(json);
+			List<RollupTask> tasks = store.read();
+
+			StringBuilder json = new StringBuilder();
+			json.append('[');
+			for (RollupTask task : tasks)
+			{
+				json.append(task.getJson()).append(",");
+			}
+
+			if (json.length() > 1)
+				json.deleteCharAt(json.length() - 1);
+			json.append(']');
+
+			Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(json.toString());
 			setHeaders(responseBuilder);
 			return responseBuilder.build();
 		}

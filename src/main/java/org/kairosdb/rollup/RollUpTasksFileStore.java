@@ -1,35 +1,43 @@
 package org.kairosdb.rollup;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.commons.io.FileUtils;
+import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.core.http.rest.json.QueryParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 /**
- * Manages access to the roll up task store
+ Manages access to the roll up task store
  */
 public class RollUpTasksFileStore implements RollUpTasksStore
 {
+	private static final Logger logger = LoggerFactory.getLogger(RollUpTasksFileStore.class);
 	private static final String FILE_NAME = "rollup.config";
 
 	private final ReentrantLock lock = new ReentrantLock();
 	private final QueryParser parser;
 	private final File configFile;
+	private final Map<String, RollupTask> rollups = new HashMap<String, RollupTask>();
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public RollUpTasksFileStore(@Named("STORE_DIRECTORY") String storeDirectory,
-			QueryParser parser) throws IOException
+			QueryParser parser) throws IOException, RollUpException
 	{
 		checkNotNullOrEmpty(storeDirectory);
 		checkNotNull(parser);
@@ -37,21 +45,26 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 		configFile = new File(storeDirectory, FILE_NAME); // todo need to create the dir if it doesn't exist?
 		configFile.createNewFile();
 		this.parser = parser;
+
+		readFromFile();
 	}
 
 	@Override
-	public void write(List<RollUpTask> tasks) throws RollUpException
+	public void write(List<RollupTask> tasks) throws RollUpException
 	{
-		List<RollUpTask> existingTasks = read();
-		existingTasks.removeAll(tasks);
-		existingTasks.addAll(tasks);
-
-		String json = parser.getGson().toJson(existingTasks);
-
 		lock.lock();
 		try
 		{
-			FileUtils.writeStringToFile(configFile, json, Charset.forName("UTF-8"));
+			for (RollupTask task : tasks)
+			{
+				rollups.put(task.getId(), task);
+			}
+
+			FileUtils.deleteQuietly(configFile);
+			for (RollupTask task : rollups.values())
+			{
+				FileUtils.writeLines(configFile, ImmutableList.of(task.getJson()), true);
+			}
 		}
 		catch (IOException e)
 		{
@@ -64,17 +77,38 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 	}
 
 	@Override
-	public List<RollUpTask> read() throws RollUpException
+	public List<RollupTask> read() throws RollUpException
 	{
 		lock.lock();
 		try
 		{
-			String json = FileUtils.readFileToString(configFile, Charset.forName("UTF-8"));
+			return new ArrayList<RollupTask>(rollups.values());
+		}
+		finally
+		{
+			lock.unlock();
+		}
+	}
 
-			List<RollUpTask> rollUpTasks = parser.parseRollUpTask(json);
-			if (rollUpTasks == null)
-				rollUpTasks = new ArrayList<RollUpTask>();
-			return rollUpTasks;
+	private void readFromFile() throws RollUpException
+	{
+		lock.lock();
+		try
+		{
+			List<String> taskJson = FileUtils.readLines(configFile, Charset.forName("UTF-8"));
+			for (String json : taskJson)
+			{
+				try
+				{
+					RollupTask task = parser.parseRollUpTask(json);
+					if (task != null)
+						rollups.put(task.getId(), task);
+				}
+				catch (QueryException e)
+				{
+					logger.error("Could no parse rollup task from json: " + json);
+				}
+			}
 		}
 		catch (IOException e)
 		{

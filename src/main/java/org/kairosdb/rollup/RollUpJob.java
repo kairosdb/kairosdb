@@ -30,7 +30,7 @@ public class RollUpJob implements InterruptableJob
 	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
 	{
 		JobDataMap dataMap = jobExecutionContext.getMergedJobDataMap();
-		RollUpTask task = (RollUpTask) dataMap.get("task");
+		RollupTask task = (RollupTask) dataMap.get("task");
 		checkState(task != null, "Task was null");
 
 		long now = System.currentTimeMillis();

@@ -11,7 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
@@ -60,7 +63,7 @@ public class RollUpManager implements KairosDBJob
 			if (lastModified > tasksLastModified)
 			{
 				logger.info("Reading rollup task config");
-				List<RollUpTask> updatedTasks = taskStore.read();
+				List<RollupTask> updatedTasks = taskStore.read();
 
 				scheduleNewTasks(updatedTasks);
 				unscheduledRemovedTasks(updatedTasks);
@@ -81,9 +84,9 @@ public class RollUpManager implements KairosDBJob
 		// todo?
 	}
 
-	private void updateScheduledTasks(List<RollUpTask> updatedTasks)
+	private void updateScheduledTasks(List<RollupTask> updatedTasks)
 	{
-		for (RollUpTask task : updatedTasks)
+		for (RollupTask task : updatedTasks)
 		{
 			Long timestamp = taskIdToTimeMap.get(task.getId());
 			if (neverScheduledOrChanged(task, timestamp))
@@ -100,7 +103,7 @@ public class RollUpManager implements KairosDBJob
 
 				try
 				{
-					logger.info("Updating schedule for rollup " + task.getMetricName());
+					logger.info("Updating schedule for rollup " + task.getName());
 					JobDetailImpl jobDetail = createJobDetail(task);
 					scheduler.schedule(jobDetail, createTrigger(task));
 				}
@@ -115,12 +118,12 @@ public class RollUpManager implements KairosDBJob
 		}
 	}
 
-	private boolean neverScheduledOrChanged(RollUpTask task, Long timestamp)
+	private boolean neverScheduledOrChanged(RollupTask task, Long timestamp)
 	{
 		return timestamp != null && task.getTimestamp() > timestamp;
 	}
 
-	private void unscheduledRemovedTasks(List<RollUpTask> tasks)
+	private void unscheduledRemovedTasks(List<RollupTask> tasks)
 	{
 		// todo more elegant way to do this
 		Iterator<String> iterator = taskIdToTimeMap.keySet().iterator();
@@ -128,9 +131,9 @@ public class RollUpManager implements KairosDBJob
 		{
 			String id = iterator.next();
 
-			RollUpTask currentTask = null;
-			RollUpTask foundTask = null;
-			for (RollUpTask task : tasks)
+			RollupTask currentTask = null;
+			RollupTask foundTask = null;
+			for (RollupTask task : tasks)
 			{
 				currentTask = task;
 				if (task.getId().equals(id))
@@ -144,27 +147,27 @@ public class RollUpManager implements KairosDBJob
 			{
 				try
 				{
-					logger.info("Cancelling rollup " + currentTask.getMetricName());
+					logger.info("Cancelling rollup " + currentTask.getName());
 					iterator.remove();
 					scheduler.cancel(id);
 				}
 				catch (KairosDBException e)
 				{
-					logger.error("Could not cancel roll up task job " + currentTask.getMetricName(), e);
+					logger.error("Could not cancel roll up task job " + currentTask.getName(), e);
 				}
 			}
 		}
 	}
 
-	private void scheduleNewTasks(List<RollUpTask> tasks)
+	private void scheduleNewTasks(List<RollupTask> tasks)
 	{
-		for (RollUpTask task : tasks)
+		for (RollupTask task : tasks)
 		{
 			if (!taskIdToTimeMap.containsKey(task.getId()))
 			{
 				try
 				{
-					logger.info("Scheduling rollup " + task.getMetricName());
+					logger.info("Scheduling rollup " + task.getName());
 					scheduler.schedule(createJobDetail(task), createTrigger(task));
 					taskIdToTimeMap.put(task.getId(), task.getTimestamp());
 				}
@@ -176,7 +179,7 @@ public class RollUpManager implements KairosDBJob
 		}
 	}
 
-	private static JobDetailImpl createJobDetail(RollUpTask task)
+	private static JobDetailImpl createJobDetail(RollupTask task)
 	{
 		JobDetailImpl jobDetail = new JobDetailImpl();
 		jobDetail.setJobClass(RollUpJob.class);
@@ -188,7 +191,7 @@ public class RollUpManager implements KairosDBJob
 		return jobDetail;
 	}
 
-	private static Trigger createTrigger(RollUpTask task)
+	private static Trigger createTrigger(RollupTask task)
 	{
 		return newTrigger()
 				.withIdentity(task.getId() + "-" + task.getClass().getSimpleName())

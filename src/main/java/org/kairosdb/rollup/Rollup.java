@@ -34,6 +34,7 @@ public class Rollup
 
 	public void addQueries(List<QueryMetric> queries)
 	{
+
 		this.queryMetrics.addAll(queries);
 	}
 }

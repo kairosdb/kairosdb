@@ -28,7 +28,7 @@ public class SaveAsAggregator implements Aggregator
 	public SaveAsAggregator(Datastore datastore)
 	{
 		m_datastore = datastore;
-		m_tags = new HashMap<>();
+		m_tags = new HashMap<String, String>();
 	}
 
 	public void setMetricName(String metricName)

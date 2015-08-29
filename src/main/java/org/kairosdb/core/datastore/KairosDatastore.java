@@ -169,6 +169,11 @@ public class KairosDatastore
 		cleanDirectory(dir);
 	}
 
+	public Datastore getDatastore()
+	{
+		return m_datastore;
+	}
+
 	/**
 	 * Close the datastore
 	 */

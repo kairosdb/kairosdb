@@ -3,24 +3,21 @@
 curl -s http://localhost:8080/api/v1/rollups/rollup -XPOST -H'Content-type:application/json' -d '
 	{
 		"name": "monthly-rollup",
-        "schedule": "* * * * * ?",
+        "schedule": "0 * * * * ?",
         "rollups": [
          {
-	         "save_as": "metric2",
+	         "save_as": "rolluptest1",
 	         "tags": {},
              "query":
              {
+              "cache_time": 0,
 			   "start_relative": {
-                    "value": "5",
-                    "unit": "minutes"
+                    "value": "1",
+                    "unit": "hours"
                 },
 			   "metrics": [
                 {
-                    "tags": {
-                        "host": ["foo", "foo2"],
-                        "customer": ["bar"]
-                    },
-                    "name": "abc.123",
+                    "name": "kairosdb.http.query_time",
                     "limit": 10000,
                     "aggregators": [
                     {

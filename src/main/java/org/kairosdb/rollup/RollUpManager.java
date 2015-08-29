@@ -2,6 +2,7 @@ package org.kairosdb.rollup;
 
 
 import com.google.inject.name.Named;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.scheduler.KairosDBJob;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
@@ -30,17 +31,19 @@ public class RollUpManager implements KairosDBJob
 	private final RollUpTasksStore taskStore;
 	private final KairosDBScheduler scheduler;
 	private final Map<String, Long> taskIdToTimeMap = new HashMap<String, Long>();
+	private final KairosDatastore dataStore;
 
 	private long tasksLastModified;
 
 	@Inject
 	public RollUpManager(
 			@Named(SCHEDULE) String schedule,
-			RollUpTasksStore taskStore, KairosDBScheduler scheduler)
+			RollUpTasksStore taskStore, KairosDBScheduler scheduler, KairosDatastore dataStore)
 	{
 		this.schedule = checkNotNullOrEmpty(schedule);
 		this.taskStore = checkNotNull(taskStore);
 		this.scheduler = checkNotNull(scheduler);
+		this.dataStore = checkNotNull(dataStore);
 	}
 
 	@Override
@@ -104,7 +107,7 @@ public class RollUpManager implements KairosDBJob
 				try
 				{
 					logger.info("Updating schedule for rollup " + task.getName());
-					JobDetailImpl jobDetail = createJobDetail(task);
+					JobDetailImpl jobDetail = createJobDetail(task, dataStore);
 					scheduler.schedule(jobDetail, createTrigger(task));
 				}
 				catch (KairosDBException e)
@@ -168,7 +171,7 @@ public class RollUpManager implements KairosDBJob
 				try
 				{
 					logger.info("Scheduling rollup " + task.getName());
-					scheduler.schedule(createJobDetail(task), createTrigger(task));
+					scheduler.schedule(createJobDetail(task, dataStore), createTrigger(task));
 					taskIdToTimeMap.put(task.getId(), task.getTimestamp());
 				}
 				catch (KairosDBException e)
@@ -179,7 +182,7 @@ public class RollUpManager implements KairosDBJob
 		}
 	}
 
-	private static JobDetailImpl createJobDetail(RollupTask task)
+	private static JobDetailImpl createJobDetail(RollupTask task, KairosDatastore dataStore)
 	{
 		JobDetailImpl jobDetail = new JobDetailImpl();
 		jobDetail.setJobClass(RollUpJob.class);
@@ -187,6 +190,7 @@ public class RollUpManager implements KairosDBJob
 
 		JobDataMap map = new JobDataMap();
 		map.put("task", task);
+		map.put("datastore", dataStore);
 		jobDetail.setJobDataMap(map);
 		return jobDetail;
 	}

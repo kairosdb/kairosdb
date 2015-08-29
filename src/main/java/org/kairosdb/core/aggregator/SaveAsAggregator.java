@@ -31,6 +31,12 @@ public class SaveAsAggregator implements Aggregator
 		m_tags = new HashMap<String, String>();
 	}
 
+	public SaveAsAggregator(Datastore datastore, String metricName)
+	{
+		this(datastore);
+		m_metricName = metricName;
+	}
+
 	public void setMetricName(String metricName)
 	{
 		m_metricName = metricName;

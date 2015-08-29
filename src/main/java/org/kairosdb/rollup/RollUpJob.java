@@ -3,6 +3,7 @@ package org.kairosdb.rollup;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.SaveAsAggregator;
 import org.kairosdb.core.aggregator.TrimAggregator;
+import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
@@ -14,6 +15,8 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 import static com.google.inject.internal.util.$Preconditions.checkState;
 
@@ -41,6 +44,7 @@ public class RollUpJob implements InterruptableJob
 		try
 		{
 			//noinspection ConstantConditions
+
 			for (Rollup rollup : task.getRollups())
 			{
 				if (interrupted)
@@ -58,12 +62,21 @@ public class RollUpJob implements InterruptableJob
 					{
 
 						//noinspection ConstantConditions
-						queryMetric.addAggregator(new SaveAsAggregator(datastore.getDatastore()));
+						queryMetric.addAggregator(new SaveAsAggregator(datastore.getDatastore(), rollup.getSaveAs()));
 					}
 
 					//noinspection ConstantConditions
 					dq = datastore.createQuery(queryMetric);
-					dq.execute();
+					List<DataPointGroup> result = dq.execute();
+
+					for (DataPointGroup dataPointGroup : result)
+					{
+						while (dataPointGroup.hasNext())
+						{
+							dataPointGroup.next();
+						}
+					}
+
 					// todo add metrics about query
 					//			ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
 				}

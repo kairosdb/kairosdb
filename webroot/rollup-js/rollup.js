@@ -49,12 +49,35 @@ app.controller('rollupController', function ($scope, $http) {
 		'0 0 * * sat ?'   // once a week
 	];
 
+	$scope.aggregators = ["sum", "avg", "min", "max"];
+
+	$scope.samplingTimes = [
+		{value: 1, unit: "minutes"},
+		{value: 5, unit: "minutes"},
+		{value: 10, unit: "minutes"},
+		{value: 15, unit: "minutes"},
+		{value: 20, unit: "minutes"},
+		{value: 30, unit: "minutes"},
+		{value: 1, unit: "hours"},
+		{value: 6, unit: "hours"},
+		{value: 1, unit: "days"},
+		{value: 1, unit: "weeks"}
+	];
+
 	$scope.scheduleModified = function (rollup, item) {
 		rollup.schedule = item;
 	};
 
 	$scope.startTimeModified = function (rollup, item) {
-		rollup.start_relative = item;
+		rollup.rollups[0].query.start_relative = item;
+	};
+
+	$scope.aggregatorModified = function (rollup, item) {
+		rollup.rollups[0].query.metrics[0].aggregators[0].name = item;
+	};
+
+	$scope.aggregatorSamplingModified = function (rollup, item) {
+		rollup.rollups[0].query.metrics[0].aggregators[0].sampling = item;
 	};
 
 	$scope.addRollup = function () {
@@ -63,7 +86,12 @@ app.controller('rollupController', function ($scope, $http) {
 			rollups: [{
 				query: {
 					start_relative: {value: 1, unit: 'hours'},
-					metrics: [{}]
+					metrics: [{
+						aggregators: [{
+							name: "sum",
+							sampling: {value: 1, unit: 'minutes'}
+						}]
+					}]
 				}
 			}]
 		};

@@ -29,10 +29,7 @@ import com.google.inject.Inject;
 import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.joda.time.DateTimeZone;
-import org.kairosdb.core.aggregator.Aggregator;
-import org.kairosdb.core.aggregator.AggregatorFactory;
-import org.kairosdb.core.aggregator.RangeAggregator;
-import org.kairosdb.core.aggregator.TimezoneAware;
+import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByFactory;
@@ -261,6 +258,19 @@ public class QueryParser
 
 			JsonObject queryObject = rollupObject.getAsJsonObject("query");
 			List<QueryMetric> queries = parseQueryMetric(queryObject);
+
+			for (QueryMetric query : queries)
+			{
+				// Add aggregators needed for rollups
+				SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_aggregatorFactory.createAggregator("save_as");
+				saveAsAggregator.setMetricName(rollup.getSaveAs());
+
+				TrimAggregator trimAggregator = (TrimAggregator) m_aggregatorFactory.createAggregator("trim");
+				trimAggregator.setTrim(TrimAggregator.Trim.LAST);
+
+				query.addAggregator(saveAsAggregator);
+				query.addAggregator(trimAggregator);
+			}
 
 			rollup.addQueries(queries);
 			task.addRollup(rollup);

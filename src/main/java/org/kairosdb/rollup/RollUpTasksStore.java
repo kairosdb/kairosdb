@@ -1,5 +1,6 @@
 package org.kairosdb.rollup;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -28,4 +29,5 @@ public interface RollUpTasksStore
 	 */
 	long lastModifiedTime() throws RollUpException;
 
+	void remove(String id) throws IOException;
 }

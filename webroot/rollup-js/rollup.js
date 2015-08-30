@@ -1,6 +1,6 @@
 var app = angular.module('myApp', []);
 app.controller('rollupController', function ($scope, $http) {
-	$http.get("http://localhost:8080/api/v1/rollups/rollup") //todo don't hard code
+	$http.get("/api/v1/rollups/rollup") //todo don't hard code
 		.success(function (response) {
 			if (response)
 				$scope.rollups = response;
@@ -106,6 +106,20 @@ app.controller('rollupController', function ($scope, $http) {
 	$scope.saveRollup = function (rollup) {
 		$scope.postRollup(rollup);
 		rollup.edit = false;
+	};
+
+	$scope.deleteRollup = function (rollup) {
+		var res = $http.delete('/api/v1/rollups/delete/' + rollup.id); // todo don't hardcode?
+		res.success(function (data, status, headers, config) {
+			var i = $scope.rollups.indexOf(rollup);
+			if (i != -1) {
+				$scope.rollups.splice(i, 1);
+			}
+			console.log(status);
+		});
+		res.error(function (data, status, headers, config) {
+			alert("failure message: " + JSON.stringify({data: data}));
+		});
 	};
 
 	$scope.postRollup = function (rollup) {

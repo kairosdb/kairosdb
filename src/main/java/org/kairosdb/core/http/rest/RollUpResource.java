@@ -160,9 +160,18 @@ public class RollUpResource
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("delete/{id}")
-	public Response delete(@PathParam("id") String id) throws Exception
+	public Response delete(@PathParam("id") String id)
 	{
-		//		manager.removeTask(id);
+		try
+		{
+			store.remove(id);
+		}
+		catch (IOException e)
+		{
+			// todo
+			logger.error("Failed to remove roll up.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
 		return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
 	}
 

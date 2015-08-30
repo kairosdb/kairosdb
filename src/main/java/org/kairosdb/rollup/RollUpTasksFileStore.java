@@ -60,11 +60,7 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 				rollups.put(task.getId(), task);
 			}
 
-			FileUtils.deleteQuietly(configFile);
-			for (RollupTask task : rollups.values())
-			{
-				FileUtils.writeLines(configFile, ImmutableList.of(task.getJson()), true);
-			}
+			writeTasks();
 		}
 		catch (IOException e)
 		{
@@ -73,6 +69,15 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 		finally
 		{
 			lock.unlock();
+		}
+	}
+
+	private void writeTasks() throws IOException
+	{
+		FileUtils.deleteQuietly(configFile);
+		for (RollupTask task : rollups.values())
+		{
+			FileUtils.writeLines(configFile, ImmutableList.of(task.getJson()), true);
 		}
 	}
 
@@ -113,6 +118,21 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 		catch (IOException e)
 		{
 			throw new RollUpException("Failed to read roll up tasks from " + configFile.getAbsolutePath(), e);
+		}
+		finally
+		{
+			lock.unlock();
+		}
+	}
+
+	@Override
+	public void remove(String id) throws IOException
+	{
+		lock.lock();
+		try
+		{
+			rollups.remove(id);
+			writeTasks();
 		}
 		finally
 		{

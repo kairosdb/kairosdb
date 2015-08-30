@@ -21,7 +21,7 @@
 
 <div class="container-fluid">
 	<div class="page-header">
-		<h1 class="text-center" style="">Roll-ups</h1>
+		<h1 class="text-center text-info">Roll-ups</h1>
 	</div>
 	<a href="#" ng-click="addRollup()"
 	   class="btn btn-primary btn-lg btn-circle pull-right"><span
@@ -30,7 +30,7 @@
 	<table class="table table-striped" data-sort-name="metric-name"
 		   data-sort-order="asc">
 		<thead>
-		<tr>
+		<tr class="text-info">
 			<th data-field="name" data-sortable="true">Roll-up Name</th>
 			<th data-field="metric-name" data-sortable="true">Metric Name</th>
 			<th data-field="execute" data-sortable="true">Execute</th>
@@ -151,15 +151,22 @@
 					   ng-hide="!rollup.edit"/>
 			</td>
 			<td>
-				<button class="btn" ng-click="editRollup(rollup)"
+				<button class="btn btn-primary" ng-click="editRollup(rollup)"
 						ng-hide="rollup.edit">
 					<span class="glyphicon glyphicon-pencil"></span>&nbsp;&nbsp;Edit
 				</button>
-				<button class="btn" ng-click="saveRollup(rollup)"
+				<button class="btn btn-success" ng-click="saveRollup(rollup)"
 						ng-hide="!rollup.edit">
 					<span class="glyphicon glyphicon-save"></span>&nbsp;&nbsp;Save
 				</button>
 			</td>
+			<td>
+				<button class="btn btn-primary" ng-click="deleteRollup(rollup)">
+					<span class="glyphicon glyphicon-remove"></span>&nbsp;&nbsp;Delete
+				</button>
+
+			</td>
+			<td></td>
 		</tr>
 		</tbody>
 	</table>

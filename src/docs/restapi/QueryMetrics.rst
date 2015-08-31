@@ -74,51 +74,51 @@ Request
 Body
 ----
 
-::
+.. code-block:: json
 
- {
-    "start_absolute": 1357023600000,
-    "end_relative": {
-        "value": "5",
-        "unit": "days"
-    },
-    "time_zone": "Asia/Kabul",
-    "metrics": [
-        {
-            "tags": {
-                "host": ["foo", "foo2"],
-                "customer": ["bar"]
-            },
-            "name": "abc.123",
-            "limit": 10000
-            "aggregators": [
-                {
-                    "name": "sum",
-                    "sampling": {
-                        "value": 10,
-                        "unit": "minutes"
-                    }
-                }
-            ]
-        },
-        {
-            "tags": {
-                "host": ["foo", "foo2"],
-                "customer": ["bar"]
-            },
-            "name": "xyz.123",
-            "aggregators": [
-                {
-                    "name": "avg",
-                    "sampling": {
-                        "value": 10,
-                        "unit": "minutes"
-                    }
-                }
-            ]
-        }
-    ]
- }
+   {
+      "start_absolute": 1357023600000,
+      "end_relative": {
+          "value": "5",
+          "unit": "days"
+      },
+      "time_zone": "Asia/Kabul",
+      "metrics": [
+          {
+              "tags": {
+                  "host": ["foo", "foo2"],
+                  "customer": ["bar"]
+              },
+              "name": "abc.123",
+              "limit": 10000
+              "aggregators": [
+                  {
+                      "name": "sum",
+                      "sampling": {
+                          "value": 10,
+                          "unit": "minutes"
+                      }
+                  }
+              ]
+          },
+          {
+              "tags": {
+                  "host": ["foo", "foo2"],
+                  "customer": ["bar"]
+              },
+              "name": "xyz.123",
+              "aggregators": [
+                  {
+                      "name": "avg",
+                      "sampling": {
+                          "value": 10,
+                          "unit": "minutes"
+                      }
+                  }
+              ]
+          }
+      ]
+   }
 
 ----------------
 Query Properties
@@ -241,53 +241,53 @@ Response
   type then "number" is returned. See :doc:`Custom Types <../kairosdevelopment/CustomData>` for
   information on custom types.
 
-  ::
+  .. code-block:: json
 
-    {
-      "queries": [
-          {
-              "sample_size": 14368,
-              "results": [
-                  {
-                      "name": "abc_123",
-                      "group_by": [
-                          {
-                             "name": "type",
-                             "type": "number"
-                          },
-                          {
+     {
+       "queries": [
+           {
+               "sample_size": 14368,
+               "results": [
+                   {
+                       "name": "abc_123",
+                       "group_by": [
+                           {
+                              "name": "type",
+                              "type": "number"
+                           },
+                           {
                               "name": "tag",
                               "tags": [
                                   "host"
                               ],
-                              "group": {
+                             "group": {
                                   "host": "server1"
-                              }
-                          }
-                      ],
-                      "tags": {
-                          "host": [
-                              "server1"
-                          ],
-                          "customer": [
-                              "bar"
-                          ]
-                      },
-                      "values": [
-                          [
-                              1364968800000,
-                              11019
-                          ],
-                          [
-                              1366351200000,
-                              2843
-                          ]
-                      ]
-                  }
+                             }
+                           }
+                       ],
+                       "tags": {
+                           "host": [
+                               "server1"
+                           ],
+                           "customer": [
+                               "bar"
+                           ]
+                       },
+                       "values": [
+                           [
+                               1364968800000,
+                               11019
+                           ],
+                           [
+                               1366351200000,
+                               2843
+                           ]
+                       ]
+                   }
               ]
           }
-      ]
-  }
+       ]
+     }
 
 
 *Failure*
@@ -296,11 +296,11 @@ Response
 
   The response will be 500 Internal Server Error if an error occurs retrieving data.
 
-  ::
+  .. code-block:: json
 
-    {
-        "errors": [
-            "metrics[0].aggregate must be one of MIN,SUM,MAX,AVG,DEV",
-            "metrics[0].sampling.unit must be one of  SECONDS,MINUTES,HOURS,DAYS,WEEKS,YEARS"
-        ]
-    }
+     {
+         "errors": [
+             "metrics[0].aggregate must be one of MIN,SUM,MAX,AVG,DEV",
+             "metrics[0].sampling.unit must be one of  SECONDS,MINUTES,HOURS,DAYS,WEEKS,YEARS"
+         ]
+     }

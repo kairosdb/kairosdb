@@ -30,7 +30,9 @@ The format of the data is
 Be aware that the data sent must be followed by a line feed character.
 
 Here is a simple shell script that inserts data using netcat.
-::
+
+
+.. code-block:: bash
 
 	#!/bin/bash
 
@@ -48,7 +50,9 @@ Submitting data via rest
 ------------------------
 
 The url for submitting data is http://localhost:8080/api/v1/datapoints
-::
+
+
+.. code-block:: json
 
 	[{
 	    "name": "archive.file.tracked",

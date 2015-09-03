@@ -65,7 +65,10 @@ public class CassandraDatastore implements Datastore
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
 
-	public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
+	//public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
+
+	// 3 days = 86400 * 3 * 1000 = 259200000
+	public static final long ROW_WIDTH = 259200000L; //3 Days wide
 
 	public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
 

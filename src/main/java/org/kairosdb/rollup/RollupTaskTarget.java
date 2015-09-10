@@ -10,6 +10,7 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
+// todo Delete this class
 /**
  Target for a roll up task. The target identifies a new metric that will be
  created for the roll up, additional tags that will be added to each data point,

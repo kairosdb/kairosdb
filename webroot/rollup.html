@@ -6,18 +6,22 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet"
 		  href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+	<!-- todo download these locally -->
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+
 	<script src="rollup-js/moment.js" type="text/javascript"></script>
 	<script src="rollup-js/later.js" type="text/javascript"></script>
 	<script src="rollup-js/prettycron.js" type="text/javascript"></script>
 </head>
+
 <body ng-app="myApp" ng-controller="rollupController">
 
 <div class="container-fluid">
 	<div class="page-header">
-		<h1 class="text-center" style="">Roll-ups</h1>
+		<h1 class="text-center text-info">Roll-ups</h1>
 	</div>
 	<a href="#" ng-click="addRollup()"
 	   class="btn btn-primary btn-lg btn-circle pull-right"><span
@@ -26,12 +30,16 @@
 	<table class="table table-striped" data-sort-name="metric-name"
 		   data-sort-order="asc">
 		<thead>
-		<tr>
+		<tr class="text-info">
 			<th data-field="name" data-sortable="true">Roll-up Name</th>
 			<th data-field="metric-name" data-sortable="true">Metric Name</th>
 			<th data-field="execute" data-sortable="true">Execute</th>
 			<th data-field="look-back" data-sortable="true">Look Back</th>
-			<th data-field="target" data-sortable="true">Target Name</th>
+			<th data-field="aggregator" data-sortable="true">Aggregator</th>
+			<th data-field="aggregator_sampling" data-sortable="true">Aggregator
+				Sampling
+			</th>
+			<th data-field="target" data-sortable="true">Save As</th>
 			<th></th>
 		</tr>
 		</thead>
@@ -44,8 +52,9 @@
 			</td>
 
 			<td>
-				<span ng-hide="rollup.edit">{{ rollup.metric_name }}</span>
-				<input type='text' ng-model="rollup.metric_name"
+				<span ng-hide="rollup.edit">{{ rollup.rollups[0].query.metrics[0].name }}</span>
+				<input type='text'
+					   ng-model="rollup.rollups[0].query.metrics[0].name"
 					   ng-hide="!rollup.edit"/>
 			</td>
 			<td>
@@ -74,7 +83,8 @@
 							type="button" id="startTimeDropdown"
 							data-toggle="dropdown" aria-haspopup="true"
 							aria-expanded="true" ng-disabled="!rollup.edit">
-						{{ toHumanReadableTimeUnit(rollup.start_relative)}}
+						{{
+						toHumanReadableTimeUnit(rollup.rollups[0].query.start_relative)}}
 						<span class="caret"></span>
 					</button>
 					<ul class="dropdown-menu"
@@ -88,21 +98,75 @@
 					</ul>
 				</div>
 			</td>
+
 			<td>
-				<span ng-hide="rollup.edit">{{ rollup.targets[0].name }}</span>
-				<input type='text' ng-model="rollup.targets[0].name"
+				<div class="dropdown">
+					<button class="btn btn-default dropdown-toggle"
+							type="button" id="aggregatorDropdown"
+							data-toggle="dropdown" aria-haspopup="true"
+							aria-expanded="true" ng-disabled="!rollup.edit">
+						{{
+						rollup.rollups[0].query.metrics[0].aggregators[0].name
+						}}
+						<span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu"
+						aria-labelledby="aggregatorDropdown">
+						<li ng-repeat="aggregator in aggregators">
+							<a href="#"
+							   ng-click="aggregatorModified(rollup, aggregator)">
+								{{ aggregator }}
+							</a>
+						</li>
+					</ul>
+				</div>
+			</td>
+
+			<td>
+				<div class="dropdown">
+					<button class="btn btn-default dropdown-toggle"
+							type="button" id="aggregatorSamplingDropdown"
+							data-toggle="dropdown" aria-haspopup="true"
+							aria-expanded="true" ng-disabled="!rollup.edit">
+						{{
+						toHumanReadableTimeUnit(rollup.rollups[0].query.metrics[0].aggregators[0].sampling)
+						}}
+						<span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu"
+						aria-labelledby="aggregatorSamplingDropdown">
+						<li ng-repeat="time in samplingTimes">
+							<a href="#"
+							   ng-click="aggregatorSamplingModified(rollup, time)">
+								{{ toHumanReadableTimeUnit(time) }}
+							</a>
+						</li>
+					</ul>
+				</div>
+			</td>
+
+			<td>
+				<span ng-hide="rollup.edit">{{ rollup.rollups[0].save_as}}</span>
+				<input type='text' ng-model="rollup.rollups[0].save_as"
 					   ng-hide="!rollup.edit"/>
 			</td>
 			<td>
-				<button class="btn" ng-click="editRollup(rollup)"
+				<button class="btn btn-primary" ng-click="editRollup(rollup)"
 						ng-hide="rollup.edit">
 					<span class="glyphicon glyphicon-pencil"></span>&nbsp;&nbsp;Edit
 				</button>
-				<button class="btn" ng-click="saveRollup(rollup)"
+				<button class="btn btn-success" ng-click="saveRollup(rollup)"
 						ng-hide="!rollup.edit">
 					<span class="glyphicon glyphicon-save"></span>&nbsp;&nbsp;Save
 				</button>
 			</td>
+			<td>
+				<button class="btn btn-primary" ng-click="deleteRollup(rollup)">
+					<span class="glyphicon glyphicon-remove"></span>&nbsp;&nbsp;Delete
+				</button>
+
+			</td>
+			<td></td>
 		</tr>
 		</tbody>
 	</table>

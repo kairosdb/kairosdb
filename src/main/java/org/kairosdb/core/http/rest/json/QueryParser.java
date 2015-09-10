@@ -29,17 +29,14 @@ import com.google.inject.Inject;
 import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.joda.time.DateTimeZone;
-import org.kairosdb.core.aggregator.Aggregator;
-import org.kairosdb.core.aggregator.AggregatorFactory;
-import org.kairosdb.core.aggregator.RangeAggregator;
-import org.kairosdb.core.aggregator.TimezoneAware;
+import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
-import org.kairosdb.rollup.RollUpTask;
-import org.kairosdb.rollup.RollupTaskTarget;
+import org.kairosdb.rollup.Rollup;
+import org.kairosdb.rollup.RollupTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,11 +150,14 @@ public class QueryParser
 
 	public List<QueryMetric> parseQueryMetric(String json) throws QueryException, BeanValidationException
 	{
-		List<QueryMetric> ret = new ArrayList<QueryMetric>();
-
 		JsonParser parser = new JsonParser();
-
 		JsonObject obj = parser.parse(json).getAsJsonObject();
+		return parseQueryMetric(obj);
+	}
+
+	private List<QueryMetric> parseQueryMetric(JsonObject obj) throws QueryException, BeanValidationException
+	{
+		List<QueryMetric> ret = new ArrayList<QueryMetric>();
 
 		Query query;
 		try
@@ -242,29 +242,42 @@ public class QueryParser
 		return (ret);
 	}
 
-	public List<RollUpTask> parseRollUpTask(String json) throws BeanValidationException
+	public RollupTask parseRollUpTask(String json) throws BeanValidationException, QueryException
 	{
 		JsonParser parser = new JsonParser();
-		JsonObject obj = parser.parse(json).getAsJsonObject();
+		JsonObject rollupTask = parser.parse(json).getAsJsonObject();
+		RollupTask task = m_gson.fromJson(rollupTask.getAsJsonObject(), RollupTask.class);
+		task.addJson(json.replaceAll("\n", ""));
 
-		JsonArray rollupTasks = obj.getAsJsonArray();
-		for (JsonElement rollupTask : rollupTasks)
+		JsonArray rollups = rollupTask.getAsJsonObject().getAsJsonArray("rollups");
+		// todo can I use foreach?
+		for (int j = 0; j < rollups.size(); j++)
 		{
-			RollUpTask task = m_gson.fromJson(rollupTask, RollUpTask.class);
-			JsonArray rollupTargets = rollupTask.getAsJsonArray();
-			for (JsonElement rollupTarget : rollupTargets)
+			JsonObject rollupObject = rollups.get(j).getAsJsonObject();
+			Rollup rollup = m_gson.fromJson(rollupObject, Rollup.class);
+
+			JsonObject queryObject = rollupObject.getAsJsonObject("query");
+			List<QueryMetric> queries = parseQueryMetric(queryObject);
+
+			for (QueryMetric query : queries)
 			{
-				RollupTaskTarget target = m_gson.fromJson(rollupTarget, RollupTaskTarget.class);
-				//				parseAggregators("", );
+				// Add aggregators needed for rollups
+				SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_aggregatorFactory.createAggregator("save_as");
+				saveAsAggregator.setMetricName(rollup.getSaveAs());
+
+				TrimAggregator trimAggregator = (TrimAggregator) m_aggregatorFactory.createAggregator("trim");
+				trimAggregator.setTrim(TrimAggregator.Trim.LAST);
+
+				query.addAggregator(saveAsAggregator);
+				query.addAggregator(trimAggregator);
 			}
 
+			rollup.addQueries(queries);
+			task.addRollup(rollup);
 		}
 
-
-		List<RollUpTask> tasks = m_gson.fromJson(json, new TypeToken<List<RollUpTask>>() {}.getType());
-
 		// todo validate and throw bean validation exception if error occurs
-		return tasks;
+		return task;
 	}
 
 	private void parsePlugins(String context, QueryMetric queryMetric, JsonArray plugins) throws BeanValidationException, QueryException
@@ -397,7 +410,7 @@ public class QueryParser
 			{
 				throw new BeanValidationException(new SimpleConstraintViolation(e.getContext(), e.getMessage()), context);
 			}
-			catch(NumberFormatException e)
+			catch (NumberFormatException e)
 			{
 				throw new BeanValidationException(new SimpleConstraintViolation(property, e.getMessage()), context);
 			}

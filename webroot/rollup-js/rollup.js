@@ -1,8 +1,16 @@
 var app = angular.module('myApp', []);
 app.controller('rollupController', function ($scope, $http) {
-	$http.get("http://localhost:8080/api/v1/rollups/rollup") //todo don't hard code
+	$http.get("/api/v1/rollups/rollup") //todo don't hard code
 		.success(function (response) {
-			$scope.rollups = response;
+			if (response)
+				$scope.rollups = response;
+			else
+				$scope.rollups = [];
+
+			console.log(response);
+		})
+		.error(function (data, status, headers, config) {
+			alert("failure message: " + JSON.stringify({data: data}));
 		});
 
 	$scope.toHumanReadableCron = function (schedule) {
@@ -41,19 +49,51 @@ app.controller('rollupController', function ($scope, $http) {
 		'0 0 * * sat ?'   // once a week
 	];
 
+	$scope.aggregators = ["sum", "avg", "min", "max"];
+
+	$scope.samplingTimes = [
+		{value: 1, unit: "minutes"},
+		{value: 5, unit: "minutes"},
+		{value: 10, unit: "minutes"},
+		{value: 15, unit: "minutes"},
+		{value: 20, unit: "minutes"},
+		{value: 30, unit: "minutes"},
+		{value: 1, unit: "hours"},
+		{value: 6, unit: "hours"},
+		{value: 1, unit: "days"},
+		{value: 1, unit: "weeks"}
+	];
+
 	$scope.scheduleModified = function (rollup, item) {
 		rollup.schedule = item;
 	};
 
 	$scope.startTimeModified = function (rollup, item) {
-		rollup.start_relative = item;
+		rollup.rollups[0].query.start_relative = item;
+	};
+
+	$scope.aggregatorModified = function (rollup, item) {
+		rollup.rollups[0].query.metrics[0].aggregators[0].name = item;
+	};
+
+	$scope.aggregatorSamplingModified = function (rollup, item) {
+		rollup.rollups[0].query.metrics[0].aggregators[0].sampling = item;
 	};
 
 	$scope.addRollup = function () {
 		var newRollup = {
-			start_relative: {value: 1, unit: 'hours'},
 			schedule: '0 * * * * ?',
-			targets: [{}]
+			rollups: [{
+				query: {
+					start_relative: {value: 1, unit: 'hours'},
+					metrics: [{
+						aggregators: [{
+							name: "sum",
+							sampling: {value: 1, unit: 'minutes'}
+						}]
+					}]
+				}
+			}]
 		};
 		newRollup.edit = true;
 		$scope.rollups.push(newRollup);
@@ -68,11 +108,24 @@ app.controller('rollupController', function ($scope, $http) {
 		rollup.edit = false;
 	};
 
-	$scope.postRollup = function (rollup) {
-		var dataObj = [];
-		dataObj.push(rollup);
+	$scope.deleteRollup = function (rollup) {
+		var res = $http.delete('/api/v1/rollups/delete/' + rollup.id); // todo don't hardcode?
+		res.success(function (data, status, headers, config) {
+			var i = $scope.rollups.indexOf(rollup);
+			if (i != -1) {
+				$scope.rollups.splice(i, 1);
+			}
+			console.log(status);
+		});
+		res.error(function (data, status, headers, config) {
+			alert("failure message: " + JSON.stringify({data: data}));
+		});
+	};
 
-		var res = $http.post('/api/v1/rollups/rollup', dataObj); // todo don't hardcode?
+	$scope.postRollup = function (rollup) {
+		// todo need to remove "edit" property
+
+		var res = $http.post('/api/v1/rollups/rollup', rollup); // todo don't hardcode?
 		res.success(function (data, status, headers, config) {
 			//$scope.message = data;
 			console.log(status);

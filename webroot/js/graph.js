@@ -117,11 +117,11 @@ function buildKairosDBQuery() {
 				metric.addAggregator(name);
 			}
 			else if (name == 'rate') {
-				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				unit = $(aggregator).find(".rateUnit").val();
 				metric.addRate(unit, time_zone);
 			}
 			else if (name == 'sampler') {
-				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				unit = $(aggregator).find(".rateUnit").val();
 				metric.addSampler(unit);
 			}
 			else if (name == 'percentile') {
@@ -148,6 +148,17 @@ function buildKairosDBQuery() {
 					return true;
 				}
 				metric.addScaleAggregator(scalingFactor);
+			}
+			else if (name == 'trim')
+			{
+				var agg = metric.addAggregator(name);
+				agg.trim = $(aggregator).find(".aggregatorTrimValue").val();
+			}
+			else if (name == 'save_as')
+			{
+				var agg = metric.addAggregator(name);
+				agg.metric_name = $(aggregator).find(".aggregatorSaveAsValue").val();
+				//todo: add ability to pass tags
 			}
 			else
 			{
@@ -552,51 +563,43 @@ function addAggregator(container) {
 	$aggregatorContainer.find(".aggregatorName").change(function () {
 		var name = $aggregatorContainer.find(".aggregatorName").val();
 
-		if (name == "diff") {
-			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
-			$aggregatorContainer.find(".aggregatorSampling").hide();
-			$aggregatorContainer.find(".aggregatorPercentile").hide();
-			$aggregatorContainer.find(".divisor").hide();
-			$aggregatorContainer.find(".scalingFactor").hide();
-		}
-		else if (name == "rate" || name == "sampler") {
-			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
-			$aggregatorContainer.find(".aggregatorSampling").hide();
-			$aggregatorContainer.find(".aggregatorPercentile").hide();
-			$aggregatorContainer.find(".divisor").hide();
-			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
-			$aggregatorContainer.find(".scalingFactor").hide();
+		//Start off by hiding everything, then showing what needs to be
+		$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
+		$aggregatorContainer.find(".aggregatorSampling").hide();
+		$aggregatorContainer.find(".aggregatorPercentile").hide();
+		$aggregatorContainer.find(".divisor").hide();
+		$aggregatorContainer.find(".scalingFactor").hide();
+		$aggregatorContainer.find(".aggregatorTrim").hide();
+		$aggregatorContainer.find(".aggregatorSaveAs").hide();
+		$aggregatorContainer.find(".aggregatorRate").hide();
+
+		if (name == "rate" || name == "sampler") {
+			$aggregatorContainer.find(".aggregatorRate").show();
 
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
 		else if (name == "percentile") {
-			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
-			$aggregatorContainer.find(".aggregatorSampling").show();
-			$aggregatorContainer.find(".scalingFactor").hide();
 		}
 		else if (name == "div") {
-			$aggregatorContainer.find(".aggregatorSampling").hide();
-			$aggregatorContainer.find(".aggregatorPercentile").hide();
-			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
-			$aggregatorContainer.find(".scalingFactor").hide();
 			$aggregatorContainer.find(".divisor").show();
 		}
 		else if (name == 'scale') {
-			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
-			$aggregatorContainer.find(".aggregatorSampling").hide();
-			$aggregatorContainer.find(".aggregatorPercentile").hide();
-			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".scalingFactor").show();
+		}
+		else if (name == 'trim') {
+			$aggregatorContainer.find(".aggregatorTrim").show();
+		}
+		else if (name == 'save_as') {
+			$aggregatorContainer.find(".aggregatorSaveAs").show();
+		}
+		else if (name == 'diff') {
 		}
 		else {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
-			$aggregatorContainer.find(".aggregatorPercentile").hide();
-			$aggregatorContainer.find(".divisor").hide();
-			$aggregatorContainer.find(".scalingFactor").hide();
 		}
 	});
 }

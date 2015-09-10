@@ -78,6 +78,9 @@
             $(".aggregatorPercentile").hide();
             $(".divisor").hide();
             $(".scalingFactor").hide();
+			$(".aggregatorTrim").hide();
+			$(".aggregatorSaveAs").hide();
+			$(".aggregatorRate").hide();
 			$("#tabs").tabs({'active': 0});
 
 			$startTime.bind("change paste keyup", function(){
@@ -980,8 +983,8 @@
 	<button class="removeAggregator"
 			style="background:none; border: none; width:5px; float:right; margin-right: 5px; margin-top: 0;"></button>
 
-	<div style="display: table-row">
-		<div style="display: table-cell">
+	<div style="">
+		<div style="float: left">
 			<select class="ui-widget aggregatorName">
 				<option value="avg">AVG</option>
 				<option value="count">COUNT</option>
@@ -997,19 +1000,21 @@
 				<option value="percentile">PERCENTILE</option>
 				<option value="rate">RATE</option>
 				<option value="sampler">SAMPLER</option>
+				<option value="save_as">SAVE AS</option>
 				<option value="scale">SCALE</option>
 				<option value="sum" selected="selected">SUM</option>
+				<option value="trim">TRIM</option>
 			</select>
 		</div>
-		<div style="display: table-cell">
-			<div style="display: table-cell" class="aggregatorSampling">
+		<div style="float: left" class="aggregatorSampling">
+			<div style="float: left">
 				<span class="header" style="margin-left: 10px; vertical-align: top;">Sampling</span>
 			</div>
-			<div style="display: table-cell" class="aggregatorSampling">
-				<input class="ui-widget aggregatorSamplingValue" style="width: 20px; margin-left: 10px;" type="text"
+			<div style="float: left">
+				<input class="ui-widget aggregatorSamplingValue" style="width: 30px; margin-left: 10px;" type="text"
 				       value="1">
 			</div>
-			<div style="display: table-cell;">
+			<div style="float: left">
 				<select class="ui-widget aggregatorSamplingUnit" style="margin-left: 10px;">
 					<option value="years">Years</option>
 					<option value="months">Months</option>
@@ -1021,23 +1026,49 @@
 					<option value="milliseconds" selected="selected">Milliseconds</option>
 				</select>
 			</div>
-
-			<div style="display: table-cell" class="aggregatorPercentile">
-                <span class="header" style="margin-left: 10px; vertical-align: top;">Percentile</span>
-            </div>
-            <div style="display: table-cell" class="aggregatorPercentile">
-                <input class="ui-widget aggregatorPercentileValue" style="width: 40px; margin-left: 10px;" type="text"
-                       value="0.75">
-            </div>
-			<div style="display: table-cell" class="divisor">
-				<span class="header" style="margin-left: 10px; vertical-align: top;">Divisor</span>
-				<input class="ui-widget divisorValue" style="width: 60px; margin-left: 10px;" type="text">
-			</div>
-            <div style="display: table-cell" class="scalingFactor">
-                <span class="header" style="margin-left: 10px; vertical-align: top;">Factor</span>
-                <input class="ui-widget scalingFactorValue" style="width: 60px; margin-left: 10px;" type="text" value="1.0">
-            </div>
 		</div>
+
+		<div style="float: left" class="aggregatorRate">
+			<select class="ui-widget rateUnit" style="margin-left: 10px;">
+				<option value="years">Years</option>
+				<option value="months">Months</option>
+				<option value="weeks">Weeks</option>
+				<option value="days">Days</option>
+				<option value="hours">Hours</option>
+				<option value="minutes">Minutes</option>
+				<option value="seconds">Seconds</option>
+				<option value="milliseconds" selected="selected">Milliseconds</option>
+			</select>
+		</div>
+
+		<div style="float: left" class="aggregatorPercentile">
+			<span class="header" style="margin-left: 10px; vertical-align: top;">Percentile</span>
+			<input class="ui-widget aggregatorPercentileValue" style="width: 40px; margin-left: 10px;" type="text"
+                       value="0.75"/>
+		</div>
+
+		<div style="float: left" class="divisor">
+			<span class="header" style="margin-left: 10px; vertical-align: top;">Divisor</span>
+			<input class="ui-widget divisorValue" style="width: 60px; margin-left: 10px;" type="text">
+		</div>
+
+		<div style="float: left" class="scalingFactor">
+			<span class="header" style="margin-left: 10px; vertical-align: top;">Factor</span>
+			<input class="ui-widget scalingFactorValue" style="width: 60px; margin-left: 10px;" type="text" value="1.0">
+		</div>
+		<div style="float: left" class="aggregatorTrim">
+			<span class="header" style="margin-left: 10px; vertical-align: top;">Trim</span>
+			<select class="ui-widget aggregatorTrimValue" style="margin-left: 10px;">
+				<option value="first" selected="selected">First</option>
+				<option value="last">Last</option>
+				<option value="both">Both</option>
+			</select>
+		</div>
+		<div style="float: left" class="aggregatorSaveAs">
+			<span class="header" style="margin-left: 10px; vertical-align: top;">Save As</span>
+			<input class="ui-widget aggregatorSaveAsValue" style="width: 275px; margin-left: 10px;" type="text" >
+		</div>
+		<div style="clear: both"/>
 	</div>
 </div>
 

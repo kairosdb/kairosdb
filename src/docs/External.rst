@@ -66,7 +66,7 @@ Papers about KairosDB
 .. _A node.js KairosDB client: https://www.npmjs.com/package/kairosdb
 .. _PHP Client: https://github.com/danibrutal/KairosDB-Client
 .. _TCollector - collects system stats: https://github.com/OpenTSDB/tcollector
-.. _Collectd plugin for KairosDB: https://github.com/gregdurham/collectd-kairosdb
+.. _Collectd plugin for KairosDB: https://github.com/kairosdb/collectd-kairosdb
 .. _Grafana: http://grafana.org/
 .. _KairosDB datasource for Grafana dashboard: https://github.com/Kratos-ISE/grafana-kairosdb-datasource-plugin
 .. _Cubism.js: http://square.github.io/cubism/

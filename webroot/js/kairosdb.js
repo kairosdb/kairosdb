@@ -21,7 +21,9 @@ kairosdb.Aggregators =
 	SCALE: "scale",
 	GAPS: "gaps",
 	FIRST: "first",
-	LAST: "last"
+	LAST: "last",
+	TRIM: "trim",
+	SAVE_AS: "save_as"
 };
 
 kairosdb.Unit =  //Values used for Aggregator sampling and Relative time
@@ -126,6 +128,11 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
+	/**
+	 Genereic add Aggregator function, returns the new aggregator
+	 * @param name
+	 * @returns {{}}
+	 */
 	this.addAggregator = function (name)
 	{
 		if (!this.aggregators)
@@ -135,7 +142,7 @@ kairosdb.Metric = function (name) {
 		aggregator.name = name;
 
 		this.aggregators.push(aggregator);
-		return this;
+		return aggregator;
 	};
 
 	this.addRangeAggregator = function (name, value, unit, time_zone) {

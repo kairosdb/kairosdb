@@ -296,7 +296,7 @@ public class CassandraDatastore implements Datastore
 			DataPointsRowKey rowKey = null;
 			//time the data is written.
 			long writeTime = System.currentTimeMillis();
-			int ttl = m_cassandraConfiguration.getDatapointTtl();
+			int ttl = getTtl(metricName);
 
 			int rowKeyTtl = 0;
 			//Row key will expire 3 weeks after the data in the row expires
@@ -380,6 +380,16 @@ public class CassandraDatastore implements Datastore
 		}
 	}
 
+	private int getTtl(String metricName)
+	{
+		int defaultTtl = m_cassandraConfiguration.getDatapointTtl();
+		Integer metricTtl = m_cassandraConfiguration.getM_datapointTtlPerMetric().get(metricName);
+		if (metricTtl != null) {
+			return metricTtl;
+		} else {
+			return defaultTtl;
+		}
+	}
 
 	@Override
 	public Iterable<String> getMetricNames()

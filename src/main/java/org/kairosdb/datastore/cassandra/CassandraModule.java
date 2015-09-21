@@ -33,10 +33,13 @@ public class CassandraModule extends AbstractModule
 	public static final String CASSANDRA_HECTOR_MAP = "cassandra.hector.map";
 	public static final String AUTH_PREFIX = "kairosdb.datastore.cassandra.auth.";
 	public static final String HECTOR_PREFIX = "kairosdb.datastore.cassandra.hector.";
+	public static final String DATAPOINT_TTL_PER_METRIC_MAP = "cassandra.ttl.metric.map";
+	private static final String DATAPOINT_TTL_PER_METRIC_PREFIX = "kairosdb.datastore.cassandra.ttl.metric.";
 
 	private Map<String, String> m_authMap = new HashMap<String, String>();
 	private Map<String, Object> m_hectorMap = new HashMap<String, Object>();
-
+	private Map<String, Integer> m_ttlMap = new HashMap<String, Integer>();
+	
 	public CassandraModule(Properties props)
 	{
 		for (Object key : props.keySet())
@@ -54,6 +57,11 @@ public class CassandraModule extends AbstractModule
 			{
 				String configKey = strKey.substring(HECTOR_PREFIX.length());
 				m_hectorMap.put(configKey, props.get(key));
+			}
+			else if (strKey.startsWith(DATAPOINT_TTL_PER_METRIC_PREFIX))
+			{
+				String configKey = strKey.substring(DATAPOINT_TTL_PER_METRIC_PREFIX.length());
+				m_ttlMap.put(configKey, Integer.parseInt(props.get(key).toString()));
 			}
 		}
 	}
@@ -76,5 +84,8 @@ public class CassandraModule extends AbstractModule
 
 		bind(new TypeLiteral<Map<String, Object>>(){}).annotatedWith(Names.named(CASSANDRA_HECTOR_MAP))
 				.toInstance(m_hectorMap);
+
+		bind(new TypeLiteral<Map<String, Integer>>(){}).annotatedWith(Names.named(DATAPOINT_TTL_PER_METRIC_MAP))
+		.toInstance(m_ttlMap);
 	}
 }

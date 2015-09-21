@@ -38,6 +38,10 @@ public class CassandraConfiguration
 	@Inject(optional=true)
 	@Named(DATAPOINT_TTL)
 	private int m_datapointTtl = 0; //Zero ttl means data lives forever.
+	
+	@Inject(optional=true)
+	@Named(CassandraModule.DATAPOINT_TTL_PER_METRIC_MAP)
+	private Map<String, Integer> m_datapointTtlPerMetric;
 
 	@Inject
 	@Named(ROW_KEY_CACHE_SIZE_PROPERTY)
@@ -164,5 +168,15 @@ public class CassandraConfiguration
 	public String getKeyspaceName()
 	{
 		return m_keyspaceName;
+	}
+	
+	public Map<String, Integer> getM_datapointTtlPerMetric()
+	{
+		return m_datapointTtlPerMetric;
+	}
+
+	public void setM_datapointTtlPerMetric(Map<String, Integer> m_datapointTtlPerMetric)
+	{
+		this.m_datapointTtlPerMetric = m_datapointTtlPerMetric;
 	}
 }

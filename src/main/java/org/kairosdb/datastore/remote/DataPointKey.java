@@ -14,26 +14,18 @@ import java.util.TreeMap;
  */
 public class DataPointKey
 {
-	private final String m_key;
 	private final String m_name;
 	private final ImmutableSortedMap<String, String> m_tags;
 	private final String m_type;
+	private final int m_ttl;
 
 
-	public DataPointKey(String name, ImmutableSortedMap<String, String> tags, String type)
+	public DataPointKey(String name, ImmutableSortedMap<String, String> tags, String type, int ttl)
 	{
 		m_name = name;
 		m_tags = tags;
 		m_type = type;
-
-		StringBuilder sb = new StringBuilder();
-		sb.append(name).append(type);
-		for (String key : tags.keySet())
-		{
-			sb.append(":").append(key).append("=").append(tags.get(key));
-		}
-
-		m_key = sb.toString();
+		m_ttl  = ttl;
 	}
 
 	public String getName()
@@ -51,14 +43,33 @@ public class DataPointKey
 		return m_type;
 	}
 
-	@Override
-	public String toString()
+	public int getTtl()
 	{
-		return "DataPointKey{" +
-				"m_key='" + m_key + '\'' +
-				", m_name='" + m_name + '\'' +
-				", m_tags=" + m_tags +
-				", m_type='" + m_type + '\'' +
-				'}';
+		return m_ttl;
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		DataPointKey that = (DataPointKey) o;
+
+		if (m_ttl != that.m_ttl) return false;
+		if (!m_name.equals(that.m_name)) return false;
+		if (!m_tags.equals(that.m_tags)) return false;
+		return m_type.equals(that.m_type);
+
+	}
+
+	@Override
+	public int hashCode()
+	{
+		int result = m_name.hashCode();
+		result = 31 * result + m_tags.hashCode();
+		result = 31 * result + m_type.hashCode();
+		result = 31 * result + m_ttl;
+		return result;
 	}
 }

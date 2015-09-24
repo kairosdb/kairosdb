@@ -321,7 +321,9 @@ public class MetricsResourceTest
 		}
 
 		@Override
-		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+		public void putDataPoint(String metricName,
+				ImmutableSortedMap<String, String> tags,
+				DataPoint dataPoint, int ttl) throws DatastoreException
 		{
 		}
 

@@ -23,7 +23,8 @@ The format of the data is
 Be aware that the data sent must be followed by a line feed character.
 
 Here is a simple shell script that inserts data using netcat.
-::
+
+.. code-block:: bash
 
 	#!/bin/bash
 

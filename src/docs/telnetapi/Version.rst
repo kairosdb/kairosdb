@@ -18,6 +18,6 @@ The output looks like this
 
 Here is an simple example using netcat.
 
-::
+.. code-block:: sh
 
   echo "version" | nc -w 30 localhost 4242

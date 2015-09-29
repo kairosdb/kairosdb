@@ -36,8 +36,9 @@ Response
   The response will be 400 Bad Request if the request is invalid.
 
   The response will be 500 Internal Server Error if an error occurs.
-  ::
 
-    {
-      "errors":["Connect to 10.92.4.1:4242 timed out"]
-    }
+  .. code-block:: json  
+
+     {
+       "errors":["Connect to 10.92.4.1:4242 timed out"]
+     }

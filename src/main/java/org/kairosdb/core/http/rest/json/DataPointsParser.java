@@ -309,7 +309,7 @@ public class DataPointsParser
 				if (dataPointFactory.isRegisteredType(type))
 				{
 					datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
-							type, metric.getTimestamp(), metric.getValue()));
+							type, metric.getTimestamp(), metric.getValue()), metric.getTtl());
 					dataPointCount++;
 				}
 				else
@@ -359,7 +359,7 @@ public class DataPointsParser
 						}
 
 						datastore.putDataPoint(metric.getName(), tags,
-								dataPointFactory.createDataPoint(type, timestamp, dataPoint[1]));
+								dataPointFactory.createDataPoint(type, timestamp, dataPoint[1]), metric.getTtl());
 						dataPointCount ++;
 					}
 					contextCount++;
@@ -383,6 +383,7 @@ public class DataPointsParser
 		private JsonElement[][] datapoints;
 		private boolean skip_validate = false;
 		private String type;
+		private int ttl = 0;
 
 		private String getName()
 		{
@@ -418,5 +419,7 @@ public class DataPointsParser
 		}
 
 		public String getType() { return type; }
+
+		public int getTtl() { return ttl; }
 	}
 }

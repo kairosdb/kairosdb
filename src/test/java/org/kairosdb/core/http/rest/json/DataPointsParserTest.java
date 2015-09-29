@@ -743,7 +743,7 @@ public class DataPointsParserTest
 		}
 
 		@Override
-		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint, int tll) throws DatastoreException
 		{
 			if ((lastDataPointSet == null) || (!lastDataPointSet.getName().equals(metricName)) ||
 					(!lastDataPointSet.getTags().equals(tags)))

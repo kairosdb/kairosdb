@@ -66,12 +66,39 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 			});
 		}
 
-		// todo GroupBy
+		// Group By
+		var groupBy = query.query.metrics[0].group_by;
+		if (groupBy && groupBy.length > 0) {
+			var groupExists = false;
+			tql += " GROUP BY";
+			_.each(groupBy, function (group) {
+				if (groupExists) {
+					tql += " AND";
+				}
+
+				if (group.name == "tag") {
+					groupExists = true;
+					tql += " tags(";
+					_.each(group.tags, function (tag) {
+						tql += '"' + tag + '", ';
+					});
+					tql = tql.substring(0, tql.length - 2); // Remove trailing comma and space
+					tql += ")";
+				}
+				if (group.name == "time") {
+					groupExists = true;
+					tql += " time(" + $scope.toHumanReadableTimeUnit(group.range_size) + ", ";
+					tql += group.group_count;
+					tql += ")";
+				}
+				if (group.name == "value") {
+					groupExists = true;
+					tql += " value(" + group.range_size + ")";
+				}
+			});
+		}
 
 		return tql;
-
-
-		//{"query":{"start_relative":{"value":1,"unit":"hours"},"metrics":[{"aggregators":[{"name":"sum","sampling":{"value":1,"unit":"minutes"}}],"name":"tap.event-indexer.foobar"}]},"save_as":"e"}
 	};
 
 	$scope.toHumanReadableAggregator = function (aggregator) {
@@ -131,66 +158,6 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 		{value: 1, unit: "weeks"}
 	];
 
-	////var escapeRegex = function(e) {
-	////	return e.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g,"\\$&")
-	////};
-	////
-	////var semaphore = false;
-	////$scope.suggestMetrics = function(query, callback) {
-	////	if(semaphore) {
-	////		return;
-	////	}
-	////	var MAXSIZE = 10;
-	////	var matcher = new RegExp(escapeRegex(query), 'i');
-	////	if (!metricList) {
-	////		$scope.updateMetricList(callback);
-	////	}
-	////	else {
-	////		var sublist = new Array(MAXSIZE);
-	////		var j = 0;
-	////		for(var i=0;i<metricList.length;i++){
-	////			if (matcher.test(metricList[i])) {
-	////				sublist[j] = metricList[i];
-	////				j++;
-	////				if(j===MAXSIZE-1){
-	////					break;
-	////				}
-	////			}
-	////		}
-	////		sublist = sublist.slice(0,j);
-	////		callback(sublist);
-	////	}
-	////};
-	//
-	//$scope.selectedMetricName = "";
-	//$scope.metricNames = ['kairosdb.metric1', 'kairosdb.metric2', 'foobar'];
-	//
-	//$scope.updateMetricList = function(callback) {
-	//	$scope.metricListLoading = true;
-	//	semaphore = true;
-	//	metricList = [];
-	//	$scope.datasource.performMetricSuggestQuery().then(function(series) {
-	//		metricList = series;
-	//		$scope.metricListLoading = false;
-	//		semaphore = false;
-	//		if(callback)
-	//			callback(_.sortBy(metricList));
-	//	});
-	//};
-	//
-	//$scope.performMetricSuggestQuery = function() {
-	//	var options = {
-	//		url : this.url + '/api/v1/metricnames',
-	//		method : 'GET'
-	//	};
-	//	return $http(options).then(function(results) {
-	//		if (!results.data) {
-	//			return [];
-	//		}
-	//		return results.data.results;
-	//	});
-	//};
-
 	$scope.scheduleModified = function (task, item) {
 		task.schedule = item;
 	};
@@ -244,9 +211,6 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 			backdrop: 'static', // disable closing of dialog with click away
 			keyboard: false, // disable closing dialog with ESC
 			resolve: {
-				rollupTaskId: function () {
-					return task.id;
-				},
 				rollup: function () {
 					return rollup;
 				}

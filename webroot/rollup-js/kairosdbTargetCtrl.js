@@ -1,8 +1,8 @@
 var metricList = null; // todo why not $scope.metricList
 
-module.controller('KairosDBTargetCtrl', ['$scope', '$modalInstance', 'KairosDBDatasource', 'rollupTaskId', 'rollup', KairosDBTargetCtrl]);
+module.controller('KairosDBTargetCtrl', ['$scope', '$modalInstance', 'KairosDBDatasource', 'rollup', KairosDBTargetCtrl]);
 
-function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollupTaskId, rollup) {
+function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) {
 
 	$scope.target = {};
 	$scope.target.metric = "";
@@ -92,37 +92,42 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollupTa
 		// Group By
 		var groupBy = rollup.query.metrics[0].group_by;
 		if (groupBy) {
+			_.each(groupBy, function (group) {
+				$scope.target.groupBy = {};
+				$scope.target.currentGroupByType = group.name;
+				if (group.name == "tag") {
+					_.each(group.tags, function (tag) {
+						$scope.addGroupByMode = true;
+						$scope.isTagGroupBy = true;
+						$scope.isTimeGroupBy = false;
+						$scope.isValueGroupBy = false;
+						$scope.target.groupBy.tagKey = tag;
+						$scope.addGroupBy();
+					});
+				}
+				else {
+					$scope.target.groupBy.name = group.name;
 
-			if (groupBy.name == "tag") {
-				_.each(groupBy.tags, function (tag) {
-					$scope.addGroupByMode = true;
-					$scope.isTagGroupBy = true;
-					$scope.$scope.target.groupBy.tagKey = tag;
+					if (group.name == "time") {
+						$scope.addGroupByMode = true;
+						$scope.isTagGroupBy = false;
+						$scope.isTimeGroupBy = true;
+						$scope.isValueGroupBy = false;
+						$scope.target.groupBy.timeInterval = KairosDBDatasource.convertToShortTimeUnit(group.range_size);
+						$scope.target.groupBy.groupCount = group.group_count;
+
+					}
+					if (group.name == "value") {
+						$scope.addGroupByMode = true;
+						$scope.isTagGroupBy = false;
+						$scope.isTimeGroupBy = false;
+						$scope.isValueGroupBy = true;
+						$scope.target.groupBy.valueRange = group.range_size;
+					}
 					$scope.addGroupBy();
-				});
-			}
-			if (groupBy.name == "time") {
-				$scope.addGroupByMode = true;
-				$scope.isTagGroupBy = false;
-				$scope.isTimeGroupBy = true;
-				$scope.target.groupBy.timeInterval = convertToShortTimeUnit(groupBy.range_size);
-				$scope.target.groupBy.groupCount = groupBy.group_count;
-
-			}
-			if (groupBy.name == "value") {
-			}
-
+				}
+			});
 		}
-
-		//"group_by": [
-		//	{
-		//		"name": "time",
-		//		"group_count": "5",
-		//		"range_size": {
-		//			"value": "1",
-		//			"unit": "milliseconds"
-		//		}
-		//	}
 	}
 
 	$scope.ok = function () {
@@ -180,7 +185,7 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollupTa
 				}
 			}
 		}
-		return sublist = sublist.slice(0, j);
+		return sublist.slice(0, j);
 	};
 
 	$scope.updateMetricList = function (callback) {

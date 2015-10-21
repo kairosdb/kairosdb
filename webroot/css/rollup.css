@@ -28,3 +28,200 @@
 textarea {
     width: 90%;
 }
+
+.tight-form-container-no-item-borders {
+    border: 1px solid #000;
+}
+
+.tight-form-container-no-item-borders .tight-form, .tight-form-container-no-item-borders .tight-form-item, .tight-form-container-no-item-borders [type=text].tight-form-input, .tight-form-container-no-item-borders [type=text].tight-form-clear-input {
+    border: 0;
+}
+
+.tight-form-container .tight-form:last-child {
+    border-bottom: 0
+}
+
+.tight-form-container:last-child {
+    border-bottom: 1px solid #000;
+}
+
+.tight-form {
+    border-top: 1px solid #000;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+    /*background: #262626;*/
+}
+
+.tight-form-list {
+    list-style: none;
+    margin: 0;
+}
+
+.tight-form-list > li {
+    float: left;
+}
+
+.grafana-metric-options {
+    margin-top: 35px;
+}
+
+.tight-form-item {
+    padding: 8px 7px;
+    font-weight: 400;
+    border-right: 1px solid #050505;
+    color: #c8c8c8;
+    display: inline-block;
+    line-height: 1.43;
+}
+
+.tight-form-container-no-item-borders .tight-form, .tight-form-container-no-item-borders .tight-form-item, .tight-form-container-no-item-borders [type=text].tight-form-input, .tight-form-container-no-item-borders [type=text].tight-form-clear-input {
+    border: 0;
+}
+
+input[type=checkbox].tight-form-checkbox {
+    margin: 0;
+}
+
+input[type=checkbox], input[type=radio] {
+    box-sizing: border-box;
+    padding: 0;
+    *height: 13px;
+    *width: 13px;
+}
+
+.spaced-form .tight-form {
+    margin: 7px 0;
+}
+
+.borderless .tight-form-item, .borderless .tight-form-input {
+    border: 0;
+}
+
+[type=text].tight-form-input, [type=email].tight-form-input, [type=number].tight-form-input, [type=password].tight-form-input {
+    border: 0;
+    border-right: 1px solid #050505;
+    margin: 0;
+    border-radius: 0;
+    padding: 8px 6px;
+    /*height: 100%;*/
+    box-sizing: border-box;
+}
+
+[type=text].tight-form-input.last, [type=email].tight-form-input.last, [type=number].tight-form-input.last, [type=password].tight-form-input.last {
+    border-right: 0;
+}
+
+input[type=checkbox].tight-form-checkbox {
+    margin: 0;
+}
+
+select.tight-form-input {
+    border: 0;
+    border-right: 1px solid #050505;
+    margin: 0;
+    border-radius: 0;
+    height: 36px;
+    padding: 8px 3px;
+}
+
+select.tight-form-input.last {
+    border-right: 0;
+}
+
+.pull-right {
+    float: right;
+}
+
+.input-mini {
+    width: 60px;
+}
+
+.input-append .add-on:last-child, .input-append .btn:last-child, .input-append .btn-group:last-child > .dropdown-toggle {
+    -webkit-border-radius: 0 3px 3px 0;
+    -moz-border-radius: 0 3px 3px 0;
+    border-radius: 0 3px 3px 0;
+}
+
+.dropdown-toggle {
+    *margin-bottom: -3px;
+}
+
+.dropdown-toggle:active, .open .dropdown-toggle {
+    outline: 0;
+}
+
+.nav .dropdown-toggle .caret {
+    border-top-color: #e3e3e3;
+    border-bottom-color: #e3e3e3;
+    margin-top: 6px;
+}
+
+.nav .dropdown-toggle:hover .caret, .nav .dropdown-toggle:focus .caret {
+    border-top-color: #fff;
+    border-bottom-color: #fff;
+}
+
+.nav-tabs .dropdown-toggle .caret {
+    margin-top: 8px;
+}
+
+.nav .active .dropdown-toggle .caret {
+    border-top-color: #fff;
+    border-bottom-color: #fff;
+}
+
+.nav-tabs .active .dropdown-toggle .caret {
+    border-top-color: #bbb;
+    border-bottom-color: #bbb;
+}
+
+.nav > .dropdown.active > a:hover, .nav > .dropdown.active > a:focus {
+    cursor: pointer;
+}
+
+.nav-tabs .open .dropdown-toggle, .nav-pills .open .dropdown-toggle, .nav > li.dropdown.open.active > a:hover, .nav > li.dropdown.open.active > a:focus {
+    color: #fff;
+    background-color: #adafae;
+    border-color: #adafae;
+}
+
+.navbar .nav .dropdown-toggle .caret {
+    margin-top: 8px;
+}
+
+/*.clearfix {*/
+/**zoom: 1;*/
+/*}*/
+/*.clearfix:before, .clearfix:after {*/
+/*display: table;*/
+/*content: "";*/
+/*line-height: 0;*/
+/*}*/
+/*.clearfix:after {*/
+/*clear: both;*/
+/*}*/
+
+.glyphicon {
+    line-height: 1.43;
+}
+
+.fa {
+    /*display: inline-block;*/
+    /*font-family: FontAwesome;*/
+    /*font-style: normal;*/
+    /*font-weight: normal;*/
+    /*line-height: 1.43;*/
+    /*font-size-adjust: none;*/
+    /*font-stretch: normal;*/
+    /*font-feature-settings: normal;*/
+    /*font-language-override: normal;*/
+    /*font-kerning: auto;*/
+    /*font-synthesis: weight style;*/
+    /*font-variant: normal;*/
+    /*font-size: inherit;*/
+    /*text-rendering: auto;*/
+}
+
+.invisible {
+    visibility: hidden;
+}

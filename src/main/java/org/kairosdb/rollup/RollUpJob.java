@@ -63,10 +63,10 @@ public class RollUpJob implements InterruptableJob
 							dataPointGroup.next();
 						}
 					}
-
-					// todo add metrics about query
-					//			ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
 				}
+
+				// todo add metrics about query
+				//			ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
 			}
 		}
 		catch (DatastoreException e)

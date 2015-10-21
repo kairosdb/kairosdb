@@ -2,16 +2,14 @@ package org.kairosdb.core.http.rest;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.http.rest.json.ErrorResponse;
 import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
-import org.kairosdb.rollup.RollUpException;
-import org.kairosdb.rollup.RollUpManager;
-import org.kairosdb.rollup.RollUpTasksStore;
-import org.kairosdb.rollup.RollupTask;
+import org.kairosdb.rollup.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,35 +42,107 @@ public class RollUpResource
 		this.store = checkNotNull(store);
 	}
 
-	/**
-	 Creates roll up tasks from the specified JSON.
-	 <p/>
-	 Returns information in JSON format about the created tasks. For example:
-	 <p/>
-	 <pre>
-	 "rollup_tasks": [
-	 {
-	 "id": "393939393",
-	 "name": "foo",
-	 "attributes":
-	 {
-	 "url": "/api/v1/rollups/393939393"
-	 }
-	 },
-	 {
-	 "id": "12345",
-	 "name": "bar",
-	 "attributes":
-	 {
-	 "url": "/api/v1/rollups/12345"
-	 }
-	 }
-	 ]
-	 </pre>
+	// TODO rename API calls for consistency - Add task -> Add rollup queries
+	@POST
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/task")
+	public Response createTask(String json)
+	{
+		try
+		{
+			RollupTask task = parser.parseRollupTask2(json);
 
-	 // todo Fix adding removes existing rollups
-	 @param json tasks in json format
-	 @return information about the created tasks
+			RollupResponse rollupResponse = new RollupResponse(task.getId(), "todo", "/api/v1/rollups/" + task.getId());
+
+			store.write(ImmutableList.of(task));
+
+			Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
+					parser.getGson().toJson(rollupResponse));
+			setHeaders(responseBuilder);
+			return responseBuilder.build();
+		}
+		catch (RollUpException e) // todo combine with Exception?
+		{
+			logger.error("Failed to add roll ups.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+		catch (Exception e)
+		{
+			logger.error("Failed to add metric.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+	}
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/addQuery/{id}") // todo rename
+	public Response createTask(@PathParam("id") String id, String json)
+	{
+		try
+		{
+			List<RollupTask> tasks = store.read();
+			for (RollupTask task : tasks)
+			{
+				if (task.getId().equals(id))
+				{
+					List<QueryMetric> queryMetrics = parser.parseQueryMetric(json);
+					Rollup rollup = new Rollup();
+					rollup.addQuery(queryMetrics.get(0));
+					task.addRollup(rollup);
+					store.write(ImmutableList.of(task));
+				}
+			}
+
+			Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK);
+			setHeaders(responseBuilder);
+			return responseBuilder.build();
+		}
+		catch (BeanValidationException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addErrors(e.getErrorMessages()).build();
+		}
+		catch (RollUpException e) // todo combine with Exception?
+		{
+			logger.error("Failed to add roll ups.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+		catch (Exception e)
+		{
+			logger.error("Failed to add metric.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+	}
+
+	/**
+	 * Creates roll up tasks from the specified JSON.
+	 * <p/>
+	 * Returns information in JSON format about the created tasks. For example:
+	 * <p/>
+	 * <pre>
+	 * "rollup_tasks": [
+	 * {
+	 * "id": "393939393",
+	 * "name": "foo",
+	 * "attributes":
+	 * {
+	 * "url": "/api/v1/rollups/393939393"
+	 * }
+	 * },
+	 * {
+	 * "id": "12345",
+	 * "name": "bar",
+	 * "attributes":
+	 * {
+	 * "url": "/api/v1/rollups/12345"
+	 * }
+	 * }
+	 * ]
+	 * </pre>
+	 * // todo Fix adding removes existing rollups
+	 *
+	 * @param json tasks in json format
+	 * @return information about the created tasks
 	 */
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
@@ -112,7 +182,7 @@ public class RollUpResource
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("rollup")
-	public Response list()
+	public Response list() throws QueryException
 	{
 		try
 		{
@@ -160,7 +230,7 @@ public class RollUpResource
 	@DELETE
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("delete/{id}")
-	public Response delete(@PathParam("id") String id)
+	public Response delete(@PathParam("id") String id) throws RollUpException, QueryException
 	{
 		try
 		{

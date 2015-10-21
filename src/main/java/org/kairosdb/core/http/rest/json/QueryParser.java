@@ -242,38 +242,100 @@ public class QueryParser
 		return (ret);
 	}
 
+	////	public List<RollupTask> parseRollUpTask(String json) throws BeanValidationException, QueryException
+	////	{
+	////		JsonParser parser = new JsonParser();
+	////		JsonArray rollupTaskArray = parser.parse(json).getAsJsonArray();
+	////
+	////		List<RollupTask> rollupTasks = new ArrayList<RollupTask>();
+	////		for (JsonElement rollupTaskElement : rollupTaskArray)
+	////		{
+	////			JsonObject rollupTask = rollupTaskElement.getAsJsonObject();
+	////
+	////			String name = rollupTask.getAsJsonPrimitive("name").getAsString();
+	////			String schedule = rollupTask.getAsJsonPrimitive("schedule").getAsString();
+	////
+	////			JsonArray rollupArray = rollupTask.getAsJsonObject().getAsJsonArray("rollups");
+	////
+	////			List<Rollup> rollups = new ArrayList<Rollup>();
+	////			for (JsonElement rollupElement : rollupArray)
+	////			{
+	////				JsonObject rollupObject = rollupElement.getAsJsonObject();
+	////
+	////				String saveAs = rollupObject.getAsJsonPrimitive("save_as").getAsString();
+	////
+	////				JsonObject queryObject = rollupObject.getAsJsonObject("query");
+	////				List<QueryMetric> queries = parseQueryMetric(queryObject);
+	////
+	////				Rollup rollup = new Rollup(saveAs, queries.get(0));
+	////				rollups.add(rollup);
+	////
+	//////				for (QueryMetric query : queries)
+	//////				{
+	//////					// Add aggregators needed for rollups
+	//////					SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_aggregatorFactory.createAggregator("save_as");
+	//////					saveAsAggregator.setMetricName(rollup.getSaveAs());
+	//////
+	//////					TrimAggregator trimAggregator = (TrimAggregator) m_aggregatorFactory.createAggregator("trim");
+	//////					trimAggregator.setTrim(TrimAggregator.Trim.LAST);
+	//////
+	//////					query.addAggregator(saveAsAggregator);
+	//////					query.addAggregator(trimAggregator);
+	//////				}
+	////			}
+	////			rollupTasks.add(new RollupTask(name, schedule, rollups));
+	////		}
+	//
+	//		// todo validate and throw bean validation exception if error occurs
+	//		return rollupTasks;
+	//
+	//	}
+
+
+	public RollupTask parseRollupTask2(String json)
+	{
+		JsonParser parser = new JsonParser();
+		JsonObject rollupTask = parser.parse(json).getAsJsonObject();
+		RollupTask task = m_gson.fromJson(rollupTask.getAsJsonObject(), RollupTask.class);
+		task.addJson(json.replaceAll("\\n", ""));
+
+		return task;
+	}
+
 	public RollupTask parseRollUpTask(String json) throws BeanValidationException, QueryException
 	{
 		JsonParser parser = new JsonParser();
 		JsonObject rollupTask = parser.parse(json).getAsJsonObject();
 		RollupTask task = m_gson.fromJson(rollupTask.getAsJsonObject(), RollupTask.class);
-		task.addJson(json.replaceAll("\n", ""));
+		task.addJson(json.replaceAll("\\n", ""));
 
 		JsonArray rollups = rollupTask.getAsJsonObject().getAsJsonArray("rollups");
-		// todo can I use foreach?
-		for (int j = 0; j < rollups.size(); j++)
+		if (rollups != null)
 		{
-			JsonObject rollupObject = rollups.get(j).getAsJsonObject();
-			Rollup rollup = m_gson.fromJson(rollupObject, Rollup.class);
-
-			JsonObject queryObject = rollupObject.getAsJsonObject("query");
-			List<QueryMetric> queries = parseQueryMetric(queryObject);
-
-			for (QueryMetric query : queries)
+			for (int j = 0; j < rollups.size(); j++)
 			{
-				// Add aggregators needed for rollups
-				SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_aggregatorFactory.createAggregator("save_as");
-				saveAsAggregator.setMetricName(rollup.getSaveAs());
+				JsonObject rollupObject = rollups.get(j).getAsJsonObject();
+				Rollup rollup = m_gson.fromJson(rollupObject, Rollup.class);
 
-				TrimAggregator trimAggregator = (TrimAggregator) m_aggregatorFactory.createAggregator("trim");
-				trimAggregator.setTrim(TrimAggregator.Trim.LAST);
+				JsonObject queryObject = rollupObject.getAsJsonObject("query");
+				List<QueryMetric> queries = parseQueryMetric(queryObject);
 
-				query.addAggregator(saveAsAggregator);
-				query.addAggregator(trimAggregator);
+				for (QueryMetric query : queries)
+				{
+					// Add aggregators needed for rollups
+					SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_aggregatorFactory.createAggregator("save_as");
+					saveAsAggregator.setMetricName(rollup.getSaveAs());
+
+					TrimAggregator trimAggregator = (TrimAggregator) m_aggregatorFactory.createAggregator("trim");
+					trimAggregator.setTrim(TrimAggregator.Trim.LAST);
+
+					query.addAggregator(saveAsAggregator);
+					query.addAggregator(trimAggregator);
+				}
+
+				rollup.addQueries(queries);
+				task.addRollup(rollup);
 			}
-
-			rollup.addQueries(queries);
-			task.addRollup(rollup);
 		}
 
 		// todo validate and throw bean validation exception if error occurs

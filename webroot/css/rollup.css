@@ -1,0 +1,30 @@
+.panel-heading .accordion-toggle:after {
+    /* symbol for "opening" panels */
+    font-family: 'Glyphicons Halflings'; /* essential for enabling glyphicon */
+    content: "\e114"; /* adjust as needed, taken from bootstrap.css */
+    float: left;
+    color: grey;
+    padding-right: 5px;
+    padding-top: 8px;
+}
+
+.panel-heading .accordion-toggle.collapsed:after {
+    /* symbol for "collapsed" panels */
+    content: "\e080"; /* adjust as needed, taken from bootstrap.css */
+}
+
+.schedule {
+    padding-left: 50px;
+}
+
+.taskOperations {
+    padding-left: 10px;
+}
+
+.rollupOperations {
+    vertical-align: top;
+}
+
+textarea {
+    width: 90%;
+}

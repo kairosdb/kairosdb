@@ -23,7 +23,7 @@
 	<div class="page-header">
 		<h1 class="text-center text-info">Roll-ups</h1>
 	</div>
-	<a href="#" ng-click="addRollup()"
+	<a href="#" ng-click="addRollupTask()"
 	   class="btn btn-primary btn-lg btn-circle pull-right"><span
 			class="glyphicon glyphicon-plus"></span></a>
 
@@ -44,7 +44,7 @@
 		</tr>
 		</thead>
 		<tbody>
-		<tr ng-repeat="rollup in rollups">
+		<tr ng-repeat="rollup in tasks">
 			<td>
 				<span ng-hide="rollup.edit">{{ rollup.name }}</span>
 				<input type='text' ng-model="rollup.name"
@@ -52,7 +52,7 @@
 			</td>
 
 			<td>
-				<span ng-hide="rollup.edit">{{ rollup.rollups[0].query.metrics[0].name }}</span>
+				<span ng-hide="rollup.edit">{{ rollup.tasks[0].query.metrics[0].name }}</span>
 				<input type='text'
 					   ng-model="rollup.rollups[0].query.metrics[0].name"
 					   ng-hide="!rollup.edit"/>
@@ -84,7 +84,7 @@
 							data-toggle="dropdown" aria-haspopup="true"
 							aria-expanded="true" ng-disabled="!rollup.edit">
 						{{
-						toHumanReadableTimeUnit(rollup.rollups[0].query.start_relative)}}
+						toHumanReadableTimeUnit(rollup.tasks[0].query.start_relative)}}
 						<span class="caret"></span>
 					</button>
 					<ul class="dropdown-menu"
@@ -106,7 +106,7 @@
 							data-toggle="dropdown" aria-haspopup="true"
 							aria-expanded="true" ng-disabled="!rollup.edit">
 						{{
-						rollup.rollups[0].query.metrics[0].aggregators[0].name
+						rollup.tasks[0].query.metrics[0].aggregators[0].name
 						}}
 						<span class="caret"></span>
 					</button>
@@ -129,7 +129,7 @@
 							data-toggle="dropdown" aria-haspopup="true"
 							aria-expanded="true" ng-disabled="!rollup.edit">
 						{{
-						toHumanReadableTimeUnit(rollup.rollups[0].query.metrics[0].aggregators[0].sampling)
+						toHumanReadableTimeUnit(rollup.tasks[0].query.metrics[0].aggregators[0].sampling)
 						}}
 						<span class="caret"></span>
 					</button>
@@ -146,22 +146,25 @@
 			</td>
 
 			<td>
-				<span ng-hide="rollup.edit">{{ rollup.rollups[0].save_as}}</span>
+				<span ng-hide="rollup.edit">{{ rollup.tasks[0].save_as}}</span>
 				<input type='text' ng-model="rollup.rollups[0].save_as"
 					   ng-hide="!rollup.edit"/>
 			</td>
 			<td>
-				<button class="btn btn-primary" ng-click="editRollup(rollup)"
+				<button class="btn btn-primary"
+						ng-click="editRollupTask(rollup)"
 						ng-hide="rollup.edit">
 					<span class="glyphicon glyphicon-pencil"></span>&nbsp;&nbsp;Edit
 				</button>
-				<button class="btn btn-success" ng-click="saveRollup(rollup)"
+				<button class="btn btn-success"
+						ng-click="saveRollupTask(rollup)"
 						ng-hide="!rollup.edit">
 					<span class="glyphicon glyphicon-save"></span>&nbsp;&nbsp;Save
 				</button>
 			</td>
 			<td>
-				<button class="btn btn-primary" ng-click="deleteRollup(rollup)">
+				<button class="btn btn-primary"
+						ng-click="deleteRollupTask(rollup)">
 					<span class="glyphicon glyphicon-remove"></span>&nbsp;&nbsp;Delete
 				</button>
 

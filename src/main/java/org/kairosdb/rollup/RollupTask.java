@@ -19,7 +19,7 @@ public class RollupTask
 	// todo add tags
 
 	private final String id = UUID.randomUUID().toString();
-	private final transient List<Rollup> rollups = new ArrayList<Rollup>();
+	private final List<Rollup> rollups = new ArrayList<Rollup>();
 	private String name;
 	private String schedule;
 	private long timestamp;

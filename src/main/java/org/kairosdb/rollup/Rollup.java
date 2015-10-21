@@ -14,7 +14,6 @@ public class Rollup
 	private final transient List<QueryMetric> queryMetrics = new ArrayList<QueryMetric>();
 	// todo add tags
 
-
 	//	public Rollup(String saveAs, QueryMetric query)
 	//	{
 	//		// todo add checks for null and empty
@@ -34,7 +33,11 @@ public class Rollup
 
 	public void addQueries(List<QueryMetric> queries)
 	{
-
 		this.queryMetrics.addAll(queries);
+	}
+
+	public void addQuery(QueryMetric query)
+	{
+		queryMetrics.add(query);
 	}
 }

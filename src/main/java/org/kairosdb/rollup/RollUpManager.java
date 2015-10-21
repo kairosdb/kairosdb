@@ -4,6 +4,7 @@ package org.kairosdb.rollup;
 import com.google.inject.name.Named;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.core.scheduler.KairosDBJob;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.quartz.*;
@@ -76,6 +77,10 @@ public class RollUpManager implements KairosDBJob
 			}
 		}
 		catch (RollUpException e)
+		{
+			logger.error("Roll up manager failure.", e);
+		}
+		catch (QueryException e)
 		{
 			logger.error("Roll up manager failure.", e);
 		}

@@ -1,5 +1,7 @@
 package org.kairosdb.rollup;
 
+import org.kairosdb.core.http.rest.QueryException;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -13,14 +15,14 @@ public interface RollUpTasksStore
 	 *
 	 * @param tasks tasks to write to the store.
 	 */
-	void write(List<RollupTask> tasks) throws RollUpException;
+	void write(List<RollupTask> tasks) throws RollUpException, QueryException;
 
 	/**
 	 * Reads all tasks from the store
 	 *
 	 * @return all roll up tasks
 	 */
-	List<RollupTask> read() throws RollUpException;
+	List<RollupTask> read() throws RollUpException, QueryException;
 	/**
 	 * Returns the time the store was last modified.
 
@@ -29,5 +31,5 @@ public interface RollUpTasksStore
 	 */
 	long lastModifiedTime() throws RollUpException;
 
-	void remove(String id) throws IOException;
+	void remove(String id) throws IOException, RollUpException, QueryException;
 }

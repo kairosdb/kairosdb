@@ -1,6 +1,6 @@
 <div ng-init="init()">
 	<div class="modal-header">
-		<h3 class="modal-title">I'm a modal!</h3>
+		<h3 class="modal-title">Roll-up Query</h3>
 	</div>
 	<div class="modal-body">
 		<div class="editor-row" style="margin-top: 10px;">
@@ -26,6 +26,26 @@
 						   ng-show="errors.metric">
 							<i class="glyphicon glyphicon-warning-sign"></i>
 						</a>
+					</ul>
+					<div class="clearfix"></div>
+				</div>
+
+				<!-- START TIME -->
+				<div class="tight-form">
+					<ul class="tight-form-list" role="menu">
+						<li class="tight-form-item">
+							<i class="fa invisible">i</i>
+						</li>
+
+						<li class="tight-form-item">
+							Start Time:
+						</li>
+						<li>
+							<select class="input-small tight-form-input"
+									ng-change="changeGroupByInput()"
+									ng-model="target.start_relative"
+									ng-options="time as time.label for time in relativeStartTimes"></select>
+						</li>
 					</ul>
 					<div class="clearfix"></div>
 				</div>
@@ -343,7 +363,8 @@
 	</div>
 
 	<div class="modal-footer">
-		<button class="btn btn-primary" type="button" ng-click="ok()">OK
+		<button class="btn btn-primary" type="button" ng-click="ok()"
+				ng-disabled="hasErrors()">OK
 		</button>
 		<button class="btn btn-warning" type="button" ng-click="cancel()">Cancel
 		</button>

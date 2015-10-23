@@ -118,18 +118,18 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 		return result;
 	};
 
-	$scope.relativeStartTimes = [
-		{value: 1, unit: "minutes"},
-		{value: 5, unit: "minutes"},
-		{value: 10, unit: "minutes"},
-		{value: 15, unit: "minutes"},
-		{value: 20, unit: "minutes"},
-		{value: 30, unit: "minutes"},
-		{value: 1, unit: "hours"},
-		{value: 6, unit: "hours"},
-		{value: 1, unit: "days"},
-		{value: 1, unit: "weeks"}
-	];
+	//$scope.relativeStartTimes = [
+	//	{value: 1, unit: "minutes"},
+	//	{value: 5, unit: "minutes"},
+	//	{value: 10, unit: "minutes"},
+	//	{value: 15, unit: "minutes"},
+	//	{value: 20, unit: "minutes"},
+	//	{value: 30, unit: "minutes"},
+	//	{value: 1, unit: "hours"},
+	//	{value: 6, unit: "hours"},
+	//	{value: 1, unit: "days"},
+	//	{value: 1, unit: "weeks"}
+	//];
 
 	$scope.executeTimes = [
 		'* * * * * ?',    // every minute
@@ -145,18 +145,18 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 
 	$scope.aggregators = ["sum", "avg", "min", "max"];
 
-	$scope.samplingTimes = [
-		{value: 1, unit: "minutes"},
-		{value: 5, unit: "minutes"},
-		{value: 10, unit: "minutes"},
-		{value: 15, unit: "minutes"},
-		{value: 20, unit: "minutes"},
-		{value: 30, unit: "minutes"},
-		{value: 1, unit: "hours"},
-		{value: 6, unit: "hours"},
-		{value: 1, unit: "days"},
-		{value: 1, unit: "weeks"}
-	];
+	//$scope.samplingTimes = [
+	//	{value: 1, unit: "minutes"},
+	//	{value: 5, unit: "minutes"},
+	//	{value: 10, unit: "minutes"},
+	//	{value: 15, unit: "minutes"},
+	//	{value: 20, unit: "minutes"},
+	//	{value: 30, unit: "minutes"},
+	//	{value: 1, unit: "hours"},
+	//	{value: 6, unit: "hours"},
+	//	{value: 1, unit: "days"},
+	//	{value: 1, unit: "weeks"}
+	//];
 
 	$scope.scheduleModified = function (task, item) {
 		task.schedule = item;

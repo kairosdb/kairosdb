@@ -1,4 +1,4 @@
-var metricList = null; // todo why not $scope.metricList
+var metricList = null;
 
 module.controller('KairosDBTargetCtrl', ['$scope', '$modalInstance', 'KairosDBDatasource', 'rollup', KairosDBTargetCtrl]);
 
@@ -8,9 +8,7 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 	$scope.target.metric = "";
 	$scope.target.downsampling = '(NONE)';
 	$scope.errors = {};
-
-	$scope.rangeUnparsed = {};
-	$scope.rangeUnparsed.from = "now-1 h";
+	$scope.target.start_relative = {};
 
 	$scope.init = function () {
 		if (rollup) {
@@ -24,6 +22,8 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 		$scope.updateMetricList(function () {
 			$scope.suggestMetrics()
 		});
+
+		$scope.target.start_relative = $scope.relativeStartTimes[6];
 	};
 
 	$scope.targetBlur = function () {
@@ -34,10 +34,18 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 		}
 	};
 
-	$scope.duplicate = function () {
-		var clone = angular.copy($scope.target);
-		$scope.panel.targets.push(clone);
-	};
+	$scope.relativeStartTimes = [
+		{value: 1, unit: "minutes", label: "1 minute"},
+		{value: 5, unit: "minutes", label: "5 minutes"},
+		{value: 10, unit: "minutes", label: "10 minutes"},
+		{value: 15, unit: "minutes", label: "15 minutes"},
+		{value: 20, unit: "minutes", label: "20 minutes"},
+		{value: 30, unit: "minutes", label: "30 minutes"},
+		{value: 1, unit: "hours", label: "1 hour"},
+		{value: 6, unit: "hours", label: "6 hours"},
+		{value: 1, unit: "days", label: "1 day"},
+		{value: 1, unit: "weeks", label: "1 week"}
+	];
 
 	function convertFromQueryToTarget(rollup) {
 		// todo handle relative start time
@@ -133,10 +141,7 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 	$scope.ok = function () {
 		var result = {};
 		result.query = {};
-		result.query.start_relative = {  // todo fix
-			"value": "1",
-			"unit": "hours"
-		};
+		result.query.start_relative = $scope.target.start_relative;
 		result.query.metrics = [];
 		var metric = KairosDBDatasource.convertTargetToQuery({}, $scope.target);
 		result.query.metrics.push(metric);
@@ -204,12 +209,12 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 	};
 
 	$scope.suggestTagKeys = function () {
-		return KairosDBDatasource.performTagSuggestQuery($scope.target.metric, $scope.rangeUnparsed, 'key', '');
+		return KairosDBDatasource.performTagSuggestQuery($scope.target.metric, 'key', '');
 
 	};
 
 	$scope.suggestTagValues = function () {
-		return KairosDBDatasource.performTagSuggestQuery($scope.target.metric, $scope.rangeUnparsed, 'value', $scope.target.currentTagKey);
+		return KairosDBDatasource.performTagSuggestQuery($scope.target.metric, 'value', $scope.target.currentTagKey);
 	};
 
 	//////////////////////////////
@@ -482,6 +487,10 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 		alert(message);
 	};
 
+	$scope.hasErrors = function () {
+		return !_.isEmpty($scope.errors);
+	};
+
 	//////////////////////////////
 	// VALIDATION
 	//////////////////////////////
@@ -503,5 +512,4 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 
 		return errs;
 	}
-
 }

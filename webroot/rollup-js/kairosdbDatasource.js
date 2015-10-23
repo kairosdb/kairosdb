@@ -56,7 +56,7 @@ module.factory('KairosDBDatasource', function ($q, $http) {
 		});
 	};
 
-	KairosDBDatasource.performTagSuggestQuery = function (metricname, range, type, keyValue) {
+	KairosDBDatasource.performTagSuggestQuery = function (metricname, type, keyValue) {
 		if (!metricname || _.isEmpty(metricname)) {
 			return;
 		}
@@ -67,8 +67,7 @@ module.factory('KairosDBDatasource', function ($q, $http) {
 		}
 
 		tagList = {
-			metricName: metricname,
-			range: range
+			metricName: metricname
 		};
 		var body = {
 			metrics: [{name: metricname}],

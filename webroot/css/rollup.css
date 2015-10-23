@@ -225,3 +225,11 @@ select.tight-form-input.last {
 .invisible {
     visibility: hidden;
 }
+
+.modal-lg {
+    max-width: 900px;
+}
+
+.modal-content {
+    width: 900px;
+}

@@ -5,6 +5,7 @@ module.controller('KairosDBTargetCtrl', ['$scope', '$modalInstance', 'KairosDBDa
 function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) {
 
 	$scope.DEFAULT_SAVE_AS = "Save As";
+	$scope.METRIC_NAME_LIST_MAX_LENGTH = 20;
 	$scope.target = {};
 	$scope.target.metric = "";
 	$scope.target.downsampling = '(NONE)';
@@ -185,7 +186,6 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 		if (semaphore) {
 			return;
 		}
-		var MAXSIZE = 10;
 		var matcher = new RegExp(escapeRegex($scope.target.metric), 'i');
 		if (!metricList) {
 			$scope.updateMetricList();
@@ -194,13 +194,13 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 			return metricList;
 		}
 
-		var sublist = new Array(MAXSIZE);
+		var sublist = new Array($scope.METRIC_NAME_LIST_MAX_LENGTH);
 		var j = 0;
 		for (var i = 0; i < metricList.length; i++) {
 			if (matcher.test(metricList[i])) {
 				sublist[j] = metricList[i];
 				j++;
-				if (j === MAXSIZE - 1) {
+				if (j === $scope.METRIC_NAME_LIST_MAX_LENGTH - 1) {
 					break;
 				}
 			}

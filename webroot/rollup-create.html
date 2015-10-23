@@ -18,8 +18,9 @@
 							   ng-model="target.metric" spellcheck="false"
 							   bs-typeahead
 							   bs-options="metric for metric in suggestMetrics()"
-							   placeholder="metric name" data-min-length="0"
-							   data-items="100" ng-blur="targetBlur()"
+							   placeholder="metric name" min-length="0"
+							   limit="METRIC_NAME_LIST_MAX_LENGTH"
+							   ng-blur="targetBlur()"
 							   data-provide="typeahead">
 						<a bs-tooltip="errors.metric"
 						   style="color: rgb(229, 189, 28)"

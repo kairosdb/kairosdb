@@ -244,6 +244,27 @@ module.factory('KairosDBDatasource', function ($q, $http) {
 	/// Time conversion functions specifics to KairosDB
 	//////////////////////////////////////////////////////////////////////
 
+	/// "10 seconds" -> {value: 10, unit: "seconds"
+	KairosDBDatasource.convertLongFormatToKairosUnit = function (time) {
+		// todo add validation
+		var timeArray = time.split(" ");
+		var unit = endsWith(timeArray[1], "s") ? timeArray[1] : timeArray[1] + "s";
+
+		return {
+			"value": timeArray[0],
+			"unit": timeArray[1]
+		}
+	};
+
+	/// "10 seconds" -> {value: 10, unit: "seconds"
+	KairosDBDatasource.convertKairosUnitToLongFormat = function (timeUnit) {
+		// todo add validation
+		if (timeUnit.value == 1)
+			return timeUnit.value + " " + timeUnit.unit.substring(0, timeUnit.unit.length - 1);
+		else
+			return timeUnit.value + " " + timeUnit.unit;
+	};
+
 	KairosDBDatasource.convertToKairosInterval = function (intervalString) {
 		var interval_regex = /(\d+(?:\.\d+)?)([Mwdhmsy])/;
 		var interval_regex_ms = /(\d+(?:\.\d+)?)(ms)/;
@@ -402,6 +423,10 @@ module.factory('KairosDBDatasource', function ($q, $http) {
 		}
 
 		//console.log("Date is neither string nor date");
+	}
+
+	function endsWith(str, suffix) {
+		return str.match(suffix + "$") == suffix;
 	}
 
 	////////////////////////////////////////////////////////////////////////

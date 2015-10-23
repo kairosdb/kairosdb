@@ -64,9 +64,9 @@
 						</li>
 						<li>
 							<select class="input-small tight-form-input"
-									ng-change="changeGroupByInput()"
-									ng-model="target.start_relative"
-									ng-options="time as time.label for time in relativeStartTimes"></select>
+									ng-change="changeStartTime()"
+									ng-model="target.start_relative_label"
+									ng-options="time for time in relativeStartTimes"></select>
 						</li>
 					</ul>
 					<div class="clearfix"></div>

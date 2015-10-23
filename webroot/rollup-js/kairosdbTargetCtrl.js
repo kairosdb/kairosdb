@@ -13,6 +13,8 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 	$scope.target.save_as = $scope.DEFAULT_SAVE_AS;
 
 	$scope.init = function () {
+		$scope.target.start_relative_label = "1 hour";
+
 		if (rollup) {
 			convertFromQueryToTarget(rollup);
 		}
@@ -24,8 +26,6 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 		$scope.updateMetricList(function () {
 			$scope.suggestMetrics()
 		});
-
-		$scope.target.start_relative = $scope.relativeStartTimes[6];
 	};
 
 	$scope.targetBlur = function () {
@@ -37,21 +37,29 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 	};
 
 	$scope.relativeStartTimes = [
-		{value: 1, unit: "minutes", label: "1 minute"},
-		{value: 5, unit: "minutes", label: "5 minutes"},
-		{value: 10, unit: "minutes", label: "10 minutes"},
-		{value: 15, unit: "minutes", label: "15 minutes"},
-		{value: 20, unit: "minutes", label: "20 minutes"},
-		{value: 30, unit: "minutes", label: "30 minutes"},
-		{value: 1, unit: "hours", label: "1 hour"},
-		{value: 6, unit: "hours", label: "6 hours"},
-		{value: 1, unit: "days", label: "1 day"},
-		{value: 1, unit: "weeks", label: "1 week"}
+		"1 minute",
+		"5 minutes",
+		"10 minutes",
+		"15 minutes",
+		"20 minutes",
+		"30 minutes",
+		"1 hour",
+		"6 hours",
+		"1 day",
+		"1 week"
 	];
 
-	function convertFromQueryToTarget(rollup) {
-		// todo handle relative start time
+	$scope.changeStartTime = function () {
+		$scope.target.start_relative = KairosDBDatasource.convertLongFormatToKairosUnit($scope.target.start_relative_label);
+	};
 
+	function convertFromQueryToTarget(rollup) {
+		// Save As
+		$scope.target.save_as = rollup.save_as;
+
+		// Start Relative Time
+		$scope.target.start_relative = rollup.query.start_relative;
+		$scope.target.start_relative_label = KairosDBDatasource.convertKairosUnitToLongFormat($scope.target.start_relative);
 
 		// Metric Name
 		$scope.target.metric = rollup.query.metrics[0].name;

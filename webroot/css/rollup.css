@@ -29,6 +29,10 @@ textarea {
     width: 90%;
 }
 
+.placeholder {
+    color: #c8c8c8;
+}
+
 .tight-form-container-no-item-borders {
     border: 1px solid #000;
 }

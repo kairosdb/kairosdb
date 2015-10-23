@@ -98,6 +98,9 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 			});
 		}
 
+		// Save As
+		tql += " SAVE AS " + query.save_as;
+
 		return tql;
 	};
 
@@ -204,7 +207,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 		});
 	};
 
-	$scope.addRollup = function (task, rollup, edit) { // todo rename
+	$scope.addRollup = function (task, rollup, edit) {
 		var modalInstance = $uibModal.open({
 			templateUrl: 'rollup-create.html?cacheBust=' + Math.random().toString(36).slice(2), //keep dialog from caching
 			controller: 'KairosDBTargetCtrl',
@@ -236,10 +239,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 	};
 
 	$scope.deleteRollup = function (task, rollup) {
-		for (var i = 0; i < task.rollups.length; i++) {
-			if (task.rollups[i].id == rollup.id)
-				task.rollups.splice(i, 1);
-		}
+		task.rollups.splice(task.rollups.indexOf(rollup), 1);
 		$scope.saveRollupTask(task);
 	};
 

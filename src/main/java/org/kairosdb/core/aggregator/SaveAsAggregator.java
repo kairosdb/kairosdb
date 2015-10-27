@@ -20,6 +20,9 @@ import java.util.Set;
 @AggregatorName(name = "save_as", description = "Saves the results to a new metric.")
 public class SaveAsAggregator implements Aggregator
 {
+
+	public static final int DEFAULT_TTL = 0;
+
 	private Datastore m_datastore;
 	private String m_metricName;
 	private Map<String, String> m_tags;
@@ -98,7 +101,7 @@ public class SaveAsAggregator implements Aggregator
 
 			try
 			{
-				m_datastore.putDataPoint(m_metricName, m_groupTags, next);
+				m_datastore.putDataPoint(m_metricName, m_groupTags, next, DEFAULT_TTL);
 			}
 			catch (DatastoreException e)
 			{

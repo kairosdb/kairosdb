@@ -816,6 +816,21 @@ public class QueryParser
 		{
 			return null;
 		}
+
+		@Override
+		public <U> U unwrap(Class<U> type) {
+			throw new javax.validation.ValidationException();
+		}
+
+		@Override
+		public Object getExecutableReturnValue() {
+			return null;
+		}
+
+		@Override
+		public Object[] getExecutableParameters() {
+			return null;
+		}
 	}
 
 	private static class SimplePath implements Path

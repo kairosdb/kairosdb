@@ -53,7 +53,7 @@ public class Client
 			}
 
 			SSLSocketFactory socketFactory = new SSLSocketFactory(truststore);
-			Scheme sch = new Scheme("https", 8443, socketFactory);
+			Scheme sch = new Scheme("https", socketFactory, 8443);
 			client.getConnectionManager().getSchemeRegistry().register(sch);
 		}
 	}

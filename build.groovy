@@ -30,6 +30,7 @@ programName = "kairosdb"
 version = "1.0.0"
 release = "1" //package release number
 summary = "KairosDB"
+summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
 with key/value tags to a nosql data store.  Currently supported
@@ -487,13 +488,14 @@ def doIntegration(Rule rule)
 //------------------------------------------------------------------------------
 //Build Docs
 new SimpleRule("docs").setDescription("Build Sphinx Documentation")
-        .setMakeAction("doDocs")
-        .setProperty("all", false)
+		.setMakeAction("doDocs")
+		.addSources(new RegExFileSet("src/docs", ".*").recurse().getFullFilePaths())
+		.setProperty("all", false)
 
 new SimpleRule("docs-rebuild").setDescription("Rebuild Sphinx Documentation. All docs are built even if not changed.")
-        .setMakeAction("doDocs")
+		.setMakeAction("doDocs")
 		.addSources(new RegExFileSet("src/docs", ".*").recurse().getFullFilePaths())
-        .setProperty("all", true)
+		.setProperty("all", true)
 
 def doDocs(Rule rule)
 {

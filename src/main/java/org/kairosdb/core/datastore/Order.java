@@ -1,7 +1,7 @@
 package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.http.rest.BeanValidationException;
-import org.kairosdb.core.http.rest.json.GsonParser;
+import org.kairosdb.core.http.rest.json.QueryParser;
 
 /**
  Created with IntelliJ IDEA.
@@ -47,7 +47,7 @@ public enum Order
 
 		if (ret == null)
 		{
-			throw new BeanValidationException(new GsonParser.SimpleConstraintViolation("order", "must be either 'asc' or 'desc'"), context);
+			throw new BeanValidationException(new QueryParser.SimpleConstraintViolation("order", "must be either 'asc' or 'desc'"), context);
 		}
 		else
 			return (ret);

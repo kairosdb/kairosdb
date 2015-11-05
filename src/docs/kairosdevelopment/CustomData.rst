@@ -1,10 +1,8 @@
-===========
 Custom Data
 ===========
 
 KairosDB provides a means for storing and aggregating custom data types.  By default KairosDB supports long, double and string values.
 
------------------------------------
 Steps for creating custom data type
 -----------------------------------
 
@@ -16,14 +14,15 @@ Steps for creating custom data type
 
 Look at StringDataPointFactory.java and StringDataPoint.java for examples of how to implement.
 
----------------------------------
 Example for creating custom types
 ---------------------------------
 
 For this example we want a custom type for complex numbers that have a real and imaginary part.  Following is the code for the DataPoint and DataPointFactory implementations:
 
 ComplexDataPoint
-::
+
+.. code-block:: java
+
 	package org.kairosdb.core.datapoints;
 
 	import org.json.JSONException;
@@ -105,7 +104,9 @@ ComplexDataPoint
 	}
 
 ComplexDataPointFactory
-::
+
+.. code-block:: java
+
 	package org.kairosdb.core.datapoints;
 
 	import com.google.gson.JsonElement;
@@ -162,11 +163,15 @@ ComplexDataPointFactory
 	}
 
 Inside our plugin module we'll need to bind the ComplexDataPointFactory like so:
-::
+
+.. code-block:: java
+
 	bind(ComplexDataPointFactory.class).in(Singleton.class);
 	
 Inside our plugin properties file we'll need to register our api type:
-::
+
+.. code-block:: java
+
 	kairosdb.datapoints.factory.complex=org.kairosdb.core.datapoints.ComplexDataPointFactory
 	
 So why are the above two steps separate and required?  The first step binds our factory into guice and registers the datastore type of 'kairos_complex'.  The second step registers the api type.  Lets say down the road we change how we want to store the complex type.  Without this separation the only way to change is by exporting all the data in importing it using the new method.  With this separation I can register a new factory that defines the datastore type as 'kairos_complex2' and bind it to the 'complex' api type.  New data will now be stored in the new format and yet the system will still be able to read the old data.

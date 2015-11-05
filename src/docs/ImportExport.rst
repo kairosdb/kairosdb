@@ -18,9 +18,9 @@ The format of the export is one metric per line in the form of a json object.  T
 
 	> bin/kairosdb.sh export | gzip > export.gz
 
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 Export Switches
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 -f `<filename>` -- file to write output to. If not specified, the output goes to stdout.
 
@@ -40,9 +40,9 @@ If you happened to compress the export you can pipe it back into the system like
 
 	> gzip -dc export.gz | bin/kairosdb.sh import
 
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 Import Switches
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 -f `<filename>` -- file to import. If not specified the input comes from stdin.
 

@@ -32,7 +32,7 @@ import java.util.Iterator;
 
 import static java.lang.Math.floor;
 
-@AggregatorName(name = "percentile", description = "finds percentile of the data range")
+@AggregatorName(name = "percentile", description = "Finds the percentile of the data range.")
 public class PercentileAggregator extends RangeAggregator
 {
 	public static final Logger logger = LoggerFactory.getLogger(PercentileAggregator.class);

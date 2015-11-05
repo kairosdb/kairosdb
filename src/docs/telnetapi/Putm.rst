@@ -9,7 +9,7 @@ You can submit data either with the telnet protocol on port 4242. The port can b
 The format of the data is
 ::
 
-	putm <metric name> <time stamp> <value> <tag> <tag>... /n
+	putm <metric name> <time stamp> <value> <tag> <tag>... \n
 
 
 **Metric name** must be one word and is limited to utf8 characters.
@@ -23,7 +23,8 @@ The format of the data is
 Be aware that the data sent must be followed by a line feed character.
 
 Here is a simple shell script that inserts data using netcat.
-::
+
+.. code-block:: bash
 
 	#!/bin/bash
 

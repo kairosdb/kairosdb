@@ -72,6 +72,34 @@ public class WebServerTest
 	}
 
 	@Test
+	public void test_setSSLCipherSuites_emptyCipherSuites_valid() throws UnknownHostException
+	{
+		server = new WebServer(0, ".");
+		server.setSSLCipherSuites("");
+	}
+
+	@Test(expected = NullPointerException.class)
+	public void test_setSSLCipherSuites_nullCipherSuites_invalid() throws UnknownHostException
+	{
+		server = new WebServer(0, ".");
+		server.setSSLCipherSuites(null);
+	}
+
+	@Test
+	public void test_setSSLProtocols_emptyProtocols_valid() throws UnknownHostException
+	{
+		server = new WebServer(0, ".");
+		server.setSSLProtocols("");
+	}
+
+	@Test(expected = NullPointerException.class)
+	public void test_setSSLProtocols_nullProcotol_invalid() throws UnknownHostException
+	{
+		server = new WebServer(0, ".");
+		server.setSSLProtocols(null);
+	}
+
+	@Test
 	public void test_constructorNullAddressValid() throws UnknownHostException
 	{
 		WebServer webServer = new WebServer(null, 0, ".");

@@ -1,26 +1,26 @@
-===============
+---------------
 Add Data Points
-===============
+---------------
 
 Records metric data points
 
-------
+^^^^^^
 Method
-------
+^^^^^^
 
   POST
 
--------
+^^^^^^^
 Request
--------
+^^^^^^^
 
   http://[host]:[port]/api/v1/datapoints
 
 *Note: you can gzip the json and upload with the content type set to application/gzip if you are batching large amounts of data.*
 
-----
+^^^^
 Body
-----
+^^^^
 ::
 
   [
@@ -30,7 +30,8 @@ Body
         "tags": {
             "host": "server1",
             "data_center": "DC1"
-        }
+        },
+        "ttl": 300
     },
     {
         "name": "impedance",
@@ -66,9 +67,9 @@ Body
     }
   ]
 
------------
+^^^^^^^^^^^
 Description
------------
+^^^^^^^^^^^
 
 You can either use **"timestamp"** with **"value"** for a single data point or you can use **"datapoints"** to post multiple data points. This example shows both approaches.
 
@@ -100,10 +101,15 @@ tagged with the value of "server1".
 Type identifies custom data types. This field is only needed if the data value is something other than a number.
 The type field is the name of the registered type for the custom data. See :doc:`Custom Types <../kairosdevelopment/CustomData>` for information on custom types.
 
+**ttl**
 
---------
+Sets the Cassandra ttl for the data points.  In the example above the data points for metric ``archive_file_tracked``
+will have the ttl set for 5 min.  Leaving the ttl off or setting it to 0 will not set a ttl in Cassandra.
+
+
+^^^^^^^^
 Response
---------
+^^^^^^^^
 *Success*
   The response will be 204 NO CONTENT with no body.
 

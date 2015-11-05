@@ -161,6 +161,7 @@ public class RemoteDatastore implements Datastore
 						writer.object();
 
 						writer.key("name").value(dataPointKey.getName());
+						writer.key("ttl").value(dataPointKey.getTtl());
 						writer.key("skip_validate").value(true);
 						writer.key("tags").object();
 						SortedMap<String, String> tags = dataPointKey.getTags();
@@ -268,9 +269,11 @@ public class RemoteDatastore implements Datastore
 	}
 
 	@Override
-	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+	public void putDataPoint(String metricName,
+			ImmutableSortedMap<String, String> tags,
+			DataPoint dataPoint, int ttl) throws DatastoreException
 	{
-		DataPointKey key = new DataPointKey(metricName, tags, dataPoint.getApiDataType());
+		DataPointKey key = new DataPointKey(metricName, tags, dataPoint.getApiDataType(), ttl);
 
 		synchronized (m_mapLock)
 		{
@@ -395,10 +398,10 @@ public class RemoteDatastore implements Datastore
 
 			try
 			{
-				putDataPoint(FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, fileSize));
-				putDataPoint(WRITE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, m_dataPointCounter));
-				putDataPoint(ZIP_FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, zipSize));
-				putDataPoint(TIME_TO_SEND_METRIC, tags, m_longDataPointFactory.createDataPoint(now, timeToSend));
+				putDataPoint(FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, fileSize), 0);
+				putDataPoint(WRITE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, m_dataPointCounter), 0);
+				putDataPoint(ZIP_FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, zipSize), 0);
+				putDataPoint(TIME_TO_SEND_METRIC, tags, m_longDataPointFactory.createDataPoint(now, timeToSend), 0);
 			}
 			catch (DatastoreException e)
 			{

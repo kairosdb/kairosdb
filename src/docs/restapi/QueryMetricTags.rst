@@ -27,7 +27,7 @@ Request
 Body
 ----
 
-::
+.. code-block:: json
 
  {
     "start_absolute": 1357023600000,
@@ -87,26 +87,26 @@ Response
 *Success*
   The response contains either the metric values or possible error values. Returns 200 for successful queries.
 
-::
+  .. code-block:: json
 
-  {
-      "results": [
-          {
-              "name": "abc_123",
-              "tags": {
-                  "host": ["server1","server2"],
-                  "type": ["bar"]
-              }
-          },
-          {
-              "name": "xyz_123",
-              "tags": {
-                  "host": ["server1","server2"],
-                  "type": ["bar"]
-              }
-          }
-      ]
-  }
+    {
+        "results": [
+            {
+                "name": "abc_123",
+                "tags": {
+                    "host": ["server1","server2"],
+                    "type": ["bar"]
+                }
+            },
+            {
+                "name": "xyz_123",
+                "tags": {
+                    "host": ["server1","server2"],
+                    "type": ["bar"]
+                }
+            }
+        ]
+    }
 
 *Failure*
 

@@ -28,7 +28,7 @@ import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryPluginFactory;
 import org.kairosdb.core.datastore.QueryQueuingManager;
 import org.kairosdb.core.groupby.*;
-import org.kairosdb.core.http.rest.json.GsonParser;
+import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.jobs.CacheFileCleaner;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.util.MemoryMonitor;
@@ -75,7 +75,7 @@ public class CoreModule extends AbstractModule
 		bind(AggregatorFactory.class).to(GuiceAggregatorFactory.class).in(Singleton.class);
 		bind(GroupByFactory.class).to(GuiceGroupByFactory.class).in(Singleton.class);
 		bind(QueryPluginFactory.class).to(GuiceQueryPluginFactory.class).in(Singleton.class);
-		bind(GsonParser.class).in(Singleton.class);
+		bind(QueryParser.class).in(Singleton.class);
 		bind(CacheFileCleaner.class).in(Singleton.class);
 		bind(KairosDBScheduler.class).in(Singleton.class);
 		bind(MemoryMonitor.class).in(Singleton.class);
@@ -96,6 +96,8 @@ public class CoreModule extends AbstractModule
 		bind(DataGapsMarkingAggregator.class);
 		bind(FirstAggregator.class);
 		bind(LastAggregator.class);
+		bind(SaveAsAggregator.class);
+		bind(TrimAggregator.class);
 
 
 		bind(ValueGroupBy.class);

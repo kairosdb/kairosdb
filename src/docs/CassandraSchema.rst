@@ -12,9 +12,9 @@ The cassandra schema consists of 3 column families
 Column Families
 ---------------
 
-~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^
 Data Points Column Family
-~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The row key is made up of 3 parts all concatenated together.
   1. Metric name (UTF-8)
@@ -28,15 +28,15 @@ The value of the column varies depending on the type of value.  The exact format
 
 The length of the row is set to exactly three weeks of data or 1,814,400,000 columns.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Row Key Index Column Family
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This row is primarily used when querying the data.  The row key is the name of the metric.  The names of the columns are the row keys from the data_points column family.  The columns have no values.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 String Index Column Family
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Just an index to lookup what metric names, tag names and tag values are in the system.  There are three rows one for each of the above mentioned.
 

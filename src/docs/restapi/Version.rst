@@ -29,7 +29,7 @@ Response
 
   Returns 200 for successful queries.
 
-::
+.. code-block:: json
 
   {
     "version": "KairosDB 0.9.4"

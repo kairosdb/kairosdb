@@ -488,13 +488,14 @@ def doIntegration(Rule rule)
 //------------------------------------------------------------------------------
 //Build Docs
 new SimpleRule("docs").setDescription("Build Sphinx Documentation")
-        .setMakeAction("doDocs")
-        .setProperty("all", false)
+		.setMakeAction("doDocs")
+		.addSources(new RegExFileSet("src/docs", ".*").recurse().getFullFilePaths())
+		.setProperty("all", false)
 
 new SimpleRule("docs-rebuild").setDescription("Rebuild Sphinx Documentation. All docs are built even if not changed.")
-        .setMakeAction("doDocs")
+		.setMakeAction("doDocs")
 		.addSources(new RegExFileSet("src/docs", ".*").recurse().getFullFilePaths())
-        .setProperty("all", true)
+		.setProperty("all", true)
 
 def doDocs(Rule rule)
 {

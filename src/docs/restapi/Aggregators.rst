@@ -2,10 +2,28 @@
 Aggregators
 ===========
 
-.. highlight:: json
+---------------------
+Aggregator Parameters
+---------------------
 
-.. note::
-	Please ignore the () on the aggregators below, it is a side effect of the documentation.
+The following are parameters that are common to more than one aggregator.
+
+.. _unit:
+
+.. js:data:: unit
+
+	Unit is a time unit represented as a string and must be one of (
+	MILLISECONDS, SECONDS, MINUTES, HOURS, DAYS, WEEKS, MONTHS, YEARS)
+
+.. _sampling:
+
+.. js:data:: sampling
+
+	A sampling is a json object containing two values a ``value`` and a ``unit``.
+	The value is a long and the unit is see :ref:`unit`.
+
+
+.. _range_aggregator:
 
 ----------------
 Range Aggregator
@@ -14,21 +32,22 @@ Range Aggregator
 Many of the below aggregators inherit from the range aggregator.  You can set
 the following parameters on any range aggregator.
 
-**sampling** (Sampling {value (long), unit (MILLISECONDS, SECONDS, MINUTES, HOURS, DAYS, WEEKS, MONTHS, YEARS)})
+**sampling** (Sampling {value (long), unit (See :ref:`unit`)})
 
 	Sampling is the length of the interval on which to aggregate data.
 
-	.. code-block:: json
-		"aggregators": [
-        {
-			"name": "sum",
-			"align_sampling": true,
-			"align_start_time": true,
-			"sampling": {
-				"value": "1",
-				"unit": "minutes"
-			}
-        }]
+.. code-block:: javascript
+
+	"aggregators": [
+	{
+	  "name": "sum",
+	  "align_sampling": true,
+	  "align_start_time": true,
+	  "sampling": {
+	    "value": 1,
+	    "unit": "minutes"
+	  }
+	}]
 
 **align_start_time** - (boolean)
 
@@ -48,152 +67,203 @@ the following parameters on any range aggregator.
 
 	Start time to calculate the ranges from.  Typically this is the start of the query
 
+**time_zone** - (long time zone format)
+
+	Time zone to use when doing time based calculations.
+
 -------
 Average
 -------
-.. function:: avg
+.. js:data:: avg
 
 	Computes average value.
-
-	:param align_start_time:
+	Extends :ref:`range_aggregator`.
 
 ------------------
 Standard Deviation
 ------------------
-.. function:: dev
+.. js:data:: dev
 
 	Computes standard deviation.
+	Extends :ref:`range_aggregator`.
 
 -----
 Count
 -----
-.. function:: count
+.. js:data:: count
 
 	Counts the number of data points.
+	Extends :ref:`range_aggregator`.
 
 -----
 First
 -----
-.. function:: first
+.. js:data:: first
 
 	Returns the first data point for the interval.
-
+	Extends :ref:`range_aggregator`.
 
 ----
 Gaps
 ----
-.. function:: gaps
+.. js:data:: gaps
 
 	Marks gaps in data according to sampling rate with a null data point.
+	Extends :ref:`range_aggregator`.
 
 ---------
 Histogram
 ---------
-.. function:: histogram
+.. js:data:: histogram
 
 	Calculates a probability distribution and returns the specified percentile
 	for the distribution. The "percentile" value is defined as 0 < percentile <= 1
 	where .5 is 50% and 1 is 100%. Note that this aggregator has been renamed to
 	*percentile* in release 0.9.2.
+	See :ref:`percentile_aggregator`.
 
 ----
 Last
 ----
-.. function:: last
+.. js:data:: last
 
 	Returns the last data point for the interval.
+	Extends :ref:`range_aggregator`.
 
 -------------
 Least Squares
 -------------
-.. function:: least_squares
+.. js:data:: least_squares
 
 	Returns two points for the range which represent the best fit line through the set of points.
+	Extends :ref:`range_aggregator`.
 
 ----
 Max
 ----
-.. function:: max
+.. js:data:: max
 
 	Returns the largest value in the interval.
+	Extends :ref:`range_aggregator`.
 
 ----
 Min
 ----
-.. function:: min
+.. js:data:: min
 
 	Returns the smallest value in the interval.
+	Extends :ref:`range_aggregator`.
+
+.. _percentile_aggregator:
 
 ----------
 Percentile
 ----------
-.. function:: percentile
+.. js:data:: percentile
 
 	Finds the percentile of the data range. Calculates a probability distribution
 	and returns the specified percentile for the distribution. The “percentile”
 	value is defined as 0 < percentile <= 1 where .5 is 50% and 1 is 100%.
+	Extends :ref:`range_aggregator`.
+
+	Parameters:
+		**percentile** (double) - Percentile to count.
 
 ----
 Sum
 ----
-.. function:: sum
+.. js:data:: sum
 
 	Sums all values
+	Extends :ref:`range_aggregator`.
 
 ----
 Diff
 ----
-.. function:: diff
+.. js:data:: diff
 
 	Computes the difference between successive data points.
 
 ------
 Divide
 ------
-.. function:: div
+.. js:data:: div
 
 	Returns each data point divided by a divisor. Requires a "divisor" property
 	which is the value that all data points will be divided by.
 
+	Parameters:
+		**divisor** (double) - Value to divide data points by.
+
 ----
 Rate
 ----
-.. function:: rate
+.. js:data:: rate
 
 	Returns the rate of change between a pair of data points. Requires a "unit"
 	property which is the sampling duration (ie rate in seconds, milliseconds,
 	minutes, etc...).
 
+	Parameters:
+		**sampling** (See :ref:`sampling`) - Sets the sampling for calculating
+		the rate.
+
+		**unit** (See :ref:`unit`) - Shortcut for setting the sampling to a single unit.
+		If you set the unit to ``SECONDS`` then the sampling is over one second.
+
+		**time_zone** (Long format time zone) - Time zone for doing time calculations.
+
 -------
 Sampler
 -------
-.. function:: sampler
+.. js:data:: sampler
 
 	Computes the sampling rate of change for the data points. Requires a "unit"
 	property which is the sampling duration  (ie rate in seconds, milliseconds,
 	minutes, etc...).
 
+	Parameters:
+		**unit** (See :ref:`unit`) - Sets the sampling unit.
+		If you set the unit to ``SECONDS`` then the sampling rate is over one second.
+
+		**time_zone** (Long format time zone) - Time zone for doing time calculations.
+
 -----
 Scale
 -----
-.. function:: scale
+.. js:data:: scale
 
 	Scales each data point by a factor. Requires a "factor" property which is
 	the scaling value.
 
+	Parameters:
+		**factor** (double) - Scale factor.
+
 ----
 Trim
 ----
-.. function:: trim
+.. js:data:: trim
 
 	Trims off the first, last or both data points for the interval.  Useful in
 	conjunction with the save_as aggregator to remove partial intervals.
 
+	Parameters:
+		**trim** (FIRST, LAST, BOTH) - Trims either first, last or both end data points.
+
 -------
 Save As
 -------
-.. function:: save_as
+.. js:data:: save_as
 
-	Saves the result to another metric.
+	Saves the result to another metric.  Any data point with a unique tag value will also
+	have that tag set.  So if a data point is returned with tags ``{"dc":["DC1"],"host":["hostA", "hostB"]}``
+	only the dc tag will be set when saved.  If you do a group by query the group by tags are saved.
 
-	:param ttl: Time to live on the saved data
+	Parameters:
+		**metric_name** (string) - Metric name to save the results to.
+
+		**tags** (Map of key values) - Additional tags to set on the metrics ``{"tag1":"value1","tag2":"value2"}``
+
+		**ttl** (integer) - Sets the ttl on the newly saved metrics
+
+

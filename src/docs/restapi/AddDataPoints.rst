@@ -30,7 +30,8 @@ Body
         "tags": {
             "host": "server1",
             "data_center": "DC1"
-        }
+        },
+        "ttl": 300
     },
     {
         "name": "impedance",
@@ -99,6 +100,11 @@ tagged with the value of "server1".
 
 Type identifies custom data types. This field is only needed if the data value is something other than a number.
 The type field is the name of the registered type for the custom data. See :doc:`Custom Types <../kairosdevelopment/CustomData>` for information on custom types.
+
+**ttl**
+
+Sets the Cassandra ttl for the data points.  In the example above the data points for metric ``archive_file_tracked``
+will have the ttl set for 5 min.  Leaving the ttl off or setting it to 0 will not set a ttl in Cassandra.
 
 
 ^^^^^^^^

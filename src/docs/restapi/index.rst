@@ -17,6 +17,7 @@ Contents:
    ListTagNames
    ListTagValues
    QueryMetrics
+   Aggregators
    QueryMetricTags
    Version
 

@@ -292,15 +292,15 @@ public class QueryParser
 	//	}
 
 
-	//	public RollupTask parseRollupTask2(String json)
-	//	{
-	//		JsonParser parser = new JsonParser();
-	//		JsonObject rollupTask = parser.parse(json).getAsJsonObject();
-	//		RollupTask task = m_gson.fromJson(rollupTask.getAsJsonObject(), RollupTask.class);
-	//		task.addJson(json.replaceAll("\\n", ""));
-	//
-	//		return task;
-	//	}
+	public RollupTask parseRollupTask2(String json)
+	{
+		JsonParser parser = new JsonParser();
+		JsonObject rollupTask = parser.parse(json).getAsJsonObject();
+		RollupTask task = m_gson.fromJson(rollupTask.getAsJsonObject(), RollupTask.class);
+		task.addJson(json.replaceAll("\\n", ""));
+
+		return task;
+	}
 
 	public RollupTask parseRollUpTask(String json) throws BeanValidationException, QueryException
 	{

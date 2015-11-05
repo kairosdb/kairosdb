@@ -9,8 +9,14 @@
 				<!-- METRIC NAME -->
 				<div class="tight-form">
 					<ul class="tight-form-list" role="menu">
-						<li class="tight-form-item">
-							<i class="fa invisible">i</i>
+						<li class="tight-form-warning">
+							<i class="fa invisible"
+							   ng-show="!errors.metric">i</i>
+							<a bs-tooltip="errors.metric"
+							   style="color: rgb(229, 189, 28)"
+							   ng-show="errors.metric">
+								<i class="glyphicon glyphicon-warning-sign"></i>
+							</a>
 						</li>
 
 						<input type="text"
@@ -22,11 +28,6 @@
 							   limit="METRIC_NAME_LIST_MAX_LENGTH"
 							   ng-blur="targetBlur()"
 							   data-provide="typeahead">
-						<a bs-tooltip="errors.metric"
-						   style="color: rgb(229, 189, 28)"
-						   ng-show="errors.metric">
-							<i class="glyphicon glyphicon-warning-sign"></i>
-						</a>
 					</ul>
 					<div class="clearfix"></div>
 				</div>
@@ -34,8 +35,14 @@
 				<!-- SAVE AS NAME -->
 				<div class="tight-form">
 					<ul class="tight-form-list" role="menu">
-						<li class="tight-form-item">
-							<i class="fa invisible">i</i>
+						<li class="tight-form-warning">
+							<i class="fa invisible"
+							   ng-show="!errors.save_as">i</i>
+							<a bs-tooltip="errors.save_as"
+							   style="color: rgb(229, 189, 28)"
+							   ng-show="errors.save_as">
+								<i class="glyphicon glyphicon-warning-sign"></i>
+							</a>
 						</li>
 
 						<input type="text"
@@ -44,11 +51,6 @@
 							   ng-click="clearSaveAs()"
 							   ng-class="(target.save_as == 'Save As') ? 'placeholder' : ''"
 							   ng-blur="targetBlur()">
-						<a bs-tooltip="errors.save_as"
-						   style="color: rgb(229, 189, 28)"
-						   ng-show="errors.save_as">
-							<i class="glyphicon glyphicon-warning-sign"></i>
-						</a>
 					</ul>
 					<div class="clearfix"></div>
 				</div>

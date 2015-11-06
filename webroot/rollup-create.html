@@ -58,7 +58,7 @@
 				<!-- START TIME -->
 				<div class="tight-form">
 					<ul class="tight-form-list" role="menu">
-						<li class="tight-form-item">
+						<li class="tight-form-warning">
 							<i class="fa invisible">i</i>
 						</li>
 
@@ -78,8 +78,13 @@
 				<!-- TAGS  filtering -->
 				<div class="tight-form">
 					<ul class="tight-form-list" role="menu">
-						<li class="tight-form-item">
-							<i class="fa invisible">i</i>
+						<li class="tight-form-warning">
+							<i class="fa invisible" ng-show="!errors.tags">i</i>
+							<a bs-tooltip="errors.tags"
+							   style="color: rgb(229, 189, 28)"
+							   ng-show="errors.tags">
+								<i class="glyphicon glyphicon-warning-sign"></i>
+							</a>
 						</li>
 
 						<li class="tight-form-item">
@@ -121,15 +126,9 @@
 								   data-min-length=0 data-items=100
 								   ng-model="target.currentTagValue"
 								   placeholder="value"/>
-							<a bs-tooltip="errors.tags"
-							   style="color: rgb(229, 189, 28)"
-							   ng-show="errors.tags">
-								<i class="glyphicon glyphicon-warning-sign"></i>
-							</a>
 						</li>
 
-						<li class="tight-form-item"
-							ng-show="addFilterTagMode">
+						<li class="tight-form-item" ng-show="addFilterTagMode">
 							<a ng-click="addFilterTag()">
 								<i ng-show="errors.tags"
 								   class="glyphicon glyphicon-remove"></i>
@@ -144,7 +143,7 @@
 				<!-- GROUP BYS -->
 				<div class="tight-form">
 					<ul class="tight-form-list" role="menu">
-						<li class="tight-form-item">
+						<li class="tight-form-warning">
 							<i class="fa invisible">i</i>
 						</li>
 						<li class="tight-form-item">
@@ -263,7 +262,7 @@
 				<!-- HORIZONTAL AGGREGATION -->
 				<div class="tight-form">
 					<ul class="tight-form-list" role="menu">
-						<li class="tight-form-item">
+						<li class="tight-form-warning">
 							<i class="fa invisible">i</i>
 						</li>
 						<li class="tight-form-item">

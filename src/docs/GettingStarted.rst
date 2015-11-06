@@ -30,6 +30,7 @@ KairosDB can be configured to use one of several backends for storing data.  By 
 Using with H2
 -------------
 
+
 ``kairosdb.service.datastore=org.kairosdb.datastore.h2.H2Module``
 
 By default KairosDB is configured to run using the H2 datbase.  This lets you do development work without setting up and running Cassandra or HBase.

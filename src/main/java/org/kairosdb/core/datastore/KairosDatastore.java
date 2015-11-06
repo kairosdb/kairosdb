@@ -442,6 +442,7 @@ public class KairosDatastore
 		{
 			return m_dataPointCount;
 		}
+        public int getRowCount() { return m_rowCount; }
 
 		@Override
 		public List<DataPointGroup> execute() throws DatastoreException

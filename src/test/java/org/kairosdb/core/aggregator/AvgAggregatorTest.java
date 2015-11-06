@@ -15,6 +15,8 @@
  */
 package org.kairosdb.core.aggregator;
 
+import org.junit.Before;
+import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
@@ -23,8 +25,6 @@ import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.testing.ListDataPointGroup;
-import org.junit.Before;
-import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.closeTo;

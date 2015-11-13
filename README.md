@@ -10,7 +10,7 @@ Documentation is found [here](http://kairosdb.github.io/website/).
 
 Download the latest [KairosDB release](https://github.com/kairosdb/kairosdb/releases).
 
-Installation instructions are found [here](http://kairosdb.github.io/website/docs/build/html/GettingStarted.html#install)
+Installation instructions are found [here](http://kairosdb.github.io/docs/build/html/GettingStarted.html#install)
 
 ## Getting Involved
 

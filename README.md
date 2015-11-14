@@ -6,11 +6,13 @@ KairosDB is a fast distributed scalable time series database written on top of C
 
 Documentation is found [here](http://kairosdb.github.io/website/).
 
+[Frequently Asked Questions](https://github.com/kairosdb/kairosdb/wiki/Frequently-Asked-Questions)
+
 ## Installing
 
 Download the latest [KairosDB release](https://github.com/kairosdb/kairosdb/releases).
 
-Installation instructions are found [here](http://kairosdb.github.io/website/docs/build/html/GettingStarted.html#install)
+Installation instructions are found [here](http://kairosdb.github.io/docs/build/html/GettingStarted.html)
 
 ## Getting Involved
 

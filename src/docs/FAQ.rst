@@ -15,4 +15,4 @@ There are several strategies here:
 3.  Batch jobs that pre-aggregate and write to a new metric.  The new metric can then be queried and used to graph the data.  This could be done with a cron job.  There is some discussion about making the batch job part of K* but, there is work to be done before this can happen.
 
 
-
+Additional FAQ can be found here: https://github.com/kairosdb/kairosdb/wiki/Frequently-Asked-Questions

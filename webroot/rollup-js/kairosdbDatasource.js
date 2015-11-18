@@ -252,7 +252,7 @@ module.factory('KairosDBDatasource', function ($q, $http) {
 
 		return {
 			"value": timeArray[0],
-			"unit": timeArray[1]
+			"unit": unit
 		}
 	};
 

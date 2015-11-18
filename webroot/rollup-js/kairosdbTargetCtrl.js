@@ -15,6 +15,7 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 
 	$scope.init = function () {
 		$scope.target.start_relative_label = "1 hour";
+		$scope.changeStartTime();
 
 		if (rollup) {
 			convertFromQueryToTarget(rollup);

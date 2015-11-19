@@ -232,6 +232,29 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 			});
 	};
 
+	$scope.pasteQuery = function (task, rollup, edit) {
+		var modalInstance = $uibModal.open({
+			templateUrl: 'paste-query.html?cacheBust=' + Math.random().toString(36).slice(2), //keep dialog from caching
+			controller: 'PasteQueryCtrl',
+			backdrop: 'static', // disable closing of dialog with click away
+			keyboard: false, // disable closing dialog with ESC
+			resolve: {
+				rollup: function () {
+					return rollup;
+				}
+			}
+		});
+
+		modalInstance.result.then(
+			function (newRollup) {
+				if (edit) {
+					task.rollups.splice(task.rollups.indexOf(rollup), 1);
+				}
+				task.rollups.push(newRollup);
+				$scope.saveTask(task);
+			});
+	};
+
 	$scope.editRollup = function (task, rollup) {
 		$scope.addRollup(task, rollup, true);
 	};

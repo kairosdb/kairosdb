@@ -25,6 +25,7 @@
 	<script src="rollup-js/rollup.js"></script>
 	<script src="rollup-js/kairosdbDatasource.js"></script>
 	<script src="rollup-js/kairosdbTargetCtrl.js"></script>
+	<script src="rollup-js/paste-query-ctrl.js"></script>
 </head>
 
 <!-- *********** TODO replace all method calls to point to model for performance reasons  *********  -->
@@ -94,6 +95,10 @@
 						<div class="panel-heading text-info">Queries
 							<a href="#" ng-click="addRollup(task)">
 								<span class="taskOperations glyphicon glyphicon-plus text-info"
+									  aria-hidden="true"></span>
+							</a>
+							<a href="#" ng-click="pasteQuery(task)">
+								<span class="glyphicon glyphicon-paste text-info"
 									  aria-hidden="true"></span>
 							</a>
 						</div>

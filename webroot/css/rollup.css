@@ -71,13 +71,13 @@ textarea {
 }
 
 .tight-form-warning {
+    display: inline-block;
     padding-left: 5px;
     padding-right: 5px;
-    padding-top: 8px;
-    padding-bottom: 8px;
     margin: 0;
     width: 30px;
-    border-right: 1px solid #050505;
+    height: 100%;
+    border-top: 1px
 }
 
 .tight-form-item {
@@ -114,13 +114,12 @@ input[type=checkbox], input[type=radio] {
 
 [type=text].tight-form-input, [type=email].tight-form-input, [type=number].tight-form-input, [type=password].tight-form-input {
     border: 0;
-    border-right: 1px solid #050505;
     margin: 0;
     border-radius: 0;
     padding: 8px 6px;
-    /*height: 100%;*/
     box-sizing: border-box;
-    width: 60%;
+    width: 90%;
+    border-left: 1px solid #050505;
 }
 
 [type=text].tight-form-input.last, [type=email].tight-form-input.last, [type=number].tight-form-input.last, [type=password].tight-form-input.last {
@@ -137,7 +136,6 @@ select.tight-form-input {
     margin: 0;
     border-radius: 0;
     height: 36px;
-    padding: 8px 3px;
 }
 
 select.tight-form-input.last {
@@ -248,4 +246,8 @@ select.tight-form-input.last {
 
 .modal-content {
     width: 900px;
+}
+
+.save_as {
+    width: 90%;
 }

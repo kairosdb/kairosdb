@@ -5,6 +5,7 @@ module.controller('KairosDBTargetCtrl', ['$scope', '$modalInstance', 'KairosDBDa
 function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) {
 
 	$scope.DEFAULT_SAVE_AS = "Save As";
+	$scope.DEFAULT_METRIC = "metric name";
 	$scope.METRIC_NAME_LIST_MAX_LENGTH = 20;
 	$scope.target = {};
 	$scope.target.metric = "";
@@ -155,7 +156,9 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 	};
 
 	$scope.clearSaveAs = function () {
-		$scope.target.save_as = "";
+		if ($scope.isSaveAsEmptyOrDefault()) {
+			$scope.target.save_as = ""
+		}
 	};
 
 	$scope.ok = function () {
@@ -171,6 +174,13 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 
 	$scope.cancel = function () {
 		$modalInstance.dismiss('cancel');
+	};
+
+	$scope.suggestSaveAs = function () {
+		if (!$scope.isMetricOrDefault() && $scope.isSaveAsEmptyOrDefault()) {
+			$scope.target.save_as = $scope.target.metric + "_rollup";
+		}
+		$scope.targetBlur();
 	};
 
 	//////////////////////////////
@@ -507,6 +517,14 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 		return !_.isEmpty($scope.errors);
 	};
 
+	$scope.isSaveAsEmptyOrDefault = function () {
+		return !$scope.target.save_as || $scope.target.save_as == $scope.DEFAULT_SAVE_AS;
+	};
+
+	$scope.isMetricOrDefault = function () {
+		return !$scope.target.metric || $scope.target.metric == $scope.DEFAULT_METRIC;
+	};
+
 	//////////////////////////////
 	// VALIDATION
 	//////////////////////////////
@@ -518,7 +536,7 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 			errs.metric = "You must supply a metric name.";
 		}
 
-		if (!target.save_as || target.save_as == $scope.DEFAULT_SAVE_AS) {
+		if ($scope.isSaveAsEmptyOrDefault()) {
 			errs.save_as = "You must supply a new metric name.";
 		}
 

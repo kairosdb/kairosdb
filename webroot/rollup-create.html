@@ -26,7 +26,8 @@
 							   bs-options="metric for metric in suggestMetrics()"
 							   placeholder="metric name" min-length="0"
 							   limit="METRIC_NAME_LIST_MAX_LENGTH"
-							   ng-blur="targetBlur()"
+							   ng-change="targetBlur()"
+							   ng-blur="suggestSaveAs()"
 							   data-provide="typeahead">
 					</ul>
 					<div class="clearfix"></div>
@@ -50,7 +51,7 @@
 							   ng-model="target.save_as" spellcheck="false"
 							   ng-click="clearSaveAs()"
 							   ng-class="(target.save_as == 'Save As') ? 'placeholder' : ''"
-							   ng-blur="targetBlur()">
+							   ng-change="targetBlur()">
 					</ul>
 					<div class="clearfix"></div>
 				</div>

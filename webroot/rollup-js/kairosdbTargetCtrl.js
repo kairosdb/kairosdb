@@ -248,30 +248,32 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 	//////////////////////////////
 
 	$scope.addFilterTag = function () {
-		if (!$scope.addFilterTagMode) {
+		if ($scope.addFilterTagMode) {
+			if ($scope.target.tags) {
+				$scope.validateFilterTag();
+
+				if (!$scope.errors.tags) {
+					if (!_.has($scope.target.tags, $scope.target.currentTagKey)) {
+						$scope.target.tags[$scope.target.currentTagKey] = [];
+					}
+					if (!_.contains($scope.target.tags[$scope.target.currentTagKey], $scope.target.currentTagValue)) {
+						$scope.target.tags[$scope.target.currentTagKey].push($scope.target.currentTagValue);
+						$scope.targetBlur();
+					}
+					$scope.target.currentTagKey = '';
+					$scope.target.currentTagValue = '';
+				}
+			}
+			else {
+				$scope.target.tags = {};
+				$scope.errors.tags = null;
+			}
+			$scope.addFilterTagMode = false;
+		}
+		else {
 			$scope.addFilterTagMode = true;
 			$scope.validateFilterTag();
-			return;
 		}
-
-		if (!$scope.target.tags) {
-			$scope.target.tags = {};
-		}
-
-		$scope.validateFilterTag();
-		if (!$scope.errors.tags) {
-			if (!_.has($scope.target.tags, $scope.target.currentTagKey)) {
-				$scope.target.tags[$scope.target.currentTagKey] = [];
-			}
-			if (!_.contains($scope.target.tags[$scope.target.currentTagKey], $scope.target.currentTagValue)) {
-				$scope.target.tags[$scope.target.currentTagKey].push($scope.target.currentTagValue);
-				$scope.targetBlur();
-			}
-			$scope.target.currentTagKey = '';
-			$scope.target.currentTagValue = '';
-		}
-
-		$scope.addFilterTagMode = false;
 	};
 
 	$scope.removeFilterTag = function (key) {

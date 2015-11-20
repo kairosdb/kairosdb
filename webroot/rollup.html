@@ -53,13 +53,28 @@
 		<div ng-repeat="task in tasks">
 			<div class="panel panel-default">
 				<div class="panel-heading">
-					<h4 class="panel-title">
-						<a class="accordion-toggle" data-toggle="collapse"
-						   data-parent="#accordion" href="#{{ task.id }}">
-							<span class="text-info" ng-hide="task.edit">{{ task.name }}</span>
-						</a>
-						<input type='text' ng-model="task.name"
-							   ng-hide="!task.edit"/>
+					<a class="accordion-toggle" data-toggle="collapse"
+					   data-parent="#accordion" href="#{{ task.id }}">
+					</a>
+
+					<a href="#" ng-click="editRollupTask(task)">
+							<span class="taskOperations glyphicon glyphicon-pencil text-info"
+								  aria-hidden="true" ng-hide="task.edit"></span>
+					</a>
+					<a href="#" ng-click="deleteRollupTask(task)">
+							<span class="taskOperations glyphicon glyphicon-remove text-info"
+								  aria-hidden="true" ng-hide="task.edit"></span>
+					</a>
+					<a href="#" ng-click="saveRollupTask(task)">
+							<span class="taskOperations glyphicon glyphicon-ok text-success"
+								  aria-hidden="true"
+								  ng-hide="!task.edit"></span>
+					</a>
+
+					<span class="text-info"
+						  ng-hide="task.edit">{{ task.name }}</span>
+					<input type='text' ng-model="task.name"
+						   ng-hide="!task.edit"/>
 
 						<span class="dropdown schedule">
 							<button class="btn btn-default dropdown-toggle"
@@ -80,21 +95,6 @@
 								</li>
 							</ul>
 						</span>
-
-						<a href="#" ng-click="deleteRollupTask(task)">
-							<span class="taskOperations glyphicon glyphicon-remove pull-right text-info"
-								  aria-hidden="true" ng-hide="task.edit"></span>
-						</a>
-						<a href="#" ng-click="editRollupTask(task)">
-							<span class="taskOperations glyphicon glyphicon-pencil pull-right text-info"
-								  aria-hidden="true" ng-hide="task.edit"></span>
-						</a>
-						<a href="#" ng-click="saveRollupTask(task)">
-							<span class="taskOperations glyphicon glyphicon-ok text-success pull-right"
-								  aria-hidden="true"
-								  ng-hide="!task.edit"></span>
-						</a>
-					</h4>
 
 					<div id="{{ task.id }}" class="panel-collapse collapse in">
 						<div class="panel-heading text-info">Queries
@@ -126,9 +126,7 @@
 										  aria-hidden="true"></span>
 								</a>
 
-								<!--{{ rollup }}<br>-->
-								<span ng-hide="rollup.edit">{{ toTql(rollup) }}<br><br></span>
-								<!--<textarea ng-hide="!rollup.edit">{{ toTql(rollup) }}</textarea>-->
+								<span ng-hide="rollup.edit">{{ toTql(rollup) }}</span>
 							</div>
 
 						</div>

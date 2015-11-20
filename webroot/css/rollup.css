@@ -4,7 +4,7 @@
     content: "\e114"; /* adjust as needed, taken from bootstrap.css */
     float: left;
     color: grey;
-    padding-right: 5px;
+    padding-right: 15px;
     padding-top: 8px;
 }
 
@@ -18,7 +18,7 @@
 }
 
 .taskOperations {
-    padding-left: 10px;
+    /*padding-left: 5px;*/
 }
 
 .rollupOperations {
@@ -246,6 +246,10 @@ select.tight-form-input.last {
 
 .modal-content {
     width: 900px;
+}
+
+.panel-body {
+    padding: 0 0 0 20px;
 }
 
 .save_as {

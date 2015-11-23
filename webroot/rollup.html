@@ -24,6 +24,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.14.1/ui-bootstrap-tpls.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-strap/2.3.3/angular-strap.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-strap/2.3.3/angular-strap.tpl.min.js"></script>
+	<script src="rollup-js/bootbox.js"></script>
 	<script src="rollup-js/moment.js" type="text/javascript"></script>
 	<script src="rollup-js/later.js" type="text/javascript"></script>
 	<script src="rollup-js/prettycron.js" type="text/javascript"></script>
@@ -36,7 +37,6 @@
 <!-- *********** TODO replace all method calls to point to model for performance reasons  *********  -->
 
 <body ng-app="rollupApp" ng-controller="rollupController">
-
 <div class="container-fluid">
 	<div class="page-header">
 		<h1 class="text-center text-info">Roll-ups
@@ -44,12 +44,13 @@
 			   class="btn btn-primary btn-lg btn-circle pull-right">
 				<span class="glyphicon glyphicon-plus"></span></a>
 		</h1>
+		<span id="lastSaved" class="last-saved pull-left text-info small"
+			  ng-hide="lastSaved ==null">Last Saved {{lastSaved}}</span>
 	</div>
 
 	<!-- TODO Group bys -->
 
 	<div class="panel-group" id="accordion">
-
 		<div ng-repeat="task in tasks">
 			<div class="panel panel-default">
 				<div class="panel-heading">
@@ -57,49 +58,38 @@
 					   data-parent="#accordion" href="#{{ task.id }}">
 					</a>
 
-					<a href="#" ng-click="editRollupTask(task)">
-							<span class="taskOperations glyphicon glyphicon-pencil text-info"
-								  aria-hidden="true" ng-hide="task.edit"></span>
-					</a>
 					<a href="#" ng-click="deleteRollupTask(task)">
 							<span class="taskOperations glyphicon glyphicon-remove text-info"
 								  aria-hidden="true" ng-hide="task.edit"></span>
 					</a>
-					<a href="#" ng-click="saveRollupTask(task)">
-							<span class="taskOperations glyphicon glyphicon-ok text-success"
-								  aria-hidden="true"
-								  ng-hide="!task.edit"></span>
-					</a>
 
-					<span class="text-info"
-						  ng-hide="task.edit">{{ task.name }}</span>
-					<input type='text' ng-model="task.name"
-						   ng-hide="!task.edit"/>
+					<input class="text-field" type='text'
+						   ng-model="task.name"
+						   ng-blur="onBlur(task)"/>
 
-						<span class="dropdown schedule">
-							<button class="btn btn-default dropdown-toggle"
-									type="button" id="executeDropdown"
-									data-toggle="dropdown" aria-haspopup="true"
-									aria-expanded="true"
-									ng-disabled="!task.edit">
-								{{ toHumanReadableCron(task.schedule) }} <span
-									class="caret"></span>
-							</button>
-							<ul class="dropdown-menu"
-								aria-labelledby="executeDropdown">
-								<li ng-repeat="executeTime in executeTimes">
-									<a href="#"
-									   ng-click="scheduleModified(task, executeTime)">
-										{{ toHumanReadableCron(executeTime) }}
-									</a>
-								</li>
-							</ul>
-						</span>
+					<span class="dropdown schedule">
+						<button class="btn btn-default dropdown-toggle"
+								type="button" id="executeDropdown"
+								data-toggle="dropdown" aria-haspopup="true"
+								aria-expanded="true">
+							{{ toHumanReadableCron(task.schedule) }} <span
+								class="caret"></span>
+						</button>
+						<ul class="dropdown-menu"
+							aria-labelledby="executeDropdown">
+							<li ng-repeat="executeTime in executeTimes">
+								<a href="#"
+								   ng-click="scheduleModified(task, executeTime)">
+									{{ toHumanReadableCron(executeTime) }}
+								</a>
+							</li>
+						</ul>
+					</span>
 
 					<div id="{{ task.id }}" class="panel-collapse collapse in">
 						<div class="panel-heading text-info">Queries
 							<a href="#" ng-click="addRollup(task)">
-								<span class="taskOperations glyphicon glyphicon-plus text-info"
+								<span class="queryOperations glyphicon glyphicon-plus text-info"
 									  aria-hidden="true"></span>
 							</a>
 							<a href="#" ng-click="pasteQuery(task)">

@@ -5,6 +5,9 @@ var module = angular.module('rollupApp', ['mgcrea.ngStrap', 'mgcrea.ngStrap.aler
 	'template/modal/window.html']);
 
 module.controller('rollupController', function ($scope, $http, $uibModal) {
+
+	$scope.lastSaved = null;
+
 	$http.get("/api/v1/rollups/rollup") //todo don't hard code
 		.success(function (response) {
 
@@ -19,6 +22,18 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 		.error(function (data, status, headers, config) {
 			alert("failure message: " + JSON.stringify({data: data}));
 		});
+
+	$scope.onBlur = function (task) {
+		$scope.saveRollupTask(task);
+
+		currentDate = new Date();
+		$scope.lastSaved = (currentDate.getHours() < 10 ? "0" + currentDate.getHours() : currentDate.getHours()) + ":" +
+			(currentDate.getMinutes() < 10 ? "0" + currentDate.getMinutes() : currentDate.getMinutes()) + ":" +
+			(currentDate.getSeconds() < 10 ? "0" + currentDate.getSeconds() : currentDate.getSeconds());
+
+		// Flash Last Saved message
+		$('#lastSaved').fadeOut('slow').fadeIn('slow').animate({opacity: 1.0}, 1000);
+	};
 
 	$scope.toHumanReadableCron = function (schedule) {
 		return prettyCron.toString(schedule);
@@ -123,19 +138,6 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 		return result;
 	};
 
-	//$scope.relativeStartTimes = [
-	//	{value: 1, unit: "minutes"},
-	//	{value: 5, unit: "minutes"},
-	//	{value: 10, unit: "minutes"},
-	//	{value: 15, unit: "minutes"},
-	//	{value: 20, unit: "minutes"},
-	//	{value: 30, unit: "minutes"},
-	//	{value: 1, unit: "hours"},
-	//	{value: 6, unit: "hours"},
-	//	{value: 1, unit: "days"},
-	//	{value: 1, unit: "weeks"}
-	//];
-
 	$scope.executeTimes = [
 		'* * * * * ?',    // every minute
 		'5 * * * * ?',    // every 5 minutes
@@ -150,21 +152,9 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 
 	$scope.aggregators = ["sum", "avg", "min", "max"];
 
-	//$scope.samplingTimes = [
-	//	{value: 1, unit: "minutes"},
-	//	{value: 5, unit: "minutes"},
-	//	{value: 10, unit: "minutes"},
-	//	{value: 15, unit: "minutes"},
-	//	{value: 20, unit: "minutes"},
-	//	{value: 30, unit: "minutes"},
-	//	{value: 1, unit: "hours"},
-	//	{value: 6, unit: "hours"},
-	//	{value: 1, unit: "days"},
-	//	{value: 1, unit: "weeks"}
-	//];
-
 	$scope.scheduleModified = function (task, item) {
 		task.schedule = item;
+		$scope.onBlur(task);
 	};
 
 	$scope.startTimeModified = function (rollup, item) {
@@ -196,16 +186,24 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 	};
 
 	$scope.deleteRollupTask = function (task) {
-		var res = $http.delete('/api/v1/rollups/delete/' + task.id); // todo don't hardcode?
-		res.success(function (data, status, headers, config) {
-			var i = $scope.tasks.indexOf(task);
-			if (i != -1) {
-				$scope.tasks.splice(i, 1);
+		bootbox.confirm({
+			size: 'medium',
+			message: "Are you sure you want to delete the rollup?",
+			callback: function (result) {
+				if (result) {
+					var res = $http.delete('/api/v1/rollups/delete/' + task.id); // todo don't hardcode?
+					res.success(function (data, status, headers, config) {
+						var i = $scope.tasks.indexOf(task);
+						if (i != -1) {
+							$scope.tasks.splice(i, 1);
+						}
+						console.log(status);
+					});
+					res.error(function (data, status, headers, config) {
+						alert("failure message: " + JSON.stringify({data: data}));
+					});
+				}
 			}
-			console.log(status);
-		});
-		res.error(function (data, status, headers, config) {
-			alert("failure message: " + JSON.stringify({data: data}));
 		});
 	};
 
@@ -213,6 +211,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 		var modalInstance = $uibModal.open({
 			templateUrl: 'rollup-create.html?cacheBust=' + Math.random().toString(36).slice(2), //keep dialog from caching
 			controller: 'KairosDBTargetCtrl',
+			size: 'lg',
 			backdrop: 'static', // disable closing of dialog with click away
 			keyboard: false, // disable closing dialog with ESC
 			resolve: {
@@ -236,6 +235,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 		var modalInstance = $uibModal.open({
 			templateUrl: 'paste-query.html?cacheBust=' + Math.random().toString(36).slice(2), //keep dialog from caching
 			controller: 'PasteQueryCtrl',
+			size: 'lg',
 			backdrop: 'static', // disable closing of dialog with click away
 			keyboard: false, // disable closing dialog with ESC
 			resolve: {
@@ -264,8 +264,16 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 	};
 
 	$scope.deleteRollup = function (task, rollup) {
-		task.rollups.splice(task.rollups.indexOf(rollup), 1);
-		$scope.saveRollupTask(task);
+		bootbox.confirm({
+			size: 'medium',
+			message: "Are you sure you want to delete the query?",
+			callback: function (result) {
+				if (result) {
+					task.rollups.splice(task.rollups.indexOf(rollup), 1);
+					$scope.saveRollupTask(task);
+				}
+			}
+		});
 	};
 
 	$scope.postNewRollupTask = function (task) {

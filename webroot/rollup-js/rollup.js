@@ -7,23 +7,48 @@ var module = angular.module('rollupApp', ['mgcrea.ngStrap', 'mgcrea.ngStrap.aler
 module.controller('rollupController', function ($scope, $http, $uibModal) {
 
 	$scope.lastSaved = null;
+	$scope.taskCopies = {};
 
 	$http.get("/api/v1/rollups/rollup") //todo don't hard code
 		.success(function (response) {
 
-			if (response)
-			// todo sort by task name
+			if (response) {
+				// todo sort by task name
 				$scope.tasks = response;
+				$scope.taskCopies = angular.copy($scope.tasks);
+			}
 			else
 				$scope.tasks = [];
-
-			console.log(response);
 		})
 		.error(function (data, status, headers, config) {
-			alert("failure message: " + JSON.stringify({data: data}));
+			alert("Error communicating with the server.");
+			//alert("failure message: " + JSON.stringify({data: data}));
 		});
 
+	$scope.isUnchanged = function (task) {
+		for (var i = 0; i < $scope.taskCopies.length; i++) {
+			var original = $scope.taskCopies[i];
+			if (task.id == original.id) {
+				return angular.equals(task, original);
+			}
+		}
+		return true; // New task
+	};
+
+	$scope.updateCopy = function (task) {
+		for (var i = 0; i < $scope.taskCopies.length; i++) {
+			var original = $scope.taskCopies[i];
+			if (task.id == original.id) {
+				$scope.taskCopies[i] = angular.copy(task);
+				break;
+			}
+		}
+	};
+
 	$scope.onBlur = function (task) {
+		if ($scope.isUnchanged(task))
+			return;
+
 		$scope.saveRollupTask(task);
 
 		currentDate = new Date();
@@ -281,10 +306,13 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 
 		var res = $http.post('/api/v1/rollups/task', task); // todo don't hardcode?
 		res.success(function (data, status, headers, config) {
+			$scope.updateCopy(task);
 			//$scope.message = data;
-			console.log(status);
+			//console.log(status);
 		});
 		res.error(function (data, status, headers, config) {
+			alert("Server error " + status);
+
 			alert("failure message: " + JSON.stringify({data: data}));
 		});
 	};

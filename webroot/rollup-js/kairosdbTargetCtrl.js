@@ -553,3 +553,9 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 		return errs;
 	}
 }
+
+module.directive('focus', function () {
+	return function (scope, element, attr) {
+		element[0].focus();
+	};
+});

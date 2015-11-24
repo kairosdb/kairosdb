@@ -1,6 +1,6 @@
 // todo Add "Last Exectuted", "When to execute next", Pause button, and maybe "create by | or owned by team"
 
-var module = angular.module('rollupApp', ['mgcrea.ngStrap', 'mgcrea.ngStrap.alert',
+var module = angular.module('rollupApp', ['mgcrea.ngStrap',
 	'mgcrea.ngStrap.tooltip', 'ui.bootstrap.modal', 'template/modal/backdrop.html',
 	'template/modal/window.html']);
 

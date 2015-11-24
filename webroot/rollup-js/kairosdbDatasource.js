@@ -5,7 +5,6 @@ module.factory('KairosDBDatasource', function ($q, $http) {
 	function KairosDBDatasource() {
 	}
 
-	// Called once per panel (graph)
 	KairosDBDatasource.query = function (options) {
 		var start = options.range.from;
 		var end = options.range.to;

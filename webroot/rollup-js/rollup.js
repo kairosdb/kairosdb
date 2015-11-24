@@ -236,7 +236,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 	$scope.addRollup = function (task, rollup, edit) {
 		var modalInstance = $uibModal.open({
 			templateUrl: 'rollup-create.html?cacheBust=' + Math.random().toString(36).slice(2), //keep dialog from caching
-			controller: 'KairosDBTargetCtrl',
+			controller: 'CreateController',
 			size: 'lg',
 			backdrop: 'static', // disable closing of dialog with click away
 			keyboard: false, // disable closing dialog with ESC

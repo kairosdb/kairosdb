@@ -1,8 +1,8 @@
 var metricList = null;
 
-module.controller('KairosDBTargetCtrl', ['$scope', '$modalInstance', 'KairosDBDatasource', 'rollup', KairosDBTargetCtrl]);
+module.controller('CreateController', ['$scope', '$modalInstance', 'KairosDBDatasource', 'rollup', CreateController]);
 
-function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) {
+function CreateController($scope, $modalInstance, KairosDBDatasource, rollup) {
 
 	$scope.DEFAULT_SAVE_AS = "Save As";
 	$scope.DEFAULT_METRIC = "metric name";
@@ -182,6 +182,27 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 		}
 		$scope.targetBlur();
 	};
+
+	$scope.hasErrors = function () {
+		return !_.isEmpty($scope.errors);
+	};
+
+	$scope.isSaveAsEmptyOrDefault = function () {
+		return !$scope.target.save_as || $scope.target.save_as == $scope.DEFAULT_SAVE_AS;
+	};
+
+	$scope.isMetricOrDefault = function () {
+		return !$scope.target.metric || $scope.target.metric == $scope.DEFAULT_METRIC;
+	};
+
+	/**
+	 * Set focus for dynamically create element
+	 */
+	module.directive('focus', function () {
+		return function (scope, element, attr) {
+			element[0].focus();
+		};
+	});
 
 	//////////////////////////////
 	// SUGGESTION QUERIES
@@ -511,18 +532,6 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 		}
 	};
 
-	$scope.hasErrors = function () {
-		return !_.isEmpty($scope.errors);
-	};
-
-	$scope.isSaveAsEmptyOrDefault = function () {
-		return !$scope.target.save_as || $scope.target.save_as == $scope.DEFAULT_SAVE_AS;
-	};
-
-	$scope.isMetricOrDefault = function () {
-		return !$scope.target.metric || $scope.target.metric == $scope.DEFAULT_METRIC;
-	};
-
 	//////////////////////////////
 	// VALIDATION
 	//////////////////////////////
@@ -549,12 +558,3 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 		return errs;
 	}
 }
-
-/**
- * Set focus for dynamically create element
- */
-module.directive('focus', function () {
-	return function (scope, element, attr) {
-		element[0].focus();
-	};
-});

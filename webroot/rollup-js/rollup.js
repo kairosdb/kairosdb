@@ -7,7 +7,8 @@ var module = angular.module('rollupApp', ['mgcrea.ngStrap', 'mgcrea.ngStrap.aler
 module.controller('rollupController', function ($scope, $http, $uibModal) {
 
 	$scope.lastSaved = null;
-	$scope.taskCopies = {};
+	$scope.tasks = [];
+	$scope.taskCopies = [];
 
 	$http.get("/api/v1/rollups/rollup") //todo don't hard code
 		.success(function (response) {
@@ -21,8 +22,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 				$scope.tasks = [];
 		})
 		.error(function (data, status, headers, config) {
-			alert("Error communicating with the server.");
-			//alert("failure message: " + JSON.stringify({data: data}));
+			$scope.alert("Could not read list of roll-ups from server.", status, data);
 		});
 
 	$scope.isUnchanged = function (task) {
@@ -32,7 +32,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 				return angular.equals(task, original);
 			}
 		}
-		return true; // New task
+		return false; // New task
 	};
 
 	$scope.updateCopy = function (task) {
@@ -222,10 +222,9 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 						if (i != -1) {
 							$scope.tasks.splice(i, 1);
 						}
-						console.log(status);
 					});
 					res.error(function (data, status, headers, config) {
-						alert("failure message: " + JSON.stringify({data: data}));
+						$scope.alert("Failed to delete roll-up.", status, data);
 					});
 				}
 			}
@@ -311,9 +310,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 			//console.log(status);
 		});
 		res.error(function (data, status, headers, config) {
-			alert("Server error " + status);
-
-			alert("failure message: " + JSON.stringify({data: data}));
+			$scope.alert("Could not save roll-ups", status, data);
 		});
 	};
 
@@ -322,11 +319,23 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 
 		var res = $http.post('/api/v1/rollups/rollup', task); // todo don't hardcode?
 		res.success(function (data, status, headers, config) {
-			//$scope.message = data;
-			console.log(status);
+			//console.log(status);
 		});
 		res.error(function (data, status, headers, config) {
-			alert("failure message: " + JSON.stringify({data: data}));
+			$scope.alert("Could not save query.", status, data);
+		});
+	};
+
+	// TODO how to not duplicate in the controller?
+	$scope.alert = function (message, status, data) {
+		//alert(message);
+		var error = "";
+		if (data && data.errors)
+			error = data.errors;
+
+		bootbox.alert({
+			title: message,
+			message: status + ":" + (error ? error : "" )
 		});
 	};
 

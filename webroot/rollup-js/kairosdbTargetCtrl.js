@@ -511,8 +511,16 @@ function KairosDBTargetCtrl($scope, $modalInstance, KairosDBDatasource, rollup) 
 		}
 	};
 
-	$scope.alert = function (message) {
-		alert(message);
+	$scope.alert = function (message, data) {
+		//alert(message);
+		var error = "";
+		if (data && data.errors)
+			error = data.errors;
+
+		bootbox.alert({
+			title: message,
+			message: status + ":" + (error ? error : "" )
+		});
 	};
 
 	$scope.hasErrors = function () {

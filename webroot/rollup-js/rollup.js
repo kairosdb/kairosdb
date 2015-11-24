@@ -14,7 +14,6 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 		.success(function (response) {
 
 			if (response) {
-				// todo sort by task name
 				$scope.tasks = response;
 				$scope.taskCopies = angular.copy($scope.tasks);
 				$scope.tasks = orderByFilter($scope.tasks, "name");

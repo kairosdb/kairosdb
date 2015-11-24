@@ -4,7 +4,7 @@ var module = angular.module('rollupApp', ['mgcrea.ngStrap',
 	'mgcrea.ngStrap.tooltip', 'ui.bootstrap.modal', 'template/modal/backdrop.html',
 	'template/modal/window.html']);
 
-module.controller('rollupController', function ($scope, $http, $uibModal) {
+module.controller('rollupController', function ($scope, $http, $uibModal, orderByFilter) {
 
 	$scope.lastSaved = null;
 	$scope.tasks = [];
@@ -17,6 +17,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 				// todo sort by task name
 				$scope.tasks = response;
 				$scope.taskCopies = angular.copy($scope.tasks);
+				$scope.tasks = orderByFilter($scope.tasks, "name");
 			}
 			else
 				$scope.tasks = [];
@@ -46,6 +47,8 @@ module.controller('rollupController', function ($scope, $http, $uibModal) {
 	};
 
 	$scope.onBlur = function (task) {
+		$scope.tasks = orderByFilter($scope.tasks, "name");
+
 		if ($scope.isUnchanged(task))
 			return;
 

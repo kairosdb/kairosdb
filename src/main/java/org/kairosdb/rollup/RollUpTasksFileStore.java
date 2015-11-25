@@ -105,7 +105,7 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 			{
 				try
 				{
-					RollupTask task = parser.parseRollUpTask(json);
+					RollupTask task = parser.parseRollupTask(json);
 					if (task != null)
 						rollups.put(task.getId(), task);
 				}

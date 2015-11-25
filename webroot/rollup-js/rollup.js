@@ -273,9 +273,6 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 
 		modalInstance.result.then(
 			function (newRollup) {
-				if (edit) {
-					task.rollups.splice(task.rollups.indexOf(rollup), 1);
-				}
 				task.rollups.push(newRollup);
 				$scope.saveTask(task);
 			});

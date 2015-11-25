@@ -50,7 +50,7 @@ public class RollUpResource
 	{
 		try
 		{
-			RollupTask task = parser.parseRollupTask2(json);
+			RollupTask task = parser.parseRollupTask(json);
 
 			RollupResponse rollupResponse = new RollupResponse(task.getId(), "todo", "/api/v1/rollups/" + task.getId());
 
@@ -151,7 +151,7 @@ public class RollUpResource
 	{
 		try
 		{
-			RollupTask task = parser.parseRollUpTask(json);
+			RollupTask task = parser.parseRollupTask(json);
 
 			RollupResponse rollupResponse = new RollupResponse(task.getId(), "todo", "/api/v1/rollups/" + task.getId());
 

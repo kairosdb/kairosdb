@@ -1,5 +1,8 @@
 package org.kairosdb.rollup;
 
+import org.apache.bval.constraints.NotEmpty;
+
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -19,9 +22,16 @@ public class RollupTask
 	// todo add tags
 
 	private final String id = UUID.randomUUID().toString();
-	private final List<Rollup> rollups = new ArrayList<Rollup>();
+	private final transient List<Rollup> rollups = new ArrayList<Rollup>();
+
+	@NotNull
+	@NotEmpty()
 	private String name;
+
+	@NotNull
+	@NotEmpty()
 	private String schedule;
+
 	private long timestamp;
 	private String json;
 

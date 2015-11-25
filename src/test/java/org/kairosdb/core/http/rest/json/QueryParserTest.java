@@ -167,7 +167,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-no-start_date.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.start_time relative or absolute time must be set");
+		assertBeanValidation(json, "query.metric[0].start_time relative or absolute time must be set");
 	}
 
 	@Test
@@ -449,14 +449,59 @@ public class QueryParserTest
 		assertBeanValidation(json, "query.metric[0].group_by[0].range_size.value must be greater than or equal to 1");
 	}
 
-	// todo fix up
-	//	@Test
-	//	public void test_parseRollUpTask() throws IOException
-	//	{
-	//		String json = Resources.toString(Resources.getResource("invalid-query-metric-group_by-value-range_size.json"), Charsets.UTF_8);
-	//
-	//		parser.parseRollUpTask(json);
-	//	}
+	@Test
+	public void test_parseRollUpTask_empty_name_invalid() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-rollup-no-name-empty.json"), Charsets.UTF_8);
+
+		assertRollupBeanValidation(json, "name may not be empty");
+	}
+
+	@Test
+	public void test_parseRollUpTask_empty_schedule_invalid() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-rollup-no-schedule.json"), Charsets.UTF_8);
+
+		assertRollupBeanValidation(json, "schedule may not be empty");
+	}
+
+	@Test
+	public void test_parseRollUpTask_empty_saveAs_invalid() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-rollup-no-saveAs-schedule.json"), Charsets.UTF_8);
+
+		assertRollupBeanValidation(json, "rollup[0].saveAs may not be empty");
+	}
+
+	/**
+	 Test the parsing of the query. Only a sanity check since it parseRollupTask
+	 reuses parseQuery.
+	 */
+	@Test
+	public void test_parseRollUpTask_empty_query_time_invalid() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-rollup-no-query_time.json"), Charsets.UTF_8);
+
+		assertRollupBeanValidation(json, "rollup[0].query.metric[0].start_time relative or absolute time must be set");
+	}
+
+	private void assertRollupBeanValidation(String json, String expectedMessage)
+	{
+		try
+		{
+			parser.parseRollupTask(json);
+			fail("Expected BeanValidationException");
+		}
+		catch (QueryException e)
+		{
+			fail("Expected BeanValidationException");
+		}
+		catch (BeanValidationException e)
+		{
+			assertThat(e.getErrorMessages().size(), equalTo(1));
+			assertThat(e.getErrorMessages().get(0), equalTo(expectedMessage));
+		}
+	}
 
 	private void assertBeanValidation(String json, String expectedMessage)
 	{

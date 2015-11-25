@@ -157,6 +157,11 @@ public class QueryParser
 
 	private List<QueryMetric> parseQueryMetric(JsonObject obj) throws QueryException, BeanValidationException
 	{
+		return parseQueryMetric(obj, "");
+	}
+
+	private List<QueryMetric> parseQueryMetric(JsonObject obj, String contextPrefix) throws QueryException, BeanValidationException
+	{
 		List<QueryMetric> ret = new ArrayList<QueryMetric>();
 
 		Query query;
@@ -173,19 +178,19 @@ public class QueryParser
 		JsonArray metricsArray = obj.getAsJsonArray("metrics");
 		if (metricsArray == null)
 		{
-			throw new BeanValidationException(new SimpleConstraintViolation("metric[]", "must have a size of at least 1"), "query");
+			throw new BeanValidationException(new SimpleConstraintViolation("metric[]", "must have a size of at least 1"), contextPrefix + "query");
 		}
 
 		for (int I = 0; I < metricsArray.size(); I++)
 		{
-			String context = "query.metric[" + I + "]";
+			String context = (!contextPrefix.isEmpty() ? contextPrefix + "." : contextPrefix) + "query.metric[" + I + "]";
 			try
 			{
 				Metric metric = m_gson.fromJson(metricsArray.get(I), Metric.class);
 
 				validateObject(metric, context);
 
-				long startTime = getStartTime(query);
+				long startTime = getStartTime(query, context);
 				QueryMetric queryMetric = new QueryMetric(startTime, query.getCacheTime(),
 						metric.getName());
 				queryMetric.setExcludeTags(metric.isExcludeTags());
@@ -242,7 +247,7 @@ public class QueryParser
 		return (ret);
 	}
 
-	////	public List<RollupTask> parseRollUpTask(String json) throws BeanValidationException, QueryException
+	////	public List<RollupTask> parseRollupTask(String json) throws BeanValidationException, QueryException
 	////	{
 	////		JsonParser parser = new JsonParser();
 	////		JsonArray rollupTaskArray = parser.parse(json).getAsJsonArray();
@@ -286,28 +291,19 @@ public class QueryParser
 	////			rollupTasks.add(new RollupTask(name, schedule, rollups));
 	////		}
 	//
-	//		// todo validate and throw bean validation exception if error occurs
 	//		return rollupTasks;
 	//
 	//	}
 
 
-	public RollupTask parseRollupTask2(String json)
+	public RollupTask parseRollupTask(String json) throws BeanValidationException, QueryException
 	{
 		JsonParser parser = new JsonParser();
 		JsonObject rollupTask = parser.parse(json).getAsJsonObject();
 		RollupTask task = m_gson.fromJson(rollupTask.getAsJsonObject(), RollupTask.class);
 		task.addJson(json.replaceAll("\\n", ""));
 
-		return task;
-	}
-
-	public RollupTask parseRollUpTask(String json) throws BeanValidationException, QueryException
-	{
-		JsonParser parser = new JsonParser();
-		JsonObject rollupTask = parser.parse(json).getAsJsonObject();
-		RollupTask task = m_gson.fromJson(rollupTask.getAsJsonObject(), RollupTask.class);
-		task.addJson(json.replaceAll("\\n", ""));
+		validateObject(task);
 
 		JsonArray rollups = rollupTask.getAsJsonObject().getAsJsonArray("rollups");
 		if (rollups != null)
@@ -317,8 +313,11 @@ public class QueryParser
 				JsonObject rollupObject = rollups.get(j).getAsJsonObject();
 				Rollup rollup = m_gson.fromJson(rollupObject, Rollup.class);
 
+				String context = "rollup[" + j + "]";
+				validateObject(rollup, context);
+
 				JsonObject queryObject = rollupObject.getAsJsonObject("query");
-				List<QueryMetric> queries = parseQueryMetric(queryObject);
+				List<QueryMetric> queries = parseQueryMetric(queryObject, context);
 
 				for (QueryMetric query : queries)
 				{
@@ -338,7 +337,6 @@ public class QueryParser
 			}
 		}
 
-		// todo validate and throw bean validation exception if error occurs
 		return task;
 	}
 
@@ -501,7 +499,7 @@ public class QueryParser
 		}
 	}
 
-	private long getStartTime(Query request) throws BeanValidationException
+	private long getStartTime(Query request, String context) throws BeanValidationException
 	{
 		if (request.getStartAbsolute() != null)
 		{
@@ -513,7 +511,7 @@ public class QueryParser
 		}
 		else
 		{
-			throw new BeanValidationException(new SimpleConstraintViolation("start_time", "relative or absolute time must be set"), "query");
+			throw new BeanValidationException(new SimpleConstraintViolation("start_time", "relative or absolute time must be set"), context);
 		}
 	}
 

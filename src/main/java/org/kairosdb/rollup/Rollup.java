@@ -1,13 +1,17 @@
 package org.kairosdb.rollup;
 
 import com.google.gson.annotations.SerializedName;
+import org.apache.bval.constraints.NotEmpty;
 import org.kairosdb.core.datastore.QueryMetric;
 
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Rollup
 {
+	@NotNull
+	@NotEmpty()
 	@SerializedName("save_as")
 	private String saveAs;
 

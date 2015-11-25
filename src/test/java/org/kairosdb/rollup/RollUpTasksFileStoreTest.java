@@ -2,6 +2,7 @@ package org.kairosdb.rollup;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
+import org.junit.Test;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
@@ -29,6 +30,12 @@ public class RollUpTasksFileStoreTest
 		RollupTaskTarget target1 = new RollupTaskTarget("target");
 //		target1.addAggregator(new SumAggregator()); // todo fix this
 		targets.add(target1);
+	}
+
+	@Test
+	public void test()
+	{
+
 	}
 
 	//	@Test(expected = NullPointerException.class)

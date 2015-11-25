@@ -80,6 +80,7 @@ function CreateController($scope, $modalInstance, KairosDBDatasource, rollup) {
 				if (aggregator.hasOwnProperty('sampling')) {
 					$scope.target.horAggregator.samplingRate = KairosDBDatasource.convertToShortTimeUnit(aggregator.sampling);
 					$scope.target.horAggregator.alignStartTime = aggregator.align_start_time ? aggregator.align_start_time : false;
+					$scope.target.horAggregator.alignSampling = aggregator.align_sampling ? aggregator.align_sampling : false;
 				}
 				if ($scope.hasUnit) {
 					$scope.target.horAggregator.unit = aggregator.unit;
@@ -452,6 +453,7 @@ function CreateController($scope, $modalInstance, KairosDBDatasource, rollup) {
 			if ($scope.hasSamplingRate) {
 				aggregator.sampling_rate = $scope.target.horAggregator.samplingRate;
 				aggregator.align_start_time = $scope.target.horAggregator.alignStartTime;
+				aggregator.align_sampling = $scope.target.horAggregator.alignSampling;
 			}
 			if ($scope.hasUnit) {
 				aggregator.unit = $scope.target.horAggregator.unit;

@@ -151,8 +151,9 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 	$scope.toHumanReadableAggregator = function (aggregator) {
 		var result = aggregator.name + '(';
 		if (aggregator.sampling) {
-			result += $scope.toHumanReadableTimeUnit(aggregator.sampling) + ", ";
-			result += aggregator.sampling.align_start_time ? aggregator.sampling.align_start_time : false;
+			result += $scope.toHumanReadableTimeUnit(aggregator.sampling);
+			result += aggregator.align_start_time ? ", align-start" : "";
+			result += aggregator.align_sampling ? ", align-sampling" : "";
 		}
 		else {
 			_.each(_.values(_.omit(aggregator, 'name')), function (value) {

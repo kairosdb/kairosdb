@@ -121,7 +121,6 @@ input[type=checkbox], input[type=radio] {
     border-radius: 0;
     padding: 8px 6px;
     box-sizing: border-box;
-    width: 90%;
     border-left: 1px solid #050505;
 }
 
@@ -147,6 +146,10 @@ select.tight-form-input.last {
 
 .pull-right {
     float: right;
+}
+
+.input-large {
+    width: 90%;
 }
 
 .input-mini {

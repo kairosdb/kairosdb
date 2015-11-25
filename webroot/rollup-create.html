@@ -20,7 +20,7 @@
 						</li>
 
 						<input type="text"
-							   class="input-small tight-form-input ng-pristine ng-valid ng-touched"
+							   class="input-large tight-form-input ng-pristine ng-valid ng-touched"
 							   ng-model="target.metric" spellcheck="false"
 							   bs-typeahead
 							   bs-options="metric for metric in suggestMetrics()"
@@ -48,7 +48,7 @@
 						</li>
 
 						<input type="text"
-							   class="input-small tight-form-input ng-pristine ng-valid ng-touched"
+							   class="input-large tight-form-input ng-pristine ng-valid ng-touched"
 							   ng-model="target.save_as" spellcheck="false"
 							   ng-click="clearSaveAs()"
 							   ng-class="(target.save_as == 'Save As') ? 'placeholder' : ''"
@@ -317,11 +317,19 @@
 						</li>
 						<li class="tight-form-item" ng-show="hasSamplingRate"
 							bs-tooltip="'Align samples to range start times'">
-							&nbsp;align&nbsp;
+							&nbsp;align Start&nbsp;
 							<input class="tight-form-checkbox"
 								   type="checkbox"
 								   ng-init="target.horAggregator.alignStartTime=true"
 								   ng-model="target.horAggregator.alignStartTime">
+						</li>
+						<li class="tight-form-item" ng-show="hasSamplingRate"
+							bs-tooltip="'Align samples based on the sampling size'">
+							&nbsp;align Sampling&nbsp;
+							<input class="tight-form-checkbox"
+								   type="checkbox"
+								   ng-init="target.horAggregator.alignSampling=false"
+								   ng-model="target.horAggregator.alignSampling">
 						</li>
 
 						<li ng-show="hasUnit" class="tight-form-item">

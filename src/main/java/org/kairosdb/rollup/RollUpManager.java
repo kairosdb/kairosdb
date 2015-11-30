@@ -96,9 +96,9 @@ public class RollUpManager implements KairosDBJob
 	{
 		for (RollupTask task : updatedTasks)
 		{
-			Long timestamp = taskIdToTimeMap.get(task.getId());
-			if (neverScheduledOrChanged(task, timestamp))
-			{
+			//			Long timestamp = taskIdToTimeMap.get(task.getId());
+			//			if (neverScheduledOrChanged(task, timestamp))
+			//			{
 				try
 				{
 					scheduler.cancel(task.getId());
@@ -121,9 +121,9 @@ public class RollUpManager implements KairosDBJob
 					continue;
 				}
 
-				taskIdToTimeMap.put(task.getId(), task.getTimestamp());
+			//				taskIdToTimeMap.put(task.getId(), task.getTimestamp());
 			}
-		}
+		//		}
 	}
 
 	private boolean neverScheduledOrChanged(RollupTask task, Long timestamp)

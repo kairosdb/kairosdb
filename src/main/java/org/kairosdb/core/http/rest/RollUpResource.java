@@ -3,24 +3,21 @@ package org.kairosdb.core.http.rest;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.formatter.DataFormatter;
-import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.http.rest.json.ErrorResponse;
 import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
-import org.kairosdb.rollup.*;
+import org.kairosdb.rollup.RollUpException;
+import org.kairosdb.rollup.RollUpTasksStore;
+import org.kairosdb.rollup.Rollup;
+import org.kairosdb.rollup.RollupTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,42 +33,42 @@ public class RollUpResource
 	private final RollUpTasksStore store;
 
 	@Inject
-	public RollUpResource(QueryParser parser, RollUpManager manager, RollUpTasksStore store)
+	public RollUpResource(QueryParser parser, RollUpTasksStore store)
 	{
 		this.parser = checkNotNull(parser);
 		this.store = checkNotNull(store);
 	}
 
 	// TODO rename API calls for consistency - Add task -> Add rollup queries
-	@POST
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/task")
-	public Response createTask(String json)
-	{
-		try
-		{
-			RollupTask task = parser.parseRollupTask(json);
-
-			RollupResponse rollupResponse = new RollupResponse(task.getId(), "todo", "/api/v1/rollups/" + task.getId());
-
-			store.write(ImmutableList.of(task));
-
-			Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
-					parser.getGson().toJson(rollupResponse));
-			setHeaders(responseBuilder);
-			return responseBuilder.build();
-		}
-		catch (RollUpException e) // todo combine with Exception?
-		{
-			logger.error("Failed to add roll ups.", e);
-			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
-		}
-		catch (Exception e)
-		{
-			logger.error("Failed to add metric.", e);
-			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
-		}
-	}
+	//	@POST
+	//	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	//	@Path("/task")
+	//	public Response createTask(String json)
+	//	{
+	//		try
+	//		{
+	//			RollupTask task = parser.parseRollupTask(json);
+	//
+	//			RollupResponse rollupResponse = new RollupResponse(task.getId(), "todo", "/api/v1/rollups/" + task.getId());
+	//
+	//			store.write(ImmutableList.of(task));
+	//
+	//			Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
+	//					parser.getGson().toJson(rollupResponse));
+	//			setHeaders(responseBuilder);
+	//			return responseBuilder.build();
+	//		}
+	//		catch (RollUpException e) // todo combine with Exception?
+	//		{
+	//			logger.error("Failed to add roll ups.", e);
+	//			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+	//		}
+	//		catch (Exception e)
+	//		{
+	//			logger.error("Failed to add metric.", e);
+	//			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+	//		}
+	//	}
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
@@ -264,35 +261,35 @@ public class RollUpResource
 		return (responseBuilder);
 	}
 
-	// todo also used in Metrics Resource.Should this be defined in a common place
-	public class ValuesStreamingOutput implements StreamingOutput
-	{
-		private DataFormatter m_formatter;
-		private Iterable<String> m_values;
-
-		public ValuesStreamingOutput(DataFormatter formatter, Iterable<String> values)
-		{
-			m_formatter = formatter;
-			m_values = values;
-		}
-
-		@SuppressWarnings("ResultOfMethodCallIgnored")
-		public void write(OutputStream output) throws IOException, WebApplicationException
-		{
-			Writer writer = new OutputStreamWriter(output, "UTF-8");
-
-			try
-			{
-				m_formatter.format(writer, m_values);
-			}
-			catch (FormatterException e)
-			{
-				logger.error("Description of what failed:", e);
-			}
-
-			writer.flush();
-		}
-	}
+	//	// todo also used in Metrics Resource.Should this be defined in a common place
+	//	public class ValuesStreamingOutput implements StreamingOutput
+	//	{
+	//		private DataFormatter m_formatter;
+	//		private Iterable<String> m_values;
+	//
+	//		public ValuesStreamingOutput(DataFormatter formatter, Iterable<String> values)
+	//		{
+	//			m_formatter = formatter;
+	//			m_values = values;
+	//		}
+	//
+	//		@SuppressWarnings("ResultOfMethodCallIgnored")
+	//		public void write(OutputStream output) throws IOException, WebApplicationException
+	//		{
+	//			Writer writer = new OutputStreamWriter(output, "UTF-8");
+	//
+	//			try
+	//			{
+	//				m_formatter.format(writer, m_values);
+	//			}
+	//			catch (FormatterException e)
+	//			{
+	//				logger.error("Description of what failed:", e);
+	//			}
+	//
+	//			writer.flush();
+	//		}
+	//	}
 
 	private class RollupResponse
 	{

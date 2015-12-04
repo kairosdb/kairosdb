@@ -439,4 +439,37 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		return CachedSearchResult.createCachedSearchResult(metricName,
 				tempFile + "/" + random.nextLong(), dataPointFactory);
 	}
+
+	@Test
+	public void test_setTTL() throws DatastoreException
+	{
+		DataPointSet set = new DataPointSet("ttlMetric");
+		set.addTag("tag", "value");
+		set.addDataPoint(new LongDataPoint(1, 1L));
+		set.addDataPoint(new LongDataPoint(2, 2L));
+		set.addDataPoint(new LongDataPoint(0, 3L));
+		set.addDataPoint(new LongDataPoint(3, 4L));
+		set.addDataPoint(new LongDataPoint(4, 5L));
+		set.addDataPoint(new LongDataPoint(5, 6L));
+		putDataPoints(set);
+
+		s_datastore.putDataPoint("ttlMetric", set.getTags(),
+				new LongDataPoint(50, 7L), 1);
+
+
+		Map<String, String> tags = new TreeMap<String, String>();
+		QueryMetric query = new QueryMetric(0, 500, 0, "ttlMetric");
+
+		query.setTags(tags);
+
+		DatastoreQuery dq = super.s_datastore.createQuery(query);
+
+		List<DataPointGroup> results = dq.execute();
+
+		assertThat(results.size(), CoreMatchers.equalTo(6));
+		DataPointGroup dpg = results.get(0);
+		assertThat(dpg.getName(), is("ttlMetric"));
+
+		dq.close();
+	}
 }

@@ -173,7 +173,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@BeforeClass
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
-		String cassandraHost = "localhost:9160";
+		System.out.println("Starting Cassandra Connection");
+		String cassandraHost = "kairos04:9160";
 		if (System.getenv("CASSANDRA_HOST") != null)
 			cassandraHost = System.getenv("CASSANDRA_HOST");
 
@@ -441,7 +442,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	}
 
 	@Test
-	public void test_setTTL() throws DatastoreException
+	public void test_setTTL() throws DatastoreException, InterruptedException
 	{
 		DataPointSet set = new DataPointSet("ttlMetric");
 		set.addTag("tag", "value");
@@ -456,7 +457,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		s_datastore.putDataPoint("ttlMetric", set.getTags(),
 				new LongDataPoint(50, 7L), 1);
 
-
+		Thread.sleep(2000);
 		Map<String, String> tags = new TreeMap<String, String>();
 		QueryMetric query = new QueryMetric(0, 500, 0, "ttlMetric");
 
@@ -465,11 +466,16 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreQuery dq = super.s_datastore.createQuery(query);
 
 		List<DataPointGroup> results = dq.execute();
-
-		assertThat(results.size(), CoreMatchers.equalTo(6));
-		DataPointGroup dpg = results.get(0);
-		assertThat(dpg.getName(), is("ttlMetric"));
-
-		dq.close();
+		try
+		{
+			assertThat(results.size(), CoreMatchers.equalTo(1));
+			DataPointGroup dpg = results.get(0);
+			assertThat(dpg.getName(), is("ttlMetric"));
+			assertThat(dq.getSampleSize(), CoreMatchers.equalTo(6));
+		}
+		finally
+		{
+			dq.close();
+		}
 	}
 }

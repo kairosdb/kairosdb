@@ -299,7 +299,7 @@ public class CassandraDatastore implements Datastore
 			DataPointsRowKey rowKey = null;
 			//time the data is written.
 			long writeTime = System.currentTimeMillis();
-			if (ttl != 0)
+			if (0 == ttl)
 				ttl = m_cassandraConfiguration.getDatapointTtl();
 
 			int rowKeyTtl = 0;

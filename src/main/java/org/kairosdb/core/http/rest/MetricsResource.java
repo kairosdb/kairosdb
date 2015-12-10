@@ -400,7 +400,7 @@ public class MetricsResource implements KairosMetricReporter
 		try
 		{
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
-			BufferedWriter writer = new BufferedWriter(new FileWriter(respFile));
+			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(respFile), "UTF-8"));
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
 

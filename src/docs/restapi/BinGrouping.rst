@@ -1,6 +1,6 @@
-=================
-Grouping by Value
-=================
+================
+Grouping by Bins
+================
 
 The Bin grouper groups data point values into bins or buckets. Values are placed into groups based on a list of bin values. For example, if the list of bins is 10, 20, 30, then values less than 10 are placed in the first group, values between 10-19 into the second group, and so forth.
 

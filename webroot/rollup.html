@@ -37,16 +37,27 @@
 </head>
 
 <!-- *********** TODO replace all method calls to point to model for performance reasons  *********  -->
-<!-- TODO Add description of a rollup at the top of the page -->
 
 <body ng-app="rollupApp" ng-controller="rollupController">
-<div class="container-fluid">
+<div class="container-fluid" style="width:90%">
 	<div class="page-header">
 		<h1 class="text-center text-info">Roll-ups
 			<a href="#" ng-click="addRollupTask()"
 			   class="btn btn-primary btn-lg btn-circle pull-right">
 				<span class="glyphicon glyphicon-plus"></span></a>
 		</h1>
+
+		<div class="text-info" style="width: 50%; float: none; margin: 0 auto;">
+			Roll-ups are a way to improve query performance by aggregating or
+			rolling up data into a larger time range such as averaging
+			millisecond data over a minute.
+			Roll-ups perform queries on existing data, aggregate the data, and
+			write the results to another metric. The original data is left
+			intact.
+			Roll-ups are continuously run on a schedule rolling up a small time
+			period of data on each execution.
+		</div>
+
 		<span id="lastSaved" class="last-saved pull-left text-info small"
 			  ng-hide="lastSaved ==null">Last Saved {{lastSaved}}</span>
 	</div>

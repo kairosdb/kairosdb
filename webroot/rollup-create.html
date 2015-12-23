@@ -57,26 +57,6 @@
 					<div class="clearfix"></div>
 				</div>
 
-				<!-- START TIME -->
-				<div class="tight-form">
-					<ul class="tight-form-list" role="menu">
-						<li class="tight-form-warning">
-							<i class="fa invisible">i</i>
-						</li>
-
-						<li class="tight-form-item">
-							Start Time:
-						</li>
-						<li>
-							<select class="input-small tight-form-input"
-									ng-change="changeStartTime()"
-									ng-model="target.start_relative_label"
-									ng-options="time for time in relativeStartTimes"></select>
-						</li>
-					</ul>
-					<div class="clearfix"></div>
-				</div>
-
 				<!-- TAGS  filtering -->
 				<div class="tight-form">
 					<ul class="tight-form-list" role="menu">
@@ -89,7 +69,8 @@
 							</a>
 						</li>
 
-						<li class="tight-form-item">
+						<li class="tight-form-item"
+							style="border-left: 1px solid #050505;">
 							Tags:
 						</li>
 						<li ng-repeat="(key, value) in target.tags track by $index"
@@ -148,7 +129,8 @@
 						<li class="tight-form-warning">
 							<i class="fa invisible">i</i>
 						</li>
-						<li class="tight-form-item">
+						<li class="tight-form-item"
+							style="border-left: 1px solid #050505;">
 							Group by:
 						</li>
 
@@ -265,9 +247,17 @@
 				<div class="tight-form">
 					<ul class="tight-form-list" role="menu">
 						<li class="tight-form-warning">
-							<i class="fa invisible">i</i>
+							<i class="fa invisible"
+							   ng-show="!errors.aggregators">i</i>
+							<a bs-tooltip="errors.aggregators"
+							   style="color: rgb(229, 189, 28)"
+							   ng-show="errors.aggregators">
+								<i class="glyphicon glyphicon-warning-sign"></i>
+							</a>
 						</li>
-						<li class="tight-form-item">
+
+						<li class="tight-form-item"
+							style="border-left: 1px solid #050505;">
 							Aggregation:
 						</li>
 						<li ng-repeat="aggregatorObject in target.horizontalAggregators track by $index"

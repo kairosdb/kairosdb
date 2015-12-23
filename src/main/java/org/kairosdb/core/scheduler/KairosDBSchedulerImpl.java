@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 import static org.quartz.JobBuilder.newJob;
 
 public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
@@ -73,8 +72,10 @@ public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
 				}
 			}
 
-			for (String groupName : scheduler.getJobGroupNames()) {
-				for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
+			for (String groupName : scheduler.getJobGroupNames())
+			{
+				for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName)))
+				{
 					String jobName = jobKey.getName();
 					List<Trigger> triggers = (List<Trigger>) scheduler.getTriggersOfJob(jobKey);
 					Date nextFireTime = triggers.get(0).getNextFireTime();
@@ -118,17 +119,17 @@ public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
 	}
 
 	@Override
-	public void cancel(String id) throws KairosDBException
+	public void cancel(JobKey jobKey) throws KairosDBException
 	{
-		checkNotNullOrEmpty(id);
+		checkNotNull(jobKey);
 
 		try
 		{
-			scheduler.deleteJob(JobKey.jobKey(id));
+			scheduler.deleteJob(jobKey);
 		}
 		catch (SchedulerException e)
 		{
-			throw new KairosDBException("Failed to delete job for id " + id, e);
+			throw new KairosDBException("Failed to delete job " + jobKey, e);
 		}
 	}
 
@@ -147,7 +148,7 @@ public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
 				}
 			}
 		}
-		catch(SchedulerException e)
+		catch (SchedulerException e)
 		{
 			throw new KairosDBException("Could not get scheduled jobs." + e);
 		}

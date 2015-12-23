@@ -1,9 +1,12 @@
 {
   "name": "Rollup",
-  "schedule": "",
+  "execution_interval": {
+    "value": 1,
+    "unit": "hours"
+  },
   "rollups": [
     {
-      "save_as": "kairosdb.http.query_time_rollup",
+      "save_as": "",
       "query": {
         "cache_time": 0,
         "start_relative": {

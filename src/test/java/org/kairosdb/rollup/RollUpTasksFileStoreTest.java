@@ -101,7 +101,7 @@ public class RollUpTasksFileStoreTest
 	//			{
 	//				assertThat(task.getMetricName(), equalTo(expected.getMetricName()));
 	//				assertThat(task.getStartTime(), equalTo(expected.getStartTime()));
-	//				assertThat(task.getSchedule(), equalTo(expected.getSchedule()));
+	//				assertThat(task.getExecutionInterval(), equalTo(expected.getExecutionInterval()));
 	//
 	//				assertThat(task.getFilters().size(), equalTo(expected.getFilters().size()));
 	//				for (String name : expected.getFilters().keys())

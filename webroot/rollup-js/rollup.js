@@ -46,24 +46,24 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 	};
 
 	$scope.onBlur = function (task) {
-		$scope.tasks = orderByFilter($scope.tasks, "name");
+		$scope.errors = validate(task);
 
-		if ($scope.isUnchanged(task))
-			return;
+		if (!$scope.hasErrors()) {
+			$scope.tasks = orderByFilter($scope.tasks, "name");
 
-		$scope.saveRollupTask(task);
+			if ($scope.isUnchanged(task))
+				return;
 
-		currentDate = new Date();
-		$scope.lastSaved = (currentDate.getHours() < 10 ? "0" + currentDate.getHours() : currentDate.getHours()) + ":" +
-			(currentDate.getMinutes() < 10 ? "0" + currentDate.getMinutes() : currentDate.getMinutes()) + ":" +
-			(currentDate.getSeconds() < 10 ? "0" + currentDate.getSeconds() : currentDate.getSeconds());
+			$scope.saveRollupTask(task);
 
-		// Flash Last Saved message
-		$('#lastSaved').fadeOut('slow').fadeIn('slow').animate({opacity: 1.0}, 1000);
-	};
+			currentDate = new Date();
+			$scope.lastSaved = (currentDate.getHours() < 10 ? "0" + currentDate.getHours() : currentDate.getHours()) + ":" +
+				(currentDate.getMinutes() < 10 ? "0" + currentDate.getMinutes() : currentDate.getMinutes()) + ":" +
+				(currentDate.getSeconds() < 10 ? "0" + currentDate.getSeconds() : currentDate.getSeconds());
 
-	$scope.toHumanReadableCron = function (schedule) {
-		return prettyCron.toString(schedule);
+			// Flash Last Saved message
+			$('#lastSaved').fadeOut('slow').fadeIn('slow').animate({opacity: 1.0}, 1000);
+		}
 	};
 
 	$scope.toHumanReadableTimeUnit = function (timeUnit) {
@@ -73,9 +73,11 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 			return timeUnit.value + " " + timeUnit.unit;
 	};
 
+	$scope.executionUnits = ["Seconds", "Minutes", "Hours", "Weeks", "Months"];
+
 	$scope.toTql = function (query) {
 		tql = "SELECT " + query.query.metrics[0].name;
-		tql += " FROM " + $scope.toHumanReadableTimeUnit(query.query.start_relative) + " to now";  // todo fix for non-relative times
+		tql += " FROM " + $scope.toHumanReadableTimeUnit(query.query.start_relative) + " to now";
 
 		// Tags
 		var first = true;
@@ -166,22 +168,8 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 		return result;
 	};
 
-	$scope.executeTimes = [
-		'* * * * * ?',    // every minute
-		'5 * * * * ?',    // every 5 minutes
-		'10 * * * * ?',   // every 10 minutes
-		'15 * * * * ?',   // every 15 minutes
-		'30 * * * * ?',   // every 30 minutes
-		'* 1 * * * ?',    // every 1 hour
-		'* 6 * * * ?',    // every 6 hours
-		'0 0 * * * ?',    // every day
-		'0 0 * * sat ?'   // once a week
-	];
-
-	$scope.aggregators = ["sum", "avg", "min", "max"];
-
-	$scope.scheduleModified = function (task, item) {
-		task.schedule = item;
+	$scope.scheduleModified = function (task, unit) {
+		task.executionUnit = unit;
 		$scope.onBlur(task);
 	};
 
@@ -198,7 +186,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 	};
 
 	$scope.addRollupTask = function () {
-		var task = {schedule: '15 * * * * ?', rollups: []};
+		var task = {executionValue: 1, executionUnit: "Hours", rollups: []};
 		task.edit = true;
 		$scope.tasks.push(task);
 
@@ -209,7 +197,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 	};
 
 	$scope.saveRollupTask = function (task) {
-		$scope.postNewRollupTask(task);
+		$scope.saveTask(task);
 		task.edit = false;
 	};
 
@@ -300,25 +288,17 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 		});
 	};
 
-	$scope.postNewRollupTask = function (task) {
-		// todo need to remove "edit" property
-
-		var res = $http.post('/api/v1/rollups/task', task); // todo don't hardcode?
-		res.success(function (data, status, headers, config) {
-			$scope.updateCopy(task);
-			//$scope.message = data;
-			//console.log(status);
-		});
-		res.error(function (data, status, headers, config) {
-			$scope.alert("Could not save roll-ups", status, data);
-		});
-	};
-
 	$scope.saveTask = function (task) {
-		// todo need to remove "edit" property
+		// todo remove these properties from task: executionUnit, edit, executionValue
+
+		task.execution_interval = {
+			value: task.executionValue,
+			unit: task.executionUnit
+		};
 
 		var res = $http.post('/api/v1/rollups/rollup', task); // todo don't hardcode?
 		res.success(function (data, status, headers, config) {
+			task.id = data.id;
 			//console.log(status);
 		});
 		res.error(function (data, status, headers, config) {
@@ -326,17 +306,64 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 		});
 	};
 
-	// TODO how to not duplicate in the controller?
+	// TODO how to not duplicate in the other controller?
 	$scope.alert = function (message, status, data) {
-		//alert(message);
-		var error = "";
-		if (data && data.errors)
-			error = data.errors;
+		if (status) {
 
-		bootbox.alert({
-			title: message,
-			message: status + ":" + (error ? error : "" )
-		});
+
+			var error = "";
+			if (data && data.errors)
+				error = data.errors;
+
+			bootbox.alert({
+				title: message,
+				message: status + ":" + (error ? error : "" )
+			});
+		}
+		else {
+			bootbox.alert({
+				message: message
+			});
+		}
 	};
 
+	$scope.isNumber = function (num) {
+		return !isNaN(num)
+	};
+
+	//////////////////////////////
+	// VALIDATION
+	//////////////////////////////
+
+	$scope.hasErrors = function () {
+		return !_.isEmpty($scope.errors);
+	};
+
+	function validate(task) {
+		var errs = {};
+
+		if (!task.name || _.isEmpty(task.name)) {
+			errs.name = "Name cannot be empty.";
+			$scope.alert(errs.name);
+		}
+		if (!task.executionValue) {
+			errs.executionValue = "You must specify when the roll-up will be executed.";
+			$scope.alert(errs.executionValue);
+		}
+		if (task.executionValue && !$scope.isNumber(task.executionValue)) {
+			errs.executionValue = "Must be a number.";
+			$scope.alert(errs.executionValue);
+		}
+
+		return errs;
+	}
+});
+
+/**
+ * Set focus for dynamically create element
+ */
+module.directive('focus', function () {
+	return function (scope, element, attr) {
+		element[0].focus();
+	};
 });

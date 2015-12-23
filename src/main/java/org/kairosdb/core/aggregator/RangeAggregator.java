@@ -183,8 +183,10 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 		m_timeZone = timeZone;
 	}
 
-
-
+	public Sampling getSampling()
+	{
+		return m_sampling;
+	}
 
 	//===========================================================================
 	/**

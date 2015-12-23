@@ -458,17 +458,17 @@ public class QueryParserTest
 	}
 
 	@Test
-	public void test_parseRollUpTask_empty_schedule_invalid() throws IOException, QueryException
+	public void test_parseRollUpTask_no_execution_interval_invalid() throws IOException, QueryException
 	{
-		String json = Resources.toString(Resources.getResource("invalid-rollup-no-schedule.json"), Charsets.UTF_8);
+		String json = Resources.toString(Resources.getResource("invalid-rollup-no-execution_interval.json"), Charsets.UTF_8);
 
-		assertRollupBeanValidation(json, "schedule may not be empty");
+		assertRollupBeanValidation(json, "executionInterval may not be null");
 	}
 
 	@Test
 	public void test_parseRollUpTask_empty_saveAs_invalid() throws IOException, QueryException
 	{
-		String json = Resources.toString(Resources.getResource("invalid-rollup-no-saveAs-schedule.json"), Charsets.UTF_8);
+		String json = Resources.toString(Resources.getResource("invalid-rollup-no-saveAs.json"), Charsets.UTF_8);
 
 		assertRollupBeanValidation(json, "rollup[0].saveAs may not be empty");
 	}
@@ -483,6 +483,14 @@ public class QueryParserTest
 		String json = Resources.toString(Resources.getResource("invalid-rollup-no-query_time.json"), Charsets.UTF_8);
 
 		assertRollupBeanValidation(json, "rollup[0].query.metric[0].start_time relative or absolute time must be set");
+	}
+
+	@Test
+	public void test_parseRollUpTask_noRangeAggregator_invalid() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-rollup-no-range-aggregator.json"), Charsets.UTF_8);
+
+		assertRollupBeanValidation(json, "rollup[0].query[0].aggregator At least one aggregator must be a range aggregator");
 	}
 
 	private void assertRollupBeanValidation(String json, String expectedMessage)

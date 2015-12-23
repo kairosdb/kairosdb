@@ -1,6 +1,8 @@
 package org.kairosdb.rollup;
 
+import com.google.gson.annotations.SerializedName;
 import org.apache.bval.constraints.NotEmpty;
+import org.kairosdb.core.datastore.Duration;
 
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
@@ -29,8 +31,8 @@ public class RollupTask
 	private String name;
 
 	@NotNull
-	@NotEmpty()
-	private String schedule;
+	@SerializedName("execution_interval")
+	private Duration executionInterval;
 
 	private long timestamp;
 	private String json;
@@ -39,14 +41,14 @@ public class RollupTask
 	{
 	}
 
-	public RollupTask(String name, String schedule, List<Rollup> rollups)
+	public RollupTask(String name, Duration executionInterval, List<Rollup> rollups)
 	{
 		checkNotNull(rollups);
 		checkArgument(rollups.size() > 0);
 
 		this.name = checkNotNullOrEmpty(name);
 		this.rollups.addAll(rollups);
-		this.schedule = checkNotNullOrEmpty(schedule);
+		this.executionInterval = checkNotNull(executionInterval);
 		this.timestamp = System.currentTimeMillis();
 	}
 
@@ -76,9 +78,9 @@ public class RollupTask
 		this.json = json.replaceFirst("\\{", "{\"id\":\"" + id + "\",");
 	}
 
-	public String getSchedule()
+	public Duration getExecutionInterval()
 	{
-		return schedule;
+		return executionInterval;
 	}
 
 	public long getTimestamp()

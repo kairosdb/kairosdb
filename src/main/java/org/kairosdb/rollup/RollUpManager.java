@@ -2,7 +2,9 @@ package org.kairosdb.rollup;
 
 
 import com.google.inject.name.Named;
+import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.core.scheduler.KairosDBJob;
@@ -19,7 +21,9 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.quartz.CalendarIntervalScheduleBuilder.calendarIntervalSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 // todo need test
@@ -101,7 +105,7 @@ public class RollUpManager implements KairosDBJob
 			//			{
 				try
 				{
-					scheduler.cancel(task.getId());
+					scheduler.cancel(getJobKey(task));
 				}
 				catch (KairosDBException e)
 				{
@@ -113,7 +117,9 @@ public class RollUpManager implements KairosDBJob
 				{
 					logger.info("Updating schedule for rollup " + task.getName());
 					JobDetailImpl jobDetail = createJobDetail(task, dataStore);
-					scheduler.schedule(jobDetail, createTrigger(task));
+					Trigger trigger = createTrigger(task);
+					scheduler.schedule(jobDetail, trigger);
+					logger.info("Roll-up task " + jobDetail.getFullName() + " scheduled. Next execution time " + trigger.getNextFireTime());
 				}
 				catch (KairosDBException e)
 				{
@@ -157,7 +163,7 @@ public class RollUpManager implements KairosDBJob
 				{
 					logger.info("Cancelling rollup " + currentTask.getName());
 					iterator.remove();
-					scheduler.cancel(id);
+					scheduler.cancel(getJobKey(foundTask));
 				}
 				catch (KairosDBException e)
 				{
@@ -176,8 +182,11 @@ public class RollUpManager implements KairosDBJob
 				try
 				{
 					logger.info("Scheduling rollup " + task.getName());
-					scheduler.schedule(createJobDetail(task, dataStore), createTrigger(task));
+					Trigger trigger = createTrigger(task);
+					JobDetailImpl jobDetail = createJobDetail(task, dataStore);
+					scheduler.schedule(jobDetail, trigger);
 					taskIdToTimeMap.put(task.getId(), task.getTimestamp());
+					logger.info("Roll-up task " + jobDetail.getFullName() + " scheduled. Next execution time " + trigger.getNextFireTime());
 				}
 				catch (KairosDBException e)
 				{
@@ -187,11 +196,16 @@ public class RollUpManager implements KairosDBJob
 		}
 	}
 
+	private static JobKey getJobKey(RollupTask task)
+	{
+		return new JobKey(task.getId(), RollUpJob.class.getSimpleName());
+	}
+
 	private static JobDetailImpl createJobDetail(RollupTask task, KairosDatastore dataStore)
 	{
 		JobDetailImpl jobDetail = new JobDetailImpl();
 		jobDetail.setJobClass(RollUpJob.class);
-		jobDetail.setKey(new JobKey(task.getId() + "-" + RollUpJob.class.getSimpleName()));
+		jobDetail.setKey(getJobKey(task));
 
 		JobDataMap map = new JobDataMap();
 		map.put("task", task);
@@ -200,11 +214,42 @@ public class RollUpManager implements KairosDBJob
 		return jobDetail;
 	}
 
+	@SuppressWarnings("ConstantConditions")
 	private static Trigger createTrigger(RollupTask task)
 	{
+		Duration executionInterval = task.getExecutionInterval();
 		return newTrigger()
-				.withIdentity(task.getId() + "-" + task.getClass().getSimpleName())
-				.withSchedule(CronScheduleBuilder.cronSchedule(task.getSchedule()))
+				.withIdentity(task.getId(), task.getClass().getSimpleName())
+				.startAt(DateBuilder.futureDate((int) executionInterval.getValue(), toIntervalUnit(executionInterval.getUnit())))
+				.withSchedule(calendarIntervalSchedule()
+						.withInterval((int) executionInterval.getValue(), toIntervalUnit(executionInterval.getUnit())))
 				.build();
 	}
+
+	private static DateBuilder.IntervalUnit toIntervalUnit(TimeUnit unit)
+	{
+		switch (unit)
+		{
+			case MILLISECONDS:
+				return DateBuilder.IntervalUnit.MILLISECOND;
+			case SECONDS:
+				return DateBuilder.IntervalUnit.SECOND;
+			case MINUTES:
+				return DateBuilder.IntervalUnit.MINUTE;
+			case HOURS:
+				return DateBuilder.IntervalUnit.HOUR;
+			case DAYS:
+				return DateBuilder.IntervalUnit.DAY;
+			case WEEKS:
+				return DateBuilder.IntervalUnit.WEEK;
+			case MONTHS:
+				return DateBuilder.IntervalUnit.MONTH;
+			case YEARS:
+				return DateBuilder.IntervalUnit.YEAR;
+			default:
+				checkState(false, "Invalid time unit" + unit);
+				return null;
+		}
+	}
+
 }

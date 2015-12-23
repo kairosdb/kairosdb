@@ -557,6 +557,16 @@ function CreateController($scope, $modalInstance, KairosDBDatasource, rollup) {
 			errs.sampling = err.message;
 		}
 
+		// verify that at least one aggregator is a sampling aggregator
+		errs.aggregators = "At least one aggregator must be a sampling aggregator.";
+		if (target.horizontalAggregators) {
+			target.horizontalAggregators.forEach(function (aggregator) {
+				if (aggregator.sampling_rate) {
+					delete errs.aggregators;
+				}
+			});
+		}
+
 		return errs;
 	}
 }

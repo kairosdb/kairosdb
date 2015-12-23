@@ -55,22 +55,27 @@ public class KairosDBSchedulerImplTest
 		assertThat(scheduledJobIds, hasItem("1"));
 		assertThat(scheduledJobIds, hasItem("2"));
 
-		scheduler.cancel("1");
+		scheduler.cancel(getJobKey("1"));
 
 		scheduledJobIds = scheduler.getScheduledJobIds();
 		assertThat(scheduledJobIds.size(), equalTo(1));
 		assertThat(scheduledJobIds, hasItem("2"));
 
-		scheduler.cancel("2");
+		scheduler.cancel(getJobKey("2"));
 
 		assertThat(scheduler.getScheduledJobIds().size(), equalTo(0));
+	}
+
+	private JobKey getJobKey(String id)
+	{
+		return new JobKey(id, "group");
 	}
 
 	private JobDetail createJobDetail(String key)
 	{
 		JobDetailImpl jobDetail = new JobDetailImpl();
 		jobDetail.setJobClass(RollUpJob.class);
-		jobDetail.setKey(new JobKey(key));
+		jobDetail.setKey(getJobKey(key));
 		return jobDetail;
 	}
 

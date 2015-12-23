@@ -319,8 +319,12 @@ public class QueryParser
 				JsonObject queryObject = rollupObject.getAsJsonObject("query");
 				List<QueryMetric> queries = parseQueryMetric(queryObject, context);
 
-				for (QueryMetric query : queries)
+				for (int k = 0; k < queries.size(); k++)
 				{
+					QueryMetric query = queries.get(k);
+					context += ".query[" + k + "]";
+					validateHasRangeAggregator(query, context);
+
 					// Add aggregators needed for rollups
 					SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_aggregatorFactory.createAggregator("save_as");
 					saveAsAggregator.setMetricName(rollup.getSaveAs());
@@ -338,6 +342,24 @@ public class QueryParser
 		}
 
 		return task;
+	}
+
+	private void validateHasRangeAggregator(QueryMetric query, String context) throws BeanValidationException
+	{
+		boolean hasRangeAggregator = false;
+		for (Aggregator aggregator : query.getAggregators())
+		{
+			if (aggregator instanceof RangeAggregator)
+			{
+				hasRangeAggregator = true;
+				break;
+			}
+		}
+
+		if (!hasRangeAggregator)
+		{
+			throw new BeanValidationException(new SimpleConstraintViolation("aggregator", "At least one aggregator must be a range aggregator"), context);
+		}
 	}
 
 	private void parsePlugins(String context, QueryMetric queryMetric, JsonArray plugins) throws BeanValidationException, QueryException

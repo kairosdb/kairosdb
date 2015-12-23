@@ -1,13 +1,16 @@
 {
   "name": "Rollup",
-  "schedule": "0 * * * * ?",
+  "execution_interval": {
+    "value": 1,
+    "unit": "hours"
+  },
   "rollups": [
     {
-      "save_as": "",
+      "save_as": "kairosdb.http.query_time_rollup",
       "query": {
         "cache_time": 0,
         "start_relative": {
-          "value": "1",
+          "value": 1,
           "unit": "hours"
         },
         "metrics": [
@@ -25,18 +28,8 @@
             },
             "aggregators": [
               {
-                "name": "sum",
-                "sampling": {
-                  "value": 10,
-                  "unit": "minutes"
-                }
-              },
-              {
-                "name": "avg",
-                "sampling": {
-                  "value": 10,
-                  "unit": "hours"
-                }
+                "name": "div",
+                "divisor": 10
               }
             ]
           }

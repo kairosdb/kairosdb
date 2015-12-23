@@ -29,19 +29,15 @@
 	<script src="rollup-js/third-party/angular-strap-min-2.3.3.js"></script>
 	<script src="rollup-js/third-party/angular-strap.tpl-min-2.3.3.js"></script>
 	<script src="rollup-js/third-party/bootbox.js"></script>
-	<script src="rollup-js/third-party/moment.js"
-			type="text/javascript"></script>
-	<script src="rollup-js/third-party/later.js"
-			type="text/javascript"></script>
-	<script src="rollup-js/third-party/prettycron.js"
-			type="text/javascript"></script>
 	<script src="rollup-js/rollup.js"></script>
 	<script src="rollup-js/kairosdbDatasource.js"></script>
 	<script src="rollup-js/createController.js"></script>
 	<script src="rollup-js/pasteQueryController.js"></script>
+
 </head>
 
 <!-- *********** TODO replace all method calls to point to model for performance reasons  *********  -->
+<!-- TODO Add description of a rollup at the top of the page -->
 
 <body ng-app="rollupApp" ng-controller="rollupController">
 <div class="container-fluid">
@@ -67,26 +63,29 @@
 							<span class="taskOperations glyphicon glyphicon-remove text-info"
 								  aria-hidden="true" ng-hide="task.edit"></span>
 					</a>
-
 					<input class="text-field" type='text'
 						   ng-model="task.name"
 						   ng-blur="onBlur(task)"
 						   focus/>
+
+					<input class="text-field input-mini" type='text'
+						   ng-model="task.executionValue"
+						   ng-blur="onBlur(task)"/>
 
 					<span class="dropdown schedule">
 						<button class="btn btn-default dropdown-toggle"
 								type="button" id="executeDropdown"
 								data-toggle="dropdown" aria-haspopup="true"
 								aria-expanded="true">
-							{{ toHumanReadableCron(task.schedule) }} <span
-								class="caret"></span>
+							{{ task.executionUnit }}
+							<span class="caret"></span>
 						</button>
 						<ul class="dropdown-menu"
 							aria-labelledby="executeDropdown">
-							<li ng-repeat="executeTime in executeTimes">
+							<li ng-repeat="unit in executionUnits">
 								<a href="#"
-								   ng-click="scheduleModified(task, executeTime)">
-									{{ toHumanReadableCron(executeTime) }}
+								   ng-click="scheduleModified(task, unit)">
+									{{ unit }}
 								</a>
 							</li>
 						</ul>

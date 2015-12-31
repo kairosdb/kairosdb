@@ -3,9 +3,12 @@ package org.kairosdb.rollup;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.RangeAggregator;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.http.rest.json.RelativeTime;
+import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
 import org.quartz.InterruptableJob;
 import org.quartz.JobDataMap;
@@ -24,9 +27,11 @@ public class RollUpJob implements InterruptableJob
 {
 	private static final Logger log = LoggerFactory.getLogger(KairosDBSchedulerImpl.class);
 
-	protected static final int TOO_OLD_MULTIPLIER = 4;
+	private static final String ROLLUP_TIME = "kairosdb.rollup.execution-time";
 
+	protected static final int TOO_OLD_MULTIPLIER = 4;
 	private boolean interrupted;
+	private LongDataPointFactory longDataPointFactory = new LongDataPointFactoryImpl();
 
 	public RollUpJob()
 	{
@@ -41,8 +46,10 @@ public class RollUpJob implements InterruptableJob
 			JobDataMap dataMap = jobExecutionContext.getMergedJobDataMap();
 			RollupTask task = (RollupTask) dataMap.get("task");
 			KairosDatastore datastore = (KairosDatastore) dataMap.get("datastore");
+			String hostName = (String) dataMap.get("hostName");
 			checkState(task != null, "Task was null");
 			checkState(datastore != null, "Datastore was null");
+			checkState(hostName != null, "hostname was null");
 
 			for (Rollup rollup : task.getRollups())
 			{
@@ -53,38 +60,49 @@ public class RollUpJob implements InterruptableJob
 
 				for (QueryMetric queryMetric : rollup.getQueryMetrics())
 				{
+					boolean success = true;
+					long startQueryTime = System.currentTimeMillis();
 					try
 					{
 						if (interrupted)
 							break;
 
-						long now = System.currentTimeMillis();
-						DataPoint rollupDataPoint = getLastRollupDataPoint(datastore, rollup.getSaveAs(), now);
-						queryMetric.setStartTime(calculateStartTime(rollupDataPoint, getLastSampling(queryMetric.getAggregators()), now));
-						queryMetric.setEndTime(calculateEndTime(rollupDataPoint, task.getExecutionInterval(), now));
+						DataPoint rollupDataPoint = getLastRollupDataPoint(datastore, rollup.getSaveAs(), startQueryTime);
+						queryMetric.setStartTime(calculateStartTime(rollupDataPoint, getLastSampling(queryMetric.getAggregators()), startQueryTime));
+						queryMetric.setEndTime(calculateEndTime(rollupDataPoint, task.getExecutionInterval(), startQueryTime));
 						long dpCount = executeRollup(datastore, queryMetric);
 						log.info("Rollup Task: " + task.getName() + " for Rollup " + rollup.getSaveAs() + " data point count of " + dpCount);
 
-						if (dpCount == 0)
+						if (dpCount == 0 && rollupDataPoint != null)
 						{
 							// Advance forward if a data point exists for the query metric
-							DataPoint dataPoint = getFutureDataPoint(datastore, queryMetric.getName(), now, rollupDataPoint);
-							queryMetric.setStartTime(calculateStartTime(dataPoint, getLastSampling(queryMetric.getAggregators()), now));
-							queryMetric.setEndTime(calculateEndTime(dataPoint, task.getExecutionInterval(), now));
+							DataPoint dataPoint = getFutureDataPoint(datastore, queryMetric.getName(), startQueryTime, rollupDataPoint);
+							queryMetric.setStartTime(calculateStartTime(dataPoint, getLastSampling(queryMetric.getAggregators()), startQueryTime));
+							queryMetric.setEndTime(calculateEndTime(dataPoint, task.getExecutionInterval(), startQueryTime));
 							dpCount = executeRollup(datastore, queryMetric);
 							log.info("Tried again Rollup Task: " + task.getName() + " for Rollup " + rollup.getSaveAs() + " data point count of " + dpCount);
 						}
-
-						// todo add metrics about query include failure cases
-						//			ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
 					}
 					catch (DatastoreException e)
 					{
+						success = false;
 						log.error("Failed to execute query for roll-up task: " + task.getName() + " roll-up: " + rollup.getSaveAs(), e);
 					}
 					catch (Exception e)
 					{
+						success = false;
 						log.error("Failed to roll-up task: " + task.getName() + " roll-up: " + rollup.getSaveAs(), e);
+					}
+					finally
+					{
+						ThreadReporter.setReportTime(System.currentTimeMillis());
+						ThreadReporter.clearTags();
+						ThreadReporter.addTag("host", hostName);
+						ThreadReporter.addTag("rollup", rollup.getSaveAs());
+						ThreadReporter.addTag("rollup-task", task.getName());
+						ThreadReporter.addTag("status", success ? "success" : "failure");
+						ThreadReporter.addDataPoint(ROLLUP_TIME, System.currentTimeMillis() - startQueryTime);
+						ThreadReporter.submitData(longDataPointFactory, datastore);
 					}
 				}
 			}
@@ -176,7 +194,7 @@ public class RollUpJob implements InterruptableJob
 
 	/**
 	 Returns the time stamp of the specified data point. If the data point is
-	 null then it returns the start time for one sampling period.
+	 null then it returns the start time for one sampling period before now.
 	 */
 	protected static long calculateStartTime(DataPoint dataPoint, Sampling lastSampling, long now)
 	{

@@ -41,6 +41,10 @@ public class RollUpManager implements KairosDBJob
 	private long tasksLastModified;
 
 	@Inject
+	@Named("HOSTNAME")
+	private String hostName = "localhost";
+
+	@Inject
 	public RollUpManager(
 			@Named(SCHEDULE) String schedule,
 			RollUpTasksStore taskStore, KairosDBScheduler scheduler, KairosDatastore dataStore)
@@ -116,7 +120,7 @@ public class RollUpManager implements KairosDBJob
 				try
 				{
 					logger.info("Updating schedule for rollup " + task.getName());
-					JobDetailImpl jobDetail = createJobDetail(task, dataStore);
+					JobDetailImpl jobDetail = createJobDetail(task, dataStore, hostName);
 					Trigger trigger = createTrigger(task);
 					scheduler.schedule(jobDetail, trigger);
 					logger.info("Roll-up task " + jobDetail.getFullName() + " scheduled. Next execution time " + trigger.getNextFireTime());
@@ -183,7 +187,7 @@ public class RollUpManager implements KairosDBJob
 				{
 					logger.info("Scheduling rollup " + task.getName());
 					Trigger trigger = createTrigger(task);
-					JobDetailImpl jobDetail = createJobDetail(task, dataStore);
+					JobDetailImpl jobDetail = createJobDetail(task, dataStore, hostName);
 					scheduler.schedule(jobDetail, trigger);
 					taskIdToTimeMap.put(task.getId(), task.getTimestamp());
 					logger.info("Roll-up task " + jobDetail.getFullName() + " scheduled. Next execution time " + trigger.getNextFireTime());
@@ -201,7 +205,7 @@ public class RollUpManager implements KairosDBJob
 		return new JobKey(task.getId(), RollUpJob.class.getSimpleName());
 	}
 
-	private static JobDetailImpl createJobDetail(RollupTask task, KairosDatastore dataStore)
+	private static JobDetailImpl createJobDetail(RollupTask task, KairosDatastore dataStore, String hostName)
 	{
 		JobDetailImpl jobDetail = new JobDetailImpl();
 		jobDetail.setJobClass(RollUpJob.class);
@@ -210,6 +214,7 @@ public class RollUpManager implements KairosDBJob
 		JobDataMap map = new JobDataMap();
 		map.put("task", task);
 		map.put("datastore", dataStore);
+		map.put("hostName", hostName);
 		jobDetail.setJobDataMap(map);
 		return jobDetail;
 	}

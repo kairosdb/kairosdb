@@ -40,7 +40,7 @@ public interface DataPoint
 	 The reason this is different from api data type is you may want to provide
 	 a new implementation for storing long values.  So the api type may be 'long'
 	 but the data store type may be 'long2'.  this way going forward new
-	 incomming long values will be stored as 'long2' but you can still read both
+	 incoming long values will be stored as 'long2' but you can still read both
 	 'long' and 'long2' from the data store.
 	 @return
 	 */

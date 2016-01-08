@@ -12,13 +12,15 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.rollup.RollupTaskChangeListener.Action;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 /**
@@ -33,6 +35,7 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 	private final QueryParser parser;
 	private final File configFile;
 	private final Map<String, RollupTask> rollups = new HashMap<String, RollupTask>();
+	private final CopyOnWriteArrayList<RollupTaskChangeListener> listenerList = new CopyOnWriteArrayList<RollupTaskChangeListener>();
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
@@ -42,7 +45,8 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 		checkNotNullOrEmpty(storeDirectory);
 		checkNotNull(parser);
 
-		configFile = new File(storeDirectory, FILE_NAME); // todo need to create the dir if it doesn't exist?
+		createStoreDirectory(storeDirectory);
+		configFile = new File(storeDirectory, FILE_NAME);
 		configFile.createNewFile();
 		this.parser = parser;
 
@@ -52,11 +56,23 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 	@Override
 	public void write(List<RollupTask> tasks) throws RollUpException
 	{
+		checkNotNull(tasks);
+		List<RollupTask> added = new ArrayList<RollupTask>();
+		List<RollupTask> changed = new ArrayList<RollupTask>();
+
 		lock.lock();
 		try
 		{
 			for (RollupTask task : tasks)
 			{
+				if (rollups.containsKey(task.getId()))
+				{
+					changed.add(task);
+				}
+				else
+				{
+					added.add(task);
+				}
 				rollups.put(task.getId(), task);
 			}
 
@@ -70,6 +86,9 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 		{
 			lock.unlock();
 		}
+
+		notifyListeners(added, Action.ADDED);
+		notifyListeners(changed, Action.CHANGED);
 	}
 
 	private void writeTasks() throws IOException
@@ -128,32 +147,53 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 	@Override
 	public void remove(String id) throws IOException
 	{
+		checkNotNullOrEmpty(id);
+		RollupTask removed = null;
 		lock.lock();
 		try
 		{
-			rollups.remove(id);
-			writeTasks();
+			removed = rollups.get(id);
+			if (removed != null)
+			{
+				rollups.remove(id);
+				writeTasks();
+			}
 		}
 		finally
 		{
 			lock.unlock();
+		}
+
+		if (removed != null)
+		{
+			notifyListeners(Collections.singletonList(removed), Action.REMOVED);
 		}
 	}
 
-	@Override
-	public long lastModifiedTime() throws RollUpException
+	public void addListener(RollupTaskChangeListener listener)
 	{
-		lock.lock();
+		listenerList.add(listener);
+	}
+
+	public void notifyListeners(List<RollupTask> tasks, Action action)
+	{
+		for (RollupTask task : tasks)
+		{
+			for (RollupTaskChangeListener listener : listenerList)
+			{
+				listener.change(task, action);
+			}
+		}
+	}
+
+	private void createStoreDirectory(String storeDirectory) throws IOException
+	{
 		try
 		{
-			if (!configFile.exists())
-				return 0;
-			else
-				return configFile.lastModified();
+			Files.createDirectory(Paths.get(storeDirectory));
 		}
-		finally
+		catch (FileAlreadyExistsException ignore)
 		{
-			lock.unlock();
 		}
 	}
 }

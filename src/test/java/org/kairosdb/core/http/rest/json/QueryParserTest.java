@@ -22,11 +22,14 @@ import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
+import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
+import org.kairosdb.rollup.RollupTask;
 
 import java.io.IOException;
 import java.util.List;
@@ -491,6 +494,21 @@ public class QueryParserTest
 		String json = Resources.toString(Resources.getResource("invalid-rollup-no-range-aggregator.json"), Charsets.UTF_8);
 
 		assertRollupBeanValidation(json, "rollup[0].query[0].aggregator At least one aggregator must be a range aggregator");
+	}
+
+	@Test
+	public void test_parseRollupTasks() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("rolluptask1.json"), Charsets.UTF_8);
+
+		RollupTask task = parser.parseRollupTask(json);
+
+		assertThat(task.getName(), equalTo("Rollup1"));
+		assertThat(task.getExecutionInterval(), equalTo(new Duration(1, TimeUnit.HOURS)));
+		assertThat(task.getRollups().size(), equalTo(1));
+		assertThat(task.getRollups().get(0).getSaveAs(), equalTo("kairosdb.http.query_time_rollup"));
+		assertThat(task.getRollups().get(0).getQueryMetrics().size(), equalTo(1));
+		assertThat(task.getRollups().get(0).getQueryMetrics().get(0).getName(), equalTo("kairosdb.http.query_time"));
 	}
 
 	private void assertRollupBeanValidation(String json, String expectedMessage)

@@ -247,55 +247,6 @@ public class QueryParser
 		return (ret);
 	}
 
-	////	public List<RollupTask> parseRollupTask(String json) throws BeanValidationException, QueryException
-	////	{
-	////		JsonParser parser = new JsonParser();
-	////		JsonArray rollupTaskArray = parser.parse(json).getAsJsonArray();
-	////
-	////		List<RollupTask> rollupTasks = new ArrayList<RollupTask>();
-	////		for (JsonElement rollupTaskElement : rollupTaskArray)
-	////		{
-	////			JsonObject rollupTask = rollupTaskElement.getAsJsonObject();
-	////
-	////			String name = rollupTask.getAsJsonPrimitive("name").getAsString();
-	////			String schedule = rollupTask.getAsJsonPrimitive("schedule").getAsString();
-	////
-	////			JsonArray rollupArray = rollupTask.getAsJsonObject().getAsJsonArray("rollups");
-	////
-	////			List<Rollup> rollups = new ArrayList<Rollup>();
-	////			for (JsonElement rollupElement : rollupArray)
-	////			{
-	////				JsonObject rollupObject = rollupElement.getAsJsonObject();
-	////
-	////				String saveAs = rollupObject.getAsJsonPrimitive("save_as").getAsString();
-	////
-	////				JsonObject queryObject = rollupObject.getAsJsonObject("query");
-	////				List<QueryMetric> queries = parseQueryMetric(queryObject);
-	////
-	////				Rollup rollup = new Rollup(saveAs, queries.get(0));
-	////				rollups.add(rollup);
-	////
-	//////				for (QueryMetric query : queries)
-	//////				{
-	//////					// Add aggregators needed for rollups
-	//////					SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_aggregatorFactory.createAggregator("save_as");
-	//////					saveAsAggregator.setMetricName(rollup.getSaveAs());
-	//////
-	//////					TrimAggregator trimAggregator = (TrimAggregator) m_aggregatorFactory.createAggregator("trim");
-	//////					trimAggregator.setTrim(TrimAggregator.Trim.LAST);
-	//////
-	//////					query.addAggregator(saveAsAggregator);
-	//////					query.addAggregator(trimAggregator);
-	//////				}
-	////			}
-	////			rollupTasks.add(new RollupTask(name, schedule, rollups));
-	////		}
-	//
-	//		return rollupTasks;
-	//
-	//	}
-
-
 	public RollupTask parseRollupTask(String json) throws BeanValidationException, QueryException
 	{
 		JsonParser parser = new JsonParser();

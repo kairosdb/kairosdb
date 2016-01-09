@@ -105,7 +105,7 @@ public class MetricsResource implements KairosMetricReporter
 		gson = builder.create();
 	}
 
-	private ResponseBuilder setHeaders(ResponseBuilder responseBuilder)
+	public static ResponseBuilder setHeaders(ResponseBuilder responseBuilder)
 	{
 		responseBuilder.header("Access-Control-Allow-Origin", "*");
 		responseBuilder.header("Pragma", "no-cache");

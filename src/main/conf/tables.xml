@@ -113,6 +113,39 @@
 		</col>
 	</table>
 
+	<table name="metadata">
+		<property key="hsqldb_tableType" value="CACHED"/>
+		<col name="namespace" type="string" primary_key="true"/>
+		<col name="key" type="string" primary_key="true"/>
+		<col name="value" type="string"/>
+
+		<table_query name="with_prefix" result_type="multi">
+			<comment>Returns metadata that have keys starting with input</comment>
+			<input>
+				<param name="namespace" type="string" test="bob"/>
+				<param name="prefix" type="string" test="foo"/>
+			</input>
+			<sql>
+				FROM metadata this
+				WHERE
+				this."namespace" = ? AND
+				this."key" like ?
+			</sql>
+		</table_query>
+
+		<table_query name="by_namespace" result_type="multi">
+			<comment>Returns all metadata keys for a namespace</comment>
+			<input>
+				<param name="namespace" type="string" test="bob"/>
+			</input>
+			<sql>
+				FROM metadata this
+				WHERE
+				this."namespace" = ?
+			</sql>
+		</table_query>
+	</table>
+
 
 	<!-- ======================================================================= -->
 	<queries>

@@ -8,6 +8,7 @@ public class GenOrmUnitTest
 		Tag.factory.testQueryMethods();
 		DataPoint.factory.testQueryMethods();
 		MetricTag.factory.testQueryMethods();
+		Metadata.factory.testQueryMethods();
 
 		}
 	}

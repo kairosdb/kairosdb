@@ -22,14 +22,12 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 import junit.framework.TestCase;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.core.Is;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPoint;
-import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.DatastoreQuery;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.TagGroupBy;
 
@@ -46,6 +44,7 @@ import static org.hamcrest.core.Is.is;
 public abstract class DatastoreTestHelper
 {
 	protected static KairosDatastore s_datastore;
+	protected static MetaDatastore s_metastore;
 	protected static final List<String> metricNames = new ArrayList<String>();
 	private static long s_startTime;
 	private static String s_unicodeNameWithSpace = "你好 means hello";
@@ -724,5 +723,52 @@ public abstract class DatastoreTestHelper
 		assertThat(group.hasNext(), is(false));
 	}
 
+	@Test
+	public void test_metadataSetValue() throws DatastoreException
+	{
+		s_metastore.setValue("Test1", "booberry");
+
+		assertThat(s_metastore.getValue("Test1"), is("booberry"));
+	}
+
+	@Test
+	public void test_metadataGetKeys() throws DatastoreException
+	{
+		s_metastore.setValue("Test1", "booberry1");
+		s_metastore.setValue("Test2", "booberry2");
+		s_metastore.setValue("Test3", "booberry3");
+		s_metastore.setValue("Test4", "booberry4");
+
+		List<String> keys = new ArrayList<>();
+		keys.add("Test1");
+		keys.add("Test2");
+		keys.add("Test3");
+		keys.add("Test4");
+
+		assertThat(s_metastore.getKeys(), Is.<Iterable<String>>is(keys));
+	}
+
+
+	@Test
+	public void test_metadataGetKeysWithPrefix() throws DatastoreException
+	{
+
+		s_metastore.setValue("Test1", "booberry1");
+		s_metastore.setValue("Test2", "booberry2");
+		s_metastore.setValue("Test3", "booberry3");
+		s_metastore.setValue("Test4", "booberry4");
+		s_metastore.setValue("Pre.Test1", "booberry4");
+		s_metastore.setValue("Pre.Test2", "booberry4");
+		s_metastore.setValue("Pre.Test3", "booberry4");
+		s_metastore.setValue("Pre.Test4", "booberry4");
+
+		List<String> keys = new ArrayList<>();
+		keys.add("Pre.Test1");
+		keys.add("Pre.Test2");
+		keys.add("Pre.Test3");
+		keys.add("Pre.Test4");
+
+		assertThat(s_metastore.getKeysWithPrefix("Pre."), Is.<Iterable<String>>is(keys));
+	}
 
 }

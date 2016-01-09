@@ -32,8 +32,9 @@ CREATE CACHED TABLE metric_tag (
 	);
 
 CREATE CACHED TABLE metadata (
+	"namespace" VARCHAR  NOT NULL,
 	"key" VARCHAR  NOT NULL,
 	"value" VARCHAR  NULL,
-	PRIMARY KEY ("key")
+	PRIMARY KEY ("namespace", "key")
 	);
 

@@ -66,9 +66,13 @@ public class H2DatastoreTest extends DatastoreTestHelper
 	{
 		KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
 
-		s_datastore = new KairosDatastore(new H2Datastore(DB_PATH, dataPointFactory),
+		H2Datastore h2Datastore = new H2Datastore(DB_PATH, dataPointFactory);
+
+		s_datastore = new KairosDatastore(h2Datastore,
 				new QueryQueuingManager(1, "hostname"),
 				Collections.<DataPointListener>emptyList(), dataPointFactory);
+
+		s_metastore = h2Datastore;
 
 		loadData();
 	}

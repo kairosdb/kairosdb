@@ -43,7 +43,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.*;
 
-public class H2Datastore implements Datastore
+public class H2Datastore implements Datastore, MetaDatastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(H2Datastore.class);
 	public static final String DATABASE_PATH_PROPERTY = "kairosdb.datastore.h2.database_path";
@@ -426,5 +426,81 @@ public class H2Datastore implements Datastore
 		}
 
 		return (sb.toString());
+	}
+
+	@Override
+	public String getValue(String namespace, String key) throws DatastoreException
+	{
+		String ret = null;
+		Metadata meta = Metadata.factory.find(namespace, key);
+		if (meta != null)
+			ret = meta.getValue();
+
+		return ret;
+	}
+
+	@Override
+	public void setValue(String namespace, String key, String value) throws DatastoreException
+	{
+		GenOrmDataSource.attachAndBegin();
+		try
+		{
+			Metadata meta = Metadata.factory.findOrCreate(namespace, key);
+			meta.setValue(value);
+			GenOrmDataSource.commit();
+		}
+		finally
+		{
+			GenOrmDataSource.close();
+		}
+	}
+
+	@Override
+	public Iterable<String> getKeys(String namespace) throws DatastoreException
+	{
+		Metadata_base.ResultSet resultSet = Metadata.factory.getByNamespace(namespace);
+
+		List<String> ret = new ArrayList<String>();
+		while (resultSet.next())
+		{
+			ret.add(resultSet.getRecord().getKey());
+		}
+
+		return ret;
+	}
+
+	@Override
+	public Iterable<String> getKeysWithPrefix(String namespace, String prefix) throws DatastoreException
+	{
+		Metadata_base.ResultSet resultSet = Metadata.factory.getWithPrefix(namespace, prefix+"%");
+
+		List<String> ret = new ArrayList<String>();
+		while (resultSet.next())
+		{
+			ret.add(resultSet.getRecord().getKey());
+		}
+
+		return ret;
+	}
+
+	@Override
+	public Iterable<String> getNamespaces() throws DatastoreException
+	{
+		return null;
+	}
+
+	@Override
+	public void deleteValue(String namespace, String metaKey)
+	{
+		GenOrmDataSource.attachAndBegin();
+		try
+		{
+			Metadata.factory.delete(namespace, metaKey);
+			GenOrmDataSource.commit();
+		}
+		finally
+		{
+			GenOrmDataSource.close();
+		}
 	}
 }

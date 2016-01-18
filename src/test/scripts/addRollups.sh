@@ -1,9 +1,9 @@
 #!/bin/bash
 
-curl -s http://localhost:8080/api/v1/rollups/rollup -XPOST -H'Content-type:application/json' -d '
+curl -s http://localhost:8080/api/v1/rollups -XPOST -H'Content-type:application/json' -d '
 	{
 		"name": "jeff_rollup3",
-        "schedule": "0 * * * * ?",
+        "execution_interval": {"value": 5, "unit": "hours"},
         "rollups": [
          {
 	         "save_as": "rolluptest1",

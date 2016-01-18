@@ -1,5 +1,7 @@
 // todo Add "Last Exectuted", "When to execute next", Pause button, and maybe "create by | or owned by team"
 
+var ROLLUP_URL = "/api/v1/rollups/";
+
 var module = angular.module('rollupApp', ['mgcrea.ngStrap',
 	'mgcrea.ngStrap.tooltip', 'ui.bootstrap.modal', 'template/modal/backdrop.html',
 	'template/modal/window.html']);
@@ -10,7 +12,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 	$scope.tasks = [];
 	$scope.taskCopies = [];
 
-	$http.get("/api/v1/rollups/rollup") //todo don't hard code
+	$http.get(ROLLUP_URL)
 		.success(function (response) {
 
 			if (response) {
@@ -55,14 +57,6 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 				return;
 
 			$scope.saveRollupTask(task);
-
-			currentDate = new Date();
-			$scope.lastSaved = (currentDate.getHours() < 10 ? "0" + currentDate.getHours() : currentDate.getHours()) + ":" +
-				(currentDate.getMinutes() < 10 ? "0" + currentDate.getMinutes() : currentDate.getMinutes()) + ":" +
-				(currentDate.getSeconds() < 10 ? "0" + currentDate.getSeconds() : currentDate.getSeconds());
-
-			// Flash Last Saved message
-			$('#lastSaved').fadeOut('slow').fadeIn('slow').animate({opacity: 1.0}, 1000);
 		}
 	};
 
@@ -207,7 +201,7 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 			message: "Are you sure you want to delete the rollup?",
 			callback: function (result) {
 				if (result) {
-					var res = $http.delete('/api/v1/rollups/delete/' + task.id); // todo don't hardcode?
+					var res = $http.delete(ROLLUP_URL + task.id);
 					res.success(function (data, status, headers, config) {
 						var i = $scope.tasks.indexOf(task);
 						if (i != -1) {
@@ -296,10 +290,18 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 			unit: task.executionUnit
 		};
 
-		var res = $http.post('/api/v1/rollups/rollup', task); // todo don't hardcode?
+		var res = $http.post(ROLLUP_URL, task);
 		res.success(function (data, status, headers, config) {
 			task.id = data.id;
-			//console.log(status);
+
+			currentDate = new Date();
+			$scope.lastSaved = (currentDate.getHours() < 10 ? "0" + currentDate.getHours() : currentDate.getHours()) + ":" +
+				(currentDate.getMinutes() < 10 ? "0" + currentDate.getMinutes() : currentDate.getMinutes()) + ":" +
+				(currentDate.getSeconds() < 10 ? "0" + currentDate.getSeconds() : currentDate.getSeconds());
+
+			// Flash Last Saved message
+			$('#lastSaved').fadeOut('slow').fadeIn('slow').animate({opacity: 1.0}, 1000);
+
 		});
 		res.error(function (data, status, headers, config) {
 			$scope.alert("Could not save query.", status, data);

@@ -247,12 +247,34 @@ public class QueryParser
 		return (ret);
 	}
 
+	public List<RollupTask> parseRollupTasks(String json) throws BeanValidationException, QueryException
+	{
+		List<RollupTask> tasks = new ArrayList<RollupTask>();
+		JsonParser parser = new JsonParser();
+		JsonArray rollupTasks = parser.parse(json).getAsJsonArray();
+		for (int i = 0; i < rollupTasks.size(); i++)
+		{
+			JsonObject taskObject = rollupTasks.get(i).getAsJsonObject();
+			RollupTask task = parseRollupTask(taskObject, "tasks[" + i + "]");
+			task.addJson(taskObject.toString().replaceAll("\\n", ""));
+			tasks.add(task);
+		}
+
+		return tasks;
+	}
+
 	public RollupTask parseRollupTask(String json) throws BeanValidationException, QueryException
 	{
 		JsonParser parser = new JsonParser();
-		JsonObject rollupTask = parser.parse(json).getAsJsonObject();
+		JsonObject taskObject = parser.parse(json).getAsJsonObject();
+		RollupTask task = parseRollupTask(taskObject, "");
+		task.addJson(taskObject.toString().replaceAll("\\n", ""));
+		return task;
+	}
+
+	public RollupTask parseRollupTask(JsonObject rollupTask, String context) throws BeanValidationException, QueryException
+	{
 		RollupTask task = m_gson.fromJson(rollupTask.getAsJsonObject(), RollupTask.class);
-		task.addJson(json.replaceAll("\\n", ""));
 
 		validateObject(task);
 
@@ -264,7 +286,7 @@ public class QueryParser
 				JsonObject rollupObject = rollups.get(j).getAsJsonObject();
 				Rollup rollup = m_gson.fromJson(rollupObject, Rollup.class);
 
-				String context = "rollup[" + j + "]";
+				context = context + "rollup[" + j + "]";
 				validateObject(rollup, context);
 
 				JsonObject queryObject = rollupObject.getAsJsonObject("query");

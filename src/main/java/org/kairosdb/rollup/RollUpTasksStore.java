@@ -1,6 +1,5 @@
 package org.kairosdb.rollup;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -26,10 +25,10 @@ public interface RollUpTasksStore
 
 	/**
 	 Removes the task specified by the id.
+	 @throws RollUpException if the task could not be removed
 	 @param id id of the task to remove
-	 @throws IOException if the task could not be removed
 	 */
-	void remove(String id) throws IOException;
+	void remove(String id) throws RollUpException;
 
 	/**
 	 Adds the listener to be notified when a task is added, changed, or removed.

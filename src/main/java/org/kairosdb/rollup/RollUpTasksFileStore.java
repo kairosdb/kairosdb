@@ -80,7 +80,7 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 		}
 		catch (IOException e)
 		{
-			throw new RollUpException("Failed to write roll up tasks to " + configFile.getAbsolutePath(), e);
+			throw new RollUpException("Failed to write roll-up tasks to " + configFile.getAbsolutePath(), e);
 		}
 		finally
 		{
@@ -136,7 +136,7 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 		}
 		catch (IOException e)
 		{
-			throw new RollUpException("Failed to read roll up tasks from " + configFile.getAbsolutePath(), e);
+			throw new RollUpException("Failed to read roll-up tasks from " + configFile.getAbsolutePath(), e);
 		}
 		finally
 		{
@@ -145,7 +145,7 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 	}
 
 	@Override
-	public void remove(String id) throws IOException
+	public void remove(String id) throws RollUpException
 	{
 		checkNotNullOrEmpty(id);
 		RollupTask removed = null;
@@ -158,6 +158,10 @@ public class RollUpTasksFileStore implements RollUpTasksStore
 				rollups.remove(id);
 				writeTasks();
 			}
+		}
+		catch (IOException e)
+		{
+			throw new RollUpException("Failed to remove roll-up task", e);
 		}
 		finally
 		{

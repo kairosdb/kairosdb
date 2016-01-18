@@ -497,7 +497,7 @@ public class QueryParserTest
 	}
 
 	@Test
-	public void test_parseRollupTasks() throws IOException, QueryException
+	public void test_parseRollupTask() throws IOException, QueryException
 	{
 		String json = Resources.toString(Resources.getResource("rolluptask1.json"), Charsets.UTF_8);
 
@@ -509,6 +509,30 @@ public class QueryParserTest
 		assertThat(task.getRollups().get(0).getSaveAs(), equalTo("kairosdb.http.query_time_rollup"));
 		assertThat(task.getRollups().get(0).getQueryMetrics().size(), equalTo(1));
 		assertThat(task.getRollups().get(0).getQueryMetrics().get(0).getName(), equalTo("kairosdb.http.query_time"));
+	}
+
+	@Test
+	public void test_parseRollupTasks() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8);
+
+		List<RollupTask> tasks = parser.parseRollupTasks(json);
+
+		assertThat(tasks.size(), equalTo(2));
+
+		assertThat(tasks.get(0).getName(), equalTo("Rollup1"));
+		assertThat(tasks.get(0).getExecutionInterval(), equalTo(new Duration(1, TimeUnit.HOURS)));
+		assertThat(tasks.get(0).getRollups().size(), equalTo(1));
+		assertThat(tasks.get(0).getRollups().get(0).getSaveAs(), equalTo("kairosdb.http.query_time_rollup"));
+		assertThat(tasks.get(0).getRollups().get(0).getQueryMetrics().size(), equalTo(1));
+		assertThat(tasks.get(0).getRollups().get(0).getQueryMetrics().get(0).getName(), equalTo("kairosdb.http.query_time"));
+
+		assertThat(tasks.get(1).getName(), equalTo("Rollup2"));
+		assertThat(tasks.get(1).getExecutionInterval(), equalTo(new Duration(1, TimeUnit.MINUTES)));
+		assertThat(tasks.get(1).getRollups().size(), equalTo(1));
+		assertThat(tasks.get(1).getRollups().get(0).getSaveAs(), equalTo("kairosdb.http.foo_rollup"));
+		assertThat(tasks.get(1).getRollups().get(0).getQueryMetrics().size(), equalTo(1));
+		assertThat(tasks.get(1).getRollups().get(0).getQueryMetrics().get(0).getName(), equalTo("kairosdb.http.foo"));
 	}
 
 	private void assertRollupBeanValidation(String json, String expectedMessage)

@@ -23,7 +23,7 @@ public class RollupTask
 	// todo setup annotations for validation
 	// todo add tags
 
-	private final String id = UUID.randomUUID().toString();
+	private final String id;
 	private final transient List<Rollup> rollups = new ArrayList<Rollup>();
 
 	@NotNull
@@ -39,6 +39,7 @@ public class RollupTask
 
 	public RollupTask()
 	{
+		id = UUID.randomUUID().toString();
 	}
 
 	public RollupTask(String name, Duration executionInterval, List<Rollup> rollups)
@@ -46,6 +47,24 @@ public class RollupTask
 		checkNotNull(rollups);
 		checkArgument(rollups.size() > 0);
 
+		id = UUID.randomUUID().toString();
+		initialize(name, executionInterval, rollups);
+	}
+
+	public RollupTask(String id, String name, Duration executionInterval, List<Rollup> rollups, String json)
+	{
+		checkNotNullOrEmpty(id);
+		checkNotNullOrEmpty(json);
+		checkNotNull(rollups);
+		checkArgument(rollups.size() > 0);
+
+		this.id = id;
+		this.json = json;
+		initialize(name, executionInterval, rollups);
+	}
+
+	private void initialize(String name, Duration executionInterval, List<Rollup> rollups)
+	{
 		this.name = checkNotNullOrEmpty(name);
 		this.rollups.addAll(rollups);
 		this.executionInterval = checkNotNull(executionInterval);
@@ -75,7 +94,17 @@ public class RollupTask
 	public void addJson(String json)
 	{
 		checkNotNullOrEmpty(json);
-		this.json = json.replaceFirst("\\{", "{\"id\":\"" + id + "\",");
+
+		if (json.contains("\"id\":"))
+		{
+			// if id already exist in the json replace it
+			this.json = json.replaceFirst("\"id\":\".\",", "\"id\":\" + id + \"");
+		}
+		else
+		{
+			// if not add it
+			this.json = json.replaceFirst("\\{", "{\"id\":\"" + id + "\",");
+		}
 	}
 
 	public Duration getExecutionInterval()

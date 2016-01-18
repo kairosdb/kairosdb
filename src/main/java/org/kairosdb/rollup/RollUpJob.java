@@ -101,7 +101,7 @@ public class RollUpJob implements InterruptableJob
 						ThreadReporter.addTag("rollup", rollup.getSaveAs());
 						ThreadReporter.addTag("rollup-task", task.getName());
 						ThreadReporter.addTag("status", success ? "success" : "failure");
-						ThreadReporter.addDataPoint(ROLLUP_TIME, System.currentTimeMillis() - startQueryTime);
+						ThreadReporter.addDataPoint(ROLLUP_TIME, System.currentTimeMillis() - ThreadReporter.getReportTime());
 						ThreadReporter.submitData(longDataPointFactory, datastore);
 					}
 				}

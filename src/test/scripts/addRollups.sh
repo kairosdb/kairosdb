@@ -1,72 +1,42 @@
 #!/bin/bash
 
 curl -s http://localhost:8080/api/v1/rollups -XPOST -H'Content-type:application/json' -d '
-	{
-		"name": "jeff_rollup3",
-        "execution_interval": {"value": 5, "unit": "hours"},
-        "rollups": [
-         {
-	         "save_as": "rolluptest1",
-             "query":
-             {
-              "cache_time": 0,
-			   "start_relative": {
-                    "value": "1",
-                    "unit": "hours"
-                },
-			   "metrics": [
-                {
-                    "name": "kairosdb.http.query_time",
-                    "limit": 10000,
-                    "tags": {
-						"host": ["foo", "bar"],
-						"customer": ["foobar"]
-					},
-
-                    "aggregators": [
-                    {
-                        "name": "sum",
-                        "sampling": {
-                            "value": 10,
-                            "unit": "minutes"
-                        }
-                    },
-                    {
-                        "name": "avg",
-                        "sampling": {
-                            "value": 10,
-                            "unit": "hours"
-                          }
-                     }
-                    ]
-                }]
-			 }
-         },
-         {
-	         "save_as": "rolluptest2",
-	         "tags": {},
-             "query":
-             {
-              "cache_time": 0,
-			   "start_relative": {
-                    "value": "1",
-                    "unit": "hours"
-                },
-			   "metrics": [
-                {
-                    "name": "kairosdb.telnet.query_time",
-                    "limit": 10000,
-                    "aggregators": [
-                    {
-                        "name": "sum",
-                        "sampling": {
-                            "value": 10,
-                            "unit": "minutes"
-                        }
-                    }]
-                }]
-			 }
-         }
-         ]
-    }
+	 {
+ 	"name": "MyRollup",
+ 	"execution_interval": {
+ 		"value": 1,
+ 		"unit": "hours"
+ 	},
+ 	"rollups": [{
+ 		"save_as": "kairosdb.http.query_time_rollup",
+ 		"query": {
+ 			"cache_time": 0,
+ 			"start_relative": {
+ 				"value": "1",
+ 				"unit": "hours"
+ 			},
+ 			"metrics": [{
+ 				"name": "kairosdb.http.query_time",
+ 				"limit": 10000,
+ 				"tags": {
+ 					"host": ["foo", "bar"],
+ 					"customer": ["foobar"]
+ 				},
+ 				"aggregators": [{
+ 					"name": "sum",
+ 					"sampling": {
+ 						"value": 1,
+ 						"unit": "minutes"
+ 					}
+ 				}, {
+ 					"name": "avg",
+ 					"sampling": {
+ 						"value": 10,
+ 						"unit": "minutes"
+ 					}
+ 				}]
+ 			}]
+ 		}
+ 	}]
+ }
 '

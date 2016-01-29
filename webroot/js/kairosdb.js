@@ -133,8 +133,7 @@ kairosdb.Metric = function (name) {
 	 * @param name
 	 * @returns {{}}
 	 */
-	this.addAggregator = function (name)
-	{
+	this.addAggregator = function (name) {
 		if (!this.aggregators)
 			this.aggregators = [];
 

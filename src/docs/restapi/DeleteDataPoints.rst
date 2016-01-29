@@ -37,7 +37,7 @@ Response
 
   The response will be 500 Internal Server Error if an error occurs.
 
-  .. code-block:: json  
+  .. code-block:: json
 
      {
        "errors":["Connect to 10.92.4.1:4242 timed out"]

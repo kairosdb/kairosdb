@@ -420,6 +420,9 @@ public class DataPointsParser
 
 		public String getType() { return type; }
 
-		public int getTtl() { return ttl; }
+		public int getTtl()
+		{
+			return ttl;
+		}
 	}
 }

@@ -23,6 +23,7 @@ public class SaveAsAggregator implements Aggregator
 	private Datastore m_datastore;
 	private String m_metricName;
 	private Map<String, String> m_tags;
+	private int m_ttl = 0;
 
 	@Inject
 	public SaveAsAggregator(Datastore datastore)
@@ -35,6 +36,7 @@ public class SaveAsAggregator implements Aggregator
 	{
 		this(datastore);
 		m_metricName = metricName;
+		m_tags = new HashMap<>();
 	}
 
 	public void setMetricName(String metricName)
@@ -45,6 +47,11 @@ public class SaveAsAggregator implements Aggregator
 	public void setTags(Map<String, String> tags)
 	{
 		m_tags = tags;
+	}
+
+	public void setTtl(int ttl)
+	{
+		m_ttl = ttl;
 	}
 
 	public String getMetricName()
@@ -104,7 +111,7 @@ public class SaveAsAggregator implements Aggregator
 
 			try
 			{
-				m_datastore.putDataPoint(m_metricName, m_groupTags, next);
+				m_datastore.putDataPoint(m_metricName, m_groupTags, next, m_ttl);
 			}
 			catch (DatastoreException e)
 			{

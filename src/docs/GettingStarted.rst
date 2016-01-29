@@ -8,13 +8,11 @@ Install
 
 KairosDB runs with java 1.6 or later.
 
-  #. Download the tar.gz file from the Releases_ page
+  #. Download the tar.gz file from the Downloads section
   #. Extract to where you wish to run from
   #. In conf/kairosdb.properties change the kairosdb.service.datastore property to the datastore you wish to use.  It defaults to an in memory H2 database (that is slow)
   #. Make sure that JAVA_HOME is set to your java install.
   #. Change to the bin directory and run ``>./kairosdb.sh run``
-
-.. _Releases: https://github.com/kairosdb/kairosdb/releases
 
 -----------------------------------
 Changing File Handle Limit on Linux
@@ -31,6 +29,7 @@ KairosDB can be configured to use one of several backends for storing data.  By 
 -------------
 Using with H2
 -------------
+
 
 ``kairosdb.service.datastore=org.kairosdb.datastore.h2.H2Module``
 
@@ -77,8 +76,6 @@ For a complete list of options please see the Cassandra section in kairosdb.prop
 | kairosdb.datastore.cassandra.port                 | Port number of Cassandra server                                                                                                                                                                                                                    |
 +---------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | kairosdb.datastore.cassandra.replication_factor   | Replication factor when writing data to Cassandra [http://www.datastax.com/docs/1.0/cluster_architecture/replication more info]                                                                                                                    |
-+---------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| kairosdb.datastore.cassandra.row_width            | The number of milliseconds in a row.  The default is 7257600000 which equates to about 12 weeks.  Changing this value after loading data into the system could cause unexpected results.                                                           |
 +---------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | kairosdb.datastore.cassandra.write_delay          | The amount of time a background thread waits before writing data to Cassandra.  This allows batching data to the datastore.                                                                                                                        |
 +---------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+

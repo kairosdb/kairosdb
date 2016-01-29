@@ -80,7 +80,7 @@ public class BlastServer implements KairosDBService, Runnable
 
 						DataPoint dp = m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), value);
 
-						m_datastore.putDataPoint(metric, ImmutableSortedMap.of("host", host), dp);
+						m_datastore.putDataPoint(metric, ImmutableSortedMap.of("host", host), dp, 0);
 					}
 				}
 				catch (IOException e)

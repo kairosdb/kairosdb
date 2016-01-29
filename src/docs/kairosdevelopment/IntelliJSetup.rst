@@ -37,7 +37,8 @@ Alternative Approach
 --------------------
 
 Create 'kairosdb.iml' at the root of your kairos project and copy the following into it:
-::
+
+.. code-block:: xml
 
   <module type="JAVA_MODULE" version="4">
     <component name="NewModuleRootManager" inherit-compiler-output="true">

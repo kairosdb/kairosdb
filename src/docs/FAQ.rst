@@ -14,10 +14,5 @@ There are several strategies here:
 2.  Only query the new data.  The idea here is that your visualization tool is smart enough to only query the new data and merge it into the graph.  Cubism.js is a tool that claims such functionality.
 3.  Batch jobs that pre-aggregate and write to a new metric.  The new metric can then be queried and used to graph the data.  This could be done with a cron job.  There is some discussion about making the batch job part of K* but, there is work to be done before this can happen.
 
-=====================================================
-Why can tags only handle ascii characters, '-', '_' and '/'?
-=====================================================
 
-This is a carry over from supporting hbase/opentsdb.  There is no reason this has to stay the way it is and will be changed in a future release.
-
-
+Additional FAQ can be found here: https://github.com/kairosdb/kairosdb/wiki/Frequently-Asked-Questions

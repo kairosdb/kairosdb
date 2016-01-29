@@ -5,7 +5,8 @@ Querying data
 The URL for getting data out is http://localhost:8080/api/v1/datapoints/query
 
 Getting data out with an absolute date
-::
+
+.. code-block:: json
 
 	{
 	  "start_absolute":1,
@@ -15,10 +16,11 @@ Getting data out with an absolute date
 	    }
 	  ]
 	}
-}
+
 
 Getting data out with a relative date
-::
+
+.. code-block:: json
 
   {
     "start_relative":{"value":20,"unit":"weeks"},

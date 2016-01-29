@@ -228,7 +228,7 @@ public class CassandraDatastore implements Datastore
 	{
 		try
 		{
-			putDataPoint(metricName, tags, dataPoint);
+			putDataPoint(metricName, tags, dataPoint, 0);
 		}
 		catch (DatastoreException e)
 		{
@@ -287,14 +287,18 @@ public class CassandraDatastore implements Datastore
 	}
 
 	@Override
-	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+	public void putDataPoint(String metricName,
+			ImmutableSortedMap<String, String> tags,
+			DataPoint dataPoint,
+			int ttl) throws DatastoreException
 	{
 		try
 		{
 			DataPointsRowKey rowKey = null;
 			//time the data is written.
 			long writeTime = System.currentTimeMillis();
-			int ttl = m_cassandraConfiguration.getDatapointTtl();
+			if (ttl != 0)
+				ttl = m_cassandraConfiguration.getDatapointTtl();
 
 			int rowKeyTtl = 0;
 			//Row key will expire 3 weeks after the data in the row expires

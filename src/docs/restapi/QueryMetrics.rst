@@ -17,11 +17,15 @@ Note that grouping by a time range or value can slow down the query.
 
 **Aggregators**
 
-Optionally you can specify aggregators. Aggregators perform an operation on data points and down samples. For example, you could sum all data points that exist in 5 minute periods.
+Optionally you can specify aggregators. Aggregators perform an operation on data
+points and down samples. For example, you could sum all data points that exist in 5 minute periods.
 
-Aggregators can be combined together. For example, you could sum all data points in 5 minute periods then average them for a week period.
+Aggregators can be combined together. For example, you could sum all data points
+in 5 minute periods then average them for a week period.
 
 Aggregators are processed in the order they are specified in the JSON. The output of one is send to the input of the next.
+
+See the :doc:`Aggregators documentation<Aggregators>` for a complete list of aggregatorss.
 
 **Filtering**
 
@@ -74,51 +78,51 @@ Request
 Body
 ----
 
-::
+.. code-block:: json
 
- {
-    "start_absolute": 1357023600000,
-    "end_relative": {
-        "value": "5",
-        "unit": "days"
-    },
-    "time_zone": "Asia/Kabul",
-    "metrics": [
-        {
-            "tags": {
-                "host": ["foo", "foo2"],
-                "customer": ["bar"]
-            },
-            "name": "abc.123",
-            "limit": 10000
-            "aggregators": [
-                {
-                    "name": "sum",
-                    "sampling": {
-                        "value": 10,
-                        "unit": "minutes"
-                    }
-                }
-            ]
-        },
-        {
-            "tags": {
-                "host": ["foo", "foo2"],
-                "customer": ["bar"]
-            },
-            "name": "xyz.123",
-            "aggregators": [
-                {
-                    "name": "avg",
-                    "sampling": {
-                        "value": 10,
-                        "unit": "minutes"
-                    }
-                }
-            ]
-        }
-    ]
- }
+   {
+      "start_absolute": 1357023600000,
+      "end_relative": {
+          "value": "5",
+          "unit": "days"
+      },
+      "time_zone": "Asia/Kabul",
+      "metrics": [
+          {
+              "tags": {
+                  "host": ["foo", "foo2"],
+                  "customer": ["bar"]
+              },
+              "name": "abc.123",
+              "limit": 10000
+              "aggregators": [
+                  {
+                      "name": "sum",
+                      "sampling": {
+                          "value": 10,
+                          "unit": "minutes"
+                      }
+                  }
+              ]
+          },
+          {
+              "tags": {
+                  "host": ["foo", "foo2"],
+                  "customer": ["bar"]
+              },
+              "name": "xyz.123",
+              "aggregators": [
+                  {
+                      "name": "avg",
+                      "sampling": {
+                          "value": 10,
+                          "unit": "minutes"
+                      }
+                  }
+              ]
+          }
+      ]
+   }
 
 ----------------
 Query Properties
@@ -160,7 +164,8 @@ The name of the metric(s) to return data points for. The name is required.
 
 *aggregators*
 
-This is an ordered array of aggregators. They are processed in the order specified. The output of an aggregator is passed to the input of the next until all have been processed.
+This is an ordered array of aggregators. They are processed in the order specified.
+The output of an aggregator is passed to the input of the next until all have been processed.
 
 If no aggregator is specified, then all data points are returned.
 
@@ -174,27 +179,6 @@ get one value which is the average for the week. Sampling is specified with a "v
 * align_start_time - An optional property. When set to true the time for the aggregated data point for each range will fall on the start of the range instead of being the value for the first data point within that range. This is false by default. *Note that align_sampling and align_start_time are mutually exclusive. If both are set, unexpected results will occur.*
 * start_time - An optional property. Used along with align_start_time. This is the alignment start time. This defaults to 0.
 
-Aggregators that support downsampling:
-    * avg - Returns the average value.
-    * dev - Returns the standard deviation.
-    * count - Counts the number of data points.
-    * dev - Calculates the standard deviation of the time series.
-    * first - Returns the first data point for the time range.
-    * gaps - Marks gaps in data according to sampling rate with a null data point.
-    * histogram - Calculates a probability distribution and returns the specified percentile for the distribution. The "percentile" value is defined as 0 < percentile <= 1 where .5 is 50% and 1 is 100%. Note that this aggregator has been renamed to *percentile* in release 0.9.2.
-    * last - Returns the last data point for the time range.
-    * least_squares - Returns two points for the range which represent the best fit line through the set of points.
-    * max - Returns the largest value.
-    * min - Returns the smallest value.
-    * percentile - Finds the percentile of the data range. Calculates a probability distribution and returns the specified percentile for the distribution. The “percentile” value is defined as 0 < percentile <= 1 where .5 is 50% and 1 is 100%.
-    * sum - Returns the sum of all values.
-
-Other aggregators:
-    * diff - Computes the difference between successive data points.
-    * div - Returns each data point divided by a divisor. Requires a "divisor" property which is the value that all data points will be divided by.
-    * rate - Returns the rate of change between a pair of data points. Requires a "unit" property which is the sampling duration (ie rate in seconds, milliseconds, minutes, etc...).
-    * sampler - Computes the sampling rate of change for the data points. Requires a "unit" property which is the sampling duration  (ie rate in seconds, milliseconds, minutes, etc...).
-    * scale - Scales each data point by a factor. Requires a "factor" property which is the scaling value.
 
 *tags*
 
@@ -241,53 +225,53 @@ Response
   type then "number" is returned. See :doc:`Custom Types <../kairosdevelopment/CustomData>` for
   information on custom types.
 
-  ::
+  .. code-block:: json
 
-    {
-      "queries": [
-          {
-              "sample_size": 14368,
-              "results": [
-                  {
-                      "name": "abc_123",
-                      "group_by": [
-                          {
-                             "name": "type",
-                             "type": "number"
-                          },
-                          {
+     {
+       "queries": [
+           {
+               "sample_size": 14368,
+               "results": [
+                   {
+                       "name": "abc_123",
+                       "group_by": [
+                           {
+                              "name": "type",
+                              "type": "number"
+                           },
+                           {
                               "name": "tag",
                               "tags": [
                                   "host"
                               ],
-                              "group": {
+                             "group": {
                                   "host": "server1"
-                              }
-                          }
-                      ],
-                      "tags": {
-                          "host": [
-                              "server1"
-                          ],
-                          "customer": [
-                              "bar"
-                          ]
-                      },
-                      "values": [
-                          [
-                              1364968800000,
-                              11019
-                          ],
-                          [
-                              1366351200000,
-                              2843
-                          ]
-                      ]
-                  }
+                             }
+                           }
+                       ],
+                       "tags": {
+                           "host": [
+                               "server1"
+                           ],
+                           "customer": [
+                               "bar"
+                           ]
+                       },
+                       "values": [
+                           [
+                               1364968800000,
+                               11019
+                           ],
+                           [
+                               1366351200000,
+                               2843
+                           ]
+                       ]
+                   }
               ]
           }
-      ]
-  }
+       ]
+     }
 
 
 *Failure*
@@ -296,11 +280,11 @@ Response
 
   The response will be 500 Internal Server Error if an error occurs retrieving data.
 
-  ::
+  .. code-block:: json
 
-    {
-        "errors": [
-            "metrics[0].aggregate must be one of MIN,SUM,MAX,AVG,DEV",
-            "metrics[0].sampling.unit must be one of  SECONDS,MINUTES,HOURS,DAYS,WEEKS,YEARS"
-        ]
-    }
+     {
+         "errors": [
+             "metrics[0].aggregate must be one of MIN,SUM,MAX,AVG,DEV",
+             "metrics[0].sampling.unit must be one of  SECONDS,MINUTES,HOURS,DAYS,WEEKS,YEARS"
+         ]
+     }

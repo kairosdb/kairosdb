@@ -575,7 +575,6 @@ function addAggregator(container) {
 
 		if (name == "rate" || name == "sampler") {
 			$aggregatorContainer.find(".aggregatorRate").show();
-
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
@@ -768,7 +767,7 @@ function showChart(subTitle, queries, metricData) {
 				});
 			}
 
-			if (groupType != 'number')
+			if (groupType && groupType != 'number')
 				return;
 
 			var result = {};

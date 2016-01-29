@@ -58,7 +58,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	{
 		for (DataPoint dataPoint : dps.getDataPoints())
 		{
-			s_datastore.putDataPoint(dps.getName(), dps.getTags(), dataPoint);
+			s_datastore.putDataPoint(dps.getName(), dps.getTags(), dataPoint, 0);
 		}
 	}
 

@@ -182,10 +182,19 @@ public class KairosDatastore
 		m_datastore.close();
 	}
 
-	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+	public void putDataPoint(String metricName,
+			ImmutableSortedMap<String, String> tags,
+			DataPoint dataPoint) throws DatastoreException
+	{
+		putDataPoint(metricName, tags, dataPoint, 0);
+	}
+
+	public void putDataPoint(String metricName,
+			ImmutableSortedMap<String, String> tags,
+			DataPoint dataPoint, int ttl) throws DatastoreException
 	{
 		//Add to datastore first.
-		m_datastore.putDataPoint(metricName, tags, dataPoint);
+		m_datastore.putDataPoint(metricName, tags, dataPoint, ttl);
 
 		for (DataPointListener dataPointListener : m_dataPointListeners)
 		{

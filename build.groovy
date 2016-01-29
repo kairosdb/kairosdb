@@ -27,7 +27,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "1.0.0-SNAPSHOT"
+version = "1.1.0"
 release = "1" //package release number
 summary = "KairosDB"
 summary = "KairosDB"
@@ -488,13 +488,14 @@ def doIntegration(Rule rule)
 //------------------------------------------------------------------------------
 //Build Docs
 new SimpleRule("docs").setDescription("Build Sphinx Documentation")
-        .setMakeAction("doDocs")
-        .setProperty("all", false)
+		.setMakeAction("doDocs")
+		.addSources(new RegExFileSet("src/docs", ".*").recurse().getFullFilePaths())
+		.setProperty("all", false)
 
 new SimpleRule("docs-rebuild").setDescription("Rebuild Sphinx Documentation. All docs are built even if not changed.")
-        .setMakeAction("doDocs")
+		.setMakeAction("doDocs")
 		.addSources(new RegExFileSet("src/docs", ".*").recurse().getFullFilePaths())
-        .setProperty("all", true)
+		.setProperty("all", true)
 
 def doDocs(Rule rule)
 {

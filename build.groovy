@@ -30,7 +30,6 @@ programName = "kairosdb"
 version = "1.1.1"
 release = "1" //package release number
 summary = "KairosDB"
-summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
 with key/value tags to a nosql data store.  Currently supported

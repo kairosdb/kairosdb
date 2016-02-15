@@ -297,7 +297,7 @@ def doRPM(Rule rule)
 				setPlatform(Architecture.NOARCH, Os.LINUX)
 				summary = summary
 				type = RpmType.BINARY
-				url = "http://kairosdb.github.io"
+				url = "http://kairosdb.org"
 				vendor = "Proofpoint Inc."
 				provides = programName
 				//prefixes = rpmBaseInstallDir

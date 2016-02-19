@@ -15,6 +15,7 @@
  */
 package org.kairosdb.datastore.cassandra;
 
+import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
@@ -59,6 +60,38 @@ public class CassandraDatastore implements Datastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
 
+
+	public static final String CREATE_KEYSPACE = "" +
+			"CREATE KEYSPACE IF NOT EXISTS %s" +
+			"  WITH REPLICATION = {'class': 'SimpleStrategy'," +
+			"  'replication_factor' : 1}";
+
+	public static final String DATA_POINTS_TABLE = "" +
+			"CREATE TABLE data_points (\n" +
+			"  key blob,\n" +
+			"  column1 blob,\n" +
+			"  value blob,\n" +
+			"  PRIMARY KEY ((key), column1)\n" +
+			") WITH COMPACT STORAGE";
+
+	public static final String ROW_KEY_INDEX_TABLE = "" +
+			"CREATE TABLE row_key_index (\n" +
+			"  key blob,\n" +
+			"  column1 blob,\n" +
+			"  value blob,\n" +
+			"  PRIMARY KEY ((key), column1)\n" +
+			") WITH COMPACT STORAGE";
+
+	public static final String STRING_INDEX_TABLE = "" +
+			"CREATE TABLE string_index (\n" +
+			"  key blob,\n" +
+			"  column1 text,\n" +
+			"  value blob,\n" +
+			"  PRIMARY KEY ((key), column1)\n" +
+			") WITH COMPACT STORAGE";
+
+
+
 	public static final int LONG_FLAG = 0x0;
 	public static final int FLOAT_FLAG = 0x1;
 
@@ -80,8 +113,13 @@ public class CassandraDatastore implements Datastore
 	public static final String ROW_KEY_TAG_VALUES = "tag_values";
 
 
-	private Cluster m_cluster;
-	private Keyspace m_keyspace;
+	//new properties
+	CassandraClient m_cassandraClient;
+
+
+	//End new props
+
+
 	private String m_keyspaceName;
 	private int m_singleRowReadSize;
 	private int m_multiRowSize;
@@ -107,6 +145,21 @@ public class CassandraDatastore implements Datastore
 
 
 	@Inject
+	public CassandraDatastore(CassandraClient cassandraClient,
+			KairosDataPointFactory kairosDataPointFactory) throws DatastoreException
+	{
+		m_cassandraClient = cassandraClient;
+		m_kairosDataPointFactory = kairosDataPointFactory;
+
+		m_rowKeyCache = new DataCache<DataPointsRowKey>(m_cassandraConfiguration.getRowKeyCacheSize());
+		m_metricNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
+		m_tagNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
+		m_tagValueCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
+
+		setupSchema();
+	}
+
+	@Inject
 	public CassandraDatastore(@Named("HOSTNAME")final String hostname,
 	                          CassandraConfiguration cassandraConfiguration,
 	                          HectorConfiguration configuration,
@@ -121,10 +174,7 @@ public class CassandraDatastore implements Datastore
 			m_kairosDataPointFactory = kairosDataPointFactory;
 			m_keyspaceName = m_cassandraConfiguration.getKeyspaceName();
 
-			m_rowKeyCache = new DataCache<DataPointsRowKey>(m_cassandraConfiguration.getRowKeyCacheSize());
-			m_metricNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
-			m_tagNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
-			m_tagValueCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
+
 
 			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
 			int threadCount = hostConfig.buildCassandraHosts().length +3;
@@ -238,8 +288,91 @@ public class CassandraDatastore implements Datastore
 		}
 	}
 
+
+	private void setupSchema()
+	{
+		try (Session session = m_cassandraClient.getSession())
+		{
+			session.execute(String.format(CREATE_KEYSPACE, m_cassandraClient.getKeyspace()));
+		}
+
+		try (Session session = m_cassandraClient.getKeyspaceSession())
+		{
+			//session.execute(CREATE_KEYSPACE);
+			session.execute(DATA_POINTS_TABLE);
+			session.execute(ROW_KEY_INDEX_TABLE);
+			session.execute(STRING_INDEX_TABLE);
+		}
+	}
+
 	private void createSchema(int replicationFactor)
 	{
+		/*
+		CREATE TABLE data_points (
+		  key blob,
+		  column1 blob,
+		  value blob,
+		  PRIMARY KEY ((key), column1)
+		) WITH COMPACT STORAGE AND
+		  bloom_filter_fp_chance=0.010000 AND
+		  caching='KEYS_ONLY' AND
+		  comment='' AND
+		  dclocal_read_repair_chance=0.100000 AND
+		  gc_grace_seconds=864000 AND
+		  index_interval=128 AND
+		  read_repair_chance=1.000000 AND
+		  replicate_on_write='true' AND
+		  populate_io_cache_on_flush='false' AND
+		  default_time_to_live=0 AND
+		  speculative_retry='NONE' AND
+		  memtable_flush_period_in_ms=0 AND
+		  compaction={'timestamp_resolution': 'MILLISECONDS', 'max_sstable_age_days': '7', 'base_time_seconds': '600', 'class': 'DateTieredCompactionStrategy'} AND
+		  compression={'sstable_compression': 'LZ4Compressor'};
+
+      CREATE TABLE row_key_index (
+		  key blob,
+		  column1 blob,
+		  value blob,
+		  PRIMARY KEY ((key), column1)
+		) WITH COMPACT STORAGE AND
+		  bloom_filter_fp_chance=0.100000 AND
+		  caching='KEYS_ONLY' AND
+		  comment='' AND
+		  dclocal_read_repair_chance=0.100000 AND
+		  gc_grace_seconds=864000 AND
+		  index_interval=128 AND
+		  read_repair_chance=1.000000 AND
+		  replicate_on_write='true' AND
+		  populate_io_cache_on_flush='false' AND
+		  default_time_to_live=0 AND
+		  speculative_retry='NONE' AND
+		  memtable_flush_period_in_ms=0 AND
+		  compaction={'class': 'LeveledCompactionStrategy'} AND
+		  compression={'sstable_compression': 'LZ4Compressor'};
+
+		CREATE TABLE string_index (
+		  key blob,
+		  column1 text,
+		  value blob,
+		  PRIMARY KEY ((key), column1)
+		) WITH COMPACT STORAGE AND
+		  bloom_filter_fp_chance=0.100000 AND
+		  caching='KEYS_ONLY' AND
+		  comment='' AND
+		  dclocal_read_repair_chance=0.100000 AND
+		  gc_grace_seconds=864000 AND
+		  index_interval=128 AND
+		  read_repair_chance=1.000000 AND
+		  replicate_on_write='true' AND
+		  populate_io_cache_on_flush='false' AND
+		  default_time_to_live=0 AND
+		  speculative_retry='NONE' AND
+		  memtable_flush_period_in_ms=0 AND
+		  compaction={'class': 'LeveledCompactionStrategy'} AND
+		  compression={'sstable_compression': 'LZ4Compressor'};
+
+
+		 */
 		List<ColumnFamilyDefinition> cfDef = new ArrayList<ColumnFamilyDefinition>();
 
 		cfDef.add(HFactory.createColumnFamilyDefinition(

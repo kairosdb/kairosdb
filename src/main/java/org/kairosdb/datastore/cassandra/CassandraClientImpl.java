@@ -6,6 +6,8 @@ import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 import java.util.List;
 
@@ -14,18 +16,24 @@ import java.util.List;
  */
 public class CassandraClientImpl implements CassandraClient
 {
+	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
+	private static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.host_list";
+
+
 	private final Cluster m_cluster;
 	private String m_keyspace;
 
-	public CassandraClientImpl(String keyspace, List<String> nodes)
+	@Inject
+	public CassandraClientImpl(@Named(KEYSPACE_PROPERTY)String keyspace,
+			@Named(HOST_LIST_PROPERTY)String hostList)
 	{
 		final Cluster.Builder builder = new Cluster.Builder()
 				.withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
 				.withQueryOptions(new QueryOptions().setConsistencyLevel(ConsistencyLevel.QUORUM));
 
-		for (String node : nodes)
+		for (String node : hostList.split(","))
 		{
-			builder.addContactPoint(node);
+			builder.addContactPoint(node.split(":")[0]);
 		}
 
 		m_cluster = builder.build();

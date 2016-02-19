@@ -45,6 +45,11 @@
 		<!-- Cassandra Client -->
 		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.0.0" />
 
+		<dependency org="org.hectorclient" name="hector-core" rev="1.1-4">
+			<artifact name="hector-core" type="bundle" ext="jar"/>
+			<exclude org="javax.servlet" module="servlet-api"/>
+		</dependency>
+
 		<!-- Jetty server stuff -->
 		<dependency org="org.eclipse.jetty" name="jetty-server" rev="8.1.18.v20150929" />
 		<dependency org="org.eclipse.jetty" name="jetty-servlet" rev="8.1.18.v20150929" />

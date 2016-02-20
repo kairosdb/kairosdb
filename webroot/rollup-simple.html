@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Roll-ups</title>
+
+	<link rel="icon"
+		  type="image/png"
+		  href="img/favicon.png"/>
+
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet"
+		  href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+	<script src="rollup-js/third-party/underscore-min-1.8.3.js"></script>
+	<script src="rollup-js/third-party/jquery-min-2.1.3.js"></script>
+	<script src="rollup-js/third-party/bootstrap-min-3.3.5.js"></script>
+	<script src="rollup-js/third-party/angular-min-1.4.5.js"></script>
+	<script src="rollup-js/third-party/angular-strap-min-2.3.3.js"></script>
+	<script src="rollup-js/third-party/angular-strap.tpl-min-2.3.3.js"></script>
+	<script src="rollup-js/third-party/bootbox.js"></script>
+	<script src="rollup-js/simpleModule.js"></script>
+	<script src="rollup-js/kairosdbDatasource.js"></script>
+	<script src="rollup-js/simpleController.js"></script>
+</head>
+
+<body ng-app="simpleRollupApp" ng-controller="simpleController">
+
+<div class="container-fluid">
+	<div class="page-header">
+		<h1 class="text-center text-info">Roll-ups
+			<a href="#" ng-click="addTask()"
+			   class="btn btn-primary btn-lg btn-circle pull-right">
+				<span class="glyphicon glyphicon-plus"></span></a>
+		</h1>
+
+		<div class="text-info" style="width: 50%; float: none; margin: 0 auto;">
+			Roll-ups are a way to improve query performance by aggregating or
+			rolling up data into a larger time range such as averaging
+			millisecond data over a minute.
+			Roll-ups perform queries on existing data, aggregate the data, and
+			write the results to another metric. The original data is left
+			intact.
+			Roll-ups are continuously run on a schedule rolling up a small time
+			period of data on each execution.
+		</div>
+
+		<span id="lastSaved"
+			  class="last-saved pull-left text-info small"
+			  ng-hide="lastSaved == null">Last Saved {{lastSaved}}</span>
+	</div>
+
+	<table class="table table-striped" data-sort-name="metric-name"
+		   data-sort-order="asc">
+		<thead>
+		<tr class="text-info">
+			<th data-field="name" data-sortable="true">Task Name</th>
+			<th data-field="metric-name" data-sortable="true">Metric</th>
+			<th data-field="save as" data-sortable="true">Save As</th>
+			<th data-field="execute" data-sortable="true">Execute</th>
+			<th data-field="group-by" data-sortable="true">Group by</th>
+			<th data-field="aggregator" data-sortable="true">Filter</th>
+			<th data-field="aggregator_sampling" data-sortable="true">Filter
+				Sampling
+				<span custom-popover
+					  popover-html="Sampling is specified as a number and a time unit.
+					  For example, '2h' is 2 hours. The unit can be one of the following:
+					  <li>ms = millisceconds
+					  <li>s = seconds
+					  <li>m = minutes
+					  <li>h = hours
+					  <li>d = days
+					  <li>w = weeks
+					  <li>M = months
+					  <li>y = years"
+					  popover-placement="bottom">
+				</span>
+			</th>
+			<th data-field="delete" data-sortable="true"></th>
+		</tr>
+		</thead>
+		<tbody>
+		<tr ng-repeat="task in tasks">
+			<td>
+				<editable model="task.name" ng-blur="onBlur(task)">{{ task.name}}</editable>
+			</td>
+			<td>
+				<autocompleteeditable model="task.metric_name">{{
+					task.metric_name }}
+				</autocompleteeditable>
+			</td>
+			<td>
+				<editable model="task.save_as">{{ task.save_as }}</editable>
+			</td>
+			<td>
+				<span class="dropdown">
+					<button class="btn btn-default dropdown-toggle"
+							type="button" id="executeDropdown"
+							data-toggle="dropdown" aria-haspopup="true"
+							aria-expanded="true">
+						{{ task.executionType }}
+						<span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu"
+						aria-labelledby="executeDropdown">
+						<li ng-repeat="unit in executionTypes">
+							<a href="#" ng-click="setExecution(task, unit)">
+								{{ unit }}
+							</a>
+						</li>
+					</ul>
+				</span>
+			</td>
+
+
+			<td>
+				<editable model="task.group_by_values"></editable>
+			</td>
+
+
+			<td>
+				<div class="dropdown">
+					<button class="btn btn-default dropdown-toggle"
+							type="button" id="aggregatorDropdown"
+							data-toggle="dropdown" aria-haspopup="true"
+							aria-expanded="true">
+						{{ task.filter }}
+						<span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu"
+						aria-labelledby="aggregatorDropdown">
+						<li ng-repeat="aggregator in aggregators">
+							<a href="#"
+							   ng-click="setFilter(task, aggregator)">
+								{{ aggregator }}
+							</a>
+						</li>
+					</ul>
+				</div>
+			</td>
+
+			<td>
+				<editable model="task.filter_sampling" ng-blur="onBlur(task)">{{
+					task.filter_sampling}}
+				</editable>
+			</td>
+
+			<td>
+				<a href="#" ng-click="deleteRollupTask(task)">
+					<span class="glyphicon glyphicon-remove text-info"
+						  aria-hidden="true"></span>
+				</a>
+			</td>
+		</tr>
+		</tbody>
+	</table>
+</div>
+
+{{ tasks }}
+
+</body>
+</html>

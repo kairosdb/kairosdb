@@ -481,7 +481,7 @@ public class CassandraDatastore implements Datastore
 				bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
 				bs.setBytes(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 				bs.setInt(2, rowKeyTtl);
-				m_session.execute(bs);
+				m_session.executeAsync(bs);
 
 				/*m_rowKeyWriteBuffer.addData(metricName, rowKey, "", now, rowKeyTtl);*/
 				for (RowKeyListener rowKeyListener : m_rowKeyListeners)
@@ -503,7 +503,7 @@ public class CassandraDatastore implements Datastore
 				BoundStatement bs = new BoundStatement(m_psInsertString);
 				bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
 				bs.setString(1, metricName);
-				m_session.execute(bs);
+				m_session.executeAsync(bs);
 				/*m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
 						metricName, "", now);*/
 			}
@@ -523,7 +523,7 @@ public class CassandraDatastore implements Datastore
 					BoundStatement bs = new BoundStatement(m_psInsertString);
 					bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_NAMES.getBytes(UTF_8)));
 					bs.setString(1, tagName);
-					m_session.execute(bs);
+					m_session.executeAsync(bs);
 					/*m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_NAMES,
 							tagName, "", now);*/
 
@@ -542,7 +542,7 @@ public class CassandraDatastore implements Datastore
 					BoundStatement bs = new BoundStatement(m_psInsertString);
 					bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_VALUES.getBytes(UTF_8)));
 					bs.setString(1, value);
-					m_session.execute(bs);
+					m_session.executeAsync(bs);
 					/*m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
 							value, "", now);*/
 				}
@@ -562,7 +562,7 @@ public class CassandraDatastore implements Datastore
 			boundStatement.setBytes(1, b);
 			boundStatement.setBytes(2, ByteBuffer.wrap(kDataOutput.getBytes()));
 			boundStatement.setInt(3, ttl);
-			m_session.execute(boundStatement);
+			m_session.executeAsync(boundStatement);
 
 		}
 		catch (Exception e)

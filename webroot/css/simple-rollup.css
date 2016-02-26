@@ -1,0 +1,24 @@
+body {
+    margin-left: 100px;
+    margin-right: 100px;
+}
+
+th {
+    background-color: #C4D6E0;
+    color: black;
+}
+
+h1 {
+    border-color: blue;
+    border-width: 1px;
+}
+
+.no-padding {
+    padding: 0;
+    margin: 0
+}
+
+.shift-1-up {
+    position: relative;
+    bottom: 1px;
+}

@@ -272,14 +272,14 @@ module.factory('KairosDBDatasource', function ($q, $http) {
 			matches = intervalString.match(interval_regex);
 		}
 		if (!matches) {
-			throw new Error('Invalid interval string, expecting a number followed by one of "y M w d h m s ms"');
+			throw new Error('Expecting a number followed by one of "y M w d h m s ms"');
 		}
 
 		var value = matches[1];
 		var unit = matches[2];
 		if (value % 1 !== 0) {
 			if (unit === 'ms') {
-				throw new Error('Invalid interval value, cannot be smaller than the millisecond');
+				throw new Error('Cannot be smaller than the millisecond');
 			}
 			value = Math.round(kbn.intervals_in_seconds[unit] * value * 1000);
 			unit = 'ms';

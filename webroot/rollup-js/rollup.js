@@ -18,6 +18,12 @@ module.controller('rollupController', function ($scope, $http, $uibModal, orderB
 			if (response) {
 				$scope.tasks = response;
 				$scope.taskCopies = angular.copy($scope.tasks);
+
+				for(var i = 0; i < $scope.tasks.length; i++){
+					$scope.tasks[i].executionValue = $scope.tasks[i].execution_interval.value;
+					$scope.tasks[i].executionUnit = $scope.tasks[i].execution_interval.unit;
+				}
+
 				$scope.tasks = orderByFilter($scope.tasks, "name");
 			}
 			else

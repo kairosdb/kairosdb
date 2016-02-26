@@ -230,7 +230,7 @@ Response
 
   ::
 
-    [{
+    {
     	"id": "ce55e623-0610-4451-a725-3daee896afd9",
     	"name": "MyRollup",
     	"execution_interval": {
@@ -268,7 +268,7 @@ Response
     			}]
     		}
     	}]
-    }]
+    }
 
 *Failure*
 
@@ -383,7 +383,7 @@ Response
 
   ::
 
-    [{
+    {
     	"id": "ce55e623-0610-4451-a725-3daee896afd9",
     	"name": "MyRollup",
     	"execution_interval": {
@@ -421,7 +421,7 @@ Response
     			}]
     		}
     	}]
-    }]
+    }
 
 *Failure*
 

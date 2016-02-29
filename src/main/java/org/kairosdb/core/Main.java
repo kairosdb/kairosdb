@@ -117,6 +117,55 @@ public class Main
 	}
 
 
+	private static Main _innerSingletoneInstance;
+	public static Main GetSingletonInstance(String[] args) throws IOException {
+		if(_innerSingletoneInstance != null)
+			return _innerSingletoneInstance;
+
+		//This sends jersey java util logging to logback
+		SLF4JBridgeHandler.removeHandlersForRootLogger();
+		SLF4JBridgeHandler.install();
+
+		JCommander commander = new JCommander(arguments);
+		try
+		{
+			commander.parse(args);
+		}
+		catch (Exception e)
+		{
+			System.out.println(e.getMessage());
+			commander.usage();
+			System.exit(0);
+		}
+
+		if (arguments.helpMessage || arguments.help)
+		{
+			commander.usage();
+			System.exit(0);
+		}
+
+		if (!arguments.operationCommand.equals("run"))
+		{
+			//Turn off console logging
+			Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+			root.getAppender("stdout").addFilter(new Filter<ILoggingEvent>()
+			{
+				@Override
+				public FilterReply decide(ILoggingEvent iLoggingEvent)
+				{
+					return (FilterReply.DENY);
+				}
+			});
+		}
+
+		File propertiesFile = null;
+		if (!StringUtils.isNullOrEmpty(arguments.propertiesFile))
+			propertiesFile = new File(arguments.propertiesFile);
+
+
+		return _innerSingletoneInstance = new Main(propertiesFile);
+	}
+
 	public Main(File propertiesFile) throws IOException
 	{
 		Properties props = new Properties();
@@ -201,93 +250,57 @@ public class Main
 
 	public static void main(String[] args) throws Exception
 	{
-		//This sends jersey java util logging to logback
-		SLF4JBridgeHandler.removeHandlersForRootLogger();
-		SLF4JBridgeHandler.install();
+		final Main main = GetSingletonInstance(args);
+		main.startKairosDb();
+	}
 
-		JCommander commander = new JCommander(arguments);
-		try
-		{
-			commander.parse(args);
-		}
-		catch (Exception e)
-		{
-			System.out.println(e.getMessage());
-			commander.usage();
-			System.exit(0);
-		}
-
-		if (arguments.helpMessage || arguments.help)
-		{
-			commander.usage();
-			System.exit(0);
-		}
-
-		if (!arguments.operationCommand.equals("run"))
-		{
-			//Turn off console logging
-			Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-			root.getAppender("stdout").addFilter(new Filter<ILoggingEvent>()
-			{
-				@Override
-				public FilterReply decide(ILoggingEvent iLoggingEvent)
-				{
-					return (FilterReply.DENY);
-				}
-			});
-		}
-
-		File propertiesFile = null;
-		if (!StringUtils.isNullOrEmpty(arguments.propertiesFile))
-			propertiesFile = new File(arguments.propertiesFile);
-
-		final Main main = new Main(propertiesFile);
-
+	public void startKairosDb() throws IOException, DatastoreException, InterruptedException {
 		if (arguments.operationCommand.equals("export"))
 		{
 			if (!StringUtils.isNullOrEmpty(arguments.exportFile))
 			{
 				Writer ps = new OutputStreamWriter(new FileOutputStream(arguments.exportFile,
 						arguments.appendToExportFile), "UTF-8");
-				main.runExport(ps, arguments.exportMetricNames);
+				this.runExport(ps, arguments.exportMetricNames);
 				ps.flush();
 				ps.close();
 			}
 			else
 			{
 				OutputStreamWriter writer = new OutputStreamWriter(System.out, "UTF-8");
-				main.runExport(writer, arguments.exportMetricNames);
+				this.runExport(writer, arguments.exportMetricNames);
 				writer.flush();
 			}
 
-			main.stopServices();
+			this.stopServices();
 		}
 		else if (arguments.operationCommand.equals("import"))
 		{
 			if (!StringUtils.isNullOrEmpty(arguments.exportFile))
 			{
 				FileInputStream fin = new FileInputStream(arguments.exportFile);
-				main.runImport(fin);
+				this.runImport(fin);
 				fin.close();
 			}
 			else
 			{
-				main.runImport(System.in);
+				this.runImport(System.in);
 			}
 
-			main.stopServices();
+			this.stopServices();
 		}
 		else if (arguments.operationCommand.equals("run") || arguments.operationCommand.equals("start"))
 		{
 			try
 			{
+				Main mainBufferInstance = this;
 				Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
 				{
 					public void run()
 					{
 						try
 						{
-							main.stopServices();
+							mainBufferInstance.stopServices();
 
 							synchronized (s_shutdownObject)
 							{
@@ -301,7 +314,7 @@ public class Main
 					}
 				}));
 
-				main.startServices();
+				this.startServices();
 
 				logger.info("------------------------------------------");
 				logger.info("     KairosDB service started");
@@ -322,8 +335,11 @@ public class Main
 				logger.info("     KairosDB service is now down!");
 				logger.info("--------------------------------------");
 			}
-
 		}
+	}
+
+	public void stopKairosDb() throws InterruptedException, DatastoreException {
+		this.stopServices();
 	}
 
 	public Injector getInjector()

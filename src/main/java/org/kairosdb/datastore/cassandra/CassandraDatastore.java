@@ -384,68 +384,42 @@ public class CassandraDatastore implements Datastore
 		}
 	}
 
-
-	@Override
-	public Iterable<String> getMetricNames()
-	{
+	private Iterable<String> queryStringIndex(final String key) {
 		SliceQuery<String, String, String> sliceQuery =
 				HFactory.createSliceQuery(m_keyspace, StringSerializer.get(), StringSerializer.get(),
 						StringSerializer.get());
 
 		sliceQuery.setColumnFamily(CF_STRING_INDEX);
-		sliceQuery.setKey(ROW_KEY_METRIC_NAMES);
+		sliceQuery.setKey(key);
 
 		ColumnSliceIterator<String, String, String> columnIterator =
 				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String) null, false, m_singleRowReadSize);
 
 		List<String> ret = new ArrayList<String>();
 
-		while (columnIterator.hasNext())
+		while (columnIterator.hasNext()) {
 			ret.add(columnIterator.next().getName());
+		}
 
-		return (ret);
+		return ret;
+	}
+
+	@Override
+	public Iterable<String> getMetricNames()
+	{
+		return queryStringIndex(ROW_KEY_METRIC_NAMES);
 	}
 
 	@Override
 	public Iterable<String> getTagNames()
 	{
-		SliceQuery<String, String, String> sliceQuery =
-				HFactory.createSliceQuery(m_keyspace, StringSerializer.get(), StringSerializer.get(),
-						StringSerializer.get());
-
-		sliceQuery.setColumnFamily(CF_STRING_INDEX);
-		sliceQuery.setKey(ROW_KEY_TAG_NAMES);
-
-		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String) null, false, m_singleRowReadSize);
-
-		List<String> ret = new ArrayList<String>();
-
-		while (columnIterator.hasNext())
-			ret.add(columnIterator.next().getName());
-
-		return (ret);
+		return queryStringIndex(ROW_KEY_TAG_NAMES);
 	}
 
 	@Override
 	public Iterable<String> getTagValues()
 	{
-		SliceQuery<String, String, String> sliceQuery =
-				HFactory.createSliceQuery(m_keyspace, StringSerializer.get(), StringSerializer.get(),
-						StringSerializer.get());
-
-		sliceQuery.setColumnFamily(CF_STRING_INDEX);
-		sliceQuery.setKey(ROW_KEY_TAG_VALUES);
-
-		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String) null, false, m_singleRowReadSize);
-
-		List<String> ret = new ArrayList<String>();
-
-		while (columnIterator.hasNext())
-			ret.add(columnIterator.next().getName());
-
-		return (ret);
+		return queryStringIndex(ROW_KEY_TAG_VALUES);
 	}
 
 	@Override

@@ -104,7 +104,8 @@ The type field is the name of the registered type for the custom data. See :doc:
 **ttl**
 
 Sets the Cassandra ttl for the data points.  In the example above the data points for metric ``archive_file_tracked``
-will have the ttl set for 5 min.  Leaving the ttl off or setting it to 0 will not set a ttl in Cassandra.
+will have the ttl set for 5 min.  Leaving the ttl off or setting it to 0 will use the default TTL value specified in
+settings.
 
 
 ^^^^^^^^

@@ -28,12 +28,12 @@ import me.prettyprint.cassandra.service.ColumnSliceIterator;
 import me.prettyprint.cassandra.service.ThriftKsDef;
 import me.prettyprint.hector.api.Cluster;
 import me.prettyprint.hector.api.Keyspace;
+import me.prettyprint.hector.api.Serializer;
 import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
 import me.prettyprint.hector.api.ddl.ComparatorType;
 import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
 import me.prettyprint.hector.api.exceptions.HectorException;
 import me.prettyprint.hector.api.factory.HFactory;
-import me.prettyprint.hector.api.query.CountQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -134,12 +134,14 @@ public class CassandraDatastore implements Datastore
 
 			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
 
-			if (keyspaceDef == null)
+			if (keyspaceDef == null) {
 				createSchema(m_cassandraConfiguration.getReplicationFactor());
-				//set global consistency level
-				ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
-				confConsLevel.setDefaultReadConsistencyLevel(m_cassandraConfiguration.getDataReadLevel().getHectorLevel());
-				confConsLevel.setDefaultWriteConsistencyLevel(m_cassandraConfiguration.getDataWriteLevel().getHectorLevel());
+			}
+
+			//set global consistency level
+			ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
+			confConsLevel.setDefaultReadConsistencyLevel(m_cassandraConfiguration.getDataReadLevel().getHectorLevel());
+			confConsLevel.setDefaultWriteConsistencyLevel(m_cassandraConfiguration.getDataWriteLevel().getHectorLevel());
 
 			//create keyspace instance with specified consistency
 			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
@@ -153,23 +155,8 @@ public class CassandraDatastore implements Datastore
 					DATA_POINTS_ROW_KEY_SERIALIZER,
 					IntegerSerializer.get(),
 					BytesArraySerializer.get(),
-					new WriteBufferStats()
-					{
-						private ImmutableSortedMap m_tags;
-						{
-							m_tags = ImmutableSortedMap.naturalOrder()
-									.put("host", hostname)
-									.put("buffer", CF_DATA_POINTS)
-									.build();
-						}
-
-						@Override
-						public void saveWriteSize(int pendingWrites)
-						{
-							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
-									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
-						}
-					}, mutatorLock, lockCondition, threadCount);
+					createWriteBufferStats(CF_DATA_POINTS, hostname),
+					mutatorLock, lockCondition, threadCount);
 
 			m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
 					m_keyspace, CF_ROW_KEY_INDEX, m_cassandraConfiguration.getWriteDelay(),
@@ -177,23 +164,8 @@ public class CassandraDatastore implements Datastore
 					StringSerializer.get(),
 					DATA_POINTS_ROW_KEY_SERIALIZER,
 					StringSerializer.get(),
-					new WriteBufferStats()
-					{
-						private ImmutableSortedMap m_tags;
-						{
-							m_tags = ImmutableSortedMap.naturalOrder()
-									.put("host", hostname)
-									.put("buffer", CF_ROW_KEY_INDEX)
-									.build();
-						}
-
-						@Override
-						public void saveWriteSize(int pendingWrites)
-						{
-							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
-									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
-						}
-					}, mutatorLock, lockCondition, threadCount);
+					createWriteBufferStats(CF_ROW_KEY_INDEX, hostname),
+					mutatorLock, lockCondition, threadCount);
 
 			m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
 					m_keyspace, CF_STRING_INDEX,
@@ -202,28 +174,33 @@ public class CassandraDatastore implements Datastore
 					StringSerializer.get(),
 					StringSerializer.get(),
 					StringSerializer.get(),
-					new WriteBufferStats()
-					{
-						private ImmutableSortedMap m_tags;
-						{
-							m_tags = ImmutableSortedMap.naturalOrder()
-									.put("host", hostname)
-									.put("buffer", CF_STRING_INDEX)
-									.build();
-						}
-
-						@Override
-						public void saveWriteSize(int pendingWrites)
-						{
-							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
-									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
-						}
-					}, mutatorLock, lockCondition, threadCount);
+					createWriteBufferStats(CF_STRING_INDEX, hostname),
+					mutatorLock, lockCondition, threadCount);
 		}
 		catch (HectorException e)
 		{
 			throw new DatastoreException(e);
 		}
+	}
+
+	private WriteBufferStats createWriteBufferStats(final String cfName, final String hostname) {
+		return new WriteBufferStats()
+		{
+			private ImmutableSortedMap m_tags;
+			{
+				m_tags = ImmutableSortedMap.naturalOrder()
+						.put("host", hostname)
+						.put("buffer", cfName)
+						.build();
+			}
+
+			@Override
+			public void saveWriteSize(int pendingWrites)
+			{
+				putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
+						m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
+			}
+		};
 	}
 
 	private void putInternalDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint)
@@ -384,68 +361,42 @@ public class CassandraDatastore implements Datastore
 		}
 	}
 
-
-	@Override
-	public Iterable<String> getMetricNames()
-	{
+	private Iterable<String> queryStringIndex(final String key) {
 		SliceQuery<String, String, String> sliceQuery =
 				HFactory.createSliceQuery(m_keyspace, StringSerializer.get(), StringSerializer.get(),
 						StringSerializer.get());
 
 		sliceQuery.setColumnFamily(CF_STRING_INDEX);
-		sliceQuery.setKey(ROW_KEY_METRIC_NAMES);
+		sliceQuery.setKey(key);
 
 		ColumnSliceIterator<String, String, String> columnIterator =
 				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String) null, false, m_singleRowReadSize);
 
 		List<String> ret = new ArrayList<String>();
 
-		while (columnIterator.hasNext())
+		while (columnIterator.hasNext()) {
 			ret.add(columnIterator.next().getName());
+		}
 
-		return (ret);
+		return ret;
+	}
+
+	@Override
+	public Iterable<String> getMetricNames()
+	{
+		return queryStringIndex(ROW_KEY_METRIC_NAMES);
 	}
 
 	@Override
 	public Iterable<String> getTagNames()
 	{
-		SliceQuery<String, String, String> sliceQuery =
-				HFactory.createSliceQuery(m_keyspace, StringSerializer.get(), StringSerializer.get(),
-						StringSerializer.get());
-
-		sliceQuery.setColumnFamily(CF_STRING_INDEX);
-		sliceQuery.setKey(ROW_KEY_TAG_NAMES);
-
-		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String) null, false, m_singleRowReadSize);
-
-		List<String> ret = new ArrayList<String>();
-
-		while (columnIterator.hasNext())
-			ret.add(columnIterator.next().getName());
-
-		return (ret);
+		return queryStringIndex(ROW_KEY_TAG_NAMES);
 	}
 
 	@Override
 	public Iterable<String> getTagValues()
 	{
-		SliceQuery<String, String, String> sliceQuery =
-				HFactory.createSliceQuery(m_keyspace, StringSerializer.get(), StringSerializer.get(),
-						StringSerializer.get());
-
-		sliceQuery.setColumnFamily(CF_STRING_INDEX);
-		sliceQuery.setKey(ROW_KEY_TAG_VALUES);
-
-		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String) null, false, m_singleRowReadSize);
-
-		List<String> ret = new ArrayList<String>();
-
-		while (columnIterator.hasNext())
-			ret.add(columnIterator.next().getName());
-
-		return (ret);
+		return queryStringIndex(ROW_KEY_TAG_VALUES);
 	}
 
 	@Override

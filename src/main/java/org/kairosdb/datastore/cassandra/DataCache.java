@@ -71,30 +71,30 @@ public class DataCache<T>
 	 returns null if item was not in cache.  If the return is not null the item
 	 from the cache is returned.
 
-	 @param cacheData
+	 @param key
 	 @return
 	 */
-	public T cacheItem(T cacheData)
+	public T cacheItem(T key)
 	{
-		LinkItem<T> mappedItem;
-
 		synchronized (m_lock)
 		{
-			LinkItem<T> li = new LinkItem<T>(cacheData);
-			mappedItem = putIfAbsent(cacheData, li);
-
-			if (mappedItem != null)
+			final LinkItem<T> cachedItem = m_hashMap.get(key);
+			if (cachedItem != null)
 			{
-				remove(mappedItem);
-				addItem(mappedItem);
+				remove(cachedItem);
+				addItem(cachedItem);
 			}
 			else
-				addItem(li);
+			{
+				final LinkItem<T> linkItem = new LinkItem<>(key);
+				m_hashMap.put(key, linkItem);
+				addItem(linkItem);
+			}
 
 			trim();
+			return cachedItem != null ? cachedItem.m_data : null;
 		}
 
-		return (mappedItem == null ? null : mappedItem.m_data);
 	}
 
 	private void trim() {
@@ -105,13 +105,6 @@ public class DataCache<T>
 
 			m_hashMap.remove(last.m_data);
 		}
-	}
-
-	private LinkItem<T> putIfAbsent(final T key, final LinkItem<T> value) {
-		if (!m_hashMap.containsKey(key))
-			return m_hashMap.put(key, value);
-		else
-			return m_hashMap.get(key);
 	}
 
 	private void remove(LinkItem<T> li)

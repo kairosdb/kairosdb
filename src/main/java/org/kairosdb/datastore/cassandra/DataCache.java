@@ -16,7 +16,10 @@
 
 package org.kairosdb.datastore.cassandra;
 
-import java.util.Set;
+import com.google.common.base.Predicate;
+
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -115,15 +118,17 @@ public class DataCache<T>
 		li.m_next.m_prev = li;
 	}
 
-	public Set<T> getCachedKeys()
-	{
-		return (m_hashMap.keySet());
-	}
-
-	public void removeKey(T key)
-	{
-		LinkItem<T> li = m_hashMap.remove(key);
-		remove(li);
+	public void removeIf(Predicate<T> predicate) {
+		synchronized (m_lock) {
+			final Iterator<Map.Entry<T, LinkItem<T>>> iterator = m_hashMap.entrySet().iterator();
+			while (iterator.hasNext()) {
+				final Map.Entry<T, LinkItem<T>> next = iterator.next();
+				if (predicate.apply(next.getKey())) {
+					iterator.remove();
+					remove(next.getValue());
+				}
+			}
+		}
 	}
 
 	public void clear()

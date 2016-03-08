@@ -91,16 +91,20 @@ public class DataCache<T>
 			else
 				addItem(li);
 
-			if (m_hashMap.size() > m_maxSize)
-			{
-				LinkItem<T> last = m_back.m_prev;
-				remove(last);
-
-				m_hashMap.remove(last.m_data);
-			}
+			trim();
 		}
 
 		return (mappedItem == null ? null : mappedItem.m_data);
+	}
+
+	private void trim() {
+		while (m_hashMap.size() > m_maxSize)
+		{
+			LinkItem<T> last = m_back.m_prev;
+			remove(last);
+
+			m_hashMap.remove(last.m_data);
+		}
 	}
 
 	private LinkItem<T> putIfAbsent(final T key, final LinkItem<T> value) {

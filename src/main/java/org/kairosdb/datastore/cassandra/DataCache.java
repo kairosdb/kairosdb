@@ -18,9 +18,9 @@ package org.kairosdb.datastore.cassandra;
 
 import com.google.common.base.Predicate;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  This cache serves two purposes.
@@ -57,7 +57,7 @@ public class DataCache<T>
 	}
 
 	//Using a ConcurrentHashMap so we can use the putIfAbsent method.
-	private final ConcurrentHashMap<T, LinkItem<T>> m_hashMap = new ConcurrentHashMap<>();
+	private final Map<T, LinkItem<T>> m_hashMap = new HashMap<>();
 
 	public DataCache(int cacheSize)
 	{
@@ -81,7 +81,7 @@ public class DataCache<T>
 		synchronized (m_lock)
 		{
 			LinkItem<T> li = new LinkItem<T>(cacheData);
-			mappedItem = m_hashMap.putIfAbsent(cacheData, li);
+			mappedItem = putIfAbsent(cacheData, li);
 
 			if (mappedItem != null)
 			{
@@ -101,6 +101,13 @@ public class DataCache<T>
 		}
 
 		return (mappedItem == null ? null : mappedItem.m_data);
+	}
+
+	private LinkItem<T> putIfAbsent(final T key, final LinkItem<T> value) {
+		if (!m_hashMap.containsKey(key))
+			return m_hashMap.put(key, value);
+		else
+			return m_hashMap.get(key);
 	}
 
 	private void remove(LinkItem<T> li)

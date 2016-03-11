@@ -1,0 +1,22 @@
+<div ng-init="init()">
+	<div class="modal-header">
+		<h3 class="modal-title">Paste Query</h3>
+	</div>
+
+	<div class="modal-body">
+		<textarea
+				style="vertical-align:top; width:100%;"
+				ng-model="query" cols="40" rows="10"
+				ng-change="validate()">
+		</textarea>
+		<br>
+	</div>
+
+	<div class="modal-footer" style="margin-top: 20px;">
+		<button class="btn btn-primary" type="button" ng-click="ok()"
+				ng-disabled="hasErrors()">OK
+		</button>
+		<button class="btn btn-warning" type="button" ng-click="cancel()">Cancel
+		</button>
+	</div>
+</div>

@@ -1,4 +1,9 @@
-var module = angular.module('simpleRollupApp', ['mgcrea.ngStrap', 'mgcrea.ngStrap.tooltip']);
+var module = angular.module('simpleRollupApp',
+	['mgcrea.ngStrap',
+	'mgcrea.ngStrap.tooltip',
+	'ui.bootstrap.modal',
+	'template/modal/backdrop.html',
+	'template/modal/window.html']);
 
 module.directive('editable', function () {
 	return {
@@ -74,10 +79,6 @@ module.directive('myBlur', function () {
 		restrict: 'A',
 		link: function (scope, element, attr) {
 			element.bind('blur', function () {
-				if (element.get(0).value.trim().length < 1){
-					// Don't leave edit if the field is empty
-					return;
-				}
 				scope.edit = false;
 				scope.$apply();
 			});

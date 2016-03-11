@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
+<!-- todo How to prevent buttons add and paste buttons from wrapping??-->
+
 <head>
 	<title>Roll-ups</title>
 
@@ -19,10 +22,12 @@
 	<script src="rollup-js/third-party/angular-min-1.4.5.js"></script>
 	<script src="rollup-js/third-party/angular-strap-min-2.3.3.js"></script>
 	<script src="rollup-js/third-party/angular-strap.tpl-min-2.3.3.js"></script>
+	<script src="rollup-js/third-party/angular-ui-bootstrap-min-0.14.1.js"></script>
 	<script src="rollup-js/third-party/bootbox.js"></script>
 	<script src="rollup-js/simpleModule.js"></script>
 	<script src="rollup-js/kairosdbDatasource.js"></script>
 	<script src="rollup-js/simpleController.js"></script>
+	<script src="rollup-js/simplePasteQueryController.js"></script>
 </head>
 
 <body ng-app="simpleRollupApp" ng-controller="simpleController" background="css/brickwall.png">
@@ -33,7 +38,11 @@
 			<h1>Roll-ups</h1>
 		</div>
 
-		<div class="text-info" style="width: 50%; float: none; margin: 0 auto; margin-top: 30px">
+		<div class="text-center text-info" data-toggle="collapse" data-target="#description">
+			<a href="#" style="font-size: 12px">What's a Roll-up?</a>
+		</div>
+
+		<div id="description" class="text-info collapse" style="width: 50%; float: none; margin: 0 auto; margin-top: 30px">
 			Roll-ups are a way to improve query performance by aggregating or
 			rolling up data into a larger time range such as averaging
 			millisecond data over a minute.
@@ -52,13 +61,13 @@
 	<table class="table table-striped" data-sort-name="metric-name"  data-sort-order="asc">
 		<thead>
 		<tr class="text-info">
-			<th data-field="name" class="col-lg-1" data-sortable="true">Task Name</th>
-			<th data-field="metric-name" class="col-lg-3" data-sortable="true">Metric</th>
-			<th data-field="save as"  class="col-lg-3" data-sortable="true">Save As</th>
-			<th data-field="execute" class="col-xxs-2" data-sortable="true">Execute</th>
-			<th data-field="group-by" class="col-md-2" data-sortable="true">Group by</th>
-			<th data-field="aggregator" class="col-xxs-1" data-sortable="true">Filter</th>
-			<th data-field="aggregator_sampling" class="col-sm-2" data-sortable="true">Filter
+			<th data-field="name" class="col-md-1" data-sortable="true">Task Name</th>
+			<th data-field="metric-name" class="col-md-2" data-sortable="true">Metric</th>
+			<th data-field="save as"  class="col-md-3" data-sortable="true">Save As</th>
+			<th data-field="execute" class="col-md-1" data-sortable="true">Execute</th>
+			<th data-field="group-by" class="col-md-1" data-sortable="true">Group by</th>
+			<th data-field="aggregator" class="col-md-1" data-sortable="true">Aggregator</th>
+			<th data-field="aggregator_sampling" class="col-md-2" data-sortable="true">Aggregator
 				Sampling
 				<span custom-popover
 					  popover-html="Sampling is specified as a number and a time unit.
@@ -74,10 +83,12 @@
 					  popover-placement="bottom">
 				</span>
 			</th>
-			<th data-field="delete"  class="col-xxs-1" data-sortable="true">
-				<a href="#" ng-click="addTask()"
-				   class="btn btn-primary btn-sm btn-circle">
-					<span class="glyphicon glyphicon-plus"></span></a>
+			<th data-field="buttons" class="no-padding text-center col-md-1" data-sortable="true">
+				<a href="#" ng-click="addTask()" class="btn btn-primary btn-sm btn-circle" style="margin-right: 3px">
+					<span class="glyphicon glyphicon-plus"></span>
+				</a><a href="#" ng-click="pasteQuery()" class="btn btn-primary btn-sm btn-circle">
+					<span class="glyphicon glyphicon-paste"></span>
+				</a>
 			</th>
 		</tr>
 		</thead>
@@ -97,7 +108,7 @@
 			<td>
 				<a href="" ng-show="!task.executionEdit" ng-click="task.executionEdit=true" style="color:black;">{{ task.executionType }}</a>
 				<span class="dropdown" ng-show="task.executionEdit">
-					<button class="btn btn-default dropdown-toggle""
+					<button class="btn btn-default dropdown-toggle"
 							type="button" id="executeDropdown"
 							data-toggle="dropdown" aria-haspopup="true"
 							aria-expanded="true">
@@ -116,48 +127,65 @@
 			</td>
 
 			<td>
-				<editable model="task.group_by_values" ng-show="!task.groupByEdit" style="margin: 0 10px 0 0"></editable>
-				<input type="text"
-					   focus-on-show
-					   class="input-small tight-form-input"
-					   spellcheck='false'
-					   bs-typeahead
-					   bs-options="key for key in suggestTagKeys(task)"
-					   data-min-length=0 data-items=100
-					   ng-model="task.group_by_value_suggest"
-					   placeholder="key"
-					   ng-show="task.groupByEdit"
-						/>
+				<table width="100%">
+					<tr>
+						<td>
+							<span ng-show="!task.groupByEdit"
+								  style="margin: 0 10px 0 0">{{task.group_by_values}}</span>
+							<input type="text" style="width:85px; padding:0; line-height:16px"
+								   focus-on-show
+								   class="input-small tight-form-input"
+								   spellcheck='false'
+								   bs-typeahead
+								   ng-blur="cancelGroupValues(task)"
+								   bs-options="key for key in suggestTagKeys(task)"
+								   data-min-length=0 data-items=100
+								   ng-model="task.group_by_value_suggest"
+								   placeholder="key"
+								   ng-show="task.groupByEdit"
+									/>
+						</td>
+						<td width="10%">
+							<a href="#" class="btn-sm btn-circle text-right" style="margin-left:1px; margin-right:5px;"
+							   ng-click="task.groupByEdit = true"
+							   ng-show="!task.groupByEdit">
+								<span class="glyphicon glyphicon-plus shift-1-up"></span></a>
+							<a href="#" class="btn-sm btn-circle" style="margin-right:10px;"
+							   ng-click="setGroupValues(task)"
+							   ng-show="task.groupByEdit">
+								<span class="glyphicon glyphicon-ok text-success"></span></a>
+						</td>
+						<td width="10%">
+							<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"
+							   ng-click="removeGroupValues(task)"
+							   ng-show="task.group_by_values.length > 0 && !task.groupByEdit">
+								<span class="glyphicon glyphicon-remove text-danger"></span></a>
 
-				<a href="#" class="btn-sm btn-circle no-padding" ng-click="task.groupByEdit = true" ng-show="!task.groupByEdit" >
-					<span class="glyphicon glyphicon-plus shift-1-up"></span></a>
-
-				<a href="#" class="btn-sm btn-circle no-padding" ng-click="removeGroupValues(task)" ng-show="task.group_by_values.length > 0 && !task.groupByEdit">
-					<span class="glyphicon glyphicon-remove text-danger"></span></a>
-
-				<a href="#" class="btn-sm btn-circle no-padding" ng-click="setGroupValues(task)" ng-show="task.groupByEdit">
-					<span class="glyphicon glyphicon-ok text-success"></span></a>
-
-				<a href="#" class="btn-sm btn-circle no-padding" ng-click="cancelGroupValues(task)" ng-show="task.groupByEdit">
-					<span class="glyphicon glyphicon-remove-sign text-danger"></span></a>
+							<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"
+							   ng-click="cancelGroupValues(task)"
+							   ng-show="task.groupByEdit">
+								<span class="glyphicon glyphicon-remove-sign text-danger"></span></a>
+						</td>
+					</tr>
+				</table>
 			</td>
 
 			<td>
-				<a href="" ng-show="!task.filterEdit" ng-click="task.filterEdit=true" style="color:black">{{ task.filter }}</a>
-				<div class="dropdown" ng-show="task.filterEdit">
+				<a href="" ng-show="!task.aggregatorEdit" ng-click="task.aggregatorEdit=true" style="color:black">{{ task.aggregator }}</a>
+				<div class="dropdown" ng-show="task.aggregatorEdit">
 					<button class="btn btn-default dropdown-toggle"
 							type="button" id="aggregatorDropdown"
 							data-toggle="dropdown" aria-haspopup="true"
 							aria-expanded="true">
-						{{ task.filter }}
+						{{ task.aggregator }}
 						<span class="caret"></span>
 					</button>
 					<ul class="dropdown-menu"
 						aria-labelledby="aggregatorDropdown">
-						<li ng-repeat="filter in FILTERS">
+						<li ng-repeat="aggregator in AGGREGATORS">
 							<a href="#"
-							   ng-click="task.filterEdit = false; setFilter(task, filter)">
-								{{ filter }}
+							   ng-click="task.aggregatorEdit = false; setAggregator(task, aggregator)">
+								{{ aggregator }}
 							</a>
 						</li>
 					</ul>
@@ -165,12 +193,12 @@
 			</td>
 
 			<td>
-				<editable model="task.filter_sampling" ng-blur="onBlur(task)">{{
-					task.filter_sampling}}
+				<editable model="task.aggregator_sampling" ng-blur="onBlur(task)">{{
+					task.aggregator}}
 				</editable>
 			</td>
 
-			<td>
+			<td class="text-center">
 				<a href="#" ng-click="deleteRollupTask(task)">
 					<span class="glyphicon glyphicon-remove text-danger"
 						  aria-hidden="true"></span>

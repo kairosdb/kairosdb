@@ -3,21 +3,22 @@ var semaphore = false;
 var metricList = null;
 
 // todo how to display a complicated task
+// todo limit the size of the metric name and save as
 
-module.controller('simpleController', ['$scope', '$http', 'orderByFilter', 'KairosDBDatasource', simpleController]);
-function simpleController($scope, $http, orderByFilter, KairosDBDatasource) {
+module.controller('simpleController', ['$scope', '$http', '$uibModal', 'orderByFilter', 'KairosDBDatasource', simpleController]);
+function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatasource) {
 
 	$scope.EXECUTION_TYPES = ["Hourly", "Daily", "Weekly", "Monthly", "Yearly"];
 	$scope.GROUP_BY_TYPES = ["tag", "time"];
-	$scope.FILTERS = ['avg', 'dev', 'max', 'min', 'sum', 'least_squares', 'count', 'percentile'];
+	$scope.AGGREGATORS = ['avg', 'dev', 'max', 'min', 'sum', 'least_squares', 'count', 'percentile'];
 
 	$scope.DEFAULT_TASK_NAME = "<task name>";
 	$scope.DEFAULT_METRIC_NAME = "<metric name>";
 	$scope.DEFAULT_SAVE_AS = "<new metric name>";
 	$scope.DEFAULT_EXECUTE = $scope.EXECUTION_TYPES[1];
-	$scope.DEFAULT_FILTER = $scope.FILTERS[4];
+	$scope.DEFAULT_AGGREGATOR = $scope.AGGREGATORS[4];
 	$scope.METRIC_NAME_LIST_MAX_LENGTH = 20;
-	$scope.DEFAULT_FILTER_SAMPLING = "1h";
+	$scope.DEFAULT_AGGREGATOR_SAMPLING = "1h";
 	$scope.DEFAULT_GROUP_BY_TYPE = "tag";
 
 	$scope.tasks = [];
@@ -44,7 +45,7 @@ function simpleController($scope, $http, orderByFilter, KairosDBDatasource) {
 		$scope.errors = $scope.validate(task);
 
 		if (!$scope.hasErrors()) {
-			//$scope.tasks = orderByFilter($scope.tasks, "name");
+			$scope.tasks = orderByFilter($scope.tasks, "name");
 			$scope.saveTask(task)
 		}
 	};
@@ -59,8 +60,8 @@ function simpleController($scope, $http, orderByFilter, KairosDBDatasource) {
 		$scope.onBlur(task);
 	};
 
-	$scope.setFilter = function (task, filter) {
-		task.filter = filter;
+	$scope.setAggregator = function (task, aggregator) {
+		task.aggregator = aggregator;
 		$scope.onBlur(task);
 	};
 
@@ -104,11 +105,12 @@ function simpleController($scope, $http, orderByFilter, KairosDBDatasource) {
 			metric_name: $scope.DEFAULT_METRIC_NAME,
 			save_as: $scope.DEFAULT_SAVE_AS,
 			executionType: $scope.DEFAULT_EXECUTE,
-			filter: $scope.DEFAULT_FILTER,
-			filter_sampling: $scope.DEFAULT_FILTER_SAMPLING,
+			aggregator: $scope.DEFAULT_AGGREGATOR,
+			aggregator_sampling: $scope.DEFAULT_AGGREGATOR_SAMPLING,
 			group_by_type: $scope.DEFAULT_GROUP_BY_TYPE
 		};
 		$scope.tasks.push(task);
+		return task;
 	};
 
 	/**
@@ -118,33 +120,38 @@ function simpleController($scope, $http, orderByFilter, KairosDBDatasource) {
 		var newTask = {};
 		newTask.id = task.id;
 		newTask.name = task.name;
+		newTask.executionType = $scope.convertFromExecutionInterval(task.execution_interval);
 
 		if (task.rollups.length > 0) {
 			newTask.save_as = task.rollups[0].save_as;
 
-			if (task.rollups[0].query) {
-				if (task.rollups[0].query.metrics) {
-					if (task.rollups[0].query.metrics.length > 0) {
-						newTask.metric_name = task.rollups[0].query.metrics[0].name;
-						newTask.executionType = $scope.convertFromExecutionInterval(task.execution_interval);
-
-						if (task.rollups[0].query.metrics[0].group_by && task.rollups[0].query.metrics[0].group_by.length > 0) {
-							newTask.group_by_type = task.rollups[0].query.metrics[0].group_by[0].name;
-							newTask.group_by_values = task.rollups[0].query.metrics[0].group_by[0].tags.join(", ");
-						}
-						else {
-							newTask.group_by_type = $scope.DEFAULT_GROUP_BY_TYPE;
-						}
-
-						if (task.rollups[0].query.metrics[0].aggregators.length > 0) {
-							newTask.filter = task.rollups[0].query.metrics[0].aggregators[0].name;
-							newTask.filter_sampling = KairosDBDatasource.convertToShortTimeUnit(task.rollups[0].query.metrics[0].aggregators[0].sampling);
-						}
-					}
-				}
+			var query = task.rollups[0].query;
+			if (query) {
+				$scope.toSimpleQuery(query, newTask, task);
 			}
 		}
 		return newTask;
+	};
+
+	$scope.toSimpleQuery = function(query, newTask) {
+		if (query.metrics) {
+			if (query.metrics.length > 0) {
+				newTask.metric_name = query.metrics[0].name;
+
+				if (query.metrics[0].group_by && query.metrics[0].group_by.length > 0) {
+					newTask.group_by_type = query.metrics[0].group_by[0].name;
+					newTask.group_by_values = query.metrics[0].group_by[0].tags.join(", ");
+				}
+				else {
+					newTask.group_by_type = $scope.DEFAULT_GROUP_BY_TYPE;
+				}
+
+				if (query.metrics[0].aggregators.length > 0) {
+					newTask.aggregator = query.metrics[0].aggregators[0].name;
+					newTask.aggregator_sampling = KairosDBDatasource.convertToShortTimeUnit(query.metrics[0].aggregators[0].sampling);
+				}
+			}
+		}
 	};
 
 	/**
@@ -176,8 +183,8 @@ function simpleController($scope, $http, orderByFilter, KairosDBDatasource) {
 
 		var aggregators = [];
 		var aggregator = {
-			name: task.filter,
-			sampling: KairosDBDatasource.convertToKairosInterval(task.filter_sampling)
+			name: task.aggregator,
+			sampling: KairosDBDatasource.convertToKairosInterval(task.aggregator_sampling)
 		};
 		aggregators.push(aggregator);
 		metric.aggregators = aggregators;
@@ -380,6 +387,23 @@ function simpleController($scope, $http, orderByFilter, KairosDBDatasource) {
 		return '';
 	};
 
+	$scope.pasteQuery = function (task, rollup, edit) {
+		var modalInstance = $uibModal.open({
+			templateUrl: 'simple-paste-query.html?cacheBust=' + Math.random().toString(36).slice(2), //keep dialog from caching
+			controller: 'SimplePasteQueryCtrl',
+			size: 'md',
+			backdrop: 'static', // disable closing of dialog with click away
+			keyboard: false // disable closing dialog with ESC
+		});
+
+		modalInstance.result.then(
+			function (response) {
+				var newTask = $scope.addTask();
+				$scope.toSimpleQuery(response.query, newTask);
+				$scope.suggestSaveAs(newTask);
+			});
+	};
+
 	// todo duplicated in createController.js
 	$scope.hasErrors = function () {
 		return !_.isEmpty($scope.errors);
@@ -390,26 +414,29 @@ function simpleController($scope, $http, orderByFilter, KairosDBDatasource) {
 
 		if (!task.name || _.isEmpty(task.name)) {
 			errs.name = "Name cannot be empty.";
+			task.name = $scope.DEFAULT_TASK_NAME;
 			$scope.alert(errs.name);
 		}
 		if (!task.metric_name|| _.isEmpty(task.metric_name)) {
 			errs.name = "Metric cannot be empty.";
+			task.metric_name = $scope.DEFAULT_METRIC_NAME;
 			$scope.alert(errs.name);
 		}
 		if (!task.save_as|| _.isEmpty(task.save_as)) {
 			errs.name = "Save As cannot be empty.";
+			task.save_as = $scope.DEFAULT_SAVE_AS;
 			$scope.alert(errs.name);
 		}
-		if (!task.filter_sampling|| _.isEmpty(task.filter_sampling)) {
-			errs.name = "Filter Sampling cannot be empty.";
+		if (!task.aggregator_sampling|| _.isEmpty(task.aggregator_sampling)) {
+			errs.name = "aggregator Sampling cannot be empty.";
 			$scope.alert(errs.name);
 		}
-		if (task.filter_sampling) {
+		if (task.aggregator_sampling) {
 			try {
-				KairosDBDatasource.convertToKairosInterval(task.filter_sampling);
+				KairosDBDatasource.convertToKairosInterval(task.aggregator_sampling);
 			}
 			catch(err){
-				errs.name = "Invalid Filter Sampling: " + err.message;
+				errs.name = "Invalid aggregator Sampling: " + err.message;
 				$scope.alert(errs.name);
 			}
 		}

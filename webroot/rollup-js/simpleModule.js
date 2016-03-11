@@ -127,3 +127,20 @@ module.directive('focusOnShow', function($timeout) {
 		}
 	};
 });
+
+// This is needed by dynamically created elements. The regular tooltip mechanism
+// does not work for dynamic elements
+module.directive('bsTooltip', function(){
+	return {
+		restrict: 'A',
+		link: function(scope, element, attrs){
+			$(element).hover(function(){
+				// on mouseenter
+				$(element).tooltip('show');
+			}, function(){
+				// on mouseleave
+				$(element).tooltip('hide');
+			});
+		}
+	};
+});

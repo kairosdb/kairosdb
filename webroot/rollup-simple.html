@@ -24,6 +24,7 @@
 	<script src="rollup-js/third-party/angular-strap.tpl-min-2.3.3.js"></script>
 	<script src="rollup-js/third-party/angular-ui-bootstrap-min-0.14.1.js"></script>
 	<script src="rollup-js/third-party/bootbox.js"></script>
+	<script src="rollup-js/third-party/bootstrap-tooltip-3.3.5.js"></script>
 	<script src="rollup-js/simpleModule.js"></script>
 	<script src="rollup-js/kairosdbDatasource.js"></script>
 	<script src="rollup-js/simpleController.js"></script>
@@ -58,17 +59,31 @@
 			  ng-hide="lastSaved == null">Last Saved {{lastSaved}}</span>
 	</div>
 
-	<table class="table table-striped" data-sort-name="metric-name"  data-sort-order="asc">
+	<!-- todo Use contextual colors to mark rows not complete???
+		<tr class="table-active">...</tr>
+		<tr class="table-success">...</tr>
+		<tr class="table-warning">...</tr>
+		<tr class="table-danger">...</tr>
+		<tr class="table-info">...</tr>
+	-->
+
+	<table class="table table-striped table-bordered" data-sort-name="metric-name"  data-sort-order="asc">
 		<thead>
 		<tr class="text-info">
-			<th data-field="name" class="col-md-1" data-sortable="true">Task Name</th>
-			<th data-field="metric-name" class="col-md-2" data-sortable="true">Metric</th>
-			<th data-field="save as"  class="col-md-3" data-sortable="true">Save As</th>
-			<th data-field="execute" class="col-md-1" data-sortable="true">Execute</th>
-			<th data-field="group-by" class="col-md-1" data-sortable="true">Group by</th>
-			<th data-field="aggregator" class="col-md-1" data-sortable="true">Aggregator</th>
-			<th data-field="aggregator_sampling" class="col-md-2" data-sortable="true">Aggregator
-				Sampling
+			<th data-field="name" data-sortable="true">
+				<span title="{{TOOLTIP_TASK_NAME}}" bs-tooltip="">Name</span></th>
+			<th data-field="metric-name" data-sortable="true">
+				<span title="{{TOOLTIP_METRIC_NAME}}" bs-tooltip="">Metric</span></th>
+			<th data-field="save as"  data-sortable="true">
+				<span title="{{TOOLTIP_SAVE_AS}}" bs-tooltip="">Save As</span></th>
+			<th data-field="execute" data-sortable="true">
+				<span title="{{TOOLTIP_EXECUTE}}" bs-tooltip="">Execute</span></th>
+			<th data-field="group-by" data-sortable="true">
+				<span title="{{TOOLTIP_GROUP_BY}}" bs-tooltip="">Group By</span></th>
+			<th data-field="aggregator" data-sortable="true">
+				<span title="{{TOOLTIP_AGGREGATOR}}" bs-tooltip="">Aggregator</span></th>
+			<th data-field="aggregator_sampling" data-sortable="true">
+				<span title="{{TOOLTIP_AGGREGATOR_SAMPLING}}" bs-tooltip="">Aggreator Sampling</span>
 				<span custom-popover
 					  popover-html="Sampling is specified as a number and a time unit.
 					  For example, '2h' is 2 hours. The unit can be one of the following:
@@ -80,13 +95,22 @@
 					  <li>w = weeks
 					  <li>M = months
 					  <li>y = years"
-					  popover-placement="bottom">
+					  popover-placement="bottom"
+					  title="{{TOOLTIP_SAMPLING_HELP}}" data-toggle="tooltip">
 				</span>
 			</th>
-			<th data-field="buttons" class="no-padding text-center col-md-1" data-sortable="true">
-				<a href="#" ng-click="addTask()" class="btn btn-primary btn-sm btn-circle" style="margin-right: 3px">
+			<th data-field="buttons" class="no-padding text-center col-md-1"
+				data-sortable="true">
+				<a href="#" ng-click="addTask()"
+				   class="btn btn-primary btn-sm btn-circle"
+				   title="{{TOOLTIP_ADD_ROLL_UP}}" bs-tooltip
+				   style="margin-right: 3px">
 					<span class="glyphicon glyphicon-plus"></span>
-				</a><a href="#" ng-click="pasteQuery()" class="btn btn-primary btn-sm btn-circle">
+				</a>
+
+				<a href="#" ng-click="pasteQuery()"
+				   class="btn btn-primary btn-sm btn-circle"
+				   title="{{TOOLTIP_PASTE_QUERY}}" bs-tooltip>
 					<span class="glyphicon glyphicon-paste"></span>
 				</a>
 			</th>
@@ -137,7 +161,7 @@
 								   class="input-small tight-form-input"
 								   spellcheck='false'
 								   bs-typeahead
-								   ng-blur="cancelGroupValues(task)"
+								   ng-blur="setGroupValues(task)"
 								   bs-options="key for key in suggestTagKeys(task)"
 								   data-min-length=0 data-items=100
 								   ng-model="task.group_by_value_suggest"
@@ -150,6 +174,7 @@
 							   ng-click="task.groupByEdit = true"
 							   ng-show="!task.groupByEdit">
 								<span class="glyphicon glyphicon-plus shift-1-up"></span></a>
+
 							<a href="#" class="btn-sm btn-circle" style="margin-right:10px;"
 							   ng-click="setGroupValues(task)"
 							   ng-show="task.groupByEdit">
@@ -199,17 +224,21 @@
 			</td>
 
 			<td class="text-center">
-				<a href="#" ng-click="deleteRollupTask(task)">
-					<span class="glyphicon glyphicon-remove text-danger"
-						  aria-hidden="true"></span>
-				</a>
+				<a href="#" ng-click="deleteRollupTask(task)"
+				   class="glyphicon glyphicon-remove text-danger"
+				   title="{{TOOLTIP_DELETE_ROLLUP}}" bs-tooltip></a>
 			</td>
 		</tr>
 		</tbody>
 	</table>
 </div>
 
-  <!--{{ tasks }}-->
 
+  <!--{{ tasks }}-->
+<script>
+	$(document).ready(function () {
+		$("[data-toggle=tooltip]").tooltip();
+	});
+</script>
 </body>
 </html>

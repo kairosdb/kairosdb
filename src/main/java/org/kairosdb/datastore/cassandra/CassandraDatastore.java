@@ -460,6 +460,7 @@ public class CassandraDatastore implements Datastore
 				queryKeys = new ArrayList<DataPointsRowKey>();
 				queryKeys.add(rowKey);
 				currentTimeTier = rowKey.getTimestamp();
+				currentType = rowKey.getDataType();
 			}
 
 			mm.checkMemoryAndThrowException();

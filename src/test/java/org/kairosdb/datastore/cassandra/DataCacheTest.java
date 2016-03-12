@@ -16,9 +16,12 @@
 
 package org.kairosdb.datastore.cassandra;
 
+import com.google.common.base.Predicate;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.kairosdb.core.TestDataPointFactory;
+
+import javax.annotation.Nullable;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -93,5 +96,24 @@ public class DataCacheTest
 
 		ret = cache.cacheItem(new TestObject("td3"));
 		assertTrue(td3 == ret);
+	}
+
+	@Test
+	public void test_removeIf()
+	{
+		DataCache<String> cache = new DataCache<String>(3);
+
+		assertNull(cache.cacheItem("one"));
+		assertNull(cache.cacheItem("two"));
+		assertNull(cache.cacheItem("three"));
+
+		cache.removeIf(new Predicate<String>() {
+			@Override
+			public boolean apply(final String s) {
+				return s.equals("two");
+			}
+		});
+
+		assertNull(cache.cacheItem("two"));
 	}
 }

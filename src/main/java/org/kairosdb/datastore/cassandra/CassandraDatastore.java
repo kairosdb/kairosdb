@@ -15,6 +15,7 @@
  */
 package org.kairosdb.datastore.cassandra;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
@@ -48,6 +49,7 @@ import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.locks.Condition;
@@ -244,17 +246,14 @@ public class CassandraDatastore implements Datastore
 
 	public void cleanRowKeyCache()
 	{
-		long currentRow = calculateRowTime(System.currentTimeMillis());
+		final long currentRow = calculateRowTime(System.currentTimeMillis());
 
-		Set<DataPointsRowKey> keys = m_rowKeyCache.getCachedKeys();
-
-		for (DataPointsRowKey key : keys)
-		{
-			if (key.getTimestamp() != currentRow)
-			{
-				m_rowKeyCache.removeKey(key);
+		m_rowKeyCache.removeIf(new Predicate<DataPointsRowKey>() {
+			@Override
+			public boolean apply(final DataPointsRowKey key) {
+				return key.getTimestamp() != currentRow;
 			}
-		}
+		});
 	}
 
 	@Override

@@ -16,10 +16,11 @@
 
 package org.kairosdb.datastore.cassandra;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import com.google.common.base.Predicate;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  This cache serves two purposes.
@@ -35,15 +36,14 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DataCache<T>
 {
-	private Object m_lock = new Object();
+	private final Object m_lock = new Object();
 
-	private LinkItem<T> m_front = new LinkItem<T>(null);
-	private LinkItem<T> m_back = new LinkItem<T>(null);
+	private final LinkItem<T> m_front = new LinkItem<>(null);
+	private final LinkItem<T> m_back = new LinkItem<>(null);
 
-	private int m_maxSize;
+	private final int m_maxSize;
 
-
-	private class LinkItem<T>
+	private static class LinkItem<T>
 	{
 		private LinkItem<T> m_prev;
 		private LinkItem<T> m_next;
@@ -57,12 +57,10 @@ public class DataCache<T>
 	}
 
 	//Using a ConcurrentHashMap so we can use the putIfAbsent method.
-	private ConcurrentHashMap<T, LinkItem<T>> m_hashMap;
+	private final Map<T, LinkItem<T>> m_hashMap = new HashMap<>();
 
 	public DataCache(int cacheSize)
 	{
-		//m_cache = new InternalCache(cacheSize);
-		m_hashMap = new ConcurrentHashMap();
 		m_maxSize = cacheSize;
 
 		m_front.m_next = m_back;
@@ -73,36 +71,40 @@ public class DataCache<T>
 	 returns null if item was not in cache.  If the return is not null the item
 	 from the cache is returned.
 
-	 @param cacheData
+	 @param key
 	 @return
 	 */
-	public T cacheItem(T cacheData)
+	public T cacheItem(T key)
 	{
-		LinkItem<T> mappedItem = null;
-
 		synchronized (m_lock)
 		{
-			LinkItem<T> li = new LinkItem<T>(cacheData);
-			mappedItem = m_hashMap.putIfAbsent(cacheData, li);
-
-			if (mappedItem != null)
+			final LinkItem<T> cachedItem = m_hashMap.get(key);
+			if (cachedItem != null)
 			{
-				remove(mappedItem);
-				addItem(mappedItem);
+				remove(cachedItem);
+				addItem(cachedItem);
 			}
 			else
-				addItem(li);
-
-			if (m_hashMap.size() > m_maxSize)
 			{
-				LinkItem<T> last = m_back.m_prev;
-				remove(last);
-
-				m_hashMap.remove(last.m_data);
+				final LinkItem<T> linkItem = new LinkItem<>(key);
+				m_hashMap.put(key, linkItem);
+				addItem(linkItem);
 			}
+
+			trim();
+			return cachedItem != null ? cachedItem.m_data : null;
 		}
 
-		return (mappedItem == null ? null : mappedItem.m_data);
+	}
+
+	private void trim() {
+		while (m_hashMap.size() > m_maxSize)
+		{
+			LinkItem<T> last = m_back.m_prev;
+			remove(last);
+
+			m_hashMap.remove(last.m_data);
+		}
 	}
 
 	private void remove(LinkItem<T> li)
@@ -120,15 +122,17 @@ public class DataCache<T>
 		li.m_next.m_prev = li;
 	}
 
-	public Set<T> getCachedKeys()
-	{
-		return (m_hashMap.keySet());
-	}
-
-	public void removeKey(T key)
-	{
-		LinkItem<T> li = m_hashMap.remove(key);
-		remove(li);
+	public void removeIf(Predicate<T> predicate) {
+		synchronized (m_lock) {
+			final Iterator<Map.Entry<T, LinkItem<T>>> iterator = m_hashMap.entrySet().iterator();
+			while (iterator.hasNext()) {
+				final Map.Entry<T, LinkItem<T>> next = iterator.next();
+				if (predicate.apply(next.getKey())) {
+					iterator.remove();
+					remove(next.getValue());
+				}
+			}
+		}
 	}
 
 	public void clear()

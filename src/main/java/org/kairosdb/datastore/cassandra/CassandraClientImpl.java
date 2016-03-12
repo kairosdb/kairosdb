@@ -17,7 +17,7 @@ import java.util.List;
 public class CassandraClientImpl implements CassandraClient
 {
 	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
-	private static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.host_list";
+	private static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
 
 
 	private final Cluster m_cluster;

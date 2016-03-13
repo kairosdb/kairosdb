@@ -94,7 +94,7 @@ Body
                   "customer": ["bar"]
               },
               "name": "abc.123",
-              "limit": 10000
+              "limit": 10000,
               "aggregators": [
                   {
                       "name": "sum",

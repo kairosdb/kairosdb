@@ -2,6 +2,7 @@ package org.kairosdb.core.health;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.kairosdb.core.http.rest.MetricsResource;
 
 import javax.ws.rs.*;
@@ -19,12 +20,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Path("/api/v1/health")
 public class HealthCheckResource
 {
-	private final HealthCheckService healthCheckService;
+	private final HealthCheckService m_healthCheckService;
+
+	@Inject
+	@Named("kairosdb.health.healthyResponseCode")
+	private int m_healthyResponse = Response.Status.NO_CONTENT.getStatusCode();
+
 
 	@Inject
 	public HealthCheckResource(HealthCheckService healthCheckService)
 	{
-		this.healthCheckService = checkNotNull(healthCheckService);
+		m_healthCheckService = checkNotNull(healthCheckService);
 	}
 
 	@OPTIONS
@@ -46,7 +52,7 @@ public class HealthCheckResource
 	@Path("check")
 	public Response check()
 	{
-		for (HealthStatus healthCheck : healthCheckService.getChecks())
+		for (HealthStatus healthCheck : m_healthCheckService.getChecks())
 		{
 			HealthCheck.Result result = healthCheck.execute();
 			if (!result.isHealthy())
@@ -55,7 +61,7 @@ public class HealthCheckResource
 			}
 		}
 
-		return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
+		return setHeaders(Response.status(m_healthyResponse)).build();
 	}
 
 
@@ -80,7 +86,7 @@ public class HealthCheckResource
 	public Response status()
 	{
 		List<String> messages = new ArrayList<String>();
-		for (HealthStatus healthCheck : healthCheckService.getChecks())
+		for (HealthStatus healthCheck : m_healthCheckService.getChecks())
 		{
 			HealthCheck.Result result = healthCheck.execute();
 			if (result.isHealthy())

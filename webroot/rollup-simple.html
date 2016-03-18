@@ -151,29 +151,7 @@
 			</td>
 
 			<td>
-				<table width="100%">
-					<tr>
-						<td>
-							<span ng-show="!task.groupByEdit"
-								  style="margin: 0 10px 0 0">{{task.group_by_values}}</span>
-							<input type="text" style="width:85px; padding:0; line-height:16px"
-								   focus-on-show
-								   class="input-small tight-form-input"
-								   spellcheck='false'
-								   bs-typeahead
-								   ng-blur="setGroupValues(task)"
-								   bs-options="key for key in suggestTagKeys(task)"
-								   data-min-length=0 data-items=100
-								   ng-model="task.group_by_value_suggest"
-								   placeholder="key"
-								   ng-show="task.groupByEdit"
-									/>
-						</td>
-						<td width="10%">
-							<a href="#" class="btn-sm btn-circle text-right" style="margin-left:1px; margin-right:5px;"
-							   ng-click="task.groupByEdit = true"
-							   ng-show="!task.groupByEdit">
-								<span class="glyphicon glyphicon-plus shift-1-up"></span></a>
+				<autocomplete-with-buttons model="task" on-blur="onBlur(task)" list="suggestTagKeys(task)"'/>
 
 							<a href="#" class="btn-sm btn-circle" style="margin-right:10px;"
 							   ng-click="setGroupValues(task)"

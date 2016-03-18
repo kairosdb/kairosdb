@@ -24,7 +24,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	$scope.GROUP_BY_TYPES = ["tag", "time"];
 	$scope.AGGREGATORS = ['avg', 'dev', 'max', 'min', 'sum', 'least_squares', 'count', 'percentile'];
 
-	$scope.DEFAULT_TASK_NAME = "<task name>";
+	$scope.DEFAULT_TASK_NAME = "<roll-up name>";
 	$scope.DEFAULT_METRIC_NAME = "<metric name>";
 	$scope.DEFAULT_SAVE_AS = "<new metric name>";
 	$scope.DEFAULT_EXECUTE = $scope.EXECUTION_TYPES[1];

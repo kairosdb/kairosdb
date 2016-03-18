@@ -131,7 +131,7 @@
 			</td>
 			<td>
 				<a href="" ng-show="!task.executionEdit" ng-click="task.executionEdit=true" style="color:black;">{{ task.executionType }}</a>
-				<span class="dropdown" ng-show="task.executionEdit">
+				<span class="dropdown" ng-show="task.exorderByFilterecutionEdit">
 					<button class="btn btn-default dropdown-toggle"
 							type="button" id="executeDropdown"
 							data-toggle="dropdown" aria-haspopup="true"
@@ -152,25 +152,6 @@
 
 			<td>
 				<autocomplete-with-buttons model="task" on-blur="onBlur(task)" list="suggestTagKeys(task)"'/>
-
-							<a href="#" class="btn-sm btn-circle" style="margin-right:10px;"
-							   ng-click="setGroupValues(task)"
-							   ng-show="task.groupByEdit">
-								<span class="glyphicon glyphicon-ok text-success"></span></a>
-						</td>
-						<td width="10%">
-							<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"
-							   ng-click="removeGroupValues(task)"
-							   ng-show="task.group_by_values.length > 0 && !task.groupByEdit">
-								<span class="glyphicon glyphicon-remove text-danger"></span></a>
-
-							<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"
-							   ng-click="cancelGroupValues(task)"
-							   ng-show="task.groupByEdit">
-								<span class="glyphicon glyphicon-remove-sign text-danger"></span></a>
-						</td>
-					</tr>
-				</table>
 			</td>
 
 			<td>

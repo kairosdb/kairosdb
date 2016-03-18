@@ -22,3 +22,11 @@ h1 {
     position: relative;
     bottom: 1px;
 }
+
+.gray {
+    color: grey;
+}
+
+.black {
+    color: black    ;
+}

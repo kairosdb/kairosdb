@@ -11,8 +11,20 @@ module.directive('editable', function () {
 		scope: {model: '='},
 		replace: false,
 		template: '<span>' +
-		'<input type="text" style="width:100%; padding:0; line-height:16px" ng-model="model"  ng-blur="$parent.onBlur($parent.task)" ng-show="edit" my-blur="edit"></input>' +
-		'<a href="" ng-show="!edit" style="color:black">{{model}}</a>' +
+		'<input type="text" ' +
+		'	style="width:100%; ' +
+		'	padding:0; ' +
+		'	line-height:16px" ' +
+		'	ng-model="model"  ' +
+		'	ng-blur="$parent.onBlur($parent.task)" ' +
+		'	ng-show="edit" ' +
+		'	my-blur="edit">' +
+		'</input>' +
+
+		'<a href=""ng-show="!edit" ' +
+				'ng-class="model.indexOf(\'<\') == 0 ? \'gray\' : \'black\'"' +
+		'>{{model}}' +
+		'</a>' +
 		'</span>',
 		link: function (scope, element, attrs) {
 			scope.edit = false;
@@ -53,7 +65,11 @@ module.directive('autocompleteeditable', function () {
 		'style="width:100%; padding:0; line-height:16px;"' +
 		'ng-focus autofocus>' +
 		'</input>' +
-		'<a href="" ng-show="!edit" style="color:black">{{task.metric_name}}</a>' +
+
+		'<a href="" ' +
+		'	ng-show="!edit" ' +
+		'	ng-class="task.metric_name.indexOf(\'<\') == 0 ? \'gray\' : \'black\'"' +
+		'>{{task.metric_name}}</a>' +
 		'</span>',
 		link: function (scope, element, attrs) {
 			scope.edit = false;

@@ -130,7 +130,13 @@
 				<editable model="task.save_as">{{ task.save_as }}</editable>
 			</td>
 			<td>
-				<a href="" ng-show="!task.executionEdit" ng-click="task.executionEdit=true" style="color:black;">{{ task.executionType }}</a>
+				<a href=""
+				   ng-show="!task.executionEdit"
+				   ng-click="task.executionEdit=true"
+				   style="color:black;"
+						>{{ task.executionType }}
+				</a>
+
 				<span class="dropdown" ng-show="task.exorderByFilterecutionEdit">
 					<button class="btn btn-default dropdown-toggle"
 							type="button" id="executeDropdown"

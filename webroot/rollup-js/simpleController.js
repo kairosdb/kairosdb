@@ -57,7 +57,6 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		$scope.errors = $scope.validate(task);
 
 		if (!$scope.hasErrors()) {
-			$scope.tasks = orderByFilter($scope.tasks, "name");
 			$scope.saveTask(task)
 		}
 	};

@@ -15,6 +15,7 @@
  */
 package org.kairosdb.datastore.cassandra;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
@@ -138,6 +139,8 @@ public class CassandraDatastore implements Datastore
 	private final PreparedStatement m_psInsertData;
 	private final PreparedStatement m_psInsertRowKey;
 	private final PreparedStatement m_psInsertString;
+	private BatchStatement m_batchStatement;
+	private final Object m_batchLock = new Object();
 	//End new props
 
 
@@ -554,6 +557,7 @@ public class CassandraDatastore implements Datastore
 			/*m_dataPointWriteBuffer.addData(rowKey, columnTime,
 					kDataOutput.getBytes(), writeTime, ttl);*/
 
+
 			BoundStatement boundStatement = new BoundStatement(m_psInsertData);
 			boundStatement.setBytes(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 			ByteBuffer b = ByteBuffer.allocate(4);
@@ -562,7 +566,21 @@ public class CassandraDatastore implements Datastore
 			boundStatement.setBytes(1, b);
 			boundStatement.setBytes(2, ByteBuffer.wrap(kDataOutput.getBytes()));
 			boundStatement.setInt(3, ttl);
-			m_session.executeAsync(boundStatement);
+			//m_session.executeAsync(boundStatement);
+
+			if (m_batchStatement == null)
+				m_batchStatement = new BatchStatement();
+
+			m_batchStatement.add(boundStatement);
+
+			if (m_batchStatement.size() > 390)
+			{
+				synchronized (m_batchLock)
+				{
+					m_session.executeAsync(m_batchStatement);
+					m_batchStatement = new BatchStatement();
+				}
+			}
 
 		}
 		catch (Exception e)

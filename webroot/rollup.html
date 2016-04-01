@@ -83,7 +83,7 @@
 			<th data-field="aggregator" data-sortable="true">
 				<span title="{{TOOLTIP_AGGREGATOR}}" bs-tooltip="">Aggregator</span></th>
 			<th data-field="aggregator_sampling" data-sortable="true">
-				<span title="{{TOOLTIP_AGGREGATOR_SAMPLING}}" bs-tooltip="">Aggreator Sampling</span>
+				<span title="{{TOOLTIP_AGGREGATOR_SAMPLING}}" bs-tooltip="">Aggregator Sampling</span>
 				<span custom-popover
 					  popover-html="Sampling is specified as a number and a time unit.
 					  For example, '2h' is 2 hours. The unit can be one of the following:
@@ -119,6 +119,7 @@
 		<tbody>
 		<tr ng-repeat="task in tasks">
 			<td>
+				<i class="glyphicon glyphicon-warning-sign text-danger" ng-show="task.incomplete"></i>
 				<editable model="task.name" ng-blur="onBlur(task)">{{ task.name }}</editable>
 			</td>
 			<td>

@@ -43,7 +43,9 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 
 				for (var i = 0; i < rollupTasks.length; i++) {
 					// convert to a simpler model
-					$scope.tasks.push($scope.toSimpleTask(rollupTasks[i])); // todo this loses data for a complex task check for complex and do something different to display
+					var task = $scope.toSimpleTask(rollupTasks[i]);
+					$scope.tasks.push(task); // todo this loses data for a complex task check for complex and do something different to display
+					$scope.checkForIncompleteTask(task)
 				}
 
 				$scope.tasks = orderByFilter($scope.tasks, "name");
@@ -55,6 +57,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 
 	$scope.onBlur = function (task) {
 		$scope.errors = $scope.validate(task);
+		$scope.checkForIncompleteTask(task);
 
 		if (!$scope.hasErrors()) {
 			$scope.saveTask(task)
@@ -120,6 +123,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 			aggregator_sampling: $scope.DEFAULT_AGGREGATOR_SAMPLING,
 			group_by_type: $scope.DEFAULT_GROUP_BY_TYPE
 		};
+		task.incomplete = true;
 		$scope.tasks.push(task);
 		return task;
 	};
@@ -417,6 +421,24 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 			});
 	};
 
+	$scope.checkForIncompleteTask = function(task){
+		if (!task.name || _.isEmpty(task.name) || task.name == $scope.DEFAULT_TASK_NAME) {
+			task.incomplete = true;
+		}
+		else if (!task.metric_name|| _.isEmpty(task.metric_name) || task.metric_name == $scope.DEFAULT_METRIC_NAME) {
+			task.incomplete = true;
+		}
+		else if (!task.save_as|| _.isEmpty(task.save_as) || task.save_as == $scope.DEFAULT_SAVE_AS) {
+			task.incomplete = true;
+		}
+		else if (!task.aggregator_sampling || _.isEmpty(task.aggregator_sampling)) {
+			task.incomplete = true;
+		}
+		else {
+			task.incomplete = false;
+		}
+	};
+
 	// todo duplicated in createController.js
 	$scope.hasErrors = function () {
 		return !_.isEmpty($scope.errors);
@@ -442,6 +464,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		}
 		if (!task.aggregator_sampling|| _.isEmpty(task.aggregator_sampling)) {
 			errs.name = "aggregator Sampling cannot be empty.";
+			task.aggregator_sampling =  $scope.DEFAULT_AGGREGATOR_SAMPLING;
 			$scope.alert(errs.name);
 		}
 		if (task.aggregator_sampling) {

@@ -5,7 +5,7 @@ var metricList = null;
 // todo how to display a complicated task
 // todo limit the size of the metric name and save as
 
-module.controller('simpleController', ['$scope', '$http', '$uibModal', 'orderByFilter', 'KairosDBDatasource', simpleController]);
+module.controller('rollupController', ['$scope', '$http', '$uibModal', 'orderByFilter', 'KairosDBDatasource', simpleController]);
 function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatasource) {
 
 	$scope.TOOLTIP_ADD_ROLL_UP = "Add new roll-up";
@@ -400,8 +400,8 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 
 	$scope.pasteQuery = function (task, rollup, edit) {
 		var modalInstance = $uibModal.open({
-			templateUrl: 'simple-paste-query.html?cacheBust=' + Math.random().toString(36).slice(2), //keep dialog from caching
-			controller: 'SimplePasteQueryCtrl',
+			templateUrl: 'rollup-paste-query.html?cacheBust=' + Math.random().toString(36).slice(2), //keep dialog from caching
+			controller: 'PasteQueryCtrl',
 			size: 'md',
 			backdrop: 'static', // disable closing of dialog with click away
 			keyboard: false // disable closing dialog with ESC

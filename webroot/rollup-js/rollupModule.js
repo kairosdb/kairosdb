@@ -1,4 +1,4 @@
-var module = angular.module('simpleRollupApp',
+var module = angular.module('rollupApp',
 	['mgcrea.ngStrap',
 		'mgcrea.ngStrap.tooltip',
 		'ui.bootstrap.modal',

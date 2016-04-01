@@ -14,7 +14,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet"
 		  href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-	<link href="css/simple-rollup.css" rel="stylesheet">
+	<link href="css/rollup.css" rel="stylesheet">
 
 	<script src="rollup-js/third-party/underscore-min-1.8.3.js"></script>
 	<script src="rollup-js/third-party/jquery-min-2.1.3.js"></script>
@@ -28,7 +28,7 @@
 	<script src="rollup-js/rollupModule.js"></script>
 	<script src="rollup-js/kairosdbDatasource.js"></script>
 	<script src="rollup-js/rollupController.js"></script>
-	<script src="rollup-old/pasteQueryController.js"></script>
+	<script src="rollup-js/pasteQueryController.js"></script>
 </head>
 
 <body ng-app="rollupApp" ng-controller="rollupController" background="css/brickwall.png">
@@ -137,7 +137,7 @@
 						>{{ task.executionType }}
 				</a>
 
-				<span class="dropdown" ng-show="task.exorderByFilterecutionEdit">
+				<span class="dropdown" ng-show="task.executionEdit">
 					<button class="btn btn-default dropdown-toggle"
 							type="button" id="executeDropdown"
 							data-toggle="dropdown" aria-haspopup="true"

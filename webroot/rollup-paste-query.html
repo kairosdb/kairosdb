@@ -1,9 +1,53 @@
-<div ng-init="init()">
-	<div class="modal-header">
-		<h3 class="modal-title">Paste Query</h3>
+<div style="font-family: Lucida Console, Monaco, monospace">
+	<div class="modal-header text-center">
+		<h3 class="modal-title text-info">Create a Roll-up</h3>
+		<br>
+		<span style="font-size: 13px">Paste a JSON query from the <a href="index.html">KairosDB query</a> UI.</span>
 	</div>
 
 	<div class="modal-body">
+		<table width="100%">
+			<tr>
+				<td>
+					<span style="font-weight: bold;">Name</span>
+				</td>
+				<td style="padding-left: 10px">
+					<span style="font-weight: bold;">Execute</span>
+				</td>
+			</tr>
+			<tr>
+				<td style="padding:0; margin:0; width: 70%">
+					<input type="text" style="width:100%;"
+						   ng-model="name"
+						   ng-change="validate()">
+				</td>
+				<td style="padding:0; margin:0;">
+					<span class="dropdown" style="margin-left: 10px;">
+					<button class="btn btn-default dropdown-toggle"
+							id="paste-query-execute"
+							type="button" id="executeDropdown"
+							data-toggle="dropdown" aria-haspopup="true"
+							aria-expanded="true">
+						{{ executionType }}
+						<span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu"
+						style="vertical-align: top"
+						aria-labelledby="executeDropdown">
+						<li ng-repeat="execution in EXECUTION_TYPES">
+							<a href="#"
+							   ng-click="setExecution(execution)">
+								{{ execution }}
+							</a>
+						</li>
+					</ul>
+					</span>
+				</td>
+			</tr>
+		</table>
+
+		<p></p><br>
+		<span style="font-weight: bold;">JSON Query</span><br>
 		<textarea
 				style="vertical-align:top; width:100%;"
 				ng-model="query" cols="40" rows="10"

@@ -410,6 +410,8 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		modalInstance.result.then(
 			function (response) {
 				var newTask = $scope.addTask();
+				newTask.name = response.name;
+				newTask.executionType = response.executionType;
 				$scope.toSimpleQuery(response.query, newTask);
 				$scope.suggestSaveAs(newTask);
 			});

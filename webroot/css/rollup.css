@@ -1,267 +1,49 @@
-.panel-heading .accordion-toggle:after {
-    /* symbol for "opening" panels */
-    font-family: 'Glyphicons Halflings'; /* essential for enabling glyphicon */
-    content: "\e114"; /* adjust as needed, taken from bootstrap.css */
-    float: left;
-    color: grey;
-    padding-right: 15px;
+body {
+    margin-left: 100px;
+    margin-right: 100px;
 }
 
-.panel-heading .accordion-toggle.collapsed:after {
-    /* symbol for "collapsed" panels */
-    content: "\e080"; /* adjust as needed, taken from bootstrap.css */
+th {
+    background-color: #C4D6E0;
+    color: black;
 }
 
-.schedule {
-    padding-left: 10px;
-}
-
-.taskOperations {
-    padding-right: 10px;
-}
-
-.queryOperations {
-    padding-left: 5px;
-}
-
-.rollupOperations {
-    vertical-align: top;
-}
-
-textarea {
-    width: 90%;
-}
-
-.placeholder {
-    color: #c8c8c8;
-}
-
-.tight-form-container-no-item-borders {
-    border: 1px solid #000;
-}
-
-.tight-form-container-no-item-borders .tight-form, .tight-form-container-no-item-borders .tight-form-item, .tight-form-container-no-item-borders [type=text].tight-form-input, .tight-form-container-no-item-borders [type=text].tight-form-clear-input {
-    border: 0;
-}
-
-.tight-form-container .tight-form:last-child {
-    border-bottom: 0
-}
-
-.tight-form-container:last-child {
-    border-bottom: 1px solid #000;
-}
-
-.tight-form {
-    border-top: 1px solid #000;
-    border-left: 1px solid #000;
-    border-right: 1px solid #000;
-    /*background: #262626;*/
-}
-
-.tight-form-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.tight-form-list > li {
-    float: left;
-}
-
-.grafana-metric-options {
-    margin-top: 35px;
-}
-
-.tight-form-warning {
-    display: inline-block;
-    padding-left: 5px;
-    padding-right: 5px;
-    margin: 0;
-    width: 30px;
-    height: 100%;
-    border-top: 1px
-}
-
-.tight-form-item {
-    padding: 8px 7px;
-    font-weight: 400;
-    border-right: 1px solid #050505;
-    color: #c8c8c8;
-    display: inline-block;
-    line-height: 1.43;
-}
-
-.tight-form-container-no-item-borders .tight-form, .tight-form-container-no-item-borders .tight-form-item, .tight-form-container-no-item-borders [type=text].tight-form-input, .tight-form-container-no-item-borders [type=text].tight-form-clear-input {
-    border: 0;
-}
-
-input[type=checkbox].tight-form-checkbox {
-    margin: 0;
-}
-
-input[type=checkbox], input[type=radio] {
-    box-sizing: border-box;
-    padding: 0;
-    *height: 13px;
-    *width: 13px;
-}
-
-.spaced-form .tight-form {
-    margin: 7px 0;
-}
-
-.borderless .tight-form-item, .borderless .tight-form-input {
-    border: 0;
-}
-
-[type=text].tight-form-input, [type=email].tight-form-input, [type=number].tight-form-input, [type=password].tight-form-input {
-    border: 0;
-    margin: 0;
-    border-radius: 0;
-    padding: 8px 6px;
-    box-sizing: border-box;
-    border-left: 1px solid #050505;
-}
-
-[type=text].tight-form-input.last, [type=email].tight-form-input.last, [type=number].tight-form-input.last, [type=password].tight-form-input.last {
-    border-right: 0;
-}
-
-input[type=checkbox].tight-form-checkbox {
-    margin: 0;
-}
-
-select.tight-form-input {
-    border: 0;
-    border-right: 1px solid #050505;
-    margin: 0;
-    border-radius: 0;
-    height: 36px;
-}
-
-select.tight-form-input.last {
-    border-right: 0;
-}
-
-.pull-right {
-    float: right;
-}
-
-.input-large {
-    width: 90%;
-}
-
-.input-mini {
-    width: 60px;
-}
-
-.input-append .add-on:last-child, .input-append .btn:last-child, .input-append .btn-group:last-child > .dropdown-toggle {
-    -webkit-border-radius: 0 3px 3px 0;
-    -moz-border-radius: 0 3px 3px 0;
-    border-radius: 0 3px 3px 0;
-}
-
-.dropdown-toggle {
-    *margin-bottom: -3px;
-    padding: 1px 3px 1px 3px;
-}
-
-.dropdown-toggle:active, .open .dropdown-toggle {
-    outline: 0;
-}
-
-.nav .dropdown-toggle .caret {
-    border-top-color: #e3e3e3;
-    border-bottom-color: #e3e3e3;
-    margin-top: 6px;
-}
-
-.nav .dropdown-toggle:hover .caret, .nav .dropdown-toggle:focus .caret {
-    border-top-color: #fff;
-    border-bottom-color: #fff;
-}
-
-.nav-tabs .dropdown-toggle .caret {
-    margin-top: 8px;
-}
-
-.nav .active .dropdown-toggle .caret {
-    border-top-color: #fff;
-    border-bottom-color: #fff;
-}
-
-.nav-tabs .active .dropdown-toggle .caret {
-    border-top-color: #bbb;
-    border-bottom-color: #bbb;
-}
-
-.nav > .dropdown.active > a:hover, .nav > .dropdown.active > a:focus {
-    cursor: pointer;
-}
-
-.nav-tabs .open .dropdown-toggle, .nav-pills .open .dropdown-toggle, .nav > li.dropdown.open.active > a:hover, .nav > li.dropdown.open.active > a:focus {
-    color: #fff;
-    background-color: #adafae;
-    border-color: #adafae;
-}
-
-.navbar .nav .dropdown-toggle .caret {
-    margin-top: 8px;
-}
-
-/*.clearfix {*/
-/**zoom: 1;*/
-/*}*/
-/*.clearfix:before, .clearfix:after {*/
-/*display: table;*/
-/*content: "";*/
-/*line-height: 0;*/
-/*}*/
-/*.clearfix:after {*/
-/*clear: both;*/
-/*}*/
-
-.glyphicon {
-    line-height: 1.43;
-}
-
-.fa {
-    /*display: inline-block;*/
-    /*font-family: FontAwesome;*/
-    /*font-style: normal;*/
-    /*font-weight: normal;*/
-    /*line-height: 1.43;*/
-    /*font-size-adjust: none;*/
-    /*font-stretch: normal;*/
-    /*font-feature-settings: normal;*/
-    /*font-language-override: normal;*/
-    /*font-kerning: auto;*/
-    /*font-synthesis: weight style;*/
-    /*font-variant: normal;*/
-    /*font-size: inherit;*/
-    /*text-rendering: auto;*/
-}
-
-.invisible {
-    visibility: hidden;
-}
-
-.panel-body {
-    padding: 0 0 0 20px;
-}
-
-.save_as {
-    width: 90%;
-}
-
-.text-field {
-    border-color: #dddddd;
+h1 {
+    border-color: blue;
     border-width: 1px;
-    background: #f4f4f4;
-    border-style: solid
 }
 
-.last-saved {
-    margin: -5px 0 0 0;
+.no-padding {
+    padding: 0;
+    /*margin: 0*/
+}
+
+.shift-1-up {
+    position: relative;
+    bottom: 1px;
+}
+
+.gray {
+    color: grey;
+}
+
+.black {
+    color: black;
+}
+
+.modal-content {
+    background: url('brickwall.png')
+}
+
+#paste-query-execute.btn {
+    padding: 2px 6px;
+    width: 160px
+}
+
+#aggregatorDropdown.btn {
+    padding: 1px 6px
+}
+
+#executeDropdown.btn {
+    padding: 1px 6px
 }

@@ -1,6 +1,9 @@
-module.controller('PasteQueryCtrl', ['$scope', '$modalInstance', SimplePasteQueryCtrl]);
+module.controller('PasteQueryCtrl', ['$scope', '$modalInstance', PasteQueryCtrl]);
 
-function SimplePasteQueryCtrl($scope, $modalInstance) {
+function PasteQueryCtrl($scope, $modalInstance) {
+
+	$scope.EXECUTION_TYPES = ["Hourly", "Daily", "Weekly", "Monthly", "Yearly"];
+	$scope.executionType = $scope.EXECUTION_TYPES[1];
 
 	$scope.ok = function () {
 		var error = $scope.validate();
@@ -10,9 +13,15 @@ function SimplePasteQueryCtrl($scope, $modalInstance) {
 		}
 		else {
 			var result = {};
+			result.name = $scope.name;
+			result.executionType = $scope.executionType;
 			result.query = JSON.parse($scope.query);
 			$modalInstance.close(result);
 		}
+	};
+
+	$scope.setExecution = function (type) {
+		$scope.executionType = type;
 	};
 
 	$scope.cancel = function () {
@@ -22,7 +31,6 @@ function SimplePasteQueryCtrl($scope, $modalInstance) {
 	// todo duplicated in createController.js
 	$scope.alert = function (message, status, data) {
 		if (status) {
-
 
 			var error = "";
 			if (data && data.errors)
@@ -45,6 +53,9 @@ function SimplePasteQueryCtrl($scope, $modalInstance) {
 	};
 
 	$scope.validate = function () {
+		if (!$scope.name || $scope.name.length < 1) {
+			return "You must specify a name."
+		}
 		if (!$scope.query || $scope.query.length < 1) {
 			return "You must paste in a query.";
 		}

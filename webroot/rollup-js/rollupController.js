@@ -3,7 +3,6 @@ var semaphore = false;
 var metricList = null;
 
 // todo how to display a complicated task
-// todo limit the size of the metric name and save as
 
 module.controller('rollupController', ['$scope', '$http', '$uibModal', 'orderByFilter', 'KairosDBDatasource', simpleController]);
 function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatasource) {
@@ -16,7 +15,8 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	$scope.TOOLTIP_METRIC_NAME = "The metric the roll-up will query";
 	$scope.TOOLTIP_SAVE_AS = "The new metric that will be created by the roll-up";
 	$scope.TOOLTIP_EXECUTE = "How often the roll-up will be executed";
-	$scope.TOOLTIP_GROUP_BY = "Groups the roll-up query by the these tags";
+	$scope.TOOLTIP_GROUP_BY = "Groups the roll-up query by the tags";
+	$scope.TOOLTIP_TAGS = "Narrows query down by tags";
 	$scope.TOOLTIP_AGGREGATOR = "Aggregators perform an operation on data points and down samples";
 	$scope.TOOLTIP_AGGREGATOR_SAMPLING = "Down sampling for the aggregator";
 
@@ -79,31 +79,6 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		$scope.onBlur(task);
 	};
 
-	$scope.setGroupValues = function(task){
-		task.groupByEdit=false;
-		if (!task.group_by_values){
-			task.group_by_values = task.group_by_value_suggest;
-		}
-		else {
-			task.group_by_values += ", " + task.group_by_value_suggest;
-		}
-		task.group_by_value_suggest = "";
-		$scope.onBlur(task);
-	};
-
-	$scope.removeGroupValues = function(task){
-		if (task.group_by_values){
-			task.group_by_values = "";
-		}
-		$scope.onBlur(task);
-	};
-
-	$scope.cancelGroupValues = function(task){
-		task.groupByEdit=false;
-		task.group_by_value_suggest = "";
-	};
-
-	// todo duplicated in rollup.js
 	$scope.toHumanReadableTimeUnit = function (timeUnit) {
 		if (timeUnit) {
 			if (timeUnit.value == 1)
@@ -165,6 +140,10 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 					newTask.aggregator = query.metrics[0].aggregators[0].name;
 					newTask.aggregator_sampling = KairosDBDatasource.convertToShortTimeUnit(query.metrics[0].aggregators[0].sampling);
 				}
+
+				if (query.metrics[0].tags){
+					newTask.tags = query.metrics[0].tags;
+				}
 			}
 		}
 	};
@@ -186,6 +165,9 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		rollup.save_as = task.save_as;
 		metric.name = task.metric_name;
 
+		if (task.tags){
+			metric.tags = task.tags;
+		}
 
 		if (task.group_by_type && task.group_by_values && task.group_by_values.length > 0) {
 			var group_by = [];
@@ -275,7 +257,6 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		});
 	};
 
-	// todo duplicated in createController.js
 	$scope.deleteRollupTask = function (task) {
 		bootbox.confirm({
 			size: 'medium',
@@ -325,7 +306,6 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		return !task.save_as || task.save_as == $scope.DEFAULT_SAVE_AS;
 	};
 
-	// todo duplicated in createController.js
 	$scope.alert = function (message, status, data) {
 		if (status) {
 
@@ -346,7 +326,6 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		}
 	};
 
-	// todo duplicated in createController.js
 	$scope.suggestMetrics = function (metricName) {
 		if (semaphore) {
 			return;
@@ -373,7 +352,6 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		return sublist.slice(0, j);
 	};
 
-	// todo duplicated in createController.js
 	$scope.updateMetricList = function (callback) {
 		$scope.metricListLoading = true;
 		semaphore = true;
@@ -391,10 +369,12 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 
 	$scope.suggestTagKeys = function (task) {
 		return KairosDBDatasource.performTagSuggestQuery(task.metric_name, 'key', '');
-
 	};
 
-	// todo duplicated in createController.js
+	$scope.suggestTagValues = function (task) {
+		return KairosDBDatasource.performTagSuggestQuery(task.metric_name, 'value', task.currentTagKey);
+	};
+
 	$scope.escapeRegex = function (e) {
 		if (e) {
 			return e.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&")
@@ -439,7 +419,6 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		}
 	};
 
-	// todo duplicated in createController.js
 	$scope.hasErrors = function () {
 		return !_.isEmpty($scope.errors);
 	};

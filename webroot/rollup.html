@@ -80,6 +80,8 @@
 				<span title="{{TOOLTIP_EXECUTE}}" bs-tooltip="">Execute</span></th>
 			<th data-field="group-by" data-sortable="true">
 				<span title="{{TOOLTIP_GROUP_BY}}" bs-tooltip="">Group By</span></th>
+			<th data-field="group-by" data-sortable="true">
+				<span title="{{TOOLTIP_TAGS}}" bs-tooltip="">Tags</span></th>
 			<th data-field="aggregator" data-sortable="true">
 				<span title="{{TOOLTIP_AGGREGATOR}}" bs-tooltip="">Aggregator</span></th>
 			<th data-field="aggregator_sampling" data-sortable="true">
@@ -159,6 +161,10 @@
 
 			<td>
 				<autocomplete-with-buttons model="task" on-blur="onBlur(task)" list="suggestTagKeys(task)"'/>
+			</td>
+
+			<td>
+				<autocomplete-tags model="task" on-blur="onBlur(task)" key-list="suggestTagKeys(task)" value-list="suggestTagValues(task)"></autocomplete-tags>
 			</td>
 
 			<td>

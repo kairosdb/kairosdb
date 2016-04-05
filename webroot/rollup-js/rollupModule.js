@@ -170,7 +170,6 @@ module.directive('autocompleteWithButtons', function ($compile) {
 		'				class="input-small tight-form-input ' +
 		'				spellcheck="false"' +
 		'				bs-typeahead ' +
-		'				ng-blur="setGroupValues(model);onBlur(model)" ' +
 		'				bs-options="key for key in list(model)"' +
 		'				data-min-length=0 ' +
 		'				data-items=100' +
@@ -186,7 +185,7 @@ module.directive('autocompleteWithButtons', function ($compile) {
 		'					<span class="glyphicon glyphicon-plus shift-1-up"></span>' +
 		'				</a>' +
 		'				<a href="#" class="btn-sm btn-circle" style="margin-right:10px;"' +
-		'					ng-click="setGroupValues(model)"' +
+		'					ng-click="setGroupValues(model);onBlur(model)"' +
 		'					ng-show="model.edit">' +
 		'				<span class="glyphicon glyphicon-ok text-success"></span></a>' +
 		'			</td>' +
@@ -204,8 +203,6 @@ module.directive('autocompleteWithButtons', function ($compile) {
 		'</table>';
 
 	var linker = function(scope, element, attributes) {
-		scope.rootDirectory = 'images/';
-
 		element.html(template).show();
 
 		$compile(element.contents())(scope);
@@ -239,6 +236,114 @@ module.directive('autocompleteWithButtons', function ($compile) {
 		scope: {
 			model:'=',
 			list: '&',
+			onBlur: '&'
+		}
+	};
+});
+
+
+module.directive('autocompleteTags', function ($compile) {
+	var template = '' +
+		'<table width="100%">' +
+		'		<tr>' +
+		'			<td>' +
+		'			<table ng-show="!model.tagEdit"> ' +
+		'				<tr ng-repeat="(tag, value) in model.tags"> ' +
+		'				<td> ' +
+		'					{{tag}}=<span ng-repeat="val in value">{{val}}{{$last ? "" : ", "}}</span>' +
+		'				</td> ' +
+		'				</tr> ' +
+		'			</table> '+
+		'			<input type="text" style="width:85px; padding:0; line-height:16px"' +
+		'				focus-on-show ' +
+		'				spellcheck="false"' +
+		'				bs-typeahead ' +
+		'				bs-options="key for key in keyList()"' +
+		'				data-min-length=0 ' +
+		'				data-items=100' +
+		'				ng-model="model.currentTagKey"' +
+		'				placeholder="key"' +
+		'				ng-show="model.tagEdit"' +
+		'			/>' +
+
+		'			<input type="text" style="width:85px; padding:0; line-height:16px" ' +
+		'				focus-on-show ' +
+		'				class="input-small tight-form-input" ' +
+		'				spellcheck="false" ' +
+		'				bs-typeahead ' +
+		'				bs-options="key for key in valueList()" ' +
+		'				data-min-length=0 ' +
+		'				data-items=100 ' +
+		'				ng-model="model.currentTagValue" ' +
+		'				placeholder="value" ' +
+		'				ng-show="model.tagEdit"' +
+		'			/>' +
+		'			</td>' +
+		'			<td width="10%" valign="top">' +
+		'				<a href="#" class="btn-sm btn-circle text-right" style="margin-left:1px; margin-right:5px;"' +
+		'					ng-click="model.tagEdit = true"' +
+		'					ng-show="!model.tagEdit">' +
+		'					<span class="glyphicon glyphicon-plus shift-1-up"></span>' +
+		'				</a>' +
+		'				<a href="#" class="btn-sm btn-circle" style="margin-right:10px;"' +
+		'					ng-click="setTag(model);onBlur(model)"' +
+		'					ng-show="model.tagEdit">' +
+		'				<span class="glyphicon glyphicon-ok text-success"></span></a>' +
+		'			</td>' +
+		'			<td width="10%" valign="top">' +
+		'				<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"' +
+		'					ng-click="removeTag(model);onBlur(model)"' +
+		'					ng-show="model.tags && !model.tagEdit">' +
+		'				<span class="glyphicon glyphicon-remove text-danger"></span></a>' +
+		'					<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"' +
+		'						ng-click="cancelTagValues(model)"' +
+		'						ng-show="model.tagEdit">' +
+		'				<span class="glyphicon glyphicon-remove-sign text-danger"></span></a>' +
+		'			</td>' +
+		'		</tr>' +
+		'</table>';
+
+	var linker = function(scope, element, attributes) {
+		element.html(template).show();
+
+		$compile(element.contents())(scope);
+
+		scope.cancelTagValues = function(model){
+			model.tagEdit=false;
+
+			delete model.currentTagKey;
+			delete model.currentTagValue
+		};
+
+		scope.removeTag = function(model){
+			delete model.tags;
+		};
+
+		scope.setTag = function(model){
+			model.tagEdit=false;
+			if (!model.tags) {
+				model.tags = {};
+			}
+
+			var existingTag = [];
+			if (model.tags[model.currentTagKey]){
+				existingTag = model.tags[model.currentTagKey]
+			}
+			existingTag.push(model.currentTagValue);
+			model.tags[model.currentTagKey] = existingTag;
+
+			delete model.currentTagKey;
+			delete model.currentTagValue;
+		};
+	};
+
+	return {
+		restrict: "E",
+		link: linker,
+		scope: {
+			model:'=',
+			keyList: '&',
+			valueList: '&',
 			onBlur: '&'
 		}
 	};

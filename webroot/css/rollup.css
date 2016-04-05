@@ -47,3 +47,9 @@ h1 {
 #executeDropdown.btn {
     padding: 1px 6px
 }
+
+.center-table
+{
+    margin: 0 auto !important;
+    float: none !important;
+}

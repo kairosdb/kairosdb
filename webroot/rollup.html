@@ -85,36 +85,49 @@
 			<th data-field="aggregator" data-sortable="true">
 				<span title="{{TOOLTIP_AGGREGATOR}}" bs-tooltip="">Aggregator</span></th>
 			<th data-field="aggregator_sampling" data-sortable="true">
-				<span title="{{TOOLTIP_AGGREGATOR_SAMPLING}}" bs-tooltip="">Aggregator Sampling</span>
-				<span custom-popover
-					  popover-html="Sampling is specified as a number and a time unit.
-					  For example, '2h' is 2 hours. The unit can be one of the following:
-					  <li>ms = millisceconds
-					  <li>s = seconds
-					  <li>m = minutes
-					  <li>h = hours
-					  <li>d = days
-					  <li>w = weeks
-					  <li>M = months
-					  <li>y = years"
-					  popover-placement="bottom"
-					  title="{{TOOLTIP_SAMPLING_HELP}}" data-toggle="tooltip">
-				</span>
+				<table>
+					<tr>
+						<td><span title="{{TOOLTIP_AGGREGATOR_SAMPLING}}" bs-tooltip="">Aggregator Sampling</span></td>
+						<td valign="top" style="padding-left:3px;">
+							<span custom-popover
+							  popover-html="Sampling is specified as a number and a time unit.
+							  For example, '2h' is 2 hours. The unit can be one of the following:
+							  <li>ms = millisceconds
+							  <li>s = seconds
+							  <li>m = minutes
+							  <li>h = hours
+							  <li>d = days
+							  <li>w = weeks
+							  <li>M = months
+							  <li>y = years"
+							  popover-placement="bottom"
+							  title="{{TOOLTIP_SAMPLING_HELP}}" data-toggle="tooltip">
+							</span>
+						</td>
+					</tr>
+				</table>
 			</th>
 			<th data-field="buttons" class="no-padding text-center col-md-1"
 				data-sortable="true">
-				<a href="#" ng-click="addTask()"
-				   class="btn btn-primary btn-sm btn-circle"
-				   title="{{TOOLTIP_ADD_ROLL_UP}}" bs-tooltip
-				   style="margin-right: 3px">
-					<span class="glyphicon glyphicon-plus"></span>
-				</a>
-
-				<a href="#" ng-click="pasteQuery()"
-				   class="btn btn-primary btn-sm btn-circle"
-				   title="{{TOOLTIP_PASTE_QUERY}}" bs-tooltip>
-					<span class="glyphicon glyphicon-paste"></span>
-				</a>
+				<table>
+					<tr>
+						<td>
+							<a href="#" ng-click="addTask()"
+							   class="btn btn-primary btn-sm btn-circle"
+							   title="{{TOOLTIP_ADD_ROLL_UP}}" bs-tooltip
+							   style="margin-right: 3px">
+								<span class="glyphicon glyphicon-plus"></span>
+							</a>
+						</td>
+						<td>
+							<a href="#" ng-click="pasteQuery()"
+							   class="btn btn-primary btn-sm btn-circle"
+							   title="{{TOOLTIP_PASTE_QUERY}}" bs-tooltip>
+								<span class="glyphicon glyphicon-paste"></span>
+							</a>
+						</td>
+					</tr>
+				</table>
 			</th>
 		</tr>
 		</thead>

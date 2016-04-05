@@ -134,8 +134,12 @@
 		<tbody>
 		<tr ng-repeat="task in tasks">
 			<td>
-				<i class="glyphicon glyphicon-warning-sign text-danger" ng-show="task.incomplete"></i>
-				<editable model="task.name" ng-blur="onBlur(task)">{{ task.name }}</editable>
+				<table>
+					<tr>
+						<td valign="top"><i class="glyphicon glyphicon-warning-sign text-danger" ng-show="task.incomplete"></i></td>
+						<td style="padding-left:5px;"><editable model="task.name" ng-blur="onBlur(task)">{{ task.name }}</editable></td>
+					</tr>
+				</table>
 			</td>
 			<td>
 				<autocompleteeditable model="task.metric_name">{{

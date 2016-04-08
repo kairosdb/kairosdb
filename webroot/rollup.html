@@ -59,17 +59,25 @@
 			  ng-hide="lastSaved == null">Last Saved {{lastSaved}}</span>
 	</div>
 
-	<!-- todo Use contextual colors to mark rows not complete???
-		<tr class="table-active">...</tr>
-		<tr class="table-success">...</tr>
-		<tr class="table-warning">...</tr>
-		<tr class="table-danger">...</tr>
-		<tr class="table-info">...</tr>
-	-->
+	<button id="small" type="button" class="btn btn-primary" ng-disabled="!anyTasksSelected()" ng-click="deleteSelected()">Delete</button>
+
+	<p></p>
 
 	<table class="table table-striped table-bordered" data-sort-name="metric-name"  data-sort-order="asc">
 		<thead>
 		<tr class="text-info">
+			<th data-field="select" data-sortable="false">
+				<div class="dropdown">
+					<button id="small"
+							class="btn btn-primary dropdown-toggle"
+							type="button" data-toggle="dropdown"
+
+					>Select <span class="caret"></span></button>
+					<ul class="dropdown-menu">
+						<li><a href="#" ng-click="selectAllTasks()">All</a></li>
+						<li><a href="#" ng-click="selectNoTasks()">None</a></li>
+					</ul>
+				</div>
 			<th data-field="name" data-sortable="true">
 				<span title="{{TOOLTIP_TASK_NAME}}" bs-tooltip="">Name</span></th>
 			<th data-field="metric-name" data-sortable="true">
@@ -133,6 +141,10 @@
 		</thead>
 		<tbody>
 		<tr ng-repeat="task in tasks">
+			<td style="text-align: center; vertical-align: middle">
+				<input type="checkbox" value="" ng-checked="task.selected" ng-model="task.selected">
+			</td>
+
 			<td>
 				<table>
 					<tr>
@@ -213,7 +225,7 @@
 			</td>
 
 			<td class="text-center">
-				<a href="#" ng-click="deleteRollupTask(task)"
+				<a href="#" ng-click="deleteTaskWithConfirm(task)"
 				   class="glyphicon glyphicon-remove text-danger"
 				   title="{{TOOLTIP_DELETE_ROLLUP}}" bs-tooltip></a>
 			</td>

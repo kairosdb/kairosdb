@@ -64,6 +64,47 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		}
 	};
 
+	$scope.deleteSelected = function() {
+		bootbox.confirm({
+			size: 'medium',
+			message: "Are you sure you want to delete the selected rollups?",
+			callback: function (result) {
+				if (result) {
+					_.each($scope.tasks, function (task) {
+						if (task.selected) {
+							$scope.deleteTask(task)
+						}
+					});
+					$scope.displayLastSaved();
+				}
+			}
+		});
+	};
+
+	$scope.anyTasksSelected = function(){
+		for(var i = 0; i < $scope.tasks.length; i++)
+		{
+			if ($scope.tasks[i].selected)
+			{
+				return true;
+			}
+		}
+	};
+
+	$scope.selectAllTasks = function(){
+		for(var i = 0; i < $scope.tasks.length; i++)
+		{
+			$scope.tasks[i].selected = true;
+		}
+	};
+
+	$scope.selectNoTasks = function() {
+		for(var i = 0; i < $scope.tasks.length; i++)
+		{
+			$scope.tasks[i].selected = false;
+		}
+	};
+
 	$scope.setExecution = function (task, type) {
 		task.executionType = type;
 		$scope.onBlur(task);
@@ -236,6 +277,17 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		}
 	};
 
+	$scope.displayLastSaved = function()
+	{
+		currentDate = new Date();
+		$scope.lastSaved = (currentDate.getHours() < 10 ? "0" + currentDate.getHours() : currentDate.getHours()) + ":" +
+			(currentDate.getMinutes() < 10 ? "0" + currentDate.getMinutes() : currentDate.getMinutes()) + ":" +
+			(currentDate.getSeconds() < 10 ? "0" + currentDate.getSeconds() : currentDate.getSeconds());
+
+		// Flash Last Saved message
+		$('#lastSaved').fadeOut('slow').fadeIn('slow').animate({opacity: 1.0}, 1000);
+	};
+
 	$scope.saveTask = function (task) {
 		var realTask = $scope.toRealTask(task);
 
@@ -243,40 +295,37 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		res.success(function (data, status, headers, config) {
 			task.id = data.id;
 
-			currentDate = new Date();
-			$scope.lastSaved = (currentDate.getHours() < 10 ? "0" + currentDate.getHours() : currentDate.getHours()) + ":" +
-				(currentDate.getMinutes() < 10 ? "0" + currentDate.getMinutes() : currentDate.getMinutes()) + ":" +
-				(currentDate.getSeconds() < 10 ? "0" + currentDate.getSeconds() : currentDate.getSeconds());
-
-			// Flash Last Saved message
-			$('#lastSaved').fadeOut('slow').fadeIn('slow').animate({opacity: 1.0}, 1000);
-
+			$scope.displayLastSaved();
 		});
 		res.error(function (data, status, headers, config) {
 			$scope.alert("Could not save query.", status, data);
 		});
 	};
 
-	$scope.deleteRollupTask = function (task) {
+	$scope.deleteTask = function (task) {
+		if (task.id) {
+			var res = $http.delete(ROLLUP_URL + task.id);
+			res.success(function (data, status, headers, config) {
+				$scope.removeTaskFromTasks(task);
+			});
+			res.error(function (data, status, headers, config) {
+				$scope.alert("Failed to delete roll-up.", status, data);
+			});
+		}
+		else {
+			// Task has never been saved
+			$scope.removeTaskFromTasks(task);
+			$scope.$apply();
+		}
+	};
+
+	$scope.deleteTaskWithConfirm = function (task) {
 		bootbox.confirm({
 			size: 'medium',
 			message: "Are you sure you want to delete the rollup?",
 			callback: function (result) {
 				if (result) {
-					if (task.id) {
-						var res = $http.delete(ROLLUP_URL + task.id);
-						res.success(function (data, status, headers, config) {
-							$scope.removeTaskFromTasks(task);
-						});
-						res.error(function (data, status, headers, config) {
-							$scope.alert("Failed to delete roll-up.", status, data);
-						});
-					}
-					else {
-						// Task has never been saved
-						$scope.removeTaskFromTasks(task);
-						$scope.$apply();
-					}
+					$scope.deleteTask(task);
 				}
 			}
 		});

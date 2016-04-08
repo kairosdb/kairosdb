@@ -2,8 +2,6 @@ var ROLLUP_URL = "/api/v1/rollups/";
 var semaphore = false;
 var metricList = null;
 
-// todo how to display a complicated task
-
 module.controller('rollupController', ['$scope', '$http', '$uibModal', 'orderByFilter', 'KairosDBDatasource', simpleController]);
 function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatasource) {
 
@@ -44,7 +42,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 				_.each(response, function(rollupTask){
 					// convert to a simpler model
 					var task = $scope.toSimpleTask(rollupTask);
-					$scope.tasks.push(task); // todo this loses data for a complex task check for complex and do something different to display
+					$scope.tasks.push(task);
 					$scope.checkForIncompleteTask(task)
 				});
 

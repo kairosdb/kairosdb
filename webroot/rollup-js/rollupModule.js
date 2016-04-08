@@ -21,12 +21,20 @@ module.directive('editable', function () {
 		'	my-blur="edit">' +
 		'</input>' +
 
-		'<a href=""ng-show="!edit" ' +
+		'<a href=""ng-show="!edit && !$parent.task.complex" ' +
 				'ng-class="model.indexOf(\'<\') == 0 ? \'gray\' : \'black\'"' +
 		'>{{model}}' +
 		'</a>' +
+
+		'<span ng-show="$parent.task.complex">{{model}}</span> ' +
 		'</span>',
 		link: function (scope, element, attrs) {
+			if (scope.$parent.task.complex)
+			{
+				// Ignore complex tasks
+				return;
+			}
+
 			scope.edit = false;
 			element.bind('click', function () {
 				scope.$apply(scope.edit = true);
@@ -67,11 +75,19 @@ module.directive('autocompleteeditable', function () {
 		'</input>' +
 
 		'<a href="" ' +
-		'	ng-show="!edit" ' +
+		'	ng-show="!edit && !task.complex" ' +
 		'	ng-class="task.metric_name.indexOf(\'<\') == 0 ? \'gray\' : \'black\'"' +
 		'>{{task.metric_name}}</a>' +
+
+		'<span ng-show="task.complex">{{task.metric_name}}</span> ' +
 		'</span>',
 		link: function (scope, element, attrs) {
+			if (scope.task.complex)
+			{
+				// Ignore complex tasks
+				return;
+			}
+
 			scope.edit = false;
 			element.bind('click', function () {
 				scope.$apply(scope.edit = true);
@@ -181,7 +197,7 @@ module.directive('autocompleteWithButtons', function ($compile) {
 		'			<td width="10%">' +
 		'				<a href="#" class="btn-sm btn-circle text-right" style="margin-left:1px; margin-right:5px;"' +
 		'					ng-click="model.edit = true"' +
-		'					ng-show="!model.edit">' +
+		'					ng-show="!model.edit && !model.complex">' +
 		'					<span class="glyphicon glyphicon-plus shift-1-up"></span>' +
 		'				</a>' +
 		'				<a href="#" class="btn-sm btn-circle" style="margin-right:10px;"' +
@@ -196,7 +212,7 @@ module.directive('autocompleteWithButtons', function ($compile) {
 		'				<span class="glyphicon glyphicon-remove text-danger"></span></a>' +
 		'					<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"' +
 		'						ng-click="cancelGroupValues(model)"' +
-		'						ng-show="model.edit">' +
+		'						ng-show="model.edit && !model.complex">' +
 		'				<span class="glyphicon glyphicon-remove-sign text-danger"></span></a>' +
 		'			</td>' +
 		'		</tr>' +
@@ -282,7 +298,7 @@ module.directive('autocompleteTags', function ($compile) {
 		'			<td width="10%" valign="top">' +
 		'				<a href="#" class="btn-sm btn-circle text-right" style="margin-left:1px; margin-right:5px;"' +
 		'					ng-click="model.tagEdit = true"' +
-		'					ng-show="!model.tagEdit">' +
+		'					ng-show="!model.tagEdit && !model.complex">' +
 		'					<span class="glyphicon glyphicon-plus shift-1-up"></span>' +
 		'				</a>' +
 		'				<a href="#" class="btn-sm btn-circle" style="margin-right:10px;"' +
@@ -293,11 +309,11 @@ module.directive('autocompleteTags', function ($compile) {
 		'			<td width="10%" valign="top">' +
 		'				<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"' +
 		'					ng-click="removeTag(model);onBlur(model)"' +
-		'					ng-show="model.tags && !model.tagEdit">' +
+		'					ng-show="model.tags && !model.tagEdit && !model.complex">' +
 		'				<span class="glyphicon glyphicon-remove text-danger"></span></a>' +
 		'					<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"' +
 		'						ng-click="cancelTagValues(model)"' +
-		'						ng-show="model.tagEdit">' +
+		'						ng-show="model.tagEdit>' +
 		'				<span class="glyphicon glyphicon-remove-sign text-danger"></span></a>' +
 		'			</td>' +
 		'		</tr>' +

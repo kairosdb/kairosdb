@@ -19,6 +19,8 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	$scope.TOOLTIP_TAGS = "Narrows query down by tags";
 	$scope.TOOLTIP_AGGREGATOR = "Aggregators perform an operation on data points and down samples";
 	$scope.TOOLTIP_AGGREGATOR_SAMPLING = "Down sampling for the aggregator";
+	$scope.TOOLTIP_INCOMPLETE = "Roll-up is not complete. Complete all grey-out fields.";
+	$scope.TOOLTIP_COMPLEX = "This roll-up is a complex roll-up and cannot be managed from this UI.";
 
 	$scope.EXECUTION_TYPES = ["Hourly", "Daily", "Weekly", "Monthly", "Yearly"];
 	$scope.GROUP_BY_TYPES = ["tag", "time"];
@@ -144,6 +146,10 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		newTask.id = task.id;
 		newTask.name = task.name;
 		newTask.executionType = $scope.convertFromExecutionInterval(task.execution_interval);
+
+		if (task.rollups.length > 1){
+			newTask.complex = true;
+		}
 
 		if (task.rollups.length > 0) {
 			newTask.save_as = task.rollups[0].save_as;

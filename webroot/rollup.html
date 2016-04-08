@@ -148,7 +148,8 @@
 			<td>
 				<table>
 					<tr>
-						<td valign="top"><i class="glyphicon glyphicon-warning-sign text-danger" ng-show="task.incomplete"></i></td>
+						<td valign="top"><i class="glyphicon glyphicon-warning-sign text-danger" title="{{TOOLTIP_COMPLEX}}" bs-tooltip="" ng-show="task.complex"></i></td>
+						<td valign="top"><i class="glyphicon glyphicon-warning-sign text-warning" title="{{TOOLTIP_INCOMPLETE}}" bs-tooltip="" ng-show="!task.complex && task.incomplete"></i></td>
 						<td style="padding-left:5px;"><editable model="task.name" ng-blur="onBlur(task)">{{ task.name }}</editable></td>
 					</tr>
 				</table>
@@ -162,8 +163,9 @@
 				<editable model="task.save_as">{{ task.save_as }}</editable>
 			</td>
 			<td>
+				<span ng-show="task.complex">{{ task.executionType }}</span>
 				<a href=""
-				   ng-show="!task.executionEdit"
+				   ng-show="!task.executionEdit && !task.complex"
 				   ng-click="task.executionEdit=true"
 				   style="color:black;"
 						>{{ task.executionType }}
@@ -197,7 +199,8 @@
 			</td>
 
 			<td>
-				<a href="" ng-show="!task.aggregatorEdit" ng-click="task.aggregatorEdit=true" style="color:black">{{ task.aggregator }}</a>
+				<span ng-show="task.complex">{{ task.aggregator }}</span>
+				<a href="" ng-show="!task.aggregatorEdit && !task.complex" ng-click="task.aggregatorEdit=true" style="color:black">{{ task.aggregator }}</a>
 				<div class="dropdown" ng-show="task.aggregatorEdit">
 					<button class="btn btn-default dropdown-toggle"
 							type="button" id="aggregatorDropdown"
@@ -226,6 +229,7 @@
 
 			<td class="text-center">
 				<a href="#" ng-click="deleteTaskWithConfirm(task)"
+				   ng-show="!task.complex"
 				   class="glyphicon glyphicon-remove text-danger"
 				   title="{{TOOLTIP_DELETE_ROLLUP}}" bs-tooltip></a>
 			</td>

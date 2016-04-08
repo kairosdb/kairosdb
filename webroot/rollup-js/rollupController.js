@@ -39,14 +39,12 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		.success(function (response) {
 
 			if (response) {
-				var rollupTasks = response;
-
-				for (var i = 0; i < rollupTasks.length; i++) {
+				_.each(response, function(rollupTask){
 					// convert to a simpler model
-					var task = $scope.toSimpleTask(rollupTasks[i]);
+					var task = $scope.toSimpleTask(rollupTask);
 					$scope.tasks.push(task); // todo this loses data for a complex task check for complex and do something different to display
 					$scope.checkForIncompleteTask(task)
-				}
+				});
 
 				$scope.tasks = orderByFilter($scope.tasks, "name");
 			}
@@ -92,17 +90,11 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	};
 
 	$scope.selectAllTasks = function(){
-		for(var i = 0; i < $scope.tasks.length; i++)
-		{
-			$scope.tasks[i].selected = true;
-		}
+		_.each($scope.tasks, function(task){task.selected = true;});
 	};
 
 	$scope.selectNoTasks = function() {
-		for(var i = 0; i < $scope.tasks.length; i++)
-		{
-			$scope.tasks[i].selected = false;
-		}
+		_.each($scope.tasks, function(task){task.selected = false;});
 	};
 
 	$scope.setExecution = function (task, type) {

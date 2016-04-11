@@ -29,10 +29,7 @@ import com.google.inject.Inject;
 import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.joda.time.DateTimeZone;
-import org.kairosdb.core.aggregator.Aggregator;
-import org.kairosdb.core.aggregator.AggregatorFactory;
-import org.kairosdb.core.aggregator.RangeAggregator;
-import org.kairosdb.core.aggregator.TimezoneAware;
+import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByFactory;
@@ -192,6 +189,13 @@ public class QueryParser
 
 				JsonObject jsMetric = metricsArray.get(I).getAsJsonObject();
 
+				JsonElement group_by = jsMetric.get("group_by");
+				if (group_by != null)
+				{
+					JsonArray groupBys = group_by.getAsJsonArray();
+					parseGroupBy(context, queryMetric, groupBys);
+				}
+
 				JsonElement aggregators = jsMetric.get("aggregators");
 				if (aggregators != null)
 				{
@@ -206,13 +210,6 @@ public class QueryParser
 					JsonArray pluginArray = plugins.getAsJsonArray();
 					if (pluginArray.size() > 0)
 						parsePlugins(context, queryMetric, pluginArray);
-				}
-
-				JsonElement group_by = jsMetric.get("group_by");
-				if (group_by != null)
-				{
-					JsonArray groupBys = group_by.getAsJsonArray();
-					parseGroupBy(context, queryMetric, groupBys);
 				}
 
 				JsonElement order = jsMetric.get("order");
@@ -287,6 +284,12 @@ public class QueryParser
 			{
 				TimezoneAware ta = (TimezoneAware) aggregator;
 				ta.setTimeZone(timeZone);
+			}
+
+			if (aggregator instanceof GroupByAware)
+			{
+				GroupByAware groupByAware = (GroupByAware) aggregator;
+				groupByAware.setGroupBys(queryMetric.getGroupBys());
 			}
 
 			deserializeProperties(aggContext, jsAggregator, aggName, aggregator);

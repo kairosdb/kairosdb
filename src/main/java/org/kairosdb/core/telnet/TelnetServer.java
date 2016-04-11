@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.telnet;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -163,8 +164,8 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 		// Configure the server.
 		serverBootstrap = new ServerBootstrap(
 				new NioServerSocketChannelFactory(
-						Executors.newCachedThreadPool(),
-						Executors.newCachedThreadPool()));
+						Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("telnet-boss-%d").build()),
+						Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("telnet-worker-%d").build())));
 
 		// Configure the pipeline factory.
 		serverBootstrap.setPipelineFactory(this);

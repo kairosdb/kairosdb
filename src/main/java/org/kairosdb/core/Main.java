@@ -473,6 +473,7 @@ public class Main
 			}
 		}
 
+		logger.info("Stopping Datastore");
 		//Stop the datastore
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
 		ds.close();

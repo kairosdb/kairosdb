@@ -173,19 +173,29 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@BeforeClass
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
-		System.out.println("Starting Cassandra Connection");
-		String cassandraHost = "kairos04:9160";
-		if (System.getenv("CASSANDRA_HOST") != null)
+		String cassandraHost = "localhost:9042";
+		if (System.getenv("CASSANDRA_HOST") != null) {
 			cassandraHost = System.getenv("CASSANDRA_HOST");
+		}
 
-		s_datastore = new CassandraDatastore("hostname", new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
-				1000, 50000, "kairosdb_test"), new HectorConfiguration(cassandraHost), dataPointFactory);
+		String hectorHost = "localhost:9160";
+		if (System.getenv("CASSANDRA_HECTOR_HOST") != null) {
+			hectorHost = System.getenv("CASSANDRA_HECTOR_HOST");
+		}
 
+		System.out.println("Starting Cassandra Connection: " + cassandraHost);
+
+		s_datastore = new CassandraDatastore("hostname", new CassandraClientImpl("kairosdb_tests", cassandraHost), new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
+				1000, 50000, "kairosdb_test"), new HectorConfiguration(hectorHost), dataPointFactory);
+
+		System.out.println("Creating KairosDataStore");
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
 				new QueryQueuingManager(1, "hostname"),
 				Collections.<DataPointListener>emptyList(), dataPointFactory);
 
+		System.out.println("Loading Cassandra data");
 		loadCassandraData();
+		System.out.println("Loading data");
 		loadData();
 		Thread.sleep(2000);
 

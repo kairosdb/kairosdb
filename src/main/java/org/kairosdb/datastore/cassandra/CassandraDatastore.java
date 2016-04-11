@@ -111,12 +111,9 @@ public class CassandraDatastore implements Datastore
 
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
-
 	public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
 
 	public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
-
-
 
 	public static final String CF_DATA_POINTS = "data_points";
 	public static final String CF_ROW_KEY_INDEX = "row_key_index";
@@ -129,8 +126,6 @@ public class CassandraDatastore implements Datastore
 
 	private final Cluster m_cluster;
 	private final Keyspace m_keyspace;
-
-
 
 	//new properties
 	CassandraClient m_cassandraClient;
@@ -220,12 +215,6 @@ public class CassandraDatastore implements Datastore
 
 			//create keyspace instance with specified consistency
 			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
-
-			ReentrantLock mutatorLock = new ReentrantLock();
-			Condition lockCondition = mutatorLock.newCondition();
-
-			createWriteBufferStats(CF_DATA_POINTS, hostname),
-			mutatorLock, lockCondition, threadCount);
 		}
 		catch (HectorException e)
 		{

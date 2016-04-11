@@ -507,22 +507,7 @@ public class CassandraDatastore implements Datastore
 			boundStatement.setBytes(1, b);
 			boundStatement.setBytes(2, ByteBuffer.wrap(kDataOutput.getBytes()));
 			boundStatement.setInt(3, ttl);
-			//m_session.executeAsync(boundStatement);
-
-			if (m_batchStatement == null)
-				m_batchStatement = new BatchStatement();
-
-			m_batchStatement.add(boundStatement);
-
-			if (m_batchStatement.size() > 390)
-			{
-				synchronized (m_batchLock)
-				{
-					m_session.executeAsync(m_batchStatement);
-					m_batchStatement = new BatchStatement();
-				}
-			}
-
+			m_session.executeAsync(boundStatement);
 		}
 		catch (Exception e)
 		{

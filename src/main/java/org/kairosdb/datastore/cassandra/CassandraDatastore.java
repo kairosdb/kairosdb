@@ -18,6 +18,8 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
@@ -187,8 +189,8 @@ public class CassandraDatastore implements Datastore
 		m_psInsertData = m_session.prepare(DATA_POINTS_INSERT);
 		m_psInsertRowKey = m_session.prepare(ROW_KEY_INDEX_INSERT);
 		m_psInsertString = m_session.prepare(STRING_INDEX_INSERT);
-		m_psQueryKeys = m.session.prepare(QUERY_STRING_INDEX);
-		m_psQueryRowKeyIndex = m.session.prepare(QUERY_ROW_KEY_INDEX);
+		m_psQueryKeys = m_session.prepare(QUERY_STRING_INDEX);
+		m_psQueryRowKeyIndex = m_session.prepare(QUERY_ROW_KEY_INDEX);
 
 		try
 		{
@@ -531,8 +533,8 @@ public class CassandraDatastore implements Datastore
 
 		List<String> ret = new ArrayList<String>();
 
-		for(Row r : rs.iterator()) {
-			ret.add(rs.getString("column1"));
+		for(Row r : rs) {
+			ret.add(r.getString("column1"));
 		}
 
 		return ret;
@@ -734,8 +736,8 @@ public class CassandraDatastore implements Datastore
 		//Default to old behavior if no plugin was provided
 		if (ret == null)
 		{
-			ret = new FilteredRowKeyIterator(query.getName(), query.getStartTime(),
-					query.getEndTime(), query.getTags());
+			ret = getMatchingRowKeys(query.getName(), query.getStartTime(),
+					query.getEndTime(), query.getTags()).iterator();
 		}
 
 		return (ret);
@@ -788,10 +790,31 @@ public class CassandraDatastore implements Datastore
 		return ((columnName & 0x1) == LONG_FLAG);
 	}
 
+	private static void filterAndAddKeys(SetMultimap<String, String> filterTags, ResultSet rs, List<DataPointsRowKey> targetList) {
+		final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
+
+		for(Row r : rs) {
+			DataPointsRowKey key = keySerializer.fromByteBuffer(r.getBytes("column1"));
+			Map<String, String> tags = key.getTags();
+
+			boolean skipKey = false;
+			for (String tag : filterTags.keySet()) {
+				String value = tags.get(tag);
+				if (value == null || !filterTags.get(tag).contains(value)) {
+					skipKey = true;
+					break;
+				}
+			}
+			if (!skipKey) {
+				targetList.add(key);
+			}
+		}
+	}
+
 	private List<DataPointsRowKey> getMatchingRowKeys(String metricName, long startTime, long endTime, SetMultimap<String, String> filterTags)
 	{
-		final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 		final List<DataPointsRowKey> rowKeys = new ArrayList<>();
+		final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 
 		BoundStatement bs = m_psQueryRowKeyIndex.bind();
 		if ((startTime < 0) && (endTime >= 0))
@@ -805,33 +828,16 @@ public class CassandraDatastore implements Datastore
 
 			ResultSet rs = m_session.execute(bs);
 
-			for(Row r : rs) {
-				DataPointsRowKey key = keySerializer.fromByteBuffer(r.getBytes("column1"));
-				Map<String, String> keyTags = rowKey.getTags();
+			filterAndAddKeys(filterTags, rs, rowKeys);
 
-				boolean skipKey = false;
-				for (String tag : m_filterTags.keySet())
-				{
-					String value = keyTags.get(tag);
-					if (value == null || !m_filterTags.get(tag).contains(value)) {
-						skipKey = true;
-						break;
-					}
-				}
-				if(!skipKey) {
-					rowKeys.add(key);
-				}
-			}
+			startKey = new DataPointsRowKey(metricName, calculateRowTime(0), "");
+			endKey = new DataPointsRowKey(metricName, calculateRowTime(endTime), "");
 
-			SliceQuery<String, DataPointsRowKey, String> sliceQuery2 =
-					HFactory.createSliceQuery(m_keyspace, StringSerializer.get(),
-							new DataPointsRowKeySerializer(true), StringSerializer.get());
+			bs.setBytes(1, keySerializer.toByteBuffer(startKey));
+			bs.setBytes(2, keySerializer.toByteBuffer(endKey));
 
-			sliceQuery2.setColumnFamily(CF_ROW_KEY_INDEX)
-					.setKey(metricName);
-
-			m_continueSliceIterator = createSliceIterator(sliceQuery2, metricName,
-					0, endTime);
+			rs = m_session.execute(bs);
+			filterAndAddKeys(filterTags, rs, rowKeys);
 		}
 		else
 		{
@@ -843,145 +849,10 @@ public class CassandraDatastore implements Datastore
 			bs.setBytes(2, keySerializer.toByteBuffer(endKey));
 
 			ResultSet rs = m_session.execute(bs);
-
-			for(Row r : rs) {
-				DataPointsRowKey key = keySerializer.fromByteBuffer(r.getBytes("column1"));
-				Map<String, String> keyTags = rowKey.getTags();
-
-				boolean skipKey = false;
-				for (String tag : m_filterTags.keySet())
-				{
-					String value = keyTags.get(tag);
-					if (value == null || !m_filterTags.get(tag).contains(value)) {
-						skipKey = true;
-						break;
-					}
-				}
-				if(!skipKey) {
-					m_rowKeys.add(key);
-				}
-			}
-
+			filterAndAddKeys(filterTags, rs, rowKeys);
 		}
 
 		return rowKeys;
-	}
-
-	private class FilteredRowKeyIterator implements Iterator<DataPointsRowKey>
-	{
-		/**
-		 Used when a query spans positive and negative time values, we have to
-		 query the positive separate from the negative times as negative times
-		 are sorted after the positive ones.
-		 */
-		private ColumnSliceIterator<String, DataPointsRowKey, String> m_continueSliceIterator;
-		private DataPointsRowKey m_nextKey;
-		private SetMultimap<String, String> m_filterTags;
-		private List<DataPointsRowKey> m_rowKeys = new ArrayList<>();
-		private Session m_session;
-		private PreparedStatement m_psRowKeyQuery;
-		private DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
-
-		public FilteredRowKeyIterator(Session session, PreparedStatement psRowKeyQuery, String metricName, long startTime, long endTime,
-				SetMultimap<String, String> filterTags)
-		{
-			m_session = session;
-			m_psRowKeyQuery = psRowKeyQuery;
-			m_filterTags = filterTags;
-
-			BoundStatement bs = m_psQueryRowKeyIndex.bind();
-			if ((startTime < 0) && (endTime >= 0))
-			{
-				DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTime(startTime), "");
-				DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTime(endTime), "");
-
-				bs.setString(0, metricName);
-				bs.setBytes(1, keySerializer.toByteBuffer(startKey));
-				bs.setBytes(2, keySerializer.toByteBuffer(endKey));
-
-				ResultSet rs = m_session.execute(bs);
-
-				for(Row r : rs) {
-					DataPointsRowKey key = keySerializer.fromByteBuffer(r.getBytes("column1"));
-					Map<String, String> keyTags = rowKey.getTags();
-
-					boolean skipKey = false;
-					for (String tag : m_filterTags.keySet())
-					{
-						String value = keyTags.get(tag);
-						if (value == null || !m_filterTags.get(tag).contains(value)) {
-							skipKey = true;
-							break;
-						}
-					}
-					if(!skipKey) {
-						m_rowKeys.add(key);
-					}
-				}
-
-				SliceQuery<String, DataPointsRowKey, String> sliceQuery2 =
-						HFactory.createSliceQuery(m_keyspace, StringSerializer.get(),
-								new DataPointsRowKeySerializer(true), StringSerializer.get());
-
-				sliceQuery2.setColumnFamily(CF_ROW_KEY_INDEX)
-						.setKey(metricName);
-
-				m_continueSliceIterator = createSliceIterator(sliceQuery2, metricName,
-						0, endTime);
-			}
-			else
-			{
-				m_sliceIterator = createSliceIterator(sliceQuery, metricName,
-						startTime, endTime);
-			}
-
-		}
-
-		private DataPointsRowKey nextKeyFromIterator(ColumnSliceIterator<String, DataPointsRowKey, String> iterator)
-		{
-			DataPointsRowKey next = null;
-
-			outer:
-			while (iterator.hasNext())
-			{
-				DataPointsRowKey rowKey = iterator.next().getName();
-
-				Map<String, String> keyTags = rowKey.getTags();
-				for (String tag : m_filterTags.keySet())
-				{
-					String value = keyTags.get(tag);
-					if (value == null || !m_filterTags.get(tag).contains(value))
-						continue outer; //Don't want this key
-				}
-
-				next = rowKey;
-				break;
-			}
-
-			return (next);
-		}
-
-		@Override
-		public boolean hasNext()
-		{
-			m_nextKey = nextKeyFromIterator(m_sliceIterator);
-
-			if ((m_nextKey == null) && (m_continueSliceIterator != null))
-				m_nextKey = nextKeyFromIterator(m_continueSliceIterator);
-
-			return (m_nextKey != null);
-		}
-
-		@Override
-		public DataPointsRowKey next()
-		{
-			return m_nextKey;
-		}
-
-		@Override
-		public void remove()
-		{
-		}
 	}
 
 	private class DeletingCallback implements QueryCallback

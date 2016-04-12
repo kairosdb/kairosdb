@@ -19,7 +19,6 @@ public class CassandraClientImpl implements CassandraClient
 	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
 	private static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
 
-
 	private final Cluster m_cluster;
 	private String m_keyspace;
 
@@ -29,7 +28,7 @@ public class CassandraClientImpl implements CassandraClient
 	{
 		final Cluster.Builder builder = new Cluster.Builder()
 				.withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
-				.withQueryOptions(new QueryOptions().setConsistencyLevel(ConsistencyLevel.QUORUM));
+				.withQueryOptions(new QueryOptions().setConsistencyLevel(ConsistencyLevel.ONE));
 
 		for (String node : hostList.split(","))
 		{

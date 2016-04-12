@@ -43,7 +43,7 @@
 		</dependency>
 
 		<!-- Cassandra Client -->
-		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.0.0" />
+		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="2.1.10" />
 
 		<dependency org="org.hectorclient" name="hector-core" rev="1.1-4">
 			<artifact name="hector-core" type="bundle" ext="jar"/>

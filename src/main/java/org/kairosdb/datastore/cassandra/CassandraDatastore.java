@@ -277,8 +277,6 @@ public class CassandraDatastore implements Datastore
 			session.execute(ROW_KEY_INDEX_TABLE);
 			session.execute(STRING_INDEX_TABLE);
 		}
-
-
 	}
 
 	private void createSchema(int replicationFactor)

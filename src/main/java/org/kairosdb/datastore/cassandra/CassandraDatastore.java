@@ -59,6 +59,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.io.UnsupportedEncodingException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -67,7 +68,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class CassandraDatastore implements Datastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
-
 
 	public static final String CREATE_KEYSPACE = "" +
 			"CREATE KEYSPACE IF NOT EXISTS %s" +
@@ -140,7 +140,7 @@ public class CassandraDatastore implements Datastore
 	private final PreparedStatement m_psInsertData;
 	private final PreparedStatement m_psInsertRowKey;
 	private final PreparedStatement m_psInsertString;
-	private final PreparedStatement m_psQueryKeys;
+	private final PreparedStatement m_psQueryStringIndex;
 	private final PreparedStatement m_psQueryRowKeyIndex;
 
 	private BatchStatement m_batchStatement;
@@ -170,8 +170,6 @@ public class CassandraDatastore implements Datastore
 	@Inject
 	private List<RowKeyListener> m_rowKeyListeners = Collections.EMPTY_LIST;
 
-
-
 	@Inject
 	public CassandraDatastore(@Named("HOSTNAME")final String hostname,
 			CassandraClient cassandraClient,
@@ -189,7 +187,7 @@ public class CassandraDatastore implements Datastore
 		m_psInsertData = m_session.prepare(DATA_POINTS_INSERT);
 		m_psInsertRowKey = m_session.prepare(ROW_KEY_INDEX_INSERT);
 		m_psInsertString = m_session.prepare(STRING_INDEX_INSERT);
-		m_psQueryKeys = m_session.prepare(QUERY_STRING_INDEX);
+		m_psQueryStringIndex = m_session.prepare(QUERY_STRING_INDEX);
 		m_psQueryRowKeyIndex = m_session.prepare(QUERY_ROW_KEY_INDEX);
 
 		try
@@ -524,13 +522,17 @@ public class CassandraDatastore implements Datastore
 
 	private Iterable<String> queryStringIndex(final String key) {
 
-		BoundStatement bs = new BoundStatement(m_psQueryKeys);
-		bs.bind(1, key);
+		BoundStatement bs = m_psQueryStringIndex.bind();
+		try {
+			bs.setBytes(0, ByteBuffer.wrap(key.getBytes("UTF-8")));
+		}
+		catch(UnsupportedEncodingException ex) {
+			throw new RuntimeException(ex);
+		}
 
 		ResultSet rs = m_session.execute(bs);
 
 		List<String> ret = new ArrayList<String>();
-
 		for(Row r : rs) {
 			ret.add(r.getString("column1"));
 		}
@@ -813,6 +815,13 @@ public class CassandraDatastore implements Datastore
 	{
 		final List<DataPointsRowKey> rowKeys = new ArrayList<>();
 		final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
+		ByteBuffer bMetricName;
+		try {
+			bMetricName = ByteBuffer.wrap(metricName.getBytes("UTF-8"));
+		}
+		catch(UnsupportedEncodingException ex) {
+			throw new RuntimeException(ex);
+		}
 
 		BoundStatement bs = m_psQueryRowKeyIndex.bind();
 		if ((startTime < 0) && (endTime >= 0))
@@ -820,7 +829,7 @@ public class CassandraDatastore implements Datastore
 			DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTime(startTime), "");
 			DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTime(endTime), "");
 
-			bs.setString(0, metricName);
+			bs.setBytes(0, bMetricName);
 			bs.setBytes(1, keySerializer.toByteBuffer(startKey));
 			bs.setBytes(2, keySerializer.toByteBuffer(endKey));
 
@@ -842,7 +851,7 @@ public class CassandraDatastore implements Datastore
 			DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTime(startTime), "");
 			DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTime(endTime), "");
 
-			bs.setString(0, metricName);
+			bs.setBytes(0, bMetricName);
 			bs.setBytes(1, keySerializer.toByteBuffer(startKey));
 			bs.setBytes(2, keySerializer.toByteBuffer(endKey));
 

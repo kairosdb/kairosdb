@@ -335,13 +335,14 @@ def doRPM(Rule rule)
 
 def addFileSetToRPM(Builder builder, String destination, AbstractFileSet files)
 {
-	for (String filePath : files.getFullFilePaths())
+
+	for (AbstractFileSet.File file : files.getFiles())
 	{
-		File f = new File(filePath)
+		File f = new File(file.getBaseDir(), file.getFile())
 		if (f.getName().endsWith(".sh"))
-			builder.addFile(destination + "/" +f.getName(), f, 0755)
+			builder.addFile(destination + "/" +file.getFile(), f, 0755)
 		else
-			builder.addFile(destination + "/" + f.getName(), f)
+			builder.addFile(destination + "/" + file.getFile(), f)
 	}
 }
 

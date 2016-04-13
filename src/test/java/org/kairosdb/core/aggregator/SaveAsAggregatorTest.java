@@ -97,6 +97,41 @@ public class SaveAsAggregatorTest
 	}
 
 	@Test
+	public void testNotAddingSavedFrom() throws DatastoreException
+	{
+		m_aggregator.setMetricName("testTtl");
+		m_aggregator.setTags(ImmutableSortedMap.<String, String>of("sweet_tag", "value"));
+		m_aggregator.setAddSavedFrom(false);
+
+		ImmutableSortedMap<String, String> verifyMap = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("sweet_tag", "value")
+				.build();
+
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new LongDataPoint(1, 10));
+		group.addDataPoint(new LongDataPoint(2, 20));
+		group.addTag("host", "tag_should_not_be_there");
+
+		DataPointGroup results = m_aggregator.aggregate(group);
+
+		assertThat(results.hasNext(), equalTo(true));
+		DataPoint dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(1L));
+		assertThat(dataPoint.getLongValue(), equalTo(10L));
+
+		verify(m_mockDatastore).putDataPoint(eq("testTtl"), eq(verifyMap), eq(dataPoint), eq(0));
+
+		assertThat(results.hasNext(), equalTo(true));
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(2L));
+		assertThat(dataPoint.getLongValue(), equalTo(20L));
+
+		verify(m_mockDatastore).putDataPoint(eq("testTtl"), eq(verifyMap), eq(dataPoint), eq(0));
+
+		results.close();
+	}
+
+	@Test
 	public void testAddedTags() throws DatastoreException
 	{
 		m_aggregator.setMetricName("testTtl");

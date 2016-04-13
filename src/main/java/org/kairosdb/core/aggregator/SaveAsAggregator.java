@@ -24,12 +24,18 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	private Map<String, String> m_tags;
 	private int m_ttl = 0;
 	private Set<String> m_tagsToKeep = new HashSet<>();
+	private boolean m_addSavedFrom = true;
 
 	@Inject
 	public SaveAsAggregator(Datastore datastore)
 	{
 		m_datastore = datastore;
 		m_tags = new HashMap<>();
+	}
+
+	public void setAddSavedFrom(boolean addSavedFrom)
+	{
+		m_addSavedFrom = addSavedFrom;
 	}
 
 	public void setMetricName(String metricName)
@@ -93,7 +99,8 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 			m_innerDataPointGroup = innerDataPointGroup;
 			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.<String, String>naturalOrder();
 			mapBuilder.putAll(m_tags);
-			mapBuilder.put("saved_from", innerDataPointGroup.getName());
+			if (m_addSavedFrom)
+				mapBuilder.put("saved_from", innerDataPointGroup.getName());
 
 			for (String innerTag : innerDataPointGroup.getTagNames())
 			{

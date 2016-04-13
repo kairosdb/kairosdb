@@ -266,4 +266,6 @@ Save As
 
 		**ttl** (integer) - Sets the ttl on the newly saved metrics
 
+		**add_saved_from** (boolean) - Tells the aggregator to add the saved_from tag to the new metric.  Defaults to true.
+
 

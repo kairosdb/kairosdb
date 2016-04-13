@@ -1,153 +1,125 @@
+/*
+ * Copyright 2013 Proofpoint Inc.
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
 package org.kairosdb.datastore.cassandra;
 
-
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
-import com.google.common.base.Function;
-import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.commons.lang3.tuple.Pair;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.datapoints.DataPointFactory;
-import org.kairosdb.core.datapoints.LegacyDataPointFactory;
-import org.kairosdb.core.datapoints.LegacyDoubleDataPoint;
-import org.kairosdb.core.datapoints.LegacyLongDataPoint;
+import org.kairosdb.core.datapoints.*;
+import org.kairosdb.core.datastore.CachedSearchResult;
+import org.kairosdb.core.datastore.Order;
 import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.util.KDataInput;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
+import com.datastax.driver.core.Row;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.Session;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.datastax.driver.core.DataType.cint;
 import static com.datastax.driver.core.ProtocolVersion.NEWEST_SUPPORTED;
-import static com.google.common.util.concurrent.Futures.successfulAsList;
-import static com.google.common.util.concurrent.Futures.transform;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.stream;
-import static org.apache.commons.lang3.tuple.Pair.of;
-import static org.kairosdb.datastore.cassandra.CassandraDatastore.getColumnTimestamp;
-import static org.kairosdb.datastore.cassandra.CassandraDatastore.isLongValue;
 
-public class CQLQueryRunner {
+import static org.kairosdb.datastore.cassandra.CassandraDatastore.*;
 
+public class CQLQueryRunner
+{
+	public static final DataPointsRowKeySerializer ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
-    public static final String RANGE_KEY = "column1";
-    private static final String VALUE_COLUMN = "value";
+	private final Session m_session;
+	private final PreparedStatement m_dataPointQuery;
 
-    private final Session session;
-    private static ExecutorService executor = Executors.newFixedThreadPool(10);
-    private final PreparedStatement queryStatement;
-    private final KairosDataPointFactory m_kairosDataPointFactory;
+	private List<DataPointsRowKey> m_rowKeys;
+	private int m_startTime; // relative row time
+	private int m_endTime; // relative row time
+	private QueryCallback m_queryCallback;
+	private int m_singleRowReadSize;
+	private int m_multiRowReadSize;
+	private boolean m_limit = false;
+	private boolean m_descending = false;
+	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
+	private DoubleDataPointFactory m_doubleDataPointFactory = new DoubleDataPointFactoryImpl();
 
+	private final KairosDataPointFactory m_kairosDataPointFactory;
 
-    public CQLQueryRunner(Session session, KairosDataPointFactory kairosDataPointFactory) {
-        this.session = session;
-        serializer = new DataPointsRowKeySerializer();
-        m_kairosDataPointFactory = kairosDataPointFactory;
-        queryStatement = session.prepare("SELECT column1, value FROM data_points WHERE key =? AND column1 > ? and column1 < ? ");
-    }
+	public CQLQueryRunner(Session session, PreparedStatement dataPointQuery,
+			KairosDataPointFactory kairosDataPointFactory,
+			List<DataPointsRowKey> rowKeys, long startTime, long endTime,
+			QueryCallback csResult,
+			int singleRowReadSize, int multiRowReadSize, int limit, Order order)
+	{
+		m_session = session;
+		m_dataPointQuery = dataPointQuery;
 
-    DataPointsRowKeySerializer serializer;
+		m_rowKeys = rowKeys;
+		m_kairosDataPointFactory = kairosDataPointFactory;
+		long m_tierRowTime = rowKeys.get(0).getTimestamp();
+		if (startTime < m_tierRowTime)
+			m_startTime = 0;
+		else
+			m_startTime = getColumnName(m_tierRowTime, startTime);
 
-    public List<ListenableFuture<Pair<DataPointsRowKey, List<Pair<Integer, ByteBuffer>>>>> queryForDataPoints(CQLQueryRunnerParams queryRunnerParams) throws ExecutionException, InterruptedException {
+		if (endTime > (m_tierRowTime + ROW_WIDTH))
+			m_endTime = getColumnName(m_tierRowTime, m_tierRowTime + ROW_WIDTH) +1;
+		else
+			m_endTime = getColumnName(m_tierRowTime, endTime) + 1; //add 1 so we get 0x1 for last bit
 
-        List<ListenableFuture<Pair<DataPointsRowKey, List<Pair<Integer, ByteBuffer>>>>> asyncResults = queryRunnerParams.getRowKeys().stream()
-                .map(dataPointsRowKey -> getSingleQueryFuture(dataPointsRowKey, queryRunnerParams.getStartTime(), queryRunnerParams.getEndTime(), queryRunnerParams.isDescending()))
-                .collect(toList());
+		m_queryCallback = csResult;
+		m_singleRowReadSize = singleRowReadSize;
+		m_multiRowReadSize = multiRowReadSize;
 
-        return asyncResults;
+		if (limit != 0)
+		{
+			m_limit = true;
+			m_singleRowReadSize = limit;
+			m_multiRowReadSize = limit;
+		}
 
-    }
+		if (order == Order.DESC)
+			m_descending = true;
+	}
 
-    private ListenableFuture<Pair<DataPointsRowKey, List<Pair<Integer, ByteBuffer>>>> getSingleQueryFuture(DataPointsRowKey row, int startTime, int endTime, boolean descending) {
-        ListenableFuture<List<Pair<Integer, ByteBuffer>>> future = sliceQuery(row, startTime, endTime, descending);
-        return transform(future, (Function<List<Pair<Integer, ByteBuffer>>, Pair<DataPointsRowKey, List<Pair<Integer, ByteBuffer>>>>) input -> of(row, input));
-    }
+	public void runQuery() throws IOException
+	{
+		BoundStatement query = m_dataPointQuery.bind();
+		List<ByteBuffer> rowKeyList = new ArrayList<>(m_rowKeys.size());
+		for(DataPointsRowKey k : m_rowKeys) {
+			rowKeyList.add(ROW_KEY_SERIALIZER.toByteBuffer(k));
+		}
+		query.setList(0, rowKeyList);
 
-    private ListenableFuture<List<Pair<Integer, ByteBuffer>>> sliceQuery(DataPointsRowKey row, int startTime, int endTime, boolean descending) {
-        ByteBuffer startRange = cint().serialize(startTime, NEWEST_SUPPORTED);
-        ByteBuffer endRange = cint().serialize(endTime, NEWEST_SUPPORTED);
+		ByteBuffer startRange = cint().serialize(m_startTime, NEWEST_SUPPORTED);
+		ByteBuffer endRange = cint().serialize(m_endTime, NEWEST_SUPPORTED);
 
+		query.setBytes(1, startRange);
+		query.setBytes(2, endRange);
 
-        ListenableFuture<List<Pair<Integer, ByteBuffer>>> mappedResult = transform(session.executeAsync(queryStatement.bind(serializer.toByteBuffer(row), startRange, endRange)),
-                (ResultSet rows) ->
-                        stream(rows.all().spliterator(), false)
-                                .map(this::rowToValueData)
-                                .collect(toList()), executor);
+		/* This will only work if the data queries is all for the same metric / tag set as the CachedSearchResult assumes data points comming in sets */
+		ResultSet rs = m_session.execute(query);
 
-        return mappedResult;
-    }
+		for ( Row r : rs ) {
 
-    private Pair<Integer, ByteBuffer> rowToValueData(Row r) {
-        return of((Integer) cint().deserialize(r.getBytes(RANGE_KEY), NEWEST_SUPPORTED), r.getBytes(VALUE_COLUMN));
-    }
-
-    public void runCQLQuery(CQLQueryRunnerParams params, QueryCallback callback) {
-        try {
-            List<ListenableFuture<Pair<DataPointsRowKey, List<Pair<Integer, ByteBuffer>>>>> pairs = this.queryForDataPoints(params);
-
-            ListenableFuture<List<Pair<DataPointsRowKey, List<Pair<Integer, ByteBuffer>>>>> futures = successfulAsList(pairs);
-
-            pairs.stream().forEach(future -> transform(future, new Function<Pair<DataPointsRowKey, List<Pair<Integer, ByteBuffer>>>, Object>() {
-
-                @Nullable
-                @Override
-                public Object apply(Pair<DataPointsRowKey, List<Pair<Integer, ByteBuffer>>> resultPair) {
-                    try {
-                        writeColumnsCQL(resultPair.getKey(), resultPair.getValue(), callback);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    return resultPair;
-                }
-            }));
-
-            futures.get();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    private synchronized void writeColumnsCQL(DataPointsRowKey rowKey, List<Pair<Integer, ByteBuffer>> columns, QueryCallback queryCallback)
-            throws IOException {
-        if (columns.size() != 0) {
-            Map<String, String> tags = rowKey.getTags();
-            String type = rowKey.getDataType();
-
-            queryCallback.startDataPointSet(type, tags);
-
-            DataPointFactory dataPointFactory = m_kairosDataPointFactory.getFactoryForDataStoreType(type);
-
-            for (Pair<Integer, ByteBuffer> column : columns) {
-                int columnTime = column.getLeft();
-
-                ByteBuffer value = column.getValue();
-                long timestamp = getColumnTimestamp(rowKey.getTimestamp(), columnTime);
-
-                if (type == LegacyDataPointFactory.DATASTORE_TYPE) {
-                    if (isLongValue(columnTime)) {
-                        queryCallback.addDataPoint(
-                                new LegacyLongDataPoint(timestamp,
-                                        ValueSerializer.getLongFromByteBuffer(value)));
-                    } else {
-                        queryCallback.addDataPoint(
-                                new LegacyDoubleDataPoint(timestamp,
-                                        ValueSerializer.getDoubleFromByteBuffer(value)));
-                    }
-                } else {
-                    queryCallback.addDataPoint(
-                            dataPointFactory.getDataPoint(timestamp, KDataInput.createInput(value.array())));
-                }
-            }
-        }
-    }
-
+		}
+	}
 }

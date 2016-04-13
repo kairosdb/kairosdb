@@ -38,10 +38,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.*;
 
 public class QueryRunner
 {
+	public static final Logger logger = LoggerFactory.getLogger(QueryRunner.class);
 	public static final DataPointsRowKeySerializer ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
 	private Keyspace m_keyspace;
@@ -68,6 +72,9 @@ public class QueryRunner
 		m_keyspace = keyspace;
 		m_columnFamily = columnFamily;
 		m_rowKeys = rowKeys;
+
+		logger.info("rowKeys.size={}", m_rowKeys.size());
+
 		m_kairosDataPointFactory = kairosDataPointFactory;
 		long m_tierRowTime = rowKeys.get(0).getTimestamp();
 		if (startTime < m_tierRowTime)

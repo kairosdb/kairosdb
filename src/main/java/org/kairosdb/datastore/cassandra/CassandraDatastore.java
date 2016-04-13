@@ -112,6 +112,8 @@ public class CassandraDatastore implements Datastore
 
 	public static final String QUERY_ROW_KEY_INDEX = "SELECT column1 FROM row_key_index WHERE key = ? AND column1 >= ? and column1 <=?";
 
+	public static final String QUERY_DATA_POINTS = "SELECT column1, value FROM data_points WHERE key IN ( ? ) AND column1 >= ? and column1 < ?";
+
 	public static final int LONG_FLAG = 0x0;
 	public static final int FLOAT_FLAG = 0x1;
 
@@ -133,27 +135,23 @@ public class CassandraDatastore implements Datastore
 	private final Cluster m_cluster;
 	private final Keyspace m_keyspace;
 
-	//new properties
-	CassandraClient m_cassandraClient;
+	private final CassandraClient m_cassandraClient;
+	private final Session m_session;
 
-	private Session m_session;
 	private final PreparedStatement m_psInsertData;
 	private final PreparedStatement m_psInsertRowKey;
 	private final PreparedStatement m_psInsertString;
 	private final PreparedStatement m_psQueryStringIndex;
 	private final PreparedStatement m_psQueryRowKeyIndex;
+	private final PreparedStatement m_psQueryDataPoints;
 
 	private BatchStatement m_batchStatement;
 	private final Object m_batchLock = new Object();
-	//End new props
 
 	private String m_keyspaceName;
 	private int m_singleRowReadSize;
 	private int m_multiRowSize;
 	private int m_multiRowReadSize;
-	//private WriteBuffer<DataPointsRowKey, Integer, byte[]> m_dataPointWriteBuffer;
-	//private WriteBuffer<String, DataPointsRowKey, String> m_rowKeyWriteBuffer;
-	//private WriteBuffer<String, String, String> m_stringIndexWriteBuffer;
 
 	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
 	private DataCache<String> m_metricNameCache = new DataCache<String>(1024);
@@ -189,6 +187,7 @@ public class CassandraDatastore implements Datastore
 		m_psInsertString = m_session.prepare(STRING_INDEX_INSERT);
 		m_psQueryStringIndex = m_session.prepare(QUERY_STRING_INDEX);
 		m_psQueryRowKeyIndex = m_session.prepare(QUERY_ROW_KEY_INDEX);
+		m_psQueryDataPoints = m_session.prepare(QUERY_DATA_POINTS);
 
 		try
 		{
@@ -640,7 +639,7 @@ public class CassandraDatastore implements Datastore
 		mm.setCheckRate(1);
 		try
 		{
-			//TODO: Run this with multiple threads
+			// TODO: Run this with multiple threads - not easily possible with how QueryCallback behaves
 			for (QueryRunner runner : runners)
 			{
 				runner.runQuery();

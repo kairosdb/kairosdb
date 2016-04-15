@@ -590,7 +590,7 @@ public class CassandraDatastore implements Datastore
 		long currentTimeTier = 0L;
 		String currentType = null;
 
-		List<QueryRunner> runners = new ArrayList<QueryRunner>();
+		List<CQLQueryRunner> runners = new ArrayList<CQLQueryRunner>();
 		List<DataPointsRowKey> queryKeys = new ArrayList<DataPointsRowKey>();
 
 		MemoryMonitor mm = new MemoryMonitor(20);
@@ -610,7 +610,7 @@ public class CassandraDatastore implements Datastore
 			}
 			else
 			{
-				runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS, m_kairosDataPointFactory,
+				runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
 						queryKeys,
 						query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
 						m_multiRowReadSize, query.getLimit(), query.getOrder()));
@@ -627,7 +627,7 @@ public class CassandraDatastore implements Datastore
 		//There may be stragglers that are not ran
 		if (!queryKeys.isEmpty())
 		{
-			runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS, m_kairosDataPointFactory,
+			runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
 					queryKeys,
 					query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
 					m_multiRowReadSize, query.getLimit(), query.getOrder()));
@@ -640,7 +640,7 @@ public class CassandraDatastore implements Datastore
 		try
 		{
 			// TODO: Run this with multiple threads - not easily possible with how QueryCallback behaves
-			for (QueryRunner runner : runners)
+			for (CQLQueryRunner runner : runners)
 			{
 				runner.runQuery();
 

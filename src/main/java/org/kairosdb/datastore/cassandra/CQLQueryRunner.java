@@ -128,7 +128,7 @@ public class CQLQueryRunner
 			m_queryCallback.startDataPointSet(type, tags);
 
 			for (Row r : rs) {
-				int columnTime = r.getInt("column1");
+				int columnTime = (Integer) cint().deserialize(r.getBytes("column1"), NEWEST_SUPPORTED);
 				ByteBuffer value = r.getBytes("value");
 
 				long timestamp = getColumnTimestamp(k.getTimestamp(), columnTime);

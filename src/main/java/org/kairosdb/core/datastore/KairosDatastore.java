@@ -466,7 +466,7 @@ public class KairosDatastore
 					{
 						returnedRows = cachedResults.getRows();
 						ThreadReporter.addDataPoint(METRIC_QUERY_CACHE_READ_TIME, System.currentTimeMillis() - queryStartTime);
-						logger.debug("Cache HIT!");
+						logger.info("cache hit={}", m_metric.getName());
 					}
 				}
 

@@ -37,6 +37,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +76,12 @@ public class QueryRunner
 		m_rowKeys = rowKeys;
 
 		logger.info("rowKeys.size={}", m_rowKeys.size());
+		Set<String> metricSet = new TreeSet<String>();
+		for(DataPointsRowKey key : m_rowKeys) {
+			metricSet.add(key.getMetricName());
+		}
+		logger.info("rowKeys.metrics.size={}", metricSet.size());
+		logger.info("rowKeys.metrics.names={}", metricSet.toArray());
 
 		m_kairosDataPointFactory = kairosDataPointFactory;
 		long m_tierRowTime = rowKeys.get(0).getTimestamp();

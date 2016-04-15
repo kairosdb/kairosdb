@@ -27,9 +27,12 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.BoundStatement;
@@ -74,6 +77,15 @@ public class CQLQueryRunner
 
 		m_rowKeys = rowKeys;
 		m_kairosDataPointFactory = kairosDataPointFactory;
+
+		logger.info("rowKeys.size={}", m_rowKeys.size());
+		Set<String> metricSet = new TreeSet<String>();
+		for(DataPointsRowKey key : m_rowKeys) {
+			metricSet.add(key.getMetricName());
+		}
+		logger.info("rowKeys.metrics.size={}", metricSet.size());
+		logger.info("rowKeys.metrics.names={}", metricSet.toArray());
+
 		long m_tierRowTime = rowKeys.get(0).getTimestamp();
 		if (startTime < m_tierRowTime)
 			m_startTime = 0;
@@ -100,9 +112,20 @@ public class CQLQueryRunner
 			m_descending = true;
 	}
 
+	private static class KeyFuturePair {
+		DataPointsRowKey key;
+		ResultSetFuture future;
+
+		public KeyFuturePair(DataPointsRowKey key, ResultSetFuture future) {
+			this.key = key;
+			this.future = future;
+		}
+	}
+
 	public void runQuery() throws IOException
 	{
 		BoundStatement query = m_dataPointQuery.bind();
+		query.setFetchSize(1000);
 
 		ByteBuffer startRange = cint().serialize(m_startTime, NEWEST_SUPPORTED);
 		ByteBuffer endRange = cint().serialize(m_endTime, NEWEST_SUPPORTED);
@@ -110,10 +133,18 @@ public class CQLQueryRunner
 		query.setBytes(1, startRange);
 		query.setBytes(2, endRange);
 
+		List<KeyFuturePair> futureResults = new ArrayList<>(m_rowKeys.size());
+
 		for( DataPointsRowKey k : m_rowKeys) {
 			query.setBytes(0, ROW_KEY_SERIALIZER.toByteBuffer(k));
 
-			ResultSet rs = m_session.execute(query);
+			ResultSetFuture rs = m_session.executeAsync(query);
+			futureResults.add(new KeyFuturePair(k, rs));
+		}
+
+		for(KeyFuturePair f : futureResults) {
+			ResultSet rs = f.future.getUninterruptibly();
+			DataPointsRowKey k = f.key;
 
 			if(rs.isExhausted()) {
 				continue;

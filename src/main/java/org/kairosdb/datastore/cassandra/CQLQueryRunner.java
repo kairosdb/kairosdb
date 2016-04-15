@@ -103,11 +103,6 @@ public class CQLQueryRunner
 	public void runQuery() throws IOException
 	{
 		BoundStatement query = m_dataPointQuery.bind();
-		List<ByteBuffer> rowKeyList = new ArrayList<>(m_rowKeys.size());
-		for(DataPointsRowKey k : m_rowKeys) {
-			rowKeyList.add(ROW_KEY_SERIALIZER.toByteBuffer(k));
-		}
-		query.setList(0, rowKeyList);
 
 		ByteBuffer startRange = cint().serialize(m_startTime, NEWEST_SUPPORTED);
 		ByteBuffer endRange = cint().serialize(m_endTime, NEWEST_SUPPORTED);
@@ -115,11 +110,44 @@ public class CQLQueryRunner
 		query.setBytes(1, startRange);
 		query.setBytes(2, endRange);
 
-		/* This will only work if the data queries is all for the same metric / tag set as the CachedSearchResult assumes data points comming in sets */
-		ResultSet rs = m_session.execute(query);
+		for( DataPointsRowKey k : m_rowKeys) {
+			query.setBytes(0, ROW_KEY_SERIALIZER.toByteBuffer(k));
 
-		for ( Row r : rs ) {
+			ResultSet rs = m_session.execute(query);
 
+			if(rs.isExhausted()) {
+				continue;
+			}
+
+			Map<String, String> tags = k.getTags();
+			String type = k.getDataType();
+
+			DataPointFactory dataPointFactory = null;
+			dataPointFactory = m_kairosDataPointFactory.getFactoryForDataStoreType(type);
+
+			m_queryCallback.startDataPointSet(type, tags);
+
+			for (Row r : rs) {
+				int columnTime = r.getInt("column1");
+				ByteBuffer value = r.getBytes("value");
+
+				long timestamp = getColumnTimestamp(k.getTimestamp(), columnTime);
+
+				if (type == LegacyDataPointFactory.DATASTORE_TYPE) {
+					if (isLongValue(columnTime)) {
+						m_queryCallback.addDataPoint(
+								new LegacyLongDataPoint(timestamp,
+										ValueSerializer.getLongFromByteBuffer(value)));
+					} else {
+						m_queryCallback.addDataPoint(
+								new LegacyDoubleDataPoint(timestamp,
+										ValueSerializer.getDoubleFromByteBuffer(value)));
+					}
+				} else {
+					m_queryCallback.addDataPoint(
+							dataPointFactory.getDataPoint(timestamp, KDataInput.createInput(value.array())));
+				}
+			}
 		}
 	}
 }

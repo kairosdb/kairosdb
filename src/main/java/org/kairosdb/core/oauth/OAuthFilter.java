@@ -1,16 +1,34 @@
 package org.kairosdb.core.oauth;
 
-import com.google.inject.Inject;
-import com.sun.jersey.oauth.signature.*;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.kairosdb.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.*;
+import com.google.inject.Inject;
+import com.sun.jersey.oauth.signature.OAuthParameters;
+import com.sun.jersey.oauth.signature.OAuthRequest;
+import com.sun.jersey.oauth.signature.OAuthSecrets;
+import com.sun.jersey.oauth.signature.OAuthSignature;
+import com.sun.jersey.oauth.signature.OAuthSignatureException;
 
 /**
  Created with IntelliJ IDEA.
@@ -120,9 +138,13 @@ public class OAuthFilter implements Filter
 		}
 
 		@Override
-		public String getRequestURL()
+        public URL getRequestURL()
 		{
-			return (m_request.getRequestURL().toString());
+            try {
+                return new URL(m_request.getRequestURL().toString());
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
 		}
 
 		@Override

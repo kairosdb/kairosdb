@@ -16,9 +16,13 @@
 
 package org.kairosdb.core.http;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import com.google.inject.servlet.GuiceFilter;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
@@ -40,12 +44,9 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.google.inject.servlet.GuiceFilter;
 
 
 public class WebServer implements KairosDBService
@@ -193,7 +194,11 @@ public class WebServer implements KairosDBService
 			if (m_server != null)
 			{
 				m_server.stop();
-				m_server.join();
+                // m_server.join();
+                // to avoid NPE
+                if (m_server.getThreadPool() != null) {
+                    m_server.getThreadPool().join();
+                }
 			}
 		}
 		catch (Exception e)

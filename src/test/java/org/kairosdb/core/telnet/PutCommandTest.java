@@ -15,8 +15,18 @@
  */
 package org.kairosdb.core.telnet;
 
-import com.google.common.collect.ImmutableSortedMap;
-import org.jboss.netty.channel.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+
+import java.net.SocketAddress;
+import java.util.Collections;
+
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelConfig;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
@@ -25,16 +35,16 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.QueryQueuingManager;
+import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.util.ValidationException;
 
-import java.net.SocketAddress;
-import java.util.Collections;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import com.google.common.collect.ImmutableSortedMap;
 
 public class PutCommandTest
 {
@@ -318,16 +328,16 @@ public class PutCommandTest
 			return null;
 		}
 
-		@Override
-		public Object getAttachment()
-		{
-			return null;
-		}
-
-		@Override
-		public void setAttachment(Object o)
-		{
-		}
+        // @Override
+        // public Object getAttachment()
+        // {
+        // return null;
+        // }
+        //
+        // @Override
+        // public void setAttachment(Object o)
+        // {
+        // }
 
 		@Override
 		public int compareTo(Channel o)

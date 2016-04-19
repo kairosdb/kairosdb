@@ -124,31 +124,35 @@ public class CQLQueryRunner
 
 	public void runQuery() throws IOException
 	{
-		BoundStatement query = m_dataPointQuery.bind();
-		query.setFetchSize(1000);
-
 		ByteBuffer startRange = cint().serialize(m_startTime, NEWEST_SUPPORTED);
 		ByteBuffer endRange = cint().serialize(m_endTime, NEWEST_SUPPORTED);
 
-		query.setBytes(1, startRange);
-		query.setBytes(2, endRange);
-
 		List<KeyFuturePair> futureResults = new ArrayList<>(m_rowKeys.size());
 
-		for( DataPointsRowKey k : m_rowKeys) {
-			query.setBytes(0, ROW_KEY_SERIALIZER.toByteBuffer(k));
+		for(DataPointsRowKey k : m_rowKeys) {
+			BoundStatement query = m_dataPointQuery.bind();
+			query.setFetchSize(1000);
+			query.setBytes(1, startRange);
+			query.setBytes(2, endRange);
+
+			ByteBuffer rowKey = ROW_KEY_SERIALIZER.toByteBuffer(k).duplicate();
+			query.setBytes(0, rowKey);
 
 			ResultSetFuture rs = m_session.executeAsync(query);
 			futureResults.add(new KeyFuturePair(k, rs));
 		}
 
 		for(KeyFuturePair f : futureResults) {
-			ResultSet rs = f.future.getUninterruptibly();
-			DataPointsRowKey k = f.key;
-
-			if(rs.isExhausted()) {
+			ResultSet rs = null;
+			try {
+				rs = f.future.getUninterruptibly();
+			}
+			catch(Throwable t)	{
+				logger.error("Failed to get result", t);
 				continue;
 			}
+
+			DataPointsRowKey k = f.key;
 
 			Map<String, String> tags = k.getTags();
 			String type = k.getDataType();
@@ -157,7 +161,6 @@ public class CQLQueryRunner
 			dataPointFactory = m_kairosDataPointFactory.getFactoryForDataStoreType(type);
 
 			m_queryCallback.startDataPointSet(type, tags);
-
 			for (Row r : rs) {
 				int columnTime = (Integer) cint().deserialize(r.getBytes("column1"), NEWEST_SUPPORTED);
 				ByteBuffer value = r.getBytes("value");

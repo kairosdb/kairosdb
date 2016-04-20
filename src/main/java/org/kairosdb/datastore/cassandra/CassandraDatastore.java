@@ -25,22 +25,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import me.prettyprint.cassandra.model.ConfigurableConsistencyLevel;
-import me.prettyprint.cassandra.serializers.BytesArraySerializer;
-import me.prettyprint.cassandra.serializers.IntegerSerializer;
-import me.prettyprint.cassandra.serializers.StringSerializer;
-import me.prettyprint.cassandra.service.CassandraHostConfigurator;
-import me.prettyprint.cassandra.service.ColumnSliceIterator;
-import me.prettyprint.cassandra.service.ThriftKsDef;
-import me.prettyprint.hector.api.Cluster;
-import me.prettyprint.hector.api.Keyspace;
-import me.prettyprint.hector.api.Serializer;
-import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
-import me.prettyprint.hector.api.ddl.ComparatorType;
-import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
-import me.prettyprint.hector.api.exceptions.HectorException;
-import me.prettyprint.hector.api.factory.HFactory;
-import me.prettyprint.hector.api.query.SliceQuery;
 import org.h2.command.Prepared;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -119,7 +103,7 @@ public class CassandraDatastore implements Datastore
 
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
-	public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
+	public static final long ROW_WIDTH = 1814400000L;
 
 	public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
 
@@ -131,9 +115,6 @@ public class CassandraDatastore implements Datastore
 	public static final String ROW_KEY_TAG_NAMES = "tag_names";
 	public static final String ROW_KEY_TAG_VALUES = "tag_values";
 	private static final Charset UTF_8 = Charset.forName("UTF-8");
-
-	private final Cluster m_cluster;
-	private final Keyspace m_keyspace;
 
 	private final CassandraClient m_cassandraClient;
 	private final Session m_session;
@@ -149,9 +130,6 @@ public class CassandraDatastore implements Datastore
 	private final Object m_batchLock = new Object();
 
 	private String m_keyspaceName;
-	private int m_singleRowReadSize;
-	private int m_multiRowSize;
-	private int m_multiRowReadSize;
 
 	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
 	private DataCache<String> m_metricNameCache = new DataCache<String>(1024);
@@ -169,10 +147,9 @@ public class CassandraDatastore implements Datastore
 	private List<RowKeyListener> m_rowKeyListeners = Collections.EMPTY_LIST;
 
 	@Inject
-	public CassandraDatastore(@Named("HOSTNAME")final String hostname,
+	public CassandraDatastore(@Named("HOSTNAME") final String hostname,
 			CassandraClient cassandraClient,
 			CassandraConfiguration cassandraConfiguration,
-			HectorConfiguration configuration,
 			KairosDataPointFactory kairosDataPointFactory) throws DatastoreException
 	{
 		m_cassandraClient = cassandraClient;
@@ -182,50 +159,20 @@ public class CassandraDatastore implements Datastore
 
 		m_session = m_cassandraClient.getKeyspaceSession();
 
-		m_psInsertData = m_session.prepare(DATA_POINTS_INSERT);
-		m_psInsertRowKey = m_session.prepare(ROW_KEY_INDEX_INSERT);
-		m_psInsertString = m_session.prepare(STRING_INDEX_INSERT);
-		m_psQueryStringIndex = m_session.prepare(QUERY_STRING_INDEX);
-		m_psQueryRowKeyIndex = m_session.prepare(QUERY_ROW_KEY_INDEX);
-		m_psQueryDataPoints = m_session.prepare(QUERY_DATA_POINTS);
+		m_psInsertData = m_session.prepare(DATA_POINTS_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelDataPoint());
+		m_psInsertRowKey = m_session.prepare(ROW_KEY_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
+		m_psInsertString = m_session.prepare(STRING_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
+		m_psQueryStringIndex = m_session.prepare(QUERY_STRING_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
+		m_psQueryRowKeyIndex = m_session.prepare(QUERY_ROW_KEY_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
+		m_psQueryDataPoints = m_session.prepare(QUERY_DATA_POINTS).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
 
-		try
-		{
-			m_cassandraConfiguration = cassandraConfiguration;
-			m_singleRowReadSize = m_cassandraConfiguration.getSingleRowReadSize();
-			m_multiRowSize = m_cassandraConfiguration.getMultiRowSize();
-			m_multiRowReadSize = m_cassandraConfiguration.getMultiRowReadSize();
-			m_keyspaceName = m_cassandraConfiguration.getKeyspaceName();
+		m_cassandraConfiguration = cassandraConfiguration;
+		m_keyspaceName = m_cassandraConfiguration.getKeyspaceName();
 
-			m_rowKeyCache = new DataCache<DataPointsRowKey>(m_cassandraConfiguration.getRowKeyCacheSize());
-			m_metricNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
-			m_tagNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
-			m_tagValueCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
-
-			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
-			int threadCount = hostConfig.buildCassandraHosts().length +3;
-
-			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
-					hostConfig, m_cassandraConfiguration.getCassandraAuthentication());
-
-			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
-
-			if (keyspaceDef == null) {
-				createSchema(m_cassandraConfiguration.getReplicationFactor());
-			}
-
-			//set global consistency level
-			ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
-			confConsLevel.setDefaultReadConsistencyLevel(m_cassandraConfiguration.getDataReadLevel().getHectorLevel());
-			confConsLevel.setDefaultWriteConsistencyLevel(m_cassandraConfiguration.getDataWriteLevel().getHectorLevel());
-
-			//create keyspace instance with specified consistency
-			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
-		}
-		catch (HectorException e)
-		{
-			throw new DatastoreException(e);
-		}
+		m_rowKeyCache = new DataCache<DataPointsRowKey>(m_cassandraConfiguration.getRowKeyCacheSize());
+		m_metricNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
+		m_tagNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
+		m_tagValueCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
 	}
 
 	private WriteBufferStats createWriteBufferStats(final String cfName, final String hostname) {
@@ -276,92 +223,6 @@ public class CassandraDatastore implements Datastore
 		}
 	}
 
-	private void createSchema(int replicationFactor)
-	{
-		/*
-		CREATE TABLE data_points (
-		  key blob,
-		  column1 blob,
-		  value blob,
-		  PRIMARY KEY ((key), column1)
-		) WITH COMPACT STORAGE AND
-		  bloom_filter_fp_chance=0.010000 AND
-		  caching='KEYS_ONLY' AND
-		  comment='' AND
-		  dclocal_read_repair_chance=0.100000 AND
-		  gc_grace_seconds=864000 AND
-		  index_interval=128 AND
-		  read_repair_chance=1.000000 AND
-		  replicate_on_write='true' AND
-		  populate_io_cache_on_flush='false' AND
-		  default_time_to_live=0 AND
-		  speculative_retry='NONE' AND
-		  memtable_flush_period_in_ms=0 AND
-		  compaction={'timestamp_resolution': 'MILLISECONDS', 'max_sstable_age_days': '7', 'base_time_seconds': '600', 'class': 'DateTieredCompactionStrategy'} AND
-		  compression={'sstable_compression': 'LZ4Compressor'};
-
-      CREATE TABLE row_key_index (
-		  key blob,
-		  column1 blob,
-		  value blob,
-		  PRIMARY KEY ((key), column1)
-		) WITH COMPACT STORAGE AND
-		  bloom_filter_fp_chance=0.100000 AND
-		  caching='KEYS_ONLY' AND
-		  comment='' AND
-		  dclocal_read_repair_chance=0.100000 AND
-		  gc_grace_seconds=864000 AND
-		  index_interval=128 AND
-		  read_repair_chance=1.000000 AND
-		  replicate_on_write='true' AND
-		  populate_io_cache_on_flush='false' AND
-		  default_time_to_live=0 AND
-		  speculative_retry='NONE' AND
-		  memtable_flush_period_in_ms=0 AND
-		  compaction={'class': 'LeveledCompactionStrategy'} AND
-		  compression={'sstable_compression': 'LZ4Compressor'};
-
-		CREATE TABLE string_index (
-		  key blob,
-		  column1 text,
-		  value blob,
-		  PRIMARY KEY ((key), column1)
-		) WITH COMPACT STORAGE AND
-		  bloom_filter_fp_chance=0.100000 AND
-		  caching='KEYS_ONLY' AND
-		  comment='' AND
-		  dclocal_read_repair_chance=0.100000 AND
-		  gc_grace_seconds=864000 AND
-		  index_interval=128 AND
-		  read_repair_chance=1.000000 AND
-		  replicate_on_write='true' AND
-		  populate_io_cache_on_flush='false' AND
-		  default_time_to_live=0 AND
-		  speculative_retry='NONE' AND
-		  memtable_flush_period_in_ms=0 AND
-		  compaction={'class': 'LeveledCompactionStrategy'} AND
-		  compression={'sstable_compression': 'LZ4Compressor'};
-
-
-		 */
-		/*List<ColumnFamilyDefinition> cfDef = new ArrayList<ColumnFamilyDefinition>();
-
-		cfDef.add(HFactory.createColumnFamilyDefinition(
-				m_keyspaceName, CF_DATA_POINTS, ComparatorType.BYTESTYPE));
-
-		cfDef.add(HFactory.createColumnFamilyDefinition(
-				m_keyspaceName, CF_ROW_KEY_INDEX, ComparatorType.BYTESTYPE));
-
-		cfDef.add(HFactory.createColumnFamilyDefinition(
-				m_keyspaceName, CF_STRING_INDEX, ComparatorType.UTF8TYPE));
-
-		KeyspaceDefinition newKeyspace = HFactory.createKeyspaceDefinition(
-				m_keyspaceName, ThriftKsDef.DEF_STRATEGY_CLASS,
-				replicationFactor, cfDef);
-
-		m_cluster.addKeyspace(newKeyspace, true);*/
-	}
-
 	public void increaseMaxBufferSizes()
 	{
 		/*m_dataPointWriteBuffer.increaseMaxBufferSize();
@@ -387,10 +248,6 @@ public class CassandraDatastore implements Datastore
 	@Override
 	public void close() throws InterruptedException
 	{
-		/*m_dataPointWriteBuffer.close();
-		m_rowKeyWriteBuffer.close();
-		m_stringIndexWriteBuffer.close();*/
-
 		m_session.close();
 		m_cassandraClient.close();
 	}
@@ -603,7 +460,7 @@ public class CassandraDatastore implements Datastore
 			if (currentType == null)
 				currentType = rowKey.getDataType();
 
-			if ((rowKey.getTimestamp() == currentTimeTier) && (queryKeys.size() < m_multiRowSize) &&
+			if ((rowKey.getTimestamp() == currentTimeTier) &&
 					(currentType.equals(rowKey.getDataType())))
 			{
 				queryKeys.add(rowKey);
@@ -612,8 +469,7 @@ public class CassandraDatastore implements Datastore
 			{
 				runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
 						queryKeys,
-						query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
-						m_multiRowReadSize, query.getLimit(), query.getOrder()));
+						query.getStartTime(), query.getEndTime(), queryCallback, query.getLimit(), query.getOrder()));
 
 				queryKeys = new ArrayList<DataPointsRowKey>();
 				queryKeys.add(rowKey);
@@ -629,8 +485,7 @@ public class CassandraDatastore implements Datastore
 		{
 			runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
 					queryKeys,
-					query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
-					m_multiRowReadSize, query.getLimit(), query.getOrder()));
+					query.getStartTime(), query.getEndTime(), queryCallback, query.getLimit(), query.getOrder()));
 		}
 
 		ThreadReporter.addDataPoint(KEY_QUERY_TIME, System.currentTimeMillis() - startTime);
@@ -667,7 +522,7 @@ public class CassandraDatastore implements Datastore
 			deleteAll = true;
 
 		Iterator<DataPointsRowKey> rowKeyIterator = getKeysForQueryIterator(deleteQuery);
-		List<DataPointsRowKey> partialRows = new ArrayList<DataPointsRowKey>();
+		List<DataPointsRowKey> partialRows = new ArrayList<>();
 
 		while (rowKeyIterator.hasNext())
 		{

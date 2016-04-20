@@ -16,27 +16,23 @@ import java.util.List;
  */
 public class CassandraClientImpl implements CassandraClient
 {
-	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
-	private static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
-
 	private final Cluster m_cluster;
 	private String m_keyspace;
 
 	@Inject
-	public CassandraClientImpl(@Named(KEYSPACE_PROPERTY)String keyspace,
-			@Named(HOST_LIST_PROPERTY)String hostList)
+	public CassandraClientImpl(CassandraConfiguration config)
 	{
 		final Cluster.Builder builder = new Cluster.Builder()
 				.withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
-				.withQueryOptions(new QueryOptions().setConsistencyLevel(ConsistencyLevel.ONE));
+				.withQueryOptions(new QueryOptions().setConsistencyLevel(config.getDataReadLevel()));
 
-		for (String node : hostList.split(","))
+		for (String node : config.getHostList().split(","))
 		{
 			builder.addContactPoint(node.split(":")[0]);
 		}
 
 		m_cluster = builder.build();
-		m_keyspace = keyspace;
+		m_keyspace = config.getKeyspaceName();
 	}
 
 
@@ -63,6 +59,4 @@ public class CassandraClientImpl implements CassandraClient
 	{
 		m_cluster.close();
 	}
-
-
 }

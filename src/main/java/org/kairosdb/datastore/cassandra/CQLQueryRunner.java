@@ -57,8 +57,6 @@ public class CQLQueryRunner
 	private int m_startTime; // relative row time
 	private int m_endTime; // relative row time
 	private QueryCallback m_queryCallback;
-	private int m_singleRowReadSize;
-	private int m_multiRowReadSize;
 	private boolean m_limit = false;
 	private boolean m_descending = false;
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
@@ -70,21 +68,13 @@ public class CQLQueryRunner
 			KairosDataPointFactory kairosDataPointFactory,
 			List<DataPointsRowKey> rowKeys, long startTime, long endTime,
 			QueryCallback csResult,
-			int singleRowReadSize, int multiRowReadSize, int limit, Order order)
+			int limit, Order order)
 	{
 		m_session = session;
 		m_dataPointQuery = dataPointQuery;
 
 		m_rowKeys = rowKeys;
 		m_kairosDataPointFactory = kairosDataPointFactory;
-
-		logger.info("rowKeys.size={}", m_rowKeys.size());
-		Set<String> metricSet = new TreeSet<String>();
-		for(DataPointsRowKey key : m_rowKeys) {
-			metricSet.add(key.getMetricName());
-		}
-		logger.info("rowKeys.metrics.size={}", metricSet.size());
-		logger.info("rowKeys.metrics.names={}", metricSet.toArray());
 
 		long m_tierRowTime = rowKeys.get(0).getTimestamp();
 		if (startTime < m_tierRowTime)
@@ -98,18 +88,14 @@ public class CQLQueryRunner
 			m_endTime = getColumnName(m_tierRowTime, endTime) + 1; //add 1 so we get 0x1 for last bit
 
 		m_queryCallback = csResult;
-		m_singleRowReadSize = singleRowReadSize;
-		m_multiRowReadSize = multiRowReadSize;
 
-		if (limit != 0)
-		{
+		if (limit != 0) {
 			m_limit = true;
-			m_singleRowReadSize = limit;
-			m_multiRowReadSize = limit;
 		}
 
-		if (order == Order.DESC)
+		if (order == Order.DESC) {
 			m_descending = true;
+		}
 	}
 
 	private static class KeyFuturePair {

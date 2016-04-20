@@ -178,15 +178,12 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 			cassandraHost = System.getenv("CASSANDRA_HOST");
 		}
 
-		String hectorHost = "localhost:9160";
-		if (System.getenv("CASSANDRA_HECTOR_HOST") != null) {
-			hectorHost = System.getenv("CASSANDRA_HECTOR_HOST");
-		}
-
 		System.out.println("Starting Cassandra Connection: " + cassandraHost);
 
-		s_datastore = new CassandraDatastore("hostname", new CassandraClientImpl("kairosdb_tests", cassandraHost), new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
-				1000, 50000, "kairosdb_test"), new HectorConfiguration(hectorHost), dataPointFactory);
+		CassandraConfiguration cassandraConfig = new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
+				1000, 50000, cassandraHost, "kairosdb_test");
+
+		s_datastore = new CassandraDatastore("localhost", new CassandraClientImpl(cassandraConfig), cassandraConfig, dataPointFactory);
 
 		System.out.println("Creating KairosDataStore");
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,

@@ -131,6 +131,7 @@ public class CassandraDatastore implements Datastore
 	private String m_keyspaceName;
 
 	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
+
 	private DataCache<String> m_metricNameCache = new DataCache<String>(1024);
 	private DataCache<String> m_tagNameCache = new DataCache<String>(1024);
 	private DataCache<String> m_tagValueCache = new DataCache<String>(1024);

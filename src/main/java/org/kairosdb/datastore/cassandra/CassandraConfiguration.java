@@ -77,9 +77,11 @@ public class CassandraConfiguration
 			int multiRowReadSize,
 			int writeDelay,
 			int maxWriteSize,
+			String hostList,
 			String keyspaceName)
 	{
 		m_replicationFactor = replicationFactor;
+		m_hostList = hostList;
 		m_keyspaceName = keyspaceName;
 	}
 

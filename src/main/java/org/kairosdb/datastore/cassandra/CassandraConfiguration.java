@@ -75,15 +75,15 @@ public class CassandraConfiguration
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_USER)
-	private Optional<String> m_user;
+	private Optional<String> m_user = Optional.empty();
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_PASSWORD)
-	private Optional<String> m_password;
+	private Optional<String> m_password = Optional.empty();
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_ADDRESS_TRANSLATOR)
-	private Optional<AddressTranslater> m_addressTranslator;
+	private Optional<AddressTranslater> m_addressTranslator = Optional.empty();
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_PORT)

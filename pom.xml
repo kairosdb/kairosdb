@@ -21,6 +21,7 @@
         <assertj.version>2.3.0</assertj.version>
         <mockito.version>1.10.19</mockito.version>
         <json-path.version>2.0.0</json-path.version>
+	<skipTests>true</skipTests>
         <argLine />
     </properties>
 

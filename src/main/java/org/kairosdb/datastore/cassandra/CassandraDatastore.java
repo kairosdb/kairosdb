@@ -130,11 +130,11 @@ public class CassandraDatastore implements Datastore
 
 	private String m_keyspaceName;
 
-	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
+	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<>(1024);
 
-	private DataCache<String> m_metricNameCache = new DataCache<String>(1024);
-	private DataCache<String> m_tagNameCache = new DataCache<String>(1024);
-	private DataCache<String> m_tagValueCache = new DataCache<String>(1024);
+	private DataCache<String> m_metricNameCache = new DataCache<>(1024);
+	private DataCache<String> m_tagNameCache = new DataCache<>(1024);
+	private DataCache<String> m_tagValueCache = new DataCache<>(1024);
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
@@ -169,10 +169,10 @@ public class CassandraDatastore implements Datastore
 		m_cassandraConfiguration = cassandraConfiguration;
 		m_keyspaceName = m_cassandraConfiguration.getKeyspaceName();
 
-		m_rowKeyCache = new DataCache<DataPointsRowKey>(m_cassandraConfiguration.getRowKeyCacheSize());
-		m_metricNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
-		m_tagNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
-		m_tagValueCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
+		m_rowKeyCache = new DataCache<>(m_cassandraConfiguration.getRowKeyCacheSize());
+		m_metricNameCache = new DataCache<>(m_cassandraConfiguration.getStringCacheSize());
+		m_tagNameCache = new DataCache<>(m_cassandraConfiguration.getStringCacheSize());
+		m_tagValueCache = new DataCache<>(m_cassandraConfiguration.getStringCacheSize());
 	}
 
 	private WriteBufferStats createWriteBufferStats(final String cfName, final String hostname) {
@@ -447,8 +447,8 @@ public class CassandraDatastore implements Datastore
 		long currentTimeTier = 0L;
 		String currentType = null;
 
-		List<CQLQueryRunner> runners = new ArrayList<CQLQueryRunner>();
-		List<DataPointsRowKey> queryKeys = new ArrayList<DataPointsRowKey>();
+		List<CQLQueryRunner> runners = new ArrayList<>();
+		List<DataPointsRowKey> queryKeys = new ArrayList<>();
 
 		MemoryMonitor mm = new MemoryMonitor(20);
 		while (rowKeys.hasNext())
@@ -471,7 +471,7 @@ public class CassandraDatastore implements Datastore
 						queryKeys,
 						query.getStartTime(), query.getEndTime(), queryCallback, query.getLimit(), query.getOrder()));
 
-				queryKeys = new ArrayList<DataPointsRowKey>();
+				queryKeys = new ArrayList<>();
 				queryKeys.add(rowKey);
 				currentTimeTier = rowKey.getTimestamp();
 				currentType = rowKey.getDataType();
@@ -669,6 +669,7 @@ public class CassandraDatastore implements Datastore
 	{
 		final List<DataPointsRowKey> rowKeys = new ArrayList<>();
 		final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
+
 		ByteBuffer bMetricName;
 		try {
 			bMetricName = ByteBuffer.wrap(metricName.getBytes("UTF-8"));
@@ -713,6 +714,7 @@ public class CassandraDatastore implements Datastore
 			filterAndAddKeys(filterTags, rs, rowKeys);
 		}
 
+		logger.info("rowKeys.size={} start={} end={}", rowKeys.size(), startTime, endTime);
 		return rowKeys;
 	}
 

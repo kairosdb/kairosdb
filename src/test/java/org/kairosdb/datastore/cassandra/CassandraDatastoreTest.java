@@ -58,7 +58,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	{
 		for (DataPoint dataPoint : dps.getDataPoints())
 		{
-			s_datastore.putDataPoint(dps.getName(), dps.getTags(), dataPoint);
+			s_datastore.putDataPoint(dps.getName(), dps.getTags(), dataPoint, 0);
 		}
 	}
 
@@ -173,15 +173,26 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@BeforeClass
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
-		s_datastore = new CassandraDatastore(null, 1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
-				1000, 50000, "hostname", "kairosdb_test", new HectorConfiguration("localhost:9160"), dataPointFactory);
+		String cassandraHost = "localhost:9042";
+		if (System.getenv("CASSANDRA_HOST") != null) {
+			cassandraHost = System.getenv("CASSANDRA_HOST");
+		}
 
+		System.out.println("Starting Cassandra Connection: " + cassandraHost);
+
+		CassandraConfiguration cassandraConfig = new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
+				1000, 50000, cassandraHost, "kairosdb_test");
+
+		s_datastore = new CassandraDatastore("localhost", new CassandraClientImpl(cassandraConfig), cassandraConfig, dataPointFactory);
+
+		System.out.println("Creating KairosDataStore");
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
 				new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), "hostname",
-				dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory);
 
+		System.out.println("Loading Cassandra data");
 		loadCassandraData();
+		System.out.println("Loading data");
 		loadData();
 		Thread.sleep(2000);
 
@@ -278,7 +289,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public void test_deleteDataPoints_DeleteEntireRow() throws IOException, DatastoreException, InterruptedException
 	{
 		String metricToDelete = "MetricToDelete";
-		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
+		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, Long.MIN_VALUE, Long.MAX_VALUE);
 
 		CachedSearchResult res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
@@ -307,7 +318,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public void test_deleteDataPoints_DeleteColumnsSpanningRows() throws IOException, DatastoreException, InterruptedException
 	{
 		String metricToDelete = "OtherMetricToDelete";
-		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
+		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, Long.MIN_VALUE, Long.MAX_VALUE);
 
 		CachedSearchResult res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
@@ -430,18 +441,48 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		putDataPoints(set);
 	}
 
-	@Test(expected = DatastoreException.class)
-	public void test_TimestampsNegative() throws DatastoreException
-	{
-		DataPointSet set = new DataPointSet("testMetric");
-		set.addDataPoint(new LongDataPoint(-1, 1L));
-		putDataPoints(set);
-	}
-
 	private static CachedSearchResult createCache(String metricName) throws IOException
 	{
 		String tempFile = System.getProperty("java.io.tmpdir");
 		return CachedSearchResult.createCachedSearchResult(metricName,
 				tempFile + "/" + random.nextLong(), dataPointFactory);
+	}
+
+	@Test
+	public void test_setTTL() throws DatastoreException, InterruptedException
+	{
+		DataPointSet set = new DataPointSet("ttlMetric");
+		set.addTag("tag", "value");
+		set.addDataPoint(new LongDataPoint(1, 1L));
+		set.addDataPoint(new LongDataPoint(2, 2L));
+		set.addDataPoint(new LongDataPoint(0, 3L));
+		set.addDataPoint(new LongDataPoint(3, 4L));
+		set.addDataPoint(new LongDataPoint(4, 5L));
+		set.addDataPoint(new LongDataPoint(5, 6L));
+		putDataPoints(set);
+
+		s_datastore.putDataPoint("ttlMetric", set.getTags(),
+				new LongDataPoint(50, 7L), 1);
+
+		Thread.sleep(2000);
+		Map<String, String> tags = new TreeMap<String, String>();
+		QueryMetric query = new QueryMetric(0, 500, 0, "ttlMetric");
+
+		query.setTags(tags);
+
+		DatastoreQuery dq = super.s_datastore.createQuery(query);
+
+		List<DataPointGroup> results = dq.execute();
+		try
+		{
+			assertThat(results.size(), CoreMatchers.equalTo(1));
+			DataPointGroup dpg = results.get(0);
+			assertThat(dpg.getName(), is("ttlMetric"));
+			assertThat(dq.getSampleSize(), CoreMatchers.equalTo(6));
+		}
+		finally
+		{
+			dq.close();
+		}
 	}
 }

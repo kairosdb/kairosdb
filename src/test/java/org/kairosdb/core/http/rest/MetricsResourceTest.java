@@ -34,12 +34,11 @@ import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
-import org.kairosdb.core.http.rest.json.GsonParser;
+import org.kairosdb.core.http.rest.json.QueryParser;
+import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.util.LoggingUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
@@ -53,8 +52,6 @@ import static org.junit.Assert.assertThat;
 
 public class MetricsResourceTest
 {
-	public static final Logger logger = LoggerFactory.getLogger(MetricsResourceTest.class);
-
 	private static final String ADD_METRIC_URL = "http://localhost:9001/api/v1/datapoints";
 	private static final String GET_METRIC_URL = "http://localhost:9001/api/v1/datapoints/query";
 	private static final String METRIC_NAMES_URL = "http://localhost:9001/api/v1/metricnames";
@@ -81,18 +78,20 @@ public class MetricsResourceTest
 			@Override
 			protected void configure()
 			{
+				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_ADDRESS_PROPERTY)).toInstance("0.0.0.0");
 				bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9001);
 				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
 				bind(Datastore.class).toInstance(datastore);
 				bind(KairosDatastore.class).in(Singleton.class);
 				bind(AggregatorFactory.class).to(TestAggregatorFactory.class);
 				bind(GroupByFactory.class).to(TestGroupByFactory.class);
-				bind(GsonParser.class).in(Singleton.class);
+				bind(QueryParser.class).in(Singleton.class);
 				bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
 				bind(QueryQueuingManager.class).toInstance(queuingManager);
 				bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
 				bindConstant().annotatedWith(Names.named("kairosdb.datastore.concurrentQueryThreads")).to(1);
 				bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
+				bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
 
 				Properties props = new Properties();
 				InputStream is = getClass().getClassLoader().getResourceAsStream("kairosdb.properties");
@@ -196,13 +195,13 @@ public class MetricsResourceTest
 	}
 
 	@Test
-	public void testAddInvalidTimestamp() throws Exception
+	public void testAddTimestampZeroValid() throws Exception
 	{
-		String json = Resources.toString(Resources.getResource("multi-metric-invalid-timestamp.json"), Charsets.UTF_8);
+		String json = Resources.toString(Resources.getResource("multi-metric-timestamp-zero.json"), Charsets.UTF_8);
 
 		JsonResponse response = client.post(json, ADD_METRIC_URL);
 
-		assertResponse(response, 400, "{\"errors\":[\"metric[1](name=archive.file.search).datapoints[0].value cannot be null or empty, must be greater than or equal to 1.\"]}");
+		assertResponse(response, 204);
 	}
 
 	@Test
@@ -322,7 +321,9 @@ public class MetricsResourceTest
 		}
 
 		@Override
-		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+		public void putDataPoint(String metricName,
+				ImmutableSortedMap<String, String> tags,
+				DataPoint dataPoint, int ttl) throws DatastoreException
 		{
 		}
 

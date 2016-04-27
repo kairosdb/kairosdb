@@ -9,9 +9,15 @@ import java.nio.channels.FileChannel;
  */
 public class BufferedDataInputStream extends DataInputStream
 {
-	public BufferedDataInputStream(RandomAccessFile file, long startPosition)
+	/**
+
+	 @param file
+	 @param startPosition
+	 @param size Size of stream buffer
+	 */
+	public BufferedDataInputStream(RandomAccessFile file, long startPosition, int size)
 	{
-		super(new BufferedInputStream(new WrappedInputStream(file, startPosition)));
+		super(new BufferedInputStream(new WrappedInputStream(file, startPosition), size));
 	}
 
 	private static class WrappedInputStream extends InputStream
@@ -40,6 +46,13 @@ public class BufferedDataInputStream extends DataInputStream
 			m_position += read;
 
 			return (read);
+		}
+
+		@Override
+		public void close() throws IOException
+		{
+			//Nothing to do, m_file is a shared resource closed at a higher level
+			m_file = null;
 		}
 	}
 }

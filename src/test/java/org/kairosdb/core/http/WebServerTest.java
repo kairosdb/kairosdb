@@ -14,6 +14,7 @@ import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -32,35 +33,86 @@ public class WebServerTest
 	@After
 	public void tearDown()
 	{
-		server.stop();
+		if (server != null)
+			server.stop();
 	}
 
 	@Test(expected = NullPointerException.class)
-	public void test_setSSLSettings_nullKeyStorePath_invalid()
+	public void test_constructorNullWebRootInvalid() throws UnknownHostException
+	{
+		new WebServer(0, null);
+	}
+
+	@Test(expected = NullPointerException.class)
+	public void test_setSSLSettings_nullKeyStorePath_invalid() throws UnknownHostException
 	{
 		server = new WebServer(0, ".");
 		server.setSSLSettings(443, null, "password");
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void test_setSSLSettings_emptyKeyStorePath_invalid()
+	public void test_setSSLSettings_emptyKeyStorePath_invalid() throws UnknownHostException
 	{
 		server = new WebServer(0, ".");
 		server.setSSLSettings(443, "", "password");
 	}
 
 	@Test(expected = NullPointerException.class)
-	public void test_setSSLSettings_nullKeyStorePassword_invalid()
+	public void test_setSSLSettings_nullKeyStorePassword_invalid() throws UnknownHostException
 	{
 		server = new WebServer(0, ".");
 		server.setSSLSettings(443, "path", null);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void test_setSSLSettings_emptyKeyStorePassword_invalid()
+	public void test_setSSLSettings_emptyKeyStorePassword_invalid() throws UnknownHostException
 	{
 		server = new WebServer(0, ".");
 		server.setSSLSettings(443, "path", "");
+	}
+
+	@Test
+	public void test_setSSLCipherSuites_emptyCipherSuites_valid() throws UnknownHostException
+	{
+		server = new WebServer(0, ".");
+		server.setSSLCipherSuites("");
+	}
+
+	@Test(expected = NullPointerException.class)
+	public void test_setSSLCipherSuites_nullCipherSuites_invalid() throws UnknownHostException
+	{
+		server = new WebServer(0, ".");
+		server.setSSLCipherSuites(null);
+	}
+
+	@Test
+	public void test_setSSLProtocols_emptyProtocols_valid() throws UnknownHostException
+	{
+		server = new WebServer(0, ".");
+		server.setSSLProtocols("");
+	}
+
+	@Test(expected = NullPointerException.class)
+	public void test_setSSLProtocols_nullProcotol_invalid() throws UnknownHostException
+	{
+		server = new WebServer(0, ".");
+		server.setSSLProtocols(null);
+	}
+
+	@Test
+	public void test_constructorNullAddressValid() throws UnknownHostException
+	{
+		WebServer webServer = new WebServer(null, 0, ".");
+
+		assertThat(webServer.getAddress().getHostName(), equalTo("localhost"));
+	}
+
+	@Test
+	public void test_constructorEmptyAddressValid() throws UnknownHostException
+	{
+		WebServer webServer = new WebServer("", 0, ".");
+
+		assertThat(webServer.getAddress().getHostName(), equalTo("localhost"));
 	}
 
 	@Test

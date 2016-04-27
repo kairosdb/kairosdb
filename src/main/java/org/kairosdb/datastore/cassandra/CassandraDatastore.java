@@ -15,26 +15,16 @@
  */
 package org.kairosdb.datastore.cassandra;
 
+import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import me.prettyprint.cassandra.model.ConfigurableConsistencyLevel;
-import me.prettyprint.cassandra.serializers.BytesArraySerializer;
-import me.prettyprint.cassandra.serializers.IntegerSerializer;
-import me.prettyprint.cassandra.serializers.StringSerializer;
-import me.prettyprint.cassandra.service.CassandraHostConfigurator;
-import me.prettyprint.cassandra.service.ColumnSliceIterator;
-import me.prettyprint.cassandra.service.ThriftKsDef;
-import me.prettyprint.hector.api.Cluster;
-import me.prettyprint.hector.api.Keyspace;
-import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
-import me.prettyprint.hector.api.ddl.ComparatorType;
-import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
-import me.prettyprint.hector.api.exceptions.HectorException;
-import me.prettyprint.hector.api.factory.HFactory;
-import me.prettyprint.hector.api.query.CountQuery;
-import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
@@ -49,7 +39,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.*;
+import java.io.UnsupportedEncodingException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -59,25 +52,59 @@ public class CassandraDatastore implements Datastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
 
+	public static final String CREATE_KEYSPACE = "" +
+			"CREATE KEYSPACE IF NOT EXISTS %s" +
+			"  WITH REPLICATION = {'class': 'SimpleStrategy'," +
+			"  'replication_factor' : 1}";
+
+	public static final String DATA_POINTS_TABLE = "" +
+			"CREATE TABLE IF NOT EXISTS data_points (\n" +
+			"  key blob,\n" +
+			"  column1 blob,\n" +
+			"  value blob,\n" +
+			"  PRIMARY KEY ((key), column1)\n" +
+			") WITH COMPACT STORAGE";
+
+	public static final String ROW_KEY_INDEX_TABLE = "" +
+			"CREATE TABLE IF NOT EXISTS row_key_index (\n" +
+			"  key blob,\n" +
+			"  column1 blob,\n" +
+			"  value blob,\n" +
+			"  PRIMARY KEY ((key), column1)\n" +
+			") WITH COMPACT STORAGE";
+
+	public static final String STRING_INDEX_TABLE = "" +
+			"CREATE TABLE IF NOT EXISTS string_index (\n" +
+			"  key blob,\n" +
+			"  column1 text,\n" +
+			"  value blob,\n" +
+			"  PRIMARY KEY ((key), column1)\n" +
+			") WITH COMPACT STORAGE";
+
+
+	public static final String DATA_POINTS_INSERT = "INSERT INTO data_points " +
+			"(key, column1, value) VALUES (?, ?, ?) USING TTL ?";
+
+	public static final String ROW_KEY_INDEX_INSERT = "INSERT INTO row_key_index " +
+			"(key, column1, value) VALUES (?, ?, 0x00) USING TTL ?";
+
+	public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
+			"(key, column1, value) VALUES (?, ?, 0x00)";
+
+	public static final String QUERY_STRING_INDEX = "SELECT column1 FROM string_index WHERE key = ?";
+
+	public static final String QUERY_ROW_KEY_INDEX = "SELECT column1 FROM row_key_index WHERE key = ? AND column1 >= ? and column1 <=?";
+
+	public static final String QUERY_DATA_POINTS = "SELECT column1, value FROM data_points WHERE key IN ( ? ) AND column1 >= ? and column1 < ?";
+
 	public static final int LONG_FLAG = 0x0;
 	public static final int FLOAT_FLAG = 0x1;
 
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
-	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
-	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
-	public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
-	public static final String WRITE_DELAY_PROPERTY = "kairosdb.datastore.cassandra.write_delay";
+	public static final long ROW_WIDTH = 1814400000L;
+
 	public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
-	public static final String WRITE_BUFFER_SIZE = "kairosdb.datastore.cassandra.write_buffer_max_size";
-	public static final String SINGLE_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.single_row_read_size";
-	public static final String MULTI_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_read_size";
-	public static final String MULTI_ROW_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_size";
-	public static final String READ_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.read_consistency_level";
-	public static final String WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.write_consistency_level";
-	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
-	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
-    public static final String DATAPOINT_TTL = "kairosdb.datastore.cassandra.datapoint_ttl";
 
 	public static final String CF_DATA_POINTS = "data_points";
 	public static final String CF_ROW_KEY_INDEX = "row_key_index";
@@ -86,176 +113,93 @@ public class CassandraDatastore implements Datastore
 	public static final String ROW_KEY_METRIC_NAMES = "metric_names";
 	public static final String ROW_KEY_TAG_NAMES = "tag_names";
 	public static final String ROW_KEY_TAG_VALUES = "tag_values";
+	private static final Charset UTF_8 = Charset.forName("UTF-8");
 
+	private final CassandraClient m_cassandraClient;
+	private final Session m_session;
 
-	private Cluster m_cluster;
-	private Keyspace m_keyspace;
+	private final PreparedStatement m_psInsertData;
+	private final PreparedStatement m_psInsertRowKey;
+	private final PreparedStatement m_psInsertString;
+	private final PreparedStatement m_psQueryStringIndex;
+	private final PreparedStatement m_psQueryRowKeyIndex;
+	private final PreparedStatement m_psQueryDataPoints;
+
+	private BatchStatement m_batchStatement;
+	private final Object m_batchLock = new Object();
+
 	private String m_keyspaceName;
-	private int m_singleRowReadSize;
-	private int m_multiRowSize;
-	private int m_multiRowReadSize;
-	private WriteBuffer<DataPointsRowKey, Integer, byte[]> m_dataPointWriteBuffer;
-	private WriteBuffer<String, DataPointsRowKey, String> m_rowKeyWriteBuffer;
-	private WriteBuffer<String, String, String> m_stringIndexWriteBuffer;
 
 	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
+
 	private DataCache<String> m_metricNameCache = new DataCache<String>(1024);
 	private DataCache<String> m_tagNameCache = new DataCache<String>(1024);
 	private DataCache<String> m_tagValueCache = new DataCache<String>(1024);
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
+	private CassandraConfiguration m_cassandraConfiguration;
+
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
-	@Named(WRITE_CONSISTENCY_LEVEL)
-	private ConsitencyLevel m_dataWriteLevel = ConsitencyLevel.QUORUM;
+	private List<RowKeyListener> m_rowKeyListeners = Collections.EMPTY_LIST;
 
 	@Inject
-	@Named(READ_CONSISTENCY_LEVEL)
-	private ConsitencyLevel m_dataReadLevel = ConsitencyLevel.ONE;
-
-	
-	@Inject(optional=true)
-	@Named(DATAPOINT_TTL)
-	private int m_datapointTtl = 0; //Zero ttl means data lives forever.
-
-	@Inject
-	public void setRowKeyCacheSize(@Named(ROW_KEY_CACHE_SIZE_PROPERTY) int size)
+	public CassandraDatastore(@Named("HOSTNAME") final String hostname,
+			CassandraClient cassandraClient,
+			CassandraConfiguration cassandraConfiguration,
+			KairosDataPointFactory kairosDataPointFactory) throws DatastoreException
 	{
-		m_rowKeyCache = new DataCache<DataPointsRowKey>(size);
+		m_cassandraClient = cassandraClient;
+		m_kairosDataPointFactory = kairosDataPointFactory;
+
+		setupSchema();
+
+		m_session = m_cassandraClient.getKeyspaceSession();
+
+		m_psInsertData = m_session.prepare(DATA_POINTS_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelDataPoint());
+		m_psInsertRowKey = m_session.prepare(ROW_KEY_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
+		m_psInsertString = m_session.prepare(STRING_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
+		m_psQueryStringIndex = m_session.prepare(QUERY_STRING_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
+		m_psQueryRowKeyIndex = m_session.prepare(QUERY_ROW_KEY_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
+		m_psQueryDataPoints = m_session.prepare(QUERY_DATA_POINTS).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
+
+		m_cassandraConfiguration = cassandraConfiguration;
+		m_keyspaceName = m_cassandraConfiguration.getKeyspaceName();
+
+		m_rowKeyCache = new DataCache<DataPointsRowKey>(m_cassandraConfiguration.getRowKeyCacheSize());
+		m_metricNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
+		m_tagNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
+		m_tagValueCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
 	}
 
-	@Inject
-	public void setStringCacheSize(@Named(STRING_CACHE_SIZE_PROPERTY) int size)
-	{
-		m_metricNameCache = new DataCache<String>(size);
-		m_tagNameCache = new DataCache<String>(size);
-		m_tagValueCache = new DataCache<String>(size);
-	}
-
-	@Inject
-	public CassandraDatastore(@Named(CassandraModule.CASSANDRA_AUTH_MAP) Map<String, String> cassandraAuthentication,
-	                          @Named(REPLICATION_FACTOR_PROPERTY) int replicationFactor,
-	                          @Named(SINGLE_ROW_READ_SIZE_PROPERTY) int singleRowReadSize,
-	                          @Named(MULTI_ROW_SIZE_PROPERTY) int multiRowSize,
-	                          @Named(MULTI_ROW_READ_SIZE_PROPERTY) int multiRowReadSize,
-	                          @Named(WRITE_DELAY_PROPERTY) int writeDelay,
-	                          @Named(WRITE_BUFFER_SIZE) int maxWriteSize,
-	                          final @Named("HOSTNAME") String hostname,
-                             @Named(KEYSPACE_PROPERTY) String keyspaceName,
-	                          HectorConfiguration configuration,
-                             KairosDataPointFactory kairosDataPointFactory) throws DatastoreException
-	{
-		try
+	private WriteBufferStats createWriteBufferStats(final String cfName, final String hostname) {
+		return new WriteBufferStats()
 		{
-			m_singleRowReadSize = singleRowReadSize;
-			m_multiRowSize = multiRowSize;
-			m_multiRowReadSize = multiRowReadSize;
-			m_kairosDataPointFactory = kairosDataPointFactory;
-			m_keyspaceName = keyspaceName;
+			private ImmutableSortedMap m_tags;
+			{
+				m_tags = ImmutableSortedMap.naturalOrder()
+						.put("host", hostname)
+						.put("buffer", cfName)
+						.build();
+			}
 
-			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
-
-			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
-					hostConfig, cassandraAuthentication);
-
-			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
-
-			if (keyspaceDef == null)
-				createSchema(replicationFactor);
-				//set global consistency level
-				ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
-				confConsLevel.setDefaultReadConsistencyLevel(m_dataReadLevel.getHectorLevel());
-				confConsLevel.setDefaultWriteConsistencyLevel(m_dataWriteLevel.getHectorLevel());
-
-			//create keyspace instance with specified consistency
-			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
-
-			ReentrantLock mutatorLock = new ReentrantLock();
-			Condition lockCondition = mutatorLock.newCondition();
-
-			m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, byte[]>(
-					m_keyspace, CF_DATA_POINTS, writeDelay, maxWriteSize,
-					DATA_POINTS_ROW_KEY_SERIALIZER,
-					IntegerSerializer.get(),
-					BytesArraySerializer.get(),
-					new WriteBufferStats()
-					{
-						private ImmutableSortedMap m_tags;
-						{
-							m_tags = ImmutableSortedMap.naturalOrder()
-									.put("host", hostname)
-									.put("buffer", CF_DATA_POINTS)
-									.build();
-						}
-
-						@Override
-						public void saveWriteSize(int pendingWrites)
-						{
-							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
-									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
-						}
-					}, mutatorLock, lockCondition);
-
-			m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
-					m_keyspace, CF_ROW_KEY_INDEX, writeDelay, maxWriteSize,
-					StringSerializer.get(),
-					DATA_POINTS_ROW_KEY_SERIALIZER,
-					StringSerializer.get(),
-					new WriteBufferStats()
-					{
-						private ImmutableSortedMap m_tags;
-						{
-							m_tags = ImmutableSortedMap.naturalOrder()
-									.put("host", hostname)
-									.put("buffer", CF_ROW_KEY_INDEX)
-									.build();
-						}
-
-						@Override
-						public void saveWriteSize(int pendingWrites)
-						{
-							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
-									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
-						}
-					}, mutatorLock, lockCondition);
-
-			m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
-					m_keyspace, CF_STRING_INDEX, writeDelay, maxWriteSize,
-					StringSerializer.get(),
-					StringSerializer.get(),
-					StringSerializer.get(),
-					new WriteBufferStats()
-					{
-						private ImmutableSortedMap m_tags;
-						{
-							m_tags = ImmutableSortedMap.naturalOrder()
-									.put("host", hostname)
-									.put("buffer", CF_STRING_INDEX)
-									.build();
-						}
-
-						@Override
-						public void saveWriteSize(int pendingWrites)
-						{
-							putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
-									m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
-						}
-					}, mutatorLock, lockCondition);
-		}
-		catch (HectorException e)
-		{
-			throw new DatastoreException(e);
-		}
+			@Override
+			public void saveWriteSize(int pendingWrites)
+			{
+				putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
+						m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
+			}
+		};
 	}
 
 	private void putInternalDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint)
 	{
 		try
 		{
-			putDataPoint(metricName, tags, dataPoint);
+			putDataPoint(metricName, tags, dataPoint, 0);
 		}
 		catch (DatastoreException e)
 		{
@@ -263,31 +207,27 @@ public class CassandraDatastore implements Datastore
 		}
 	}
 
-	private void createSchema(int replicationFactor)
+
+	private void setupSchema()
 	{
-		List<ColumnFamilyDefinition> cfDef = new ArrayList<ColumnFamilyDefinition>();
+		try (Session session = m_cassandraClient.getSession())
+		{
+			session.execute(String.format(CREATE_KEYSPACE, m_cassandraClient.getKeyspace()));
+		}
 
-		cfDef.add(HFactory.createColumnFamilyDefinition(
-				m_keyspaceName, CF_DATA_POINTS, ComparatorType.BYTESTYPE));
-
-		cfDef.add(HFactory.createColumnFamilyDefinition(
-				m_keyspaceName, CF_ROW_KEY_INDEX, ComparatorType.BYTESTYPE));
-
-		cfDef.add(HFactory.createColumnFamilyDefinition(
-				m_keyspaceName, CF_STRING_INDEX, ComparatorType.UTF8TYPE));
-
-		KeyspaceDefinition newKeyspace = HFactory.createKeyspaceDefinition(
-				m_keyspaceName, ThriftKsDef.DEF_STRATEGY_CLASS,
-				replicationFactor, cfDef);
-
-		m_cluster.addKeyspace(newKeyspace, true);
+		try (Session session = m_cassandraClient.getKeyspaceSession())
+		{
+			session.execute(DATA_POINTS_TABLE);
+			session.execute(ROW_KEY_INDEX_TABLE);
+			session.execute(STRING_INDEX_TABLE);
+		}
 	}
 
 	public void increaseMaxBufferSizes()
 	{
-		m_dataPointWriteBuffer.increaseMaxBufferSize();
+		/*m_dataPointWriteBuffer.increaseMaxBufferSize();
 		m_rowKeyWriteBuffer.increaseMaxBufferSize();
-		m_stringIndexWriteBuffer.increaseMaxBufferSize();
+		m_stringIndexWriteBuffer.increaseMaxBufferSize();*/
 	}
 
 	public void cleanRowKeyCache()
@@ -308,95 +248,127 @@ public class CassandraDatastore implements Datastore
 	@Override
 	public void close() throws InterruptedException
 	{
-		m_dataPointWriteBuffer.close();
-		m_rowKeyWriteBuffer.close();
-		m_stringIndexWriteBuffer.close();
+		m_session.close();
+		m_cassandraClient.close();
 	}
 
 	@Override
-	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+	public void putDataPoint(String metricName,
+			ImmutableSortedMap<String, String> tags,
+			DataPoint dataPoint,
+			int ttl) throws DatastoreException
 	{
 		try
 		{
-			long rowTime = -1L;
 			DataPointsRowKey rowKey = null;
 			//time the data is written.
 			long writeTime = System.currentTimeMillis();
+			if (0 == ttl)
+				ttl = m_cassandraConfiguration.getDatapointTtl();
 
-			if (dataPoint.getTimestamp() < 0)
-				throw new DatastoreException("Timestamp must be greater than or equal to zero.");
-			long newRowTime = calculateRowTime(dataPoint.getTimestamp());
-			if (newRowTime != rowTime)
+			int rowKeyTtl = 0;
+			//Row key will expire 3 weeks after the data in the row expires
+			if (ttl != 0)
+				rowKeyTtl = ttl + ((int)(ROW_WIDTH / 1000));
+
+			long rowTime= calculateRowTime(dataPoint.getTimestamp());
+
+			rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
+					tags);
+
+			long now = System.currentTimeMillis();
+
+			//Write out the row key if it is not cached
+			DataPointsRowKey cachedKey = m_rowKeyCache.cacheItem(rowKey);
+			if (cachedKey == null)
 			{
-				rowTime = newRowTime;
-				rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
-						tags);
+				BoundStatement bs = new BoundStatement(m_psInsertRowKey);
+				bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
+				bs.setBytes(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+				bs.setInt(2, rowKeyTtl);
+				m_session.executeAsync(bs);
 
-				long now = System.currentTimeMillis();
+				/*m_rowKeyWriteBuffer.addData(metricName, rowKey, "", now, rowKeyTtl);*/
+				for (RowKeyListener rowKeyListener : m_rowKeyListeners)
+					rowKeyListener.addRowKey(metricName, rowKey, rowKeyTtl);
+			}
+			else
+				rowKey = cachedKey;
 
-				int rowKeyTtl = 0;
-				//Row key will expire 3 weeks after the data in the row expires
-				if (m_datapointTtl != 0)
-					rowKeyTtl = m_datapointTtl + ((int)(ROW_WIDTH / 1000));
-
-				//Write out the row key if it is not cached
-				if (!m_rowKeyCache.isCached(rowKey))
-					m_rowKeyWriteBuffer.addData(metricName, rowKey, "", now, rowKeyTtl);
-
-				//Write metric name if not in cache
-				if (!m_metricNameCache.isCached(metricName))
+			//Write metric name if not in cache
+			String cachedName = m_metricNameCache.cacheItem(metricName);
+			if (cachedName == null)
+			{
+				if (metricName.length() == 0)
 				{
-					if (metricName.length() == 0)
+					logger.warn(
+							"Attempted to add empty metric name to string index. Row looks like: "+dataPoint
+					);
+				}
+				BoundStatement bs = new BoundStatement(m_psInsertString);
+				bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
+				bs.setString(1, metricName);
+				m_session.executeAsync(bs);
+				/*m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
+						metricName, "", now);*/
+			}
+
+			//Check tag names and values to write them out
+			for (String tagName : tags.keySet())
+			{
+				String cachedTagName = m_tagNameCache.cacheItem(tagName);
+				if (cachedTagName == null)
+				{
+					if(tagName.length() == 0)
 					{
 						logger.warn(
-								"Attempted to add empty metric name to string index. Row looks like: "+dataPoint
+								"Attempted to add empty tagName to string cache for metric: "+metricName
 						);
 					}
-					m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
-							metricName, "", now);
+					BoundStatement bs = new BoundStatement(m_psInsertString);
+					bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_NAMES.getBytes(UTF_8)));
+					bs.setString(1, tagName);
+					m_session.executeAsync(bs);
+					/*m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_NAMES,
+							tagName, "", now);*/
+
 				}
 
-				//Check tag names and values to write them out
-				for (String tagName : tags.keySet())
+				String value = tags.get(tagName);
+				String cachedValue = m_tagValueCache.cacheItem(value);
+				if (cachedValue == null)
 				{
-					if (!m_tagNameCache.isCached(tagName))
+					if(value.toString().length() == 0)
 					{
-						if(tagName.length() == 0)
-						{
-							logger.warn(
-									"Attempted to add empty tagName to string cache for metric: "+metricName
-							);
-						}
-						m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_NAMES,
-								tagName, "", now);
-
+						logger.warn(
+								"Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+metricName
+						);
 					}
-
-					String value = tags.get(tagName);
-					if (!m_tagValueCache.isCached(value))
-					{
-						if(value.toString().length() == 0)
-						{
-							logger.warn(
-									"Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+metricName
-							);
-						}
-						m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
-								value, "", now);
-					}
+					BoundStatement bs = new BoundStatement(m_psInsertString);
+					bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_VALUES.getBytes(UTF_8)));
+					bs.setString(1, value);
+					m_session.executeAsync(bs);
+					/*m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
+							value, "", now);*/
 				}
 			}
 
 			int columnTime = getColumnName(rowTime, dataPoint.getTimestamp());
 			KDataOutput kDataOutput = new KDataOutput();
 			dataPoint.writeValueToBuffer(kDataOutput);
-			m_dataPointWriteBuffer.addData(rowKey, columnTime,
-					kDataOutput.getBytes(), writeTime, m_datapointTtl);
+			/*m_dataPointWriteBuffer.addData(rowKey, columnTime,
+					kDataOutput.getBytes(), writeTime, ttl);*/
 
-		}
-		catch (DatastoreException e)
-		{
-			throw e;
+
+			BoundStatement boundStatement = new BoundStatement(m_psInsertData);
+			boundStatement.setBytes(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+			ByteBuffer b = ByteBuffer.allocate(4);
+			b.putInt(columnTime);
+			b.rewind();
+			boundStatement.setBytes(1, b);
+			boundStatement.setBytes(2, ByteBuffer.wrap(kDataOutput.getBytes()));
+			boundStatement.setInt(3, ttl);
+			m_session.executeAsync(boundStatement);
 		}
 		catch (Exception e)
 		{
@@ -404,68 +376,42 @@ public class CassandraDatastore implements Datastore
 		}
 	}
 
+	private Iterable<String> queryStringIndex(final String key) {
+
+		BoundStatement bs = m_psQueryStringIndex.bind();
+		try {
+			bs.setBytes(0, ByteBuffer.wrap(key.getBytes("UTF-8")));
+		}
+		catch(UnsupportedEncodingException ex) {
+			throw new RuntimeException(ex);
+		}
+
+		ResultSet rs = m_session.execute(bs);
+
+		List<String> ret = new ArrayList<String>();
+		for(Row r : rs) {
+			ret.add(r.getString("column1"));
+		}
+
+		return ret;
+	}
 
 	@Override
 	public Iterable<String> getMetricNames()
 	{
-		SliceQuery<String, String, String> sliceQuery =
-				HFactory.createSliceQuery(m_keyspace, StringSerializer.get(), StringSerializer.get(),
-						StringSerializer.get());
-
-		sliceQuery.setColumnFamily(CF_STRING_INDEX);
-		sliceQuery.setKey(ROW_KEY_METRIC_NAMES);
-
-		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String) null, false, m_singleRowReadSize);
-
-		List<String> ret = new ArrayList<String>();
-
-		while (columnIterator.hasNext())
-			ret.add(columnIterator.next().getName());
-
-		return (ret);
+		return queryStringIndex(ROW_KEY_METRIC_NAMES);
 	}
 
 	@Override
 	public Iterable<String> getTagNames()
 	{
-		SliceQuery<String, String, String> sliceQuery =
-				HFactory.createSliceQuery(m_keyspace, StringSerializer.get(), StringSerializer.get(),
-						StringSerializer.get());
-
-		sliceQuery.setColumnFamily(CF_STRING_INDEX);
-		sliceQuery.setKey(ROW_KEY_TAG_NAMES);
-
-		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String) null, false, m_singleRowReadSize);
-
-		List<String> ret = new ArrayList<String>();
-
-		while (columnIterator.hasNext())
-			ret.add(columnIterator.next().getName());
-
-		return (ret);
+		return queryStringIndex(ROW_KEY_TAG_NAMES);
 	}
 
 	@Override
 	public Iterable<String> getTagValues()
 	{
-		SliceQuery<String, String, String> sliceQuery =
-				HFactory.createSliceQuery(m_keyspace, StringSerializer.get(), StringSerializer.get(),
-						StringSerializer.get());
-
-		sliceQuery.setColumnFamily(CF_STRING_INDEX);
-		sliceQuery.setKey(ROW_KEY_TAG_VALUES);
-
-		ColumnSliceIterator<String, String, String> columnIterator =
-				new ColumnSliceIterator<String, String, String>(sliceQuery, "", (String) null, false, m_singleRowReadSize);
-
-		List<String> ret = new ArrayList<String>();
-
-		while (columnIterator.hasNext())
-			ret.add(columnIterator.next().getName());
-
-		return (ret);
+		return queryStringIndex(ROW_KEY_TAG_VALUES);
 	}
 
 	@Override
@@ -501,7 +447,7 @@ public class CassandraDatastore implements Datastore
 		long currentTimeTier = 0L;
 		String currentType = null;
 
-		List<QueryRunner> runners = new ArrayList<QueryRunner>();
+		List<CQLQueryRunner> runners = new ArrayList<CQLQueryRunner>();
 		List<DataPointsRowKey> queryKeys = new ArrayList<DataPointsRowKey>();
 
 		MemoryMonitor mm = new MemoryMonitor(20);
@@ -514,21 +460,21 @@ public class CassandraDatastore implements Datastore
 			if (currentType == null)
 				currentType = rowKey.getDataType();
 
-			if ((rowKey.getTimestamp() == currentTimeTier) && (queryKeys.size() < m_multiRowSize) &&
+			if ((rowKey.getTimestamp() == currentTimeTier) &&
 					(currentType.equals(rowKey.getDataType())))
 			{
 				queryKeys.add(rowKey);
 			}
 			else
 			{
-				runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS, m_kairosDataPointFactory,
+				runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
 						queryKeys,
-						query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
-						m_multiRowReadSize, query.getLimit(), query.getOrder()));
+						query.getStartTime(), query.getEndTime(), queryCallback, query.getLimit(), query.getOrder()));
 
 				queryKeys = new ArrayList<DataPointsRowKey>();
 				queryKeys.add(rowKey);
 				currentTimeTier = rowKey.getTimestamp();
+				currentType = rowKey.getDataType();
 			}
 
 			mm.checkMemoryAndThrowException();
@@ -537,10 +483,9 @@ public class CassandraDatastore implements Datastore
 		//There may be stragglers that are not ran
 		if (!queryKeys.isEmpty())
 		{
-			runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS, m_kairosDataPointFactory,
+			runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
 					queryKeys,
-					query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
-					m_multiRowReadSize, query.getLimit(), query.getOrder()));
+					query.getStartTime(), query.getEndTime(), queryCallback, query.getLimit(), query.getOrder()));
 		}
 
 		ThreadReporter.addDataPoint(KEY_QUERY_TIME, System.currentTimeMillis() - startTime);
@@ -549,8 +494,8 @@ public class CassandraDatastore implements Datastore
 		mm.setCheckRate(1);
 		try
 		{
-			//TODO: Run this with multiple threads
-			for (QueryRunner runner : runners)
+			// TODO: Run this with multiple threads - not easily possible with how QueryCallback behaves
+			for (CQLQueryRunner runner : runners)
 			{
 				runner.runQuery();
 
@@ -572,17 +517,12 @@ public class CassandraDatastore implements Datastore
 
 		long now = System.currentTimeMillis();
 
-		// Get number of columns in the row key
-		// We do this up front to avoid waiting for a sync of cassandra to see
-		// if they are all gone.
-		CountQuery<String, DataPointsRowKey> countQuery = HFactory.createCountQuery(m_keyspace, StringSerializer.get(), DATA_POINTS_ROW_KEY_SERIALIZER);
-		countQuery.setColumnFamily(CF_ROW_KEY_INDEX).
-				setKey(deleteQuery.getName()).
-				setRange(new DataPointsRowKey(deleteQuery.getName(), 0L, ""), new DataPointsRowKey(deleteQuery.getName(), Long.MAX_VALUE, ""), Integer.MAX_VALUE);
-		int rowKeyColumnCount = countQuery.execute().get();
+		boolean deleteAll = false;
+		if (deleteQuery.getStartTime() == Long.MIN_VALUE && deleteQuery.getEndTime() == Long.MAX_VALUE)
+			deleteAll = true;
 
 		Iterator<DataPointsRowKey> rowKeyIterator = getKeysForQueryIterator(deleteQuery);
-		List<DataPointsRowKey> partialRows = new ArrayList<DataPointsRowKey>();
+		List<DataPointsRowKey> partialRows = new ArrayList<>();
 
 		while (rowKeyIterator.hasNext())
 		{
@@ -590,10 +530,10 @@ public class CassandraDatastore implements Datastore
 			long rowKeyTimestamp = rowKey.getTimestamp();
 			if (deleteQuery.getStartTime() <= rowKeyTimestamp && (deleteQuery.getEndTime() >= rowKeyTimestamp + ROW_WIDTH - 1))
 			{
-				m_dataPointWriteBuffer.deleteRow(rowKey, now);  // delete the whole row
-				m_rowKeyWriteBuffer.deleteColumn(rowKey.getMetricName(), rowKey, now); // Delete the index
+				//todo fix me
+				//m_dataPointWriteBuffer.deleteRow(rowKey, now);  // delete the whole row
+				//m_rowKeyWriteBuffer.deleteColumn(rowKey.getMetricName(), rowKey, now); // Delete the index
 				m_rowKeyCache.clear();
-				rowKeyColumnCount--;
 			}
 			else
 			{
@@ -604,10 +544,11 @@ public class CassandraDatastore implements Datastore
 		queryWithRowKeys(deleteQuery, new DeletingCallback(deleteQuery.getName()), partialRows.iterator());
 
 		// If index is gone, delete metric name from Strings column family
-		if (rowKeyColumnCount < 1)
+		if (deleteAll)
 		{
-			m_rowKeyWriteBuffer.deleteRow(deleteQuery.getName(), now);
-			m_stringIndexWriteBuffer.deleteColumn(ROW_KEY_METRIC_NAMES, deleteQuery.getName(), now);
+			//m_rowKeyWriteBuffer.deleteRow(deleteQuery.getName(), now);
+			//todo fix me
+			//m_stringIndexWriteBuffer.deleteColumn(ROW_KEY_METRIC_NAMES, deleteQuery.getName(), now);
 			m_rowKeyCache.clear();
 			m_metricNameCache.clear();
 		}
@@ -630,15 +571,35 @@ public class CassandraDatastore implements Datastore
 	 * @param query query
 	 * @return row keys for the query
 	 */
-	/*package*/ Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query)
+	public Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query)
 	{
-		return (new FilteredRowKeyIterator(query.getName(), query.getStartTime(),
-				query.getEndTime(), query.getTags()));
+		Iterator<DataPointsRowKey> ret = null;
+
+		List<QueryPlugin> plugins = query.getPlugins();
+
+		//First plugin that works gets it.
+		for (QueryPlugin plugin : plugins)
+		{
+			if (plugin instanceof CassandraRowKeyPlugin)
+			{
+				ret = ((CassandraRowKeyPlugin) plugin).getKeysForQueryIterator(query);
+				break;
+			}
+		}
+
+		//Default to old behavior if no plugin was provided
+		if (ret == null)
+		{
+			ret = getMatchingRowKeys(query.getName(), query.getStartTime(),
+					query.getEndTime(), query.getTags()).iterator();
+		}
+
+		return (ret);
 	}
 
 	public static long calculateRowTime(long timestamp)
 	{
-		return (timestamp - (timestamp % ROW_WIDTH));
+		return (timestamp - (Math.abs(timestamp) % ROW_WIDTH));
 	}
 
 
@@ -683,76 +644,76 @@ public class CassandraDatastore implements Datastore
 		return ((columnName & 0x1) == LONG_FLAG);
 	}
 
-	private class FilteredRowKeyIterator implements Iterator<DataPointsRowKey>
-	{
-		private ColumnSliceIterator<String, DataPointsRowKey, String> m_sliceIterator;
-		private DataPointsRowKey m_nextKey;
-		private SetMultimap<String, String> m_filterTags;
+	private static void filterAndAddKeys(SetMultimap<String, String> filterTags, ResultSet rs, List<DataPointsRowKey> targetList) {
+		final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 
-		public FilteredRowKeyIterator(String metricName, long startTime, long endTime,
-				SetMultimap<String, String> filterTags)
-		{
-			m_filterTags = filterTags;
-			SliceQuery<String, DataPointsRowKey, String> sliceQuery =
-					HFactory.createSliceQuery(m_keyspace, StringSerializer.get(),
-							new DataPointsRowKeySerializer(true), StringSerializer.get());
+		for(Row r : rs) {
+			DataPointsRowKey key = keySerializer.fromByteBuffer(r.getBytes("column1"));
+			Map<String, String> tags = key.getTags();
 
-			DataPointsRowKey startKey = new DataPointsRowKey(metricName,
-					calculateRowTime(startTime), "");
-
-			/*
-			Adding 1 to the end time ensures we get all the keys that have end time and
-			have tags in the key.
-			 */
-			DataPointsRowKey endKey = new DataPointsRowKey(metricName,
-					calculateRowTime(endTime) + 1, "");
-
-
-			sliceQuery.setColumnFamily(CF_ROW_KEY_INDEX)
-					.setKey(metricName);
-
-			m_sliceIterator =
-					new ColumnSliceIterator<String, DataPointsRowKey, String>(sliceQuery,
-							startKey, endKey, false, m_singleRowReadSize);
-
-		}
-
-
-		@Override
-		public boolean hasNext()
-		{
-			m_nextKey = null;
-
-			outer:
-			while (m_sliceIterator.hasNext())
-			{
-				DataPointsRowKey rowKey = m_sliceIterator.next().getName();
-
-				Map<String, String> keyTags = rowKey.getTags();
-				for (String tag : m_filterTags.keySet())
-				{
-					String value = keyTags.get(tag);
-					if (value == null || !m_filterTags.get(tag).contains(value))
-						continue outer; //Don't want this key
+			boolean skipKey = false;
+			for (String tag : filterTags.keySet()) {
+				String value = tags.get(tag);
+				if (value == null || !filterTags.get(tag).contains(value)) {
+					skipKey = true;
+					break;
 				}
-
-				m_nextKey = rowKey;
-				break;
 			}
+			if (!skipKey) {
+				targetList.add(key);
+			}
+		}
+	}
 
-			return (m_nextKey != null);
+	private List<DataPointsRowKey> getMatchingRowKeys(String metricName, long startTime, long endTime, SetMultimap<String, String> filterTags)
+	{
+		final List<DataPointsRowKey> rowKeys = new ArrayList<>();
+		final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
+		ByteBuffer bMetricName;
+		try {
+			bMetricName = ByteBuffer.wrap(metricName.getBytes("UTF-8"));
+		}
+		catch(UnsupportedEncodingException ex) {
+			throw new RuntimeException(ex);
 		}
 
-		@Override
-		public DataPointsRowKey next()
+		BoundStatement bs = m_psQueryRowKeyIndex.bind();
+		if ((startTime < 0) && (endTime >= 0))
 		{
-			return m_nextKey;
+			DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTime(startTime), "");
+			DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTime(endTime), "");
+
+			bs.setBytes(0, bMetricName);
+			bs.setBytes(1, keySerializer.toByteBuffer(startKey));
+			bs.setBytes(2, keySerializer.toByteBuffer(endKey));
+
+			ResultSet rs = m_session.execute(bs);
+
+			filterAndAddKeys(filterTags, rs, rowKeys);
+
+			startKey = new DataPointsRowKey(metricName, calculateRowTime(0), "");
+			endKey = new DataPointsRowKey(metricName, calculateRowTime(endTime), "");
+
+			bs.setBytes(1, keySerializer.toByteBuffer(startKey));
+			bs.setBytes(2, keySerializer.toByteBuffer(endKey));
+
+			rs = m_session.execute(bs);
+			filterAndAddKeys(filterTags, rs, rowKeys);
+		}
+		else
+		{
+			DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTime(startTime), "");
+			DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTime(endTime), "");
+
+			bs.setBytes(0, bMetricName);
+			bs.setBytes(1, keySerializer.toByteBuffer(startKey));
+			bs.setBytes(2, keySerializer.toByteBuffer(endKey));
+
+			ResultSet rs = m_session.execute(bs);
+			filterAndAddKeys(filterTags, rs, rowKeys);
 		}
 
-		@Override
-		public void remove()
-		{
-		}
+		return rowKeys;
 	}
 
 	private class DeletingCallback implements QueryCallback
@@ -790,7 +751,8 @@ public class CassandraDatastore implements Datastore
 			else
 				columnName = getColumnName(rowTime, time);
 
-			m_dataPointWriteBuffer.deleteColumn(m_currentRow, columnName, m_now);
+			//todo fix me
+			//m_dataPointWriteBuffer.deleteColumn(m_currentRow, columnName, m_now);
 		}
 
 		@Override

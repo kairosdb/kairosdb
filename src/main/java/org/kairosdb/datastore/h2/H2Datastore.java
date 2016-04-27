@@ -19,6 +19,7 @@ package org.kairosdb.datastore.h2;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.mchange.v2.c3p0.DataSources;
 import org.agileclick.genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
 import org.kairosdb.core.*;
@@ -66,7 +67,14 @@ public class H2Datastore implements Datastore
 		ds.setURL("jdbc:h2:" + dbPath + "/kairosdb");
 		ds.setUser("sa");
 
-		GenOrmDataSource.setDataSource(new DSEnvelope(ds));
+		try
+		{
+			GenOrmDataSource.setDataSource(new DSEnvelope(DataSources.pooledDataSource(ds)));
+		}
+		catch (SQLException e)
+		{
+			e.printStackTrace();
+		}
 
 		try
 		{
@@ -95,7 +103,7 @@ public class H2Datastore implements Datastore
 
 		StringBuilder sb = new StringBuilder();
 		InputStreamReader reader = new InputStreamReader(getClass().getClassLoader()
-				.getResourceAsStream("org/kairosdb/datastore/h2/orm/create.sql"));
+				.getResourceAsStream("create.sql"));
 
 		int ch;
 		while ((ch = reader.read()) != -1)
@@ -125,24 +133,29 @@ public class H2Datastore implements Datastore
 	}
 
 	@Override
-	public synchronized void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, org.kairosdb.core.DataPoint dataPoint) throws DatastoreException
+	public synchronized void putDataPoint(String metricName,
+			ImmutableSortedMap<String, String> tags,
+			org.kairosdb.core.DataPoint dataPoint, int ttl) throws DatastoreException
 	{
 		GenOrmDataSource.attachAndBegin();
 		try
 		{
 			String key = createMetricKey(metricName, tags, dataPoint.getDataStoreDataType());
 			Metric m = Metric.factory.findOrCreate(key);
-			m.setName(metricName);
-			m.setType(dataPoint.getDataStoreDataType());
-
-			for (String name : tags.keySet())
+			if (m.isNew())
 			{
-				String value = tags.get(name);
-				Tag.factory.findOrCreate(name, value);
-				MetricTag.factory.findOrCreate(key, name, value);
-			}
+				m.setName(metricName);
+				m.setType(dataPoint.getDataStoreDataType());
 
-			GenOrmDataSource.flush();
+				for (String name : tags.keySet())
+				{
+					String value = tags.get(name);
+					Tag.factory.findOrCreate(name, value);
+					MetricTag.factory.findOrCreate(key, name, value);
+				}
+
+				GenOrmDataSource.flush();
+			}
 
 			KDataOutput dataOutput = new KDataOutput();
 			dataPoint.writeValueToBuffer(dataOutput);
@@ -281,8 +294,7 @@ public class H2Datastore implements Datastore
 					MetricTag mtag = tags.getRecord();
 					tagMap.put(mtag.getTagName(), mtag.getTagValue());
 				}
-
-				queryCallback.startDataPointSet(type, tagMap);
+				tags.close();
 
 				Timestamp startTime = new Timestamp(query.getStartTime());
 				Timestamp endTime = new Timestamp(query.getEndTime());
@@ -299,19 +311,27 @@ public class H2Datastore implements Datastore
 							startTime, endTime, query.getLimit(), query.getOrder().getText());
 				}
 
-				while (resultSet.next())
+				try
 				{
-					DataPoint record = resultSet.getRecord();
+					boolean startedDataPointSet = false;
+					while (resultSet.next())
+					{
+						if (!startedDataPointSet)
+						{
+							queryCallback.startDataPointSet(type, tagMap);
+							startedDataPointSet = true;
+						}
 
-					queryCallback.addDataPoint(m_dataPointFactory.createDataPoint(type,
-							record.getTimestamp().getTime(),
-							KDataInput.createInput(record.getValue())));
+						DataPoint record = resultSet.getRecord();
 
-					/*if (!record.isLongValueNull())
-						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getLongValue());
-					else
-						queryCallback.addDataPoint(record.getTimestamp().getTime(), record.getDoubleValue());
-						*/
+						queryCallback.addDataPoint(m_dataPointFactory.createDataPoint(type,
+								record.getTimestamp().getTime(),
+								KDataInput.createInput(record.getValue())));
+					}
+				}
+				finally
+				{
+					resultSet.close();
 				}
 			}
 			queryCallback.endDataPoints();
@@ -319,6 +339,10 @@ public class H2Datastore implements Datastore
 		catch (IOException e)
 		{
 			throw new DatastoreException(e);
+		}
+		finally
+		{
+			idQuery.close();
 		}
 	}
 
@@ -338,6 +362,11 @@ public class H2Datastore implements Datastore
 				new DeleteMetricsQuery(metricId,
 						new Timestamp(deleteQuery.getStartTime()),
 						new Timestamp(deleteQuery.getEndTime())).runUpdate();
+
+				if (DataPoint.factory.getWithMetricId(metricId) == null)
+				{
+					Metric.factory.find(metricId).delete();
+				}
 			}
 
 			idQuery.close();

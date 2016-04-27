@@ -1,4 +1,5 @@
 var metricToTags = {};
+var tabContainerMap = [];
 
 function displayQuery() {
 	var queryString = $('#query-hidden-text').val();
@@ -20,6 +21,10 @@ function clear()
 	$("#flotTitle").html("");
 	$("#graphLegend").html("");
 	$("#chartContainer").html("");
+}
+
+function showQuery() {
+	$(".query-window").toggle();
 }
 
 function updateChart() {
@@ -92,6 +97,15 @@ function buildKairosDBQuery() {
 				}
 				metric.addGroupBy(new kairosdb.ValueGroupBy(size));
 			}
+			else if(name == "bin"){
+			    var bins = $(groupBy).find(".groupByBinValue").val().split(',');
+			    if(bins.length < 1){
+			        showErrorMessage("Missing Bin Group By size. Values must be separated by commas.");
+                    hasError = true;
+                    return true;
+			    }
+			    metric.addGroupBy(new kairosdb.BinGroupBy(bins));
+			}
 		});
 
 		// Add aggregators
@@ -99,12 +113,15 @@ function buildKairosDBQuery() {
 			var name = $(aggregator).find(".aggregatorName").val();
 
 			var unit;
-			if (name == 'rate') {
-				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-				metric.addRate(unit);
+			if (name == 'diff') {
+				metric.addAggregator(name);
+			}
+			else if (name == 'rate') {
+				unit = $(aggregator).find(".rateUnit").val();
+				metric.addRate(unit, time_zone);
 			}
 			else if (name == 'sampler') {
-				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				unit = $(aggregator).find(".rateUnit").val();
 				metric.addSampler(unit);
 			}
 			else if (name == 'percentile') {
@@ -117,7 +134,7 @@ function buildKairosDBQuery() {
 				if (!isValidPercentile(percentile)) {
 					return true;
 				}
-				metric.addPercentile(value, unit, percentile);
+				metric.addPercentile(value, unit, percentile, time_zone);
 			}
 			else if (name == 'div') {
 				var divisor = $(aggregator).find(".divisorValue").val();
@@ -132,6 +149,17 @@ function buildKairosDBQuery() {
 				}
 				metric.addScaleAggregator(scalingFactor);
 			}
+			else if (name == 'trim')
+			{
+				var agg = metric.addAggregator(name);
+				agg.trim = $(aggregator).find(".aggregatorTrimValue").val();
+			}
+			else if (name == 'save_as')
+			{
+				var agg = metric.addAggregator(name);
+				agg.metric_name = $(aggregator).find(".aggregatorSaveAsValue").val();
+				//todo: add ability to pass tags
+			}
 			else
 			{
 				var value = $(aggregator).find(".aggregatorSamplingValue").val();
@@ -139,7 +167,7 @@ function buildKairosDBQuery() {
 					return true;
 				}
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-				metric.addAggregator(name, value, unit);
+				metric.addRangeAggregator(name, value, unit, time_zone);
 			}
 		});
 
@@ -195,7 +223,7 @@ function buildKairosDBQuery() {
 
 	var startTimeAbsolute = $("#startTime").datepicker("getDate");
 	var startTimeRelativeValue = $("#startRelativeValue").val();
-
+	
 	if (startTimeAbsolute != null) {
 		query.setStartAbsolute(startTimeAbsolute.getTime());
 	}
@@ -218,6 +246,10 @@ function buildKairosDBQuery() {
 			query.setEndRelative(endRelativeValue, $("#endRelativeUnit").val())
 		}
 	}
+	
+	var time_zone = $(".timeZone").val();
+	if (time_zone != '')
+		query.setTimeZone(time_zone)
 
 	return hasError ? null : query;
 }
@@ -249,8 +281,14 @@ function removeMetric(removeButton) {
 	if (metricCount == 0) {
 		return;
 	}
-
+	
 	var count = removeButton.data("metricCount");
+	for (var index = 0; index < tabContainerMap.length; ++index) {
+		if(tabContainerMap[index]===count) {
+			tabContainerMap.splice(index,1);
+			break;
+		}
+	}
 	$('#metricContainer' + count).remove();
 	$('#metricTab' + count).remove();
 	$("#tabs").tabs("refresh");
@@ -386,9 +424,9 @@ function addMetric() {
 	// Tell tabs object to update changes
 	var $tabs = $("#tabs");
 	$tabs.tabs("refresh");
-
 	// Activate newly added tab
 	var lastTab = $(".ui-tabs-nav").children().size() - 1;
+	tabContainerMap[lastTab] = metricCount;
 	$tabs.tabs({active: lastTab});
 }
 
@@ -429,6 +467,11 @@ function addGroupBy(container) {
 			$groupBy = $("#groupByValueTemplate").clone();
 			$groupBy.removeAttr("id").appendTo(groupByContainer);
 			$groupBy.show();
+		}
+		else if(newName == "bin"){
+		    $groupBy = $("#groupByBinTemplate").clone();
+            $groupBy.removeAttr("id").appendTo(groupByContainer);
+            $groupBy.show();
 		}
 	});
 
@@ -520,44 +563,42 @@ function addAggregator(container) {
 	$aggregatorContainer.find(".aggregatorName").change(function () {
 		var name = $aggregatorContainer.find(".aggregatorName").val();
 
-		if (name == "rate" || name == "sampler") {
-			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
-			$aggregatorContainer.find(".aggregatorSampling").hide();
-			$aggregatorContainer.find(".aggregatorPercentile").hide();
-			$aggregatorContainer.find(".divisor").hide();
-			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
-			$aggregatorContainer.find(".scalingFactor").hide();
+		//Start off by hiding everything, then showing what needs to be
+		$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
+		$aggregatorContainer.find(".aggregatorSampling").hide();
+		$aggregatorContainer.find(".aggregatorPercentile").hide();
+		$aggregatorContainer.find(".divisor").hide();
+		$aggregatorContainer.find(".scalingFactor").hide();
+		$aggregatorContainer.find(".aggregatorTrim").hide();
+		$aggregatorContainer.find(".aggregatorSaveAs").hide();
+		$aggregatorContainer.find(".aggregatorRate").hide();
 
+		if (name == "rate" || name == "sampler") {
+			$aggregatorContainer.find(".aggregatorRate").show();
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
 		else if (name == "percentile") {
-			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
-			$aggregatorContainer.find(".aggregatorSampling").show();
-			$aggregatorContainer.find(".scalingFactor").hide();
 		}
 		else if (name == "div") {
-			$aggregatorContainer.find(".aggregatorSampling").hide();
-			$aggregatorContainer.find(".aggregatorPercentile").hide();
-			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
-			$aggregatorContainer.find(".scalingFactor").hide();
 			$aggregatorContainer.find(".divisor").show();
 		}
 		else if (name == 'scale') {
-			$aggregatorContainer.find(".aggregatorSamplingUnit").hide();
-			$aggregatorContainer.find(".aggregatorSampling").hide();
-			$aggregatorContainer.find(".aggregatorPercentile").hide();
-			$aggregatorContainer.find(".divisor").hide();
 			$aggregatorContainer.find(".scalingFactor").show();
+		}
+		else if (name == 'trim') {
+			$aggregatorContainer.find(".aggregatorTrim").show();
+		}
+		else if (name == 'save_as') {
+			$aggregatorContainer.find(".aggregatorSaveAs").show();
+		}
+		else if (name == 'diff') {
 		}
 		else {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
-            $aggregatorContainer.find(".aggregatorPercentile").hide();
-			$aggregatorContainer.find(".divisor").hide();
-			$aggregatorContainer.find(".scalingFactor").hide();
 		}
 	});
 }
@@ -713,10 +754,12 @@ function showChart(subTitle, queries, metricData) {
 
                     var first = true;
 					$.each(group.group, function (key, value) {
-						if (!first)
-							groupByMessage += ", ";
-						groupByMessage += key + '=' + value;
-						first = false;
+                        if (value.length > 0) {
+                            if (!first)
+                                groupByMessage += ", ";
+                            groupByMessage += key + '=' + value;
+                            first = false;
+                        }
 					});
 
 					groupByMessage += ')';
@@ -724,7 +767,7 @@ function showChart(subTitle, queries, metricData) {
 				});
 			}
 
-			if (groupType != 'number')
+			if (groupType && groupType != 'number')
 				return;
 
 			var result = {};

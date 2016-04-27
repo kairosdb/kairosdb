@@ -18,7 +18,12 @@ kairosdb.Aggregators =
 	SUM: "sum",
 	LEAST_SQUARES: "least_squares",
 	PERCENTILE: "percentile",
-	SCALE: "scale"
+	SCALE: "scale",
+	GAPS: "gaps",
+	FIRST: "first",
+	LAST: "last",
+	TRIM: "trim",
+	SAVE_AS: "save_as"
 };
 
 kairosdb.Unit =  //Values used for Aggregator sampling and Relative time
@@ -60,14 +65,17 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
-	this.addRate = function (unit) {
+	this.addRate = function (unit, time_zone) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
 		var rate = {};
 		rate.name = "rate";
 		if (unit) {
-			rate.unit = unit;
+            		rate.sampling = {};
+			rate.sampling.unit = unit;
+			rate.sampling.value = 1;
+            		rate.sampling.time_zone = time_zone;
 		}
 
 		this.aggregators.push(rate);
@@ -88,7 +96,7 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
-	this.addPercentile = function (value, unit, percent) {
+	this.addPercentile = function (value, unit, percent, time_zone) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
@@ -99,6 +107,7 @@ kairosdb.Metric = function (name) {
 			percentile.sampling = {};
 			percentile.sampling.unit = unit;
 			percentile.sampling.value = value;
+            		percentile.sampling.time_zone = time_zone;
 		}
 
 		this.aggregators.push(percentile);
@@ -119,7 +128,24 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
-	this.addAggregator = function (name, value, unit) {
+	/**
+	 Genereic add Aggregator function, returns the new aggregator
+	 * @param name
+	 * @returns {{}}
+	 */
+	this.addAggregator = function (name)
+	{
+		if (!this.aggregators)
+			this.aggregators = [];
+
+		var aggregator = {};
+		aggregator.name = name;
+
+		this.aggregators.push(aggregator);
+		return aggregator;
+	};
+
+	this.addRangeAggregator = function (name, value, unit, time_zone) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
@@ -131,11 +157,12 @@ kairosdb.Metric = function (name) {
 			aggregator.sampling = {};
 			aggregator.sampling.value = value;
 			aggregator.sampling.unit = unit;
+            		aggregator.sampling.time_zone = time_zone;
 		}
 
 		this.aggregators.push(aggregator);
 		return this;
-	}
+	};
 
 	this.addScaleAggregator = function (scalingFactor) {
 		if (!this.aggregators)
@@ -191,6 +218,14 @@ kairosdb.TimeGroupBy = function (groupSizeValue, groupSizeUnit, groupCount) {
 };
 
 /**
+ * Bin groupBy
+ * @param groupSize
+ */
+kairosdb.BinGroupBy = function(groupSize){
+    this.name = "bin";
+    this.bins = groupSize;
+}
+/**
  cacheTime: the amount of time in seconds to cache the query
  */
 kairosdb.MetricQuery = function (cacheTime) {
@@ -238,6 +273,13 @@ kairosdb.MetricQuery = function (cacheTime) {
 			throw new kairosdb.MetricException(
 				'You cannot define both end_absolute and end_relative');
 	};
+	
+	/**
+	*/
+	this.setTimeZone = function (timeZone)
+	{
+		this.time_zone = timeZone;
+	}
 
 	/**
 	 Used to add a kairos.Metric object to the MetricQuery

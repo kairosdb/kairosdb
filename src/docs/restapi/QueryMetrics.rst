@@ -17,15 +17,50 @@ Note that grouping by a time range or value can slow down the query.
 
 **Aggregators**
 
-Optionally you can specify aggregators. Aggregators perform an operation on data points and down samples. For example, you could sum all data points that exist in 5 minute periods.
+Optionally you can specify aggregators. Aggregators perform an operation on data
+points and down samples. For example, you could sum all data points that exist in 5 minute periods.
 
-Aggregators can be combined together. For example, you could sum all data points in 5 minute periods then average them for a week period.
+Aggregators can be combined together. For example, you could sum all data points
+in 5 minute periods then average them for a week period.
 
 Aggregators are processed in the order they are specified in the JSON. The output of one is send to the input of the next.
+
+See the :doc:`Aggregators documentation<Aggregators>` for a complete list of aggregatorss.
 
 **Filtering**
 
 It is possible to filter the data returned by specifying a tag. The data returned will only contain data points associated with the specified tag. Filtering is done using the "tags" property.
+
+---------------
+Request Methods
+---------------
+
+Queries can be done using either a GET or POST method.
+
+--------------------------------------------------------------------------------------------
+
+The GET version requires that the JSON is encoded and passed to the "query" parameter.
+
+------
+Method
+------
+
+  GET
+
+-------
+Request
+-------
+
+  http://[host]:[port]/api/v1/datapoints/query?query=[encoded_JSON]
+
+----
+Body
+----
+  NONE
+
+--------------------------------------------------------------------------------------------
+
+The POST version takes the query JSON in the body of the request.
 
 ------
 Method
@@ -43,50 +78,51 @@ Request
 Body
 ----
 
-::
+.. code-block:: json
 
- {
-    "start_absolute": 1357023600000,
-    "end_relative": {
-        "value": "5",
-        "unit": "days"
-    },
-    "metrics": [
-        {
-            "tags": {
-                "host": ["foo", "foo2"],
-                "customer": ["bar"]
-            },
-            "name": "abc.123",
-            "limit": 10000
-            "aggregators": [
-                {
-                    "name": "sum",
-                    "sampling": {
-                        "value": 10,
-                        "unit": "minutes"
-                    }
-                }
-            ]
-        },
-        {
-            "tags": {
-                "host": ["foo", "foo2"],
-                "customer": ["bar"]
-            },
-            "name": "xyz.123",
-            "aggregators": [
-                {
-                    "name": "avg",
-                    "sampling": {
-                        "value": 10,
-                        "unit": "minutes"
-                    }
-                }
-            ]
-        }
-    ]
- }
+   {
+      "start_absolute": 1357023600000,
+      "end_relative": {
+          "value": "5",
+          "unit": "days"
+      },
+      "time_zone": "Asia/Kabul",
+      "metrics": [
+          {
+              "tags": {
+                  "host": ["foo", "foo2"],
+                  "customer": ["bar"]
+              },
+              "name": "abc.123",
+              "limit": 10000,
+              "aggregators": [
+                  {
+                      "name": "sum",
+                      "sampling": {
+                          "value": 10,
+                          "unit": "minutes"
+                      }
+                  }
+              ]
+          },
+          {
+              "tags": {
+                  "host": ["foo", "foo2"],
+                  "customer": ["bar"]
+              },
+              "name": "xyz.123",
+              "aggregators": [
+                  {
+                      "name": "avg",
+                      "sampling": {
+                          "value": 10,
+                          "unit": "minutes"
+                      }
+                  }
+              ]
+          }
+      ]
+   }
 
 ----------------
 Query Properties
@@ -104,11 +140,19 @@ The relative start time is the current date and time minus the specified value a
 The time in milliseconds. This must be later in time than the start time. If not specified, the end time is assumed to be the current date and time.
 
 *end_relative*
-The relative end time is the current date and time minus the specified value and unit. Possible unit values are "milliseconds", "seconds", "minutes", "hours", "days", "weeks", "months", and "years". For example, if the start time is 30 minutes and the end time is 10 minutes, the query returns matching data points that occurred between the last 30 minutes up to and including the last 10 minutes. If not specified, the end time is assumed to the current date and time. 
+The relative end time is the current date and time minus the specified value and unit. Possible unit values are "milliseconds", "seconds", "minutes", "hours", "days", "weeks", "months", and "years". For example, if the start time is 30 minutes and the end time is 10 minutes, the query returns matching data points that occurred between the last 30 minutes up to and including the last 10 minutes. If not specified, the end time is assumed to the current date and time.
+
+*time_zone*
+The time zone for the time range of the query. If not specified, UTC is used.
 
 *cache_time*
+	The amount of time in seconds to re use the cache from a previous query. When a query is made Kairos looks for the cache file for the query.  If a cache file is found and the timestamp of the cache file is within cache_time seconds from the current query, the cache is used.
 
-The amount of time in seconds to cache the output of the query. If the same query is executed before the cache time expired then cached data is returned.
+	Cache files are identified by hashing the metric name, the start and end time of the query and any tags specified.  For example if you query a metric using relative start of 4 hours ago and then 30 min later you run the same query with a cache_time set to 2000 (just over 30 min) you will get the cached data back.
+
+	Sending a query with a cache_time set to 0 will always refresh the cache with new data from Cassandra.
+
+	Changing aggregators on a query does not effect the use of cache.
 
 -----------------
 Metric Properties
@@ -120,39 +164,25 @@ The name of the metric(s) to return data points for. The name is required.
 
 *aggregators*
 
-This is an ordered array of aggregators. They are processed in the order specified. The output of an aggregator is passed to the input of the next until all have been processed.
-
-Aggregators perform an operation on all data points that exist in the sampling period. Some aggregators do not have a sampling period and simply perform the operation on all data points.
+This is an ordered array of aggregators. They are processed in the order specified.
+The output of an aggregator is passed to the input of the next until all have been processed.
 
 If no aggregator is specified, then all data points are returned.
 
-The default aggregators are:
-
-    * avg - returns the average value
-    * dev - returns the standard deviation
-    * div - returns each data point divided by the a divisor. _
-    * histogram - Calculates a probability distribution and returns the specified percentile for the distribution. The "percentile" value is defined as 0 < percentile <= 1 where .5 is 50% and 1 is 100%. Note that this aggregator has been renamed to *percentile* in release 0.9.2.
-    * least_squares - returns two points for the range which represent the best fit line through the set of points.
-    * max - returns the largest value
-    * min - returns the smallest value
-    * rate - returns the rate of change between pair of data points.
-    * sum - returns the sum of all values
-
-All aggregators allow downsampling except *rate* and *div*.
-
-* The rate aggregator takes a "unit" parameter that tells how to calculate the return data (ie rate in seconds, milliseconds, minutes, etc...).
-* The div aggregator takes a "divisor" which is the value that all data points will be divided by. The "divisor" is an
-
-Downsampling allows you to reduce the sampling rate of the data points and aggregate these values over a longer period
+Most aggregators support downsampling. Downsampling allows you to reduce the sampling rate of the data points and aggregate these values over a longer period
 of time. For example, you could average all daily values over the last week. Rather than getting 7 values you would
 get one value which is the average for the week. Sampling is specified with a "value" and a "unit".
 
-* value - an integer value.
-* unit - possible unit values are "milliseconds", "seconds", "minutes", "hours", "days", "weeks", "months", and "years".
-	
+* value - An integer value.
+* unit - The time range. Possible unit values are "milliseconds", "seconds", "minutes", "hours", "days", "weeks", "months", and "years".
+* align_sampling - An optional property. Setting this to true will cause the aggregation range to be aligned based on the sampling size.  For example if your sample size is either milliseconds, seconds, minutes or hours then the start of the range will always be at the top of the hour.  The effect of setting this to true is that your data will take the same shape when graphed as you refresh the data. This is false by default. *Note that align_sampling and align_start_time are mutually exclusive. If both are set, unexpected results will occur.*
+* align_start_time - An optional property. When set to true the time for the aggregated data point for each range will fall on the start of the range instead of being the value for the first data point within that range. This is false by default. *Note that align_sampling and align_start_time are mutually exclusive. If both are set, unexpected results will occur.*
+* start_time - An optional property. Used along with align_start_time. This is the alignment start time. This defaults to 0.
+
+
 *tags*
 
-Tags narrow down the search. Only metrics that include the tag and matches one of the values are returned. Tags is optional. 
+Tags narrow down the search. Only metrics that include the tag and matches one of the values are returned. Tags is optional.
 
 *group_by*
 
@@ -166,7 +196,10 @@ See :doc:`Grouping by Time <TimeGrouping>` for information on how to group by a 
 
 See :doc:`Grouping by Value <ValueGrouping>` for information on how to group by data point values.
 
-Note that grouping by a time range or by value can slow down the query.
+See :doc:`Grouping by Bins <BinGrouping>` for information on how to group by bins.
+
+
+Note that grouping by a time range, by value, or by bins can slow down the query.
 
 *exclude_tags*
 
@@ -192,53 +225,53 @@ Response
   type then "number" is returned. See :doc:`Custom Types <../kairosdevelopment/CustomData>` for
   information on custom types.
 
-  ::
+  .. code-block:: json
 
-    {
-      "queries": [
-          {
-              "sample_size": 14368,
-              "results": [
-                  {
-                      "name": "abc_123",
-                      "group_by": [
-                          {
-                             "name": "type",
-                             "type": "number"
-                          },
-                          {
+     {
+       "queries": [
+           {
+               "sample_size": 14368,
+               "results": [
+                   {
+                       "name": "abc_123",
+                       "group_by": [
+                           {
+                              "name": "type",
+                              "type": "number"
+                           },
+                           {
                               "name": "tag",
                               "tags": [
                                   "host"
                               ],
-                              "group": {
+                             "group": {
                                   "host": "server1"
-                              }
-                          }
-                      ],
-                      "tags": {
-                          "host": [
-                              "server1"
-                          ],
-                          "customer": [
-                              "bar"
-                          ]
-                      },
-                      "values": [
-                          [
-                              1364968800000,
-                              11019
-                          ],
-                          [
-                              1366351200000,
-                              2843
-                          ]
-                      ]
-                  }
+                             }
+                           }
+                       ],
+                       "tags": {
+                           "host": [
+                               "server1"
+                           ],
+                           "customer": [
+                               "bar"
+                           ]
+                       },
+                       "values": [
+                           [
+                               1364968800000,
+                               11019
+                           ],
+                           [
+                               1366351200000,
+                               2843
+                           ]
+                       ]
+                   }
               ]
           }
-      ]
-  }
+       ]
+     }
 
 
 *Failure*
@@ -247,11 +280,11 @@ Response
 
   The response will be 500 Internal Server Error if an error occurs retrieving data.
 
-  ::
+  .. code-block:: json
 
-    {
-        "errors": [
-            "metrics[0].aggregate must be one of MIN,SUM,MAX,AVG,DEV",
-            "metrics[0].sampling.unit must be one of  SECONDS,MINUTES,HOURS,DAYS,WEEKS,YEARS"
-        ]
-    }
+     {
+         "errors": [
+             "metrics[0].aggregate must be one of MIN,SUM,MAX,AVG,DEV",
+             "metrics[0].sampling.unit must be one of  SECONDS,MINUTES,HOURS,DAYS,WEEKS,YEARS"
+         ]
+     }

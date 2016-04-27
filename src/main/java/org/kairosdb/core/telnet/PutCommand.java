@@ -40,81 +40,25 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
-public class PutCommand implements TelnetCommand, KairosMetricReporter
+public class PutCommand extends PutMillisecondCommand
 {
-	private KairosDatastore m_datastore;
-	private AtomicInteger m_counter = new AtomicInteger();
-	private String m_hostName;
-	private LongDataPointFactory m_longFactory;
-	private DoubleDataPointFactory m_doubleFactory;
-
 	@Inject
 	public PutCommand(KairosDatastore datastore, @Named("HOSTNAME") String hostname,
 			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
-		checkNotNullOrEmpty(hostname);
-		m_hostName = hostname;
-		m_datastore = datastore;
-		m_longFactory = longFactory;
-		m_doubleFactory = doubleFactory;
+		super(datastore, hostname, longFactory, doubleFactory);
 	}
 
 	@Override
 	public void execute(Channel chan, String[] command) throws DatastoreException, ValidationException
 	{
-		Validator.validateNotNullOrEmpty("metricName", command[1]);
-		Validator.validateCharacterSet("metricName", command[1]);
-
-		String metricName = command[1];
-
 		long timestamp = Util.parseLong(command[2]);
 		//Backwards compatible hack for the next 30 years
 		//This allows clients to send seconds to us
 		if (timestamp < 3000000000L)
 			timestamp *= 1000;
 
-		DataPoint dp;
-		try
-		{
-			if (command[3].contains("."))
-				dp = m_doubleFactory.createDataPoint(timestamp, Double.parseDouble(command[3]));
-			else
-				dp = m_longFactory.createDataPoint(timestamp, Util.parseLong(command[3]));
-		}
-		catch (NumberFormatException e)
-		{
-			throw new ValidationException(e.getMessage());
-		}
-
-		ImmutableSortedMap.Builder<String, String> tags = Tags.create();
-
-		int tagCount = 0;
-		for (int i = 4; i < command.length; i++)
-		{
-			String[] tag = command[i].split("=");
-			validateTag(tagCount, tag);
-
-			tags.put(tag[0], tag[1]);
-			tagCount++;
-		}
-
-		if (tagCount == 0)
-			tags.put("add", "tag");
-
-		m_counter.incrementAndGet();
-		m_datastore.putDataPoint(metricName, tags.build(), dp);
-	}
-
-	private void validateTag(int tagCount, String[] tag) throws ValidationException
-	{
-		if (tag.length < 2)
-			throw new ValidationException(String.format("tag[%d] must be in the format 'name=value'.", tagCount));
-
-		Validator.validateNotNullOrEmpty(String.format("tag[%d].name", tagCount), tag[0]);
-		Validator.validateCharacterSet(String.format("tag[%d].name", tagCount), tag[0]);
-
-		Validator.validateNotNullOrEmpty(String.format("tag[%d].value", tagCount), tag[1]);
-		Validator.validateCharacterSet(String.format("tag[%d].value", tagCount), tag[1]);
+		execute(command, timestamp);
 	}
 
 	@Override
@@ -123,14 +67,4 @@ public class PutCommand implements TelnetCommand, KairosMetricReporter
 		return ("put");
 	}
 
-	@Override
-	public List<DataPointSet> getMetrics(long now)
-	{
-		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
-		dps.addTag("host", m_hostName);
-		dps.addTag("method", "put");
-		dps.addDataPoint(m_longFactory.createDataPoint(now, m_counter.getAndSet(0)));
-
-		return (Collections.singletonList(dps));
-	}
 }

@@ -15,23 +15,36 @@
  */
 package org.kairosdb.core.telnet;
 
-import com.google.common.collect.ImmutableSortedMap;
-import org.jboss.netty.channel.*;
-import org.junit.Before;
-import org.junit.Test;
-import org.kairosdb.core.*;
-import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
-import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datastore.*;
-import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.util.ValidationException;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.net.SocketAddress;
 import java.util.Collections;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelConfig;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.junit.Before;
+import org.junit.Test;
+import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointListener;
+import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.TestDataPointFactory;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.QueryQueuingManager;
+import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.util.ValidationException;
+
+import com.google.common.collect.ImmutableSortedMap;
 
 public class PutCommandTest
 {
@@ -43,7 +56,7 @@ public class PutCommandTest
 	{
 		datastore = new FakeDatastore();
 		KairosDatastore kairosDatastore = new KairosDatastore(datastore, new QueryQueuingManager(1, "test"),
-				Collections.<DataPointListener>emptyList(), "test", new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
 		command = new PutCommand(kairosDatastore, "test", new LongDataPointFactoryImpl(),
 				new DoubleDataPointFactoryImpl());
 	}
@@ -80,21 +93,9 @@ public class PutCommandTest
 	}
 
 	@Test
-	public void test_metricName_characters_invalid() throws DatastoreException, ValidationException
+	public void test_metricName_characters_valid() throws DatastoreException, ValidationException
 	{
-		try
-		{
-			command.execute(new FakeChannel(), new String[]{"telnet", "foo:bar", "12345678999", "789", "foo=bar", "fum=barfum"});
-			fail("ValidationException expected");
-		}
-		catch (DatastoreException e)
-		{
-			fail("ValidationException expected");
-		}
-		catch (ValidationException e)
-		{
-			assertThat(e.getMessage(), equalTo("metricName may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
-		}
+		command.execute(new FakeChannel(), new String[]{"telnet", "你好", "12345678999", "789", "foo=bar", "fum=barfum"});
 	}
 
 	@Test
@@ -129,7 +130,7 @@ public class PutCommandTest
 		}
 		catch (ValidationException e)
 		{
-			assertThat(e.getMessage(), equalTo("tag[1].name may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+			assertThat(e.getMessage(), equalTo("tag[1].name may contain any character except colon ':', and equals '='."));
 		}
 	}
 
@@ -165,7 +166,7 @@ public class PutCommandTest
 		}
 		catch (ValidationException e)
 		{
-			assertThat(e.getMessage(), equalTo("tag[1].value may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+			assertThat(e.getMessage(), equalTo("tag[1].value may contain any character except colon ':', and equals '='."));
 		}
 	}
 
@@ -327,16 +328,16 @@ public class PutCommandTest
 			return null;
 		}
 
-		@Override
-		public Object getAttachment()
-		{
-			return null;
-		}
-
-		@Override
-		public void setAttachment(Object o)
-		{
-		}
+        // @Override
+        // public Object getAttachment()
+        // {
+        // return null;
+        // }
+        //
+        // @Override
+        // public void setAttachment(Object o)
+        // {
+        // }
 
 		@Override
 		public int compareTo(Channel o)
@@ -360,7 +361,9 @@ public class PutCommandTest
 		}
 
 		@Override
-		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint) throws DatastoreException
+		public void putDataPoint(String metricName,
+				ImmutableSortedMap<String, String> tags,
+				DataPoint dataPoint, int ttl) throws DatastoreException
 		{
 			if (set == null)
 				set = new DataPointSet(metricName, tags, Collections.EMPTY_LIST);

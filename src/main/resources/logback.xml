@@ -17,15 +17,26 @@
 		<file>log/kairosdb.log</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<!-- daily rollover -->
-			<fileNamePattern>log/kairosdb.%d{yyyy-MM-dd}.log</fileNamePattern>
+			<fileNamePattern>log/kairosdb.%d.log.gz</fileNamePattern>
 
 			<!-- keep 30 days' worth of history -->
 			<maxHistory>30</maxHistory>
+
+			<!-- or whenever the file size reaches 100MB -->
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>100MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+
+			<!-- Whenever startup, will run the rollover -->
+			<cleanHistoryOnStart>true</cleanHistoryOnStart>
 		</rollingPolicy>
 		<encoder>
 			<pattern>%d{MM-dd|HH:mm:ss.SSS} [%thread] %-5level [%file:%line] - %msg%n</pattern>
 		</encoder>
 	</appender>
+
+	<logger name="com.mchange.v2.c3p0" level="WARN"/>
 
 	<!--<logger name="org.hbase.async.RegionClient" level="DEBUG"/>-->
 
@@ -34,7 +45,7 @@
 
 	<!--<logger name="org.kairosdb.core.http.rest.MetricsResource" level="DEBUG"/>-->
 
-	<root level="INFO">
+	<root level="DEBUG">
 		<appender-ref ref="stdout"/>
 		<appender-ref ref="logfile"/>
 	</root>

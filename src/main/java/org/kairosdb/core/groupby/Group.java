@@ -192,6 +192,7 @@ public class Group
 
 				if (!fileDeleted)
 					logger.error("Could not delete group file: " + m_groupCacheFile.getAbsolutePath());
+
 			}
 			catch (IOException e)
 			{

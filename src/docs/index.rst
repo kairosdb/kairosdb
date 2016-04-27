@@ -1,7 +1,3 @@
-.. test documentation master file, created by
-   sphinx-quickstart on Thu May 22 15:04:53 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
 ======================
 KairosDB documentation
@@ -20,6 +16,7 @@ Contents:
    ImportExport
    WebUI
    Configuration
+   Logging
    Statistics
    KairosClient
    CassandraSchema
@@ -28,12 +25,6 @@ Contents:
    telnetapi/index
    Graphite
    IssueTracking
+   External
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 

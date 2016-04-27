@@ -48,8 +48,8 @@ public class Validator
 
 	public static boolean isValidateCharacterSet(ValidationErrors validationErrors, Object name, String value)
 	{
-		if (value == null || value.isEmpty() || !CharacterSet.isValid(value)){
-			validationErrors.addErrorMessage(name + " may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'.");
+		if (value == null || value.isEmpty() || !CharacterSet.isValidTagNameValue(value)){
+			validationErrors.addErrorMessage(name + " may contain any character except colon ':', and equals '='.");
 			return false;
 		}
 		return true;
@@ -68,6 +68,16 @@ public class Validator
 			return false;
 		}
 
+		return true;
+	}
+
+	public static boolean isNotNull(ValidationErrors validationErrors, Object name, Object value)
+	{
+		if (value == null)
+		{
+			validationErrors.addErrorMessage(name + " may not be null.");
+			return false;
+		}
 		return true;
 	}
 

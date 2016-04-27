@@ -23,6 +23,7 @@ import com.google.inject.name.Names;
 import org.kairosdb.core.datastore.Datastore;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -66,6 +67,10 @@ public class CassandraModule extends AbstractModule
 		bind(IncreaseMaxBufferSizesJob.class).in(Scopes.SINGLETON);
 		bind(CleanRowKeyCache.class).in(Scopes.SINGLETON);
 		bind(HectorConfiguration.class).in(Scopes.SINGLETON);
+		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);
+		bind(CassandraClient.class).to(CassandraClientImpl.class);
+
+		bind(new TypeLiteral<List<RowKeyListener>>(){}).toProvider(RowKeyListenerProvider.class);
 
 		bind(new TypeLiteral<Map<String, String>>(){}).annotatedWith(Names.named(CASSANDRA_AUTH_MAP))
 				.toInstance(m_authMap);

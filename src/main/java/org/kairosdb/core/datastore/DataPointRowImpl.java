@@ -16,7 +16,6 @@
 package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.datastore.DataPointRow;
 
 import java.util.*;
 
@@ -46,7 +45,7 @@ public class DataPointRowImpl implements DataPointRow
 	@Override
 	public String getDatastoreType()
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		return dataPoints.get(0).getDataStoreDataType();
 	}
 
 	@Override

@@ -42,7 +42,7 @@ public class ValidatorTest
 		}
 		catch (ValidationException e)
 		{
-			assertThat(e.getMessage(), equalTo("test may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+			assertThat(e.getMessage(), equalTo("test may contain any character except colon ':', and equals '='."));
 		}
 	}
 
@@ -115,7 +115,7 @@ public class ValidatorTest
 		ValidationErrors errors = new ValidationErrors();
 
 		assertThat(Validator.isValidateCharacterSet(errors, "test", "ABC:123"), equalTo(false));
-		assertThat(errors.getErrors(), hasItem("test may only contain alphanumeric characters plus periods '.', slash '/', dash '-', and underscore '_'."));
+		assertThat(errors.getErrors(), hasItem("test may contain any character except colon ':', and equals '='."));
 	}
 
 	@Test

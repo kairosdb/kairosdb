@@ -42,11 +42,8 @@ public class LeastSquaresAggregator extends RangeAggregator
 
 	private class LeastSquaresDataPointAggregator implements RangeSubAggregator
 	{
-		private SimpleRegression m_simpleRegression;
-
 		public LeastSquaresDataPointAggregator()
 		{
-			m_simpleRegression = new SimpleRegression(true);
 		}
 
 		@Override
@@ -57,6 +54,7 @@ public class LeastSquaresAggregator extends RangeAggregator
 			DataPoint first = null;
 			DataPoint second = null;
 			int count = 0;
+			SimpleRegression simpleRegression = new SimpleRegression(true);
 
 			while (dataPointRange.hasNext())
 			{
@@ -74,7 +72,7 @@ public class LeastSquaresAggregator extends RangeAggregator
 				if (start == -1L)
 					start = dp.getTimestamp();
 
-				m_simpleRegression.addData(dp.getTimestamp(), dp.getDoubleValue());
+				simpleRegression.addData(dp.getTimestamp(), dp.getDoubleValue());
 			}
 
 			List<DataPoint> ret = new ArrayList<DataPoint>();
@@ -90,8 +88,8 @@ public class LeastSquaresAggregator extends RangeAggregator
 			}
 			else if (count != 0)
 			{
-				ret.add(m_dataPointFactory.createDataPoint(start, m_simpleRegression.predict(start)));
-				ret.add(m_dataPointFactory.createDataPoint(stop, m_simpleRegression.predict(stop)));
+				ret.add(m_dataPointFactory.createDataPoint(start, simpleRegression.predict(start)));
+				ret.add(m_dataPointFactory.createDataPoint(stop, simpleRegression.predict(stop)));
 			}
 
 			return (ret);

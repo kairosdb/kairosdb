@@ -17,23 +17,26 @@
 package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
+import org.joda.time.DateTimeZone;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
+import org.kairosdb.util.Util;
 
 @AggregatorName(name = "rate", description = "Computes the rate of change for the data points.")
-public class RateAggregator implements Aggregator
+public class RateAggregator implements Aggregator, TimezoneAware
 {
-	private long m_sampling;
+	private Sampling m_sampling;
 	private DoubleDataPointFactory m_dataPointFactory;
+	private DateTimeZone m_timeZone;
 
 	@Inject
 	public RateAggregator(DoubleDataPointFactory dataPointFactory)
 	{
-		m_sampling = 1L;
+		m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
 		m_dataPointFactory = dataPointFactory;
 	}
 
@@ -48,9 +51,20 @@ public class RateAggregator implements Aggregator
 		return (new RateDataPointAggregator(dataPointGroup));
 	}
 
+	public void setSampling(Sampling sampling)
+	{
+		m_sampling = sampling;
+	}
+
 	public void setUnit(TimeUnit timeUnit)
 	{
-		m_sampling = new Sampling(1, timeUnit).getSampling();
+		m_sampling = new Sampling(1, timeUnit);
+	}
+
+	@Override
+	public void setTimeZone(DateTimeZone timeZone)
+	{
+		m_timeZone = timeZone;
 	}
 
 
@@ -59,6 +73,13 @@ public class RateAggregator implements Aggregator
 		public RateDataPointAggregator(DataPointGroup innerDataPointGroup)
 		{
 			super(innerDataPointGroup);
+		}
+
+		@Override
+		public boolean hasNext()
+		{
+			//Ensure we have two data points to mess with
+			return currentDataPoint != null && hasNextInternal();
 		}
 
 		@Override
@@ -86,7 +107,7 @@ public class RateAggregator implements Aggregator
 				}
 			}
 
-			double rate = (x1 - x0)/(y1 - y0) * m_sampling;
+			double rate = (x1 - x0)/(y1 - y0) * Util.getSamplingDuration(y0, m_sampling, m_timeZone);
 
 			return (m_dataPointFactory.createDataPoint(y1, rate));
 		}

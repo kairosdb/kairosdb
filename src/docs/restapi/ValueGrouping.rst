@@ -16,7 +16,7 @@ The name for this grouper is "value".
 The grouper requires a range size. This is range of the values for each group.
 ::
 
-    "range*size": size
+    "range_size": size
 
 -------
 Example

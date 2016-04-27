@@ -15,16 +15,25 @@
  */
 package org.kairosdb.core.http;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Scopes;
 import com.google.inject.servlet.GuiceFilter;
 import com.google.inject.servlet.ServletModule;
+import com.google.inject.multibindings.Multibinder;
+import com.sun.jersey.api.container.filter.GZIPContentEncodingFilter;
+import com.sun.jersey.guice.JerseyServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
+import com.sun.jersey.spi.container.ContainerRequestFilter;
+import com.sun.jersey.spi.container.ContainerResponseFilter;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
+import org.eclipse.jetty.server.handler.GzipHandler;
+import org.eclipse.jetty.servlets.GzipFilter;
 import org.kairosdb.core.http.rest.MetricsResource;
 
+import javax.ws.rs.core.MediaType;
 import java.util.Properties;
 
-public class WebServletModule extends ServletModule
+public class WebServletModule extends JerseyServletModule
 {
 	public WebServletModule(Properties props)
 	{
@@ -43,6 +52,13 @@ public class WebServletModule extends ServletModule
 		bind(MetricsResource.class).in(Scopes.SINGLETON);
 
 		bind(GuiceContainer.class);
+
+		ImmutableMap<String, String> params = new ImmutableMap.Builder<String, String>()
+				.put("mimeTypes", MediaType.APPLICATION_JSON)
+				.put("methods", "GET,POST")
+				.build();
+		bind(GzipFilter.class).in(Scopes.SINGLETON);
+		filter("/*").through(GzipFilter.class, params);
 
 		bind(LoggingFilter.class).in(Scopes.SINGLETON);
 		filter("/*").through(LoggingFilter.class);

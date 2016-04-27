@@ -22,13 +22,17 @@ public class CassandraClientImpl implements CassandraClient
 	@Inject
 	public CassandraClientImpl(CassandraConfiguration config)
 	{
-		final Cluster.Builder builder = new Cluster.Builder()
-				.withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
-				.withQueryOptions(new QueryOptions().setConsistencyLevel(config.getDataReadLevel()));
+		final Cluster.Builder builder = new Cluster.Builder();
+		config.getAddressTranslator().ifPresent(builder::withAddressTranslater);
+		builder.withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()));
+		builder.withQueryOptions(new QueryOptions().setConsistencyLevel(config.getDataReadLevel()));
 
-		for (String node : config.getHostList().split(","))
-		{
-			builder.addContactPoint(node.split(":")[0]);
+		for (String node : config.getHostList().split(",")) {
+			builder.addContactPoint(node);
+		}
+
+		if(config.getUser().isPresent() && config.getPassword().isPresent()) {
+			builder.withCredentials(config.getUser().get(), config.getPassword().get());
 		}
 
 		m_cluster = builder.build();

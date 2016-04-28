@@ -35,8 +35,10 @@ public class CassandraClientImpl implements CassandraClient
 			builder.addContactPoint(node);
 		}
 
-		if(config.getUser().isPresent() && config.getPassword().isPresent()) {
-			builder.withCredentials(config.getUser().get(), config.getPassword().get());
+		String user = config.getUser();
+		String password = config.getPassword();
+		if(null!=user && null!=password && !"".equals(user) && !"".equals(password)) {
+			builder.withCredentials(user, password);
 		}
 
 		m_cluster = builder.build();

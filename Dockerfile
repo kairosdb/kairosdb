@@ -7,4 +7,4 @@ RUN rm /app/kairosdb.tar.gz
 
 EXPOSE 8080
 
-CMD ["/app/bin/kairosdb.sh"]
+CMD ["/app/bin/kairosdb.sh", "run"]

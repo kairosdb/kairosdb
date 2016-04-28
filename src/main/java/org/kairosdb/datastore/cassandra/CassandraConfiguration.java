@@ -80,11 +80,11 @@ public class CassandraConfiguration
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_USER)
-	private Optional<String> m_user = Optional.empty();
+	private String m_user = null;
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_PASSWORD)
-	private Optional<String> m_password = Optional.empty();
+	private String m_password = null;
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_ADDRESS_TRANSLATOR)
@@ -165,11 +165,11 @@ public class CassandraConfiguration
 		this.m_hostList = m_hostList;
 	}
 
-	public Optional<String> getPassword() {
+	public String getPassword() {
 		return m_password;
 	}
 
-	public Optional<String> getUser() {
+	public String getUser() {
 		return m_user;
 	}
 

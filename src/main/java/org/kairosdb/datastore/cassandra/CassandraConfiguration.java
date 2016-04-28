@@ -14,6 +14,11 @@ import java.util.Optional;
  */
 public class CassandraConfiguration
 {
+	public static enum ADDRESS_TRANSLATOR_TYPE {
+		NONE,
+		EC2
+	}
+
 	private static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.host_list";
 	private static final String CASSANDRA_PORT = "kairosdb.datastore.cassandra.port";
 
@@ -83,7 +88,7 @@ public class CassandraConfiguration
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_ADDRESS_TRANSLATOR)
-	private Optional<AddressTranslater> m_addressTranslator = Optional.empty();
+	private ADDRESS_TRANSLATOR_TYPE m_addressTranslator = ADDRESS_TRANSLATOR_TYPE.NONE;
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_PORT)
@@ -168,7 +173,7 @@ public class CassandraConfiguration
 		return m_user;
 	}
 
-	public Optional<AddressTranslater> getAddressTranslator() {
+	public ADDRESS_TRANSLATOR_TYPE getAddressTranslator() {
 		return m_addressTranslator;
 	}
 

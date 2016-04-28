@@ -466,13 +466,11 @@ public class KairosDatastore
 					{
 						returnedRows = cachedResults.getRows();
 						ThreadReporter.addDataPoint(METRIC_QUERY_CACHE_READ_TIME, System.currentTimeMillis() - queryStartTime);
-						logger.info("cache hit={}", m_metric.getName());
 					}
 				}
 
 				if (cachedResults == null)
 				{
-					logger.debug("Cache MISS!");
 					cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
 							tempFile, m_dataPointFactory);
 					m_datastore.queryDatabase(m_metric, cachedResults);

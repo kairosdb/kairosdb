@@ -683,6 +683,7 @@ public class CassandraDatastore implements Datastore
 		{
 			DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTime(startTime), "");
 			DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTime(endTime), "");
+			endKey.setEndSearchKey(true);
 
 			bs.setBytes(0, bMetricName);
 			bs.setBytes(1, keySerializer.toByteBuffer(startKey));
@@ -705,6 +706,7 @@ public class CassandraDatastore implements Datastore
 		{
 			DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTime(startTime), "");
 			DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTime(endTime), "");
+			endKey.setEndSearchKey(true);
 
 			bs.setBytes(0, bMetricName);
 			bs.setBytes(1, keySerializer.toByteBuffer(startKey));
@@ -714,7 +716,6 @@ public class CassandraDatastore implements Datastore
 			filterAndAddKeys(filterTags, rs, rowKeys);
 		}
 
-		logger.info("rowKeys.size={} start={} end={}", rowKeys.size(), startTime, endTime);
 		return rowKeys;
 	}
 

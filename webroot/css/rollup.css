@@ -1,6 +1,6 @@
 body {
-    margin-left: 100px;
-    margin-right: 100px;
+    margin: 0 5%;
+    width: 90%;
 }
 
 th {
@@ -56,4 +56,9 @@ h1 {
 {
     margin: 0 auto !important;
     float: none !important;
+}
+
+.text-columns {
+    word-wrap: break-word;
+    max-width: 300px;
 }

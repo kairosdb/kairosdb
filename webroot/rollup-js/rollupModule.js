@@ -5,30 +5,29 @@ var module = angular.module('rollupApp',
 		'template/modal/backdrop.html',
 		'template/modal/window.html']);
 
-module.directive('editable', function () {
-	return {
-		restrict: 'E',
-		scope: {model: '='},
-		replace: false,
-		template: '<span>' +
-		'<input type="text" ' +
-		'	style="width:100%; ' +
-		'	padding:0; ' +
-		'	line-height:16px" ' +
-		'	ng-model="model"  ' +
-		'	ng-blur="$parent.onBlur($parent.task)" ' +
-		'	ng-show="edit" ' +
-		'	my-blur="edit">' +
-		'</input>' +
+module.directive('editable', function ($compile) {
+	var template = '' +
+		'<span>' +
+			'<input type="text" ' +
+			'	style="padding:0; line-height:16px;" ' +
+			'	ng-model="model"  ' +
+			'	ng-blur="$parent.onBlur($parent.task)" ' +
+			'	ng-show="edit" ' +
+			'	my-blur="edit">' +
+			'</input>' +
 
-		'<a href=""ng-show="!edit && !$parent.task.complex" ' +
-				'ng-class="model.indexOf(\'<\') == 0 ? \'gray\' : \'black\'"' +
-		'>{{model}}' +
-		'</a>' +
+			'<a href="" ' +
+			'	ng-show="!edit && !$parent.task.complex" ' +
+			'	ng-click="onClick()" ' +
+			'	ng-class="model.indexOf(\'<\') == 0 ? \'gray\' : \'black\'">{{model}}</a>' +
 
-		'<span ng-show="$parent.task.complex">{{model}}</span> ' +
-		'</span>',
-		link: function (scope, element, attrs) {
+		'	<span ng-show="$parent.task.complex">{{model}}</span> ' +
+		'</span>';
+
+	var linker = function(scope, element, attributes) {
+
+		scope.onClick = function()
+		{
 			if (scope.$parent.task.complex)
 			{
 				// Ignore complex tasks
@@ -36,16 +35,29 @@ module.directive('editable', function () {
 			}
 
 			scope.edit = false;
-			element.bind('click', function () {
-				scope.$apply(scope.edit = true);
-				element.find('input').focus();
 
+			element.bind('click', function () {
 				inputField = element.find('input').get(0);
+				inputField.style.width = element[0].parentElement.offsetWidth - 15 + "px";
 				if (inputField.value.indexOf("<") === 0) {
 					// Remove text from text field since its just placeholder text
 					inputField.value = '';
 				}
+				scope.$apply(scope.edit = true);
+				inputField.focus();
 			});
+		};
+
+		element.html(template).show();
+
+		$compile(element.contents())(scope);
+	};
+
+	return {
+		restrict: "E",
+		link: linker,
+		scope: {
+			model:'='
 		}
 	};
 });
@@ -60,7 +72,6 @@ module.directive('autocompleteeditable', function () {
 		'ng-show="edit"' +
 		'my-blur="edit"' +
 		'ng-blur="suggestSaveAs(task)"' +
-		'class="input-large tight-form-input ng-pristine ng-valid ng-touched"' +
 		'ng-model="task.metric_name"' +
 		'myblur="edit" spellcheck="false"' +
 		'bs-typeahead bs-options="metric for metric in suggestMetrics(task.metric_name)"' +
@@ -90,14 +101,16 @@ module.directive('autocompleteeditable', function () {
 
 			scope.edit = false;
 			element.bind('click', function () {
-				scope.$apply(scope.edit = true);
-				element.find('input').focus();
 
 				inputField = element.find('input').get(0);
+				inputField = element.find('input').get(0);
+				inputField.style.width = element[0].parentElement.offsetWidth - 15 + "px";
 				if (inputField.value.indexOf("<") === 0) {
 					// Remove text from text field since its just placeholder text
 					inputField.value = '';
 				}
+				scope.$apply(scope.edit = true);
+				inputField.focus();
 			});
 		}
 	};
@@ -183,7 +196,6 @@ module.directive('autocompleteWithButtons', function ($compile) {
 		'			<span ng-show="!model.edit" style="margin: 0 10px 0 0">{{model.group_by_values}}</span>' +
 		'			<input type="text" style="width:85px; padding:0; line-height:16px"' +
 		'				focus-on-show ' +
-		'				class="input-small tight-form-input ' +
 		'				spellcheck="false"' +
 		'				bs-typeahead ' +
 		'				bs-options="key for key in list(model)"' +
@@ -313,7 +325,7 @@ module.directive('autocompleteTags', function ($compile) {
 		'				<span class="glyphicon glyphicon-remove text-danger"></span></a>' +
 		'					<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"' +
 		'						ng-click="cancelTagValues(model)"' +
-		'						ng-show="model.tagEdit>' +
+		'						ng-show="model.tagEdit">' +
 		'				<span class="glyphicon glyphicon-remove-sign text-danger"></span></a>' +
 		'			</td>' +
 		'		</tr>' +

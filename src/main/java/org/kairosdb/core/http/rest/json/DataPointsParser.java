@@ -335,12 +335,15 @@ public class DataPointsParser
 					}
 					else
 					{
-						Long timestamp = null;
+						Long optionalTimestamp = null;
 						if (!dataPoint[0].isJsonNull())
-							timestamp = dataPoint[0].getAsLong();
+							optionalTimestamp = dataPoint[0].getAsLong();
 
-						if (metric.validate() && !Validator.isNotNull(validationErrors, dataPointContext.setAttribute("timestamp"), timestamp))
+						if (metric.validate() && !Validator.isNotNull(validationErrors, dataPointContext.setAttribute("timestamp"), optionalTimestamp))
 							continue;
+						
+						@SuppressWarnings( "null" )
+						long timestamp = optionalTimestamp;
 
 						String type = metric.getType();
 						if (dataPoint.length > 2)

@@ -317,7 +317,7 @@ public class Util
 				ret = new org.joda.time.Duration(dt, dt.plusSeconds((int)sampling.getValue())).getMillis();
 				break;
 			case MILLISECONDS:
-				ret = (long) sampling.getValue();
+				ret = sampling.getValue();
 				break;
 		}
 		return ret;

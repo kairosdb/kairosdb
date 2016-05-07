@@ -711,14 +711,14 @@ public class DataPointsParserTest
 
 		DataPointsParser parser = new DataPointsParser(datastore, skipReader,
 				new Gson(), dataPointFactory);
-		ValidationErrors validationErrors = parser.parse();
+		parser.parse();
 
 		System.out.println(parser.getDataPointCount());
 		System.out.println("No Validation");
 		System.out.println(parser.getIngestTime());
 
 		parser = new DataPointsParser(datastore, reader, new Gson(), dataPointFactory);
-		validationErrors = parser.parse();
+		parser.parse();
 		System.out.println("With Validation");
 		System.out.println(parser.getIngestTime());
 	}
@@ -748,18 +748,12 @@ public class DataPointsParserTest
 			if ((lastDataPointSet == null) || (!lastDataPointSet.getName().equals(metricName)) ||
 					(!lastDataPointSet.getTags().equals(tags)))
 			{
-				lastDataPointSet = new DataPointSet(metricName, tags, Collections.EMPTY_LIST);
+				lastDataPointSet = new DataPointSet(metricName, tags, Collections.<DataPoint>emptyList());
 				dataPointSetList.add(lastDataPointSet);
 			}
 
 			lastDataPointSet.addDataPoint(dataPoint);
 		}
-
-		/*@Override
-		public void putDataPoints(DataPointSet dps) throws DatastoreException
-		{
-			dataPointSetList.add(dps);
-		}*/
 
 		@Override
 		public Iterable<String> getMetricNames() throws DatastoreException

@@ -4,11 +4,10 @@ import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  Created with IntelliJ IDEA.
@@ -48,6 +47,6 @@ public class DataPointTestCommon
 			testSum += dp.getDoubleValue();
 		}
 
-		assertEquals(sum, testSum);
+		assertEquals(sum, testSum, 0.0);
 	}
 }

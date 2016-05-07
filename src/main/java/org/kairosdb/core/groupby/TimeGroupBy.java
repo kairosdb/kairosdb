@@ -90,6 +90,7 @@ public class TimeGroupBy implements GroupBy
 			case HOURS: milliseconds *= 60;
 			case MINUTES: milliseconds *= 60;
 			case SECONDS: milliseconds *= 1000;
+			case MILLISECONDS:
 		}
 
 		return milliseconds;

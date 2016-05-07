@@ -19,7 +19,6 @@ package org.kairosdb.core.aggregator;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;

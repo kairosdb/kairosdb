@@ -23,8 +23,6 @@ import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import java.util.Collections;
 import java.util.Iterator;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Standard Deviation aggregator.
  * Can compute without storing all of the data points in memory at the same

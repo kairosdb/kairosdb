@@ -8,11 +8,7 @@ package org.kairosdb.core.datastore;
 
 import com.google.common.collect.ImmutableSortedMap;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.exception.DatastoreException;
-
-import java.util.List;
-import java.util.SortedMap;
 
 public interface Datastore
 {

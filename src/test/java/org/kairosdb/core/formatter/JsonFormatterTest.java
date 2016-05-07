@@ -16,7 +16,6 @@
 package org.kairosdb.core.formatter;
 
 import org.junit.Test;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.StringIterable;

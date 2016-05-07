@@ -20,15 +20,12 @@ import com.google.inject.Binding;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import com.google.inject.name.Names;
-import org.kairosdb.core.reporting.KairosMetricReporter;
-
 import java.util.HashMap;
 import java.util.Map;
 
 public class GuiceCommandProvider implements CommandProvider
 {
-	private Map<String, TelnetCommand> m_commandMap = new HashMap<String, TelnetCommand>();
+	private Map<String, TelnetCommand> m_commandMap = new HashMap<>();
 
 	@Inject
 	public GuiceCommandProvider(Injector injector)
@@ -37,10 +34,12 @@ public class GuiceCommandProvider implements CommandProvider
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (TelnetCommand.class.isAssignableFrom(bindingClass))
 			{
-				TelnetCommand command = (TelnetCommand)injector.getInstance(bindingClass);
+				@SuppressWarnings("unchecked")
+				Class<? extends TelnetCommand> castClass = (Class<? extends TelnetCommand>) bindingClass;
+				TelnetCommand command = injector.getInstance(castClass);
 				m_commandMap.put(command.getCommand(), command);
 			}
 		}
@@ -49,8 +48,6 @@ public class GuiceCommandProvider implements CommandProvider
 	@Override
 	public TelnetCommand getCommand(String command)
 	{
-		TelnetCommand cmd = m_commandMap.get(command);
-
-		return (cmd);
+		return m_commandMap.get(command);
 	}
 }

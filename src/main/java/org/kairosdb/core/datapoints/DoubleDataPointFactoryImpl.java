@@ -6,8 +6,6 @@ import org.kairosdb.core.DataPoint;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import static org.kairosdb.core.DataPoint.GROUP_NUMBER;
 
 public class DoubleDataPointFactoryImpl implements DoubleDataPointFactory
@@ -17,7 +15,7 @@ public class DoubleDataPointFactoryImpl implements DoubleDataPointFactory
 	@Override
 	public DataPoint createDataPoint(long timestamp, double value)
 	{
-		return ((DataPoint)new DoubleDataPoint(timestamp, value));
+		return new DoubleDataPoint(timestamp, value);
 	}
 
 	@Override

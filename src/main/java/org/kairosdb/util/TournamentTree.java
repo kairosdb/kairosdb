@@ -25,7 +25,7 @@ import java.util.TreeSet;
 
 public class TournamentTree<T>
 	{
-	private class TreeValue<T>
+	private static class TreeValue<T>
 		{
 		private int m_iteratorNum;
 		private T m_value;

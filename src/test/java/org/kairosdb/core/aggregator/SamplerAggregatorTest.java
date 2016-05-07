@@ -123,7 +123,7 @@ public class SamplerAggregatorTest
         SamplerAggregator samplerAggregator = new SamplerAggregator(new DoubleDataPointFactoryImpl());
         DataPointGroup results = samplerAggregator.aggregate(group);
 
-        DataPoint dp = results.next();
+        results.next();
     }
 
 }

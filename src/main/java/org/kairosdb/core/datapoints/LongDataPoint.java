@@ -7,7 +7,6 @@ import org.json.JSONWriter;
 
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  Created with IntelliJ IDEA.

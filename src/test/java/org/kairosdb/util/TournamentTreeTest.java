@@ -30,22 +30,15 @@ public class TournamentTreeTest
 	private class RowData
 	{
 		private long m_ts;
-		private int m_value;
 
 		public RowData(long ts, int value)
 		{
 			m_ts = ts;
-			m_value = value;
 		}
 
 		public long getTimeStamp()
 		{
-			return (m_ts);
-		}
-
-		public int getValue()
-		{
-			return (m_value);
+			return m_ts;
 		}
 	}
 

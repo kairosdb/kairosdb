@@ -31,8 +31,8 @@ import org.kairosdb.datastore.DatastoreTestHelper;
 import java.io.IOException;
 import java.util.*;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -110,7 +110,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		for (int i = OVERFLOW_SIZE; i > 0; i--)
 		{
-			dpSet.addDataPoint(new LongDataPoint(s_dataPointTime - (long) i, 42));
+			dpSet.addDataPoint(new LongDataPoint(s_dataPointTime - i, 42));
 		}
 
 		putDataPoints(dpSet);
@@ -409,7 +409,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = super.s_datastore.createQuery(query);
+		DatastoreQuery dq = DatastoreTestHelper.s_datastore.createQuery(query);
 
 		List<DataPointGroup> results = dq.execute();
 
@@ -463,7 +463,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = super.s_datastore.createQuery(query);
+		DatastoreQuery dq = DatastoreTestHelper.s_datastore.createQuery(query);
 
 		List<DataPointGroup> results = dq.execute();
 		try

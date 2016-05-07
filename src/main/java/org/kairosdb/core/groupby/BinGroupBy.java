@@ -21,7 +21,6 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.GroupByName;
 import org.kairosdb.core.formatter.FormatterException;
 
-import javax.validation.constraints.Min;
 import java.io.StringWriter;
 import java.util.Map;
 

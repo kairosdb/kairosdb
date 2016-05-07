@@ -16,10 +16,9 @@
 
 package org.kairosdb.datastore.cassandra;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  This cache serves two purposes.
@@ -43,7 +42,7 @@ public class DataCache<T>
 	private int m_maxSize;
 
 
-	private class LinkItem<T>
+	private static class LinkItem<T>
 	{
 		private LinkItem<T> m_prev;
 		private LinkItem<T> m_next;
@@ -56,13 +55,13 @@ public class DataCache<T>
 		}
 	}
 
-	//Using a ConcurrentHashMap so we can use the putIfAbsent method.
-	private ConcurrentHashMap<T, LinkItem<T>> m_hashMap;
+	//Using a ConcurrentMap so we can use the putIfAbsent method.
+	private ConcurrentMap<T, LinkItem<T>> m_hashMap;
 
 	public DataCache(int cacheSize)
 	{
 		//m_cache = new InternalCache(cacheSize);
-		m_hashMap = new ConcurrentHashMap();
+		m_hashMap = new ConcurrentHashMap<>();
 		m_maxSize = cacheSize;
 
 		m_front.m_next = m_back;

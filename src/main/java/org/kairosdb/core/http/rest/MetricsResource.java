@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.http.rest;
 
+import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
@@ -667,7 +668,6 @@ public class MetricsResource implements KairosMetricReporter
 			m_values = values;
 		}
 
-		@SuppressWarnings("ResultOfMethodCallIgnored")
 		public void write(OutputStream output) throws IOException, WebApplicationException
 		{
 			Writer writer = new OutputStreamWriter(output, "UTF-8");
@@ -694,23 +694,12 @@ public class MetricsResource implements KairosMetricReporter
 			m_responseFile = responseFile;
 		}
 
-		@SuppressWarnings("ResultOfMethodCallIgnored")
 		@Override
-		public void write(OutputStream output) throws IOException, WebApplicationException
+		public void write(OutputStream output) throws IOException
 		{
 			try
 			{
-				InputStream reader = new FileInputStream(m_responseFile);
-
-				byte[] buffer = new byte[1024];
-				int size;
-
-				while ((size = reader.read(buffer)) != -1)
-				{
-					output.write(buffer, 0, size);
-				}
-
-				reader.close();
+				Files.copy(m_responseFile, output);
 				output.flush();
 			}
 			finally

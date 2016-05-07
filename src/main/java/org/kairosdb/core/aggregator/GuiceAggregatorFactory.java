@@ -26,7 +26,7 @@ import java.util.*;
 
 public class GuiceAggregatorFactory implements AggregatorFactory
 {
-	private Map<String, Class<Aggregator>> m_aggregators = new HashMap<String, Class<Aggregator>>();
+	private Map<String, Class<? extends Aggregator>> m_aggregators = new HashMap<>();
 	private Injector m_injector;
 
 
@@ -38,28 +38,30 @@ public class GuiceAggregatorFactory implements AggregatorFactory
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (Aggregator.class.isAssignableFrom(bindingClass))
 			{
-				AggregatorName ann = (AggregatorName)bindingClass.getAnnotation(AggregatorName.class);
+				@SuppressWarnings("unchecked")
+				Class<? extends Aggregator> castClass = (Class<? extends Aggregator>) bindingClass;
+				
+				AggregatorName ann = castClass.getAnnotation(AggregatorName.class);
 				if (ann == null)
-					throw new IllegalStateException("Aggregator class "+bindingClass.getName()+
+					throw new IllegalStateException("Aggregator class "+castClass.getName()+
 							" does not have required annotation "+AggregatorName.class.getName());
 
-				m_aggregators.put(ann.name(), bindingClass);
+				m_aggregators.put(ann.name(), castClass);
 			}
 		}
 	}
 
 	public Aggregator createAggregator(String name)
 	{
-		Class<Aggregator> aggClass = m_aggregators.get(name);
+		Class<? extends Aggregator> aggClass = m_aggregators.get(name);
 
 		if (aggClass == null)
 			return (null);
 
-		Aggregator agg = m_injector.getInstance(aggClass);
-		return (agg);
+		return m_injector.getInstance(aggClass);
 	}
 
 }

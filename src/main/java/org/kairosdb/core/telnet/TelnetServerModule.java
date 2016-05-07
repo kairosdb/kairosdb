@@ -18,7 +18,6 @@ package org.kairosdb.core.telnet;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
-import com.google.inject.name.Names;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,12 +27,9 @@ public class TelnetServerModule extends AbstractModule
 {
 	public static final Logger logger = LoggerFactory.getLogger(TelnetServerModule.class);
 
-	private Properties m_props;
-
-
 	public TelnetServerModule(Properties props)
 	{
-		m_props = props;
+
 	}
 
 	@Override

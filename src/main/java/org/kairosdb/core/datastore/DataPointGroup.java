@@ -21,7 +21,6 @@ import org.kairosdb.core.groupby.GroupByResult;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 public interface DataPointGroup extends Iterator<DataPoint>, TagSet
 {

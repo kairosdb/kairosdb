@@ -7,9 +7,6 @@
 package org.kairosdb.core;
 
 import com.google.inject.*;
-import org.kairosdb.core.aggregator.Aggregator;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,11 +23,12 @@ public class DataPointListenerProvider implements Provider<List<DataPointListene
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (DataPointListener.class.isAssignableFrom(bindingClass))
 			{
-				DataPointListener listener = (DataPointListener)injector.getInstance(bindingClass);
-				m_listeners.add(listener);
+				@SuppressWarnings("unchecked")
+				Class<? extends DataPointListener> castClass = (Class<? extends DataPointListener>)bindingClass;
+				m_listeners.add(injector.getInstance(castClass));
 			}
 		}
 	}

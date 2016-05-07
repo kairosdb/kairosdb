@@ -43,7 +43,7 @@ public class LongDataPointFactoryImpl implements LongDataPointFactory
 	@Override
 	public DataPoint createDataPoint(long timestamp, long value)
 	{
-		return ((DataPoint)new LongDataPoint(timestamp, value));
+		return new LongDataPoint(timestamp, value);
 	}
 
 	@Override

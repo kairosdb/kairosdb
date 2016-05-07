@@ -124,7 +124,7 @@ public class RateAggregatorTest
 		RateAggregator rateAggregator = new RateAggregator(new DoubleDataPointFactoryImpl());
 		DataPointGroup results = rateAggregator.aggregate(group);
 
-		DataPoint dp = results.next();
+		results.next();
 	}
 
 }

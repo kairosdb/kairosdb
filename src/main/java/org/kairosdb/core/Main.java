@@ -443,11 +443,13 @@ public class Main
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (KairosDBService.class.isAssignableFrom(bindingClass))
 			{
-				KairosDBService service = (KairosDBService) m_injector.getInstance(bindingClass);
-				logger.info("Starting service " + bindingClass);
+				@SuppressWarnings("unchecked")
+				Class<? extends KairosDBService> castClass = (Class<? extends KairosDBService>) bindingClass;
+				KairosDBService service = m_injector.getInstance(castClass);
+				logger.info("Starting service " + castClass);
 				service.start();
 				m_services.add(service);
 			}

@@ -19,7 +19,6 @@ package org.kairosdb.util;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
-import java.lang.management.MemoryUsage;
 
 /**
  Created with IntelliJ IDEA.
@@ -34,17 +33,16 @@ public class MemoryMonitor
 
 	private static MemoryPoolMXBean findPool()
 	{
-		MemoryPoolMXBean ret = null;
 		for (MemoryPoolMXBean pool : ManagementFactory.getMemoryPoolMXBeans()) {
 			if (pool.getType() == MemoryType.HEAP && pool.isUsageThresholdSupported()) {
-				ret = pool;
+				// we do something when we reached 99.9% of memory usage
+				// when we get to this point gc was unable to recover memory.
+				pool.setCollectionUsageThreshold((long) Math.floor(pool.getUsage().getMax() * 0.999));
+				return pool;
 			}
 		}
-		// we do something when we reached 99.9% of memory usage
-		// when we get to this point gc was unable to recover memory.
-		ret.setCollectionUsageThreshold((long) Math.floor(ret.getUsage().getMax() * 0.999));
 
-		return (ret);
+		return null;
 	}
 
 	private int m_checkRate;

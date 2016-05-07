@@ -83,7 +83,7 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 	@Override
 	public List<QueryPlugin> getPlugins()
 	{
-		return Collections.EMPTY_LIST;
+		return Collections.<QueryPlugin>emptyList();
 	}
 
 }

@@ -17,8 +17,6 @@ package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.datastore.DataPointGroup;
 
-import java.util.List;
-
 public interface Aggregator
 {
 	DataPointGroup aggregate(DataPointGroup dataPointGroup);

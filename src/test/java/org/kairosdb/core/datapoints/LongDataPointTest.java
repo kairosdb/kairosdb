@@ -1,6 +1,5 @@
 package org.kairosdb.core.datapoints;
 
-import org.junit.Before;
 import org.junit.BeforeClass;
 
 /**

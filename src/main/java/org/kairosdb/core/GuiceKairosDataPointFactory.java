@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.io.DataInput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -55,10 +54,12 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (DataPointFactory.class.isAssignableFrom(bindingClass))
 			{
-				DataPointFactory factory = (DataPointFactory)injector.getInstance(bindingClass);
+				@SuppressWarnings("unchecked")
+				Class<? extends DataPointFactory> castClass = (Class<? extends DataPointFactory>) bindingClass;
+				DataPointFactory factory = injector.getInstance(castClass);
 				String dsType = factory.getDataStoreType();
 				DataPointFactory registered = m_factoryMapDataStore.put(dsType, factory);
 				//Check if two different classes were bound to the same data type.
@@ -80,7 +81,7 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 				String type = key.substring(DATAPOINTS_FACTORY_PROP_PREFIX.length());
 				try
 				{
-					Class factoryClass = Class.forName(className);
+					Class<?> factoryClass = Class.forName(className);
 
 					DataPointFactory factory = (DataPointFactory) injector.getInstance(factoryClass);
 

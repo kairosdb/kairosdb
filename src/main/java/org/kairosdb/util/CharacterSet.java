@@ -28,7 +28,7 @@ public class CharacterSet
 
 	/**
 	 * Returns true if the specified string contains a valid set of characters
-	 * For a tag name or value, cannot contain ; or =
+	 * For a tag name or value, cannot contain : or =
 	 * @param s string to test
 	 * @return true if all characters in the string are valid
 	 */

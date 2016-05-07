@@ -84,6 +84,8 @@ public class TimeGroupBy implements GroupBy
 		long milliseconds = rangeSize.getValue();
 		switch(rangeSize.getUnit())
 		{
+			case MONTHS:
+				throw new AssertionError();
 			case YEARS: milliseconds *= 52;
 			case WEEKS: milliseconds *= 7;
 			case DAYS: milliseconds *= 24;

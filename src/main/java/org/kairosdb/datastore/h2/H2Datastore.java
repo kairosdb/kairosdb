@@ -55,15 +55,19 @@ public class H2Datastore implements Datastore
 			KairosDataPointFactory dataPointFactory) throws DatastoreException
 	{
 		m_dataPointFactory = dataPointFactory;
-		logger.info("Starting H2 database in " + dbPath);
 		boolean createDB = false;
 
 		File dataDir = new File(dbPath);
 		if (!dataDir.exists())
 			createDB = true;
-
+	
+		dbPath = dbPath.replace('\\', '/');
+		//newer H2 is more strict about relative paths
+		String jdbcPath = (dataDir.isAbsolute() || dbPath.startsWith("./") ? "" : "./") + dbPath;
+		logger.info("Starting H2 database in " + jdbcPath);
+		
 		JdbcDataSource ds = new JdbcDataSource();
-		ds.setURL("jdbc:h2:" + dbPath + "/kairosdb");
+		ds.setURL("jdbc:h2:" + jdbcPath + "/kairosdb");
 		ds.setUser("sa");
 
 		try

@@ -52,18 +52,17 @@ public class SaveAsAggregatorTest
 		assertThat(dataPoint.getTimestamp(), equalTo(1L));
 		assertThat(dataPoint.getLongValue(), equalTo(10L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), any(ImmutableSortedMap.class), eq(dataPoint), eq(42));
+		verify(m_mockDatastore).putDataPoint(eq("testTtl"), anyTags(), eq(dataPoint), eq(42));
 
 		assertThat(results.hasNext(), equalTo(true));
 		dataPoint = results.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(2L));
 		assertThat(dataPoint.getLongValue(), equalTo(20L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), any(ImmutableSortedMap.class), eq(dataPoint), eq(42));
+		verify(m_mockDatastore).putDataPoint(eq("testTtl"), anyTags(), eq(dataPoint), eq(42));
 
 		results.close();
 	}
-
 
 	@Test
 	public void testNoTtl() throws DatastoreException
@@ -81,14 +80,14 @@ public class SaveAsAggregatorTest
 		assertThat(dataPoint.getTimestamp(), equalTo(1L));
 		assertThat(dataPoint.getLongValue(), equalTo(10L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), any(ImmutableSortedMap.class), eq(dataPoint), eq(0));
+		verify(m_mockDatastore).putDataPoint(eq("testTtl"), anyTags(), eq(dataPoint), eq(0));
 
 		assertThat(results.hasNext(), equalTo(true));
 		dataPoint = results.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(2L));
 		assertThat(dataPoint.getLongValue(), equalTo(20L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), any(ImmutableSortedMap.class), eq(dataPoint), eq(0));
+		verify(m_mockDatastore).putDataPoint(eq("testTtl"), anyTags(), eq(dataPoint), eq(0));
 
 		results.close();
 	}
@@ -203,5 +202,10 @@ public class SaveAsAggregatorTest
 		verify(m_mockDatastore).putDataPoint(eq("testTtl"), eq(verifyMap), eq(dataPoint), eq(42));
 
 		results.close();
+	}
+	
+	@SuppressWarnings("unchecked")
+	private ImmutableSortedMap<String,String> anyTags() {
+		return any(ImmutableSortedMap.class);
 	}
 }

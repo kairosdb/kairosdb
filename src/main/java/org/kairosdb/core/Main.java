@@ -24,7 +24,7 @@ import com.beust.jcommander.Parameter;
 import com.google.gson.Gson;
 import com.google.inject.*;
 import com.google.inject.util.Modules;
-import org.apache.commons.io.FileUtils;
+import com.google.common.io.Files;
 import org.h2.util.StringUtils;
 import org.json.JSONException;
 import org.json.JSONWriter;
@@ -498,7 +498,7 @@ public class Main
 				if (recoveryFile.exists())
 				{
 					logger.info("Skipping metrics found in " + recoveryFile.getAbsolutePath());
-					List<String> list = FileUtils.readLines(recoveryFile);
+					List<String> list = Files.readLines(recoveryFile, Charset.defaultCharset());
 					metricsExported.addAll(list);
 				}
 

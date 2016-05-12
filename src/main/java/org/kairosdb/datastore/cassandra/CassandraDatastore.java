@@ -212,6 +212,13 @@ public class CassandraDatastore implements Datastore
 	{
 		try (Session session = m_cassandraClient.getSession())
 		{
+			PreparedStatement ps = session.prepare("SELECT * FROM system.schema_keyspaces WHERE keyspace_name = ?");
+			List<Row> rows = session.execute(ps.bind(m_cassandraClient.getKeyspace())).all();
+			if (rows.size() != 0) {
+				logger.info("Keyspace '"+m_cassandraClient.getKeyspace()+"' already exists");
+				return;
+			}
+
 			session.execute(String.format(CREATE_KEYSPACE, m_cassandraClient.getKeyspace()));
 		}
 

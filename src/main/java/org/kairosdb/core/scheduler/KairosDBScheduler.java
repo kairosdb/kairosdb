@@ -46,6 +46,7 @@ public class KairosDBScheduler implements KairosDBService
 
 		Properties props = new Properties();
 		props.setProperty("org.quartz.threadPool.threadCount", "4");
+		props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, "true");
 
 		StdSchedulerFactory factory = new StdSchedulerFactory(props);
 		scheduler = factory.getScheduler();

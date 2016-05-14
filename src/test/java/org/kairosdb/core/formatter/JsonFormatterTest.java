@@ -155,7 +155,7 @@ public class JsonFormatterTest
 		assertThat(writer.toString(), equalTo("{\"results\":[\"Phil\",\"Bob\",\"Larry\",\"Moe\",\"Curly\"]}"));
 	}
 
-	private class TestStringIterable extends StringIterable
+	private static class TestStringIterable extends StringIterable
 	{
 
 		@Override

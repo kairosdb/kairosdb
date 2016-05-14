@@ -312,7 +312,7 @@ public class KairosDatastoreTest
 		return null;
 	}
 
-	private class TestKairosDatastore extends KairosDatastore
+	private static class TestKairosDatastore extends KairosDatastore
 	{
 
 		public TestKairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
@@ -323,7 +323,7 @@ public class KairosDatastoreTest
 		}
 	}
 
-	private class TestDatastore implements Datastore
+	private static class TestDatastore implements Datastore
 	{
 		private DatastoreException m_toThrow = null;
 

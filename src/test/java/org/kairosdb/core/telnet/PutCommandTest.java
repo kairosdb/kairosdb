@@ -178,7 +178,7 @@ public class PutCommandTest
 		}
 	}
 
-	public class FakeChannel implements Channel
+	public static class FakeChannel implements Channel
 	{
 		@Override
 		public Integer getId()
@@ -336,7 +336,7 @@ public class PutCommandTest
 		}
 	}
 
-	private class FakeDatastore implements Datastore
+	private static class FakeDatastore implements Datastore
 	{
 		private DataPointSet set;
 

@@ -635,7 +635,7 @@ public class QueryParser
 	}
 
 	//===========================================================================
-	private class TimeUnitDeserializer implements JsonDeserializer<TimeUnit>
+	private static class TimeUnitDeserializer implements JsonDeserializer<TimeUnit>
 	{
 		public TimeUnit deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
 				throws JsonParseException
@@ -658,7 +658,7 @@ public class QueryParser
 	}
 
 	//===========================================================================
-	private class DateTimeZoneDeserializer implements JsonDeserializer<DateTimeZone>
+	private static class DateTimeZoneDeserializer implements JsonDeserializer<DateTimeZone>
 	{
 		public DateTimeZone deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
 				throws JsonParseException
@@ -686,7 +686,7 @@ public class QueryParser
 
 
 	//===========================================================================
-	private class MetricDeserializer implements JsonDeserializer<Metric>
+	private static class MetricDeserializer implements JsonDeserializer<Metric>
 	{
 		@Override
 		public Metric deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext)

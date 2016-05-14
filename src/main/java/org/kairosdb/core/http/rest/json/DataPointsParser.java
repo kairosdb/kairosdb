@@ -141,7 +141,7 @@ public class DataPointsParser
 		return metric;
 	}
 
-	private class Context
+	private static class Context
 	{
 		private int m_count;
 		private String m_name;
@@ -179,7 +179,7 @@ public class DataPointsParser
 		}
 	}
 
-	private class SubContext
+	private static class SubContext
 	{
 		private Context m_context;
 		private String m_contextName;

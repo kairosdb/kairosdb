@@ -23,7 +23,7 @@ import static org.junit.Assert.assertNull;
 
 public class DataCacheTest
 {
-	public class TestObject
+	public static class TestObject
 	{
 		private final String m_data;
 

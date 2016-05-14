@@ -27,7 +27,7 @@ import static org.junit.Assert.*;
 
 public class TournamentTreeTest
 {
-	private class RowData
+	private static class RowData
 	{
 		private long m_ts;
 
@@ -42,7 +42,7 @@ public class TournamentTreeTest
 		}
 	}
 
-	private class RowDataComparator implements Comparator<RowData>
+	private static class RowDataComparator implements Comparator<RowData>
 	{
 		public int compare(RowData rd1, RowData rd2)
 		{

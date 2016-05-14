@@ -657,7 +657,7 @@ public class MetricsResource implements KairosMetricReporter
 		return ret;
 	}
 
-	public class ValuesStreamingOutput implements StreamingOutput
+	public static class ValuesStreamingOutput implements StreamingOutput
 	{
 		private DataFormatter m_formatter;
 		private Iterable<String> m_values;
@@ -685,7 +685,7 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
-	public class FileStreamingOutput implements StreamingOutput
+	public static class FileStreamingOutput implements StreamingOutput
 	{
 		private File m_responseFile;
 

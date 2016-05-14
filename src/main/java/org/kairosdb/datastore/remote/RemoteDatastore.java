@@ -46,7 +46,7 @@ import java.util.SortedMap;
 import java.util.zip.GZIPOutputStream;
 
 
-public class RemoteDatastore implements Datastore
+public final class RemoteDatastore implements Datastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(RemoteDatastore.class);
 	public static final String DATA_DIR_PROP = "kairosdb.datastore.remote.data_dir";
@@ -328,6 +328,8 @@ public class RemoteDatastore implements Datastore
 						return (name.endsWith(".gz"));
 					}
 				});
+		if(zipFiles == null)
+			return;
 
 		for (String zipFile : zipFiles)
 		{

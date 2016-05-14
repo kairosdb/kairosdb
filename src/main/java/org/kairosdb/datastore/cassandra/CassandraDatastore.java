@@ -333,7 +333,7 @@ public class CassandraDatastore implements Datastore
 				String cachedValue = m_tagValueCache.cacheItem(value);
 				if (cachedValue == null)
 				{
-					if(value.toString().length() == 0)
+					if(value.length() == 0)
 					{
 						logger.warn(
 								"Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+metricName
@@ -533,18 +533,6 @@ public class CassandraDatastore implements Datastore
 			m_rowKeyCache.clear();
 			m_metricNameCache.clear();
 		}
-	}
-
-	@SuppressWarnings("unused")
-	private SortedMap<String, String> getTags(DataPointRow row)
-	{
-		TreeMap<String, String> map = new TreeMap<String, String>();
-		for (String name : row.getTagNames())
-		{
-			map.put(name, row.getTagValue(name));
-		}
-
-		return map;
 	}
 
 	/**

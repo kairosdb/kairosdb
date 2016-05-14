@@ -46,6 +46,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 
 public class Main
 {
@@ -55,7 +56,7 @@ public class Main
 	public static final String SERVICE_PREFIX = "kairosdb.service.";
 	public static final String SERVICE_FOLDER_PREFIX = "kairosdb.service_folder.";
 
-	private final static Object s_shutdownObject = new Object();
+	private final static CountDownLatch s_shutdownObject = new CountDownLatch(1);
 
 	private static final Arguments arguments = new Arguments();
 
@@ -76,7 +77,9 @@ public class Main
 				return (name.endsWith(".properties") && !name.equals(propertiesFile.getName()));
 			}
 		});
-
+		if (pluginProps == null)
+			return;
+		
 		ClassLoader cl = getClass().getClassLoader();
 
 		for (String prop : pluginProps)
@@ -88,14 +91,21 @@ public class Main
 
 			if (propStream != null)
 			{
-				props.load(propStream);
-				propStream.close();
+				try
+				{
+					props.load(propStream);
+				}
+				finally
+				{
+					propStream.close();
+				}
 			}
 
 			//Load the file in
-			FileInputStream fis = new FileInputStream(new File(propDir, prop));
-			props.load(fis);
-			fis.close();
+			try(FileInputStream fis = new FileInputStream(new File(propDir, prop)))
+			{
+				props.load(fis);
+			}
 		}
 	}
 
@@ -104,11 +114,14 @@ public class Main
 		List<URL> jars = new ArrayList<URL>();
 		File libDir = new File(path);
 		File[] fileList = libDir.listFiles();
-		for (File f : fileList)
+		if(fileList != null)
 		{
-			if (f.getName().endsWith(".jar"))
+			for (File f : fileList)
 			{
-				jars.add(f.toURI().toURL());
+				if (f.getName().endsWith(".jar"))
+				{
+					jars.add(f.toURI().toURL());
+				}
 			}
 		}
 
@@ -121,14 +134,21 @@ public class Main
 	{
 		Properties props = new Properties();
 		InputStream is = getClass().getClassLoader().getResourceAsStream("kairosdb.properties");
-		props.load(is);
-		is.close();
+		try
+		{
+			props.load(is);
+		}
+		finally
+		{
+			is.close();
+		}
 
 		if (propertiesFile != null)
 		{
-			FileInputStream fis = new FileInputStream(propertiesFile);
-			props.load(fis);
-			fis.close();
+			try(FileInputStream fis = new FileInputStream(propertiesFile))
+			{
+				props.load(fis);
+			}
 
 			loadPlugins(props, propertiesFile);
 		}
@@ -289,10 +309,7 @@ public class Main
 						{
 							main.stopServices();
 
-							synchronized (s_shutdownObject)
-							{
-								s_shutdownObject.notify();
-							}
+							s_shutdownObject.countDown();
 						}
 						catch (Exception e)
 						{
@@ -425,13 +442,11 @@ public class Main
 	{
 		try
 		{
-			synchronized (s_shutdownObject)
-			{
-				s_shutdownObject.wait();
-			}
+			s_shutdownObject.await();
 		}
 		catch (InterruptedException ignore)
 		{
+			Thread.currentThread().interrupt();
 		}
 	}
 
@@ -481,7 +496,7 @@ public class Main
 		ds.close();
 	}
 
-	private class RecoveryFile
+	private static class RecoveryFile
 	{
 		private final Set<String> metricsExported = new HashSet<String>();
 
@@ -527,10 +542,10 @@ public class Main
 		}
 	}
 
-	private class ExportQueryCallback implements QueryCallback
+	private static class ExportQueryCallback implements QueryCallback
 	{
 		private final Writer m_writer;
-		private JSONWriter m_jsonWriter;
+		private JSONWriter m_jsonWriter = null;
 		private final String m_metric;
 
 		public ExportQueryCallback(String metricName, Writer out)

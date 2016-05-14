@@ -88,7 +88,7 @@ public class DataPointSet
 	{
 		return (m_dataType);
 	}
-
+	
 	@Override
 	public boolean equals(Object o)
 	{
@@ -105,6 +105,17 @@ public class DataPointSet
 			return false;
 
 		return true;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((m_dataPoints == null) ? 0 : m_dataPoints.hashCode());
+		result = prime * result + ((m_name == null) ? 0 : m_name.hashCode());
+		result = prime * result + ((m_tags == null) ? 0 : m_tags.hashCode());
+		return result;
 	}
 
 }

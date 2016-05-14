@@ -105,12 +105,14 @@ public class H2Datastore implements Datastore
 		m_holdConnection.setAutoCommit(false);
 
 		StringBuilder sb = new StringBuilder();
-		InputStreamReader reader = new InputStreamReader(getClass().getClassLoader()
-				.getResourceAsStream("create.sql"));
+		try(InputStreamReader reader = new InputStreamReader(getClass().getClassLoader()
+				.getResourceAsStream("create.sql")))
+		{
 
-		int ch;
-		while ((ch = reader.read()) != -1)
-			sb.append((char) ch);
+			int ch;
+			while ((ch = reader.read()) != -1)
+				sb.append((char) ch);
+		}
 
 		String[] tableCommands = sb.toString().split(";");
 

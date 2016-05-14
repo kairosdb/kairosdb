@@ -30,11 +30,12 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 
-public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runnable
+public final class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runnable
 {
 	public static final Logger logger = LoggerFactory.getLogger(WriteBuffer.class);
 
@@ -42,7 +43,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 	private String m_cfName;
 	private List<Triple<RowKeyType, ColumnKeyType, ValueType>> m_buffer;
 	private Mutator<RowKeyType> m_mutator;
-	private volatile int m_bufferCount = 0;
+	private final AtomicInteger m_bufferCount = new AtomicInteger(0);
 	private ReentrantLock m_mutatorLock;
 
 	private Thread m_writeThread;
@@ -112,7 +113,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		try
 		{
 			waitOnBufferFull();
-			m_bufferCount ++;
+			m_bufferCount.incrementAndGet();
 
 			if (columnKey.toString().length() > 0)
 			{
@@ -135,7 +136,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		{
 			waitOnBufferFull();
 
-			m_bufferCount ++;
+			m_bufferCount.incrementAndGet();
 			m_mutator.addDeletion(rowKey, m_cfName, timestamp);
 		}
 		finally
@@ -151,7 +152,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		{
 			waitOnBufferFull();
 
-			m_bufferCount ++;
+			m_bufferCount.incrementAndGet();
 			m_mutator.addDeletion(rowKey, m_cfName, columnKey, m_columnKeySerializer, timestamp);
 		}
 		finally
@@ -162,7 +163,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 
 	private void waitOnBufferFull()
 	{
-		if ((m_bufferCount > m_maxBufferSize) && (m_mutatorLock.getHoldCount() == 1))
+		if ((m_bufferCount.get() > m_maxBufferSize) && (m_mutatorLock.getHoldCount() == 1))
 		{
 			submitJob();
 		}
@@ -196,13 +197,13 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		Mutator<RowKeyType> pendingMutations = null;
 		List<Triple<RowKeyType, ColumnKeyType, ValueType>> buffer = null;
 
-		m_writeStats.saveWriteSize(m_bufferCount);
+		m_writeStats.saveWriteSize(m_bufferCount.get());
 
 		pendingMutations = m_mutator;
 		buffer = m_buffer;
 		m_mutator = new MutatorImpl<RowKeyType>(m_keyspace, m_rowKeySerializer);
 		m_buffer = new ArrayList<Triple<RowKeyType, ColumnKeyType, ValueType>>();
-		m_bufferCount = 0;
+		m_bufferCount.set(0);
 
 		WriteDataJob writeDataJob = new WriteDataJob(pendingMutations, buffer);
 		//submit job
@@ -222,7 +223,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			}
 			catch (InterruptedException ignored) {}
 
-			if (m_bufferCount != 0)
+			if (m_bufferCount.get() != 0)
 			{
 				m_mutatorLock.lock();
 				try

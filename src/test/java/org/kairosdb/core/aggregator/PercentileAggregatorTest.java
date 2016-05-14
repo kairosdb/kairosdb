@@ -88,7 +88,7 @@ public class PercentileAggregatorTest
 		double[] doubleValues = new double[values.length];
 		for (int i = 0; i < values.length; i++)
 		{
-			doubleValues[i] = new Double(values[i].toString());
+			doubleValues[i] = Double.valueOf(values[i].toString());
 		}
 		return getActualPercentile(percentile, doubleValues);
 	}
@@ -149,8 +149,7 @@ public class PercentileAggregatorTest
 		long range = 1000000000L;
 		for (int i = 0; i < testSize; i++)
 		{
-			int rand = (int) (2*Math.random());
-			if(rand ==0)
+			if(random.nextBoolean())
 			{
 				long j = (long)(random.nextDouble()*range);
 				group.addDataPoint(new LongDataPoint(1, j));

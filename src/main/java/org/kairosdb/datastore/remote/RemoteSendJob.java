@@ -75,7 +75,7 @@ public class RemoteSendJob implements KairosDBJob
 
 			try
 			{
-				Thread.sleep(delay * 1000);
+				Thread.sleep(delay * 1000L);
 			}
 			catch (InterruptedException e)
 			{

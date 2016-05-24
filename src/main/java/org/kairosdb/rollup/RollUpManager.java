@@ -2,6 +2,7 @@ package org.kairosdb.rollup;
 
 
 import com.google.inject.name.Named;
+import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.TimeUnit;
@@ -23,7 +24,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static org.quartz.CalendarIntervalScheduleBuilder.calendarIntervalSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
-public class RollUpManager implements RollupTaskChangeListener
+public class RollUpManager implements KairosDBService, RollupTaskChangeListener
 {
 	public static final Logger logger = LoggerFactory.getLogger(RollUpManager.class);
 	private static final String GROUP_ID = RollUpJob.class.getSimpleName();
@@ -182,5 +183,17 @@ public class RollUpManager implements RollupTaskChangeListener
 				checkState(false, "Invalid time unit" + unit);
 				return null;
 		}
+	}
+
+	@Override
+	public void start() throws KairosDBException
+	{
+
+	}
+
+	@Override
+	public void stop()
+	{
+
 	}
 }

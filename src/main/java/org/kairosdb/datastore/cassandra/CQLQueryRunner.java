@@ -66,7 +66,7 @@ public class CQLQueryRunner
 
 	public CQLQueryRunner(Session session, PreparedStatement dataPointQuery,
 			KairosDataPointFactory kairosDataPointFactory,
-			List<DataPointsRowKey> rowKeys, long startTime, long endTime,
+			List<DataPointsRowKey> rowKeys, long startTime, long endTime, long rowWidth,
 			QueryCallback csResult,
 			int limit, Order order)
 	{
@@ -82,8 +82,8 @@ public class CQLQueryRunner
 		else
 			m_startTime = getColumnName(m_tierRowTime, startTime);
 
-		if (endTime > (m_tierRowTime + ROW_WIDTH))
-			m_endTime = getColumnName(m_tierRowTime, m_tierRowTime + ROW_WIDTH) +1;
+		if (endTime > (m_tierRowTime + rowWidth))
+			m_endTime = getColumnName(m_tierRowTime, m_tierRowTime + rowWidth) +1;
 		else
 			m_endTime = getColumnName(m_tierRowTime, endTime) + 1; //add 1 so we get 0x1 for last bit
 

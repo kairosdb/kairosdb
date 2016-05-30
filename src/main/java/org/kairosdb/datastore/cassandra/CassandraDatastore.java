@@ -102,7 +102,8 @@ public class CassandraDatastore implements Datastore
 
 	public static final DataPointsRowKeySerializer DATA_POINTS_ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
-	public static final long ROW_WIDTH = 1814400000L;
+	public final long m_rowWidthRead;
+	public final long m_rowWidthWrite;
 
 	public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
 
@@ -168,6 +169,9 @@ public class CassandraDatastore implements Datastore
 
 		m_cassandraConfiguration = cassandraConfiguration;
 		m_keyspaceName = m_cassandraConfiguration.getKeyspaceName();
+
+		m_rowWidthRead = cassandraConfiguration.getRowWidthRead();
+		m_rowWidthWrite = cassandraConfiguration.getRowWidthWrite();
 
 		m_rowKeyCache = new DataCache<>(m_cassandraConfiguration.getRowKeyCacheSize());
 		m_metricNameCache = new DataCache<>(m_cassandraConfiguration.getStringCacheSize());
@@ -239,7 +243,7 @@ public class CassandraDatastore implements Datastore
 
 	public void cleanRowKeyCache()
 	{
-		long currentRow = calculateRowTime(System.currentTimeMillis());
+		long currentRow = calculateRowTimeRead(System.currentTimeMillis());
 
 		Set<DataPointsRowKey> keys = m_rowKeyCache.getCachedKeys();
 
@@ -274,11 +278,11 @@ public class CassandraDatastore implements Datastore
 				ttl = m_cassandraConfiguration.getDatapointTtl();
 
 			int rowKeyTtl = 0;
-			//Row key will expire 3 weeks after the data in the row expires
+			//Row key will expire after configured ReadRowWidth
 			if (ttl != 0)
-				rowKeyTtl = ttl + ((int)(ROW_WIDTH / 1000));
+				rowKeyTtl = ttl + ((int)(m_rowWidthWrite / 1000));
 
-			long rowTime= calculateRowTime(dataPoint.getTimestamp());
+			long rowTime= calculateRowTimeWrite(dataPoint.getTimestamp());
 
 			rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
 					tags);
@@ -395,7 +399,7 @@ public class CassandraDatastore implements Datastore
 
 		ResultSet rs = m_session.execute(bs);
 
-		List<String> ret = new ArrayList<String>();
+		List<String> ret = new ArrayList<>();
 		for(Row r : rs) {
 			ret.add(r.getString("column1"));
 		}
@@ -476,7 +480,7 @@ public class CassandraDatastore implements Datastore
 			{
 				runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
 						queryKeys,
-						query.getStartTime(), query.getEndTime(), queryCallback, query.getLimit(), query.getOrder()));
+						query.getStartTime(), query.getEndTime(), m_rowWidthRead, queryCallback, query.getLimit(), query.getOrder()));
 
 				queryKeys = new ArrayList<>();
 				queryKeys.add(rowKey);
@@ -492,7 +496,7 @@ public class CassandraDatastore implements Datastore
 		{
 			runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
 					queryKeys,
-					query.getStartTime(), query.getEndTime(), queryCallback, query.getLimit(), query.getOrder()));
+					query.getStartTime(), query.getEndTime(), m_rowWidthRead, queryCallback, query.getLimit(), query.getOrder()));
 		}
 
 		ThreadReporter.addDataPoint(KEY_QUERY_TIME, System.currentTimeMillis() - startTime);
@@ -535,9 +539,10 @@ public class CassandraDatastore implements Datastore
 		{
 			DataPointsRowKey rowKey = rowKeyIterator.next();
 			long rowKeyTimestamp = rowKey.getTimestamp();
-			if (deleteQuery.getStartTime() <= rowKeyTimestamp && (deleteQuery.getEndTime() >= rowKeyTimestamp + ROW_WIDTH - 1))
+			// TODO check which width to use
+			if (deleteQuery.getStartTime() <= rowKeyTimestamp && (deleteQuery.getEndTime() >= rowKeyTimestamp + m_rowWidthRead - 1))
 			{
-				//todo fix me
+				// TODO fix me
 				//m_dataPointWriteBuffer.deleteRow(rowKey, now);  // delete the whole row
 				//m_rowKeyWriteBuffer.deleteColumn(rowKey.getMetricName(), rowKey, now); // Delete the index
 				m_rowKeyCache.clear();
@@ -563,7 +568,7 @@ public class CassandraDatastore implements Datastore
 
 	private SortedMap<String, String> getTags(DataPointRow row)
 	{
-		TreeMap<String, String> map = new TreeMap<String, String>();
+		TreeMap<String, String> map = new TreeMap<>();
 		for (String name : row.getTagNames())
 		{
 			map.put(name, row.getTagValue(name));
@@ -604,9 +609,14 @@ public class CassandraDatastore implements Datastore
 		return (ret);
 	}
 
-	public static long calculateRowTime(long timestamp)
+	public long calculateRowTimeRead(long timestamp)
 	{
-		return (timestamp - (Math.abs(timestamp) % ROW_WIDTH));
+		return (timestamp - (Math.abs(timestamp) % m_rowWidthRead));
+	}
+
+	public long calculateRowTimeWrite(long timestamp)
+	{
+		return (timestamp - (Math.abs(timestamp) % m_rowWidthWrite));
 	}
 
 
@@ -688,8 +698,8 @@ public class CassandraDatastore implements Datastore
 		BoundStatement bs = m_psQueryRowKeyIndex.bind();
 		if ((startTime < 0) && (endTime >= 0))
 		{
-			DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTime(startTime), "");
-			DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTime(endTime), "");
+			DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(startTime), "");
+			DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTimeRead(endTime), "");
 			endKey.setEndSearchKey(true);
 
 			bs.setBytes(0, bMetricName);
@@ -700,8 +710,8 @@ public class CassandraDatastore implements Datastore
 
 			filterAndAddKeys(filterTags, rs, rowKeys);
 
-			startKey = new DataPointsRowKey(metricName, calculateRowTime(0), "");
-			endKey = new DataPointsRowKey(metricName, calculateRowTime(endTime), "");
+			startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(0), "");
+			endKey = new DataPointsRowKey(metricName, calculateRowTimeRead(endTime), "");
 
 			bs.setBytes(1, keySerializer.toByteBuffer(startKey));
 			bs.setBytes(2, keySerializer.toByteBuffer(endKey));
@@ -711,8 +721,8 @@ public class CassandraDatastore implements Datastore
 		}
 		else
 		{
-			DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTime(startTime), "");
-			DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTime(endTime), "");
+			DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(startTime), "");
+			DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTimeRead(endTime), "");
 			endKey.setEndSearchKey(true);
 
 			bs.setBytes(0, bMetricName);
@@ -744,8 +754,7 @@ public class CassandraDatastore implements Datastore
 		public void addDataPoint(DataPoint datapoint) throws IOException
 		{
 			long time = datapoint.getTimestamp();
-
-			long rowTime = calculateRowTime(time);
+			long rowTime = calculateRowTimeWrite(time);
 			if (m_currentRow == null)
 			{
 				m_currentRow = new DataPointsRowKey(m_metric, rowTime, m_currentType, m_currentTags);

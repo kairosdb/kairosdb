@@ -38,6 +38,17 @@ public class CassandraConfiguration
 	public static final String CASSANDRA_PASSWORD = "kairosdb.datastore.cassandra.password";
 	public static final String CASSANDRA_ADDRESS_TRANSLATOR = "kairosdb.datastore.cassandra.address_translator";
 
+	public static final String CASSANDRA_READ_ROWWIDTH = "kairosdb.datastore.cassandra.read_row_width";
+	public static final String CASSANDRA_WRITE_ROWWIDTH = "kairosdb.datastore.cassandra.write_row_width";
+
+	@Inject(optional=true)
+	@Named(CASSANDRA_WRITE_ROWWIDTH)
+	private long m_rowWidthWrite = 1L * 3 * 24 * 60 * 60 * 1000; // 3 day row width for write
+
+	@Inject(optional=true)
+	@Named(CASSANDRA_READ_ROWWIDTH)
+	private long m_rowWidthRead = 1814400000L; // 3 weeks for reading - backwards compatible
+
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL_META)
 	private ConsistencyLevel m_dataWriteLevelMeta = ConsistencyLevel.LOCAL_ONE;
@@ -179,5 +190,13 @@ public class CassandraConfiguration
 
 	public int getPort() {
 		return m_port;
+	}
+
+	public long getRowWidthRead() {
+		return m_rowWidthRead;
+	}
+
+	public long getRowWidthWrite() {
+		return m_rowWidthWrite;
 	}
 }

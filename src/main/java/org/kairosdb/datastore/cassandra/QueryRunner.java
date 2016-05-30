@@ -67,7 +67,7 @@ public class QueryRunner
 
 	public QueryRunner(Keyspace keyspace, String columnFamily,
 			KairosDataPointFactory kairosDataPointFactory,
-			List<DataPointsRowKey> rowKeys, long startTime, long endTime,
+			List<DataPointsRowKey> rowKeys, long startTime, long endTime, long rowWidth,
 			QueryCallback csResult,
 			int singleRowReadSize, int multiRowReadSize, int limit, Order order)
 	{
@@ -90,8 +90,8 @@ public class QueryRunner
 		else
 			m_startTime = getColumnName(m_tierRowTime, startTime);
 
-		if (endTime > (m_tierRowTime + ROW_WIDTH))
-			m_endTime = getColumnName(m_tierRowTime, m_tierRowTime + ROW_WIDTH) +1;
+		if (endTime > (m_tierRowTime + rowWidth))
+			m_endTime = getColumnName(m_tierRowTime, m_tierRowTime + rowWidth) +1;
 		else
 			m_endTime = getColumnName(m_tierRowTime, endTime) +1; //add 1 so we get 0x1 for last bit
 

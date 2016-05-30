@@ -179,6 +179,14 @@ public class CassandraDatastore implements Datastore
 		m_tagValueCache = new DataCache<>(m_cassandraConfiguration.getStringCacheSize());
 	}
 
+	public long getRowWidthRead() {
+		return m_rowWidthRead;
+	}
+
+	public long getRowWidthWrite() {
+		return m_rowWidthWrite;
+	}
+
 	private WriteBufferStats createWriteBufferStats(final String cfName, final String hostname) {
 		return new WriteBufferStats()
 		{

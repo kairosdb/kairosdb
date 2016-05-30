@@ -76,7 +76,6 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		putDataPoints(dpSet);
 
-
 		dpSet = new DataPointSet(ROW_KEY_TEST_METRIC);
 		dpSet.addTag("host", "B");
 		dpSet.addTag("client", "foo");
@@ -122,7 +121,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addTag("host", "A");
 		dpSet.addTag("client", "bar");
 
-		long rowKeyTime = CassandraDatastore.calculateRowTime(s_dataPointTime);
+		long rowKeyTime = s_datastore.calculateRowTimeWrite(s_dataPointTime);
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime, 13));
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + 1000, 14));
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + 2000, 15));
@@ -137,9 +136,9 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addTag("client", "bar");
 
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime, 13));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + CassandraDatastore.ROW_WIDTH, 14));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * CassandraDatastore.ROW_WIDTH), 15));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * CassandraDatastore.ROW_WIDTH), 16));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + s_datastore.getRowWidthWrite(), 14));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * s_datastore.getRowWidthWrite()), 15));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * s_datastore.getRowWidthWrite()), 16));
 
 		putDataPoints(dpSet);
 
@@ -150,9 +149,9 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addTag("client", "bar");
 
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime, 13));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + CassandraDatastore.ROW_WIDTH, 14));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * CassandraDatastore.ROW_WIDTH), 15));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * CassandraDatastore.ROW_WIDTH), 16));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + s_datastore.getRowWidthWrite(), 14));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * s_datastore.getRowWidthWrite()), 15));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * s_datastore.getRowWidthWrite()), 16));
 
 		putDataPoints(dpSet);
 
@@ -211,7 +210,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 	private static List<DataPointsRowKey> readIterator(Iterator<DataPointsRowKey> it)
 	{
-		List<DataPointsRowKey> ret = new ArrayList<DataPointsRowKey>();
+		List<DataPointsRowKey> ret = new ArrayList<>();
 		while (it.hasNext())
 			ret.add(it.next());
 
@@ -345,7 +344,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@Test
 	public void test_deleteDataPoints_DeleteColumnsSpanningRows_rowsLeft() throws IOException, DatastoreException, InterruptedException
 	{
-		long rowKeyTime = CassandraDatastore.calculateRowTime(s_dataPointTime);
+		long rowKeyTime = s_datastore.calculateRowTimeRead(s_dataPointTime);
 		String metricToDelete = "MetricToPartiallyDelete";
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 
@@ -355,7 +354,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(rows.size(), equalTo(4));
 
 		DatastoreMetricQuery deleteQuery = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L,
-				rowKeyTime + (3 * CassandraDatastore.ROW_WIDTH - 1));
+				rowKeyTime + (3 * s_datastore.getRowWidthRead() - 1));
 		s_datastore.deleteDataPoints(deleteQuery);
 		Thread.sleep(2000);
 
@@ -376,7 +375,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@Test
 	public void test_deleteDataPoints_DeleteColumnWithinRow() throws IOException, DatastoreException, InterruptedException
 	{
-		long rowKeyTime = CassandraDatastore.calculateRowTime(s_dataPointTime);
+		long rowKeyTime = s_datastore.calculateRowTimeRead(s_dataPointTime);
 		String metricToDelete = "YetAnotherMetricToDelete";
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, rowKeyTime, rowKeyTime + 2000);
 

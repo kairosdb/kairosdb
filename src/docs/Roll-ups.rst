@@ -8,6 +8,15 @@ Roll-ups are continuously run on a schedule rolling up a small time period of da
 Roll-ups are scheduled by creating a roll-up task. A task contains one or more roll-ups and an execution interval (how often the task is executed).
 Roll-ups can be created using the :doc:`Roll-up REST API <restapi/Roll-ups>` or by using the Web UI (`http://<kairosServer>:<port>/rollup.html`).
 
+----------
+Installing
+----------
+Roll-ups are installed with KairosDB but disabled by default. You enable roll-ups by uncommenting the following line from kairosdb.properties and restarting KairosDB:
+
+	::
+
+		kairosdb.service.rollups=org.kairosdb.rollup.RollUpModule
+
 -------
 Example
 -------

@@ -464,7 +464,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				new LongDataPoint(50, 7L), 1);
 
 		Thread.sleep(2000);
-		Map<String, String> tags = new TreeMap<String, String>();
+		Map<String, String> tags = new TreeMap<>();
 		QueryMetric query = new QueryMetric(0, 500, 0, "ttlMetric");
 
 		query.setTags(tags);

@@ -703,6 +703,8 @@ public class CassandraDatastore implements Datastore
 			throw new RuntimeException(ex);
 		}
 
+		logger.info("querying from={} to={}", startTime, endTime);
+
 		BoundStatement bs = m_psQueryRowKeyIndex.bind();
 		if ((startTime < 0) && (endTime >= 0))
 		{
@@ -729,8 +731,12 @@ public class CassandraDatastore implements Datastore
 		}
 		else
 		{
-			DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(startTime), "");
-			DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTimeRead(endTime), "");
+			long calculatedEndTime = calculateRowTimeRead(endTime);
+			long calculatedStarTime = calculateRowTimeRead(startTime);
+			logger.info("calculated: s={} cs={} e={} ce={}", startTime, calculatedStarTime, endTime, calculatedEndTime);
+
+			DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculatedStarTime, "");
+			DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculatedEndTime, "");
 			endKey.setEndSearchKey(true);
 
 			bs.setBytes(0, bMetricName);

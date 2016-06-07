@@ -1,4 +1,4 @@
-FROM registry.opensource.zalan.do/stups/openjdk:8u77-b03-1-20
+FROM registry.opensource.zalan.do/stups/openjdk:8-24
 
 RUN mkdir -p /app
 RUN mkdir -p /app/conf/logging

@@ -124,17 +124,15 @@ public class Main
 	 * allow overwriting any existing property via correctly named environment variable
 	 * e.g. kairosdb.datastore.cassandra.host_list via KAIROSDB_DATASTORE_CASSANDRA_HOST_LIST
 	 */
-    protected void applyEnvironmentVariables(Properties props) {
+	protected void applyEnvironmentVariables(Properties props) {
 		Map<String, String> env = System.getenv();
-		props.stringPropertyNames().stream()
-				.forEach(propName -> {
-				String envVarName = toEnvVarName(propName);
-					if (env.containsKey(envVarName)) {
-						props.setProperty(propName, env.get(envVarName));
-					}
+		props.stringPropertyNames().stream().forEach(propName -> {
+			String envVarName = toEnvVarName(propName);
+			if (env.containsKey(envVarName)) {
+				props.setProperty(propName, env.get(envVarName));
+			}
 		});
-    }
-
+	}
 
 	public Main(File propertiesFile) throws IOException
 	{

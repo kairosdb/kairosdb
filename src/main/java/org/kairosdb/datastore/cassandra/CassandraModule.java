@@ -68,6 +68,7 @@ public class CassandraModule extends AbstractModule
 		bind(CleanRowKeyCache.class).in(Scopes.SINGLETON);
 		bind(HectorConfiguration.class).in(Scopes.SINGLETON);
 		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);
+		bind(CassandraClient.class).to(CassandraClientImpl.class);
 
 		bind(new TypeLiteral<List<RowKeyListener>>(){}).toProvider(RowKeyListenerProvider.class);
 

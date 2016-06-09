@@ -1,17 +1,31 @@
 package org.kairosdb.datastore.cassandra;
 
+import com.datastax.driver.core.policies.AddressTranslater;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+import com.datastax.driver.core.ConsistencyLevel;
+
 import java.util.Map;
+import java.util.Optional;
 
 /**
  Created by bhawkins on 10/13/14.
  */
 public class CassandraConfiguration
 {
+	public static enum ADDRESS_TRANSLATOR_TYPE {
+		NONE,
+		EC2
+	}
+
+	private static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.host_list";
+	private static final String CASSANDRA_PORT = "kairosdb.datastore.cassandra.port";
+
 	public static final String READ_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.read_consistency_level";
-	public static final String WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.write_consistency_level";
+	public static final String WRITE_CONSISTENCY_LEVEL_META = "kairosdb.datastore.cassandra.write_consistency_level_meta";
+	public static final String WRITE_CONSISTENCY_LEVEL_DATAPOINT = "kairosdb.datastore.cassandra.write_consistency_level_datapoint";
+
 	public static final String DATAPOINT_TTL = "kairosdb.datastore.cassandra.datapoint_ttl";
 
 	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
@@ -19,21 +33,33 @@ public class CassandraConfiguration
 
 	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
 	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
-	public static final String WRITE_DELAY_PROPERTY = "kairosdb.datastore.cassandra.write_delay";
 
-	public static final String WRITE_BUFFER_SIZE = "kairosdb.datastore.cassandra.write_buffer_max_size";
-	public static final String SINGLE_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.single_row_read_size";
-	public static final String MULTI_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_read_size";
-	public static final String MULTI_ROW_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_size";
+	public static final String CASSANDRA_USER = "kairosdb.datastore.cassandra.user";
+	public static final String CASSANDRA_PASSWORD = "kairosdb.datastore.cassandra.password";
+	public static final String CASSANDRA_ADDRESS_TRANSLATOR = "kairosdb.datastore.cassandra.address_translator";
 
+	public static final String CASSANDRA_READ_ROWWIDTH = "kairosdb.datastore.cassandra.read_row_width";
+	public static final String CASSANDRA_WRITE_ROWWIDTH = "kairosdb.datastore.cassandra.write_row_width";
+
+	@Inject(optional=true)
+	@Named(CASSANDRA_WRITE_ROWWIDTH)
+	private long m_rowWidthWrite = 1L * 3 * 24 * 60 * 60 * 1000; // 3 day row width for write
+
+	@Inject(optional=true)
+	@Named(CASSANDRA_READ_ROWWIDTH)
+	private long m_rowWidthRead = 1814400000L; // 3 weeks for reading - backwards compatible
 
 	@Inject
-	@Named(WRITE_CONSISTENCY_LEVEL)
-	private ConsistencyLevel m_dataWriteLevel = ConsistencyLevel.QUORUM;
+	@Named(WRITE_CONSISTENCY_LEVEL_META)
+	private ConsistencyLevel m_dataWriteLevelMeta = ConsistencyLevel.LOCAL_ONE;
+
+	@Inject
+	@Named(WRITE_CONSISTENCY_LEVEL_DATAPOINT)
+	private ConsistencyLevel m_dataWriteLevelDataPoint = ConsistencyLevel.LOCAL_ONE;
 
 	@Inject
 	@Named(READ_CONSISTENCY_LEVEL)
-	private ConsistencyLevel m_dataReadLevel = ConsistencyLevel.ONE;
+	private ConsistencyLevel m_dataReadLevel = ConsistencyLevel.LOCAL_ONE;
 
 	@Inject(optional=true)
 	@Named(DATAPOINT_TTL)
@@ -42,6 +68,10 @@ public class CassandraConfiguration
 	@Inject
 	@Named(ROW_KEY_CACHE_SIZE_PROPERTY)
 	private int m_rowKeyCacheSize = 1024;
+
+	@Inject
+	@Named(HOST_LIST_PROPERTY)
+	private String m_hostList = "localhost";
 
 	@Inject
 	@Named(STRING_CACHE_SIZE_PROPERTY)
@@ -56,29 +86,24 @@ public class CassandraConfiguration
 	private int m_replicationFactor;
 
 	@Inject
-	@Named(SINGLE_ROW_READ_SIZE_PROPERTY)
-	private int m_singleRowReadSize;
-
-	@Inject
-	@Named(MULTI_ROW_SIZE_PROPERTY)
-	private int m_multiRowSize;
-
-	@Inject
-	@Named(MULTI_ROW_READ_SIZE_PROPERTY)
-	private int m_multiRowReadSize;
-
-	@Inject
-	@Named(WRITE_DELAY_PROPERTY)
-	private int m_writeDelay;
-
-	@Inject
-	@Named(WRITE_BUFFER_SIZE)
-	private int m_maxWriteSize;
-
-	@Inject
 	@Named(KEYSPACE_PROPERTY)
 	private String m_keyspaceName;
 
+	@Inject(optional=true)
+	@Named(CASSANDRA_USER)
+	private String m_user = null;
+
+	@Inject(optional=true)
+	@Named(CASSANDRA_PASSWORD)
+	private String m_password = null;
+
+	@Inject(optional=true)
+	@Named(CASSANDRA_ADDRESS_TRANSLATOR)
+	private ADDRESS_TRANSLATOR_TYPE m_addressTranslator = ADDRESS_TRANSLATOR_TYPE.NONE;
+
+	@Inject(optional=true)
+	@Named(CASSANDRA_PORT)
+	private int m_port = 9042;
 
 	public CassandraConfiguration()
 	{
@@ -90,20 +115,22 @@ public class CassandraConfiguration
 			int multiRowReadSize,
 			int writeDelay,
 			int maxWriteSize,
+			String hostList,
 			String keyspaceName)
 	{
 		m_replicationFactor = replicationFactor;
-		m_singleRowReadSize = singleRowReadSize;
-		m_multiRowSize = multiRowSize;
-		m_multiRowReadSize = multiRowReadSize;
-		m_writeDelay = writeDelay;
-		m_maxWriteSize = maxWriteSize;
+		m_hostList = hostList;
 		m_keyspaceName = keyspaceName;
 	}
 
-	public ConsistencyLevel getDataWriteLevel()
+	public ConsistencyLevel getDataWriteLevelMeta()
 	{
-		return m_dataWriteLevel;
+		return m_dataWriteLevelMeta;
+	}
+
+	public ConsistencyLevel getDataWriteLevelDataPoint()
+	{
+		return m_dataWriteLevelDataPoint;
 	}
 
 	public ConsistencyLevel getDataReadLevel()
@@ -136,33 +163,40 @@ public class CassandraConfiguration
 		return m_replicationFactor;
 	}
 
-	public int getSingleRowReadSize()
-	{
-		return m_singleRowReadSize;
-	}
-
-	public int getMultiRowSize()
-	{
-		return m_multiRowSize;
-	}
-
-	public int getMultiRowReadSize()
-	{
-		return m_multiRowReadSize;
-	}
-
-	public int getWriteDelay()
-	{
-		return m_writeDelay;
-	}
-
-	public int getMaxWriteSize()
-	{
-		return m_maxWriteSize;
-	}
-
 	public String getKeyspaceName()
 	{
 		return m_keyspaceName;
+	}
+
+	public String getHostList() {
+		return m_hostList;
+	}
+
+	public void setHostList(String m_hostList) {
+		this.m_hostList = m_hostList;
+	}
+
+	public String getPassword() {
+		return m_password;
+	}
+
+	public String getUser() {
+		return m_user;
+	}
+
+	public ADDRESS_TRANSLATOR_TYPE getAddressTranslator() {
+		return m_addressTranslator;
+	}
+
+	public int getPort() {
+		return m_port;
+	}
+
+	public long getRowWidthRead() {
+		return m_rowWidthRead;
+	}
+
+	public long getRowWidthWrite() {
+		return m_rowWidthWrite;
 	}
 }

@@ -52,6 +52,7 @@ public class KairosDatastore
 	public static final String QUERIES_WAITING_METRIC_NAME = "kairosdb.datastore.queries_waiting";
     public static final String QUERY_SAMPLE_SIZE = "kairosdb.datastore.query_sample_size";
     public static final String QUERY_ROW_COUNT = "kairosdb.datastore.query_row_count";
+	public static final String METRIC_QUERY_CACHE_READ_TIME = "kairosdb.datastore.cache_read_time";
 
 	private final Datastore m_datastore;
 	private final QueryQueuingManager m_queuingManager;
@@ -464,13 +465,12 @@ public class KairosDatastore
 					if (cachedResults != null)
 					{
 						returnedRows = cachedResults.getRows();
-						logger.debug("Cache HIT!");
+						ThreadReporter.addDataPoint(METRIC_QUERY_CACHE_READ_TIME, System.currentTimeMillis() - queryStartTime);
 					}
 				}
 
 				if (cachedResults == null)
 				{
-					logger.debug("Cache MISS!");
 					cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
 							tempFile, m_dataPointFactory);
 					m_datastore.queryDatabase(m_metric, cachedResults);

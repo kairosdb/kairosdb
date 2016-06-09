@@ -16,11 +16,21 @@
 
 package org.kairosdb.core.telnet;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.concurrent.Executors;
+
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.frame.DelimiterBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.Delimiters;
@@ -30,13 +40,9 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.concurrent.Executors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 public class TelnetServer extends SimpleChannelUpstreamHandler implements ChannelPipelineFactory,
 		KairosDBService
@@ -185,8 +191,10 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 	@Override
 	public void stop()
 	{
-		if (serverBootstrap != null)
-			serverBootstrap.shutdown();
+        // shutdown seems to be not existent anymore
+        // if (serverBootstrap != null)
+        // serverBootstrap.shutdown();
+
 	}
 
 	private static String formatCommand(String[] command)

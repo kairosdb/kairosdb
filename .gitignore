@@ -17,3 +17,10 @@ lib/ivy/test/*
 .DS_Store
 myivysettings.xml
 tablesaw.properties
+
+target
+.classpath
+.project
+.settings
+bin
+log

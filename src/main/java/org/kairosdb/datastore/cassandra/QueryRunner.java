@@ -37,11 +37,17 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.*;
 
 public class QueryRunner
 {
+	public static final Logger logger = LoggerFactory.getLogger(QueryRunner.class);
 	public static final DataPointsRowKeySerializer ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
 
 	private Keyspace m_keyspace;
@@ -61,13 +67,22 @@ public class QueryRunner
 
 	public QueryRunner(Keyspace keyspace, String columnFamily,
 			KairosDataPointFactory kairosDataPointFactory,
-			List<DataPointsRowKey> rowKeys, long startTime, long endTime,
+			List<DataPointsRowKey> rowKeys, long startTime, long endTime, long rowWidth,
 			QueryCallback csResult,
 			int singleRowReadSize, int multiRowReadSize, int limit, Order order)
 	{
 		m_keyspace = keyspace;
 		m_columnFamily = columnFamily;
 		m_rowKeys = rowKeys;
+
+		logger.info("rowKeys.size={}", m_rowKeys.size());
+		Set<String> metricSet = new TreeSet<String>();
+		for(DataPointsRowKey key : m_rowKeys) {
+			metricSet.add(key.getMetricName());
+		}
+		logger.info("rowKeys.metrics.size={}", metricSet.size());
+		logger.info("rowKeys.metrics.names={}", metricSet.toArray());
+
 		m_kairosDataPointFactory = kairosDataPointFactory;
 		long m_tierRowTime = rowKeys.get(0).getTimestamp();
 		if (startTime < m_tierRowTime)
@@ -75,8 +90,8 @@ public class QueryRunner
 		else
 			m_startTime = getColumnName(m_tierRowTime, startTime);
 
-		if (endTime > (m_tierRowTime + ROW_WIDTH))
-			m_endTime = getColumnName(m_tierRowTime, m_tierRowTime + ROW_WIDTH) +1;
+		if (endTime > (m_tierRowTime + rowWidth))
+			m_endTime = getColumnName(m_tierRowTime, m_tierRowTime + rowWidth) +1;
 		else
 			m_endTime = getColumnName(m_tierRowTime, endTime) +1; //add 1 so we get 0x1 for last bit
 

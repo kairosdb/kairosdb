@@ -107,10 +107,6 @@ public class CassandraDatastore implements Datastore
 
 	public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
 
-	public static final String CF_DATA_POINTS = "data_points";
-	public static final String CF_ROW_KEY_INDEX = "row_key_index";
-	public static final String CF_STRING_INDEX = "string_index";
-
 	public static final String ROW_KEY_METRIC_NAMES = "metric_names";
 	public static final String ROW_KEY_TAG_NAMES = "tag_names";
 	public static final String ROW_KEY_TAG_VALUES = "tag_values";
@@ -125,11 +121,6 @@ public class CassandraDatastore implements Datastore
 	private final PreparedStatement m_psQueryStringIndex;
 	private final PreparedStatement m_psQueryRowKeyIndex;
 	private final PreparedStatement m_psQueryDataPoints;
-
-	private BatchStatement m_batchStatement;
-	private final Object m_batchLock = new Object();
-
-	private String m_keyspaceName;
 
 	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<>(1024);
 
@@ -168,7 +159,6 @@ public class CassandraDatastore implements Datastore
 		m_psQueryDataPoints = m_session.prepare(QUERY_DATA_POINTS).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
 
 		m_cassandraConfiguration = cassandraConfiguration;
-		m_keyspaceName = m_cassandraConfiguration.getKeyspaceName();
 
 		m_rowWidthRead = cassandraConfiguration.getRowWidthRead();
 		m_rowWidthWrite = cassandraConfiguration.getRowWidthWrite();
@@ -186,39 +176,6 @@ public class CassandraDatastore implements Datastore
 	public long getRowWidthWrite() {
 		return m_rowWidthWrite;
 	}
-
-	private WriteBufferStats createWriteBufferStats(final String cfName, final String hostname) {
-		return new WriteBufferStats()
-		{
-			private ImmutableSortedMap m_tags;
-			{
-				m_tags = ImmutableSortedMap.naturalOrder()
-						.put("host", hostname)
-						.put("buffer", cfName)
-						.build();
-			}
-
-			@Override
-			public void saveWriteSize(int pendingWrites)
-			{
-				putInternalDataPoint("kairosdb.datastore.write_size", m_tags,
-						m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), pendingWrites));
-			}
-		};
-	}
-
-	private void putInternalDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint)
-	{
-		try
-		{
-			putDataPoint(metricName, tags, dataPoint, 0);
-		}
-		catch (DatastoreException e)
-		{
-			logger.error("", e);
-		}
-	}
-
 
 	private void setupSchema()
 	{

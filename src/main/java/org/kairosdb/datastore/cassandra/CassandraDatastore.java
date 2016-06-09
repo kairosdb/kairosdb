@@ -669,10 +669,11 @@ public class CassandraDatastore implements Datastore
 		return ((columnName & 0x1) == LONG_FLAG);
 	}
 
-	private static void filterAndAddKeys(SetMultimap<String, String> filterTags, ResultSet rs, List<DataPointsRowKey> targetList) {
+	private static void filterAndAddKeys(String metricName, SetMultimap<String, String> filterTags, ResultSet rs, List<DataPointsRowKey> targetList) {
 		final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
-
+		int i = 0;
 		for(Row r : rs) {
+			i++;
 			DataPointsRowKey key = keySerializer.fromByteBuffer(r.getBytes("column1"));
 			Map<String, String> tags = key.getTags();
 
@@ -687,6 +688,9 @@ public class CassandraDatastore implements Datastore
 			if (!skipKey) {
 				targetList.add(key);
 			}
+		}
+		if(i>100) {
+			logger.warn("filterAndAddKeys: metric={} read={} filtered={}", metricName, i, targetList.size());
 		}
 	}
 
@@ -718,7 +722,7 @@ public class CassandraDatastore implements Datastore
 
 			ResultSet rs = m_session.execute(bs);
 
-			filterAndAddKeys(filterTags, rs, rowKeys);
+			filterAndAddKeys(metricName, filterTags, rs, rowKeys);
 
 			startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(0), "");
 			endKey = new DataPointsRowKey(metricName, calculateRowTimeRead(endTime), "");
@@ -727,7 +731,7 @@ public class CassandraDatastore implements Datastore
 			bs.setBytes(2, keySerializer.toByteBuffer(endKey));
 
 			rs = m_session.execute(bs);
-			filterAndAddKeys(filterTags, rs, rowKeys);
+			filterAndAddKeys(metricName, filterTags, rs, rowKeys);
 		}
 		else
 		{
@@ -745,8 +749,9 @@ public class CassandraDatastore implements Datastore
 			bs.setBytes(2, keySerializer.toByteBuffer(endKey));
 
 			ResultSet rs = m_session.execute(bs);
-			filterAndAddKeys(filterTags, rs, rowKeys);
+			filterAndAddKeys(metricName, filterTags, rs, rowKeys);
 		}
+
 
 		return rowKeys;
 	}

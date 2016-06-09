@@ -1,4 +1,6 @@
 Building requires JDK 1.8 or later.
 
 $ ./mvnw clean package
+$ pip3 install scm-source
+$ scm-source -f target/scm-source.json
 $ docker build -t kairosdb .

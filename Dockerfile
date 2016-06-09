@@ -1,4 +1,4 @@
-FROM registry.opensource.zalan.do/stups/openjdk:8-24
+FROM registry.opensource.zalan.do/stups/openjdk:8-26
 
 EXPOSE 8080
 

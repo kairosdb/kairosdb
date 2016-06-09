@@ -670,6 +670,7 @@ public class CassandraDatastore implements Datastore
 	}
 
 	private static void filterAndAddKeys(String metricName, SetMultimap<String, String> filterTags, ResultSet rs, List<DataPointsRowKey> targetList) {
+		long startTime = System.currentTimeMillis();
 		final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 		int i = 0;
 		for(Row r : rs) {
@@ -690,7 +691,8 @@ public class CassandraDatastore implements Datastore
 			}
 		}
 		if(i>100) {
-			logger.warn("filterAndAddKeys: metric={} read={} filtered={}", metricName, i, targetList.size());
+			final long endTime = System.currentTimeMillis();
+			logger.warn("filterAndAddKeys: metric={} read={} filtered={} time={}", metricName, i, targetList.size(), (endTime-startTime));
 		}
 	}
 

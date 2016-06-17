@@ -767,8 +767,6 @@ function showChart(subTitle, queries, metricData) {
 				});
 			}
 
-			if (groupType && groupType != 'number')
-				return;
 
 			var result = {};
 			result.name = queryResult.name + groupByMessage;

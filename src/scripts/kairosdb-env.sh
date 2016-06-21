@@ -2,11 +2,7 @@
 DEFAULT_MEM_JAVA_PERCENT=80
 
 if [ -z "$MEM_JAVA_PERCENT" ]; then
-    if [ -n "$1" ]; then
-        MEM_JAVA_PERCENT=$1
-    else
-        MEM_JAVA_PERCENT=$DEFAULT_MEM_JAVA_PERCENT
-    fi
+    MEM_JAVA_PERCENT=$DEFAULT_MEM_JAVA_PERCENT
 fi
 
 MEM_TOTAL_KB=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')

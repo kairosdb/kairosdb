@@ -443,6 +443,7 @@ public class CassandraDatastore implements Datastore
 			}
 			else
 			{
+				logger.info("Creating new query runner: metric={} size={}", queryKeys.get(0).getMetricName(), queryKeys.size());
 				runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
 						queryKeys,
 						query.getStartTime(), query.getEndTime(), m_rowWidthRead, queryCallback, query.getLimit(), query.getOrder()));
@@ -459,6 +460,7 @@ public class CassandraDatastore implements Datastore
 		//There may be stragglers that are not ran
 		if (!queryKeys.isEmpty())
 		{
+			logger.info("Creating new runner for remaining keys: metric={} size={}", queryKeys.get(0).getMetricName(), queryKeys.size());
 			runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
 					queryKeys,
 					query.getStartTime(), query.getEndTime(), m_rowWidthRead, queryCallback, query.getLimit(), query.getOrder()));

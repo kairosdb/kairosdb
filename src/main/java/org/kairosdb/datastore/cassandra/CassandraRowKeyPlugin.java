@@ -3,7 +3,7 @@ package org.kairosdb.datastore.cassandra;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.datastore.QueryPlugin;
 
-import java.util.Iterator;
+import java.util.Collection;
 
 /**
  Created by bhawkins on 11/23/14.
@@ -15,5 +15,5 @@ public interface CassandraRowKeyPlugin extends QueryPlugin
 	 @param query
 	 @return
 	 */
-	public Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query);
+	Collection<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query);
 }

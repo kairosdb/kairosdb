@@ -394,13 +394,12 @@ public class CassandraDatastore implements Datastore
 	public TagSet queryMetricTags(DatastoreMetricQuery query)
 	{
 		TagSetImpl tagSet = new TagSetImpl();
-		Iterator<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query);
+		Collection<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query);
 
 		MemoryMonitor mm = new MemoryMonitor(20);
-		while (rowKeys.hasNext())
+		for(DataPointsRowKey key : rowKeys)
 		{
-			DataPointsRowKey dataPointsRowKey = rowKeys.next();
-			for (Map.Entry<String, String> tag : dataPointsRowKey.getTags().entrySet())
+			for (Map.Entry<String, String> tag : key.getTags().entrySet())
 			{
 				tagSet.addTag(tag.getKey(), tag.getValue());
 				mm.checkMemoryAndThrowException();
@@ -417,7 +416,7 @@ public class CassandraDatastore implements Datastore
 	}
 
 	private void queryWithRowKeys(DatastoreMetricQuery query,
-			QueryCallback queryCallback, Iterator<DataPointsRowKey> rowKeys)
+			QueryCallback queryCallback, Collection<DataPointsRowKey> rowKeys)
 	{
 		long startTime = System.currentTimeMillis();
 		long currentTimeTier = 0L;
@@ -426,36 +425,37 @@ public class CassandraDatastore implements Datastore
 		List<CQLQueryRunner> runners = new ArrayList<>();
 		List<DataPointsRowKey> queryKeys = new ArrayList<>();
 
-		MemoryMonitor mm = new MemoryMonitor(20);
-		while (rowKeys.hasNext())
-		{
-			DataPointsRowKey rowKey = rowKeys.next();
-			if (currentTimeTier == 0L)
-				currentTimeTier = rowKey.getTimestamp();
+        MemoryMonitor mm = new MemoryMonitor(20);
 
-			if (currentType == null)
-				currentType = rowKey.getDataType();
+        if (rowKeys.size() < 64) {
+            queryKeys.addAll(rowKeys);
+        }
+        else {
 
-			if ((rowKey.getTimestamp() == currentTimeTier) &&
-					(currentType.equals(rowKey.getDataType())))
-			{
-				queryKeys.add(rowKey);
-			}
-			else
-			{
-				logger.info("Creating new query runner: metric={} size={}", queryKeys.get(0).getMetricName(), queryKeys.size());
-				runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
-						queryKeys,
-						query.getStartTime(), query.getEndTime(), m_rowWidthRead, queryCallback, query.getLimit(), query.getOrder()));
+            for (DataPointsRowKey rowKey : queryKeys) {
+                if (currentTimeTier == 0L)
+                    currentTimeTier = rowKey.getTimestamp();
 
-				queryKeys = new ArrayList<>();
-				queryKeys.add(rowKey);
-				currentTimeTier = rowKey.getTimestamp();
-				currentType = rowKey.getDataType();
-			}
+                if (currentType == null)
+                    currentType = rowKey.getDataType();
 
-			mm.checkMemoryAndThrowException();
-		}
+                if ((rowKey.getTimestamp() == currentTimeTier) &&
+                        (currentType.equals(rowKey.getDataType()))) {
+                    queryKeys.add(rowKey);
+                } else {
+                    logger.info("Creating new query runner: metric={} size={}", queryKeys.get(0).getMetricName(), queryKeys.size());
+                    runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
+                            queryKeys,
+                            query.getStartTime(), query.getEndTime(), m_rowWidthRead, queryCallback, query.getLimit(), query.getOrder()));
+
+                    queryKeys = new ArrayList<>();
+                    queryKeys.add(rowKey);
+                    currentTimeTier = rowKey.getTimestamp();
+                    currentType = rowKey.getDataType();
+                }
+                mm.checkMemoryAndThrowException();
+            }
+        }
 
 		//There may be stragglers that are not ran
 		if (!queryKeys.isEmpty())
@@ -499,7 +499,7 @@ public class CassandraDatastore implements Datastore
 		if (deleteQuery.getStartTime() == Long.MIN_VALUE && deleteQuery.getEndTime() == Long.MAX_VALUE)
 			deleteAll = true;
 
-		Iterator<DataPointsRowKey> rowKeyIterator = getKeysForQueryIterator(deleteQuery);
+		Iterator<DataPointsRowKey> rowKeyIterator = getKeysForQueryIterator(deleteQuery).iterator();
 		List<DataPointsRowKey> partialRows = new ArrayList<>();
 
 		while (rowKeyIterator.hasNext())
@@ -520,7 +520,7 @@ public class CassandraDatastore implements Datastore
 			}
 		}
 
-		queryWithRowKeys(deleteQuery, new DeletingCallback(deleteQuery.getName()), partialRows.iterator());
+		queryWithRowKeys(deleteQuery, new DeletingCallback(deleteQuery.getName()), partialRows);
 
 		// If index is gone, delete metric name from Strings column family
 		if (deleteAll)
@@ -550,15 +550,14 @@ public class CassandraDatastore implements Datastore
 	 * @param query query
 	 * @return row keys for the query
 	 */
-	public Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query)
+	public Collection<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query)
 	{
-		Iterator<DataPointsRowKey> ret = null;
+		Collection<DataPointsRowKey> ret = null;
 
 		List<QueryPlugin> plugins = query.getPlugins();
 
 		//First plugin that works gets it.
-		for (QueryPlugin plugin : plugins)
-		{
+		for (QueryPlugin plugin : plugins) {
 			if (plugin instanceof CassandraRowKeyPlugin)
 			{
 				ret = ((CassandraRowKeyPlugin) plugin).getKeysForQueryIterator(query);
@@ -567,13 +566,12 @@ public class CassandraDatastore implements Datastore
 		}
 
 		//Default to old behavior if no plugin was provided
-		if (ret == null)
-		{
-			ret = getMatchingRowKeys(query.getName(), query.getStartTime(),
-					query.getEndTime(), query.getTags()).iterator();
+		if (ret == null){
+            ret = getMatchingRowKeys(query.getName(), query.getStartTime(),
+			query.getEndTime(), query.getTags());
 		}
 
-		return (ret);
+		return ret;
 	}
 
 	public long calculateRowTimeRead(long timestamp)

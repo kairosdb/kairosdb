@@ -229,7 +229,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
 				HashMultimap.<String, String>create(), s_dataPointTime, s_dataPointTime);
 
-		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
+		Collection<DataPointsRowKey> keys = s_datastore.getKeysForQueryIterator(query);
 
 		assertEquals(4, keys.size());
 	}
@@ -243,7 +243,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
 				tagFilter, s_dataPointTime, s_dataPointTime);
 
-		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
+		Collection<DataPointsRowKey> keys = s_datastore.getKeysForQueryIterator(query);
 
 		assertEquals(2, keys.size());
 	}
@@ -306,7 +306,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(rows.size(), equalTo(0));
 
 		// Verify that the index key is gone
-		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(query));
+		Collection<DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQueryIterator(query);
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
@@ -334,7 +334,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		// Verify that the index key is gone
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
-		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(queryEverything));
+		Collection<DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQueryIterator(queryEverything);
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
@@ -365,7 +365,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		// Verify that the index key is gone
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
-		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(queryEverything));
+		Collection<DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQueryIterator(queryEverything);
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
@@ -394,7 +394,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		// Verify that the index key is still there
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
-		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(queryEverything));
+		Collection<DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQueryIterator(queryEverything);
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family

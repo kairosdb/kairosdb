@@ -73,7 +73,7 @@ public class CachedSearchResult implements QueryCallback
 	{
 		m_metricName = metricName;
 		m_indexFile = indexFile;
-		m_dataPointSets = new ArrayList<FilePositionMarker>();
+		m_dataPointSets = new ArrayList<>();
 		m_dataFile = dataFile;
 		m_dataPointFactory = datatPointFactory;
 		m_stringPool = new StringPool();
@@ -265,7 +265,7 @@ public class CachedSearchResult implements QueryCallback
 
 	public List<DataPointRow> getRows()
 	{
-		List<DataPointRow> ret = new ArrayList<DataPointRow>();
+		List<DataPointRow> ret = new ArrayList<>();
 		MemoryMonitor mm = new MemoryMonitor(20);
 
 		for (FilePositionMarker dpSet : m_dataPointSets)
@@ -292,7 +292,7 @@ public class CachedSearchResult implements QueryCallback
 		{
 			m_startPosition = 0L;
 			m_endPosition = 0L;
-			m_tags = new HashMap<String, String>();
+			m_tags = new HashMap<>();
 			m_dataType = null;
 			m_dataPointCount = 0;
 		}

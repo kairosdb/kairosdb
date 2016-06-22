@@ -429,9 +429,9 @@ public class CassandraDatastore implements Datastore
 
         if (rowKeys.size() < 64) {
             queryKeys.addAll(rowKeys);
+            queryKeys.sort((x,y)-> Long.compare(x.getTimestamp(), y.getTimestamp()));
         }
         else {
-
             for (DataPointsRowKey rowKey : rowKeys) {
                 if (currentTimeTier == 0L)
                     currentTimeTier = rowKey.getTimestamp();

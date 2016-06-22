@@ -13,8 +13,7 @@ import org.kairosdb.core.DataPoint;
  */
 public interface QueryCallback
 {
-	public void addDataPoint(DataPoint datapoint) throws IOException;
-	
-	public void startDataPointSet(String dataType, Map<String, String> tags) throws IOException;
-	public void endDataPoints() throws IOException;
+	void addDataPoint(DataPoint datapoint) throws IOException;
+	void startDataPointSet(String dataType, Map<String, String> tags) throws IOException;
+	void endDataPoints() throws IOException;
 }

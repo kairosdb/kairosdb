@@ -647,7 +647,7 @@ public class CassandraDatastore implements Datastore
 				targetList.add(key);
 			}
 		}
-		if(i>100) {
+		if(i > 5000 || targetList.size() > 100) {
 			final long endTime = System.currentTimeMillis();
 			logger.warn("filterAndAddKeys: metric={} read={} filtered={} time={}", metricName, i, targetList.size(), (endTime-startTime));
 		}

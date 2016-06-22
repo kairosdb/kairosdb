@@ -54,13 +54,10 @@ public class CQLQueryRunner
 	private final PreparedStatement m_dataPointQuery;
 
 	private List<DataPointsRowKey> m_rowKeys;
-	private int m_startTime; // relative row time
-	private int m_endTime; // relative row time
+	private long m_startTime; // relative row time
+	private long m_endTime; // relative row time
+	private long m_rowWidth;
 	private QueryCallback m_queryCallback;
-	private boolean m_limit = false;
-	private boolean m_descending = false;
-	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
-	private DoubleDataPointFactory m_doubleDataPointFactory = new DoubleDataPointFactoryImpl();
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
@@ -76,26 +73,11 @@ public class CQLQueryRunner
 		m_rowKeys = rowKeys;
 		m_kairosDataPointFactory = kairosDataPointFactory;
 
-		long m_tierRowTime = rowKeys.get(0).getTimestamp();
-		if (startTime < m_tierRowTime)
-			m_startTime = 0;
-		else
-			m_startTime = getColumnName(m_tierRowTime, startTime);
-
-		if (endTime > (m_tierRowTime + rowWidth))
-			m_endTime = getColumnName(m_tierRowTime, m_tierRowTime + rowWidth) +1;
-		else
-			m_endTime = getColumnName(m_tierRowTime, endTime) + 1; //add 1 so we get 0x1 for last bit
+		m_startTime = startTime;
+		m_endTime = endTime;
+		m_rowWidth = rowWidth;
 
 		m_queryCallback = csResult;
-
-		if (limit != 0) {
-			m_limit = true;
-		}
-
-		if (order == Order.DESC) {
-			m_descending = true;
-		}
 	}
 
 	private static class KeyFuturePair {
@@ -108,16 +90,31 @@ public class CQLQueryRunner
 		}
 	}
 
+	private int getStarTime(long startTime, long tierTime) {
+		if (startTime < tierTime)
+			return 0;
+		else
+			return getColumnName(tierTime, startTime);
+	}
+
+	private int getEndTime(long endTime, long rowTime, long rowWidth) {
+		if (endTime > (rowTime + rowWidth))
+			return getColumnName(rowTime, rowTime + rowWidth) +1;
+		else
+			return getColumnName(rowTime, endTime) + 1; //add 1 so we get 0x1 for last bit
+	}
+
 	public void runQuery() throws IOException
 	{
-		ByteBuffer startRange = cint().serialize(m_startTime, NEWEST_SUPPORTED);
-		ByteBuffer endRange = cint().serialize(m_endTime, NEWEST_SUPPORTED);
-
 		List<KeyFuturePair> futureResults = new ArrayList<>(m_rowKeys.size());
 
 		for(DataPointsRowKey k : m_rowKeys) {
 			BoundStatement query = m_dataPointQuery.bind();
 			query.setFetchSize(1000);
+
+			ByteBuffer startRange = cint().serialize(getStarTime(m_startTime, k.getTimestamp()), NEWEST_SUPPORTED);
+			ByteBuffer endRange = cint().serialize(getEndTime(m_endTime, k.getTimestamp(), m_rowWidth), NEWEST_SUPPORTED);
+
 			query.setBytes(1, startRange);
 			query.setBytes(2, endRange);
 

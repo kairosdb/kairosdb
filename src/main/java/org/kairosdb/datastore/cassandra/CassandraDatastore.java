@@ -427,28 +427,33 @@ public class CassandraDatastore implements Datastore
 
         MemoryMonitor mm = new MemoryMonitor(20);
 
-        for (DataPointsRowKey rowKey : rowKeys) {
-            if (currentTimeTier == 0L)
-                currentTimeTier = rowKey.getTimestamp();
+        if (rowKeys.size() < 64) {
+            queryKeys.addAll(rowKeys);
+        }
+        else {
+            for (DataPointsRowKey rowKey : rowKeys) {
+                if (currentTimeTier == 0L)
+                    currentTimeTier = rowKey.getTimestamp();
 
-            if (currentType == null)
-                currentType = rowKey.getDataType();
+                if (currentType == null)
+                    currentType = rowKey.getDataType();
 
-            if ((rowKey.getTimestamp() == currentTimeTier) &&
-                    (currentType.equals(rowKey.getDataType()))) {
-                queryKeys.add(rowKey);
-            } else {
-                logger.info("Creating new query runner: metric={} size={}", queryKeys.get(0).getMetricName(), queryKeys.size());
-                runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
-                        queryKeys,
-                        query.getStartTime(), query.getEndTime(), m_rowWidthRead, queryCallback, query.getLimit(), query.getOrder()));
+                if ((rowKey.getTimestamp() == currentTimeTier) &&
+                        (currentType.equals(rowKey.getDataType()))) {
+                    queryKeys.add(rowKey);
+                } else {
+                    logger.info("Creating new query runner: metric={} size={}", queryKeys.get(0).getMetricName(), queryKeys.size());
+                    runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
+                            queryKeys,
+                            query.getStartTime(), query.getEndTime(), m_rowWidthRead, queryCallback, query.getLimit(), query.getOrder()));
 
-                queryKeys = new ArrayList<>();
-                queryKeys.add(rowKey);
-                currentTimeTier = rowKey.getTimestamp();
-                currentType = rowKey.getDataType();
+                    queryKeys = new ArrayList<>();
+                    queryKeys.add(rowKey);
+                    currentTimeTier = rowKey.getTimestamp();
+                    currentType = rowKey.getDataType();
+                }
+                mm.checkMemoryAndThrowException();
             }
-            mm.checkMemoryAndThrowException();
         }
 
 		//There may be stragglers that are not ran

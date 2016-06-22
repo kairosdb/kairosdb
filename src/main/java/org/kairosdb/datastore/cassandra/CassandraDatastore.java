@@ -432,7 +432,7 @@ public class CassandraDatastore implements Datastore
         }
         else {
 
-            for (DataPointsRowKey rowKey : queryKeys) {
+            for (DataPointsRowKey rowKey : rowKeys) {
                 if (currentTimeTier == 0L)
                     currentTimeTier = rowKey.getTimestamp();
 

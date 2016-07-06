@@ -45,6 +45,11 @@ public class CountAggregator extends RangeAggregator
 	{
 		return true;
 	}
+       	@Override
+	public String getGroupType(String groupType)
+	{
+	        return m_dataPointFactory.getGroupType();
+	}
 
 	private class CountDataPointAggregator implements RangeSubAggregator
 	{

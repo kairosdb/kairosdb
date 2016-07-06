@@ -25,6 +25,11 @@ public class LimitAggregator implements Aggregator
 	{
 		return true;
 	}
+       	@Override
+	public String getGroupType(String groupType)
+	{
+	        return groupType;
+	}
 
 	@Override
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)

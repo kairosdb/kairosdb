@@ -48,6 +48,11 @@ public class TrimAggregator implements Aggregator
 	{
 		return true;
 	}
+       	@Override
+	public String getGroupType(String groupType)
+	{
+	        return groupType;
+	}
 
 	private class TimDataPointAggregator extends AggregatedDataPointGroupWrapper
 	{

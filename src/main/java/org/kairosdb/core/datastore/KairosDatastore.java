@@ -534,8 +534,10 @@ public class KairosDatastore
 				for (Aggregator aggregator : aggregators)
 				{
 					//Make sure the aggregator can handle this type of data.
-					if (aggregator.canAggregate(groupType))
+				  if (aggregator.canAggregate(groupType)) {
 						aggregatedGroup = aggregator.aggregate(aggregatedGroup);
+						groupType = aggregator.getGroupType(groupType);
+				  }
 				}
 
 				m_results.add(aggregatedGroup);

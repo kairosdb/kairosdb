@@ -51,6 +51,11 @@ public class SmaAggregator implements Aggregator
 	{
 		return DataPoint.GROUP_NUMBER.equals(groupType);
 	}
+       	@Override
+	public String getGroupType(String groupType)
+	{
+	        return m_dataPointFactory.getGroupType();
+	}
 
 	@Override
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)

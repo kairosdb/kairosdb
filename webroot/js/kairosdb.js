@@ -23,6 +23,7 @@ kairosdb.Aggregators =
 	FIRST: "first",
 	LAST: "last",
 	TRIM: "trim",
+	WEIGHTED_AVG: "weighted_avg",
 	SAVE_AS: "save_as"
 };
 

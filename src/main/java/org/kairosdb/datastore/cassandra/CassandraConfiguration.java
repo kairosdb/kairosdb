@@ -1,13 +1,11 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.policies.AddressTranslater;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 import com.datastax.driver.core.ConsistencyLevel;
 
 import java.util.Map;
-import java.util.Optional;
 
 /**
  Created by bhawkins on 10/13/14.

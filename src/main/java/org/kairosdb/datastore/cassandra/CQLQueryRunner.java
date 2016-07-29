@@ -15,6 +15,7 @@
  */
 package org.kairosdb.datastore.cassandra;
 
+import com.datastax.driver.core.*;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.Order;
@@ -27,21 +28,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.Session;
-
-
-import static com.datastax.driver.core.DataType.cint;
 import static com.datastax.driver.core.ProtocolVersion.NEWEST_SUPPORTED;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.*;
 
 public class CQLQueryRunner {
     public static final DataPointsRowKeySerializer ROW_KEY_SERIALIZER = new DataPointsRowKeySerializer();
+    public static final TypeCodec<Integer> INTEGER_CODEC = CodecRegistry.DEFAULT_INSTANCE.codecFor(DataType.cint());
 
     private final Session m_session;
     private final PreparedStatement m_dataPointQuery;
@@ -103,8 +96,8 @@ public class CQLQueryRunner {
             BoundStatement query = m_dataPointQuery.bind();
             query.setFetchSize(1000);
 
-            ByteBuffer startRange = cint().serialize(getStarTime(m_startTime, k.getTimestamp()), NEWEST_SUPPORTED);
-            ByteBuffer endRange = cint().serialize(getEndTime(m_endTime, k.getTimestamp(), m_rowWidth), NEWEST_SUPPORTED);
+            ByteBuffer startRange = INTEGER_CODEC.serialize(getStarTime(m_startTime, k.getTimestamp()), NEWEST_SUPPORTED);
+            ByteBuffer endRange = INTEGER_CODEC.serialize(getEndTime(m_endTime, k.getTimestamp(), m_rowWidth), NEWEST_SUPPORTED);
 
             query.setBytes(1, startRange);
             query.setBytes(2, endRange);
@@ -134,7 +127,7 @@ public class CQLQueryRunner {
 
             m_queryCallback.startDataPointSet(type, tags);
             for (Row r : rs) {
-                int columnTime = (Integer) cint().deserialize(r.getBytes("column1"), NEWEST_SUPPORTED);
+                int columnTime = INTEGER_CODEC.deserialize(r.getBytes("column1"), NEWEST_SUPPORTED);
                 ByteBuffer value = r.getBytes("value");
 
                 long timestamp = getColumnTimestamp(k.getTimestamp(), columnTime);

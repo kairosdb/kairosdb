@@ -22,7 +22,8 @@ public class CassandraClientImpl implements CassandraClient
 		final Cluster.Builder builder = new Cluster.Builder();
 		if(config.getAddressTranslator().equals(CassandraConfiguration.ADDRESS_TRANSLATOR_TYPE.EC2)) {
 			builder.withAddressTranslator(new EC2MultiRegionAddressTranslator());
-			builder.withLoadBalancingPolicy((EC2AwareRoundRobinPolicy.CreateEC2AwareRoundRobinPolicy()));
+			// This should work, seems the EC2AwareRoundRobinPolicy uses REMOTE for not being in the SAME az
+			builder.withLoadBalancingPolicy(new TokenAwarePolicy(EC2AwareRoundRobinPolicy.CreateEC2AwareRoundRobinPolicy()));
 		}
 		else {
 			builder.withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()));

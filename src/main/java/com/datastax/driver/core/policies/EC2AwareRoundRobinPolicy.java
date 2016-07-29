@@ -187,7 +187,6 @@ public class EC2AwareRoundRobinPolicy implements LoadBalancingPolicy {
     }
 
 
-
     /**
      * Returns the hosts to use for a new query.
      * <p/>

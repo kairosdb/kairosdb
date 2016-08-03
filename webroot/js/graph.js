@@ -134,7 +134,8 @@ function buildKairosDBQuery() {
 				if (!isValidPercentile(percentile)) {
 					return true;
 				}
-				metric.addPercentile(value, unit, percentile, time_zone);
+				var align_start_time = $(aggregator).find(".aggregatorAlignStartTimeValue").prop("checked");
+				metric.addPercentile(value, unit, percentile, time_zone, align_start_time);
 			}
 			else if (name == 'div') {
 				var divisor = $(aggregator).find(".divisorValue").val();
@@ -167,7 +168,8 @@ function buildKairosDBQuery() {
 					return true;
 				}
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-				metric.addRangeAggregator(name, value, unit, time_zone);
+				var align_start_time = $(aggregator).find(".aggregatorAlignStartTimeValue").prop("checked");
+				metric.addRangeAggregator(name, value, unit, time_zone, align_start_time);
 			}
 		});
 
@@ -572,15 +574,18 @@ function addAggregator(container) {
 		$aggregatorContainer.find(".aggregatorTrim").hide();
 		$aggregatorContainer.find(".aggregatorSaveAs").hide();
 		$aggregatorContainer.find(".aggregatorRate").hide();
+		$aggregatorContainer.find(".aggregatorAlignStartTime").hide();
 
 		if (name == "rate" || name == "sampler") {
 			$aggregatorContainer.find(".aggregatorRate").show();
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
 		else if (name == "percentile") {
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
+			$aggregatorContainer.find(".aggregatorAlignStartTime").show();
 		}
 		else if (name == "div") {
 			$aggregatorContainer.find(".divisor").show();
@@ -599,6 +604,7 @@ function addAggregator(container) {
 		else {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
+			$aggregatorContainer.find(".aggregatorAlignStartTime").show();
 		}
 	});
 }

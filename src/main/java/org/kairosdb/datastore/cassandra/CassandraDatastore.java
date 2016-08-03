@@ -43,8 +43,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.io.UnsupportedEncodingException;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -54,7 +52,7 @@ public class CassandraDatastore implements Datastore {
     public static final String CREATE_KEYSPACE = "" +
             "CREATE KEYSPACE IF NOT EXISTS %s" +
             "  WITH REPLICATION = {'class': 'SimpleStrategy'," +
-            "  'replication_factor' : 1}";
+            "  'replication_factor' : %d }";
 
     public static final String DATA_POINTS_TABLE = "" +
             "CREATE TABLE IF NOT EXISTS data_points (\n" +
@@ -62,7 +60,12 @@ public class CassandraDatastore implements Datastore {
             "  column1 blob,\n" +
             "  value blob,\n" +
             "  PRIMARY KEY ((key), column1)\n" +
-            ") WITH COMPACT STORAGE";
+            ") WITH COMPACT STORAGE " +
+            "   AND CLUSTERING ORDER BY (column1 DESC) " + // This should fit the default use case better
+            "   AND compaction = {'timestamp_resolution': 'MICROSECONDS'," +
+            "                     'max_sstable_age_days': '31'," +
+            "                     'base_time_seconds': '7200'," +
+            "                     'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy'}";
 
     public static final String ROW_KEY_INDEX_TABLE = "" +
             "CREATE TABLE IF NOT EXISTS row_key_index (\n" +
@@ -184,7 +187,7 @@ public class CassandraDatastore implements Datastore {
                 return;
             }
 
-            session.execute(String.format(CREATE_KEYSPACE, m_cassandraClient.getKeyspace()));
+            session.execute(String.format(CREATE_KEYSPACE, m_cassandraClient.getKeyspace(), m_cassandraConfiguration.getReplicationFactor()));
         }
 
         try (Session session = m_cassandraClient.getKeyspaceSession()) {

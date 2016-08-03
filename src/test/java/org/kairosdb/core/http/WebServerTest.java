@@ -2,11 +2,12 @@
 //  WebServerTest.java
 //
 // Copyright 2013, Proofpoint Inc. All rights reserved.
-//        
+//
 package org.kairosdb.core.http;
 
 import com.google.common.io.Resources;
 import org.apache.http.conn.HttpHostConnectException;
+import org.eclipse.jetty.util.thread.ExecutorThreadPool;
 import org.junit.After;
 import org.junit.Test;
 import org.kairosdb.core.exception.KairosDBException;
@@ -20,6 +21,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -97,6 +100,38 @@ public class WebServerTest
 	{
 		server = new WebServer(0, ".");
 		server.setSSLProtocols(null);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void test_setThreadPool_maxQueueSize_invalid() throws UnknownHostException
+	{
+		server = new WebServer(0, ".");
+		// arguments: maxQueueSize, minThreads, maxThreads, keepAliveMs
+		server.setThreadPool(0, 1, 2, 1000);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void test_setThreadPool_minThreads_invalid() throws UnknownHostException
+	{
+		server = new WebServer(0, ".");
+		// arguments: maxQueueSize, minThreads, maxThreads, keepAliveMs
+		server.setThreadPool(1, 3, 2, 1000);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void test_setThreadPool_maxThreads_invalid() throws UnknownHostException
+	{
+		server = new WebServer(0, ".");
+		// arguments: maxQueueSize, minThreads, maxThreads, keepAliveMs
+		server.setThreadPool(1, 1, 0, 1000);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void test_setThreadPool_keepAliveMs_invalid() throws UnknownHostException
+	{
+		server = new WebServer(0, ".");
+		// arguments: maxQueueSize, minThreads, maxThreads, keepAliveMs
+		server.setThreadPool(1, 1, 2, -1);
 	}
 
 	@Test
@@ -195,4 +230,31 @@ public class WebServerTest
 		assertThat(response.getJson().length(), greaterThan(0));
 	}
 
+	@Test
+	public void test_success() throws KairosDBException, IOException, InterruptedException
+	{
+		server = new WebServer(9001, ".");
+		server.start();
+
+		client = new Client();
+
+		JsonResponse response = client.get("http://localhost:9001/");
+		assertThat(response.getStatusCode(), equalTo(200));
+		assertThat(response.getJson().length(), greaterThan(0));
+	}
+
+	@Test
+	public void test_success_using_pool() throws KairosDBException, IOException, InterruptedException
+	{
+		server = new WebServer(9001, ".");
+		// arguments: maxQueueSize, minThreads, maxThreads, keepAliveMs
+		server.setThreadPool(1000, 1000, 2500, 1000);
+		server.start();
+
+		client = new Client();
+
+		JsonResponse response = client.get("http://localhost:9001/");
+		assertThat(response.getStatusCode(), equalTo(200));
+		assertThat(response.getJson().length(), greaterThan(0));
+	}
 }

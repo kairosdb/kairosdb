@@ -44,6 +44,10 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
+import java.util.concurrent.LinkedBlockingQueue;
+import org.eclipse.jetty.util.thread.ExecutorThreadPool;
+import java.util.concurrent.TimeUnit;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
@@ -62,6 +66,10 @@ public class WebServer implements KairosDBService
 	public static final String JETTY_SSL_CIPHER_SUITES = "kairosdb.jetty.ssl.cipherSuites";
 	public static final String JETTY_SSL_KEYSTORE_PATH = "kairosdb.jetty.ssl.keystore.path";
 	public static final String JETTY_SSL_KEYSTORE_PASSWORD = "kairosdb.jetty.ssl.keystore.password";
+	public static final String JETTY_THREADS_QUEUE_SIZE_PROPERTY = "kairosdb.jetty.threads.queue_size";
+	public static final String JETTY_THREADS_MIN_PROPERTY = "kairosdb.jetty.threads.min";
+	public static final String JETTY_THREADS_MAX_PROPERTY = "kairosdb.jetty.threads.max";
+	public static final String JETTY_THREADS_KEEP_ALIVE_MS_PROPERTY = "kairosdb.jetty.threads.keep_alive_ms";
 
 	private InetAddress m_address;
 	private int m_port;
@@ -74,7 +82,7 @@ public class WebServer implements KairosDBService
 	private String[] m_protocols;
 	private String m_keyStorePath;
 	private String m_keyStorePassword;
-
+	private ExecutorThreadPool m_pool;
 
 	public WebServer(int port, String webRoot)
 			throws UnknownHostException
@@ -126,6 +134,16 @@ public class WebServer implements KairosDBService
 		m_protocols = protocols.split("\\s*,\\s*");
 	}
 
+	@Inject(optional = true)
+	public void setThreadPool(@Named(JETTY_THREADS_QUEUE_SIZE_PROPERTY) int maxQueueSize,
+	                            @Named(JETTY_THREADS_MIN_PROPERTY) int minThreads,
+	                            @Named(JETTY_THREADS_MAX_PROPERTY) int maxThreads,
+	                            @Named(JETTY_THREADS_KEEP_ALIVE_MS_PROPERTY) long keepAliveMs)
+	{
+		LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(maxQueueSize);
+		m_pool = new ExecutorThreadPool(minThreads, maxThreads, keepAliveMs, TimeUnit.MILLISECONDS, queue);
+	}
+
 	@Override
 	public void start() throws KairosDBException
 	{
@@ -135,6 +153,9 @@ public class WebServer implements KairosDBService
 				m_server = new Server(new InetSocketAddress(m_address, m_port));
 			else
 				m_server = new Server();
+
+			if (m_pool != null)
+				m_server.setThreadPool(m_pool);
 
 			//Set up SSL
 			if (m_keyStorePath != null && !m_keyStorePath.isEmpty())

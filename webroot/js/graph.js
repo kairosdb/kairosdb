@@ -220,6 +220,14 @@ function buildKairosDBQuery() {
 				metric.addTag(name, value);
 		});
 
+        // Add Limit
+        $metricContainer.find("[name='limit']").each(function (index, limitInput) {
+            var value = $(limitInput).val();
+
+            if (value)
+                metric.setLimit(value);
+        });
+
 		query.addMetric(metric);
 	});
 

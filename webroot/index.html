@@ -469,31 +469,40 @@
 				<option value="trim">TRIM</option>
 			</select>
 		</div>
-		<div style="float: left" class="aggregatorSampling">
-			<div style="float: left">
-				<span class="header" style="margin-left: 10px; vertical-align: top;">Sampling</span>
-			</div>
-			<div style="float: left">
-				<input class="ui-widget aggregatorSamplingValue" style="width: 30px; margin-left: 10px;" type="text"
-				       value="1">
-			</div>
-			<div style="float: left">
-				<select class="ui-widget aggregatorSamplingUnit" style="margin-left: 10px;">
-					<option value="years">Years</option>
-					<option value="months">Months</option>
-					<option value="weeks">Weeks</option>
-					<option value="days">Days</option>
-					<option value="hours">Hours</option>
-					<option value="minutes">Minutes</option>
-					<option value="seconds">Seconds</option>
-					<option value="milliseconds" selected="selected">Milliseconds</option>
-				</select>
-			</div>
-            <div style="float: left" class="aggregatorAlignStartTime">
-                <span class="header" style="margin-left: 10px; vertical-align: top;">Align start time</span>
-            </div>
-			<div style="float: left" class="aggregatorAlignStartTime">
-				<input class="ui-widget aggregatorAlignStartTimeValue" style="margin-left: 10px;" type="checkbox">
+		<div>
+			<div style="float: left" class="aggregatorSampling">
+				<div style="float: left">
+					<span class="header"
+						  style="margin-left: 10px; vertical-align: top;">Sampling</span>
+				</div>
+				<div style="float: left">
+					<input class="ui-widget aggregatorSamplingValue"
+						   style="width: 30px; margin-left: 10px;" type="text"
+						   value="1">
+				</div>
+				<div style="float: left">
+					<select class="ui-widget aggregatorSamplingUnit"
+							style="margin-left: 10px;">
+						<option value="divisoryears">Years</option>
+						<option value="months">Months</option>
+						<option value="weeks">Weeks</option>
+						<option value="days">Days</option>
+						<option value="hours">Hours</option>
+						<option value="minutes">Minutes</option>
+						<option value="seconds">Seconds</option>
+						<option value="milliseconds" selected="selected">
+							Milliseconds
+						</option>
+					</select>
+				</div>
+				<div style="float: left" class="aggregatorAlignStartTime">
+					<span class="header"
+						  style="margin-left: 10px; vertical-align: top;">Align start time</span>
+				</div>
+				<div style="float: left" class="aggregatorAlignStartTime">
+					<input class="ui-widget aggregatorAlignStartTimeValue"
+						   style="margin-left: 10px;" type="checkbox">
+				</div>
 			</div>
             <div style="display: table-cell" class="aggregatorPercentile">
                 <span class="header" style="margin-left: 10px; vertical-align: top;">Percentile</span>
@@ -525,21 +534,6 @@
 			</select>
 		</div>
 
-		<div style="float: left" class="aggregatorPercentile">
-			<span class="header" style="margin-left: 10px; vertical-align: top;">Percentile</span>
-			<input class="ui-widget aggregatorPercentileValue" style="width: 40px; margin-left: 10px;" type="text"
-                       value="0.75"/>
-		</div>
-
-		<div style="float: left" class="divisor">
-			<span class="header" style="margin-left: 10px; vertical-align: top;">Divisor</span>
-			<input class="ui-widget divisorValue" style="width: 60px; margin-left: 10px;" type="text">
-		</div>
-
-		<div style="float: left" class="scalingFactor">
-			<span class="header" style="margin-left: 10px; vertical-align: top;">Factor</span>
-			<input class="ui-widget scalingFactorValue" style="width: 60px; margin-left: 10px;" type="text" value="1.0">
-		</div>
 		<div style="float: left" class="aggregatorTrim">
 			<span class="header" style="margin-left: 10px; vertical-align: top;">Trim</span>
 			<select class="ui-widget aggregatorTrimValue" style="margin-left: 10px;">

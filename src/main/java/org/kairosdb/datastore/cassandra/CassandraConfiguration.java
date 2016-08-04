@@ -39,6 +39,12 @@ public class CassandraConfiguration
 	public static final String CASSANDRA_READ_ROWWIDTH = "kairosdb.datastore.cassandra.read_row_width";
 	public static final String CASSANDRA_WRITE_ROWWIDTH = "kairosdb.datastore.cassandra.write_row_width";
 
+	public static final String CASSANDRA_MAX_ROW_KEYS_FOR_QUERY = "kairosdb.datastore.cassandra.max_row_keys_for_query";
+
+	@Inject
+	@Named(CASSANDRA_MAX_ROW_KEYS_FOR_QUERY)
+	private int m_maxRowKeysForQuery = 10000;
+
 	@Inject(optional=true)
 	@Named(CASSANDRA_WRITE_ROWWIDTH)
 	private long m_rowWidthWrite = 1L * 3 * 24 * 60 * 60 * 1000; // 3 day row width for write
@@ -196,5 +202,9 @@ public class CassandraConfiguration
 
 	public long getRowWidthWrite() {
 		return m_rowWidthWrite;
+	}
+
+	public int getMaxRowKeysForQuery() {
+		return m_maxRowKeysForQuery;
 	}
 }

@@ -41,7 +41,7 @@ public class CassandraConfiguration
 
 	public static final String CASSANDRA_MAX_ROW_KEYS_FOR_QUERY = "kairosdb.datastore.cassandra.max_row_keys_for_query";
 
-	@Inject
+	@Inject(optional=true)
 	@Named(CASSANDRA_MAX_ROW_KEYS_FOR_QUERY)
 	private int m_maxRowKeysForQuery = 10000;
 

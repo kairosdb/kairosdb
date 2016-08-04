@@ -128,11 +128,13 @@ function buildKairosDBQuery() {
 			else if (name == 'percentile') {
 				value = $(aggregator).find(".aggregatorSamplingValue").val();
 				if (!isValidInteger(value)) {
+					showErrorMessage("sampling value must be an integer greater than 0.");
 					return true;
 				}
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				var percentile = $(aggregator).find(".aggregatorPercentileValue").val();
 				if (!isValidPercentile(percentile)) {
+					showErrorMessage("sampling value must be an integer greater than 0.");
 					return true;
 				}
 				var align_start_time = $(aggregator).find(".aggregatorAlignStartTimeValue").prop("checked");
@@ -140,6 +142,11 @@ function buildKairosDBQuery() {
 			}
 			else if (name == 'div') {
 				var divisor = $(aggregator).find(".divisorValue").val();
+				if (!$.isNumeric(divisor) || divisor < 1)
+				{
+					showErrorMessage("divisor value must be a number greater than 0.");
+					return true;
+				}
 				metric.addDivideAggregator(divisor);
 			}
 			else if (name == 'scale')
@@ -165,7 +172,7 @@ function buildKairosDBQuery() {
 			else
 			{
 				var value = $(aggregator).find(".aggregatorSamplingValue").val();
-				if (!isValidInteger(value)) {
+				if (!isValidInteger(value, "sampling value must be an integer greater than 0.")) {
 					return true;
 				}
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
@@ -189,7 +196,6 @@ function buildKairosDBQuery() {
 		function isValidInteger(value) {
 			var intRegex = /^\d+$/;
 			if (!intRegex.test(value)) {
-				showErrorMessage("sampling value must be an integer greater than 0.");
 				hasError = true;
 				return false;
 			}
@@ -232,7 +238,6 @@ function buildKairosDBQuery() {
 				else{
 					showErrorMessage("Limit must be a number > 0.");
 					hasError = true;
-					return false;
 				}
 			}
         });

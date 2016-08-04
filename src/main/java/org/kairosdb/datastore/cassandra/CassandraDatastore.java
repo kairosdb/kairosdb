@@ -525,6 +525,11 @@ public class CassandraDatastore implements Datastore {
                     query.getEndTime(), query.getTags());
         }
 
+        if (ret.size() > m_cassandraConfiguration.getMaxRowKeysForQuery()) {
+            throw new MaxRowKeysForQueryExceededException(String.format("Query for metric %s matches %d row keys, but only %d are allowed",
+                    query.getName(), ret.size(), m_cassandraConfiguration.getMaxRowKeysForQuery()));
+        }
+
         return ret;
     }
 

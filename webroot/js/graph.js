@@ -30,15 +30,16 @@ function showQuery() {
 function updateChart() {
 	clear();
 	var query=buildKairosDBQuery();
+	if (query) {
+		var metricData = getAdditionalChartData();
+		$('#query-hidden-text').val(JSON.stringify(query, null, 2));
+		displayQuery();
 
-	var metricData = getAdditionalChartData();
-	$('#query-hidden-text').val(JSON.stringify(query, null, 2));
-	displayQuery();
-
-	var $graphLink = $("#graph_link");
-	$graphLink.attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
-	$graphLink.show();
-	showChartForQuery("(Click and drag to zoom)", query, metricData);
+		var $graphLink = $("#graph_link");
+		$graphLink.attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
+		$graphLink.show();
+		showChartForQuery("(Click and drag to zoom)", query, metricData);
+	}
 }
 
 function buildKairosDBQuery() {
@@ -224,8 +225,16 @@ function buildKairosDBQuery() {
         $metricContainer.find("[name='limit']").each(function (index, limitInput) {
             var value = $(limitInput).val();
 
-            if (value)
-                metric.setLimit(value);
+            if (value){
+				if (isValidInteger(value) && value > 0) {
+					metric.setLimit(value);
+				}
+				else{
+					showErrorMessage("Limit must be a number > 0.");
+					hasError = true;
+					return false;
+				}
+			}
         });
 
 		query.addMetric(metric);

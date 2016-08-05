@@ -71,6 +71,13 @@ public class SamplerAggregator implements Aggregator, TimezoneAware
 		}
 
 		@Override
+		public boolean hasNext()
+		{
+			//Ensure we have two data points to mess with
+			return currentDataPoint != null && hasNextInternal();
+		}
+
+		@Override
 		public DataPoint next()
 		{
 			final double x0 = currentDataPoint.getDoubleValue();

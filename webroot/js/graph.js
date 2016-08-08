@@ -245,10 +245,17 @@ function buildKairosDBQuery() {
 		query.addMetric(metric);
 	});
 
-	var startTimeAbsolute = $("#startTime").datepicker("getDate");
+	var time_zone = $(".timeZone").val();
+	if (time_zone != '')
+		query.setTimeZone(time_zone);
+
+	var startTimeAbsolute = $("#startTime").datetimepicker("getDate");
 	var startTimeRelativeValue = $("#startRelativeValue").val();
 	
 	if (startTimeAbsolute != null) {
+		if (time_zone) {
+			startTimeAbsolute = convertToTimezone(startTimeAbsolute, time_zone);
+		}
 		query.setStartAbsolute(startTimeAbsolute.getTime());
 	}
 	else if (startTimeRelativeValue) {
@@ -260,8 +267,11 @@ function buildKairosDBQuery() {
 		return;
 	}
 
-	var endTimeAbsolute = $("#endTime").datepicker("getDate");
+	var endTimeAbsolute = $("#endTime").datetimepicker("getDate");
 	if (endTimeAbsolute != null) {
+		if (time_zone) {
+			endTimeAbsolute = convertToTimezone(endTimeAbsolute, time_zone);
+		}
 		query.setEndAbsolute(endTimeAbsolute.getTime());
 	}
 	else {
@@ -271,11 +281,15 @@ function buildKairosDBQuery() {
 		}
 	}
 	
-	var time_zone = $(".timeZone").val();
-	if (time_zone != '')
-		query.setTimeZone(time_zone)
-
 	return hasError ? null : query;
+}
+
+function convertToTimezone(time, time_zone)
+{
+	var timeString = moment(time).format("dddd, MMMM Do YYYY, HH:mm:ss.SSS");
+	var convertedTimeString = moment.tz(timeString, "dddd, MMMM Do YYYY, HH:mm:ss.SSS", time_zone).format();
+	return new Date(convertedTimeString);
+
 }
 
 /**

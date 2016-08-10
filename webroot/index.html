@@ -244,24 +244,31 @@
 
 <div class="ui-widget footnote">* Required Fields</div>
 
-<p>
-	<button id="submitButton" style="margin-top: 10px;">Graph</button>
-	<button id="showQueryButton" style="margin-top: 10px;">Show Query</button>
-	<button id="saveButton" style="margin-top: 10px;" value="Dropdown" data-dropdown="#saveDropdown">Save</button>
-	<button id="deleteButton" style="margin-top: 10px;">Delete Data</button>
-<div class="ui-widget">
-	<div id="errorContainer" class="ui-state-error ui-corner-all" style="padding:5px; width: 500px;"></div>
-	<p>
+<p></p>
+<button id="submitButton" style="margin-top: 10px;">Graph</button>
+<button id="showQueryButton" style="margin-top: 10px;">Show Query</button>
+<button id="saveButton" style="margin-top: 10px;" value="Dropdown"
+		data-dropdown="#saveDropdown">Save
+</button>
+<button id="deleteButton" style="margin-top: 10px;">Delete Data</button>
 
-	<p>
+<div class="ui-widget">
+	<div id="errorContainer" class="ui-state-error ui-corner-all"
+		 style="padding:5px; width: 500px;">
+	</div>
 </div>
 
 <div class="query-window" style="display: none">
 <span class="header ui-widget">Query in
-	<input class="ui-widget" type="radio" name="query-type" id="query-type-json" checked onclick="displayQuery()"/><label for="query-type-json">JSON</label> or
-	<input type="radio" name="query-type" id="query-type-js-object" onclick="displayQuery()"/><label for="query-type-js-object">JS Object</label></span> <br>
-<input type="hidden" id="query-hidden-text"/>
-<textarea id="query-text" class="ui-widget" rows="5" style="margin-top: 5px;"></textarea>
+	<input class="ui-widget" type="radio" name="query-type" id="query-type-json"
+		   checked onclick="displayQuery()"/><label
+			for="query-type-json">JSON</label> or
+	<input type="radio" name="query-type" id="query-type-js-object"
+		   onclick="displayQuery()"/><label
+			for="query-type-js-object">JS Object</label></span> <br>
+	<input type="hidden" id="query-hidden-text"/>
+	<textarea id="query-text" class="ui-widget" rows="5"
+			  style="margin-top: 5px;"></textarea>
 </div>
 
 <p>
@@ -483,7 +490,7 @@
 				<div style="float: left">
 					<input class="ui-widget aggregatorSamplingValue"
 						   style="width: 30px; margin-left: 10px;" type="text"
-						   value="1">
+						   value="1"/>
 				</div>
 				<div style="float: left">
 					<select class="ui-widget aggregatorSamplingUnit"
@@ -502,11 +509,12 @@
 				</div>
 				<div style="float: left" class="aggregatorAlignStartTime">
 					<span class="header"
-						  style="margin-left: 10px; vertical-align: top;">Align start time</span>
+						  style="margin-left: 10px; vertical-align: top;">Align start time
+					</span>
 				</div>
 				<div style="float: left" class="aggregatorAlignStartTime">
 					<input class="ui-widget aggregatorAlignStartTimeValue"
-						   style="margin-left: 10px;" type="checkbox">
+						   style="margin-left: 10px;" type="checkbox"/>
 				</div>
 			</div>
             <div style="display: table-cell" class="aggregatorPercentile">
@@ -514,15 +522,15 @@
             </div>
             <div style="display: table-cell" class="aggregatorPercentile">
                 <input class="ui-widget aggregatorPercentileValue" style="width: 40px; margin-left: 10px;" type="text"
-                       value="0.75">
+                       value="0.75"/>
             </div>
 			<div style="display: table-cell" class="divisor">
 				<span class="header" style="margin-left: 10px; vertical-align: top;">Divisor</span>
-				<input class="ui-widget divisorValue" style="width: 60px; margin-left: 10px;" type="text">
+				<input class="ui-widget divisorValue" style="width: 60px; margin-left: 10px;" type="text"/>
 			</div>
             <div style="display: table-cell" class="scalingFactor">
                 <span class="header" style="margin-left: 10px; vertical-align: top;">Factor</span>
-                <input class="ui-widget scalingFactorValue" style="width: 60px; margin-left: 10px;" type="text" value="1.0">
+                <input class="ui-widget scalingFactorValue" style="width: 60px; margin-left: 10px;" type="text" value="1.0"/>
             </div>
 		</div>
 
@@ -549,9 +557,9 @@
 		</div>
 		<div style="float: left" class="aggregatorSaveAs">
 			<span class="header" style="margin-left: 10px; vertical-align: top;">Save As</span>
-			<input class="ui-widget aggregatorSaveAsValue" style="width: 275px; margin-left: 10px;" type="text" >
+			<input class="ui-widget aggregatorSaveAsValue" style="width: 275px; margin-left: 10px;" type="text"/>
 		</div>
-		<div style="clear: both"/>
+		<div style="clear: both"></div>
 	</div>
 </div>
 

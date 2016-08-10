@@ -86,6 +86,8 @@
 			$(".aggregatorTrim").hide();
 			$(".aggregatorSaveAs").hide();
 			$(".aggregatorRate").hide();
+			$(".rateRolloverFilter").hide();
+			$(".rateRolloverFilterLabel").hide();
 			$("#tabs").tabs({'active': 0});
 
 			$startTime.bind("change paste keyup", function(){
@@ -537,6 +539,8 @@
 				<option value="seconds">Seconds</option>
 				<option value="milliseconds" selected="selected">Milliseconds</option>
 			</select>
+			<input class="ui-widget rateRolloverFilter" id="rateRolloverFilter" style="margin-left: 10px;" type="checkbox">
+			<label class="ui-widget rateRolloverFilterLabel" id="rateRolloverFilterLabel">Rollover Filter</label><br>
 		</div>
 
 		<div style="float: left" class="aggregatorTrim">

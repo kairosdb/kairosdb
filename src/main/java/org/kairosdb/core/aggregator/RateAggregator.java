@@ -32,12 +32,14 @@ public class RateAggregator implements Aggregator, TimezoneAware
 	private Sampling m_sampling;
 	private DoubleDataPointFactory m_dataPointFactory;
 	private DateTimeZone m_timeZone;
+	private boolean m_rolloverFilter;
 
 	@Inject
 	public RateAggregator(DoubleDataPointFactory dataPointFactory)
 	{
 		m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
 		m_dataPointFactory = dataPointFactory;
+		m_rolloverFilter = false;
 	}
 
 	@Override
@@ -67,12 +69,21 @@ public class RateAggregator implements Aggregator, TimezoneAware
 		m_timeZone = timeZone;
 	}
 
+	public void setRolloverFilter(boolean filter)
+	{
+		m_rolloverFilter = filter;
+	}
+
 
 	private class RateDataPointAggregator extends AggregatedDataPointGroupWrapper
 	{
+		double m_prevRate;
+
 		public RateDataPointAggregator(DataPointGroup innerDataPointGroup)
 		{
 			super(innerDataPointGroup);
+
+			m_prevRate = 0.0;
 		}
 
 		@Override
@@ -107,7 +118,13 @@ public class RateAggregator implements Aggregator, TimezoneAware
 				}
 			}
 
-			double rate = (x1 - x0)/(y1 - y0) * Util.getSamplingDuration(y0, m_sampling, m_timeZone);
+			double rate = 0.0;
+			if (m_rolloverFilter && x1 < x0)
+				rate = m_prevRate;
+			else
+				rate = (x1 - x0)/(y1 - y0) * Util.getSamplingDuration(y0, m_sampling, m_timeZone);
+
+			m_prevRate = rate;
 
 			return (m_dataPointFactory.createDataPoint(y1, rate));
 		}

@@ -109,6 +109,41 @@ public class RateAggregatorTest
 		assertThat(dp.getDoubleValue(), equalTo(15.0));
 	}
 
+	@Test
+	public void test_counterRolloverRate()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("rate");
+		group.addDataPoint(new LongDataPoint(1, 5));
+		group.addDataPoint(new LongDataPoint(2, 10));
+		group.addDataPoint(new LongDataPoint(3, 12));
+		group.addDataPoint(new LongDataPoint(4, 21));
+		group.addDataPoint(new LongDataPoint(5, 0));
+		group.addDataPoint(new LongDataPoint(6, 8));
+
+		RateAggregator rateAggregator = new RateAggregator(new DoubleDataPointFactoryImpl());
+		rateAggregator.setRolloverFilter(true);
+		DataPointGroup results = rateAggregator.aggregate(group);
+
+		DataPoint dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(2L));
+		assertThat(dp.getDoubleValue(), equalTo(5.0));
+
+		dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(3L));
+		assertThat(dp.getDoubleValue(), equalTo(2.0));
+
+		dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(4L));
+		assertThat(dp.getDoubleValue(), equalTo(9.0));
+
+		dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(5L));
+		assertThat(dp.getDoubleValue(), equalTo(9.0));
+
+		dp = results.next();
+		assertThat(dp.getTimestamp(), equalTo(6L));
+		assertThat(dp.getDoubleValue(), equalTo(8.0));
+	}
 
 	@Test(expected = IllegalStateException.class)
 	public void test_dataPointsAtSameTime()

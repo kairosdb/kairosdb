@@ -66,7 +66,7 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
-	this.addRate = function (unit, time_zone) {
+	this.addRate = function (unit, time_zone, rollover_filter) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
@@ -78,6 +78,7 @@ kairosdb.Metric = function (name) {
 			rate.sampling.value = 1;
             		rate.sampling.time_zone = time_zone;
 		}
+		rate.rollover_filter = rollover_filter
 
 		this.aggregators.push(rate);
 		return this;

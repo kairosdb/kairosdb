@@ -119,7 +119,8 @@ function buildKairosDBQuery() {
 			}
 			else if (name == 'rate') {
 				unit = $(aggregator).find(".rateUnit").val();
-				metric.addRate(unit, time_zone);
+				var rollover_filter = $(aggregator).find(".rateRolloverFilter").is(':checked');
+				metric.addRate(unit, time_zone, rollover_filter);
 			}
 			else if (name == 'sampler') {
 				unit = $(aggregator).find(".rateUnit").val();
@@ -611,12 +612,18 @@ function addAggregator(container) {
 		$aggregatorContainer.find(".aggregatorSaveAs").hide();
 		$aggregatorContainer.find(".aggregatorRate").hide();
 		$aggregatorContainer.find(".aggregatorAlignStartTime").hide();
+		$aggregatorContainer.find(".rateRolloverFilter").hide();
+		$aggregatorContainer.find(".rateRolloverFilterLabel").hide();
 
 		if (name == "rate" || name == "sampler") {
 			$aggregatorContainer.find(".aggregatorRate").show();
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
+			if (name == "rate") {
+				$aggregatorContainer.find(".rateRolloverFilter").show();
+				$aggregatorContainer.find(".rateRolloverFilterLabel").show();
+			}
 		}
 		else if (name == "percentile") {
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');

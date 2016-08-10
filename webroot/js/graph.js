@@ -122,6 +122,10 @@ function buildKairosDBQuery() {
 				var rollover_filter = $(aggregator).find(".rateRolloverFilter").is(':checked');
 				metric.addRate(unit, time_zone, rollover_filter);
 			}
+			else if (name == 'non_negative_rate') {
+				unit = $(aggregator).find(".rateUnit").val();
+				metric.addNonNegativeRate(unit, time_zone);
+			}
 			else if (name == 'sampler') {
 				unit = $(aggregator).find(".rateUnit").val();
 				metric.addSampler(unit);
@@ -615,7 +619,7 @@ function addAggregator(container) {
 		$aggregatorContainer.find(".rateRolloverFilter").hide();
 		$aggregatorContainer.find(".rateRolloverFilterLabel").hide();
 
-		if (name == "rate" || name == "sampler") {
+		if (name == "rate" || name == "non_negative_rate" || name == "sampler") {
 			$aggregatorContainer.find(".aggregatorRate").show();
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			// clear values

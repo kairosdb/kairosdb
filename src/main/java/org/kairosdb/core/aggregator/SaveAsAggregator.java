@@ -76,6 +76,12 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	}
 
 	@Override
+	public String getAggregatedGroupType(String groupType)
+	{
+		return groupType;
+	}
+
+	@Override
 	public void setGroupBys(List<GroupBy> groupBys)
 	{
 		for (GroupBy groupBy : groupBys)

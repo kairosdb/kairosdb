@@ -23,4 +23,5 @@ public interface Aggregator
 {
 	DataPointGroup aggregate(DataPointGroup dataPointGroup);
 	boolean canAggregate(String groupType);
+	String getAggregatedGroupType(String groupType);
 }

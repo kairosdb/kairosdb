@@ -356,7 +356,7 @@ public class PutCommandTest
 				DataPoint dataPoint, int ttl) throws DatastoreException
 		{
 			if (set == null)
-				set = new DataPointSet(metricName, tags, Collections.EMPTY_LIST);
+				set = new DataPointSet(metricName, tags, Collections.<DataPoint>emptyList());
 
 			set.addDataPoint(dataPoint);
 		}

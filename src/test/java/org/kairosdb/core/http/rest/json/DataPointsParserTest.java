@@ -748,7 +748,7 @@ public class DataPointsParserTest
 			if ((lastDataPointSet == null) || (!lastDataPointSet.getName().equals(metricName)) ||
 					(!lastDataPointSet.getTags().equals(tags)))
 			{
-				lastDataPointSet = new DataPointSet(metricName, tags, Collections.EMPTY_LIST);
+				lastDataPointSet = new DataPointSet(metricName, tags, Collections.<DataPoint>emptyList());
 				dataPointSetList.add(lastDataPointSet);
 			}
 

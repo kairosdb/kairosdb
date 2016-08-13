@@ -368,9 +368,9 @@ public class KairosDatastore
 	private static String getTagsKey(LinkedHashMap<String, String> tags)
 	{
 		StringBuilder builder = new StringBuilder();
-		for (String name : tags.keySet())
+		for (Map.Entry<String,String> entry : tags.entrySet())
 		{
-			builder.append(name).append(tags.get(name));
+			builder.append(entry.getKey()).append(entry.getValue());
 		}
 
 		return builder.toString();
@@ -420,7 +420,6 @@ public class KairosDatastore
 		private QueryMetric m_metric;
 		private List<DataPointGroup> m_results;
 		private int m_dataPointCount;
-        private int m_rowCount;
 		
 		public DatastoreQueryImpl(QueryMetric metric)
 				throws UnsupportedEncodingException, NoSuchAlgorithmException,
@@ -442,7 +441,6 @@ public class KairosDatastore
 		{
 			return m_dataPointCount;
 		}
-        public int getRowCount() { return m_rowCount; }
 
 		@Override
 		public List<DataPointGroup> execute() throws DatastoreException
@@ -461,14 +459,13 @@ public class KairosDatastore
 				{
 					cachedResults = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
 							tempFile, m_metric.getCacheTime(), m_dataPointFactory);
-					if (cachedResults != null)
-					{
-						returnedRows = cachedResults.getRows();
-						logger.debug("Cache HIT!");
-					}
 				}
 
-				if (cachedResults == null)
+				if (cachedResults != null)
+				{
+					returnedRows = cachedResults.getRows();
+					logger.debug("Cache HIT!");
+				} else
 				{
 					logger.debug("Cache MISS!");
 					cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
@@ -488,10 +485,8 @@ public class KairosDatastore
 				m_dataPointCount += returnedRow.getDataPointCount();
 			}
 
-            m_rowCount = returnedRows.size();
-
             ThreadReporter.addDataPoint(QUERY_SAMPLE_SIZE, m_dataPointCount);
-            ThreadReporter.addDataPoint(QUERY_ROW_COUNT, m_rowCount);
+            ThreadReporter.addDataPoint(QUERY_ROW_COUNT, returnedRows.size());
 
 			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
 					returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());

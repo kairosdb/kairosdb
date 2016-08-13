@@ -19,7 +19,6 @@ package org.kairosdb.core.telnet;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.jboss.netty.channel.Channel;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.exception.DatastoreException;

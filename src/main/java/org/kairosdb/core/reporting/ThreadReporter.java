@@ -17,8 +17,6 @@
 package org.kairosdb.core.reporting;
 
 import com.google.common.collect.ImmutableSortedMap;
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;

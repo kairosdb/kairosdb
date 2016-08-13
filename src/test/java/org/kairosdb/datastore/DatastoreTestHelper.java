@@ -20,11 +20,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
-import junit.framework.TestCase;
-import org.hamcrest.CoreMatchers;
 import org.junit.Test;
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
@@ -35,9 +31,8 @@ import org.kairosdb.core.groupby.TagGroupBy;
 
 import java.util.*;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -579,7 +574,6 @@ public abstract class DatastoreTestHelper
 	@Test
 	public void test_queryNegativeAndPositiveTime() throws DatastoreException
 	{
-		SetMultimap<String, String> tags = HashMultimap.create();
 		QueryMetric query = new QueryMetric(-2000000000L, 0, "old_data");
 		query.setEndTime(2000000000L);
 
@@ -615,7 +609,6 @@ public abstract class DatastoreTestHelper
 	@Test
 	public void test_queryNegativeTime() throws DatastoreException
 	{
-		SetMultimap<String, String> tags = HashMultimap.create();
 		QueryMetric query = new QueryMetric(-2000000000L, 0, "old_data");
 		query.setEndTime(-1L);
 

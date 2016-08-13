@@ -19,7 +19,6 @@ package org.kairosdb.datastore.h2;
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.KairosDatastore;
 
 public class H2Module extends AbstractModule
 {

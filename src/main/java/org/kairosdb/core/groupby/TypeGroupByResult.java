@@ -20,10 +20,6 @@ import org.json.JSONWriter;
 import org.kairosdb.core.formatter.FormatterException;
 
 import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class TypeGroupByResult implements GroupByResult
 {

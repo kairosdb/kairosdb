@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -45,7 +45,7 @@ public class CachedSearchResultTest
 
 		long now = System.currentTimeMillis();
 
-		Map<String, String> tags = new HashMap();
+		Map<String, String> tags = new HashMap<>();
 		tags.put("host", "A");
 		tags.put("client", "foo");
 		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
@@ -56,7 +56,7 @@ public class CachedSearchResultTest
 		csResult.addDataPoint(new LegacyDoubleDataPoint(now+3, 43.1));
 
 
-		tags = new HashMap();
+		tags = new HashMap<>();
 		tags.put("host", "B");
 		tags.put("client", "foo");
 		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
@@ -66,7 +66,7 @@ public class CachedSearchResultTest
 		csResult.addDataPoint(new LegacyLongDataPoint(now+2, 2));
 		csResult.addDataPoint(new LegacyDoubleDataPoint(now+3, 2.1));
 
-		tags = new HashMap();
+		tags = new HashMap<>();
 		tags.put("host", "A");
 		tags.put("client", "bar");
 		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
@@ -194,7 +194,7 @@ public class CachedSearchResultTest
 			else
 			{
 				Double value = (Double)numbers[count];
-				assertEquals(value.doubleValue(), dp.getDoubleValue());
+				assertEquals(value.doubleValue(), dp.getDoubleValue(), 0.0);
 			}
 
 			count ++;

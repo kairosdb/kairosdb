@@ -46,13 +46,13 @@ public class KairosDBScheduler implements KairosDBService
 
 		Properties props = new Properties();
 		props.setProperty("org.quartz.threadPool.threadCount", "4");
+		props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, "true");
 
 		StdSchedulerFactory factory = new StdSchedulerFactory(props);
 		scheduler = factory.getScheduler();
 		scheduler.setJobFactory(new KairosDBJobFactory(guice));
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void start() throws KairosDBException
 	{
@@ -62,10 +62,12 @@ public class KairosDBScheduler implements KairosDBService
 
 			for (Key<?> key : guice.getAllBindings().keySet())
 			{
-				Class bindingClass = key.getTypeLiteral().getRawType();
+				Class<?> bindingClass = key.getTypeLiteral().getRawType();
 				if (KairosDBJob.class.isAssignableFrom(bindingClass))
 				{
-					KairosDBJob job = (KairosDBJob) guice.getInstance(bindingClass);
+					@SuppressWarnings("unchecked")
+					Class<? extends KairosDBJob> castClass = (Class<? extends KairosDBJob>) bindingClass;
+					KairosDBJob job = guice.getInstance(castClass);
 					JobDetail jobDetail = newJob(job.getClass())
 							.withIdentity(job.getClass().getName()).build();
 
@@ -78,7 +80,7 @@ public class KairosDBScheduler implements KairosDBService
 				for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
 
 					String jobName = jobKey.getName();
-					List<Trigger> triggers = (List<Trigger>) scheduler.getTriggersOfJob(jobKey);
+					List<? extends Trigger> triggers = scheduler.getTriggersOfJob(jobKey);
 					Date nextFireTime = triggers.get(0).getNextFireTime();
 					log.info("*** Scheduled job " + jobName + " to execute next on " + nextFireTime);
 				}

@@ -53,7 +53,7 @@ public class CoreModule extends AbstractModule
 	{
 		String className = m_props.getProperty(property);
 
-		Class klass = null;
+		Class<?> klass = null;
 		try
 		{
 			klass = getClass().getClassLoader().loadClass(className);

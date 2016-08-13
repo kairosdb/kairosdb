@@ -27,29 +27,22 @@ import static org.junit.Assert.*;
 
 public class TournamentTreeTest
 {
-	private class RowData
+	private static class RowData
 	{
 		private long m_ts;
-		private int m_value;
 
 		public RowData(long ts, int value)
 		{
 			m_ts = ts;
-			m_value = value;
 		}
 
 		public long getTimeStamp()
 		{
-			return (m_ts);
-		}
-
-		public int getValue()
-		{
-			return (m_value);
+			return m_ts;
 		}
 	}
 
-	private class RowDataComparator implements Comparator<RowData>
+	private static class RowDataComparator implements Comparator<RowData>
 	{
 		public int compare(RowData rd1, RowData rd2)
 		{

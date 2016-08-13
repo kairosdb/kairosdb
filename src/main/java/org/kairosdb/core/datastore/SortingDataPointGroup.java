@@ -85,7 +85,7 @@ public class SortingDataPointGroup extends AbstractDataPointGroup
 	}
 
 
-	private class DataPointComparator implements Comparator<DataPoint>
+	private static class DataPointComparator implements Comparator<DataPoint>
 	{
 		@Override
 		public int compare(DataPoint point1, DataPoint point2)

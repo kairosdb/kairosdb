@@ -24,11 +24,12 @@ public class KairosMetricReporterListProvider implements Provider<List<KairosMet
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (KairosMetricReporter.class.isAssignableFrom(bindingClass))
 			{
-				KairosMetricReporter reporter = (KairosMetricReporter)injector.getInstance(bindingClass);
-				m_reporters.add(reporter);
+				@SuppressWarnings("unchecked")
+				Class<? extends KairosMetricReporter> castClass = (Class<? extends KairosMetricReporter>)bindingClass;
+				m_reporters.add(injector.getInstance(castClass));
 			}
 		}
 	}

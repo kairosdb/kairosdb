@@ -28,7 +28,6 @@ import me.prettyprint.cassandra.service.ColumnSliceIterator;
 import me.prettyprint.cassandra.service.ThriftKsDef;
 import me.prettyprint.hector.api.Cluster;
 import me.prettyprint.hector.api.Keyspace;
-import me.prettyprint.hector.api.Serializer;
 import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
 import me.prettyprint.hector.api.ddl.ComparatorType;
 import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
@@ -103,7 +102,7 @@ public class CassandraDatastore implements Datastore
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
-	private List<RowKeyListener> m_rowKeyListeners = Collections.EMPTY_LIST;
+	private List<RowKeyListener> m_rowKeyListeners = Collections.<RowKeyListener>emptyList();
 
 
 	@Inject
@@ -186,13 +185,10 @@ public class CassandraDatastore implements Datastore
 	private WriteBufferStats createWriteBufferStats(final String cfName, final String hostname) {
 		return new WriteBufferStats()
 		{
-			private ImmutableSortedMap m_tags;
-			{
-				m_tags = ImmutableSortedMap.naturalOrder()
+			private ImmutableSortedMap<String,String> m_tags = ImmutableSortedMap.<String,String>naturalOrder()
 						.put("host", hostname)
 						.put("buffer", cfName)
 						.build();
-			}
 
 			@Override
 			public void saveWriteSize(int pendingWrites)
@@ -337,7 +333,7 @@ public class CassandraDatastore implements Datastore
 				String cachedValue = m_tagValueCache.cacheItem(value);
 				if (cachedValue == null)
 				{
-					if(value.toString().length() == 0)
+					if(value.length() == 0)
 					{
 						logger.warn(
 								"Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+metricName
@@ -539,17 +535,6 @@ public class CassandraDatastore implements Datastore
 		}
 	}
 
-	private SortedMap<String, String> getTags(DataPointRow row)
-	{
-		TreeMap<String, String> map = new TreeMap<String, String>();
-		for (String name : row.getTagNames())
-		{
-			map.put(name, row.getTagValue(name));
-		}
-
-		return map;
-	}
-
 	/**
 	 * Returns the row keys for the query in tiers ie grouped by row key timestamp
 	 *
@@ -621,7 +606,7 @@ public class CassandraDatastore implements Datastore
 
 	public static long getColumnTimestamp(long rowTime, int columnName)
 	{
-		return (rowTime + (long) (columnName >>> 1));
+		return (rowTime + (columnName >>> 1));
 	}
 
 	public static boolean isLongValue(int columnName)

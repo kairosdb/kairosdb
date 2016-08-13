@@ -21,7 +21,6 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
 import java.io.*;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -102,35 +101,14 @@ public class ResponseToMetricConverter
 
 	private static class MetricFrom
 	{
-		private String name;
-
 		private Map<String, String[]> tags;
-
-		private long[][] values;
-
-		private GroupBy[] groupBy;
-	}
-
-	private class GroupBy
-	{
-		private String name;
-
-		private String[] tags;
-
-		private Map<String, String> group;
 	}
 
 	private static class MetricTo
 	{
-		private String name;
 		private Map<String, String> tags = new HashMap<String, String>();
-		private long[][] datapoints;
-
 		private MetricTo(MetricFrom from)
 		{
-			this.name = from.name;
-			this.datapoints = Arrays.copyOf(from.values, from.values.length);
-
 			for (Map.Entry<String, String[]> entry : from.tags.entrySet())
 			{
 				tags.put(entry.getKey(), entry.getValue()[0]);

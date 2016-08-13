@@ -16,7 +16,6 @@
 package org.kairosdb.core.groupby;
 
 import org.junit.Test;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.formatter.FormatterException;

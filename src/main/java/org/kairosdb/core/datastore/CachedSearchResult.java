@@ -310,19 +310,9 @@ public class CachedSearchResult implements QueryCallback
 			m_endPosition = endPosition;
 		}
 
-		public Map<String, String> getTags()
-		{
-			return m_tags;
-		}
-
 		public void incrementDataPointCount()
 		{
 			m_dataPointCount ++;
-		}
-
-		public int getDataPointCount()
-		{
-			return m_dataPointCount;
 		}
 
 		@Override

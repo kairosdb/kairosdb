@@ -18,15 +18,9 @@ package org.kairosdb.core.http;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Scopes;
 import com.google.inject.servlet.GuiceFilter;
-import com.google.inject.servlet.ServletModule;
-import com.google.inject.multibindings.Multibinder;
-import com.sun.jersey.api.container.filter.GZIPContentEncodingFilter;
 import com.sun.jersey.guice.JerseyServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
-import com.sun.jersey.spi.container.ContainerRequestFilter;
-import com.sun.jersey.spi.container.ContainerResponseFilter;
-import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
-import org.eclipse.jetty.server.handler.GzipHandler;
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import org.eclipse.jetty.servlets.GzipFilter;
 import org.kairosdb.core.http.rest.MetricsResource;
 

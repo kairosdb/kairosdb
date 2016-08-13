@@ -2,7 +2,6 @@ package org.kairosdb.datastore.cassandra;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.scheduler.KairosDBJob;
-import org.quartz.CronScheduleBuilder;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.Trigger;

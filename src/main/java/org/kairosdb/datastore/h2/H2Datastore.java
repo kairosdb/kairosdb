@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -56,15 +55,19 @@ public class H2Datastore implements Datastore
 			KairosDataPointFactory dataPointFactory) throws DatastoreException
 	{
 		m_dataPointFactory = dataPointFactory;
-		logger.info("Starting H2 database in " + dbPath);
 		boolean createDB = false;
 
 		File dataDir = new File(dbPath);
 		if (!dataDir.exists())
 			createDB = true;
-
+	
+		dbPath = dbPath.replace('\\', '/');
+		//newer H2 is more strict about relative paths
+		String jdbcPath = (dataDir.isAbsolute() || dbPath.startsWith("./") ? "" : "./") + dbPath;
+		logger.info("Starting H2 database in " + jdbcPath);
+		
 		JdbcDataSource ds = new JdbcDataSource();
-		ds.setURL("jdbc:h2:" + dbPath + "/kairosdb");
+		ds.setURL("jdbc:h2:" + jdbcPath + "/kairosdb");
 		ds.setUser("sa");
 
 		try
@@ -102,12 +105,14 @@ public class H2Datastore implements Datastore
 		m_holdConnection.setAutoCommit(false);
 
 		StringBuilder sb = new StringBuilder();
-		InputStreamReader reader = new InputStreamReader(getClass().getClassLoader()
-				.getResourceAsStream("create.sql"));
+		try(InputStreamReader reader = new InputStreamReader(getClass().getClassLoader()
+				.getResourceAsStream("create.sql")))
+		{
 
-		int ch;
-		while ((ch = reader.read()) != -1)
-			sb.append((char) ch);
+			int ch;
+			while ((ch = reader.read()) != -1)
+				sb.append((char) ch);
+		}
 
 		String[] tableCommands = sb.toString().split(";");
 

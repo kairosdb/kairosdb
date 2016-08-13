@@ -1,12 +1,6 @@
 package org.kairosdb.core.datapoints;
 
-import org.json.JSONException;
-import org.json.JSONWriter;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.DataPointHelper;
-import org.kairosdb.core.datapoints.LongDataPoint;
-
-import java.nio.ByteBuffer;
 
 /**
  Created with IntelliJ IDEA.

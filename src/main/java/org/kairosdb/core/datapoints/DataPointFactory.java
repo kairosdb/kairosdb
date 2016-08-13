@@ -5,7 +5,6 @@ import org.kairosdb.core.DataPoint;
 
 import java.io.DataInput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  Implmementation must be thread safe.

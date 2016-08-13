@@ -2,9 +2,6 @@ package org.kairosdb.datastore.remote;
 
 import com.google.common.collect.ImmutableSortedMap;
 
-import java.util.SortedMap;
-import java.util.TreeMap;
-
 /**
  Created with IntelliJ IDEA.
  User: bhawkins

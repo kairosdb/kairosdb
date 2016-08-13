@@ -27,9 +27,7 @@ import org.kairosdb.core.datastore.TimeUnit;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Iterator;
-import java.util.TimeZone;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -191,7 +189,6 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	private class RangeDataPointAggregator extends AggregatedDataPointGroupWrapper
 	{
 		protected RangeSubAggregator m_subAggregator;
-		protected Calendar m_calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		protected Iterator<DataPoint> m_dpIterator;
 		/* used for generic range computations */
 		private DateTimeField m_unitField;
@@ -274,19 +271,6 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 			return (m_dpIterator.next());
 		}
 
-
-        /**
-         * Computes the data point time for the aggregated value.
-         * Different strategies could be added here such as
-         * datapoint time = range start time
-         *                = range end time
-         *                = range median
-         *                = current datapoint time
-         * @return
-         */
-        private long getDataPointTime() {
-            return currentDataPoint.getTimestamp();
-        }
 
         /**
          *

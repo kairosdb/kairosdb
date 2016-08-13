@@ -10,7 +10,6 @@ import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 public class DataPointsRowKeySerializerTest
 {
@@ -36,7 +35,7 @@ public class DataPointsRowKeySerializerTest
 
 		assertThat(rowKey.getMetricName(), equalTo(metricName));
 		assertThat(rowKey.getDataType(), equalTo(LegacyDataPointFactory.DATASTORE_TYPE));
-		assertThat(rowKey.getTimestamp(), equalTo((long) now));
+		assertThat(rowKey.getTimestamp(), equalTo(now));
 	}
 
 	@Test

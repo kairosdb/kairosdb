@@ -40,8 +40,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
@@ -312,7 +312,7 @@ public class KairosDatastoreTest
 		return null;
 	}
 
-	private class TestKairosDatastore extends KairosDatastore
+	private static class TestKairosDatastore extends KairosDatastore
 	{
 
 		public TestKairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
@@ -323,7 +323,7 @@ public class KairosDatastoreTest
 		}
 	}
 
-	private class TestDatastore implements Datastore
+	private static class TestDatastore implements Datastore
 	{
 		private DatastoreException m_toThrow = null;
 
@@ -361,6 +361,7 @@ public class KairosDatastoreTest
 			return null;
 		}
 
+		@SuppressWarnings("unused")
 		public void throwQueryException(DatastoreException toThrow)
 		{
 			m_toThrow = toThrow;

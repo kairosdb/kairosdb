@@ -61,7 +61,7 @@ public class QueryParser
 	private AggregatorFactory m_aggregatorFactory;
 	private QueryPluginFactory m_pluginFactory;
 	private GroupByFactory m_groupByFactory;
-	private Map<Class, Map<String, PropertyDescriptor>> m_descriptorMap;
+	private Map<Class<?>, Map<String, PropertyDescriptor>> m_descriptorMap;
 	private final Object m_descriptorMapLock = new Object();
 	private Gson m_gson;
 
@@ -73,7 +73,7 @@ public class QueryParser
 		m_groupByFactory = groupByFactory;
 		m_pluginFactory = pluginFactory;
 
-		m_descriptorMap = new HashMap<Class, Map<String, PropertyDescriptor>>();
+		m_descriptorMap = new HashMap<>();
 
 		GsonBuilder builder = new GsonBuilder();
 		builder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
@@ -85,7 +85,7 @@ public class QueryParser
 		m_gson = builder.create();
 	}
 
-	private PropertyDescriptor getPropertyDescriptor(Class objClass, String property) throws IntrospectionException
+	private PropertyDescriptor getPropertyDescriptor(Class<?> objClass, String property) throws IntrospectionException
 	{
 		synchronized (m_descriptorMapLock)
 		{
@@ -353,7 +353,7 @@ public class QueryParser
 				throw new QueryException(msg);
 			}
 
-			Class propClass = pd.getPropertyType();
+			Class<?> propClass = pd.getPropertyType();
 
 			Object propValue;
 			try
@@ -635,7 +635,7 @@ public class QueryParser
 	}
 
 	//===========================================================================
-	private class TimeUnitDeserializer implements JsonDeserializer<TimeUnit>
+	private static class TimeUnitDeserializer implements JsonDeserializer<TimeUnit>
 	{
 		public TimeUnit deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
 				throws JsonParseException
@@ -658,7 +658,7 @@ public class QueryParser
 	}
 
 	//===========================================================================
-	private class DateTimeZoneDeserializer implements JsonDeserializer<DateTimeZone>
+	private static class DateTimeZoneDeserializer implements JsonDeserializer<DateTimeZone>
 	{
 		public DateTimeZone deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
 				throws JsonParseException
@@ -686,7 +686,7 @@ public class QueryParser
 
 
 	//===========================================================================
-	private class MetricDeserializer implements JsonDeserializer<Metric>
+	private static class MetricDeserializer implements JsonDeserializer<Metric>
 	{
 		@Override
 		public Metric deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext)

@@ -141,7 +141,7 @@ public class DataPointsParser
 		return metric;
 	}
 
-	private class Context
+	private static class Context
 	{
 		private int m_count;
 		private String m_name;
@@ -179,7 +179,7 @@ public class DataPointsParser
 		}
 	}
 
-	private class SubContext
+	private static class SubContext
 	{
 		private Context m_context;
 		private String m_contextName;
@@ -335,12 +335,15 @@ public class DataPointsParser
 					}
 					else
 					{
-						Long timestamp = null;
+						Long optionalTimestamp = null;
 						if (!dataPoint[0].isJsonNull())
-							timestamp = dataPoint[0].getAsLong();
+							optionalTimestamp = dataPoint[0].getAsLong();
 
-						if (metric.validate() && !Validator.isNotNull(validationErrors, dataPointContext.setAttribute("timestamp"), timestamp))
+						if (metric.validate() && !Validator.isNotNull(validationErrors, dataPointContext.setAttribute("timestamp"), optionalTimestamp))
 							continue;
+						
+						@SuppressWarnings( "null" )
+						long timestamp = optionalTimestamp;
 
 						String type = metric.getType();
 						if (dataPoint.length > 2)

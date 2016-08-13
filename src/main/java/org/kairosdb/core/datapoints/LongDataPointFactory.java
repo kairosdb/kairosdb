@@ -2,8 +2,6 @@ package org.kairosdb.core.datapoints;
 
 import org.kairosdb.core.DataPoint;
 
-import java.nio.ByteBuffer;
-
 /**
  Created with IntelliJ IDEA.
  User: bhawkins

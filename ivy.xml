@@ -31,14 +31,14 @@
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2" />
 		<dependency org="org.slf4j" name="jul-to-slf4j" rev="1.7.2" />
 		<dependency org="org.apache.commons" name="commons-math3" rev="3.2" />
-		<dependency org="commons-io" name="commons-io" rev="2.4" />
+		<!--<dependency org="commons-io" name="commons-io" rev="2.4" />-->
 		<dependency org="com.beust" name="jcommander" rev="1.35" />
-		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.2.5" />
+		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.3.6" />
 		<dependency org="joda-time" name="joda-time" rev="2.3" />
-
+		
 		<dependency org="ch.qos.logback" name="logback-core" rev="1.0.9" />
 		<dependency org="ch.qos.logback" name="logback-classic" rev="1.0.9" />
-
+		
 		<!--<dependency org="log4j" name="log4j" rev="1.2.17" />-->
 		<!--<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.7.2" />-->
 		<!--<dependency org="com.chargebee" name="chargebee-java" rev="1.1.11" />-->
@@ -51,12 +51,12 @@
 		<!--<dependency org="dom4j" name="dom4j" rev="1.6.1" />
 		<dependency org="jaxen" name="jaxen" rev="1.1.4" />
 		<dependency org="org.antlr" name="stringtemplate" rev="3.2.1" />-->
-
+		
 		<dependency org="org.hectorclient" name="hector-core" rev="1.1-4">
 			<artifact name="hector-core" type="bundle" ext="jar"/>
 			<exclude org="javax.servlet" module="servlet-api"/>
 		</dependency>
-
+		
 		<!-- Jetty server stuff -->
 		<dependency org="org.eclipse.jetty" name="jetty-server" rev="8.1.16.v20140903" />
 		<dependency org="org.eclipse.jetty" name="jetty-servlet" rev="8.1.16.v20140903" />
@@ -64,30 +64,30 @@
 		<dependency org="org.eclipse.jetty.orbit" name="javax.servlet" rev="3.0.0.v201112011016">
 			<artifact name="javax.servlet" type="orbit" ext="jar"/>
 		</dependency>
-
+		
 		<!--Jersey-->
 		<dependency org="com.sun.jersey.contribs" name="jersey-guice" rev="1.18.3" />
 		<dependency org="com.sun.jersey" name="jersey-server" rev="1.18.3"/>
-		<dependency org="com.sun.jersey" name="jersey-json" rev="1.18.3"/>
+		<dependency org="com.fasterxml.jackson.jaxrs" name="jackson-jaxrs-json-provider" rev="2.2.3"/>
 		<dependency org="com.sun.jersey" name="jersey-core" rev="1.18.3" />
 		<dependency org="com.sun.jersey" name="jersey-servlet" rev="1.18.3" transitive="false"/>
-		<dependency org="com.sun.jersey.oauth" name="oauth-signature" rev="1.1.1-ea" />
-		<dependency org="com.sun.jersey.oauth" name="oauth-server" rev="1.1.1-ea" />
-
+		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-signature" rev="1.18.3" />
+		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-server" rev="1.18.3" />
+		
 		<!-- Pulse -->
 		<dependency org="javax.validation" name="validation-api" rev="1.0.0.GA"/>
 		<dependency org="org.apache.bval" name="bval-jsr303" rev="0.5"/>
 		<!--<dependency org="com.proofpoint.platform" name="log" rev="0.66"/>-->
 		<dependency org="com.google.code.findbugs" name="jsr305" rev="1.3.9"/>
-
+		
 		<!-- Quartz -->
 		<dependency org="org.quartz-scheduler" name="quartz" rev="2.1.7" />
-
+		
         <!-- Codehale Metrics -->
         <dependency org="com.codahale.metrics" name="metrics-healthchecks" rev="3.0.2" />
         <dependency org="com.codahale.metrics" name="metrics-jvm" rev="3.0.2" />
-
-		<dependency org="org.testng" name="testng" rev="6.8.5" conf="integration->default"/>
-
+        
+        <dependency org="org.testng" name="testng" rev="6.8.5" conf="integration->default"/>
+        
 	</dependencies>
 </ivy-module>

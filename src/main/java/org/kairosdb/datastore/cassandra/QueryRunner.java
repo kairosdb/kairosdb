@@ -15,7 +15,6 @@
  */
 package org.kairosdb.datastore.cassandra;
 
-import me.prettyprint.cassandra.serializers.ByteBufferSerializer;
 import me.prettyprint.cassandra.serializers.BytesArraySerializer;
 import me.prettyprint.cassandra.serializers.IntegerSerializer;
 import me.prettyprint.hector.api.Keyspace;
@@ -27,7 +26,6 @@ import me.prettyprint.hector.api.query.MultigetSliceQuery;
 import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.*;
-import org.kairosdb.core.datastore.CachedSearchResult;
 import org.kairosdb.core.datastore.Order;
 import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.util.KDataInput;
@@ -54,8 +52,6 @@ public class QueryRunner
 	private int m_multiRowReadSize;
 	private boolean m_limit = false;
 	private boolean m_descending = false;
-	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
-	private DoubleDataPointFactory m_doubleDataPointFactory = new DoubleDataPointFactoryImpl();
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
@@ -176,7 +172,7 @@ public class QueryRunner
 				byte[] value = column.getValue();
 				long timestamp = getColumnTimestamp(rowKey.getTimestamp(), columnTime);
 
-				if (type == LegacyDataPointFactory.DATASTORE_TYPE)
+				if (LegacyDataPointFactory.DATASTORE_TYPE.equals(type))
 				{
 					if (isLongValue(columnTime))
 					{

@@ -6,8 +6,6 @@ import org.kairosdb.core.DataPoint;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import static org.kairosdb.core.DataPoint.GROUP_NUMBER;
 import static org.kairosdb.util.Util.packLong;
 import static org.kairosdb.util.Util.unpackLong;

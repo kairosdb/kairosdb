@@ -16,18 +16,14 @@
 
 package org.kairosdb.datastore.cassandra;
 
-import junit.framework.Assert;
 import org.junit.Test;
-import org.kairosdb.core.TestDataPointFactory;
-
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class DataCacheTest
 {
-	public class TestObject
+	public static class TestObject
 	{
 		private final String m_data;
 

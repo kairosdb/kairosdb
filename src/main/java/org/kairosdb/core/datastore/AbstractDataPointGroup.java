@@ -17,6 +17,7 @@ package org.kairosdb.core.datastore;
 
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.SetMultimap;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.TreeMultimap;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.util.Preconditions;
@@ -57,10 +58,7 @@ public abstract class AbstractDataPointGroup implements DataPointGroup
 
 	public void addTags(Map<String, String> tags)
 	{
-		for (String key : tags.keySet())
-		{
-			this.tags.put(key, tags.get(key));
-		}
+		this.tags.putAll(Multimaps.forMap(tags));
 	}
 
 	public void addTags(DataPointGroup dpGroup)

@@ -1,7 +1,6 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.google.inject.*;
-import org.kairosdb.core.DataPointListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,11 +21,13 @@ public class RowKeyListenerProvider implements Provider<List<RowKeyListener>>
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (RowKeyListener.class.isAssignableFrom(bindingClass))
 			{
-				RowKeyListener listener = (RowKeyListener)injector.getInstance(bindingClass);
-				m_listeners.add(listener);
+				@SuppressWarnings("unchecked")
+				Class<? extends RowKeyListener> castClass = (Class<? extends RowKeyListener>) bindingClass;
+
+				m_listeners.add(injector.getInstance(castClass));
 			}
 		}
 	}

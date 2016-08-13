@@ -21,7 +21,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.Before;
 import org.junit.Test;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;

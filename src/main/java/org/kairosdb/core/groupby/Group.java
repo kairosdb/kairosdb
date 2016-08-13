@@ -20,13 +20,10 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.DataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.util.BufferedDataOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;

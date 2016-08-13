@@ -33,7 +33,7 @@ public class HealthCheckServiceImplTest
 		assertThat(checks, hasItems(new HealthStatus1(), new HealthStatus2()));
 	}
 
-	private class TestModule extends AbstractModule
+	private static class TestModule extends AbstractModule
 	{
 
 		@Override

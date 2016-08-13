@@ -34,8 +34,6 @@ import org.kairosdb.util.Validator;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;

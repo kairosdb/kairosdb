@@ -5,7 +5,6 @@ import org.kairosdb.core.datapoints.*;
 
 import java.io.DataInput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 

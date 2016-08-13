@@ -26,7 +26,7 @@ import java.util.Map;
 
 public class GuiceGroupByFactory implements GroupByFactory
 {
-	private Map<String, Class<GroupBy>> groupBys = new HashMap<String, Class<GroupBy>>();
+	private Map<String, Class<? extends GroupBy>> groupBys = new HashMap<>();
 	private Injector injector;
 
 
@@ -38,28 +38,29 @@ public class GuiceGroupByFactory implements GroupByFactory
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (GroupBy.class.isAssignableFrom(bindingClass))
 			{
-				GroupByName name = (GroupByName)bindingClass.getAnnotation(GroupByName.class);
+				@SuppressWarnings("unchecked")
+				Class<? extends GroupBy> castClass = (Class<? extends GroupBy>) bindingClass;
+				GroupByName name = castClass.getAnnotation(GroupByName.class);
 				if (name == null)
-					throw new IllegalStateException("Aggregator class "+bindingClass.getName()+
+					throw new IllegalStateException("Aggregator class "+castClass.getName()+
 							" does not have required annotation "+GroupByName.class.getName());
 
-				groupBys.put(name.name(), bindingClass);
+				groupBys.put(name.name(), castClass);
 			}
 		}
 	}
 
 	public GroupBy createGroupBy(String name)
 	{
-		Class<GroupBy> groupByClass = groupBys.get(name);
+		Class<? extends GroupBy> groupByClass = groupBys.get(name);
 
 		if (groupByClass == null)
 			return (null);
 
-		GroupBy groupBy = injector.getInstance(groupByClass);
-		return (groupBy);
+		return injector.getInstance(groupByClass);
 	}
 
 }

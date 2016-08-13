@@ -178,7 +178,7 @@ public class PutCommandTest
 		}
 	}
 
-	public class FakeChannel implements Channel
+	public static class FakeChannel implements Channel
 	{
 		@Override
 		public Integer getId()
@@ -336,7 +336,7 @@ public class PutCommandTest
 		}
 	}
 
-	private class FakeDatastore implements Datastore
+	private static class FakeDatastore implements Datastore
 	{
 		private DataPointSet set;
 
@@ -356,7 +356,7 @@ public class PutCommandTest
 				DataPoint dataPoint, int ttl) throws DatastoreException
 		{
 			if (set == null)
-				set = new DataPointSet(metricName, tags, Collections.EMPTY_LIST);
+				set = new DataPointSet(metricName, tags, Collections.<DataPoint>emptyList());
 
 			set.addDataPoint(dataPoint);
 		}

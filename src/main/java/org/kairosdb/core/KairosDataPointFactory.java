@@ -21,7 +21,6 @@ import org.kairosdb.core.datapoints.DataPointFactory;
 
 import java.io.DataInput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  Created with IntelliJ IDEA.

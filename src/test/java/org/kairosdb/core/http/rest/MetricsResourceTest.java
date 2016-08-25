@@ -90,6 +90,7 @@ public class MetricsResourceTest
 				bind(QueryQueuingManager.class).toInstance(queuingManager);
 				bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
 				bindConstant().annotatedWith(Names.named("kairosdb.datastore.concurrentQueryThreads")).to(1);
+				bindConstant().annotatedWith(Names.named("kairosdb.query_cache.keep_cache_files")).to(false);
 				bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
 				bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
 

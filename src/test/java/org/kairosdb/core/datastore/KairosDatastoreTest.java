@@ -61,7 +61,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
 
 		datastore.createQuery(null);
 	}
@@ -71,7 +71,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 		metric.addAggregator(aggFactory.createAggregator("sum"));
 
@@ -100,7 +100,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 
 		DatastoreQuery dq = datastore.createQuery(metric);
@@ -174,7 +174,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
 
 		// Create files in the cache directory
 		File cacheDir = new File(datastore.getCacheDir());
@@ -319,7 +319,7 @@ public class KairosDatastoreTest
 		                           List<DataPointListener> dataPointListeners,
 		                           KairosDataPointFactory dataPointFactory) throws DatastoreException
 		{
-			super(datastore, queuingManager, dataPointListeners, dataPointFactory);
+			super(datastore, queuingManager, dataPointListeners, dataPointFactory, false);
 		}
 	}
 

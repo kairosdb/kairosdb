@@ -38,19 +38,20 @@ public class CachedSearchResult implements QueryCallback
 	public static final byte LONG_FLAG = 0x1;
 	public static final byte DOUBLE_FLAG = 0x2;
 
-	private String m_metricName;
-	private List<FilePositionMarker> m_dataPointSets;
+	private final String m_metricName;
+	private final List<FilePositionMarker> m_dataPointSets;
 	private FilePositionMarker m_currentFilePositionMarker;
-	private File m_dataFile;
+	private final File m_dataFile;
 	private RandomAccessFile m_randomAccessFile;
 	private BufferedDataOutputStream m_dataOutputStream;
 
-	private File m_indexFile;
-	private AtomicInteger m_closeCounter = new AtomicInteger();
+	private final File m_indexFile;
+	private final AtomicInteger m_closeCounter = new AtomicInteger();
 	private boolean m_readFromCache = false;
-	private KairosDataPointFactory m_dataPointFactory;
-	private StringPool m_stringPool;
+	private final KairosDataPointFactory m_dataPointFactory;
+	private final StringPool m_stringPool;
 	private int m_maxReadBufferSize = 8192;  //Default value in BufferedInputStream
+	private boolean m_keepCacheFiles;
 
 
 	private static File getIndexFile(String baseFileName)
@@ -68,7 +69,7 @@ public class CachedSearchResult implements QueryCallback
 	}
 
 	private CachedSearchResult(String metricName, File dataFile, File indexFile,
-			KairosDataPointFactory datatPointFactory)
+			KairosDataPointFactory datatPointFactory, boolean keepCacheFiles)
 			throws FileNotFoundException
 	{
 		m_metricName = metricName;
@@ -77,6 +78,7 @@ public class CachedSearchResult implements QueryCallback
 		m_dataFile = dataFile;
 		m_dataPointFactory = datatPointFactory;
 		m_stringPool = new StringPool();
+		m_keepCacheFiles = keepCacheFiles;
 	}
 
 	private void openCacheFile() throws FileNotFoundException
@@ -145,7 +147,8 @@ public class CachedSearchResult implements QueryCallback
 
 
 	public static CachedSearchResult createCachedSearchResult(String metricName,
-			String baseFileName, KairosDataPointFactory dataPointFactory)
+			String baseFileName, KairosDataPointFactory dataPointFactory,
+			boolean keepCacheFiles)
 			throws IOException
 	{
 		File dataFile = getDataFile(baseFileName);
@@ -156,7 +159,7 @@ public class CachedSearchResult implements QueryCallback
 		indexFile.delete();
 
 		CachedSearchResult ret = new CachedSearchResult(metricName, dataFile,
-				indexFile, dataPointFactory);
+				indexFile, dataPointFactory, keepCacheFiles);
 
 		return (ret);
 	}
@@ -168,7 +171,8 @@ public class CachedSearchResult implements QueryCallback
 	 @return The CachedSearchResult if the file exists or null if it doesn't
 	 */
 	public static CachedSearchResult openCachedSearchResult(String metricName,
-			String baseFileName, int cacheTime, KairosDataPointFactory dataPointFactory) throws IOException
+			String baseFileName, int cacheTime, KairosDataPointFactory dataPointFactory,
+			boolean keepCacheFiles) throws IOException
 	{
 		CachedSearchResult ret = null;
 		File dataFile = getDataFile(baseFileName);
@@ -178,7 +182,7 @@ public class CachedSearchResult implements QueryCallback
 		if (dataFile.exists() && indexFile.exists() && ((now - dataFile.lastModified()) < ((long)cacheTime * 1000)))
 		{
 
-			ret = new CachedSearchResult(metricName, dataFile, indexFile, dataPointFactory);
+			ret = new CachedSearchResult(metricName, dataFile, indexFile, dataPointFactory, keepCacheFiles);
 			try
 			{
 				ret.loadIndex();
@@ -221,7 +225,10 @@ public class CachedSearchResult implements QueryCallback
 			if (m_randomAccessFile != null)
 				m_randomAccessFile.close();
 
-			saveIndex();
+			if (m_keepCacheFiles)
+				saveIndex();
+			else
+				m_dataFile.delete();
 		}
 		catch (IOException e)
 		{

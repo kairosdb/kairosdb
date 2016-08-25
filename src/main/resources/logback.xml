@@ -45,7 +45,7 @@
 
 	<!--<logger name="org.kairosdb.core.http.rest.MetricsResource" level="DEBUG"/>-->
 
-	<root level="DEBUG">
+	<root level="INFO">
 		<appender-ref ref="stdout"/>
 		<appender-ref ref="logfile"/>
 	</root>

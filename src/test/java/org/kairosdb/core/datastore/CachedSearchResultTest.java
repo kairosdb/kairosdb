@@ -41,7 +41,7 @@ public class CachedSearchResultTest
 
 		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
 		CachedSearchResult csResult =
-				CachedSearchResult.createCachedSearchResult("metric1", tempFile, dataPointFactory);
+				CachedSearchResult.createCachedSearchResult("metric1", tempFile, dataPointFactory, true);
 
 		long now = System.currentTimeMillis();
 
@@ -95,7 +95,7 @@ public class CachedSearchResultTest
 
 		//Re-open cached file and verify the data is the same.
 		csResult =
-				CachedSearchResult.openCachedSearchResult("metric1", tempFile, 100, dataPointFactory);
+				CachedSearchResult.openCachedSearchResult("metric1", tempFile, 100, dataPointFactory, true);
 
 		rows = csResult.getRows();
 
@@ -118,7 +118,7 @@ public class CachedSearchResultTest
 	{
 		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
 		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult(
-				"metric2", tempFile, dataPointFactory);
+				"metric2", tempFile, dataPointFactory, true);
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
 		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
@@ -151,7 +151,7 @@ public class CachedSearchResultTest
 	{
 		String tempFile = System.getProperty("java.io.tmpdir") + "/baseFile";
 		CachedSearchResult csResult = CachedSearchResult.createCachedSearchResult(
-				"metric3", tempFile, dataPointFactory);
+				"metric3", tempFile, dataPointFactory, true);
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
 		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());

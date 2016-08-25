@@ -45,6 +45,12 @@ public class DataGapsMarkingAggregator extends RangeAggregator
 		return true;
 	}
 
+	@Override
+	public String getAggregatedGroupType(String groupType)
+	{
+		return groupType;
+	}
+
 	private class MarkDataGapsAggregator implements RangeSubAggregator
 	{
 		@Override

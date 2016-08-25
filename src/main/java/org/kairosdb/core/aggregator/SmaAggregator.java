@@ -53,6 +53,12 @@ public class SmaAggregator implements Aggregator
 	}
 
 	@Override
+	public String getAggregatedGroupType(String groupType)
+	{
+		return m_dataPointFactory.getGroupType();
+	}
+
+	@Override
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
 		checkState(m_size != 0);

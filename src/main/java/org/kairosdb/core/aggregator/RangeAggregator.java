@@ -43,8 +43,8 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 
 	@NotNull
 	@Valid
-	private Sampling m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
-	private boolean m_alignStartTime;
+	protected Sampling m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
+	protected boolean m_alignStartTime;
 
 	public RangeAggregator()
 	{

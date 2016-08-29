@@ -416,7 +416,6 @@ public class MetricsResource implements KairosMetricReporter
 
 	public Response runQuery(String json, String remoteAddr) throws Exception
 	{
-		checkNotNull(json);
 		logger.debug(json);
 
 		ThreadReporter.setReportTime(System.currentTimeMillis());
@@ -424,6 +423,9 @@ public class MetricsResource implements KairosMetricReporter
 
 		try
 		{
+			if (json == null)
+				throw new BeanValidationException(new QueryParser.SimpleConstraintViolation("query json", "must not be null or empty"), "");
+
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(respFile), "UTF-8"));
 

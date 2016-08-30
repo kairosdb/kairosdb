@@ -26,20 +26,18 @@ import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.util.Util;
 
-@AggregatorName(name = "rate", description = "Computes the rate of change for the data points.")
-public class RateAggregator implements Aggregator, TimezoneAware
+@AggregatorName(name = "non_negative_rate", description = "Computes the rate of change for the data points and returns only positive values.")
+public class NonNegativeRateAggregator implements Aggregator, TimezoneAware
 {
 	private Sampling m_sampling;
 	private DoubleDataPointFactory m_dataPointFactory;
 	private DateTimeZone m_timeZone;
-	private boolean m_rolloverFilter;
 
 	@Inject
-	public RateAggregator(DoubleDataPointFactory dataPointFactory)
+	public NonNegativeRateAggregator(DoubleDataPointFactory dataPointFactory)
 	{
 		m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
 		m_dataPointFactory = dataPointFactory;
-		m_rolloverFilter = false;
 	}
 
 	@Override
@@ -48,15 +46,9 @@ public class RateAggregator implements Aggregator, TimezoneAware
 		return DataPoint.GROUP_NUMBER.equals(groupType);
 	}
 
-	@Override
-	public String getAggregatedGroupType(String groupType)
-	{
-		return m_dataPointFactory.getGroupType();
-	}
-
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
-		return (new RateDataPointAggregator(dataPointGroup));
+		return (new NonNegativeRateDataPointAggregator(dataPointGroup));
 	}
 
 	public void setSampling(Sampling sampling)
@@ -75,21 +67,12 @@ public class RateAggregator implements Aggregator, TimezoneAware
 		m_timeZone = timeZone;
 	}
 
-	public void setRolloverFilter(boolean filter)
+
+	private class NonNegativeRateDataPointAggregator extends AggregatedDataPointGroupWrapper
 	{
-		m_rolloverFilter = filter;
-	}
-
-
-	private class RateDataPointAggregator extends AggregatedDataPointGroupWrapper
-	{
-		double m_prevRate;
-
-		public RateDataPointAggregator(DataPointGroup innerDataPointGroup)
+		public NonNegativeRateDataPointAggregator(DataPointGroup innerDataPointGroup)
 		{
 			super(innerDataPointGroup);
-
-			m_prevRate = 0.0;
 		}
 
 		@Override
@@ -124,13 +107,9 @@ public class RateAggregator implements Aggregator, TimezoneAware
 				}
 			}
 
-			double rate = 0.0;
-			if (m_rolloverFilter && x1 < x0)
-				rate = m_prevRate;
-			else
-				rate = (x1 - x0)/(y1 - y0) * Util.getSamplingDuration(y0, m_sampling, m_timeZone);
-
-			m_prevRate = rate;
+			double rate = (x1 - x0)/(y1 - y0) * Util.getSamplingDuration(y0, m_sampling, m_timeZone);
+			if (rate < 0.0)
+				rate = 0.0;
 
 			return (m_dataPointFactory.createDataPoint(y1, rate));
 		}

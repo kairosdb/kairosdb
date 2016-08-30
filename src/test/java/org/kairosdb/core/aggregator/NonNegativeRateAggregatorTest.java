@@ -26,12 +26,12 @@ import org.kairosdb.testing.ListDataPointGroup;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
-public class RateAggregatorTest
+public class NonNegativeRateAggregatorTest
 {
 	@Test(expected = NullPointerException.class)
 	public void test_nullSet_invalid()
 	{
-		new RateAggregator(new DoubleDataPointFactoryImpl()).aggregate(null);
+		new NonNegativeRateAggregator(new DoubleDataPointFactoryImpl()).aggregate(null);
 	}
 
 	@Test
@@ -43,7 +43,7 @@ public class RateAggregatorTest
 		group.addDataPoint(new LongDataPoint(3, 30));
 		group.addDataPoint(new LongDataPoint(4, 40));
 
-		RateAggregator rateAggregator = new RateAggregator(new DoubleDataPointFactoryImpl());
+		NonNegativeRateAggregator rateAggregator = new NonNegativeRateAggregator(new DoubleDataPointFactoryImpl());
 		DataPointGroup results = rateAggregator.aggregate(group);
 
 		DataPoint dp = results.next();
@@ -68,7 +68,7 @@ public class RateAggregatorTest
 		group.addDataPoint(new LongDataPoint(5, 30));
 		group.addDataPoint(new LongDataPoint(7, 40));
 
-		RateAggregator rateAggregator = new RateAggregator(new DoubleDataPointFactoryImpl());
+		NonNegativeRateAggregator rateAggregator = new NonNegativeRateAggregator(new DoubleDataPointFactoryImpl());
 		DataPointGroup results = rateAggregator.aggregate(group);
 
 		DataPoint dp = results.next();
@@ -93,7 +93,7 @@ public class RateAggregatorTest
 		group.addDataPoint(new LongDataPoint(3, 5));
 		group.addDataPoint(new LongDataPoint(4, 20));
 
-		RateAggregator rateAggregator = new RateAggregator(new DoubleDataPointFactoryImpl());
+		NonNegativeRateAggregator rateAggregator = new NonNegativeRateAggregator(new DoubleDataPointFactoryImpl());
 		DataPointGroup results = rateAggregator.aggregate(group);
 
 		DataPoint dp = results.next();
@@ -102,7 +102,7 @@ public class RateAggregatorTest
 
 		dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(3L));
-		assertThat(dp.getDoubleValue(), equalTo(-5.0));
+		assertThat(dp.getDoubleValue(), equalTo(0.0));
 
 		dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(4L));
@@ -110,18 +110,17 @@ public class RateAggregatorTest
 	}
 
 	@Test
-	public void test_counterRolloverRate()
+	public void test_negativeRates()
 	{
 		ListDataPointGroup group = new ListDataPointGroup("rate");
 		group.addDataPoint(new LongDataPoint(1, 5));
 		group.addDataPoint(new LongDataPoint(2, 10));
 		group.addDataPoint(new LongDataPoint(3, 12));
 		group.addDataPoint(new LongDataPoint(4, 21));
-		group.addDataPoint(new LongDataPoint(5, 0));
+		group.addDataPoint(new LongDataPoint(5, 2));
 		group.addDataPoint(new LongDataPoint(6, 8));
 
-		RateAggregator rateAggregator = new RateAggregator(new DoubleDataPointFactoryImpl());
-		rateAggregator.setRolloverFilter(true);
+		NonNegativeRateAggregator rateAggregator = new NonNegativeRateAggregator(new DoubleDataPointFactoryImpl());
 		DataPointGroup results = rateAggregator.aggregate(group);
 
 		DataPoint dp = results.next();
@@ -138,11 +137,11 @@ public class RateAggregatorTest
 
 		dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(5L));
-		assertThat(dp.getDoubleValue(), equalTo(9.0));
+		assertThat(dp.getDoubleValue(), equalTo(0.0));
 
 		dp = results.next();
 		assertThat(dp.getTimestamp(), equalTo(6L));
-		assertThat(dp.getDoubleValue(), equalTo(8.0));
+		assertThat(dp.getDoubleValue(), equalTo(6.0));
 	}
 
 	@Test(expected = IllegalStateException.class)
@@ -156,7 +155,7 @@ public class RateAggregatorTest
 		group.addDataPoint(new LongDataPoint(3, 30));
 
 
-		RateAggregator rateAggregator = new RateAggregator(new DoubleDataPointFactoryImpl());
+		NonNegativeRateAggregator rateAggregator = new NonNegativeRateAggregator(new DoubleDataPointFactoryImpl());
 		DataPointGroup results = rateAggregator.aggregate(group);
 
 		DataPoint dp = results.next();

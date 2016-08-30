@@ -86,6 +86,7 @@ public class CoreModule extends AbstractModule
 		bind(AvgAggregator.class);
 		bind(StdAggregator.class);
 		bind(RateAggregator.class);
+		bind(NonNegativeRateAggregator.class);
 		bind(SamplerAggregator.class);
 		bind(LeastSquaresAggregator.class);
 		bind(PercentileAggregator.class);
@@ -99,7 +100,6 @@ public class CoreModule extends AbstractModule
 		bind(SaveAsAggregator.class);
 		bind(TrimAggregator.class);
 		bind(SmaAggregator.class);
-
 
 		bind(ValueGroupBy.class);
 		bind(TimeGroupBy.class);

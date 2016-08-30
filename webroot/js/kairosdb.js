@@ -66,7 +66,7 @@ kairosdb.Metric = function (name) {
 		return this;
 	};
 
-	this.addRate = function (unit, time_zone) {
+	this.addRate = function (unit, time_zone, rollover_filter) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
@@ -78,8 +78,26 @@ kairosdb.Metric = function (name) {
 			rate.sampling.value = 1;
             		rate.sampling.time_zone = time_zone;
 		}
+		rate.rollover_filter = rollover_filter
 
 		this.aggregators.push(rate);
+		return this;
+	};
+
+	this.addNonNegativeRate = function (unit, time_zone) {
+		if (!this.aggregators)
+			this.aggregators = [];
+
+		var non_neg_rate = {};
+		non_neg_rate.name = "non_negative_rate";
+		if (unit) {
+			non_neg_rate.sampling = {};
+			non_neg_rate.sampling.unit = unit;
+			non_neg_rate.sampling.value = 1;
+			non_neg_rate.sampling.time_zone = time_zone;
+		}
+
+		this.aggregators.push(non_neg_rate);
 		return this;
 	};
 

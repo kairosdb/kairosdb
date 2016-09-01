@@ -7,9 +7,8 @@
 		<conf name="test" extends="default"/>
 	</configurations>
 	<dependencies>
-		<dependency org="com.google.guava" name="guava" rev="18.0">
+		<dependency org="com.google.guava" name="guava" rev="19.0">
 			<artifact name="guava" type="bundle" ext="jar"/>
-
 		</dependency>
 		<dependency org="org.json" name="org.json" rev="chargebee-1.0" />
 		<dependency org="com.google.code.gson" name="gson" rev="2.2.4" />
@@ -25,8 +24,8 @@
 		<!-- provides connection pooling -->
 		<dependency org="c3p0" name="c3p0" rev="0.9.1.2" />
 
-		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.14" />
-		<dependency org="org.slf4j" name="jul-to-slf4j" rev="1.7.14" />
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21" />
+		<dependency org="org.slf4j" name="jul-to-slf4j" rev="1.7.21" />
 		<dependency org="org.apache.commons" name="commons-math3" rev="3.2" />
 		<dependency org="commons-io" name="commons-io" rev="2.4" />
 		<dependency org="com.beust" name="jcommander" rev="1.35" />

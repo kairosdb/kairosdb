@@ -183,7 +183,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
 				new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
 
 		loadCassandraData();
 		loadData();
@@ -438,7 +438,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	{
 		String tempFile = System.getProperty("java.io.tmpdir");
 		return CachedSearchResult.createCachedSearchResult(metricName,
-				tempFile + "/" + random.nextLong(), dataPointFactory);
+				tempFile + "/" + random.nextLong(), dataPointFactory, false);
 	}
 
 	@Test

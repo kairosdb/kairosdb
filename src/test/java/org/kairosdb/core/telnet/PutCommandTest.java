@@ -46,7 +46,7 @@ public class PutCommandTest
 	{
 		datastore = new FakeDatastore();
 		KairosDatastore kairosDatastore = new KairosDatastore(datastore, new QueryQueuingManager(1, "test"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
 		command = new PutCommand(kairosDatastore, "test", new LongDataPointFactoryImpl(),
 				new DoubleDataPointFactoryImpl());
 	}

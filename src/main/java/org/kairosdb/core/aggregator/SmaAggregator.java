@@ -17,29 +17,31 @@
 package org.kairosdb.core.aggregator;
 
 
-import com.google.inject.Inject;
+import static com.google.common.base.Preconditions.checkState;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
-import org.kairosdb.core.http.rest.validation.NonZero;
 
-import java.util.List;
-import java.util.Set;
+import com.google.inject.Inject;
 
-import static com.google.common.base.Preconditions.checkState;
-
-@AggregatorName(name = "div", description = "Divides each data point by a divisor.")
-public class DivideAggregator implements Aggregator
+@AggregatorName(name = "sma", description = "Simple moving average.")
+public class SmaAggregator implements Aggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;
 
-	@NonZero
-	private double m_divisor;
+	//@NonZero
+	private int m_size;
 
 	@Inject
-	public DivideAggregator(DoubleDataPointFactory dataPointFactory)
+	public SmaAggregator(DoubleDataPointFactory dataPointFactory)
 	{
 		m_dataPointFactory = dataPointFactory;
 	}
@@ -59,22 +61,29 @@ public class DivideAggregator implements Aggregator
 	@Override
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
-		checkState(m_divisor != 0.0);
-		return new DivideDataPointGroup(dataPointGroup);
+		checkState(m_size != 0);
+		return new SmaDataPointGroup(dataPointGroup);
 	}
 
-	public void setDivisor(double divisor)
+	public void setSize(int size)
 	{
-		m_divisor = divisor;
+		m_size = size;
 	}
 
-	private class DivideDataPointGroup implements DataPointGroup
+	private class SmaDataPointGroup implements DataPointGroup
 	{
 		private DataPointGroup m_innerDataPointGroup;
+		ArrayList<DataPoint> subSet = new ArrayList<DataPoint>();
 
-		public DivideDataPointGroup(DataPointGroup innerDataPointGroup)
+		public SmaDataPointGroup(DataPointGroup innerDataPointGroup)
 		{
 			m_innerDataPointGroup = innerDataPointGroup;
+
+			for(int i=0;i<m_size-1;i++){
+				if (innerDataPointGroup.hasNext()){
+					subSet.add(innerDataPointGroup.next());
+				}
+			}
 		}
 
 		@Override
@@ -88,8 +97,20 @@ public class DivideAggregator implements Aggregator
 		{
 			DataPoint dp = m_innerDataPointGroup.next();
 
-			dp = m_dataPointFactory.createDataPoint(dp.getTimestamp(), dp.getDoubleValue() / m_divisor);
+			subSet.add(dp);
+			if(subSet.size()>m_size){
+				subSet.remove(0);
+			}
+			
+			double sum = 0;
+			for(int i=0;i<subSet.size();i++){
+				DataPoint dpt = subSet.get(i);
+				sum += dpt.getDoubleValue();
+			}
+			
+			dp = m_dataPointFactory.createDataPoint(dp.getTimestamp(), sum / subSet.size());
 
+			//System.out.println(new SimpleDateFormat("MM/dd/yyyy HH:mm").format(dp.getTimestamp())+" "+sum+" "+subSet.size());
 			return (dp);
 		}
 

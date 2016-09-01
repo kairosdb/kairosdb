@@ -35,10 +35,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DataCache<T>
 {
-	private Object m_lock = new Object();
+	private final Object m_lock = new Object();
 
-	private LinkItem<T> m_front = new LinkItem<T>(null);
-	private LinkItem<T> m_back = new LinkItem<T>(null);
+	private final LinkItem<T> m_front = new LinkItem<T>(null);
+	private final LinkItem<T> m_back = new LinkItem<T>(null);
 
 	private int m_maxSize;
 
@@ -127,8 +127,12 @@ public class DataCache<T>
 
 	public void removeKey(T key)
 	{
-		LinkItem<T> li = m_hashMap.remove(key);
-		remove(li);
+		synchronized (m_lock)
+		{
+			LinkItem<T> li = m_hashMap.remove(key);
+			if (li != null)
+				remove(li);
+		}
 	}
 
 	public void clear()

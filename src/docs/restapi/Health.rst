@@ -42,6 +42,7 @@ Check
 -----
 
 Checks the status of each health check. If all are healthy it returns status 204 otherwise it returns 500.
+This can be configured to return something other than 204 by changing the kairosdb.health.healthyResponseCode property.
 
 """"""
 Method

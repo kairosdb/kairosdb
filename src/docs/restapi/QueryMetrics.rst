@@ -25,7 +25,7 @@ in 5 minute periods then average them for a week period.
 
 Aggregators are processed in the order they are specified in the JSON. The output of one is send to the input of the next.
 
-See the :doc:`Aggregators documentation<Aggregators>` for a complete list of aggregatorss.
+See the :doc:`Aggregators documentation<Aggregators>` for a complete list of aggregators.
 
 **Filtering**
 
@@ -94,7 +94,7 @@ Body
                   "customer": ["bar"]
               },
               "name": "abc.123",
-              "limit": 10000
+              "limit": 10000,
               "aggregators": [
                   {
                       "name": "sum",

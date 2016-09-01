@@ -40,13 +40,13 @@ Body
             "tags": {
                 "host": ["foo"]
             },
-            "name": "abc.123",
+            "name": "abc.123"
         },
         {
             "tags": {
                 "host": ["foo"]
             },
-            "name": "xyz.123",
+            "name": "xyz.123"
         }
     ]
  }

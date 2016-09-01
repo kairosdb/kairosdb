@@ -21,11 +21,13 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -41,8 +43,9 @@ import org.kairosdb.util.MemoryMonitorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -87,6 +90,21 @@ public class MetricsResource implements KairosMetricReporter
 
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
+
+	@Inject
+	private StringDataPointFactory m_stringDataPointFactory = new StringDataPointFactory();
+
+	@Inject(optional=true)
+	@Named("kairosdb.log.queries.enable")
+	private boolean m_logQueries = false;
+
+	@Inject(optional=true)
+	@Named("kairosdb.log.queries.ttl")
+	private int m_logQueriesTtl = 86400;
+
+	@Inject(optional=true)
+	@Named("kairosdb.log.queries.greater_than")
+	private int m_logQueriesLongerThan = 60;
 
 	@Inject
 	@Named("HOSTNAME")
@@ -381,17 +399,23 @@ public class MetricsResource implements KairosMetricReporter
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path(QUERY_URL)
-	public Response query(@QueryParam("query") String json) throws Exception
+	public Response getQuery(@QueryParam("query") String json, @Context HttpServletRequest request) throws Exception
 	{
-		return get(json);
+		return runQuery(json, request.getRemoteAddr());
 	}
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path(QUERY_URL)
-	public Response get(String json) throws Exception
+	public Response postQuery(String json, @Context HttpServletRequest request) throws Exception
 	{
-		checkNotNull(json);
+		return runQuery(json, request.getRemoteAddr());
+	}
+
+
+
+	public Response runQuery(String json, String remoteAddr) throws Exception
+	{
 		logger.debug(json);
 
 		ThreadReporter.setReportTime(System.currentTimeMillis());
@@ -399,6 +423,9 @@ public class MetricsResource implements KairosMetricReporter
 
 		try
 		{
+			if (json == null)
+				throw new BeanValidationException(new QueryParser.SimpleConstraintViolation("query json", "must not be null or empty"), "");
+
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(respFile), "UTF-8"));
 
@@ -437,10 +464,22 @@ public class MetricsResource implements KairosMetricReporter
 
 			ThreadReporter.clearTags();
 			ThreadReporter.addTag("host", hostName);
-			ThreadReporter.addTag("request", QUERY_URL);
-			ThreadReporter.addDataPoint(REQUEST_TIME, System.currentTimeMillis() - ThreadReporter.getReportTime());
 
-			ThreadReporter.submitData(m_longDataPointFactory, datastore);
+			//write metrics for query logging
+			long queryTime = System.currentTimeMillis() - ThreadReporter.getReportTime();
+			if (m_logQueries && ((queryTime/1000) >= m_logQueriesLongerThan))
+			{
+				ThreadReporter.addDataPoint("kairosdb.log.query.remote_address", remoteAddr, m_logQueriesTtl);
+				ThreadReporter.addDataPoint("kairosdb.log.query.json", json, m_logQueriesTtl);
+			}
+
+			ThreadReporter.addTag("request", QUERY_URL);
+			ThreadReporter.addDataPoint(REQUEST_TIME, queryTime);
+
+
+
+			ThreadReporter.submitData(m_longDataPointFactory,
+					m_stringDataPointFactory, datastore);
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new FileStreamingOutput(respFile));

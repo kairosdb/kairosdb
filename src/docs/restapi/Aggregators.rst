@@ -49,21 +49,24 @@ the following parameters on any range aggregator.
 	  }
 	}]
 
-**align_start_time** - (boolean)
+**align_start_time** - (boolean, optional, default value: false)
 
 	When set to true the time for the aggregated data point for each range will
 	fall on the start of the range instead of being the value for the first
-	data point within that range.
+	data point within that range. Note that align_sampling and align_start_time
+        are mutually exclusive. If both are set, unexpected results will occur.
 
-**align_sampling** - (boolean)
+**align_sampling** - (boolean, optional, default value: false)
 
 	Setting this to true will cause the aggregation range to be aligned based on
 	the sampling size.  For example if your sample size is either milliseconds,
 	seconds, minutes or hours then the start of the range will always be at the top
 	of the hour.  The effect of setting this to true is that your data will
-	take the same shape when graphed as you refresh the data.
+	take the same shape when graphed as you refresh the data. Note that 
+        align_sampling and align_start_time are mutually exclusive. If both are set,
+        unexpected results will occur.
 
-**start_time** - (long)
+**start_time** - (long, optional, default value: 0)
 
 	Start time to calculate the ranges from.  Typically this is the start of the query
 
@@ -265,5 +268,7 @@ Save As
 		**tags** (Map of key values) - Additional tags to set on the metrics ``{"tag1":"value1","tag2":"value2"}``
 
 		**ttl** (integer) - Sets the ttl on the newly saved metrics
+
+		**add_saved_from** (boolean) - Tells the aggregator to add the saved_from tag to the new metric.  Defaults to true.
 
 

@@ -54,6 +54,12 @@ public class StdAggregator extends RangeAggregator
 	}
 
 	@Override
+	public String getAggregatedGroupType(String groupType)
+	{
+		return m_dataPointFactory.getGroupType();
+	}
+
+	@Override
 	protected RangeSubAggregator getSubAggregator()
 	{
 		return (new StdDataPointAggregator());

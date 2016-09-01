@@ -30,15 +30,16 @@ function showQuery() {
 function updateChart() {
 	clear();
 	var query=buildKairosDBQuery();
+	if (query) {
+		var metricData = getAdditionalChartData();
+		$('#query-hidden-text').val(JSON.stringify(query, null, 2));
+		displayQuery();
 
-	var metricData = getAdditionalChartData();
-	$('#query-hidden-text').val(JSON.stringify(query, null, 2));
-	displayQuery();
-
-	var $graphLink = $("#graph_link");
-	$graphLink.attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
-	$graphLink.show();
-	showChartForQuery("(Click and drag to zoom)", query, metricData);
+		var $graphLink = $("#graph_link");
+		$graphLink.attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
+		$graphLink.show();
+		showChartForQuery("(Click and drag to zoom)", query, metricData);
+	}
 }
 
 function buildKairosDBQuery() {
@@ -127,17 +128,25 @@ function buildKairosDBQuery() {
 			else if (name == 'percentile') {
 				value = $(aggregator).find(".aggregatorSamplingValue").val();
 				if (!isValidInteger(value)) {
+					showErrorMessage("sampling value must be an integer greater than 0.");
 					return true;
 				}
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
 				var percentile = $(aggregator).find(".aggregatorPercentileValue").val();
 				if (!isValidPercentile(percentile)) {
+					showErrorMessage("sampling value must be an integer greater than 0.");
 					return true;
 				}
-				metric.addPercentile(value, unit, percentile, time_zone);
+				var align_start_time = $(aggregator).find(".aggregatorAlignStartTimeValue").prop("checked");
+				metric.addPercentile(value, unit, percentile, time_zone, align_start_time);
 			}
 			else if (name == 'div') {
 				var divisor = $(aggregator).find(".divisorValue").val();
+				if (!$.isNumeric(divisor) || divisor < 1)
+				{
+					showErrorMessage("divisor value must be a number greater than 0.");
+					return true;
+				}
 				metric.addDivideAggregator(divisor);
 			}
 			else if (name == 'scale')
@@ -163,11 +172,12 @@ function buildKairosDBQuery() {
 			else
 			{
 				var value = $(aggregator).find(".aggregatorSamplingValue").val();
-				if (!isValidInteger(value)) {
+				if (!isValidInteger(value, "sampling value must be an integer greater than 0.")) {
 					return true;
 				}
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-				metric.addRangeAggregator(name, value, unit, time_zone);
+				var align_start_time = $(aggregator).find(".aggregatorAlignStartTimeValue").prop("checked");
+				metric.addRangeAggregator(name, value, unit, time_zone, align_start_time);
 			}
 		});
 
@@ -186,7 +196,6 @@ function buildKairosDBQuery() {
 		function isValidInteger(value) {
 			var intRegex = /^\d+$/;
 			if (!intRegex.test(value)) {
-				showErrorMessage("sampling value must be an integer greater than 0.");
 				hasError = true;
 				return false;
 			}
@@ -218,13 +227,35 @@ function buildKairosDBQuery() {
 				metric.addTag(name, value);
 		});
 
+        // Add Limit
+        $metricContainer.find("[name='limit']").each(function (index, limitInput) {
+            var value = $(limitInput).val();
+
+            if (value){
+				if (isValidInteger(value) && value > 0) {
+					metric.setLimit(value);
+				}
+				else{
+					showErrorMessage("Limit must be a number > 0.");
+					hasError = true;
+				}
+			}
+        });
+
 		query.addMetric(metric);
 	});
 
-	var startTimeAbsolute = $("#startTime").datepicker("getDate");
+	var time_zone = $(".timeZone").val();
+	if (time_zone != '')
+		query.setTimeZone(time_zone);
+
+	var startTimeAbsolute = $("#startTime").datetimepicker("getDate");
 	var startTimeRelativeValue = $("#startRelativeValue").val();
 	
 	if (startTimeAbsolute != null) {
+		if (time_zone) {
+			startTimeAbsolute = convertToTimezone(startTimeAbsolute, time_zone);
+		}
 		query.setStartAbsolute(startTimeAbsolute.getTime());
 	}
 	else if (startTimeRelativeValue) {
@@ -236,8 +267,11 @@ function buildKairosDBQuery() {
 		return;
 	}
 
-	var endTimeAbsolute = $("#endTime").datepicker("getDate");
+	var endTimeAbsolute = $("#endTime").datetimepicker("getDate");
 	if (endTimeAbsolute != null) {
+		if (time_zone) {
+			endTimeAbsolute = convertToTimezone(endTimeAbsolute, time_zone);
+		}
 		query.setEndAbsolute(endTimeAbsolute.getTime());
 	}
 	else {
@@ -247,11 +281,15 @@ function buildKairosDBQuery() {
 		}
 	}
 	
-	var time_zone = $(".timeZone").val();
-	if (time_zone != '')
-		query.setTimeZone(time_zone)
-
 	return hasError ? null : query;
+}
+
+function convertToTimezone(time, time_zone)
+{
+	var timeString = moment(time).format("dddd, MMMM Do YYYY, HH:mm:ss.SSS");
+	var convertedTimeString = moment.tz(timeString, "dddd, MMMM Do YYYY, HH:mm:ss.SSS", time_zone).format();
+	return new Date(convertedTimeString);
+
 }
 
 /**
@@ -572,15 +610,18 @@ function addAggregator(container) {
 		$aggregatorContainer.find(".aggregatorTrim").hide();
 		$aggregatorContainer.find(".aggregatorSaveAs").hide();
 		$aggregatorContainer.find(".aggregatorRate").hide();
+		$aggregatorContainer.find(".aggregatorAlignStartTime").hide();
 
 		if (name == "rate" || name == "sampler") {
 			$aggregatorContainer.find(".aggregatorRate").show();
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
 		else if (name == "percentile") {
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
+			$aggregatorContainer.find(".aggregatorAlignStartTime").show();
 		}
 		else if (name == "div") {
 			$aggregatorContainer.find(".divisor").show();
@@ -599,6 +640,7 @@ function addAggregator(container) {
 		else {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
+			$aggregatorContainer.find(".aggregatorAlignStartTime").show();
 		}
 	});
 }
@@ -767,8 +809,6 @@ function showChart(subTitle, queries, metricData) {
 				});
 			}
 
-			if (groupType && groupType != 'number')
-				return;
 
 			var result = {};
 			result.name = queryResult.name + groupByMessage;

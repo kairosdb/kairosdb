@@ -15,6 +15,7 @@
  */
 package org.kairosdb.datastore.cassandra;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.prettyprint.cassandra.model.HColumnImpl;
 import me.prettyprint.cassandra.model.MutatorImpl;
 import me.prettyprint.hector.api.Keyspace;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -64,7 +66,8 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			Condition lockCondition,
 			int threadCount)
 	{
-		m_executorService = Executors.newFixedThreadPool(threadCount);
+		m_executorService = Executors.newFixedThreadPool(threadCount,
+				new ThreadFactoryBuilder().setNameFormat("WriteBuffer-"+cfName+"-%d").build());
 
 		m_keyspace = keyspace;
 		m_cfName = cfName;
@@ -79,7 +82,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 
 		m_buffer = new ArrayList<Triple<RowKeyType, ColumnKeyType, ValueType>>();
 		m_mutator = new MutatorImpl<RowKeyType>(keyspace, keySerializer);
-		m_writeThread = new Thread(this);
+		m_writeThread = new Thread(this, "WriteBuffer Scheduler for "+cfName);
 		m_writeThread.start();
 	}
 	
@@ -107,9 +110,6 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			long timestamp,
 			int ttl)
 	{
-		/*if (true)
-			return;*/
-
 		m_mutatorLock.lock();
 		try
 		{
@@ -155,7 +155,6 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 
 			m_bufferCount ++;
 			m_mutator.addDeletion(rowKey, m_cfName, columnKey, m_columnKeySerializer, timestamp);
-//			m_mutator.delete(rowKey, m_cfName, columnKey, m_columnKeySerializer, timestamp);
 		}
 		finally
 		{
@@ -167,14 +166,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 	{
 		if ((m_bufferCount > m_maxBufferSize) && (m_mutatorLock.getHoldCount() == 1))
 		{
-			//try
-			//{
-				//System.out.println("++++++Thread Interrupt+++++++++");
-				//m_writeThread.interrupt();
-				//m_lockCondition.await();
-				submitJob();
-			//}
-			//catch (InterruptedException ignored) {}
+			submitJob();
 		}
 	}
 
@@ -183,6 +175,8 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		m_exit = true;
 		m_writeThread.interrupt();
 		m_writeThread.join();
+		m_executorService.shutdown();
+		m_executorService.awaitTermination(1, TimeUnit.MINUTES);
 	}
 
 	/**
@@ -238,14 +232,6 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 				m_mutatorLock.lock();
 				try
 				{
-					/*m_writeStats.saveWriteSize(m_bufferCount);
-
-					pendingMutations = m_mutator;
-					buffer = m_buffer;
-					m_mutator = new MutatorImpl<RowKeyType>(m_keyspace, m_rowKeySerializer);
-					m_buffer = new ArrayList<Tripple<RowKeyType, ColumnKeyType, ValueType>>();
-					m_bufferCount = 0;
-					m_lockCondition.signalAll();*/
 					submitJob();
 				}
 				finally
@@ -253,54 +239,6 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 					m_mutatorLock.unlock();
 				}
 			}
-
-			/*try
-			{
-				if (pendingMutations != null)
-				{
-					for (Tripple<RowKeyType, ColumnKeyType, ValueType> data : buffer)
-					{
-						pendingMutations.addInsertion(
-								data.getFirst(),
-								m_cfName,
-								new HColumnImpl<ColumnKeyType, ValueType>(data.getSecond(), data.getThird(), data.getTime(), m_columnKeySerializer, m_valueSerializer)
-						);
-					}
-					pendingMutations.execute();
-				}
-
-				pendingMutations = null;
-			}
-			catch (Exception e)
-			{
-				logger.error("Error sending data to Cassandra ("+m_cfName+")", e);
-
-				m_maxBufferSize = m_maxBufferSize * 3 / 4;
-
-				logger.error("Reducing write buffer size to "+m_maxBufferSize+
-						".  You need to increase your cassandra capacity or change the kairosdb.datastore.cassandra.write_buffer_max_size property.");
-			}
-
-
-			//If the batch failed we will retry it without changing the buffer size.
-			while (pendingMutations != null)
-			{
-				try
-				{
-					Thread.sleep(100);
-				}
-				catch (InterruptedException ignored){ }
-
-				try
-				{
-					pendingMutations.execute();
-					pendingMutations = null;
-				}
-				catch (Exception e)
-				{
-					logger.error("Error resending data", e);
-				}
-			}*/
 		}
 	}
 
@@ -343,9 +281,6 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 				m_started = true;
 				m_jobLock.notifyAll();
 			}
-
-			/*if (true)
-				return;*/
 
 			try
 			{

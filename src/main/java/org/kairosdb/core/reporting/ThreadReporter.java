@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.util.Tags;
@@ -39,20 +40,45 @@ public class ThreadReporter
 {
 	private static class ReporterDataPoint
 	{
-		private String m_metricName;
-		private long m_value;
-		private ImmutableSortedMap.Builder<String, String> m_tags;
+		private final String m_metricName;
+		private final long m_value;
+		private final String m_strValue;
+		private final ImmutableSortedMap.Builder<String, String> m_tags;
+		private final int m_ttl;
 
-		private ReporterDataPoint(String metricName, SortedMap<String, String> tags, long value)
+		private ReporterDataPoint(String metricName, SortedMap<String, String> tags,
+				long value, int ttl)
 		{
 			m_metricName = metricName;
 			m_value = value;
 			m_tags = Tags.create();
 			m_tags.putAll(tags);
+			m_ttl = ttl;
+			m_strValue = null;
+		}
+
+		private ReporterDataPoint(String metricName, SortedMap<String, String> tags,
+				String value, int ttl)
+		{
+			m_metricName = metricName;
+			m_value = 0;
+			m_tags = Tags.create();
+			m_tags.putAll(tags);
+			m_ttl = ttl;
+			m_strValue = value;
 		}
 
 		public String getMetricName() { return (m_metricName); }
 		public long getValue() { return (m_value); }
+		public String getStrValue() { return m_strValue; }
+		public void addTag(String name, String value)
+		{
+			m_tags.put(name, value);
+		}
+
+		public int getTtl() { return (m_ttl); }
+		public boolean isStringValue() { return m_strValue != null; }
+
 		public ImmutableSortedMap<String, String> getTags() { return m_tags.build(); }
 	}
 
@@ -131,19 +157,54 @@ public class ThreadReporter
 		s_currentTags.get().clear();
 	}
 
-	public static void addDataPoint(String metric, long value)
+	public static ReporterDataPoint addDataPoint(String metric, long value)
 	{
-		s_reporterData.addDataPoint(new ReporterDataPoint(metric, s_currentTags.get(), value));
+		return addDataPoint(metric, value, 0);
 	}
 
-	public static void submitData(LongDataPointFactory dataPointFactory, KairosDatastore datastore) throws DatastoreException
+	public static ReporterDataPoint addDataPoint(String metric, long value, int ttl)
+	{
+		ReporterDataPoint rdp = new ReporterDataPoint(metric, s_currentTags.get(),
+				value, ttl);
+		s_reporterData.addDataPoint(rdp);
+
+		return rdp;
+	}
+
+	public static ReporterDataPoint addDataPoint(String metric, String value)
+	{
+		return addDataPoint(metric, value, 0);
+	}
+
+	public static ReporterDataPoint addDataPoint(String metric, String value, int ttl)
+	{
+		ReporterDataPoint rdp = new ReporterDataPoint(metric, s_currentTags.get(),
+				value, ttl);
+		s_reporterData.addDataPoint(rdp);
+
+		return rdp;
+	}
+
+	public static void submitData(LongDataPointFactory longDataPointFactory,
+			StringDataPointFactory stringDataPointFactory,
+			KairosDatastore datastore) throws DatastoreException
 	{
 		while (s_reporterData.getListSize() != 0)
 		{
 			ReporterDataPoint dp = s_reporterData.getNextDataPoint();
 
-			datastore.putDataPoint(dp.getMetricName(), dp.getTags(),
-					dataPointFactory.createDataPoint(s_reportTime.get(), dp.getValue()));
+			if (dp.isStringValue())
+			{
+				datastore.putDataPoint(dp.getMetricName(), dp.getTags(),
+						stringDataPointFactory.createDataPoint(s_reportTime.get(), dp.getStrValue()),
+						dp.getTtl());
+			}
+			else
+			{
+				datastore.putDataPoint(dp.getMetricName(), dp.getTags(),
+						longDataPointFactory.createDataPoint(s_reportTime.get(), dp.getValue()),
+						dp.getTtl());
+			}
 		}
 	}
 

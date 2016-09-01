@@ -44,6 +44,12 @@ public class LastAggregator extends RangeAggregator
 	}
 
 	@Override
+	public String getAggregatedGroupType(String groupType)
+	{
+		return m_dataPointFactory.getGroupType();
+	}
+
+	@Override
 	protected RangeSubAggregator getSubAggregator()
 	{
 		return (new LastDataPointAggregator());
@@ -55,18 +61,24 @@ public class LastAggregator extends RangeAggregator
 		public Iterable<DataPoint> getNextDataPoints(long returnTime, Iterator<DataPoint> dataPointRange)
 		{
 			Double last = null;
+			Long lastTime = 0L;
 			while (dataPointRange.hasNext())
 			{
 				final DataPoint dp = dataPointRange.next();
 				if (dp.isDouble())
 				{
 					last = dp.getDoubleValue();
+					lastTime = dp.getTimestamp();
 				}
 			}
 
 			if (last != null)
 			{
-				return Collections.singletonList(m_dataPointFactory.createDataPoint(returnTime, last));
+				long retTime = returnTime;
+				if (!m_alignStartTime)
+					retTime = lastTime;
+
+				return Collections.singletonList(m_dataPointFactory.createDataPoint(retTime, last));
 			}
 
 			return Collections.emptyList();

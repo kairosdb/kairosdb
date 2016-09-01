@@ -116,6 +116,23 @@ public class Main
 		return jars.toArray(new URL[0]);
 	}
 
+	protected static String toEnvVarName(String propName) {
+		return propName.toUpperCase().replace('.', '_');
+	}
+
+	/*
+	 * allow overwriting any existing property via correctly named environment variable
+	 * e.g. kairosdb.datastore.cassandra.host_list via KAIROSDB_DATASTORE_CASSANDRA_HOST_LIST
+	 */
+	protected void applyEnvironmentVariables(Properties props) {
+		Map<String, String> env = System.getenv();
+		for (String propName : props.stringPropertyNames()) {
+			String envVarName = toEnvVarName(propName);
+			if (env.containsKey(envVarName)) {
+				props.setProperty(propName, env.get(envVarName));
+			}
+		}
+	}
 
 	public Main(File propertiesFile) throws IOException
 	{
@@ -132,6 +149,8 @@ public class Main
 
 			loadPlugins(props, propertiesFile);
 		}
+
+		applyEnvironmentVariables(props);
 
 		List<Module> moduleList = new ArrayList<Module>();
 		moduleList.add(new CoreModule(props));
@@ -473,6 +492,7 @@ public class Main
 			}
 		}
 
+		logger.info("Stopping Datastore");
 		//Stop the datastore
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
 		ds.close();

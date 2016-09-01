@@ -48,10 +48,11 @@ public class KairosDatastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(KairosDatastore.class);
 	public static final String QUERY_CACHE_DIR = "kairosdb.query_cache.cache_dir";
+	public static final String KEEP_CACHE_FILES = "kairosdb.query_cache.keep_cache_files";
 	public static final String QUERY_METRIC_TIME = "kairosdb.datastore.query_time";
 	public static final String QUERIES_WAITING_METRIC_NAME = "kairosdb.datastore.queries_waiting";
-    public static final String QUERY_SAMPLE_SIZE = "kairosdb.datastore.query_sample_size";
-    public static final String QUERY_ROW_COUNT = "kairosdb.datastore.query_row_count";
+	public static final String QUERY_SAMPLE_SIZE = "kairosdb.datastore.query_sample_size";
+	public static final String QUERY_ROW_COUNT = "kairosdb.datastore.query_row_count";
 
 	private final Datastore m_datastore;
 	private final QueryQueuingManager m_queuingManager;
@@ -60,11 +61,13 @@ public class KairosDatastore
 
 	private String m_baseCacheDir;
 	private volatile String m_cacheDir;
+	private final boolean m_keepCacheFiles;
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-	      List<DataPointListener> dataPointListeners, KairosDataPointFactory dataPointFactory)
+			List<DataPointListener> dataPointListeners, KairosDataPointFactory dataPointFactory,
+			@Named(KEEP_CACHE_FILES) boolean keepCacheFiles)
 			throws DatastoreException
 	{
 		m_datastore = checkNotNull(datastore);
@@ -73,6 +76,7 @@ public class KairosDatastore
 		m_dataPointFactory = dataPointFactory;
 
 		m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
+		m_keepCacheFiles = keepCacheFiles;
 
 		setupCacheDirectory();
 	}
@@ -420,7 +424,7 @@ public class KairosDatastore
 		private QueryMetric m_metric;
 		private List<DataPointGroup> m_results;
 		private int m_dataPointCount;
-        private int m_rowCount;
+		private int m_rowCount;
 		
 		public DatastoreQueryImpl(QueryMetric metric)
 				throws UnsupportedEncodingException, NoSuchAlgorithmException,
@@ -442,7 +446,7 @@ public class KairosDatastore
 		{
 			return m_dataPointCount;
 		}
-        public int getRowCount() { return m_rowCount; }
+		public int getRowCount() { return m_rowCount; }
 
 		@Override
 		public List<DataPointGroup> execute() throws DatastoreException
@@ -460,7 +464,7 @@ public class KairosDatastore
 				if (m_metric.getCacheTime() > 0)
 				{
 					cachedResults = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
-							tempFile, m_metric.getCacheTime(), m_dataPointFactory);
+							tempFile, m_metric.getCacheTime(), m_dataPointFactory, m_keepCacheFiles);
 					if (cachedResults != null)
 					{
 						returnedRows = cachedResults.getRows();
@@ -472,7 +476,7 @@ public class KairosDatastore
 				{
 					logger.debug("Cache MISS!");
 					cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
-							tempFile, m_dataPointFactory);
+							tempFile, m_dataPointFactory, m_keepCacheFiles);
 					m_datastore.queryDatabase(m_metric, cachedResults);
 					returnedRows = cachedResults.getRows();
 				}
@@ -534,8 +538,10 @@ public class KairosDatastore
 				for (Aggregator aggregator : aggregators)
 				{
 					//Make sure the aggregator can handle this type of data.
-					if (aggregator.canAggregate(groupType))
+					if (aggregator.canAggregate(groupType)) {
 						aggregatedGroup = aggregator.aggregate(aggregatedGroup);
+						groupType = aggregator.getAggregatedGroupType(groupType);
+					}
 				}
 
 				m_results.add(aggregatedGroup);

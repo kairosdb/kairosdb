@@ -39,4 +39,10 @@ public class StringDataPointFactory implements DataPointFactory
 		StringDataPoint ret = new StringDataPoint(timestamp, buffer.readUTF());
 		return ret;
 	}
+
+	public DataPoint createDataPoint(long timestamp, String value)
+	{
+		StringDataPoint ret = new StringDataPoint(timestamp, value);
+		return ret;
+	}
 }

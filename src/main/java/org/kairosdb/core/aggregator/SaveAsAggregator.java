@@ -7,29 +7,35 @@ import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByResult;
+import org.kairosdb.core.groupby.TagGroupBy;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  Created by bhawkins on 8/28/15.
  */
 @AggregatorName(name = "save_as", description = "Saves the results to a new metric.")
-public class SaveAsAggregator implements Aggregator
+public class SaveAsAggregator implements Aggregator, GroupByAware
 {
 	private Datastore m_datastore;
 	private String m_metricName;
 	private Map<String, String> m_tags;
 	private int m_ttl = 0;
+	private Set<String> m_tagsToKeep = new HashSet<>();
+	private boolean m_addSavedFrom = true;
 
 	@Inject
 	public SaveAsAggregator(Datastore datastore)
 	{
 		m_datastore = datastore;
 		m_tags = new HashMap<>();
+	}
+
+	public void setAddSavedFrom(boolean addSavedFrom)
+	{
+		m_addSavedFrom = addSavedFrom;
 	}
 
 	public void setMetricName(String metricName)
@@ -69,6 +75,26 @@ public class SaveAsAggregator implements Aggregator
 		return true;
 	}
 
+	@Override
+	public String getAggregatedGroupType(String groupType)
+	{
+		return groupType;
+	}
+
+	@Override
+	public void setGroupBys(List<GroupBy> groupBys)
+	{
+		for (GroupBy groupBy : groupBys)
+		{
+			if (groupBy instanceof TagGroupBy)
+			{
+				TagGroupBy tagGroupBy = (TagGroupBy) groupBy;
+
+				m_tagsToKeep.addAll(tagGroupBy.getTagNames());
+			}
+		}
+	}
+
 	private class SaveAsDataPointAggregator implements DataPointGroup
 	{
 		private DataPointGroup m_innerDataPointGroup;
@@ -79,12 +105,13 @@ public class SaveAsAggregator implements Aggregator
 			m_innerDataPointGroup = innerDataPointGroup;
 			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.<String, String>naturalOrder();
 			mapBuilder.putAll(m_tags);
-			mapBuilder.put("saved_from", innerDataPointGroup.getName());
+			if (m_addSavedFrom)
+				mapBuilder.put("saved_from", innerDataPointGroup.getName());
 
 			for (String innerTag : innerDataPointGroup.getTagNames())
 			{
 				Set<String> tagValues = innerDataPointGroup.getTagValues(innerTag);
-				if (tagValues.size() == 1)
+				if (m_tagsToKeep.contains(innerTag) && (tagValues.size() == 1))
 					mapBuilder.put(innerTag, tagValues.iterator().next());
 			}
 

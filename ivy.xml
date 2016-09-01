@@ -33,8 +33,8 @@
 		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.2.5" />
 		<dependency org="joda-time" name="joda-time" rev="2.3" />
 
-		<dependency org="ch.qos.logback" name="logback-core" rev="1.0.9" />
-		<dependency org="ch.qos.logback" name="logback-classic" rev="1.0.9" />
+		<dependency org="ch.qos.logback" name="logback-core" rev="1.1.7" />
+		<dependency org="ch.qos.logback" name="logback-classic" rev="1.1.7" />
 
 		<!--Genormous dependencies-->
 		<dependency org="org.agileclick.genorm" name="genormous" rev="1.6.0.jdbc4"/>
@@ -51,9 +51,9 @@
 		</dependency>
 
 		<!-- Jetty server stuff -->
-		<dependency org="org.eclipse.jetty" name="jetty-server" rev="8.1.18.v20150929" />
-		<dependency org="org.eclipse.jetty" name="jetty-servlet" rev="8.1.18.v20150929" />
-		<dependency org="org.eclipse.jetty" name="jetty-servlets" rev="8.1.18.v20150929" />
+		<dependency org="org.eclipse.jetty" name="jetty-server" rev="8.1.19.v20160209" />
+		<dependency org="org.eclipse.jetty" name="jetty-servlet" rev="8.1.19.v20160209" />
+		<dependency org="org.eclipse.jetty" name="jetty-servlets" rev="8.1.19.v20160209" />
 		<dependency org="org.eclipse.jetty.orbit" name="javax.servlet" rev="3.0.0.v201112011016">
 			<artifact name="javax.servlet" type="orbit" ext="jar"/>
 		</dependency>

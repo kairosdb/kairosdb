@@ -51,6 +51,12 @@ public class SamplerAggregator implements Aggregator, TimezoneAware
 		return DataPoint.GROUP_NUMBER.equals(groupType);
 	}
 
+	@Override
+	public String getAggregatedGroupType(String groupType)
+	{
+		return m_dataPointFactory.getGroupType();
+	}
+
 	public void setUnit(TimeUnit timeUnit)
 	{
 		m_sampling = new Sampling(1, timeUnit);
@@ -68,6 +74,13 @@ public class SamplerAggregator implements Aggregator, TimezoneAware
 		public SamplerDataPointAggregator(DataPointGroup innerDataPointGroup)
 		{
 			super(innerDataPointGroup);
+		}
+
+		@Override
+		public boolean hasNext()
+		{
+			//Ensure we have two data points to mess with
+			return currentDataPoint != null && hasNextInternal();
 		}
 
 		@Override

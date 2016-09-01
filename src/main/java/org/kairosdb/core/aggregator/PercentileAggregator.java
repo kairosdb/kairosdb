@@ -51,6 +51,12 @@ public class PercentileAggregator extends RangeAggregator
 		return DataPoint.GROUP_NUMBER.equals(groupType);
 	}
 
+	@Override
+	public String getAggregatedGroupType(String groupType)
+	{
+		return m_dataPointFactory.getGroupType();
+	}
+
 	@NonZero
 	private double percentile;
 

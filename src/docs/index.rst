@@ -16,6 +16,7 @@ Contents:
    ImportExport
    WebUI
    Configuration
+   Logging
    Statistics
    KairosClient
    CassandraSchema

@@ -51,8 +51,8 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 	private ServerBootstrap serverBootstrap;
 
 	public TelnetServer(int port,
-	                    int maxCommandLength,
-	                    CommandProvider commandProvider)
+			int maxCommandLength,
+			CommandProvider commandProvider)
 			throws UnknownHostException
 	{
 		this(null, port, maxCommandLength, commandProvider);
@@ -60,9 +60,9 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 
 	@Inject
 	public TelnetServer(@Named("kairosdb.telnetserver.address") String address,
-	                    @Named("kairosdb.telnetserver.port") int port,
-	                    @Named("kairosdb.telnetserver.max_command_size") int maxCommandLength,
-	                    CommandProvider commandProvider)
+			@Named("kairosdb.telnetserver.port") int port,
+			@Named("kairosdb.telnetserver.max_command_size") int maxCommandLength,
+			CommandProvider commandProvider)
 			throws UnknownHostException
 	{
 		checkArgument(maxCommandLength > 0, "command length must be greater than zero");

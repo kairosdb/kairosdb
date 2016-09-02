@@ -56,4 +56,29 @@ public class Duration
 				", unit=" + unit +
 				'}';
 	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o)
+		{
+			return true;
+		}
+		if (o == null || getClass() != o.getClass())
+		{
+			return false;
+		}
+
+		Duration duration = (Duration) o;
+
+		return value == duration.value && unit == duration.unit;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		int result = (int) (value ^ (value >>> 32));
+		result = 31 * result + (unit != null ? unit.hashCode() : 0);
+		return result;
+	}
 }

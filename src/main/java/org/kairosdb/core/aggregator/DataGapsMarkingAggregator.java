@@ -17,22 +17,22 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.datapoints.NullDataPoint;
 
 import java.util.Collections;
 import java.util.Iterator;
-import org.kairosdb.core.datapoints.NullDataPoint;
 
 @AggregatorName(name = "gaps", description = "Marks gaps in data according to sampling rate with a null data point.")
 public class DataGapsMarkingAggregator extends RangeAggregator
 {
 
-        
+
 	@Inject
 	public DataGapsMarkingAggregator()
 	{
 		super(true);
 	}
-        
+
 	@Override
 	protected RangeSubAggregator getSubAggregator()
 	{

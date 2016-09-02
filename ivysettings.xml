@@ -1,17 +1,21 @@
 <ivysettings>
 	<settings defaultResolver="default"/>
 	<resolvers>
-		<ibiblio name="local-m2" m2compatible="true" root="file://${user.home}/.m2/repository" changingPattern=".*SNAPSHOT"/>
+		<ibiblio name="local-m2" m2compatible="true"
+		         root="file://${user.home}/.m2/repository"
+		         changingPattern=".*SNAPSHOT"/>
 		<!--<ibiblio name="my-maven" m2compatible="true" root="http://repo.maven.apache.org/maven2/"/>-->
 		<!--<ibiblio name="staging" m2compatible="true" root="https://oss.sonatype.org/content/repositories/orgagileclick-1008"/>-->
 		<ibiblio name="central" m2compatible="true"/>
 
 		<filesystem name="local-m2-publish" m2compatible="true">
-			<artifact pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]"/>
+			<artifact
+					pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]"/>
 		</filesystem>
 
 		<filesystem name="local-m2-publish-snapshot" m2compatible="true">
-			<artifact pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision]-SNAPSHOT.[ext]"/>
+			<artifact
+					pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision]-SNAPSHOT.[ext]"/>
 		</filesystem>
 
 		<chain name="default">

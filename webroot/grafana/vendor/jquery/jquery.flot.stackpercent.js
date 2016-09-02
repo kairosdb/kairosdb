@@ -1,23 +1,23 @@
 (function ($) {
-    var options = {
-        series: {
-            stackpercent: null
-        } // or number/string
-    };
+	var options = {
+		series: {
+			stackpercent: null
+		} // or number/string
+	};
 
-    function init(plot) {
+	function init(plot) {
 
-        // will be built up dynamically as a hash from x-value, or y-value if horizontal
-        var stackBases = {};
-        var processed = false;
-        var stackSums = {};
+		// will be built up dynamically as a hash from x-value, or y-value if horizontal
+		var stackBases = {};
+		var processed = false;
+		var stackSums = {};
 
-        //set percentage for stacked chart
-        function processRawData(plot, series, data, datapoints) {
-            if (!processed) {
-                processed = true;
-                stackSums = getStackSums(plot.getData());
-            }
+		//set percentage for stacked chart
+		function processRawData(plot, series, data, datapoints) {
+			if (!processed) {
+				processed = true;
+				stackSums = getStackSums(plot.getData());
+			}
 			if (series.stackpercent == true) {
 				var num = data.length;
 				series.percents = [];
@@ -36,47 +36,47 @@
 					}
 				}
 			}
-        }
+		}
 
-        //calculate summary
-        function getStackSums(_data) {
-            var data_len = _data.length;
-            var sums = {};
-            if (data_len > 0) {
-                //caculate summary
-                for (var i = 0; i < data_len; i++) {
-                    if (_data[i].stackpercent) {
+		//calculate summary
+		function getStackSums(_data) {
+			var data_len = _data.length;
+			var sums = {};
+			if (data_len > 0) {
+				//caculate summary
+				for (var i = 0; i < data_len; i++) {
+					if (_data[i].stackpercent) {
 						var key_idx = 0;
 						var value_idx = 1;
 						if (_data[i].bars && _data[i].bars.horizontal && _data[i].bars.horizontal === true) {
 							key_idx = 1;
 							value_idx = 0;
 						}
-                        var num = _data[i].data.length;
-                        for (var j = 0; j < num; j++) {
-                            var value = 0;
-                            if (_data[i].data[j][1] != null) {
-                                value = _data[i].data[j][value_idx];
-                            }
-                            if (sums[_data[i].data[j][key_idx] + ""]) {
-                                sums[_data[i].data[j][key_idx] + ""] += value;
-                            } else {
-                                sums[_data[i].data[j][key_idx] + ""] = value;
-                            }
+						var num = _data[i].data.length;
+						for (var j = 0; j < num; j++) {
+							var value = 0;
+							if (_data[i].data[j][1] != null) {
+								value = _data[i].data[j][value_idx];
+							}
+							if (sums[_data[i].data[j][key_idx] + ""]) {
+								sums[_data[i].data[j][key_idx] + ""] += value;
+							} else {
+								sums[_data[i].data[j][key_idx] + ""] = value;
+							}
 
-                        }
-                    }
-                }
-            }
-            return sums;
-        }
+						}
+					}
+				}
+			}
+			return sums;
+		}
 
-        function stackData(plot, s, datapoints) {
-            if (!s.stackpercent) return;
-            if (!processed) {
-                stackSums = getStackSums(plot.getData());
-            }
-            var newPoints = [];
+		function stackData(plot, s, datapoints) {
+			if (!s.stackpercent) return;
+			if (!processed) {
+				stackSums = getStackSums(plot.getData());
+			}
+			var newPoints = [];
 
 
 			var key_idx = 0;
@@ -101,7 +101,7 @@
 				stackBases[datapoints.points[i + key_idx]] += datapoints.points[i + value_idx];
 				// change points to percentage values
 				// you may need to set yaxis:{ max = 100 }
-				if ( stackSums[newPoints[i+key_idx]+""] > 0 ){
+				if (stackSums[newPoints[i + key_idx] + ""] > 0) {
 					newPoints[i + value_idx] = newPoints[i + value_idx] * 100 / stackSums[newPoints[i + key_idx] + ""];
 					newPoints[i + 2] = newPoints[i + 2] * 100 / stackSums[newPoints[i + key_idx] + ""];
 				} else {
@@ -110,17 +110,17 @@
 				}
 			}
 
-            datapoints.points = newPoints;
-        }
+			datapoints.points = newPoints;
+		}
 
 		plot.hooks.processRawData.push(processRawData);
-        plot.hooks.processDatapoints.push(stackData);
-    }
+		plot.hooks.processDatapoints.push(stackData);
+	}
 
-    $.plot.plugins.push({
-        init: init,
-        options: options,
-        name: 'stackpercent',
-        version: '0.1'
-    });
+	$.plot.plugins.push({
+		init: init,
+		options: options,
+		name: 'stackpercent',
+		version: '0.1'
+	});
 })(jQuery);

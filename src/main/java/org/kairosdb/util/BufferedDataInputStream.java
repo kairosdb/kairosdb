@@ -10,10 +10,9 @@ import java.nio.channels.FileChannel;
 public class BufferedDataInputStream extends DataInputStream
 {
 	/**
-
 	 @param file
 	 @param startPosition
-	 @param size Size of stream buffer
+	 @param size          Size of stream buffer
 	 */
 	public BufferedDataInputStream(RandomAccessFile file, long startPosition, int size)
 	{

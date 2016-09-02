@@ -20,11 +20,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
-import junit.framework.TestCase;
-import org.hamcrest.CoreMatchers;
 import org.junit.Test;
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
@@ -36,7 +32,6 @@ import org.kairosdb.core.groupby.TagGroupBy;
 import java.util.*;
 
 import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -611,7 +606,7 @@ public abstract class DatastoreTestHelper
 			dq.close();
 		}
 	}
-	
+
 	@Test
 	public void test_queryNegativeTime() throws DatastoreException
 	{
@@ -685,7 +680,7 @@ public abstract class DatastoreTestHelper
 	@Test
 	public void test_notReturningTagsForEmptyData() throws DatastoreException, InterruptedException
 	{
-		QueryMetric query = new QueryMetric(s_startTime -1, 0, "delete_me");
+		QueryMetric query = new QueryMetric(s_startTime - 1, 0, "delete_me");
 		query.setEndTime(s_startTime + 1);
 
 		s_datastore.delete(query);

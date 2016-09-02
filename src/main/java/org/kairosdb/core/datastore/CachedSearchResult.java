@@ -397,7 +397,7 @@ public class CachedSearchResult implements QueryCallback
 
 		private void allocateReadBuffer()
 		{
-			int rowSize = (int)(m_endPostition - m_currentPosition);
+			int rowSize = (int) (m_endPostition - m_currentPosition);
 			int bufferSize = (rowSize < m_maxReadBufferSize ? rowSize : m_maxReadBufferSize);
 
 			m_readBuffer = new BufferedDataInputStream(m_randomAccessFile, m_currentPosition, bufferSize);

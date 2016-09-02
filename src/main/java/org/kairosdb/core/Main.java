@@ -167,7 +167,7 @@ public class Main
 
 					String serviceName = propName.substring(SERVICE_PREFIX.length());
 
-					String pluginFolder = props.getProperty(SERVICE_FOLDER_PREFIX+serviceName);
+					String pluginFolder = props.getProperty(SERVICE_FOLDER_PREFIX + serviceName);
 
 					ClassLoader pluginLoader = this.getClass().getClassLoader();
 					if (pluginFolder != null)

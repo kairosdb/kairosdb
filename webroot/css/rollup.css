@@ -1,0 +1,64 @@
+body {
+    margin: 0 5%;
+    width: 90%;
+}
+
+th {
+    background-color: #C4D6E0;
+    color: black;
+}
+
+h1 {
+    border-color: blue;
+    border-width: 1px;
+}
+
+.no-padding {
+    padding: 0;
+    /*margin: 0*/
+}
+
+.shift-1-up {
+    position: relative;
+    bottom: 1px;
+}
+
+.gray {
+    color: grey;
+}
+
+.black {
+    color: black;
+}
+
+.modal-content {
+    background: url('brickwall.png')
+}
+
+#paste-query-execute.btn {
+    padding: 2px 6px;
+    width: 160px
+}
+
+#aggregatorDropdown.btn {
+    padding: 1px 6px
+}
+
+#executeDropdown.btn {
+    padding: 1px 6px
+}
+
+#small.btn {
+    padding: 1px 6px
+}
+
+.center-table
+{
+    margin: 0 auto !important;
+    float: none !important;
+}
+
+.text-columns {
+    word-wrap: break-word;
+    max-width: 300px;
+}

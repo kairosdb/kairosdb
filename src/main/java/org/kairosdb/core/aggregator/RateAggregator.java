@@ -113,7 +113,7 @@ public class RateAggregator implements Aggregator, TimezoneAware
 				}
 			}
 
-			double rate = (x1 - x0)/(y1 - y0) * Util.getSamplingDuration(y0, m_sampling, m_timeZone);
+			double rate = (x1 - x0) / (y1 - y0) * Util.getSamplingDuration(y0, m_sampling, m_timeZone);
 
 			return (m_dataPointFactory.createDataPoint(y1, rate));
 		}

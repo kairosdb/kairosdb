@@ -23,7 +23,6 @@ import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Random;
 
 import static org.quartz.TriggerBuilder.newTrigger;
@@ -65,6 +64,11 @@ public class RemoteSendJob implements KairosDBJob
 				.withIdentity(this.getClass().getSimpleName())
 				.withSchedule(CronScheduleBuilder.cronSchedule(m_schedule))
 				.build());
+	}
+
+	@Override
+	public void interrupt()
+	{
 	}
 
 	@Override

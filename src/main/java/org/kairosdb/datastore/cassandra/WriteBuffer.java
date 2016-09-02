@@ -119,9 +119,10 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			if (columnKey.toString().length() > 0)
 			{
 				m_buffer.add(new Triple<RowKeyType, ColumnKeyType, ValueType>(rowKey, columnKey, value, timestamp, ttl));
-			} else
+			}
+			else
 			{
-				logger.info("Discarded "+m_cfName+" row with empty column name. This should never happen.");
+				logger.info("Discarded " + m_cfName + " row with empty column name. This should never happen.");
 			}
 		}
 		finally
@@ -311,11 +312,11 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			}
 			catch (Exception e)
 			{
-				logger.error("Error sending data to Cassandra ("+m_cfName+")", e);
+				logger.error("Error sending data to Cassandra (" + m_cfName + ")", e);
 
 				m_maxBufferSize = m_maxBufferSize * 3 / 4;
 
-				logger.error("Reducing write buffer size to "+m_maxBufferSize+
+				logger.error("Reducing write buffer size to " + m_maxBufferSize +
 						".  You need to increase your cassandra capacity or change the kairosdb.datastore.cassandra.write_buffer_max_size property.");
 			}
 
@@ -327,7 +328,9 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 				{
 					Thread.sleep(100);
 				}
-				catch (InterruptedException ignored){ }
+				catch (InterruptedException ignored)
+				{
+				}
 
 				try
 				{

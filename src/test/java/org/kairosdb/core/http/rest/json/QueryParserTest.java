@@ -22,11 +22,14 @@ import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
+import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
+import org.kairosdb.rollup.RollupTask;
 
 import java.io.IOException;
 import java.util.List;
@@ -167,7 +170,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-no-start_date.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.start_time relative or absolute time must be set");
+		assertBeanValidation(json, "query.metric[0].start_time relative or absolute time must be set");
 	}
 
 	@Test
@@ -303,12 +306,12 @@ public class QueryParserTest
 
 		assertBeanValidation(json, "query.metric[0].aggregators[0].sampling.value must be greater than or equal to 1");
 	}
-        
-        @Test
+
+	@Test
 	public void test_aggregator_sampling_timezone_invalid() throws IOException, QueryException
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sampling-timezone.json"), Charsets.UTF_8);
-		
+
 		assertBeanValidation(json, "query.bogus is not a valid time zone, must be one of " + DateTimeZone.getAvailableIDs());
 	}
 	
@@ -447,6 +450,107 @@ public class QueryParserTest
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-group_by-value-range_size.json"), Charsets.UTF_8);
 
 		assertBeanValidation(json, "query.metric[0].group_by[0].range_size.value must be greater than or equal to 1");
+	}
+
+	@Test
+	public void test_parseRollUpTask_empty_name_invalid() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-rollup-no-name-empty.json"), Charsets.UTF_8);
+
+		assertRollupBeanValidation(json, "name may not be empty");
+	}
+
+	@Test
+	public void test_parseRollUpTask_no_execution_interval_invalid() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-rollup-no-execution_interval.json"), Charsets.UTF_8);
+
+		assertRollupBeanValidation(json, "executionInterval may not be null");
+	}
+
+	@Test
+	public void test_parseRollUpTask_empty_saveAs_invalid() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-rollup-no-saveAs.json"), Charsets.UTF_8);
+
+		assertRollupBeanValidation(json, "rollup[0].saveAs may not be empty");
+	}
+
+	/**
+	 Test the parsing of the query. Only a sanity check since it parseRollupTask
+	 reuses parseQuery.
+	 */
+	@Test
+	public void test_parseRollUpTask_empty_query_time_invalid() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-rollup-no-query_time.json"), Charsets.UTF_8);
+
+		assertRollupBeanValidation(json, "rollup[0].query.metric[0].start_time relative or absolute time must be set");
+	}
+
+	@Test
+	public void test_parseRollUpTask_noRangeAggregator_invalid() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-rollup-no-range-aggregator.json"), Charsets.UTF_8);
+
+		assertRollupBeanValidation(json, "rollup[0].query[0].aggregator At least one aggregator must be a range aggregator");
+	}
+
+	@Test
+	public void test_parseRollupTask() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("rolluptask1.json"), Charsets.UTF_8);
+
+		RollupTask task = parser.parseRollupTask(json);
+
+		assertThat(task.getName(), equalTo("Rollup1"));
+		assertThat(task.getExecutionInterval(), equalTo(new Duration(1, TimeUnit.HOURS)));
+		assertThat(task.getRollups().size(), equalTo(1));
+		assertThat(task.getRollups().get(0).getSaveAs(), equalTo("kairosdb.http.query_time_rollup"));
+		assertThat(task.getRollups().get(0).getQueryMetrics().size(), equalTo(1));
+		assertThat(task.getRollups().get(0).getQueryMetrics().get(0).getName(), equalTo("kairosdb.http.query_time"));
+	}
+
+	@Test
+	public void test_parseRollupTasks() throws IOException, QueryException
+	{
+		String json = Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8);
+
+		List<RollupTask> tasks = parser.parseRollupTasks(json);
+
+		assertThat(tasks.size(), equalTo(2));
+
+		assertThat(tasks.get(0).getName(), equalTo("Rollup1"));
+		assertThat(tasks.get(0).getExecutionInterval(), equalTo(new Duration(1, TimeUnit.HOURS)));
+		assertThat(tasks.get(0).getRollups().size(), equalTo(1));
+		assertThat(tasks.get(0).getRollups().get(0).getSaveAs(), equalTo("kairosdb.http.query_time_rollup"));
+		assertThat(tasks.get(0).getRollups().get(0).getQueryMetrics().size(), equalTo(1));
+		assertThat(tasks.get(0).getRollups().get(0).getQueryMetrics().get(0).getName(), equalTo("kairosdb.http.query_time"));
+
+		assertThat(tasks.get(1).getName(), equalTo("Rollup2"));
+		assertThat(tasks.get(1).getExecutionInterval(), equalTo(new Duration(1, TimeUnit.MINUTES)));
+		assertThat(tasks.get(1).getRollups().size(), equalTo(1));
+		assertThat(tasks.get(1).getRollups().get(0).getSaveAs(), equalTo("kairosdb.http.foo_rollup"));
+		assertThat(tasks.get(1).getRollups().get(0).getQueryMetrics().size(), equalTo(1));
+		assertThat(tasks.get(1).getRollups().get(0).getQueryMetrics().get(0).getName(), equalTo("kairosdb.http.foo"));
+	}
+
+	private void assertRollupBeanValidation(String json, String expectedMessage)
+	{
+		try
+		{
+			parser.parseRollupTask(json);
+			fail("Expected BeanValidationException");
+		}
+		catch (QueryException e)
+		{
+			fail("Expected BeanValidationException");
+		}
+		catch (BeanValidationException e)
+		{
+			assertThat(e.getErrorMessages().size(), equalTo(1));
+			assertThat(e.getErrorMessages().get(0), equalTo(expectedMessage));
+		}
 	}
 
 	private void assertBeanValidation(String json, String expectedMessage)

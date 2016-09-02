@@ -7,7 +7,6 @@ import org.json.JSONWriter;
 
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  Created with IntelliJ IDEA.
@@ -111,7 +110,7 @@ public class LongDataPoint extends DataPointHelper
 	public String toString()
 	{
 		return "LongDataPoint{" +
-                "m_timestamp=" + new DateTime(m_timestamp) +
+				"m_timestamp=" + new DateTime(m_timestamp) +
 				" m_value=" + m_value +
 				'}';
 	}

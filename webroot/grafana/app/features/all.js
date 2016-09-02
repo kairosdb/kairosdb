@@ -1,3 +1,4 @@
 define([
-  './panellinkeditor/module',
-], function () {});
+	'./panellinkeditor/module',
+], function () {
+});

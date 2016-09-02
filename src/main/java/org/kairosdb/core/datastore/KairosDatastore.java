@@ -104,6 +104,7 @@ public class KairosDatastore
 
 	/**
 	 Make sure the folder exists
+
 	 @param path
 	 */
 	private static void ensureFolder(String path)
@@ -170,6 +171,11 @@ public class KairosDatastore
 		logger.debug("Deleting cache files in " + dir.getAbsolutePath());
 
 		cleanDirectory(dir);
+	}
+
+	public Datastore getDatastore()
+	{
+		return m_datastore;
 	}
 
 	/**

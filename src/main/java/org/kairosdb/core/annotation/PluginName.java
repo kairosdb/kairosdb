@@ -12,5 +12,6 @@ import java.lang.annotation.Target;
 public @interface PluginName
 {
 	String name();
+
 	String description();
 }

@@ -64,7 +64,7 @@ public class DataPointsParser
 	private int ingestTime;
 
 	public DataPointsParser(KairosDatastore datastore, Reader stream, Gson gson,
-	                        KairosDataPointFactory dataPointFactory)
+			KairosDataPointFactory dataPointFactory)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.inputStream = checkNotNull(stream);
@@ -270,7 +270,7 @@ public class DataPointsParser
 				Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("value"), metric.getValue());
 			else if (metric.getValue() != null && !metric.getValue().isJsonNull())
 				Validator.isNotNull(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp());
-//				Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp(), 1);
+			//				Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp(), 1);
 
 
 			if (Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("tags count"), metric.getTags().size(), 1))
@@ -345,7 +345,7 @@ public class DataPointsParser
 						String type = metric.getType();
 						if (dataPoint.length > 2)
 							type = dataPoint[2].getAsString();
-						
+
 						if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
 							continue;
 
@@ -420,6 +420,9 @@ public class DataPointsParser
 
 		public String getType() { return type; }
 
-		public int getTtl() { return ttl; }
+		public int getTtl()
+		{
+			return ttl;
+		}
 	}
 }

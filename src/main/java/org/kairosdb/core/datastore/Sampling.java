@@ -23,12 +23,12 @@ public class Sampling extends Duration
 	{
 		super();
 	}
-	
+
 	public Sampling(int value, TimeUnit unit)
 	{
 		super(value, unit);
 	}
-	
+
 
 	@Override
 	public String toString()

@@ -70,7 +70,6 @@ public class CassandraDatastore implements Datastore
 	public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
 
 
-
 	public static final String CF_DATA_POINTS = "data_points";
 	public static final String CF_ROW_KEY_INDEX = "row_key_index";
 	public static final String CF_STRING_INDEX = "string_index";
@@ -107,10 +106,10 @@ public class CassandraDatastore implements Datastore
 
 
 	@Inject
-	public CassandraDatastore(@Named("HOSTNAME")final String hostname,
-	                          CassandraConfiguration cassandraConfiguration,
-	                          HectorConfiguration configuration,
-                             KairosDataPointFactory kairosDataPointFactory) throws DatastoreException
+	public CassandraDatastore(@Named("HOSTNAME") final String hostname,
+			CassandraConfiguration cassandraConfiguration,
+			HectorConfiguration configuration,
+			KairosDataPointFactory kairosDataPointFactory) throws DatastoreException
 	{
 		try
 		{
@@ -127,7 +126,7 @@ public class CassandraDatastore implements Datastore
 			m_tagValueCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
 
 			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
-			int threadCount = hostConfig.buildCassandraHosts().length +3;
+			int threadCount = hostConfig.buildCassandraHosts().length + 3;
 
 			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
 					hostConfig, m_cassandraConfiguration.getCassandraAuthentication());
@@ -136,10 +135,8 @@ public class CassandraDatastore implements Datastore
 
 			if (keyspaceDef == null) {
 				createSchema(m_cassandraConfiguration.getReplicationFactor());
-			}
-
-			//set global consistency level
-			ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
+				//set global consistency level
+				ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
 			confConsLevel.setDefaultReadConsistencyLevel(m_cassandraConfiguration.getDataReadLevel().getHectorLevel());
 			confConsLevel.setDefaultWriteConsistencyLevel(m_cassandraConfiguration.getDataWriteLevel().getHectorLevel());
 
@@ -282,9 +279,9 @@ public class CassandraDatastore implements Datastore
 			int rowKeyTtl = 0;
 			//Row key will expire 3 weeks after the data in the row expires
 			if (ttl != 0)
-				rowKeyTtl = ttl + ((int)(ROW_WIDTH / 1000));
+				rowKeyTtl = ttl + ((int) (ROW_WIDTH / 1000));
 
-			long rowTime= calculateRowTime(dataPoint.getTimestamp());
+			long rowTime = calculateRowTime(dataPoint.getTimestamp());
 
 			rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
 					tags);
@@ -309,7 +306,7 @@ public class CassandraDatastore implements Datastore
 				if (metricName.length() == 0)
 				{
 					logger.warn(
-							"Attempted to add empty metric name to string index. Row looks like: "+dataPoint
+							"Attempted to add empty metric name to string index. Row looks like: " + dataPoint
 					);
 				}
 				m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
@@ -322,10 +319,10 @@ public class CassandraDatastore implements Datastore
 				String cachedTagName = m_tagNameCache.cacheItem(tagName);
 				if (cachedTagName == null)
 				{
-					if(tagName.length() == 0)
+					if (tagName.length() == 0)
 					{
 						logger.warn(
-								"Attempted to add empty tagName to string cache for metric: "+metricName
+								"Attempted to add empty tagName to string cache for metric: " + metricName
 						);
 					}
 					m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_NAMES,
@@ -337,10 +334,10 @@ public class CassandraDatastore implements Datastore
 				String cachedValue = m_tagValueCache.cacheItem(value);
 				if (cachedValue == null)
 				{
-					if(value.toString().length() == 0)
+					if (value.toString().length() == 0)
 					{
 						logger.warn(
-								"Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+metricName
+								"Attempted to add empty tagValue (tag name " + tagName + ") to string cache for metric: " + metricName
 						);
 					}
 					m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
@@ -697,7 +694,7 @@ public class CassandraDatastore implements Datastore
 		{
 			DataPointsRowKey next = null;
 
-			outer:
+outer:
 			while (iterator.hasNext())
 			{
 				DataPointsRowKey rowKey = iterator.next().getName();

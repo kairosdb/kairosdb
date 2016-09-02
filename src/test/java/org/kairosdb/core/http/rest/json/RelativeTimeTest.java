@@ -31,13 +31,13 @@ import static org.junit.Assert.assertThat;
 
 public class RelativeTimeTest
 {
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss");
+	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SS");
 	private long timeRelativeTo;
 
 	@Before
 	public void setup() throws ParseException
 	{
-		timeRelativeTo = dateFormat.parse("2013-JAN-18 4:55:12").getTime();
+		timeRelativeTo = dateFormat.parse("2013-JAN-18 4:55:12.22").getTime();
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -49,11 +49,19 @@ public class RelativeTimeTest
 	}
 
 	@Test
+	public void test_getTimeRelativeTo_milliseconds() throws ParseException
+	{
+		RelativeTime time = new RelativeTime(5, "MILLISECONDS");
+
+		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2013-Jan-18 4:55:12.17").getTime()));
+	}
+
+	@Test
 	public void test_getTimeRelativeTo_seconds() throws ParseException
 	{
 		RelativeTime time = new RelativeTime(5, "SECONDS");
 
-		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2013-Jan-18 4:55:07").getTime()));
+		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2013-Jan-18 4:55:07.22").getTime()));
 	}
 
 	@Test
@@ -61,7 +69,7 @@ public class RelativeTimeTest
 	{
 		RelativeTime time = new RelativeTime(5, "MINUTES");
 
-		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2013-Jan-18 4:50:12").getTime()));
+		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2013-Jan-18 4:50:12.22").getTime()));
 	}
 
 	@Test
@@ -69,7 +77,7 @@ public class RelativeTimeTest
 	{
 		RelativeTime time = new RelativeTime(3, "HOURS");
 
-		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2013-Jan-18 1:55:12").getTime()));
+		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2013-Jan-18 1:55:12.22").getTime()));
 	}
 
 	@Test
@@ -77,7 +85,7 @@ public class RelativeTimeTest
 	{
 		RelativeTime time = new RelativeTime(3, "DAYS");
 
-		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2013-Jan-15 4:55:12").getTime()));
+		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2013-Jan-15 4:55:12.22").getTime()));
 	}
 
 	@Test
@@ -85,7 +93,7 @@ public class RelativeTimeTest
 	{
 		RelativeTime time = new RelativeTime(3, "WEEKS");
 
-		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2012-Dec-28 4:55:12").getTime()));
+		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2012-Dec-28 4:55:12.22").getTime()));
 	}
 
 	@Test
@@ -93,7 +101,7 @@ public class RelativeTimeTest
 	{
 		RelativeTime time = new RelativeTime(2, "MONTHS");
 
-		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2012-Nov-18 4:55:12").getTime()));
+		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2012-Nov-18 4:55:12.22").getTime()));
 	}
 
 	@Test
@@ -101,7 +109,7 @@ public class RelativeTimeTest
 	{
 		RelativeTime time = new RelativeTime(3, "YEARS");
 
-		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2010-JAN-18 4:55:12").getTime()));
+		assertThat(time.getTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2010-JAN-18 4:55:12.22").getTime()));
 	}
 
 	@Test
@@ -126,5 +134,30 @@ public class RelativeTimeTest
 		/*assertThat(violationMessages.get(1), equalTo("value must be greater than or equal to 1"));
 		assertThat(violationMessages.get(0), equalTo("unit may not be null"));*/
 	}
+
+	@Test
+	public void test_getFutureTimeRelativeTo_milliseconds() throws ParseException
+	{
+		RelativeTime time = new RelativeTime(5, "MILLISECONDS");
+
+		assertThat(time.getFutureTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2013-Jan-18 4:55:12.27").getTime()));
+	}
+
+	@Test
+	public void test_getFutureTimeRelativeTo_seconds() throws ParseException
+	{
+		RelativeTime time = new RelativeTime(5, "SECONDS");
+
+		assertThat(time.getFutureTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2013-Jan-18 4:55:17.22").getTime()));
+	}
+
+	@Test
+	public void test_getFutureTimeRelativeTo_minutes() throws ParseException
+	{
+		RelativeTime time = new RelativeTime(5, "MINUTES");
+
+		assertThat(time.getFutureTimeRelativeTo(timeRelativeTo), equalTo(dateFormat.parse("2013-Jan-18 5:00:12.22").getTime()));
+	}
+
 
 }

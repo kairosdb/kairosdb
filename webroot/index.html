@@ -150,8 +150,8 @@
 			$("#autocompleteTagName").combobox().combobox({
 				source: function (request, response) {
 					var selectedTabIndex = $("#tabs").tabs("option", "active");
-					var metricName = $('#metricContainer' + tabContainerMap[selectedTabIndex]).find(".metricName").combobox("value");
-					if (metricName) {
+				var metricName = $('#metricContainer' + tabContainerMap[selectedTabIndex]).find(".metricName").combobox("value");
+					if (metricName){
 						var tags = [];
 						$.each(metricToTags[metricName], function (tag) {
 							tags.push(tag);
@@ -191,12 +191,9 @@
 	<table>
 		<tr>
 		<tr>
-			<td colspan="3" align="center" class="ui-widget header">Absolute
-			</td>
-			<td colspan="2" align="center" class="ui-widget header">Relative
-			</td>
-			<td align="center" class="ui-widget header">Time Zone
-			</td>
+			<td colspan="3" align="center" class="ui-widget header">Absolute</td>
+		<td colspan="2" align="center" class="ui-widget header">Relative</td>
+		<td align="center" class="ui-widget header">Time Zone</td>
 		</tr>
 		<tr>
 			<td class="ui-widget">From*</td>

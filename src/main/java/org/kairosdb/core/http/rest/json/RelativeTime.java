@@ -38,13 +38,18 @@ public class RelativeTime extends Duration
 
 	public RelativeTime(int value, String unit)
 	{
-		super(value, TimeUnit.from(unit));
+		this(value, TimeUnit.from(unit));
+	}
+
+	public RelativeTime(int value, TimeUnit unit)
+	{
+		super(value, unit);
 		initialize();
 	}
 
 	public long getTimeRelativeTo(long time)
 	{
-		int valueToUse = -(int)value;
+		int valueToUse = -(int) value;
 		int field = 0;
 		if (getUnit() == TimeUnit.MILLISECONDS)
 		{
@@ -53,7 +58,39 @@ public class RelativeTime extends Duration
 			time -= value;
 			valueToUse = 0;
 		}
-		else if (getUnit() == TimeUnit.SECONDS )
+		else if (getUnit() == TimeUnit.SECONDS)
+			field = Calendar.SECOND;
+		else if (getUnit() == TimeUnit.MINUTES)
+			field = Calendar.MINUTE;
+		else if (getUnit() == TimeUnit.HOURS)
+			field = Calendar.HOUR;
+		else if (getUnit() == TimeUnit.DAYS)
+			field = Calendar.DATE;
+		else if (getUnit() == TimeUnit.WEEKS)
+			field = Calendar.WEEK_OF_MONTH;
+		else if (getUnit() == TimeUnit.MONTHS)
+			field = Calendar.MONTH;
+		else if (getUnit() == TimeUnit.YEARS)
+			field = Calendar.YEAR;
+
+		calendar.setTimeInMillis(time);
+		calendar.add(field, valueToUse);
+
+		return calendar.getTime().getTime();
+	}
+
+	public long getFutureTimeRelativeTo(long time)
+	{
+		int valueToUse = (int) value;
+		int field = 0;
+		if (getUnit() == TimeUnit.MILLISECONDS)
+		{
+			field = Calendar.MILLISECOND;
+			//we do our own adjustment as calendar cannot handle a long.
+			time += value;
+			valueToUse = 0;
+		}
+		else if (getUnit() == TimeUnit.SECONDS)
 			field = Calendar.SECOND;
 		else if (getUnit() == TimeUnit.MINUTES)
 			field = Calendar.MINUTE;

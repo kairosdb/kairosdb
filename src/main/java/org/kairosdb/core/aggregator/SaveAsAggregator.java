@@ -30,7 +30,14 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	public SaveAsAggregator(Datastore datastore)
 	{
 		m_datastore = datastore;
-		m_tags = new HashMap<>();
+		m_tags = new HashMap<String, String>();
+	}
+
+	public SaveAsAggregator(Datastore datastore, String metricName)
+	{
+		this(datastore);
+		m_metricName = metricName;
+		m_tags = new HashMap<String, String>();
 	}
 
 	public void setAddSavedFrom(boolean addSavedFrom)

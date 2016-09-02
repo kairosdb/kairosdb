@@ -1,136 +1,136 @@
 define([
-  'angular',
-  'lodash',
-  'jquery',
-],
-function (angular, _, $) {
-  'use strict';
+		'angular',
+		'lodash',
+		'jquery',
+	],
+	function (angular, _, $) {
+		'use strict';
 
-  angular
-    .module('grafana.directives')
-    .directive('influxdbFuncEditor', function($compile) {
+		angular
+			.module('grafana.directives')
+			.directive('influxdbFuncEditor', function ($compile) {
 
-      var funcSpanTemplate = '<a gf-dropdown="functionMenu" class="dropdown-toggle" ' +
-                             'data-toggle="dropdown">{{target.function}}</a><span>(</span>';
+				var funcSpanTemplate = '<a gf-dropdown="functionMenu" class="dropdown-toggle" ' +
+					'data-toggle="dropdown">{{target.function}}</a><span>(</span>';
 
-      var paramTemplate = '<input type="text" style="display:none"' +
-                          ' class="input-mini grafana-function-param-input"></input>';
+				var paramTemplate = '<input type="text" style="display:none"' +
+					' class="input-mini grafana-function-param-input"></input>';
 
-      return {
-        restrict: 'A',
-        link: function postLink($scope, elem) {
-          var $funcLink = $(funcSpanTemplate);
+				return {
+					restrict: 'A',
+					link: function postLink($scope, elem) {
+						var $funcLink = $(funcSpanTemplate);
 
-          $scope.functionMenu = _.map($scope.functions, function(func) {
-            return {
-              text: func,
-              click: "changeFunction('" + func + "');"
-            };
-          });
+						$scope.functionMenu = _.map($scope.functions, function (func) {
+							return {
+								text: func,
+								click: "changeFunction('" + func + "');"
+							};
+						});
 
-          function clickFuncParam() {
-            /*jshint validthis:true */
+						function clickFuncParam() {
+							/*jshint validthis:true */
 
-            var $link = $(this);
-            var $input = $link.next();
+							var $link = $(this);
+							var $input = $link.next();
 
-            $input.val($scope.target.column);
-            $input.css('width', ($link.width() + 16) + 'px');
+							$input.val($scope.target.column);
+							$input.css('width', ($link.width() + 16) + 'px');
 
-            $link.hide();
-            $input.show();
-            $input.focus();
-            $input.select();
+							$link.hide();
+							$input.show();
+							$input.focus();
+							$input.select();
 
-            var typeahead = $input.data('typeahead');
-            if (typeahead) {
-              $input.val('');
-              typeahead.lookup();
-            }
-          }
+							var typeahead = $input.data('typeahead');
+							if (typeahead) {
+								$input.val('');
+								typeahead.lookup();
+							}
+						}
 
-          function inputBlur() {
-            /*jshint validthis:true */
+						function inputBlur() {
+							/*jshint validthis:true */
 
-            var $input = $(this);
-            var $link = $input.prev();
+							var $input = $(this);
+							var $link = $input.prev();
 
-            if ($input.val() !== '') {
-              $link.text($input.val());
+							if ($input.val() !== '') {
+								$link.text($input.val());
 
-              $scope.target.column = $input.val();
-              $scope.$apply($scope.get_data);
-            }
+								$scope.target.column = $input.val();
+								$scope.$apply($scope.get_data);
+							}
 
-            $input.hide();
-            $link.show();
-          }
+							$input.hide();
+							$link.show();
+						}
 
-          function inputKeyPress(e) {
-            /*jshint validthis:true */
+						function inputKeyPress(e) {
+							/*jshint validthis:true */
 
-            if(e.which === 13) {
-              inputBlur.call(this);
-            }
-          }
+							if (e.which === 13) {
+								inputBlur.call(this);
+							}
+						}
 
-          function inputKeyDown() {
-            /*jshint validthis:true */
-            this.style.width = (3 + this.value.length) * 8 + 'px';
-          }
+						function inputKeyDown() {
+							/*jshint validthis:true */
+							this.style.width = (3 + this.value.length) * 8 + 'px';
+						}
 
-          function addTypeahead($input) {
-            $input.attr('data-provide', 'typeahead');
+						function addTypeahead($input) {
+							$input.attr('data-provide', 'typeahead');
 
-            $input.typeahead({
-              source: function () {
-                return $scope.listColumns.apply(null, arguments);
-              },
-              minLength: 0,
-              items: 20,
-              updater: function (value) {
-                setTimeout(function() {
-                  inputBlur.call($input[0]);
-                }, 0);
-                return value;
-              }
-            });
+							$input.typeahead({
+								source: function () {
+									return $scope.listColumns.apply(null, arguments);
+								},
+								minLength: 0,
+								items: 20,
+								updater: function (value) {
+									setTimeout(function () {
+										inputBlur.call($input[0]);
+									}, 0);
+									return value;
+								}
+							});
 
-            var typeahead = $input.data('typeahead');
-            typeahead.lookup = function () {
-              var items;
-              this.query = this.$element.val() || '';
-              items = this.source(this.query, $.proxy(this.process, this));
-              return items ? this.process(items) : items;
-            };
-          }
+							var typeahead = $input.data('typeahead');
+							typeahead.lookup = function () {
+								var items;
+								this.query = this.$element.val() || '';
+								items = this.source(this.query, $.proxy(this.process, this));
+								return items ? this.process(items) : items;
+							};
+						}
 
-          function addElementsAndCompile() {
-            $funcLink.appendTo(elem);
+						function addElementsAndCompile() {
+							$funcLink.appendTo(elem);
 
-            var $paramLink = $('<a ng-click="" class="graphite-func-param-link">' + $scope.target.column + '</a>');
-            var $input = $(paramTemplate);
+							var $paramLink = $('<a ng-click="" class="graphite-func-param-link">' + $scope.target.column + '</a>');
+							var $input = $(paramTemplate);
 
-            $paramLink.appendTo(elem);
-            $input.appendTo(elem);
+							$paramLink.appendTo(elem);
+							$input.appendTo(elem);
 
-            $input.blur(inputBlur);
-            $input.keyup(inputKeyDown);
-            $input.keypress(inputKeyPress);
-            $paramLink.click(clickFuncParam);
+							$input.blur(inputBlur);
+							$input.keyup(inputKeyDown);
+							$input.keypress(inputKeyPress);
+							$paramLink.click(clickFuncParam);
 
-            addTypeahead($input);
+							addTypeahead($input);
 
-            $('<span>)</span>').appendTo(elem);
+							$('<span>)</span>').appendTo(elem);
 
-            $compile(elem.contents())($scope);
-          }
+							$compile(elem.contents())($scope);
+						}
 
-          addElementsAndCompile();
+						addElementsAndCompile();
 
-        }
-      };
+					}
+				};
 
-    });
+			});
 
-});
+	});

@@ -73,10 +73,10 @@ kairosdb.Metric = function (name) {
 		var rate = {};
 		rate.name = "rate";
 		if (unit) {
-            		rate.sampling = {};
+			rate.sampling = {};
 			rate.sampling.unit = unit;
 			rate.sampling.value = 1;
-            		rate.sampling.time_zone = time_zone;
+			rate.sampling.time_zone = time_zone;
 		}
 
 		this.aggregators.push(rate);
@@ -135,8 +135,7 @@ kairosdb.Metric = function (name) {
 	 * @param name
 	 * @returns {{}}
 	 */
-	this.addAggregator = function (name)
-	{
+	this.addAggregator = function (name) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
@@ -230,9 +229,9 @@ kairosdb.TimeGroupBy = function (groupSizeValue, groupSizeUnit, groupCount) {
  * Bin groupBy
  * @param groupSize
  */
-kairosdb.BinGroupBy = function(groupSize){
-    this.name = "bin";
-    this.bins = groupSize;
+kairosdb.BinGroupBy = function (groupSize) {
+	this.name = "bin";
+	this.bins = groupSize;
 }
 /**
  cacheTime: the amount of time in seconds to cache the query
@@ -282,11 +281,10 @@ kairosdb.MetricQuery = function (cacheTime) {
 			throw new kairosdb.MetricException(
 				'You cannot define both end_absolute and end_relative');
 	};
-	
+
 	/**
-	*/
-	this.setTimeZone = function (timeZone)
-	{
+	 */
+	this.setTimeZone = function (timeZone) {
 		this.time_zone = timeZone;
 	}
 

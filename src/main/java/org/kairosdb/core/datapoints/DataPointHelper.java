@@ -59,6 +59,7 @@ public abstract class DataPointHelper implements DataPoint
 	/**
 	 Returns the data point group for this data point if one is set.
 	 Some aggregators may strip off this information
+
 	 @return The DataPointGroup or null if one is not set.
 	 */
 	@Override

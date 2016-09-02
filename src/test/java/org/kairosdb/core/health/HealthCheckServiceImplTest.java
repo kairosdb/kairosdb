@@ -48,6 +48,7 @@ public class HealthCheckServiceImplTest
 	private static class HealthStatus1 implements HealthStatus
 	{
 		private String name = getClass().getSimpleName();
+
 		@Override
 		public String getName()
 		{

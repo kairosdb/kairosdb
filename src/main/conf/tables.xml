@@ -87,7 +87,9 @@
 		</table_query>
 
 		<table_query name="with_metric_id" result_type="single">
-			<comment>Check for at least a single data point for a given metric id</comment>
+			<comment>Check for at least a single data point for a given metric
+				id
+			</comment>
 			<input>
 				<param name="metric_id" type="string" test="foo"/>
 			</input>

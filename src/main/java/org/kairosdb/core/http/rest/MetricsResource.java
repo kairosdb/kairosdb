@@ -79,7 +79,7 @@ public class MetricsResource implements KairosMetricReporter
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
 	private final QueryParser queryParser;
 
-	//Used for parsing incomming metrices
+	//Used for parsing incoming metrics
 	private final Gson gson;
 
 	//These two are used to track rate of ingestion
@@ -511,7 +511,7 @@ public class MetricsResource implements KairosMetricReporter
 		}
 		catch (IOException e)
 		{
-			logger.error("Failed to open temp folder "+datastore.getCacheDir(), e);
+			logger.error("Failed to open temp folder " + datastore.getCacheDir(), e);
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}
 		catch (Exception e)

@@ -1,34 +1,34 @@
 define([
-  'angular',
-  'app',
-  'lodash'
-],
-function (angular, app, _) {
-  'use strict';
+		'angular',
+		'app',
+		'lodash'
+	],
+	function (angular, app, _) {
+		'use strict';
 
-  angular
-    .module('grafana.directives')
-    .directive('arrayJoin', function() {
-      return {
-        restrict: 'A',
-        require: 'ngModel',
-        link: function(scope, element, attr, ngModel) {
+		angular
+			.module('grafana.directives')
+			.directive('arrayJoin', function () {
+				return {
+					restrict: 'A',
+					require: 'ngModel',
+					link: function (scope, element, attr, ngModel) {
 
-          function split_array(text) {
-            return (text || '').split(',');
-          }
+						function split_array(text) {
+							return (text || '').split(',');
+						}
 
-          function join_array(text) {
-            if(_.isArray(text)) {
-              return (text || '').join(',');
-            } else {
-              return text;
-            }
-          }
+						function join_array(text) {
+							if (_.isArray(text)) {
+								return (text || '').join(',');
+							} else {
+								return text;
+							}
+						}
 
-          ngModel.$parsers.push(split_array);
-          ngModel.$formatters.push(join_array);
-        }
-      };
-    });
-});
+						ngModel.$parsers.push(split_array);
+						ngModel.$formatters.push(join_array);
+					}
+				};
+			});
+	});

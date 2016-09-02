@@ -139,6 +139,11 @@ public class QueryMetric implements DatastoreMetricQuery
 		this.endTimeSet = true;
 	}
 
+	public void setStartTime(long startTime)
+	{
+		this.startTime = startTime;
+	}
+
 	public List<GroupBy> getGroupBys()
 	{
 		return Collections.unmodifiableList(groupBys);

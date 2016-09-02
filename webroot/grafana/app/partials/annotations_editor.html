@@ -7,7 +7,8 @@
 		</div>
 
 		<div ng-model="editor.index" bs-tabs style="text-transform:capitalize;">
-			<div ng-repeat="tab in ['Overview', 'Add', 'Edit']" data-title="{{tab}}">
+			<div ng-repeat="tab in ['Overview', 'Add', 'Edit']"
+				 data-title="{{tab}}">
 			</div>
 		</div>
 
@@ -26,15 +27,23 @@
 							{{annotation.name}}
 						</td>
 						<td style="width: 1%">
-							<a ng-click="edit(annotation)" class="btn btn-success btn-mini">
+							<a ng-click="edit(annotation)"
+							   class="btn btn-success btn-mini">
 								<i class="icon-edit"></i>
 								Edit
 							</a>
 						</td>
-						<td style="width: 1%"><i ng-click="_.move(annotations,$index,$index-1)" ng-hide="$first" class="pointer icon-arrow-up"></i></td>
-						<td style="width: 1%"><i ng-click="_.move(annotations,$index,$index+1)" ng-hide="$last" class="pointer icon-arrow-down"></i></td>
+						<td style="width: 1%"><i
+								ng-click="_.move(annotations,$index,$index-1)"
+								ng-hide="$first"
+								class="pointer icon-arrow-up"></i></td>
+						<td style="width: 1%"><i
+								ng-click="_.move(annotations,$index,$index+1)"
+								ng-hide="$last"
+								class="pointer icon-arrow-down"></i></td>
 						<td style="width: 1%">
-							<a ng-click="removeAnnotation(annotation)" class="btn btn-danger btn-mini">
+							<a ng-click="removeAnnotation(annotation)"
+							   class="btn btn-danger btn-mini">
 								<i class="icon-remove"></i>
 							</a>
 						</td>
@@ -47,24 +56,33 @@
 			<div class="editor-row">
 				<div class="editor-option">
 					<label class="small">Name</label>
-					<input type="text" class="input-medium" ng-model='currentAnnotation.name' placeholder="name"></input>
+					<input type="text" class="input-medium"
+						   ng-model='currentAnnotation.name'
+						   placeholder="name"></input>
 				</div>
 				<div class="editor-option">
 					<label class="small">Datasource</label>
-					<select ng-model="currentAnnotation.datasource" ng-options="f.name as f.name for f in datasources" ng-change="datasourceChanged()"></select>
+					<select ng-model="currentAnnotation.datasource"
+							ng-options="f.name as f.name for f in datasources"
+							ng-change="datasourceChanged()"></select>
 				</div>
 				<div class="editor-option">
 					<label class="small">Icon color</label>
-					<spectrum-picker ng-model="currentAnnotation.iconColor"></spectrum-picker>
+					<spectrum-picker
+							ng-model="currentAnnotation.iconColor"></spectrum-picker>
 				</div>
 				<div class="editor-option">
 					<label class="small">Icon size</label>
-					<select class="input-mini" ng-model="currentAnnotation.iconSize" ng-options="f for f in [7,8,9,10,13,15,17,20,25,30]"></select>
+					<select class="input-mini"
+							ng-model="currentAnnotation.iconSize"
+							ng-options="f for f in [7,8,9,10,13,15,17,20,25,30]"></select>
 				</div>
-				<editor-opt-bool text="Grid line" model="currentAnnotation.showLine"></editor-opt-bool>
+				<editor-opt-bool text="Grid line"
+								 model="currentAnnotation.showLine"></editor-opt-bool>
 				<div class="editor-option">
 					<label class="small">Line color</label>
-					<spectrum-picker ng-model="currentAnnotation.lineColor"></spectrum-picker>
+					<spectrum-picker
+							ng-model="currentAnnotation.lineColor"></spectrum-picker>
 				</div>
 			</div>
 
@@ -75,8 +93,14 @@
 	</div>
 
 	<div class="dashboard-editor-footer">
-		<button ng-show="editor.index === 1" type="button" class="btn btn-success" ng-click="add()">Add</button>
-		<button ng-show="editor.index === 2" type="button" class="btn btn-success pull-left" ng-click="update();">Update</button>
-		<button type="button" class="btn btn-success pull-right" ng-click="close_edit();dismiss();dashboard.refresh();">Close</button>
+		<button ng-show="editor.index === 1" type="button"
+				class="btn btn-success" ng-click="add()">Add
+		</button>
+		<button ng-show="editor.index === 2" type="button"
+				class="btn btn-success pull-left" ng-click="update();">Update
+		</button>
+		<button type="button" class="btn btn-success pull-right"
+				ng-click="close_edit();dismiss();dashboard.refresh();">Close
+		</button>
 	</div>
 </div>

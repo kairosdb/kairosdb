@@ -306,7 +306,7 @@ public class KairosDatastoreTest
 		for (GroupByResult groupByResult : dataPointGroup.getGroupByResult())
 		{
 			if (groupByResult instanceof TagGroupByResult)
-				return ((TagGroupByResult)groupByResult).getTagResults();
+				return ((TagGroupByResult) groupByResult).getTagResults();
 		}
 
 		return null;
@@ -316,8 +316,8 @@ public class KairosDatastoreTest
 	{
 
 		public TestKairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-		                           List<DataPointListener> dataPointListeners,
-		                           KairosDataPointFactory dataPointFactory) throws DatastoreException
+				List<DataPointListener> dataPointListeners,
+				KairosDataPointFactory dataPointFactory) throws DatastoreException
 		{
 			super(datastore, queuingManager, dataPointListeners, dataPointFactory, false);
 		}

@@ -59,4 +59,9 @@ public class CacheFileCleaner implements KairosDBJob
 				.withSchedule(CronScheduleBuilder.cronSchedule(schedule))
 				.build();
 	}
+
+	@Override
+	public void interrupt()
+	{
+	}
 }

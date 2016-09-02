@@ -69,7 +69,9 @@ public class CassandraModule extends AbstractModule
 		bind(HectorConfiguration.class).in(Scopes.SINGLETON);
 		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);
 
-		bind(new TypeLiteral<List<RowKeyListener>>(){}).toProvider(RowKeyListenerProvider.class);
+		bind(new TypeLiteral<List<RowKeyListener>>()
+		{
+		}).toProvider(RowKeyListenerProvider.class);
 
 		bind(new TypeLiteral<Map<String, String>>(){}).annotatedWith(Names.named(CASSANDRA_AUTH_MAP))
 				.toInstance(m_authMap);

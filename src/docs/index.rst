@@ -20,6 +20,7 @@ Contents:
    Statistics
    KairosClient
    CassandraSchema
+   Roll-ups
    kairosdevelopment/index
    restapi/index
    telnetapi/index

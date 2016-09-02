@@ -542,7 +542,7 @@ public class DataPointsParserTest
 		assertThat(dataPointSetList.get(0).getDataPoints().get(3).getTimestamp(), equalTo(1349109378L));
 		DataPoint dataPoint = dataPointSetList.get(0).getDataPoints().get(3);
 		assertThat(dataPoint, instanceOf(StringDataPoint.class));
-		assertThat(((StringDataPoint)dataPoint).getValue(), equalTo("string_data"));
+		assertThat(((StringDataPoint) dataPoint).getValue(), equalTo("string_data"));
 
 		assertThat(dataPointSetList.get(1).getName(), equalTo("archive_file_search"));
 		assertThat(dataPointSetList.get(1).getTags().size(), equalTo(2));
@@ -559,7 +559,7 @@ public class DataPointsParserTest
 		assertThat(dataPointSetList.get(2).getDataPoints().size(), equalTo(1));
 		DataPoint stringData = dataPointSetList.get(2).getDataPoints().get(0);
 		assertThat(stringData.getTimestamp(), equalTo(1349109378L));
-		assertThat(((StringDataPoint)stringData).getValue(), equalTo("sweet"));
+		assertThat(((StringDataPoint) stringData).getValue(), equalTo("sweet"));
 
 		assertThat(parser.getDataPointCount(), equalTo(6));
 	}
@@ -613,7 +613,7 @@ public class DataPointsParserTest
 		assertThat(dataPointSetList.get(0).getTags().get("foo"), equalTo("bar"));
 		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(1));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
-		assertThat(((StringDataPoint)dataPointSetList.get(0).getDataPoints().get(0)).getValue(), equalTo("The Value"));
+		assertThat(((StringDataPoint) dataPointSetList.get(0).getDataPoints().get(0)).getValue(), equalTo("The Value"));
 	}
 
 	@Test
@@ -639,7 +639,7 @@ public class DataPointsParserTest
 		assertThat(dataPointSetList.get(0).getTags().get("foo"), equalTo("bar"));
 		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(1));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
-        assertThat(((StringDataPoint)dataPointSetList.get(0).getDataPoints().get(0)).getValue(), equalTo("The Value"));
+		assertThat(((StringDataPoint) dataPointSetList.get(0).getDataPoints().get(0)).getValue(), equalTo("The Value"));
 	}
 
 	@Test

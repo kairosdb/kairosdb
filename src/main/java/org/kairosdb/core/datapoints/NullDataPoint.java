@@ -15,14 +15,7 @@ package org.kairosdb.core.datapoints;
 
 import org.json.JSONException;
 import org.json.JSONWriter;
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.datapoints.DataPointHelper;
-import org.kairosdb.core.datapoints.LongDataPoint;
-
-import java.nio.ByteBuffer;
-
 import org.kairosdb.core.aggregator.DataGapsMarkingAggregator;
-import org.kairosdb.core.exception.KairosDBException;
 
 import java.io.DataOutput;
 import java.io.IOException;

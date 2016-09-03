@@ -5,6 +5,7 @@ import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.RangeAggregator;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.http.rest.json.RelativeTime;
@@ -32,6 +33,7 @@ public class RollUpJob implements InterruptableJob
 	protected static final int TOO_OLD_MULTIPLIER = 4;
 	private boolean interrupted;
 	private LongDataPointFactory longDataPointFactory = new LongDataPointFactoryImpl();
+	private StringDataPointFactory stringDataPointFactory = new StringDataPointFactory();
 
 	public RollUpJob()
 	{
@@ -102,7 +104,7 @@ public class RollUpJob implements InterruptableJob
 						ThreadReporter.addTag("rollup-task", task.getName());
 						ThreadReporter.addTag("status", success ? "success" : "failure");
 						ThreadReporter.addDataPoint(ROLLUP_TIME, System.currentTimeMillis() - ThreadReporter.getReportTime());
-						ThreadReporter.submitData(longDataPointFactory, datastore);
+						ThreadReporter.submitData(longDataPointFactory, stringDataPointFactory, datastore);
 					}
 				}
 			}

@@ -97,14 +97,21 @@ public class RollUpJob implements InterruptableJob
 					}
 					finally
 					{
-						ThreadReporter.setReportTime(System.currentTimeMillis());
-						ThreadReporter.clearTags();
-						ThreadReporter.addTag("host", hostName);
-						ThreadReporter.addTag("rollup", rollup.getSaveAs());
-						ThreadReporter.addTag("rollup-task", task.getName());
-						ThreadReporter.addTag("status", success ? "success" : "failure");
-						ThreadReporter.addDataPoint(ROLLUP_TIME, System.currentTimeMillis() - ThreadReporter.getReportTime());
-						ThreadReporter.submitData(longDataPointFactory, stringDataPointFactory, datastore);
+						try
+						{
+							ThreadReporter.setReportTime(System.currentTimeMillis());
+							ThreadReporter.clearTags();
+							ThreadReporter.addTag("host", hostName);
+							ThreadReporter.addTag("rollup", rollup.getSaveAs());
+							ThreadReporter.addTag("rollup-task", task.getName());
+							ThreadReporter.addTag("status", success ? "success" : "failure");
+							ThreadReporter.addDataPoint(ROLLUP_TIME, System.currentTimeMillis() - ThreadReporter.getReportTime());
+							ThreadReporter.submitData(longDataPointFactory, stringDataPointFactory, datastore);
+						}
+						catch (DatastoreException e)
+						{
+							log.error("Could not report metrics for rollup job.", e);
+						}
 					}
 				}
 			}

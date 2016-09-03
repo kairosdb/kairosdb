@@ -28,7 +28,6 @@ import me.prettyprint.cassandra.service.ColumnSliceIterator;
 import me.prettyprint.cassandra.service.ThriftKsDef;
 import me.prettyprint.hector.api.Cluster;
 import me.prettyprint.hector.api.Keyspace;
-import me.prettyprint.hector.api.Serializer;
 import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
 import me.prettyprint.hector.api.ddl.ComparatorType;
 import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
@@ -134,7 +133,9 @@ public class CassandraDatastore implements Datastore
 			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
 
 			if (keyspaceDef == null)
+			{
 				createSchema(m_cassandraConfiguration.getReplicationFactor());
+			}
 
 			//set global consistency level
 			ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();

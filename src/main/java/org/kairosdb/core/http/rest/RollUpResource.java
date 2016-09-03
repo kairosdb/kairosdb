@@ -26,7 +26,7 @@ import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 public class RollUpResource
 {
 	private static final Logger logger = LoggerFactory.getLogger(MetricsResource.class);
-	public static final String RESOURCE_URL = "/api/v1/rollups/";
+	static final String RESOURCE_URL = "/api/v1/rollups/";
 
 	private final QueryParser parser;
 	private final RollUpTasksStore store;
@@ -38,40 +38,6 @@ public class RollUpResource
 		this.store = checkNotNull(store);
 	}
 
-	//	@POST
-	//	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	//	@Path("/{id}/queries")
-	//	public Response addQuery(@PathParam("id") String id, String json)
-	//	{
-	//		checkNotNullOrEmpty(id);
-	//		checkNotNullOrEmpty(json);
-	//		try
-	//		{
-	//			ResponseBuilder responseBuilder;
-	//			RollupTask task = findExistingTask(id);
-	//			if (task != null)
-	//			{
-	//				List<QueryMetric> queryMetrics = parser.parseQueryMetric(json);
-	//				Rollup rollup = new Rollup();
-	//				rollup.addQuery(queryMetrics.get(0));
-	//				task.addRollup(rollup);
-	//				store.write(ImmutableList.of(task));
-	//				responseBuilder = Response.status(Status.NO_CONTENT);
-	//			}
-	//			else
-	//			{
-	//				responseBuilder = Response.status(Status.NOT_FOUND).entity(new ErrorResponse("Resource not found for id " + id));
-	//			}
-	//			setHeaders(responseBuilder);
-	//			return responseBuilder.build();
-	//		}
-	//		catch (Exception e)
-	//		{
-	//			logger.error("Failed to create roll-up.", e);
-	//			return setHeaders(Response.status(Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
-	//		}
-	//	}
-	//
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	public Response create(String json)

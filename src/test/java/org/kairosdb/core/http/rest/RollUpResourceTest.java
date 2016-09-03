@@ -1,5 +1,6 @@
 package org.kairosdb.core.http.rest;
 
+import ch.qos.logback.classic.Level;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.gson.GsonBuilder;
@@ -15,6 +16,7 @@ import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
 import org.kairosdb.rollup.RollUpException;
 import org.kairosdb.rollup.RollUpTasksStore;
 import org.kairosdb.rollup.RollupTask;
+import org.kairosdb.util.LoggingUtils;
 import org.mockito.ArgumentCaptor;
 
 import javax.ws.rs.core.Response;
@@ -34,9 +36,9 @@ import static org.mockito.Mockito.*;
 
 public class RollUpResourceTest
 {
-	public static final String BEAN_VALIDATION_ERROR = "bean validation error";
-	public static final String CONTEXT = "context";
-	public static final String INTERNAL_EXCEPTION_MESSAGE = "Internal Exception";
+	private static final String BEAN_VALIDATION_ERROR = "bean validation error";
+	private static final String CONTEXT = "context";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal Exception";
 
 	private RollUpResource resource;
 	private RollUpTasksStore mockStore;
@@ -81,14 +83,22 @@ public class RollUpResourceTest
 	@Test
 	public void testCreate_internalError() throws IOException, QueryException
 	{
-		when(mockQueryParser.parseRollupTask(anyString())).thenThrow(createQueryException());
+		Level previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);
+		try
+		{
+			when(mockQueryParser.parseRollupTask(anyString())).thenThrow(createQueryException());
 
-		Response response = resource.create("thejson");
+			Response response = resource.create("thejson");
 
-		ErrorResponse errorResponse = (ErrorResponse) response.getEntity();
-		assertThat(response.getStatus(), equalTo(INTERNAL_SERVER_ERROR.getStatusCode()));
-		assertThat(errorResponse.getErrors().size(), equalTo(1));
-		assertThat(errorResponse.getErrors().get(0), equalTo(INTERNAL_EXCEPTION_MESSAGE));
+			ErrorResponse errorResponse = (ErrorResponse) response.getEntity();
+			assertThat(response.getStatus(), equalTo(INTERNAL_SERVER_ERROR.getStatusCode()));
+			assertThat(errorResponse.getErrors().size(), equalTo(1));
+			assertThat(errorResponse.getErrors().get(0), equalTo(INTERNAL_EXCEPTION_MESSAGE));
+		}
+		finally
+		{
+			LoggingUtils.setLogLevel(previousLogLevel);
+		}
 	}
 
 	@Test
@@ -122,14 +132,22 @@ public class RollUpResourceTest
 	@Test
 	public void testList_internalError() throws IOException, QueryException, RollUpException
 	{
-		when(mockStore.read()).thenThrow(createRollupException());
+		Level previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);
+		try
+		{
+			when(mockStore.read()).thenThrow(createRollupException());
 
-		Response response = resource.list();
+			Response response = resource.list();
 
-		ErrorResponse errorResponse = (ErrorResponse) response.getEntity();
-		assertThat(response.getStatus(), equalTo(INTERNAL_SERVER_ERROR.getStatusCode()));
-		assertThat(errorResponse.getErrors().size(), equalTo(1));
-		assertThat(errorResponse.getErrors().get(0), equalTo(INTERNAL_EXCEPTION_MESSAGE));
+			ErrorResponse errorResponse = (ErrorResponse) response.getEntity();
+			assertThat(response.getStatus(), equalTo(INTERNAL_SERVER_ERROR.getStatusCode()));
+			assertThat(errorResponse.getErrors().size(), equalTo(1));
+			assertThat(errorResponse.getErrors().get(0), equalTo(INTERNAL_EXCEPTION_MESSAGE));
+		}
+		finally
+		{
+			LoggingUtils.setLogLevel(previousLogLevel);
+		}
 	}
 
 	@Test(expected = NullPointerException.class)
@@ -177,14 +195,22 @@ public class RollUpResourceTest
 	@Test
 	public void testGet_internalError() throws IOException, QueryException, RollUpException
 	{
-		when(mockStore.read()).thenThrow(createRollupException());
+		Level previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);
+		try
+		{
+			when(mockStore.read()).thenThrow(createRollupException());
 
-		Response response = resource.get("1");
+			Response response = resource.get("1");
 
-		ErrorResponse errorResponse = (ErrorResponse) response.getEntity();
-		assertThat(response.getStatus(), equalTo(INTERNAL_SERVER_ERROR.getStatusCode()));
-		assertThat(errorResponse.getErrors().size(), equalTo(1));
-		assertThat(errorResponse.getErrors().get(0), equalTo(INTERNAL_EXCEPTION_MESSAGE));
+			ErrorResponse errorResponse = (ErrorResponse) response.getEntity();
+			assertThat(response.getStatus(), equalTo(INTERNAL_SERVER_ERROR.getStatusCode()));
+			assertThat(errorResponse.getErrors().size(), equalTo(1));
+			assertThat(errorResponse.getErrors().get(0), equalTo(INTERNAL_EXCEPTION_MESSAGE));
+		}
+		finally
+		{
+			LoggingUtils.setLogLevel(previousLogLevel);
+		}
 	}
 
 	@Test(expected = NullPointerException.class)
@@ -216,17 +242,25 @@ public class RollUpResourceTest
 	@Test
 	public void testDelete_internalError() throws IOException, QueryException, RollUpException
 	{
-		String json = Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8);
-		List<RollupTask> tasks = queryParser.parseRollupTasks(json);
-		when(mockStore.read()).thenReturn(tasks);
-		doThrow(createRollupException()).when(mockStore).remove(anyString());
+		Level previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);
+		try
+		{
+			String json = Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8);
+			List<RollupTask> tasks = queryParser.parseRollupTasks(json);
+			when(mockStore.read()).thenReturn(tasks);
+			doThrow(createRollupException()).when(mockStore).remove(anyString());
 
-		Response response = resource.delete(tasks.get(0).getId());
+			Response response = resource.delete(tasks.get(0).getId());
 
-		ErrorResponse errorResponse = (ErrorResponse) response.getEntity();
-		assertThat(response.getStatus(), equalTo(INTERNAL_SERVER_ERROR.getStatusCode()));
-		assertThat(errorResponse.getErrors().size(), equalTo(1));
-		assertThat(errorResponse.getErrors().get(0), equalTo(INTERNAL_EXCEPTION_MESSAGE));
+			ErrorResponse errorResponse = (ErrorResponse) response.getEntity();
+			assertThat(response.getStatus(), equalTo(INTERNAL_SERVER_ERROR.getStatusCode()));
+			assertThat(errorResponse.getErrors().size(), equalTo(1));
+			assertThat(errorResponse.getErrors().get(0), equalTo(INTERNAL_EXCEPTION_MESSAGE));
+		}
+		finally
+		{
+			LoggingUtils.setLogLevel(previousLogLevel);
+		}
 	}
 
 	@Test
@@ -241,84 +275,6 @@ public class RollUpResourceTest
 		assertThat(errorResponse.getErrors().size(), equalTo(1));
 		assertThat(errorResponse.getErrors().get(0), equalTo("Resource not found for id 1"));
 	}
-
-	//	@Test(expected = NullPointerException.class)
-	//	public void testAddQuery_nullIdInvalid()
-	//	{
-	//		resource.addQuery(null, "json");
-	//	}
-	//
-	//	@Test(expected = IllegalArgumentException.class)
-	//	public void testAddQuery_emptyIdInvalid()
-	//	{
-	//		resource.addQuery("", "json");
-	//	}
-	//
-	//	@Test(expected = NullPointerException.class)
-	//	public void testAddQuery_nullJsonInvalid()
-	//	{
-	//		resource.addQuery("1", null);
-	//	}
-	//
-	//	@Test(expected = IllegalArgumentException.class)
-	//	public void testAddQuery_emptyJsonInvalid()
-	//	{
-	//		resource.addQuery("1", "");
-	//	}
-	//
-	//	@Test
-	//	public void testAddQuery() throws IOException, QueryException, RollUpException
-	//	{
-	//		resource = new RollUpResource(queryParser, mockStore);
-	//		String json = Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8);
-	//		List<RollupTask> tasks = queryParser.parseRollupTasks(json);
-	//		when(mockStore.read()).thenReturn(tasks);
-	//		String queryJson = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
-	//		List<QueryMetric> queryMetrics = queryParser.parseQueryMetric(queryJson);
-	//
-	//		Response response = resource.addQuery(tasks.get(1).getId(), queryJson);
-	//
-	//		@SuppressWarnings("unchecked")
-	//		Class<ArrayList<RollupTask>> listClass = (Class<ArrayList<RollupTask>>)(Class)ArrayList.class;
-	//		ArgumentCaptor<ArrayList<RollupTask>> captor = ArgumentCaptor.forClass(listClass);
-	//
-	//		verify(mockStore, times(1)).write(captor.capture());
-	//		List<RollupTask> modifiedTasks = captor.getValue();
-	//		assertThat(response.getStatus(), equalTo(NO_CONTENT.getStatusCode()));
-	//		assertThat(modifiedTasks.size(), equalTo(1));
-	//		assertThat(modifiedTasks.get(0).getRollups().size(), equalTo(2));
-	//
-	//		QueryMetric queryMetric = modifiedTasks.get(0).getRollups().get(1).getQueryMetrics().get(0);
-	//		assertThat(queryMetric.getName(), equalTo(queryMetrics.get(0).getName()));
-	//		assertThat(queryMetric.getStartTime(), equalTo(queryMetrics.get(0).getStartTime()));
-	//		assertThat(queryMetric.getEndTime(), equalTo(queryMetrics.get(0).getEndTime()));
-	//	}
-	//
-	//	@Test
-	//	public void testAddQuery_internalError() throws IOException, QueryException, RollUpException
-	//	{
-	//		when(mockStore.read()).thenThrow(createRollupException());
-	//
-	//		Response response = resource.addQuery("1", "json");
-	//
-	//		ErrorResponse errorResponse = (ErrorResponse) response.getEntity();
-	//		assertThat(response.getStatus(), equalTo(INTERNAL_SERVER_ERROR.getStatusCode()));
-	//		assertThat(errorResponse.getErrors().size(), equalTo(1));
-	//		assertThat(errorResponse.getErrors().get(0), equalTo(INTERNAL_EXCEPTION_MESSAGE));
-	//	}
-	//
-	//	@Test
-	//	public void testAddQuery_resourceNotFoundError() throws IOException, QueryException, RollUpException
-	//	{
-	//		when(mockStore.read()).thenReturn(Collections.<RollupTask>emptyList());
-	//
-	//		Response response = resource.addQuery("1", "json");
-	//
-	//		ErrorResponse errorResponse = (ErrorResponse) response.getEntity();
-	//		assertThat(response.getStatus(), equalTo(NOT_FOUND.getStatusCode()));
-	//		assertThat(errorResponse.getErrors().size(), equalTo(1));
-	//		assertThat(errorResponse.getErrors().get(0), equalTo("Resource not found for id 1"));
-	//	}
 
 	@Test(expected = NullPointerException.class)
 	public void testUpdate_nullIdInvalid()
@@ -373,19 +329,26 @@ public class RollUpResourceTest
 	@Test
 	public void testUpdate_internalError() throws IOException, QueryException, RollUpException
 	{
-		resource = new RollUpResource(queryParser, mockStore);
-		String json = Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8);
-		List<RollupTask> tasks = queryParser.parseRollupTasks(json);
-		when(mockStore.read()).thenReturn(tasks);
-		//noinspection unchecked
-		doThrow(createRollupException()).when(mockStore).write((List<RollupTask>) anyCollection());
+		Level previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);
+		try
+		{
+			resource = new RollUpResource(queryParser, mockStore);
+			String json = Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8);
+			List<RollupTask> tasks = queryParser.parseRollupTasks(json);
+			when(mockStore.read()).thenReturn(tasks);
+			//noinspection unchecked
+			doThrow(createRollupException()).when(mockStore).write((List<RollupTask>) anyCollection());
 
-		Response response = resource.update(tasks.get(0).getId(), tasks.get(0).getJson());
+			Response response = resource.update(tasks.get(0).getId(), tasks.get(0).getJson());
 
-		ErrorResponse errorResponse = (ErrorResponse) response.getEntity();
-		assertThat(response.getStatus(), equalTo(INTERNAL_SERVER_ERROR.getStatusCode()));
-		assertThat(errorResponse.getErrors().size(), equalTo(1));
-		assertThat(errorResponse.getErrors().get(0), equalTo(INTERNAL_EXCEPTION_MESSAGE));
+			ErrorResponse errorResponse = (ErrorResponse) response.getEntity();
+			assertThat(response.getStatus(), equalTo(INTERNAL_SERVER_ERROR.getStatusCode()));
+			assertThat(errorResponse.getErrors().size(), equalTo(1));
+			assertThat(errorResponse.getErrors().get(0), equalTo(INTERNAL_EXCEPTION_MESSAGE));
+		}
+			finally{
+				LoggingUtils.setLogLevel(previousLogLevel);
+		}
 	}
 
 	@Test

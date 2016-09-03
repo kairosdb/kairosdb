@@ -133,10 +133,11 @@ public class CassandraDatastore implements Datastore
 
 			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
 
-			if (keyspaceDef == null) {
+			if (keyspaceDef == null)
 				createSchema(m_cassandraConfiguration.getReplicationFactor());
-				//set global consistency level
-				ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
+
+			//set global consistency level
+			ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
 			confConsLevel.setDefaultReadConsistencyLevel(m_cassandraConfiguration.getDataReadLevel().getHectorLevel());
 			confConsLevel.setDefaultWriteConsistencyLevel(m_cassandraConfiguration.getDataWriteLevel().getHectorLevel());
 

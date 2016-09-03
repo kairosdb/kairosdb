@@ -42,7 +42,7 @@ public class RollUpJobTest
 
 		testDataStore = new TestDatastore();
 		datastore = new KairosDatastore(testDataStore, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
 	}
 
 	@Test

@@ -1,11 +1,9 @@
 package org.kairosdb.congestion;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  Created by bhawkins on 3/19/16.
  */
-public class AdaptiveCongestionController implements CongestionControler
+public class AdaptiveCongestionController implements CongestionController
 {
 	private int m_processCounter;
 	private int m_maxProcesses;

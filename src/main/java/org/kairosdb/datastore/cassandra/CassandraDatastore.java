@@ -15,12 +15,7 @@
  */
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.BatchStatement;
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
+import com.datastax.driver.core.*;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
@@ -39,10 +34,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
-import java.io.UnsupportedEncodingException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -580,6 +577,54 @@ public class CassandraDatastore implements Datastore {
         return ((columnName & 0x1) == LONG_FLAG);
     }
 
+    private static final Pattern GLOB_PATTERN = Pattern.compile("\\?|\\*");
+
+    /**
+     * Convert a GLOB style pattern ("*" for any number of any char, "?" for exactly one char) to a regex pattern.
+     *
+     * Code borrowed from Spring's AntPathMatcher.java (Apache 2 license)
+     */
+    public static Pattern convertGlobToPattern(String pattern) {
+        StringBuilder patternBuilder = new StringBuilder();
+        Matcher matcher = GLOB_PATTERN.matcher(pattern);
+        int end = 0;
+        while (matcher.find()) {
+            patternBuilder.append(quote(pattern, end, matcher.start()));
+            String match = matcher.group();
+            if ("?".equals(match)) {
+                patternBuilder.append('.');
+            } else if ("*".equals(match)) {
+                patternBuilder.append(".*");
+            }
+            end = matcher.end();
+        }
+        patternBuilder.append(quote(pattern, end, pattern.length()));
+        return Pattern.compile(patternBuilder.toString());
+    }
+
+    private static String quote(String s, int start, int end) {
+        if (start == end) {
+            return "";
+        }
+        return Pattern.quote(s.substring(start, end));
+    }
+
+    /**
+     * Return whether the given input value matches any of the given GLOB-style patterns.
+     */
+    public static boolean matchesAny(String value, Collection<String> patterns) {
+        for (String pattern : patterns) {
+            if (value.equals(pattern)) {
+                return true;
+            } else if (pattern.contains("*") || pattern.contains("?")) {
+                if (convertGlobToPattern(pattern).matcher(value).matches()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private static void filterAndAddKeys(String metricName, SetMultimap<String, String> filterTags, ResultSet rs, List<DataPointsRowKey> targetList) {
         long startTime = System.currentTimeMillis();
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
@@ -592,7 +637,7 @@ public class CassandraDatastore implements Datastore {
             boolean skipKey = false;
             for (String tag : filterTags.keySet()) {
                 String value = tags.get(tag);
-                if (value == null || !filterTags.get(tag).contains(value)) {
+                if (value == null || !matchesAny(value, filterTags.get(tag))) {
                     skipKey = true;
                     break;
                 }

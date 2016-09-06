@@ -17,6 +17,8 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.*;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -612,14 +614,10 @@ public class CassandraDatastore implements Datastore {
     /**
      * Return whether the given input value matches any of the given GLOB-style patterns.
      */
-    public static boolean matchesAny(String value, Collection<String> patterns) {
-        for (String pattern : patterns) {
-            if (value.equals(pattern)) {
+    public static boolean matchesAny(final String value, final Collection<Pattern> patterns) {
+        for (Pattern pattern : patterns) {
+            if (pattern.matcher(value).matches()) {
                 return true;
-            } else if (pattern.contains("*") || pattern.contains("?")) {
-                if (convertGlobToPattern(pattern).matcher(value).matches()) {
-                    return true;
-                }
             }
         }
         return false;
@@ -628,6 +626,10 @@ public class CassandraDatastore implements Datastore {
     private static void filterAndAddKeys(String metricName, SetMultimap<String, String> filterTags, ResultSet rs, List<DataPointsRowKey> targetList) {
         long startTime = System.currentTimeMillis();
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
+        final SetMultimap<String, Pattern> tagPatterns = MultimapBuilder.hashKeys(filterTags.size()).hashSetValues().build();
+        for (Map.Entry<String, String> entry : filterTags.entries()) {
+            tagPatterns.put(entry.getKey(), convertGlobToPattern(entry.getValue()));
+        }
         int i = 0;
         for (Row r : rs) {
             i++;
@@ -637,7 +639,7 @@ public class CassandraDatastore implements Datastore {
             boolean skipKey = false;
             for (String tag : filterTags.keySet()) {
                 String value = tags.get(tag);
-                if (value == null || !matchesAny(value, filterTags.get(tag))) {
+                if (value == null || !matchesAny(value, tagPatterns.get(tag))) {
                     skipKey = true;
                     break;
                 }

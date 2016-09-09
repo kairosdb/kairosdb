@@ -121,7 +121,7 @@ public class ExportTest
 
 		//Assert data is not there.
 		QueryMetric queryMetric = new QueryMetric(0, 0, METRIC_NAME);
-		DatastoreQuery query = ds.createQuery(queryMetric);
+		DatastoreQuery query = ds.createQuery(queryMetric, null);
 		List<DataPointGroup> results = query.execute();
 		assertThat(results.size(), equalTo(1));
 		assertThat(results.get(0).hasNext(), equalTo(false));
@@ -146,7 +146,7 @@ public class ExportTest
 		SumAggregator sum = new SumAggregator(new DoubleDataPointFactoryImpl());
 		sum.setSampling(new Sampling(100, TimeUnit.YEARS));
 		queryMetric.addAggregator(sum);
-		DatastoreQuery query = ds.createQuery(queryMetric);
+		DatastoreQuery query = ds.createQuery(queryMetric, null);
 		List<DataPointGroup> results = query.execute();
 
 		assertThat(results.size(), equalTo(1));

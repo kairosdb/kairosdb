@@ -1,5 +1,6 @@
 package org.kairosdb.datastore.cassandra;
 
+import org.kairosdb.core.datastore.DataStoreCrossQueryContext;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.datastore.QueryPlugin;
 
@@ -15,5 +16,5 @@ public interface CassandraRowKeyPlugin extends QueryPlugin
 	 @param query
 	 @return
 	 */
-	Collection<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query);
+	Collection<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query, DataStoreCrossQueryContext context);
 }

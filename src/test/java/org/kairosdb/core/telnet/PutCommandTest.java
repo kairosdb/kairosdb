@@ -35,12 +35,7 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.QueryCallback;
-import org.kairosdb.core.datastore.QueryQueuingManager;
-import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.util.ValidationException;
 
@@ -396,7 +391,7 @@ public class PutCommandTest
 		}
 
 		@Override
-		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
+		public void queryDatabase(DatastoreMetricQuery query, DataStoreCrossQueryContext context, QueryCallback queryCallback) throws DatastoreException
 		{
 		}
 

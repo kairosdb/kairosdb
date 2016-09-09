@@ -362,7 +362,7 @@ public class Main
 			for (I = 0; I < 100000; I++)
 			{
 				String metricName = UUID.randomUUID().toString();
-				DatastoreQuery query = ds.createQuery(new QueryMetric(0, 0, "abc123" + metricName));
+				DatastoreQuery query = ds.createQuery(new QueryMetric(0, 0, "abc123" + metricName), null);
 				query.execute();
 				query.close();
 			}
@@ -399,7 +399,7 @@ public class Main
 					logger.info("Exporting: " + metric);
 					QueryMetric qm = new QueryMetric(1L, 0, metric);
 					ExportQueryCallback callback = new ExportQueryCallback(metric, out);
-					ds.export(qm, callback);
+					ds.export(qm, null, callback);
 
 					recoveryFile.writeMetric(metric);
 				}

@@ -33,10 +33,7 @@ import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
-import org.kairosdb.core.datastore.QueryCallback;
-import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -430,7 +427,7 @@ public class RemoteDatastore implements Datastore
 	}
 
 	@Override
-	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
+	public void queryDatabase(DatastoreMetricQuery query, DataStoreCrossQueryContext context, QueryCallback queryCallback) throws DatastoreException
 	{
 		throw new DatastoreException("Method not implemented.");
 	}

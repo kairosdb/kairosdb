@@ -272,7 +272,7 @@ public class H2Datastore implements Datastore
 	}
 
 	@Override
-	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
+	public void queryDatabase(DatastoreMetricQuery query, DataStoreCrossQueryContext context, QueryCallback queryCallback) throws DatastoreException
 	{
 		GenOrmQueryResultSet<? extends MetricIdResults> idQuery = getMetricIdsForQuery(query);
 

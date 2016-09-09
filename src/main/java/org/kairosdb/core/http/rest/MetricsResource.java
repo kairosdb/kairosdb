@@ -26,10 +26,7 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.DatastoreQuery;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
@@ -408,6 +405,8 @@ public class MetricsResource implements KairosMetricReporter
 
 			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
+			DataStoreCrossQueryContext queryContext = new DataStoreCrossQueryContext();
+
 			int queryCount = 0;
 			for (QueryMetric query : queries)
 			{
@@ -415,7 +414,7 @@ public class MetricsResource implements KairosMetricReporter
 				ThreadReporter.addTag("metric_name", query.getName());
 				ThreadReporter.addTag("query_index", String.valueOf(queryCount));
 
-				DatastoreQuery dq = datastore.createQuery(query);
+				DatastoreQuery dq = datastore.createQuery(query, queryContext);
 				long startQuery = System.currentTimeMillis();
 
 				try

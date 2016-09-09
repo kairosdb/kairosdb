@@ -672,6 +672,7 @@ public class CassandraDatastore implements Datastore {
             if (o instanceof HashMap) {
                 Map<String, ResultSet> contextCache = (Map<String, ResultSet>) o;
                 if (contextCache.containsKey(metricName)) {
+                    logger.info("Hitting RowKey ResultSet cache... {}", metricName);
                     filterAndAddKeys(metricName, filterTags, contextCache.get(metricName), rowKeys);
                     return rowKeys;
                 }

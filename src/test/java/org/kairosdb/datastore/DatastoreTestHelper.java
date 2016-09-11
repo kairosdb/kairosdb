@@ -222,7 +222,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 
 		try
 		{
@@ -264,7 +264,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
 			List<DataPointGroup> results = dq.execute();
@@ -303,7 +303,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
 			List<DataPointGroup> results = dq.execute();
@@ -352,7 +352,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
 			List<DataPointGroup> results = dq.execute();
@@ -420,7 +420,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
 			List<DataPointGroup> results = dq.execute();
@@ -459,7 +459,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
 			List<DataPointGroup> results = dq.execute();
@@ -485,7 +485,7 @@ public abstract class DatastoreTestHelper
 		tags.put("host", "B");
 		query.setTags(tags);
 
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
 			List<DataPointGroup> results = dq.execute();
@@ -524,7 +524,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
 			List<DataPointGroup> results = dq.execute();
@@ -560,7 +560,7 @@ public abstract class DatastoreTestHelper
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
 			List<DataPointGroup> results = dq.execute();
@@ -583,7 +583,7 @@ public abstract class DatastoreTestHelper
 		QueryMetric query = new QueryMetric(-2000000000L, 0, "old_data");
 		query.setEndTime(2000000000L);
 
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
 			List<DataPointGroup> results = dq.execute();
@@ -619,7 +619,7 @@ public abstract class DatastoreTestHelper
 		QueryMetric query = new QueryMetric(-2000000000L, 0, "old_data");
 		query.setEndTime(-1L);
 
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
 			List<DataPointGroup> results = dq.execute();
@@ -655,7 +655,7 @@ public abstract class DatastoreTestHelper
 		tags.put("host", s_unicodeName);
 		query.setTags(tags);
 
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
 			List<DataPointGroup> results = dq.execute();
@@ -692,7 +692,7 @@ public abstract class DatastoreTestHelper
 
 		Thread.sleep(1500);
 		//Now query for the data
-		DatastoreQuery dq = s_datastore.createQuery(query, null);
+		DatastoreQuery dq = s_datastore.createQuery(query);
 		try
 		{
 			List<DataPointGroup> results = dq.execute();

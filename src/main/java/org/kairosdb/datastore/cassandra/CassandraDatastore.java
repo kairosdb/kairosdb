@@ -368,7 +368,7 @@ public class CassandraDatastore implements Datastore {
     @Override
     public TagSet queryMetricTags(DatastoreMetricQuery query) {
         TagSetImpl tagSet = new TagSetImpl();
-        Collection<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query, null);
+        Collection<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query);
 
         MemoryMonitor mm = new MemoryMonitor(20);
         for (DataPointsRowKey key : rowKeys) {
@@ -382,8 +382,8 @@ public class CassandraDatastore implements Datastore {
     }
 
     @Override
-    public void queryDatabase(DatastoreMetricQuery query, DataStoreCrossQueryContext context, QueryCallback queryCallback) {
-        queryWithRowKeys(query, queryCallback, getKeysForQueryIterator(query, context));
+    public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) {
+        queryWithRowKeys(query, queryCallback, getKeysForQueryIterator(query));
     }
 
     private void queryWithRowKeys(DatastoreMetricQuery query,
@@ -461,7 +461,7 @@ public class CassandraDatastore implements Datastore {
         if (deleteQuery.getStartTime() == Long.MIN_VALUE && deleteQuery.getEndTime() == Long.MAX_VALUE)
             deleteAll = true;
 
-        Iterator<DataPointsRowKey> rowKeyIterator = getKeysForQueryIterator(deleteQuery, null).iterator();
+        Iterator<DataPointsRowKey> rowKeyIterator = getKeysForQueryIterator(deleteQuery).iterator();
         List<DataPointsRowKey> partialRows = new ArrayList<>();
 
         while (rowKeyIterator.hasNext()) {
@@ -505,7 +505,7 @@ public class CassandraDatastore implements Datastore {
      * @param query query
      * @return row keys for the query
      */
-    public Collection<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query, DataStoreCrossQueryContext context) {
+    public Collection<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query) {
         Collection<DataPointsRowKey> ret = null;
 
         List<QueryPlugin> plugins = query.getPlugins();
@@ -513,7 +513,7 @@ public class CassandraDatastore implements Datastore {
         //First plugin that works gets it.
         for (QueryPlugin plugin : plugins) {
             if (plugin instanceof CassandraRowKeyPlugin) {
-                ret = ((CassandraRowKeyPlugin) plugin).getKeysForQueryIterator(query, context);
+                ret = ((CassandraRowKeyPlugin) plugin).getKeysForQueryIterator(query);
                 break;
             }
         }
@@ -521,7 +521,7 @@ public class CassandraDatastore implements Datastore {
         //Default to old behavior if no plugin was provided
         if (ret == null) {
             ret = getMatchingRowKeys(query.getName(), query.getStartTime(),
-                    query.getEndTime(), query.getTags(), context);
+                    query.getEndTime(), query.getTags());
         }
 
         if (ret.size() > m_cassandraConfiguration.getMaxRowKeysForQuery()) {
@@ -654,7 +654,7 @@ public class CassandraDatastore implements Datastore {
         }
     }
 
-    private List<DataPointsRowKey> getMatchingRowKeys(String metricName, long startTime, long endTime, SetMultimap<String, String> filterTags, DataStoreCrossQueryContext context) {
+    private List<DataPointsRowKey> getMatchingRowKeys(String metricName, long startTime, long endTime, SetMultimap<String, String> filterTags) {
         final List<DataPointsRowKey> rowKeys = new ArrayList<>();
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 
@@ -666,17 +666,6 @@ public class CassandraDatastore implements Datastore {
         }
 
         // logger.info("querying from={} to={}", startTime, endTime);
-
-        if (null != context) {
-            Object o = context.get(CrossQueryContextFields.CASSANDRA_ROW_KEYS);
-            if (o instanceof HashMap) {
-                Map<String, ResultSet> contextCache = (Map<String, ResultSet>) o;
-                if (contextCache.containsKey(metricName)) {
-                    filterAndAddKeys(metricName, filterTags, contextCache.get(metricName), rowKeys);
-                    return rowKeys;
-                }
-            }
-        }
 
         BoundStatement bs = m_psQueryRowKeyIndex.bind();
         if ((startTime < 0) && (endTime >= 0)) {
@@ -699,13 +688,6 @@ public class CassandraDatastore implements Datastore {
             bs.setBytes(2, keySerializer.toByteBuffer(endKey));
 
             rs = m_session.execute(bs);
-
-            if (null != context) {
-                Object o = context.get(CrossQueryContextFields.CASSANDRA_ROW_KEYS);
-                Map<String, ResultSet> contextCache = (Map<String, ResultSet>) o;
-                contextCache.put(metricName, rs);
-            }
-
             filterAndAddKeys(metricName, filterTags, rs, rowKeys);
         } else {
             long calculatedStarTime = calculateRowTimeRead(startTime);
@@ -722,15 +704,9 @@ public class CassandraDatastore implements Datastore {
             bs.setBytes(2, keySerializer.toByteBuffer(endKey));
 
             ResultSet rs = m_session.execute(bs);
-
-            if (null != context) {
-                Object o = context.get(CrossQueryContextFields.CASSANDRA_ROW_KEYS);
-                Map<String, ResultSet> contextCache = (Map<String, ResultSet>) o;
-                contextCache.put(metricName, rs);
-            }
-
             filterAndAddKeys(metricName, filterTags, rs, rowKeys);
         }
+
 
         return rowKeys;
     }

@@ -780,7 +780,7 @@ public class DataPointsParserTest
 		}
 
 		@Override
-		public void queryDatabase(DatastoreMetricQuery query, DataStoreCrossQueryContext context, QueryCallback queryCallback) throws DatastoreException
+		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 		{
 
 		}

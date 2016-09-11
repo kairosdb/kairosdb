@@ -63,7 +63,7 @@ public class KairosDatastoreTest
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
 				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
 
-		datastore.createQuery(null, null);
+		datastore.createQuery(null);
 	}
 
 	@Test
@@ -75,7 +75,7 @@ public class KairosDatastoreTest
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 		metric.addAggregator(aggFactory.createAggregator("sum"));
 
-		DatastoreQuery dq = datastore.createQuery(metric, null);
+		DatastoreQuery dq = datastore.createQuery(metric);
 		List<DataPointGroup> results = dq.execute();
 
 		DataPointGroup group = results.get(0);
@@ -103,7 +103,7 @@ public class KairosDatastoreTest
 				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 
-		DatastoreQuery dq = datastore.createQuery(metric, null);
+		DatastoreQuery dq = datastore.createQuery(metric);
 		List<DataPointGroup> results = dq.execute();
 
 		assertThat(results.size(), is(1));
@@ -367,7 +367,7 @@ public class KairosDatastoreTest
 		}
 
 		@Override
-		public void queryDatabase(DatastoreMetricQuery query, DataStoreCrossQueryContext context, QueryCallback queryCallback)
+		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback)
 				throws DatastoreException
 		{
 			if (m_toThrow != null)

@@ -219,11 +219,11 @@ public class KairosDatastore
 	 * @param metric metric
 	 * @throws DatastoreException
 	 */
-	public void export(QueryMetric metric, DataStoreCrossQueryContext context, QueryCallback callback) throws DatastoreException
+	public void export(QueryMetric metric, QueryCallback callback) throws DatastoreException
 	{
 		checkNotNull(metric);
 
-		m_datastore.queryDatabase(metric, context, callback);
+		m_datastore.queryDatabase(metric, callback);
 	}
 
 
@@ -235,7 +235,7 @@ public class KairosDatastore
 
 	}
 
-	public DatastoreQuery createQuery(QueryMetric metric, DataStoreCrossQueryContext context) throws DatastoreException
+	public DatastoreQuery createQuery(QueryMetric metric) throws DatastoreException
 	{
 		checkNotNull(metric);
 
@@ -243,7 +243,7 @@ public class KairosDatastore
 
 		try
 		{
-			dq = new DatastoreQueryImpl(metric, context);
+			dq = new DatastoreQueryImpl(metric);
 		}
 		catch (UnsupportedEncodingException e)
 		{
@@ -422,14 +422,11 @@ public class KairosDatastore
 		private List<DataPointGroup> m_results;
 		private int m_dataPointCount;
         private int m_rowCount;
-		private DataStoreCrossQueryContext m_queryContext;
 		
-		public DatastoreQueryImpl(QueryMetric metric, DataStoreCrossQueryContext context)
+		public DatastoreQueryImpl(QueryMetric metric)
 				throws UnsupportedEncodingException, NoSuchAlgorithmException,
 				InterruptedException, DatastoreException
 		{
-			m_queryContext = context;
-
 			//Report number of queries waiting
 			int waitingCount = m_queuingManager.getQueryWaitingCount();
 			if (waitingCount != 0)
@@ -476,7 +473,7 @@ public class KairosDatastore
 				{
 					cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
 							tempFile, m_dataPointFactory);
-					m_datastore.queryDatabase(m_metric, m_queryContext, cachedResults);
+					m_datastore.queryDatabase(m_metric, cachedResults);
 					returnedRows = cachedResults.getRows();
 				}
 			}
@@ -511,7 +508,7 @@ public class KairosDatastore
 				throw new DatastoreException(e);
 			}
 
-			m_results = new ArrayList<>();
+			m_results = new ArrayList<DataPointGroup>();
 			for (DataPointGroup queryResult : queryResults)
 			{
 				String groupType = DataPoint.GROUP_NUMBER;

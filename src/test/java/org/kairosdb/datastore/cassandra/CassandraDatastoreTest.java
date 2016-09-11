@@ -229,7 +229,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
 				HashMultimap.<String, String>create(), s_dataPointTime, s_dataPointTime);
 
-		Collection<DataPointsRowKey> keys = s_datastore.getKeysForQueryIterator(query, null);
+		Collection<DataPointsRowKey> keys = s_datastore.getKeysForQueryIterator(query);
 
 		assertEquals(4, keys.size());
 	}
@@ -243,7 +243,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
 				tagFilter, s_dataPointTime, s_dataPointTime);
 
-		Collection<DataPointsRowKey> keys = s_datastore.getKeysForQueryIterator(query, null);
+		Collection<DataPointsRowKey> keys = s_datastore.getKeysForQueryIterator(query);
 
 		assertEquals(2, keys.size());
 	}
@@ -258,7 +258,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		query.setEndTime(s_dataPointTime);
 		query.setTags(tagFilter);
 
-		DatastoreQuery dq = DatastoreTestHelper.s_datastore.createQuery(query, null);
+		DatastoreQuery dq = DatastoreTestHelper.s_datastore.createQuery(query);
 		List<DataPointGroup> results = dq.execute();
 
 		DataPointGroup dataPointGroup = results.get(0);
@@ -291,7 +291,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, Long.MIN_VALUE, Long.MAX_VALUE);
 
 		CachedSearchResult res = createCache(metricToDelete);
-		s_datastore.queryDatabase(query, null, res);
+		s_datastore.queryDatabase(query, res);
 		List<DataPointRow> rows = res.getRows();
 
 		assertThat(rows.size(), equalTo(1));
@@ -301,12 +301,12 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		// Verify that all data points are gone
 		res = createCache(metricToDelete);
-		s_datastore.queryDatabase(query, null, res);
+		s_datastore.queryDatabase(query, res);
 		rows = res.getRows();
 		assertThat(rows.size(), equalTo(0));
 
 		// Verify that the index key is gone
-		Collection<DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQueryIterator(query, null);
+		Collection<DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQueryIterator(query);
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
@@ -320,7 +320,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, Long.MIN_VALUE, Long.MAX_VALUE);
 
 		CachedSearchResult res = createCache(metricToDelete);
-		s_datastore.queryDatabase(query, null, res);
+		s_datastore.queryDatabase(query, res);
 		List<DataPointRow> rows = res.getRows();
 		assertThat(rows.size(), equalTo(4));
 
@@ -328,13 +328,13 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		Thread.sleep(2000);
 
 		res = createCache(metricToDelete);
-		s_datastore.queryDatabase(query, null, res);
+		s_datastore.queryDatabase(query, res);
 		rows = res.getRows();
 		assertThat(rows.size(), equalTo(0));
 
 		// Verify that the index key is gone
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
-		Collection<DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQueryIterator(queryEverything, null);
+		Collection<DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQueryIterator(queryEverything);
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
@@ -349,7 +349,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 
 		CachedSearchResult res = createCache(metricToDelete);
-		s_datastore.queryDatabase(query, null, res);
+		s_datastore.queryDatabase(query, res);
 		List<DataPointRow> rows = res.getRows();
 		assertThat(rows.size(), equalTo(4));
 
@@ -359,13 +359,13 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		Thread.sleep(2000);
 
 		res = createCache(metricToDelete);
-		s_datastore.queryDatabase(query, null, res);
+		s_datastore.queryDatabase(query, res);
 		rows = res.getRows();
 		assertThat(rows.size(), equalTo(1));
 
 		// Verify that the index key is gone
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
-		Collection<DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQueryIterator(queryEverything, null);
+		Collection<DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQueryIterator(queryEverything);
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
@@ -380,7 +380,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, rowKeyTime, rowKeyTime + 2000);
 
 		CachedSearchResult res = createCache(metricToDelete);
-		s_datastore.queryDatabase(query, null, res);
+		s_datastore.queryDatabase(query, res);
 		List<DataPointRow> rows = res.getRows();
 		assertThat(rows.size(), equalTo(1));
 
@@ -388,13 +388,13 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		Thread.sleep(2000);
 
 		res = createCache(metricToDelete);
-		s_datastore.queryDatabase(query, null, res);
+		s_datastore.queryDatabase(query, res);
 		rows = res.getRows();
 		assertThat(rows.size(), equalTo(0));
 
 		// Verify that the index key is still there
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
-		Collection<DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQueryIterator(queryEverything, null);
+		Collection<DataPointsRowKey> indexRowKeys = s_datastore.getKeysForQueryIterator(queryEverything);
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
@@ -415,7 +415,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = super.s_datastore.createQuery(query, null);
+		DatastoreQuery dq = super.s_datastore.createQuery(query);
 
 		List<DataPointGroup> results = dq.execute();
 
@@ -469,7 +469,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = super.s_datastore.createQuery(query, null);
+		DatastoreQuery dq = super.s_datastore.createQuery(query);
 
 		List<DataPointGroup> results = dq.execute();
 		try

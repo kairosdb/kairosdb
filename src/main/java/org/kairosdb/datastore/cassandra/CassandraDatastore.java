@@ -179,6 +179,14 @@ public class CassandraDatastore implements Datastore {
 
     private void setupSchema() {
         try (Session session = m_cassandraClient.getSession()) {
+            ResultSet rs = session.execute("SELECT release_version FROM system.local");
+
+            final String version = rs.all().get(0).getString(0);
+            if(version.startsWith("3")) {
+                logger.info("Warning: V3 auto setup not supported, schema needs to exist");
+                return;
+            }
+
             PreparedStatement ps = session.prepare("SELECT * FROM system.schema_keyspaces WHERE keyspace_name = ?");
             List<Row> rows = session.execute(ps.bind(m_cassandraClient.getKeyspace())).all();
             if (rows.size() != 0) {

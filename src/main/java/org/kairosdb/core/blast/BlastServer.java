@@ -7,6 +7,7 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
 
@@ -23,13 +24,13 @@ import java.net.Socket;
 public class BlastServer implements KairosDBService, Runnable
 {
 	private Thread m_serverThread;
-	private final Datastore m_datastore;
+	private final KairosDatastore m_datastore;
 	private final LongDataPointFactory m_longDataPointFactory;
 	private boolean m_keepRunning = true;
 	private ServerSocket m_serverSocket;
 
 	@Inject
-	public BlastServer(Datastore datastore, LongDataPointFactory longDataPointFactory)
+	public BlastServer(KairosDatastore datastore, LongDataPointFactory longDataPointFactory)
 	{
 		m_datastore = datastore;
 		m_longDataPointFactory = longDataPointFactory;

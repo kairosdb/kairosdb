@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByResult;
@@ -19,7 +19,7 @@ import java.util.*;
 @AggregatorName(name = "save_as", description = "Saves the results to a new metric.")
 public class SaveAsAggregator implements Aggregator, GroupByAware
 {
-	private Datastore m_datastore;
+	private KairosDatastore m_datastore;
 	private String m_metricName;
 	private Map<String, String> m_tags;
 	private int m_ttl = 0;
@@ -27,7 +27,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	private boolean m_addSavedFrom = true;
 
 	@Inject
-	public SaveAsAggregator(Datastore datastore)
+	public SaveAsAggregator(KairosDatastore datastore)
 	{
 		m_datastore = datastore;
 		m_tags = new HashMap<>();

@@ -15,6 +15,7 @@ import tablesaw.addons.java.JavaCRule
 import tablesaw.addons.java.JavaProgram
 import tablesaw.addons.junit.JUnitRule
 import tablesaw.definitions.Definition
+import tablesaw.rules.CopyRule
 import tablesaw.rules.DirectoryRule
 import tablesaw.rules.Rule
 import tablesaw.rules.SimpleRule
@@ -123,27 +124,6 @@ publishRule.addArtifact(jp.getJarRule().getTarget())
 		.setType("jar")
 		.setExt("jar")
 
-//------------------------------------------------------------------------------
-//==-- Maven Artifacts --==
-mavenArtifactsRule = new SimpleRule("maven-artifacts").setDescription("Create maven artifacts for maven central")
-		.addSource(jp.getJarRule().getTarget())
-		.addSource(jp.getJavaDocJarRule().getTarget())
-		.addSource(jp.getSourceJarRule().getTarget())
-		.addSource("build/jar/pom.xml")
-		.setMakeAction("signArtifacts")
-
-void signArtifacts(Rule rule)
-{
-	for (String source : rule.getSources())
-	{
-		cmd = "gpg -ab "+source
-		saw.exec(cmd)
-	}
-}
-
-new JarRule("maven-bundle", "build/bundle.jar").setDescription("Create bundle for uploading to maven central")
-		.addDepend(mavenArtifactsRule)
-		.addFileSet(new RegExFileSet(saw.getProperty(JavaProgram.JAR_DIRECTORY_PROPERTY), ".*"))
 
 //------------------------------------------------------------------------------
 //Set information in the manifest file
@@ -508,6 +488,44 @@ def doDocs(Rule rule)
     if (sudo.getExitCode() != 0)
         throw new TablesawException("Unable to run sphinx-build")
 }
+
+
+
+//------------------------------------------------------------------------------
+//==-- Maven Artifacts --==
+bundleDir = new DirectoryRule("build/bundle")
+copyBundleBits = new CopyRule()
+		.addDepend(bundleDir)
+		.addDepend(gzipRule)
+		.addDepend(jp.getJarRule())
+		.addDepend(jp.getJavaDocJarRule())
+		.addDepend(jp.getSourceJarRule())
+		.addDepend(pomRule)
+		.addFile(gzipRule.getTarget())
+		.addFile(jp.getJarRule().getTarget())
+		.addFile(jp.getJavaDocJarRule().getTarget())
+		.addFile(jp.getSourceJarRule().getTarget())
+		.addFile("build/jar/pom.xml")
+		.setDestination("build/bundle")
+
+mavenArtifactsRule = new SimpleRule("maven-artifacts").setDescription("Create maven artifacts for maven central")
+		.addDepend(copyBundleBits)
+
+		.setMakeAction("signArtifacts")
+
+void signArtifacts(Rule rule)
+{
+	for (String source : new RegExFileSet("build/bundle", ".*").getFullFilePaths())
+	{
+		cmd = "gpg -ab "+source
+		saw.exec(cmd)
+	}
+}
+
+new JarRule("maven-bundle", "build/bundle.jar").setDescription("Create bundle for uploading to maven central")
+		.addDepend(mavenArtifactsRule)
+		.addFileSet(new RegExFileSet("build/bundle", ".*"))
+
 
 
 saw.setDefaultTarget("jar")

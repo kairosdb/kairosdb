@@ -27,6 +27,7 @@ import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.util.Util;
+import org.kairosdb.util.ValidationException;
 import org.kairosdb.util.Validator;
 
 import java.io.EOFException;
@@ -231,9 +232,11 @@ public class DataPointsParser
 		}
 	}
 
-	private String findType(JsonElement value)
+	private String findType(JsonElement value) throws ValidationException
 	{
-		checkState(value.isJsonPrimitive());
+		if (!value.isJsonPrimitive()){
+			throw new ValidationException("value is an invalid type");
+		}
 
 		JsonPrimitive primitiveValue = (JsonPrimitive) value;
 		if (primitiveValue.isNumber() || (primitiveValue.isString() && Util.isNumber(value.getAsString())))
@@ -297,24 +300,31 @@ public class DataPointsParser
 
 		if (!validationErrors.hasErrors())
 		{
-			//DataPointSet dataPointSet = new DataPointSet(metric.getName(), metric.getTags(), Collections.<DataPoint>emptyList());
 			ImmutableSortedMap<String, String> tags = ImmutableSortedMap.copyOf(metric.getTags());
 
 			if (metric.getTimestamp() != null && metric.getValue() != null)
 			{
 				String type = metric.getType();
-				if (type == null)
-					type = findType(metric.getValue());
+				if (type == null) {
+                    try {
+                        type = findType(metric.getValue());
+                    }
+                    catch (ValidationException e) {
+                        validationErrors.addErrorMessage(context + " " + e.getMessage());
+                    }
+                }
 
-				if (dataPointFactory.isRegisteredType(type))
-				{
-					datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
-							type, metric.getTimestamp(), metric.getValue()), metric.getTtl());
-					dataPointCount++;
-				}
-				else
-					validationErrors.addErrorMessage("Unregistered data point type '"+type+"'");
-			}
+                if (type != null) {
+                    if (dataPointFactory.isRegisteredType(type)) {
+                        datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
+                                type, metric.getTimestamp(), metric.getValue()), metric.getTtl());
+                        dataPointCount++;
+                    }
+                    else {
+                        validationErrors.addErrorMessage("Unregistered data point type '" + type + "'");
+                    }
+                }
+            }
 
 			if (metric.getDatapoints() != null && metric.getDatapoints().length > 0)
 			{
@@ -349,8 +359,15 @@ public class DataPointsParser
 						if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
 							continue;
 
-						if (type == null)
-							type = findType(dataPoint[1]);
+						if (type == null) {
+                            try {
+                                type = findType(dataPoint[1]);
+                            }
+                            catch (ValidationException e) {
+                                validationErrors.addErrorMessage(context + " " + e.getMessage());
+                                continue;
+                            }
+                        }
 
 						if (!dataPointFactory.isRegisteredType(type))
 						{

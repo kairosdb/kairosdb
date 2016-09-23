@@ -32,6 +32,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
@@ -49,7 +50,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
+				Collections.emptyList(), new TestDataPointFactory(), false);
 
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json), new Gson(),
 				dataPointFactory);
@@ -67,7 +68,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
@@ -85,7 +86,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -102,7 +103,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -119,7 +120,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -136,7 +137,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -153,7 +154,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -170,7 +171,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -187,7 +188,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -204,7 +205,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -221,7 +222,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -238,7 +239,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -255,7 +256,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -272,7 +273,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -289,7 +290,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -307,7 +308,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -325,7 +326,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -342,7 +343,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -360,7 +361,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -381,7 +382,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -397,7 +398,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -423,7 +424,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -448,7 +449,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -478,7 +479,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -518,7 +519,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -542,7 +543,7 @@ public class DataPointsParserTest
 		assertThat(dataPointSetList.get(0).getDataPoints().get(3).getTimestamp(), equalTo(1349109378L));
 		DataPoint dataPoint = dataPointSetList.get(0).getDataPoints().get(3);
 		assertThat(dataPoint, instanceOf(StringDataPoint.class));
-		assertThat(((StringDataPoint) dataPoint).getValue(), equalTo("string_data"));
+		assertThat(((StringDataPoint)dataPoint).getValue(), equalTo("string_data"));
 
 		assertThat(dataPointSetList.get(1).getName(), equalTo("archive_file_search"));
 		assertThat(dataPointSetList.get(1).getTags().size(), equalTo(2));
@@ -559,7 +560,7 @@ public class DataPointsParserTest
 		assertThat(dataPointSetList.get(2).getDataPoints().size(), equalTo(1));
 		DataPoint stringData = dataPointSetList.get(2).getDataPoints().get(0);
 		assertThat(stringData.getTimestamp(), equalTo(1349109378L));
-		assertThat(((StringDataPoint) stringData).getValue(), equalTo("sweet"));
+		assertThat(((StringDataPoint)stringData).getValue(), equalTo("sweet"));
 
 		assertThat(parser.getDataPointCount(), equalTo(6));
 	}
@@ -571,7 +572,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -597,7 +598,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -613,7 +614,7 @@ public class DataPointsParserTest
 		assertThat(dataPointSetList.get(0).getTags().get("foo"), equalTo("bar"));
 		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(1));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
-		assertThat(((StringDataPoint) dataPointSetList.get(0).getDataPoints().get(0)).getValue(), equalTo("The Value"));
+		assertThat(((StringDataPoint)dataPointSetList.get(0).getDataPoints().get(0)).getValue(), equalTo("The Value"));
 	}
 
 	@Test
@@ -623,7 +624,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -639,7 +640,7 @@ public class DataPointsParserTest
 		assertThat(dataPointSetList.get(0).getTags().get("foo"), equalTo("bar"));
 		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(1));
 		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
-		assertThat(((StringDataPoint) dataPointSetList.get(0).getDataPoints().get(0)).getValue(), equalTo("The Value"));
+        assertThat(((StringDataPoint)dataPointSetList.get(0).getDataPoints().get(0)).getValue(), equalTo("The Value"));
 	}
 
 	@Test
@@ -649,7 +650,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -675,7 +676,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -697,6 +698,44 @@ public class DataPointsParserTest
 	}
 
 	@Test
+	public void test_valueType_invalid() throws DatastoreException, IOException
+	{
+		// Value is a map which is not valid
+		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": " + new HashMap() + ", \"tags\":{\"foo\":\"bar\"}}";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.emptyList(), dataPointFactory, false);
+		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.hasErrors(), equalTo(true));
+		assertThat(validationErrors.size(), equalTo(1));
+		assertThat(validationErrors.getErrors().get(0), equalTo("metric[0](name=metric1) value is an invalid type"));
+	}
+
+	@Test
+	public void test_valueType_dataPointArray_invalid() throws DatastoreException, IOException
+	{
+		// Value is a map which is not valid
+		String json = "{\"name\": \"metric1\", \"datapoints\": [[1349109376, " + new HashMap() + "]], \"tags\":{\"foo\":\"bar\"}}";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
+				Collections.emptyList(), dataPointFactory, false);
+		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.hasErrors(), equalTo(true));
+		assertThat(validationErrors.size(), equalTo(1));
+		assertThat(validationErrors.getErrors().get(0), equalTo("metric[0](name=metric1) value is an invalid type"));
+	}
+
+	@Test
 	public void test_parserSpeed() throws DatastoreException, IOException
 	{
 		Reader skipReader = new InputStreamReader(
@@ -707,7 +746,7 @@ public class DataPointsParserTest
 
 		FakeDataStore fakeds = new FakeDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				Collections.emptyList(), dataPointFactory, false);
 
 		DataPointsParser parser = new DataPointsParser(datastore, skipReader,
 				new Gson(), dataPointFactory);
@@ -725,7 +764,7 @@ public class DataPointsParserTest
 
 	private static class FakeDataStore implements Datastore
 	{
-		List<DataPointSet> dataPointSetList = new ArrayList<DataPointSet>();
+		List<DataPointSet> dataPointSetList = new ArrayList<>();
 		private DataPointSet lastDataPointSet;
 
 		protected FakeDataStore() throws DatastoreException

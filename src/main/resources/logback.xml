@@ -17,7 +17,7 @@
 		<file>log/kairosdb.log</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 			<!-- daily rollover -->
-			<fileNamePattern>log/kairosdb.%d.log.gz</fileNamePattern>
+			<fileNamePattern>log/kairosdb.%d.%i.log.gz</fileNamePattern>
 
 			<!-- keep 30 days' worth of history -->
 			<maxHistory>30</maxHistory>

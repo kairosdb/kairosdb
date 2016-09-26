@@ -94,7 +94,7 @@ public class CassandraDatastore implements Datastore {
 
     public static final String QUERY_STRING_INDEX = "SELECT column1 FROM string_index WHERE key = ?";
 
-    public static final String QUERY_ROW_KEY_INDEX = "SELECT column1 FROM row_key_index WHERE key = ? AND column1 >= ? and column1 <=?";
+    public static final String QUERY_ROW_KEY_INDEX = "SELECT column1 FROM row_key_index WHERE key = ? AND column1 >= ? and column1 <= ? LIMIT ?";
 
     public static final String QUERY_DATA_POINTS = "SELECT column1, value FROM data_points WHERE key IN ( ? ) AND column1 >= ? and column1 < ?";
 

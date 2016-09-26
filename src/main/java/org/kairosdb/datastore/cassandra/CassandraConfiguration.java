@@ -40,10 +40,15 @@ public class CassandraConfiguration
 	public static final String CASSANDRA_WRITE_ROWWIDTH = "kairosdb.datastore.cassandra.write_row_width";
 
 	public static final String CASSANDRA_MAX_ROW_KEYS_FOR_QUERY = "kairosdb.datastore.cassandra.max_row_keys_for_query";
+	public static final String CASSANDRA_MAX_ROWS_FOR_KEY_QUERY = "kairosdb.datastore.cassandra.max_rows_for_key_query";
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_MAX_ROW_KEYS_FOR_QUERY)
 	private int m_maxRowKeysForQuery = 10000;
+
+	@Inject(optional=true)
+	@Named(CASSANDRA_MAX_ROWS_FOR_KEY_QUERY)
+	private int m_maxRowsForKeysQuery = 150000;
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_WRITE_ROWWIDTH)
@@ -206,5 +211,9 @@ public class CassandraConfiguration
 
 	public int getMaxRowKeysForQuery() {
 		return m_maxRowKeysForQuery;
+	}
+
+	public int getMaxRowsForKeysQuery() {
+		return m_maxRowsForKeysQuery;
 	}
 }

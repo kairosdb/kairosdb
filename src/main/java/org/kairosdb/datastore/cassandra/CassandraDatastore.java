@@ -508,7 +508,7 @@ public class CassandraDatastore implements Datastore {
     }
 
     public Collection<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query) {
-        return getKeysForQueryIterator(query, m_cassandraConfiguration.getMaxRowKeysForQuery() + 1);
+        return getKeysForQueryIterator(query, m_cassandraConfiguration.getMaxRowsForKeysQuery() + 1);
     }
 
 
@@ -722,7 +722,6 @@ public class CassandraDatastore implements Datastore {
             ResultSet rs = m_session.execute(bs);
             filterAndAddKeys(metricName, filterTags, rs, rowKeys);
         }
-
 
         return rowKeys;
     }

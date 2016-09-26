@@ -296,6 +296,8 @@ public class CassandraDatastore implements Datastore {
                     bs.setString(1, split);
                     bs.setString(2, v);
                     bs.setBytes(3, serializedKey);
+
+                    m_session.executeAsync(bs);
                 }
 
                 for (RowKeyListener rowKeyListener : m_rowKeyListeners) {
@@ -715,13 +717,6 @@ public class CassandraDatastore implements Datastore {
         final List<DataPointsRowKey> rowKeys = new ArrayList<>();
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 
-        ByteBuffer bMetricName;
-        try {
-            bMetricName = ByteBuffer.wrap(metricName.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException ex) {
-            throw new RuntimeException(ex);
-        }
-
         String useSplitField = null;
         Set<String> useSplit = new HashSet<>();
 
@@ -738,7 +733,7 @@ public class CassandraDatastore implements Datastore {
         int bsShift = 0;
         BoundStatement bs;
 
-        if (useSplit != null) {
+        if (useSplit != null && useSplit.size() > 0) {
             bsShift = 2;
             bs = m_psInsertRowKeySplit.bind();
             bs.setString(1, useSplitField);
@@ -746,6 +741,15 @@ public class CassandraDatastore implements Datastore {
         }
         else {
             bs = m_psQueryRowKeyIndex.bind();
+
+            ByteBuffer bMetricName;
+            try {
+                bMetricName = ByteBuffer.wrap(metricName.getBytes("UTF-8"));
+            } catch (UnsupportedEncodingException ex) {
+                throw new RuntimeException(ex);
+            }
+
+            bs.setBytes(0, bMetricName);
         }
 
         bs.setInt(3 + bsShift, limit);

@@ -17,7 +17,6 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.*;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
@@ -59,12 +58,21 @@ public class CassandraDatastore implements Datastore {
             "  column1 blob,\n" +
             "  value blob,\n" +
             "  PRIMARY KEY ((key), column1)\n" +
-            ") WITH COMPACT STORAGE " +
-            "   AND CLUSTERING ORDER BY (column1 DESC) " + // This should fit the default use case better
+            ") WITH CLUSTERING ORDER BY (column1 DESC) " + // This should fit the default use case better
             "   AND compaction = {'timestamp_resolution': 'MICROSECONDS'," +
             "                     'max_sstable_age_days': '31'," +
             "                     'base_time_seconds': '7200'," +
             "                     'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy'}";
+
+    public static final String ROW_KEY_SPLIT_INDEX_TABLE = "" +
+            "CREATE TABLE IF NOT EXISTS row_key_split_index (" +
+            "  metric_name text," +
+            "  tag_name text," +
+            "  tag_value, " +
+            "  column1 blob," +
+            "  value blob," +
+            "  PRIMARY KEY ((metric_name, tag_name, tag_value), column1)" +
+            ");";
 
     public static final String ROW_KEY_INDEX_TABLE = "" +
             "CREATE TABLE IF NOT EXISTS row_key_index (\n" +
@@ -72,7 +80,7 @@ public class CassandraDatastore implements Datastore {
             "  column1 blob,\n" +
             "  value blob,\n" +
             "  PRIMARY KEY ((key), column1)\n" +
-            ") WITH COMPACT STORAGE";
+            ");";
 
     public static final String STRING_INDEX_TABLE = "" +
             "CREATE TABLE IF NOT EXISTS string_index (\n" +
@@ -80,7 +88,7 @@ public class CassandraDatastore implements Datastore {
             "  column1 text,\n" +
             "  value blob,\n" +
             "  PRIMARY KEY ((key), column1)\n" +
-            ") WITH COMPACT STORAGE";
+            ");";
 
 
     public static final String DATA_POINTS_INSERT = "INSERT INTO data_points " +
@@ -89,12 +97,17 @@ public class CassandraDatastore implements Datastore {
     public static final String ROW_KEY_INDEX_INSERT = "INSERT INTO row_key_index " +
             "(key, column1, value) VALUES (?, ?, 0x00) USING TTL ?";
 
+    public static final String ROW_KEY_INDEX_SPLIT_INSERT = "INSERT INTO row_key_split_index " +
+            "(metric_name, tag_name, tag_value, column1, value) VALUES (?, ?, ?, ?, 0x00) USING TTL ?";
+
     public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
             "(key, column1, value) VALUES (?, ?, 0x00)";
 
     public static final String QUERY_STRING_INDEX = "SELECT column1 FROM string_index WHERE key = ?";
 
     public static final String QUERY_ROW_KEY_INDEX = "SELECT column1 FROM row_key_index WHERE key = ? AND column1 >= ? and column1 <= ? LIMIT ?";
+
+    public static final String QUERY_ROW_KEY_SPLIT_INDEX = "SELECT column1 FROM row_key_split_index WHERE metric_name = ? AND tag_name = ? and tag_value IN (?) AND column1 >= ? and column1 <= ? LIMIT ?";
 
     public static final String QUERY_DATA_POINTS = "SELECT column1, value FROM data_points WHERE key IN ( ? ) AND column1 >= ? and column1 < ?";
 
@@ -118,9 +131,11 @@ public class CassandraDatastore implements Datastore {
 
     private final PreparedStatement m_psInsertData;
     private final PreparedStatement m_psInsertRowKey;
+    private final PreparedStatement m_psInsertRowKeySplit;
     private final PreparedStatement m_psInsertString;
     private final PreparedStatement m_psQueryStringIndex;
     private final PreparedStatement m_psQueryRowKeyIndex;
+    private final PreparedStatement m_psQueryRowKeySplitIndex;
     private final PreparedStatement m_psQueryDataPoints;
 
     private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<>(1024);
@@ -152,10 +167,12 @@ public class CassandraDatastore implements Datastore {
         m_session = m_cassandraClient.getKeyspaceSession();
 
         m_psInsertData = m_session.prepare(DATA_POINTS_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelDataPoint());
+        m_psInsertRowKeySplit = m_session.prepare(ROW_KEY_INDEX_SPLIT_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psInsertRowKey = m_session.prepare(ROW_KEY_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psInsertString = m_session.prepare(STRING_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psQueryStringIndex = m_session.prepare(QUERY_STRING_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryRowKeyIndex = m_session.prepare(QUERY_ROW_KEY_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
+        m_psQueryRowKeySplitIndex = m_session.prepare(QUERY_ROW_KEY_SPLIT_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryDataPoints = m_session.prepare(QUERY_DATA_POINTS).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
 
         m_cassandraConfiguration = cassandraConfiguration;
@@ -200,6 +217,7 @@ public class CassandraDatastore implements Datastore {
         try (Session session = m_cassandraClient.getKeyspaceSession()) {
             session.execute(DATA_POINTS_TABLE);
             session.execute(ROW_KEY_INDEX_TABLE);
+            session.execute(ROW_KEY_SPLIT_INDEX_TABLE);
             session.execute(STRING_INDEX_TABLE);
         }
     }
@@ -228,6 +246,9 @@ public class CassandraDatastore implements Datastore {
         m_cassandraClient.close();
     }
 
+    // use list, same order for reads later
+    private static final List<String> ROW_KEY_SPLITS = Arrays.asList("key", "application_id", "stack_name");
+
     @Override
     public void putDataPoint(String metricName,
                              ImmutableSortedMap<String, String> tags,
@@ -252,20 +273,37 @@ public class CassandraDatastore implements Datastore {
 
             long now = System.currentTimeMillis();
 
-            //Write out the row key if it is not cached
+            // Write out the row key if it is not cached
             DataPointsRowKey cachedKey = m_rowKeyCache.cacheItem(rowKey);
             if (cachedKey == null) {
                 BoundStatement bs = new BoundStatement(m_psInsertRowKey);
                 bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
-                bs.setBytes(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+
+                ByteBuffer serializedKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey);
+
+                bs.setBytes(1, serializedKey);
                 bs.setInt(2, rowKeyTtl);
                 m_session.executeAsync(bs);
 
-				/*m_rowKeyWriteBuffer.addData(metricName, rowKey, "", now, rowKeyTtl);*/
-                for (RowKeyListener rowKeyListener : m_rowKeyListeners)
+                for(String split : ROW_KEY_SPLITS) {
+                    String v = tags.get(split);
+                    if (null == v) {
+                        continue;
+                    }
+
+                    bs = new BoundStatement(m_psInsertRowKeySplit);
+                    bs.setString(0, metricName);
+                    bs.setString(1, split);
+                    bs.setString(2, v);
+                    bs.setBytes(3, serializedKey);
+                }
+
+                for (RowKeyListener rowKeyListener : m_rowKeyListeners) {
                     rowKeyListener.addRowKey(metricName, rowKey, rowKeyTtl);
-            } else
+                }
+            } else {
                 rowKey = cachedKey;
+            }
 
             //Write metric name if not in cache
             String cachedName = m_metricNameCache.cacheItem(metricName);
@@ -684,20 +722,41 @@ public class CassandraDatastore implements Datastore {
             throw new RuntimeException(ex);
         }
 
-        // logger.info("querying from={} to={}", startTime, endTime);
+        String useSplitField = null;
+        Set<String> useSplit = new HashSet<>();
 
-        BoundStatement bs = m_psQueryRowKeyIndex.bind();
-        bs.setInt(3, limit);
+        for(String split : ROW_KEY_SPLITS) {
+            if (filterTags.containsKey(split)) {
+                Set<String> vs = filterTags.get(split);
+                if(vs.size()<useSplit.size() && vs.stream().noneMatch(x->x.contains("*") || x.contains("?"))) {
+                    useSplit = vs;
+                    useSplitField = split;
+                }
+            }
+        }
+
+        int bsShift = 0;
+        BoundStatement bs;
+
+        if (useSplit != null) {
+            bsShift = 2;
+            bs = m_psInsertRowKeySplit.bind();
+            bs.setString(1, useSplitField);
+            bs.setList(2, Arrays.asList(useSplit.toArray()));
+        }
+        else {
+            bs = m_psQueryRowKeyIndex.bind();
+        }
+
+        bs.setInt(3 + bsShift, limit);
 
         if ((startTime < 0) && (endTime >= 0)) {
             DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(startTime), "");
             DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTimeRead(endTime), "");
             endKey.setEndSearchKey(true);
 
-            bs.setBytes(0, bMetricName);
-            bs.setBytes(1, keySerializer.toByteBuffer(startKey));
-            bs.setBytes(2, keySerializer.toByteBuffer(endKey));
-
+            bs.setBytes(1 + bsShift, keySerializer.toByteBuffer(startKey));
+            bs.setBytes(2 + bsShift, keySerializer.toByteBuffer(endKey));
 
             ResultSet rs = m_session.execute(bs);
 
@@ -721,9 +780,8 @@ public class CassandraDatastore implements Datastore {
             DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculatedEndTime, "");
             endKey.setEndSearchKey(true);
 
-            bs.setBytes(0, bMetricName);
-            bs.setBytes(1, keySerializer.toByteBuffer(startKey));
-            bs.setBytes(2, keySerializer.toByteBuffer(endKey));
+            bs.setBytes(1 + bsShift, keySerializer.toByteBuffer(startKey));
+            bs.setBytes(2 + bsShift, keySerializer.toByteBuffer(endKey));
 
             ResultSet rs = m_session.execute(bs);
             filterAndAddKeys(metricName, filterTags, rs, rowKeys, m_cassandraConfiguration.getMaxRowsForKeysQuery());

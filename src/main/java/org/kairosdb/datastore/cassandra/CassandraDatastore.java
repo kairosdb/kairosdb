@@ -718,7 +718,6 @@ public class CassandraDatastore implements Datastore {
             bs.setBytes(0, bMetricName);
             bs.setBytes(1, keySerializer.toByteBuffer(startKey));
             bs.setBytes(2, keySerializer.toByteBuffer(endKey));
-            bs.bind(3, limit);
 
             ResultSet rs = m_session.execute(bs);
             filterAndAddKeys(metricName, filterTags, rs, rowKeys);

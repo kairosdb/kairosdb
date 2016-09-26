@@ -407,6 +407,12 @@ public class MetricsResource implements KairosMetricReporter
 			jsonResponse.begin();
 
 			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
+			for(QueryMetric q : queries) {
+				if(!(q.getGroupBys() != null) && !(q.getGroupBys().size()>0)) {
+					JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+					return builder.addError("You need so spezify group by or Aggregator").build();
+				}
+			}
 
 			int queryCount = 0;
 			for (QueryMetric query : queries)

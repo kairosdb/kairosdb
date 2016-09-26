@@ -94,7 +94,7 @@ public class CassandraDatastore implements Datastore {
 
     public static final String QUERY_STRING_INDEX = "SELECT column1 FROM string_index WHERE key = ?";
 
-    public static final String QUERY_ROW_KEY_INDEX = "SELECT column1 FROM row_key_index WHERE key = ? AND column1 >= ? and column1 <=?";
+    public static final String QUERY_ROW_KEY_INDEX = "SELECT column1 FROM row_key_index WHERE key = ? AND column1 >= ? and column1 <=? LIMIT ?";
 
     public static final String QUERY_DATA_POINTS = "SELECT column1, value FROM data_points WHERE key IN ( ? ) AND column1 >= ? and column1 < ?";
 
@@ -376,7 +376,7 @@ public class CassandraDatastore implements Datastore {
     @Override
     public TagSet queryMetricTags(DatastoreMetricQuery query) {
         TagSetImpl tagSet = new TagSetImpl();
-        Collection<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query);
+        Collection<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query, 50);
 
         MemoryMonitor mm = new MemoryMonitor(20);
         for (DataPointsRowKey key : rowKeys) {
@@ -507,13 +507,18 @@ public class CassandraDatastore implements Datastore {
         return map;
     }
 
+    public Collection<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query) {
+        return getKeysForQueryIterator(query, m_cassandraConfiguration.getMaxRowKeysForQuery() + 1);
+    }
+
+
     /**
      * Returns the row keys for the query in tiers ie grouped by row key timestamp
      *
      * @param query query
      * @return row keys for the query
      */
-    public Collection<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query) {
+    public Collection<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query, int limit) {
         Collection<DataPointsRowKey> ret = null;
 
         List<QueryPlugin> plugins = query.getPlugins();
@@ -529,7 +534,7 @@ public class CassandraDatastore implements Datastore {
         //Default to old behavior if no plugin was provided
         if (ret == null) {
             ret = getMatchingRowKeys(query.getName(), query.getStartTime(),
-                    query.getEndTime(), query.getTags());
+                    query.getEndTime(), query.getTags(), limit);
         }
 
         if (ret.size() > m_cassandraConfiguration.getMaxRowKeysForQuery()) {
@@ -662,7 +667,7 @@ public class CassandraDatastore implements Datastore {
         }
     }
 
-    private List<DataPointsRowKey> getMatchingRowKeys(String metricName, long startTime, long endTime, SetMultimap<String, String> filterTags) {
+    private List<DataPointsRowKey> getMatchingRowKeys(String metricName, long startTime, long endTime, SetMultimap<String, String> filterTags, int limit) {
         final List<DataPointsRowKey> rowKeys = new ArrayList<>();
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 
@@ -676,6 +681,8 @@ public class CassandraDatastore implements Datastore {
         // logger.info("querying from={} to={}", startTime, endTime);
 
         BoundStatement bs = m_psQueryRowKeyIndex.bind();
+        bs.bind(3, limit);
+
         if ((startTime < 0) && (endTime >= 0)) {
             DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(startTime), "");
             DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTimeRead(endTime), "");

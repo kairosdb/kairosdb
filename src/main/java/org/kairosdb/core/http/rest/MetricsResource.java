@@ -412,8 +412,6 @@ public class MetricsResource implements KairosMetricReporter
 			for (QueryMetric query : queries)
 			{
 				queryCount++;
-				ThreadReporter.addTag("metric_name", query.getName());
-				ThreadReporter.addTag("query_index", String.valueOf(queryCount));
 
 				DatastoreQuery dq = datastore.createQuery(query);
 				long startQuery = System.currentTimeMillis();
@@ -423,7 +421,7 @@ public class MetricsResource implements KairosMetricReporter
 					List<DataPointGroup> results = dq.execute();
 					jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
 
-					ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
+					// ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
 				}
 				finally
 				{

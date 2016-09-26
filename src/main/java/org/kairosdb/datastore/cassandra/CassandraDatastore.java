@@ -636,7 +636,7 @@ public class CassandraDatastore implements Datastore {
         return false;
     }
 
-    private static void filterAndAddKeys(String metricName, SetMultimap<String, String> filterTags, ResultSet rs, List<DataPointsRowKey> targetList) {
+    private static void filterAndAddKeys(String metricName, SetMultimap<String, String> filterTags, ResultSet rs, List<DataPointsRowKey> targetList, int limit) {
         long startTime = System.currentTimeMillis();
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
         final SetMultimap<String, Pattern> tagPatterns = MultimapBuilder.hashKeys(filterTags.size()).hashSetValues().build();
@@ -646,6 +646,11 @@ public class CassandraDatastore implements Datastore {
         int i = 0;
         for (Row r : rs) {
             i++;
+
+            if (i > limit) {
+                throw new MaxRowKeysForQueryExceededException(String.format("Too many rows too scan: metric=%s limit=%d", metricName, limit));
+            }
+
             DataPointsRowKey key = keySerializer.fromByteBuffer(r.getBytes("column1"));
             Map<String, String> tags = key.getTags();
 
@@ -663,6 +668,7 @@ public class CassandraDatastore implements Datastore {
         }
         if (i > 5000 || targetList.size() > 100) {
             final long endTime = System.currentTimeMillis();
+            logger.warn("metric={} query={}", metricName, filterTags);
             logger.warn("filterAndAddKeys: metric={} read={} filtered={} time={}", metricName, i, targetList.size(), (endTime - startTime));
         }
     }
@@ -695,7 +701,7 @@ public class CassandraDatastore implements Datastore {
 
             ResultSet rs = m_session.execute(bs);
 
-            filterAndAddKeys(metricName, filterTags, rs, rowKeys);
+            filterAndAddKeys(metricName, filterTags, rs, rowKeys, m_cassandraConfiguration.getMaxRowsForKeysQuery());
 
             startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(0), "");
             endKey = new DataPointsRowKey(metricName, calculateRowTimeRead(endTime), "");
@@ -704,7 +710,7 @@ public class CassandraDatastore implements Datastore {
             bs.setBytes(2, keySerializer.toByteBuffer(endKey));
 
             rs = m_session.execute(bs);
-            filterAndAddKeys(metricName, filterTags, rs, rowKeys);
+            filterAndAddKeys(metricName, filterTags, rs, rowKeys, m_cassandraConfiguration.getMaxRowsForKeysQuery());
         } else {
             long calculatedStarTime = calculateRowTimeRead(startTime);
             // Use write width here, as END time is upper bound for query and end with produces the bigger timestamp
@@ -720,7 +726,7 @@ public class CassandraDatastore implements Datastore {
             bs.setBytes(2, keySerializer.toByteBuffer(endKey));
 
             ResultSet rs = m_session.execute(bs);
-            filterAndAddKeys(metricName, filterTags, rs, rowKeys);
+            filterAndAddKeys(metricName, filterTags, rs, rowKeys, m_cassandraConfiguration.getMaxRowsForKeysQuery());
         }
 
         return rowKeys;

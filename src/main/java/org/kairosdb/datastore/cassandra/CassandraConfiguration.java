@@ -48,7 +48,7 @@ public class CassandraConfiguration
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_MAX_ROWS_FOR_KEY_QUERY)
-	private int m_maxRowsForKeysQuery = 150000;
+	private int m_maxRowsForKeysQuery = 300000;
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_WRITE_ROWWIDTH)

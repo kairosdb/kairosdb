@@ -35,7 +35,7 @@ public class DataPointsRowKey
 
 	public DataPointsRowKey(String metricName, long timestamp, String dataType)
 	{
-		this(metricName, timestamp, dataType, new TreeMap<String, String>());
+		this(metricName, timestamp, dataType, new TreeMap<>());
 	}
 
 	public DataPointsRowKey(String metricName, long timestamp, String datatype,

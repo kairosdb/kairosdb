@@ -284,8 +284,6 @@ public class CassandraDatastore implements Datastore {
             rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
                     tags);
 
-            long now = System.currentTimeMillis();
-
             // Write out the row key if it is not cached
             boolean writeRowKey = false;
             Boolean isCachedKey = m_rowKeyCache.getIfPresent(rowKey);

@@ -16,6 +16,9 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.*;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.SetMultimap;
@@ -39,6 +42,8 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -138,11 +143,26 @@ public class CassandraDatastore implements Datastore {
     private final PreparedStatement m_psQueryRowKeySplitIndex;
     private final PreparedStatement m_psQueryDataPoints;
 
-    private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<>(32000);
+    private final Cache<DataPointsRowKey, Boolean> m_rowKeyCache = Caffeine.newBuilder()
+            .initialCapacity(30_000)
+            .maximumSize(30_000)
+            .expireAfterWrite(24, TimeUnit.HOURS).build();
 
-    private DataCache<String> m_metricNameCache = new DataCache<>(5000);
-    private DataCache<String> m_tagNameCache = new DataCache<>(16000);
-    private DataCache<String> m_tagValueCache = new DataCache<>(16000);
+    private final Cache<String, Boolean> m_metricNameCache = Caffeine.newBuilder()
+            .initialCapacity(5_000)
+            .maximumSize(5_000)
+            .expireAfterWrite(24, TimeUnit.HOURS).build();
+
+    private final Cache<String, Boolean> m_tagNameCache = Caffeine.newBuilder()
+            .initialCapacity(16_000)
+            .maximumSize(16_000)
+            .expireAfterWrite(24, TimeUnit.HOURS).build();
+
+    private final Cache<String, Boolean> m_tagValueCache = Caffeine.newBuilder()
+            .initialCapacity(16_000)
+            .maximumSize(16_000)
+            .expireAfterWrite(24, TimeUnit.HOURS).build();
+
 
     private final KairosDataPointFactory m_kairosDataPointFactory;
 
@@ -179,11 +199,6 @@ public class CassandraDatastore implements Datastore {
 
         m_rowWidthRead = cassandraConfiguration.getRowWidthRead();
         m_rowWidthWrite = cassandraConfiguration.getRowWidthWrite();
-
-        m_rowKeyCache = new DataCache<>(m_cassandraConfiguration.getRowKeyCacheSize());
-        m_metricNameCache = new DataCache<>(m_cassandraConfiguration.getStringCacheSize());
-        m_tagNameCache = new DataCache<>(m_cassandraConfiguration.getStringCacheSize());
-        m_tagValueCache = new DataCache<>(m_cassandraConfiguration.getStringCacheSize());
     }
 
     public long getRowWidthRead() {
@@ -229,15 +244,6 @@ public class CassandraDatastore implements Datastore {
     }
 
     public void cleanRowKeyCache() {
-        long currentRow = calculateRowTimeRead(System.currentTimeMillis());
-
-        Set<DataPointsRowKey> keys = m_rowKeyCache.getCachedKeys();
-
-        for (DataPointsRowKey key : keys) {
-            if (key.getTimestamp() != currentRow) {
-                m_rowKeyCache.removeKey(key);
-            }
-        }
     }
 
     @Override
@@ -248,6 +254,9 @@ public class CassandraDatastore implements Datastore {
 
     // use list, same order for reads later
     private static final List<String> ROW_KEY_SPLITS = Arrays.asList("key", "application_id", "stack_name");
+
+    private final Integer LOCK_ROW_KEY = new Integer(1);
+    private final Boolean CACHE_BOOLEAN = new Boolean(true);
 
     @Override
     public void putDataPoint(String metricName,
@@ -274,8 +283,20 @@ public class CassandraDatastore implements Datastore {
             long now = System.currentTimeMillis();
 
             // Write out the row key if it is not cached
-            DataPointsRowKey cachedKey = m_rowKeyCache.cacheItem(rowKey);
-            if (cachedKey == null) {
+            boolean writeRowKey = false;
+            Boolean isCachedKey = m_rowKeyCache.getIfPresent(rowKey);
+            if (isCachedKey == null) {
+                synchronized (LOCK_ROW_KEY) {
+                    isCachedKey = m_rowKeyCache.getIfPresent(rowKey);
+                    if (null == isCachedKey) {
+                        // leave lock
+                        writeRowKey = true;
+                        m_rowKeyCache.put(rowKey, CACHE_BOOLEAN);
+                    }
+                }
+            }
+
+            if (writeRowKey) {
                 BoundStatement bs = new BoundStatement(m_psInsertRowKey);
                 bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
 
@@ -285,7 +306,7 @@ public class CassandraDatastore implements Datastore {
                 bs.setInt(2, rowKeyTtl);
                 m_session.executeAsync(bs);
 
-                for(String split : ROW_KEY_SPLITS) {
+                for (String split : ROW_KEY_SPLITS) {
                     String v = tags.get(split);
                     if (null == v || "".equals(v)) {
                         continue;
@@ -303,13 +324,12 @@ public class CassandraDatastore implements Datastore {
                 for (RowKeyListener rowKeyListener : m_rowKeyListeners) {
                     rowKeyListener.addRowKey(metricName, rowKey, rowKeyTtl);
                 }
-            } else {
-                rowKey = cachedKey;
             }
 
             //Write metric name if not in cache
-            String cachedName = m_metricNameCache.cacheItem(metricName);
-            if (cachedName == null) {
+            Boolean isCachedName  = m_metricNameCache.getIfPresent(metricName);
+            if (isCachedName == null) {
+                m_metricNameCache.put(metricName, CACHE_BOOLEAN);
                 if (metricName.length() == 0) {
                     logger.warn(
                             "Attempted to add empty metric name to string index. Row looks like: " + dataPoint
@@ -319,14 +339,13 @@ public class CassandraDatastore implements Datastore {
                 bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
                 bs.setString(1, metricName);
                 m_session.executeAsync(bs);
-				/*m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
-						metricName, "", now);*/
             }
 
             //Check tag names and values to write them out
             for (String tagName : tags.keySet()) {
-                String cachedTagName = m_tagNameCache.cacheItem(tagName);
-                if (cachedTagName == null) {
+                Boolean isCachedTagName = m_tagNameCache.getIfPresent(tagName);
+                if (isCachedTagName == null) {
+                    m_tagNameCache.put(tagName, CACHE_BOOLEAN);
                     if (tagName.length() == 0) {
                         logger.warn(
                                 "Attempted to add empty tagName to string cache for metric: " + metricName
@@ -336,14 +355,12 @@ public class CassandraDatastore implements Datastore {
                     bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_NAMES.getBytes(UTF_8)));
                     bs.setString(1, tagName);
                     m_session.executeAsync(bs);
-					/*m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_NAMES,
-							tagName, "", now);*/
-
                 }
 
                 String value = tags.get(tagName);
-                String cachedValue = m_tagValueCache.cacheItem(value);
-                if (cachedValue == null) {
+                Boolean isCachedValue = m_tagValueCache.getIfPresent(value);
+                if (isCachedValue == null) {
+                    m_tagValueCache.put(value, CACHE_BOOLEAN);
                     if (value.toString().length() == 0) {
                         logger.warn(
                                 "Attempted to add empty tagValue (tag name " + tagName + ") to string cache for metric: " + metricName
@@ -520,7 +537,7 @@ public class CassandraDatastore implements Datastore {
                 // TODO fix me
                 //m_dataPointWriteBuffer.deleteRow(rowKey, now);  // delete the whole row
                 //m_rowKeyWriteBuffer.deleteColumn(rowKey.getMetricName(), rowKey, now); // Delete the index
-                m_rowKeyCache.clear();
+                // m_rowKeyCache.clear();
             } else {
                 partialRows.add(rowKey);
             }
@@ -533,8 +550,8 @@ public class CassandraDatastore implements Datastore {
             //m_rowKeyWriteBuffer.deleteRow(deleteQuery.getName(), now);
             //todo fix me
             //m_stringIndexWriteBuffer.deleteColumn(ROW_KEY_METRIC_NAMES, deleteQuery.getName(), now);
-            m_rowKeyCache.clear();
-            m_metricNameCache.clear();
+            // m_rowKeyCache.clear();
+            // m_metricNameCache.clear();
         }
     }
 

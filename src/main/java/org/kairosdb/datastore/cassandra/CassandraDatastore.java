@@ -44,6 +44,7 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -258,6 +259,9 @@ public class CassandraDatastore implements Datastore {
     private final Integer LOCK_ROW_KEY = new Integer(1);
     private final Boolean CACHE_BOOLEAN = new Boolean(true);
 
+    private volatile int keyInsertCount = 0;
+    private volatile long keyInsertTimer = System.currentTimeMillis();
+
     @Override
     public void putDataPoint(String metricName,
                              ImmutableSortedMap<String, String> tags,
@@ -292,11 +296,19 @@ public class CassandraDatastore implements Datastore {
                         // leave lock
                         writeRowKey = true;
                         m_rowKeyCache.put(rowKey, CACHE_BOOLEAN);
+
+                        int count = keyInsertCount++;
+                        if ((writeTime - keyInsertTimer) > 15000) {
+                            keyInsertTimer = writeTime;
+                            keyInsertCount = 0;
+                            logger.warn("RowKeys inserted: count={}", count);
+                        }
                     }
                 }
             }
 
             if (writeRowKey) {
+
                 BoundStatement bs = new BoundStatement(m_psInsertRowKey);
                 bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
 

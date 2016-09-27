@@ -723,7 +723,8 @@ public class CassandraDatastore implements Datastore {
         for(String split : ROW_KEY_SPLITS) {
             if (filterTags.containsKey(split)) {
                 Set<String> vs = filterTags.get(split);
-                if(vs.size()<useSplit.size() && vs.stream().noneMatch(x->x.contains("*") || x.contains("?"))) {
+                if(((vs.size() < useSplit.size() && useSplit.size() > 0) || (vs.size() > 0 && useSplit.size() == 0))
+                        && vs.stream().noneMatch(x->x.contains("*") || x.contains("?"))) {
                     useSplit = vs;
                     useSplitField = split;
                 }
@@ -734,7 +735,7 @@ public class CassandraDatastore implements Datastore {
         BoundStatement bs;
 
         if (useSplitField != null && !"".equals(useSplitField) && useSplit.size() > 0) {
-            logger.info("using split lookup: name={} fields={}", useSplitField, useSplit);
+            logger.warn("using split lookup: name={} fields={}", useSplitField, useSplit);
             bsShift = 2;
             bs = m_psQueryRowKeySplitIndex.bind();
             bs.setString(1, useSplitField);

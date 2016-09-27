@@ -733,7 +733,8 @@ public class CassandraDatastore implements Datastore {
         int bsShift = 0;
         BoundStatement bs;
 
-        if (useSplit != null && useSplit.size() > 0) {
+        if (useSplitField != null && !"".equals(useSplitField) && useSplit.size() > 0) {
+            logger.info("using split lookup: name={} fields={}", useSplitField, useSplit);
             bsShift = 2;
             bs = m_psQueryRowKeySplitIndex.bind();
             bs.setString(1, useSplitField);

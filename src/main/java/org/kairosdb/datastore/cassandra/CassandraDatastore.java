@@ -138,11 +138,11 @@ public class CassandraDatastore implements Datastore {
     private final PreparedStatement m_psQueryRowKeySplitIndex;
     private final PreparedStatement m_psQueryDataPoints;
 
-    private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<>(1024);
+    private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<>(8192);
 
-    private DataCache<String> m_metricNameCache = new DataCache<>(1024);
-    private DataCache<String> m_tagNameCache = new DataCache<>(1024);
-    private DataCache<String> m_tagValueCache = new DataCache<>(1024);
+    private DataCache<String> m_metricNameCache = new DataCache<>(4096);
+    private DataCache<String> m_tagNameCache = new DataCache<>(4096);
+    private DataCache<String> m_tagValueCache = new DataCache<>(4096);
 
     private final KairosDataPointFactory m_kairosDataPointFactory;
 
@@ -735,7 +735,7 @@ public class CassandraDatastore implements Datastore {
 
         if (useSplit != null && useSplit.size() > 0) {
             bsShift = 2;
-            bs = m_psInsertRowKeySplit.bind();
+            bs = m_psQueryRowKeySplitIndex.bind();
             bs.setString(1, useSplitField);
             bs.setList(2, Arrays.asList(useSplit.toArray()));
         }

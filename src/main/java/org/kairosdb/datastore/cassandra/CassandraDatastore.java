@@ -145,8 +145,8 @@ public class CassandraDatastore implements Datastore {
     private final PreparedStatement m_psQueryDataPoints;
 
     private final Cache<DataPointsRowKey, Boolean> m_rowKeyCache = Caffeine.newBuilder()
-            .initialCapacity(30_000)
-            .maximumSize(60_000)
+            .initialCapacity(70_000)
+            .maximumSize(110_000)
             .expireAfterWrite(24, TimeUnit.HOURS).build();
 
     private final Cache<String, Boolean> m_metricNameCache = Caffeine.newBuilder()
@@ -160,8 +160,8 @@ public class CassandraDatastore implements Datastore {
             .expireAfterWrite(24, TimeUnit.HOURS).build();
 
     private final Cache<String, Boolean> m_tagValueCache = Caffeine.newBuilder()
-            .initialCapacity(60_000)
-            .maximumSize(60_000)
+            .initialCapacity(50_000)
+            .maximumSize(100_000)
             .expireAfterWrite(24, TimeUnit.HOURS).build();
 
 

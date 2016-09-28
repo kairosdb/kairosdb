@@ -362,7 +362,7 @@ public class CassandraDatastore implements Datastore {
                 }
 
                 if (countsByMetricName != null) {
-                    Collections.sort(countsByMetricName, (x,y) -> x.getValue() - y.getValue());
+                    Collections.sort(countsByMetricName, (x,y) -> y.getValue() - x.getValue());
                     logger.warn("Keys inserted: {}", countsByMetricName.subList(0, Math.min(10, countsByMetricName.size())));
                 }
             }

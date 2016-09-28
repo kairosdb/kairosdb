@@ -324,6 +324,7 @@ public class CassandraDatastore implements Datastore {
                             keyInsertCount = 0;
                             countsByMetricName = new ArrayList<>();
                             countsByMetricName.addAll(insertCountByMetric.entrySet());
+                            countsByMetricName.clear();
                             logger.warn("RowKeys inserted: count={}", count);
                         }
                     }
@@ -360,7 +361,7 @@ public class CassandraDatastore implements Datastore {
                     rowKeyListener.addRowKey(metricName, rowKey, rowKeyTtl);
                 }
 
-                if (countsByMetricName == null) {
+                if (countsByMetricName != null) {
                     Collections.sort(countsByMetricName, (x,y) -> x.getValue() - y.getValue());
                     logger.warn("Keys inserted: {}", countsByMetricName.subList(0, Math.min(10, countsByMetricName.size())));
                 }

@@ -32,7 +32,7 @@ public class CassandraClientImpl implements CassandraClient
 		builder.withQueryOptions(new QueryOptions().setConsistencyLevel(config.getDataReadLevel()));
 
 		for (String node : config.getHostList().split(",")) {
-			builder.addContactPoint(node);
+			builder.addContactPoint(node.trim());
 		}
 
 		String user = config.getUser();

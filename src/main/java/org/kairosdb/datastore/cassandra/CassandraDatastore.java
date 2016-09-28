@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -144,28 +145,17 @@ public class CassandraDatastore implements Datastore {
     private final PreparedStatement m_psQueryRowKeySplitIndex;
     private final PreparedStatement m_psQueryDataPoints;
 
-    private final Cache<DataPointsRowKey, Boolean> m_rowKeyCache = Caffeine.newBuilder()
-            .initialCapacity(70_000)
-            .maximumSize(110_000)
-            .expireAfterWrite(24, TimeUnit.HOURS).build();
+    private final Cache<DataPointsRowKey, Boolean> m_rowKeyCache;
 
-    private final Cache<String, Boolean> m_metricNameCache = Caffeine.newBuilder()
-            .initialCapacity(5_000)
-            .maximumSize(5_000)
-            .expireAfterWrite(24, TimeUnit.HOURS).build();
+    private final Cache<String, Boolean> m_metricNameCache;
 
-    private final Cache<String, Boolean> m_tagNameCache = Caffeine.newBuilder()
-            .initialCapacity(1_000)
-            .maximumSize(1_000)
-            .expireAfterWrite(24, TimeUnit.HOURS).build();
+    private final Cache<String, Boolean> m_tagNameCache;
 
-    private final Cache<String, Boolean> m_tagValueCache = Caffeine.newBuilder()
-            .initialCapacity(50_000)
-            .maximumSize(100_000)
-            .expireAfterWrite(24, TimeUnit.HOURS).build();
-
+    private final Cache<String, Boolean> m_tagValueCache;
 
     private final KairosDataPointFactory m_kairosDataPointFactory;
+
+    private final List<String> m_indexTagList;
 
     private CassandraConfiguration m_cassandraConfiguration;
 
@@ -180,6 +170,29 @@ public class CassandraDatastore implements Datastore {
                               CassandraClient cassandraClient,
                               CassandraConfiguration cassandraConfiguration,
                               KairosDataPointFactory kairosDataPointFactory) throws DatastoreException {
+
+        m_rowKeyCache = Caffeine.newBuilder()
+                .initialCapacity(cassandraConfiguration.getRowKeyCacheSize()/3 + 1)
+                .maximumSize(cassandraConfiguration.getRowKeyCacheSize())
+                .expireAfterWrite(24, TimeUnit.HOURS).build();
+
+        m_metricNameCache = Caffeine.newBuilder()
+                .initialCapacity(cassandraConfiguration.getMetricNameCacheSize()/3 + 1)
+                .maximumSize(cassandraConfiguration.getMetricNameCacheSize())
+                .expireAfterWrite(24, TimeUnit.HOURS).build();
+
+        m_tagNameCache = Caffeine.newBuilder()
+                .initialCapacity(cassandraConfiguration.getTagNameCacheSize()/3 + 1)
+                .maximumSize(cassandraConfiguration.getTagNameCacheSize())
+                .expireAfterWrite(24, TimeUnit.HOURS).build();
+
+        m_tagValueCache = Caffeine.newBuilder()
+                .initialCapacity(cassandraConfiguration.getTagValueCacheSize()/3 + 1)
+                .maximumSize(cassandraConfiguration.getTagValueCacheSize())
+                .expireAfterWrite(24, TimeUnit.HOURS).build();
+
+        m_indexTagList = Arrays.asList(cassandraConfiguration.getIndexTagList().split(",")).stream().map(String::trim).collect(Collectors.toList());
+
         m_cassandraClient = cassandraClient;
         m_kairosDataPointFactory = kairosDataPointFactory;
 
@@ -254,7 +267,7 @@ public class CassandraDatastore implements Datastore {
     }
 
     // use list, same order for reads later
-    private static final List<String> ROW_KEY_SPLITS = Arrays.asList("key", "application_id", "stack_name");
+
 
     private final Integer LOCK_ROW_KEY = new Integer(1);
     private final Boolean CACHE_BOOLEAN = new Boolean(true);
@@ -316,7 +329,7 @@ public class CassandraDatastore implements Datastore {
                 bs.setInt(2, rowKeyTtl);
                 m_session.executeAsync(bs);
 
-                for (String split : ROW_KEY_SPLITS) {
+                for (String split : m_indexTagList) {
                     String v = tags.get(split);
                     if (null == v || "".equals(v)) {
                         continue;
@@ -747,7 +760,7 @@ public class CassandraDatastore implements Datastore {
         String useSplitField = null;
         Set<String> useSplit = new HashSet<>();
 
-        for(String split : ROW_KEY_SPLITS) {
+        for(String split : m_indexTagList) {
             if (filterTags.containsKey(split)) {
                 Set<String> vs = filterTags.get(split);
                 if(((vs.size() < useSplit.size() && useSplit.size() > 0) || (vs.size() > 0 && useSplit.size() == 0))

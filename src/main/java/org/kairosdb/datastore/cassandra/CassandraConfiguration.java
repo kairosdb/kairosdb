@@ -12,6 +12,7 @@ import java.util.Map;
  */
 public class CassandraConfiguration
 {
+
 	public static enum ADDRESS_TRANSLATOR_TYPE {
 		NONE,
 		EC2
@@ -28,6 +29,9 @@ public class CassandraConfiguration
 
 	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
 	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
+	public static final String TAG_NAME_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.tag_name_cache_size";
+	public static final String TAG_VALUE_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.tag_value_cache_size";
+	public static final String METRIC_NAME_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.metric_name_cache_size";
 
 	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
 	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
@@ -41,6 +45,16 @@ public class CassandraConfiguration
 
 	public static final String CASSANDRA_MAX_ROW_KEYS_FOR_QUERY = "kairosdb.datastore.cassandra.max_row_keys_for_query";
 	public static final String CASSANDRA_MAX_ROWS_FOR_KEY_QUERY = "kairosdb.datastore.cassandra.max_rows_for_key_query";
+
+	public static final String CASSANDRA_INDEX_TAG_LIST = "kairosdb.datastore.cassandra.index_tag_list";
+
+	@Inject(optional=true)
+	@Named(CASSANDRA_INDEX_TAG_LIST)
+	private String m_IndexTagList = "stack_name,application_id,key";
+
+	public String getIndexTagList() {
+		return m_IndexTagList;
+	}
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_MAX_ROW_KEYS_FOR_QUERY)
@@ -75,16 +89,28 @@ public class CassandraConfiguration
 	private int m_datapointTtl = 0; //Zero ttl means data lives forever.
 
 	@Inject
-	@Named(ROW_KEY_CACHE_SIZE_PROPERTY)
-	private int m_rowKeyCacheSize = 1024;
-
-	@Inject
 	@Named(HOST_LIST_PROPERTY)
 	private String m_hostList = "localhost";
 
-	@Inject
+	@Inject(optional=true)
 	@Named(STRING_CACHE_SIZE_PROPERTY)
 	private int m_stringCacheSize = 1024;
+
+	@Inject(optional=true)
+	@Named(ROW_KEY_CACHE_SIZE_PROPERTY)
+	private int m_rowKeyCacheSize = 1024;
+
+	@Inject(optional=true)
+	@Named(TAG_NAME_CACHE_SIZE_PROPERTY)
+	private int m_tagNameCacheSize = 1024;
+
+	@Inject(optional=true)
+	@Named(TAG_VALUE_CACHE_SIZE_PROPERTY)
+	private int m_tagValueCacheSize = 1024;
+
+	@Inject(optional=true)
+	@Named(METRIC_NAME_CACHE_SIZE_PROPERTY)
+	private int m_metricNameCacheSize = 1024;
 
 	@Inject
 	@Named(CassandraModule.CASSANDRA_AUTH_MAP)
@@ -215,5 +241,17 @@ public class CassandraConfiguration
 
 	public int getMaxRowsForKeysQuery() {
 		return m_maxRowsForKeysQuery;
+	}
+
+	public int getTagNameCacheSize() {
+		return m_tagNameCacheSize;
+	}
+
+	public int getTagValueCacheSize() {
+		return m_tagValueCacheSize;
+	}
+
+	public int getMetricNameCacheSize() {
+		return m_metricNameCacheSize;
 	}
 }

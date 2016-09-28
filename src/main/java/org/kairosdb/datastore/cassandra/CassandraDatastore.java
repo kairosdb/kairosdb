@@ -18,7 +18,6 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.*;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.SetMultimap;
@@ -42,9 +41,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -171,6 +168,12 @@ public class CassandraDatastore implements Datastore {
                               CassandraConfiguration cassandraConfiguration,
                               KairosDataPointFactory kairosDataPointFactory) throws DatastoreException {
 
+        logger.warn("Setting tag index: {}", cassandraConfiguration.getIndexTagList());
+        logger.warn("Setting metric name cache size: {}", cassandraConfiguration.getMetricNameCacheSize());
+        logger.warn("Setting row key cache size: {}", cassandraConfiguration.getRowKeyCacheSize());
+        logger.warn("Setting tag name cache size: {}", cassandraConfiguration.getTagNameCacheSize());
+        logger.warn("Setting tag value cache size: {}", cassandraConfiguration.getTagValueCacheSize());
+
         m_rowKeyCache = Caffeine.newBuilder()
                 .initialCapacity(cassandraConfiguration.getRowKeyCacheSize()/3 + 1)
                 .maximumSize(cassandraConfiguration.getRowKeyCacheSize())
@@ -266,14 +269,13 @@ public class CassandraDatastore implements Datastore {
         m_cassandraClient.close();
     }
 
-    // use list, same order for reads later
-
-
     private final Integer LOCK_ROW_KEY = new Integer(1);
     private final Boolean CACHE_BOOLEAN = new Boolean(true);
 
     private volatile int keyInsertCount = 0;
     private volatile long keyInsertTimer = System.currentTimeMillis();
+
+    private final Map<String, Integer> insertCountByMetric = new HashMap<>();
 
     @Override
     public void putDataPoint(String metricName,
@@ -281,21 +283,22 @@ public class CassandraDatastore implements Datastore {
                              DataPoint dataPoint,
                              int ttl) throws DatastoreException {
         try {
-            DataPointsRowKey rowKey = null;
+
             //time the data is written.
             long writeTime = System.currentTimeMillis();
-            if (0 == ttl)
+            if (0 == ttl) {
                 ttl = m_cassandraConfiguration.getDatapointTtl();
+            }
 
             int rowKeyTtl = 0;
             //Row key will expire after configured ReadRowWidth
-            if (ttl != 0)
+            if (ttl != 0) {
                 rowKeyTtl = ttl + ((int) (m_rowWidthWrite / 1000));
+            }
 
-            long rowTime = calculateRowTimeWrite(dataPoint.getTimestamp());
-
-            rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
-                    tags);
+            final long rowTime = calculateRowTimeWrite(dataPoint.getTimestamp());
+            final DataPointsRowKey rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(), tags);
+            List<Map.Entry<String, Integer>> countsByMetricName = null;
 
             // Write out the row key if it is not cached
             boolean writeRowKey = false;
@@ -309,9 +312,18 @@ public class CassandraDatastore implements Datastore {
                         m_rowKeyCache.put(rowKey, CACHE_BOOLEAN);
 
                         int count = keyInsertCount++;
-                        if ((writeTime - keyInsertTimer) > 15000) {
+                        if(insertCountByMetric.containsKey(metricName)) {
+                            insertCountByMetric.put(metricName, insertCountByMetric.get(metricName) + 1);
+                        }
+                        else {
+                            insertCountByMetric.put(metricName, 1);
+                        }
+
+                        if ((writeTime - keyInsertTimer) > 30_000) {
                             keyInsertTimer = writeTime;
                             keyInsertCount = 0;
+                            countsByMetricName = new ArrayList<>();
+                            countsByMetricName.addAll(insertCountByMetric.entrySet());
                             logger.warn("RowKeys inserted: count={}", count);
                         }
                     }
@@ -346,6 +358,11 @@ public class CassandraDatastore implements Datastore {
 
                 for (RowKeyListener rowKeyListener : m_rowKeyListeners) {
                     rowKeyListener.addRowKey(metricName, rowKey, rowKeyTtl);
+                }
+
+                if (countsByMetricName == null) {
+                    Collections.sort(countsByMetricName, (x,y) -> x.getValue() - y.getValue());
+                    logger.warn("Keys inserted: {}", countsByMetricName.subList(0, Math.min(10, countsByMetricName.size())));
                 }
             }
 

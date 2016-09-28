@@ -324,7 +324,7 @@ public class CassandraDatastore implements Datastore {
                             keyInsertCount = 0;
                             countsByMetricName = new ArrayList<>();
                             countsByMetricName.addAll(insertCountByMetric.entrySet());
-                            countsByMetricName.clear();
+                            insertCountByMetric.clear();
                             logger.warn("RowKeys inserted: count={}", count);
                         }
                     }

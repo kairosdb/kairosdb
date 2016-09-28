@@ -50,7 +50,7 @@ public class CassandraConfiguration
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_INDEX_TAG_LIST)
-	private String m_IndexTagList = "stack_name,application_id,key";
+	private String m_IndexTagList = "key,application_id,stack_name";
 
 	public String getIndexTagList() {
 		return m_IndexTagList;

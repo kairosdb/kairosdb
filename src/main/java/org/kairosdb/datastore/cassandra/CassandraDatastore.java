@@ -311,7 +311,7 @@ public class CassandraDatastore implements Datastore {
                         writeRowKey = true;
                         m_rowKeyCache.put(rowKey, CACHE_BOOLEAN);
 
-                        int count = keyInsertCount++;
+                        int count = ++keyInsertCount;
                         if(insertCountByMetric.containsKey(metricName)) {
                             insertCountByMetric.put(metricName, insertCountByMetric.get(metricName) + 1);
                         }

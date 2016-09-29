@@ -21,9 +21,11 @@ You can turn off metrics reporting by removing the kairosdb.service.reporter pro
 Metrics Reported
 ----------------
 
+
 * *kairosdb.datastore.cassandra.key_query_time* - Time in milliseconds to query the row keys from Cassandra.
+* *kairosdb.datastore.cassandra.row_key_count* - The number of partitions in Cassandra the query came from.
 * *kairosdb.datastore.query_collisions* - Number of identical queries that are ran at the same time.  Or one was started before the other finished.
-* *kairosdb.datastore.query_row_count* - The number of rows a query retrieved data from.
+* *kairosdb.datastore.query_row_count* - The number of chunks fetched by the datastore.  Example. If it takes two queries to get the data from a single row in Cassandra then this value will be 2.  The higher this number the more memory the query will require to process.
 * *kairosdb.datastore.query_sample_size* - The number of data points a query retrieves from Cassandra (before aggregation).
 * *kairosdb.datastore.query_time* - The number of milliseconds to retreive the data out of Cassandra for a query (not including key lookup).
 * *kairosdb.datastore.write_size* - The number of data points written to the data store during the last write.
@@ -35,6 +37,8 @@ Metrics Reported
 * *kairosdb.jvm.total_memory* - The amount of total memory in the JVM.
 * *kairosdb.jvm.max_memory* - The maximum amount of memory the JVM will attempt to use.
 * *kairosdb.jvm.thread_count* - The total number of threads running in the JVM.
+* *kairosdb.log.query.json* - When enabled by turning on kairosdb.log.queries.enable this metric contains the json query.
+* *kairosdb.log.query.remote_address* - When enabled by turning on kairosdb.log.queries.enable this metric contains the sender IP address for the query.
 * *kairosdb.metric_counters* - Counts the number of data points received since the last report.  Tags are used to separate one metric from another.
 * *kairosdb.protocol.http_request_count* - The number of HTTP requests for each method. This includes a method tag that indicates the method that was called. For example, method=query if a query was done.
 * *kairosdb.protocol.telnet_request_count* - The number of telnet requests for each method. This includes a method tag that indicates the method that called. For example, method=put if the put method was called.

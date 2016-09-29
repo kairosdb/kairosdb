@@ -67,6 +67,7 @@ public class CassandraDatastore implements Datastore
 	public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
 
 	public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
+	public static final String ROW_KEY_COUNT = "kairosdb.datastore.cassandra.row_key_count";
 
 
 	public static final String CF_DATA_POINTS = "data_points";
@@ -430,6 +431,7 @@ public class CassandraDatastore implements Datastore
 		long startTime = System.currentTimeMillis();
 		long currentTimeTier = 0L;
 		String currentType = null;
+		int rowCount = 0;
 
 		List<QueryRunner> runners = new ArrayList<QueryRunner>();
 		List<DataPointsRowKey> queryKeys = new ArrayList<DataPointsRowKey>();
@@ -437,6 +439,7 @@ public class CassandraDatastore implements Datastore
 		MemoryMonitor mm = new MemoryMonitor(20);
 		while (rowKeys.hasNext())
 		{
+			rowCount++;
 			DataPointsRowKey rowKey = rowKeys.next();
 			if (currentTimeTier == 0L)
 				currentTimeTier = rowKey.getTimestamp();
@@ -464,6 +467,8 @@ public class CassandraDatastore implements Datastore
 
 			mm.checkMemoryAndThrowException();
 		}
+
+		ThreadReporter.addDataPoint(ROW_KEY_COUNT, rowCount);
 
 		//There may be stragglers that are not ran
 		if (!queryKeys.isEmpty())

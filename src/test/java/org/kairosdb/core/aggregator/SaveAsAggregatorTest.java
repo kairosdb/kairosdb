@@ -1,6 +1,7 @@
 package org.kairosdb.core.aggregator;
 
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.EventBus;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
@@ -10,18 +11,16 @@ import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.TagGroupBy;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.testing.ListDataPointGroup;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Collections;
-import java.util.Map;
-import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.kairosdb.util.DataPointEventUtil.verifyEvent;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 /**
  Created by bhawkins on 2/9/16.
@@ -30,12 +29,18 @@ public class SaveAsAggregatorTest
 {
 	private SaveAsAggregator m_aggregator;
 	private Datastore m_mockDatastore;
+	private EventBus m_mockEventBus;
+	ArgumentCaptor<DataPointEvent> m_event;
+
 
 	@Before
 	public void setup()
 	{
 		m_mockDatastore = mock(Datastore.class);
-		m_aggregator = new SaveAsAggregator(m_mockDatastore);
+		m_mockEventBus = mock(EventBus.class);
+		m_aggregator = new SaveAsAggregator(m_mockEventBus);
+
+		m_event = ArgumentCaptor.forClass(DataPointEvent.class);
 	}
 
 	@Test
@@ -55,14 +60,14 @@ public class SaveAsAggregatorTest
 		assertThat(dataPoint.getTimestamp(), equalTo(1L));
 		assertThat(dataPoint.getLongValue(), equalTo(10L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), any(ImmutableSortedMap.class), eq(dataPoint), eq(42));
+		verifyEvent(m_mockEventBus, "testTtl", dataPoint, 42);
 
 		assertThat(results.hasNext(), equalTo(true));
 		dataPoint = results.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(2L));
 		assertThat(dataPoint.getLongValue(), equalTo(20L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), any(ImmutableSortedMap.class), eq(dataPoint), eq(42));
+		verifyEvent(m_mockEventBus, "testTtl", dataPoint, 42);
 
 		results.close();
 	}
@@ -84,14 +89,14 @@ public class SaveAsAggregatorTest
 		assertThat(dataPoint.getTimestamp(), equalTo(1L));
 		assertThat(dataPoint.getLongValue(), equalTo(10L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), any(ImmutableSortedMap.class), eq(dataPoint), eq(0));
+		verifyEvent(m_mockEventBus, "testTtl", dataPoint, 0);
 
 		assertThat(results.hasNext(), equalTo(true));
 		dataPoint = results.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(2L));
 		assertThat(dataPoint.getLongValue(), equalTo(20L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), any(ImmutableSortedMap.class), eq(dataPoint), eq(0));
+		verifyEvent(m_mockEventBus, "testTtl", dataPoint, 0);
 
 		results.close();
 	}
@@ -119,14 +124,14 @@ public class SaveAsAggregatorTest
 		assertThat(dataPoint.getTimestamp(), equalTo(1L));
 		assertThat(dataPoint.getLongValue(), equalTo(10L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), eq(verifyMap), eq(dataPoint), eq(0));
+		verifyEvent(m_mockEventBus, "testTtl", verifyMap, dataPoint, 0);
 
 		assertThat(results.hasNext(), equalTo(true));
 		dataPoint = results.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(2L));
 		assertThat(dataPoint.getLongValue(), equalTo(20L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), eq(verifyMap), eq(dataPoint), eq(0));
+		verifyEvent(m_mockEventBus, "testTtl", verifyMap, dataPoint, 0);
 
 		results.close();
 	}
@@ -154,14 +159,14 @@ public class SaveAsAggregatorTest
 		assertThat(dataPoint.getTimestamp(), equalTo(1L));
 		assertThat(dataPoint.getLongValue(), equalTo(10L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), eq(verifyMap), eq(dataPoint), eq(0));
+		verifyEvent(m_mockEventBus, "testTtl", verifyMap, dataPoint, 0);
 
 		assertThat(results.hasNext(), equalTo(true));
 		dataPoint = results.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(2L));
 		assertThat(dataPoint.getLongValue(), equalTo(20L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), eq(verifyMap), eq(dataPoint), eq(0));
+		verifyEvent(m_mockEventBus, "testTtl", verifyMap, dataPoint, 0);
 
 		results.close();
 	}
@@ -196,14 +201,14 @@ public class SaveAsAggregatorTest
 		assertThat(dataPoint.getTimestamp(), equalTo(1L));
 		assertThat(dataPoint.getLongValue(), equalTo(10L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), eq(verifyMap), eq(dataPoint), eq(42));
+		verifyEvent(m_mockEventBus, "testTtl", verifyMap, dataPoint, 42);
 
 		assertThat(results.hasNext(), equalTo(true));
 		dataPoint = results.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(2L));
 		assertThat(dataPoint.getLongValue(), equalTo(20L));
 
-		verify(m_mockDatastore).putDataPoint(eq("testTtl"), eq(verifyMap), eq(dataPoint), eq(42));
+		verifyEvent(m_mockEventBus, "testTtl", verifyMap, dataPoint, 42);
 
 		results.close();
 	}

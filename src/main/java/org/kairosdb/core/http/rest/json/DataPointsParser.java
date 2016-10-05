@@ -17,6 +17,7 @@
 package org.kairosdb.core.http.rest.json;
 
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.EventBus;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
@@ -24,8 +25,8 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.Util;
 import org.kairosdb.util.Validator;
 
@@ -45,7 +46,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class DataPointsParser
 {
-	private final KairosDatastore datastore;
+	private final EventBus m_eventBus;
 	private final Reader inputStream;
 	private final Gson gson;
 	private final KairosDataPointFactory dataPointFactory;
@@ -63,10 +64,10 @@ public class DataPointsParser
 	private int dataPointCount;
 	private int ingestTime;
 
-	public DataPointsParser(KairosDatastore datastore, Reader stream, Gson gson,
+	public DataPointsParser(EventBus eventBus, Reader stream, Gson gson,
 	                        KairosDataPointFactory dataPointFactory)
 	{
-		this.datastore = checkNotNull(datastore);
+		m_eventBus = checkNotNull(eventBus);
 		this.inputStream = checkNotNull(stream);
 		this.gson = gson;
 		this.dataPointFactory = dataPointFactory;
@@ -308,8 +309,8 @@ public class DataPointsParser
 
 				if (dataPointFactory.isRegisteredType(type))
 				{
-					datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
-							type, metric.getTimestamp(), metric.getValue()), metric.getTtl());
+					m_eventBus.post(new DataPointEvent(metric.getName(), tags, dataPointFactory.createDataPoint(
+							type, metric.getTimestamp(), metric.getValue()), metric.getTtl()));
 					dataPointCount++;
 				}
 				else
@@ -358,8 +359,8 @@ public class DataPointsParser
 							continue;
 						}
 
-						datastore.putDataPoint(metric.getName(), tags,
-								dataPointFactory.createDataPoint(type, timestamp, dataPoint[1]), metric.getTtl());
+						m_eventBus.post(new DataPointEvent(metric.getName(), tags,
+								dataPointFactory.createDataPoint(type, timestamp, dataPoint[1]), metric.getTtl()));
 						dataPointCount ++;
 					}
 					contextCount++;

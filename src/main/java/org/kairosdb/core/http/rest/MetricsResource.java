@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.http.rest;
 
+import com.google.common.eventbus.EventBus;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
@@ -54,6 +55,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static javax.ws.rs.core.Response.ResponseBuilder;
 
@@ -76,6 +78,7 @@ public class MetricsResource implements KairosMetricReporter
 	public static final String QUERY_URL = "/datapoints/query";
 
 	private final KairosDatastore datastore;
+	private final EventBus m_eventBus;
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
 	private final QueryParser queryParser;
 
@@ -112,10 +115,11 @@ public class MetricsResource implements KairosMetricReporter
 
 	@Inject
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
-			KairosDataPointFactory dataPointFactory)
+			KairosDataPointFactory dataPointFactory, EventBus eventBus)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.queryParser = checkNotNull(queryParser);
+		m_eventBus = checkNotNull(eventBus);
 		m_kairosDataPointFactory = dataPointFactory;
 		formatters.put("json", new JsonFormatter());
 
@@ -246,7 +250,7 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		try
 		{
-			DataPointsParser parser = new DataPointsParser(datastore, new InputStreamReader(json, "UTF-8"),
+			DataPointsParser parser = new DataPointsParser(m_eventBus, new InputStreamReader(json, "UTF-8"),
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 
@@ -479,7 +483,7 @@ public class MetricsResource implements KairosMetricReporter
 
 
 			ThreadReporter.submitData(m_longDataPointFactory,
-					m_stringDataPointFactory, datastore);
+					m_stringDataPointFactory, m_eventBus);
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new FileStreamingOutput(respFile));

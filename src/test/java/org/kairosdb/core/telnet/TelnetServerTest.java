@@ -17,6 +17,7 @@
 package org.kairosdb.core.telnet;
 
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.EventBus;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import java.net.UnknownHostException;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.kairosdb.util.DataPointEventUtil.verifyEvent;
 import static org.mockito.Mockito.*;
 
 /**
@@ -47,6 +49,7 @@ public class TelnetServerTest
 	private static final int TELNET_PORT = 4244;
 	private static final int MAX_COMMAND_LENGTH = 1024;
 	private KairosDatastore m_datastore;
+	private EventBus m_eventBus;
 	private TelnetServer m_server;
 	private TelnetClient m_client;
 	private TestCommandProvider commandProvider;
@@ -54,9 +57,9 @@ public class TelnetServerTest
 	@Before
 	public void setupDatastore() throws KairosDBException, IOException
 	{
-		m_datastore = mock(KairosDatastore.class);
+		m_eventBus = mock(EventBus.class);
 		commandProvider = new TestCommandProvider();
-		commandProvider.putCommand("put", new PutCommand(m_datastore, "localhost",
+		commandProvider.putCommand("put", new PutCommand(m_eventBus, "localhost",
 				new LongDataPointFactoryImpl(), new DoubleDataPointFactoryImpl()));
 
 		m_server = new TelnetServer(TELNET_PORT, MAX_COMMAND_LENGTH, commandProvider);
@@ -118,8 +121,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verify(m_datastore, timeout(5000).times(1))
-				.putDataPoint("test.metric", tags, dp);
+		verifyEvent(m_eventBus, "test.metric", tags, dp);
 	}
 
 	@Test
@@ -134,8 +136,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verify(m_datastore, timeout(5000).times(1))
-				.putDataPoint("test.metric", tags, dp);
+		verifyEvent(m_eventBus, "test.metric", tags, dp);
 	}
 
 	@Test
@@ -150,8 +151,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verify(m_datastore, timeout(5000).times(1))
-				.putDataPoint("test.metric", tags, dp);
+		verifyEvent(m_eventBus, "test.metric", tags, dp);
 	}
 
 	@Test
@@ -166,8 +166,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verify(m_datastore, timeout(5000).times(1))
-				.putDataPoint("test.metric", tags, dp);
+		verifyEvent(m_eventBus, "test.metric", tags, dp);
 	}
 
 	@Test
@@ -185,15 +184,14 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verify(m_datastore, timeout(5000).times(0))
-				.putDataPoint(metricName, tags, dp);
+		verifyZeroInteractions(m_eventBus);
 	}
 
 	@Test
 	public void test_MaxCommandLengthSufficient() throws KairosDBException, IOException
 	{
 		TestCommandProvider commandProvider = new TestCommandProvider();
-		commandProvider.putCommand("put", new PutCommand(m_datastore, "localhost",
+		commandProvider.putCommand("put", new PutCommand(m_eventBus, "localhost",
 				new LongDataPointFactoryImpl(), new DoubleDataPointFactoryImpl()));
 		m_server.stop();
 		m_server = new TelnetServer(TELNET_PORT, 3072, commandProvider);
@@ -212,8 +210,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verify(m_datastore, timeout(5000).times(1))
-				.putDataPoint(metricName, tags, dp);
+		verifyEvent(m_eventBus, metricName, tags, dp);
 	}
 
 	private String createLongString(int length)

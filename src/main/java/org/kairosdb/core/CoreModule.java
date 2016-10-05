@@ -16,11 +16,16 @@
 
 package org.kairosdb.core;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.net.InetAddresses;
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.matcher.Matchers;
 import com.google.inject.name.Names;
+import com.google.inject.spi.InjectionListener;
+import com.google.inject.spi.TypeEncounter;
+import com.google.inject.spi.TypeListener;
 import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.GuiceQueryPluginFactory;
@@ -43,6 +48,7 @@ public class CoreModule extends AbstractModule
 	public static final String DATAPOINTS_FACTORY_LONG = "kairosdb.datapoints.factory.long";
 	public static final String DATAPOINTS_FACTORY_DOUBLE = "kairosdb.datapoints.factory.double";
 	private Properties m_props;
+	private final EventBus m_eventBus = new EventBus();
 
 	public CoreModule(Properties props)
 	{
@@ -70,6 +76,26 @@ public class CoreModule extends AbstractModule
 	@Override
 	protected void configure()
 	{
+		/*
+		This bit of magic makes it so any object that is bound through guice just
+		needs to annotate a method with @Subscribe and they can get events.
+		 */
+		bind(EventBus.class).toInstance(m_eventBus);
+		//Need to register an exception handler
+		bindListener(Matchers.any(), new TypeListener()
+		{
+			public <I> void hear(TypeLiteral<I> typeLiteral, TypeEncounter<I> typeEncounter)
+			{
+				typeEncounter.register(new InjectionListener<I>()
+				{
+					public void afterInjection(I i)
+					{
+						m_eventBus.register(i);
+					}
+				});
+			}
+		});
+
 		bind(QueryQueuingManager.class).in(Singleton.class);
 		bind(KairosDatastore.class).in(Singleton.class);
 		bind(AggregatorFactory.class).to(GuiceAggregatorFactory.class).in(Singleton.class);
@@ -111,10 +137,6 @@ public class CoreModule extends AbstractModule
 
 		String hostname = m_props.getProperty("kairosdb.hostname");
 		bindConstant().annotatedWith(Names.named("HOSTNAME")).to(hostname != null ? hostname: Util.getHostName());
-
-		bind(new TypeLiteral<List<DataPointListener>>()
-		{
-		}).toProvider(DataPointListenerProvider.class);
 
 		//bind datapoint default impls
 		bind(DoubleDataPointFactory.class)

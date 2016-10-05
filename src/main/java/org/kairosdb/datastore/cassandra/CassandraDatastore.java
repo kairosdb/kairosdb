@@ -21,6 +21,7 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
+import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import me.prettyprint.cassandra.model.ConfigurableConsistencyLevel;
@@ -48,6 +49,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.KDataOutput;
 import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
@@ -282,7 +284,7 @@ public class CassandraDatastore implements Datastore
 	{
 		try
 		{
-			putDataPoint(metricName, tags, dataPoint, 0);
+			putDataPoint(new DataPointEvent(metricName, tags, dataPoint, 0));
 		}
 		catch (DatastoreException e)
 		{
@@ -427,12 +429,14 @@ public class CassandraDatastore implements Datastore
 		m_cassandraClient.close();
 	}
 
-	@Override
-	public void putDataPoint(String metricName,
-			ImmutableSortedMap<String, String> tags,
-			DataPoint dataPoint,
-			int ttl) throws DatastoreException
+	@Subscribe
+	public void putDataPoint(DataPointEvent dataPointEvent) throws DatastoreException
 	{
+		String metricName = dataPointEvent.getMetricName();
+		ImmutableSortedMap<String, String> tags = dataPointEvent.getTags();
+		DataPoint dataPoint = dataPointEvent.getDataPoint();
+		int ttl = dataPointEvent.getTtl();
+
 		try
 		{
 			DataPointsRowKey rowKey = null;

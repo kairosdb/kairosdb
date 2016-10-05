@@ -21,6 +21,7 @@ import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.google.common.eventbus.EventBus;
 import com.google.gson.Gson;
 import com.google.inject.*;
 import com.google.inject.util.Modules;
@@ -416,6 +417,7 @@ public class Main
 	public void runImport(InputStream in) throws IOException, DatastoreException
 	{
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
+		EventBus eventBus = m_injector.getInstance(EventBus.class);
 		KairosDataPointFactory dpFactory = m_injector.getInstance(KairosDataPointFactory.class);
 
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8));
@@ -424,7 +426,7 @@ public class Main
 		String line;
 		while ((line = reader.readLine()) != null)
 		{
-			DataPointsParser dataPointsParser = new DataPointsParser(ds, new StringReader(line),
+			DataPointsParser dataPointsParser = new DataPointsParser(eventBus, new StringReader(line),
 					gson, dpFactory);
 
 			ValidationErrors validationErrors = dataPointsParser.parse();

@@ -1,7 +1,6 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.google.inject.*;
-import org.kairosdb.core.DataPointListener;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -17,6 +17,7 @@
 package org.kairosdb.datastore.h2;
 
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mchange.v2.c3p0.DataSources;
@@ -29,6 +30,7 @@ import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.h2.orm.*;
 import org.kairosdb.datastore.h2.orm.DataPoint;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.KDataInput;
 import org.kairosdb.util.KDataOutput;
 import org.slf4j.Logger;
@@ -132,14 +134,16 @@ public class H2Datastore implements Datastore
 		}
 	}
 
-	@Override
-	public synchronized void putDataPoint(String metricName,
-			ImmutableSortedMap<String, String> tags,
-			org.kairosdb.core.DataPoint dataPoint, int ttl) throws DatastoreException
+	@Subscribe
+	public synchronized void putDataPoint(DataPointEvent event) throws DatastoreException
 	{
 		GenOrmDataSource.attachAndBegin();
 		try
 		{
+			ImmutableSortedMap<String, String> tags = event.getTags();
+			String metricName = event.getMetricName();
+			org.kairosdb.core.DataPoint dataPoint = event.getDataPoint();
+
 			String key = createMetricKey(metricName, tags, dataPoint.getDataStoreDataType());
 			Metric m = Metric.factory.findOrCreate(key);
 			if (m.isNew())

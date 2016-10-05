@@ -22,7 +22,6 @@ import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.LimitAggregator;
@@ -56,7 +55,6 @@ public class KairosDatastore
 
 	private final Datastore m_datastore;
 	private final QueryQueuingManager m_queuingManager;
-	private final List<DataPointListener> m_dataPointListeners;
 	private final KairosDataPointFactory m_dataPointFactory;
 
 	private String m_baseCacheDir;
@@ -66,12 +64,11 @@ public class KairosDatastore
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-			List<DataPointListener> dataPointListeners, KairosDataPointFactory dataPointFactory,
+			KairosDataPointFactory dataPointFactory,
 			@Named(KEEP_CACHE_FILES) boolean keepCacheFiles)
 			throws DatastoreException
 	{
 		m_datastore = checkNotNull(datastore);
-		m_dataPointListeners = checkNotNull(dataPointListeners);
 		m_queuingManager = checkNotNull(queuingManager);
 		m_dataPointFactory = dataPointFactory;
 
@@ -180,7 +177,7 @@ public class KairosDatastore
 		m_datastore.close();
 	}
 
-	public void putDataPoint(String metricName,
+	/*public void putDataPoint(String metricName,
 			ImmutableSortedMap<String, String> tags,
 			DataPoint dataPoint) throws DatastoreException
 	{
@@ -193,12 +190,7 @@ public class KairosDatastore
 	{
 		//Add to datastore first.
 		m_datastore.putDataPoint(metricName, tags, dataPoint, ttl);
-
-		for (DataPointListener dataPointListener : m_dataPointListeners)
-		{
-			dataPointListener.dataPoint(metricName, tags, dataPoint);
-		}
-	}
+	}*/
 
 
 	public Iterable<String> getMetricNames() throws DatastoreException

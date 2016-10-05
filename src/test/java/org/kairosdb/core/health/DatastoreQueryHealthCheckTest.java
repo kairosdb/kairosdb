@@ -4,6 +4,7 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 
 import java.util.Collections;
@@ -16,13 +17,13 @@ import static org.mockito.Mockito.when;
 
 public class DatastoreQueryHealthCheckTest
 {
-	private Datastore datastore;
+	private KairosDatastore datastore;
 	private DatastoreQueryHealthCheck healthCheck;
 
 	@Before
 	public void setup() throws DatastoreException
 	{
-		datastore = mock(Datastore.class);
+		datastore = mock(KairosDatastore.class);
 		when(datastore.getMetricNames()).thenReturn(Collections.<String>emptyList());
 
 		healthCheck = new DatastoreQueryHealthCheck(datastore);

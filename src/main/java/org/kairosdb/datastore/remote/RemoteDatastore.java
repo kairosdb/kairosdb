@@ -19,6 +19,7 @@ package org.kairosdb.datastore.remote;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Multimap;
+import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.http.HttpResponse;
@@ -38,6 +39,7 @@ import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.events.DataPointEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -268,16 +270,15 @@ public class RemoteDatastore implements Datastore
 		}
 	}
 
-	@Override
-	public void putDataPoint(String metricName,
-			ImmutableSortedMap<String, String> tags,
-			DataPoint dataPoint, int ttl) throws DatastoreException
+	@Subscribe
+	public void putDataPoint(DataPointEvent event) throws DatastoreException
 	{
-		DataPointKey key = new DataPointKey(metricName, tags, dataPoint.getApiDataType(), ttl);
+		DataPointKey key = new DataPointKey(event.getMetricName(), event.getTags(),
+				event.getDataPoint().getApiDataType(), event.getTtl());
 
 		synchronized (m_mapLock)
 		{
-			m_dataPointMultimap.put(key, dataPoint);
+			m_dataPointMultimap.put(key, event.getDataPoint());
 		}
 	}
 
@@ -398,10 +399,10 @@ public class RemoteDatastore implements Datastore
 
 			try
 			{
-				putDataPoint(FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, fileSize), 0);
-				putDataPoint(WRITE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, m_dataPointCounter), 0);
-				putDataPoint(ZIP_FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, zipSize), 0);
-				putDataPoint(TIME_TO_SEND_METRIC, tags, m_longDataPointFactory.createDataPoint(now, timeToSend), 0);
+				putDataPoint(new DataPointEvent(FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, fileSize), 0));
+				putDataPoint(new DataPointEvent(WRITE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, m_dataPointCounter), 0));
+				putDataPoint(new DataPointEvent(ZIP_FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, zipSize), 0));
+				putDataPoint(new DataPointEvent(TIME_TO_SEND_METRIC, tags, m_longDataPointFactory.createDataPoint(now, timeToSend), 0));
 			}
 			catch (DatastoreException e)
 			{

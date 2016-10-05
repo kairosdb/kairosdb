@@ -20,7 +20,6 @@ import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datastore.*;
@@ -65,10 +64,13 @@ public class H2DatastoreTest extends DatastoreTestHelper
 	public static void setupDatabase() throws DatastoreException
 	{
 		KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
+		H2Datastore h2Datastore = new H2Datastore(DB_PATH, dataPointFactory);
 
-		s_datastore = new KairosDatastore(new H2Datastore(DB_PATH, dataPointFactory),
+		s_datastore = new KairosDatastore(h2Datastore,
 				new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				dataPointFactory, false);
+
+		s_eventBus.register(h2Datastore);
 
 		loadData();
 	}

@@ -18,7 +18,6 @@ package org.kairosdb.core.datastore;
 import com.google.common.collect.ImmutableSortedMap;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.aggregator.AggregatorFactory;
@@ -61,7 +60,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
+				new TestDataPointFactory(), false);
 
 		datastore.createQuery(null);
 	}
@@ -71,7 +70,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
+				new TestDataPointFactory(), false);
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 		metric.addAggregator(aggFactory.createAggregator("sum"));
 
@@ -100,7 +99,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
+				new TestDataPointFactory(), false);
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 
 		DatastoreQuery dq = datastore.createQuery(metric);
@@ -174,7 +173,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
+				new TestDataPointFactory(), false);
 
 		// Create files in the cache directory
 		File cacheDir = new File(datastore.getCacheDir());
@@ -196,7 +195,7 @@ public class KairosDatastoreTest
 	public void test_groupByTypeAndTag_SameTagValue() throws DatastoreException, FormatterException
 	{
 		TestKairosDatastore datastore = new TestKairosDatastore(new TestDatastore(), new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				new TestDataPointFactory());
 
 		TagGroupBy groupBy = new TagGroupBy("tag1", "tag2");
 		List<DataPointRow> rows = new ArrayList<DataPointRow>();
@@ -227,7 +226,7 @@ public class KairosDatastoreTest
 	public void test_groupByTypeAndTag_DifferentTagValues() throws DatastoreException, FormatterException
 	{
 		TestKairosDatastore datastore = new TestKairosDatastore(new TestDatastore(), new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				new TestDataPointFactory());
 
 		TagGroupBy groupBy = new TagGroupBy("tag1", "tag2");
 		List<DataPointRow> rows = new ArrayList<DataPointRow>();
@@ -258,7 +257,7 @@ public class KairosDatastoreTest
 	public void test_groupByTypeAndTag_MultipleTags() throws DatastoreException, FormatterException
 	{
 		TestKairosDatastore datastore = new TestKairosDatastore(new TestDatastore(), new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				new TestDataPointFactory());
 
 		/*
 		The order of the returned data must be stored first by tag1 and
@@ -316,10 +315,9 @@ public class KairosDatastoreTest
 	{
 
 		public TestKairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-		                           List<DataPointListener> dataPointListeners,
 		                           KairosDataPointFactory dataPointFactory) throws DatastoreException
 		{
-			super(datastore, queuingManager, dataPointListeners, dataPointFactory, false);
+			super(datastore, queuingManager, dataPointFactory, false);
 		}
 	}
 
@@ -333,13 +331,6 @@ public class KairosDatastoreTest
 
 		@Override
 		public void close() throws InterruptedException
-		{
-		}
-
-		@Override
-		public void putDataPoint(String metricName,
-				ImmutableSortedMap<String, String> tags,
-				DataPoint dataPoint, int ttl) throws DatastoreException
 		{
 		}
 

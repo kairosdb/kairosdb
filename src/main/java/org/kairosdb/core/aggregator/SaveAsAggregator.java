@@ -1,6 +1,7 @@
 package org.kairosdb.core.aggregator;
 
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
@@ -10,6 +11,7 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
+import org.kairosdb.events.DataPointEvent;
 
 import java.util.*;
 
@@ -19,7 +21,7 @@ import java.util.*;
 @AggregatorName(name = "save_as", description = "Saves the results to a new metric.")
 public class SaveAsAggregator implements Aggregator, GroupByAware
 {
-	private KairosDatastore m_datastore;
+	private final EventBus m_eventBus;
 	private String m_metricName;
 	private Map<String, String> m_tags;
 	private int m_ttl = 0;
@@ -27,9 +29,9 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	private boolean m_addSavedFrom = true;
 
 	@Inject
-	public SaveAsAggregator(KairosDatastore datastore)
+	public SaveAsAggregator(EventBus eventBus)
 	{
-		m_datastore = datastore;
+		m_eventBus = eventBus;
 		m_tags = new HashMap<>();
 	}
 
@@ -129,14 +131,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 		{
 			DataPoint next = m_innerDataPointGroup.next();
 
-			try
-			{
-				m_datastore.putDataPoint(m_metricName, m_groupTags, next, m_ttl);
-			}
-			catch (DatastoreException e)
-			{
-				throw new RuntimeException("Failure to save data to "+m_metricName, e);
-			}
+			m_eventBus.post(new DataPointEvent(m_metricName, m_groupTags, next, m_ttl));
 
 			return next;
 		}

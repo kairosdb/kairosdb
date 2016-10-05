@@ -18,7 +18,7 @@ public interface Datastore
 {
 	public void close() throws InterruptedException, DatastoreException;
 
-	public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint, int ttl) throws DatastoreException;
+	//public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint, int ttl) throws DatastoreException;
 
 	public Iterable<String> getMetricNames() throws DatastoreException;
 

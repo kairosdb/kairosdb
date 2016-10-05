@@ -18,9 +18,14 @@ package org.kairosdb.core.http.rest;
 import ch.qos.logback.classic.Level;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.EventBus;
 import com.google.common.io.Resources;
 import com.google.inject.*;
+import com.google.inject.matcher.Matchers;
 import com.google.inject.name.Names;
+import com.google.inject.spi.InjectionListener;
+import com.google.inject.spi.TypeEncounter;
+import com.google.inject.spi.TypeListener;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -62,6 +67,7 @@ public class MetricsResourceTest
 	private static QueryQueuingManager queuingManager;
 	private static Client client;
 	private static WebServer server;
+	private static final EventBus m_eventBus = new EventBus();
 
 	@BeforeClass
 	public static void startup() throws Exception
@@ -78,6 +84,21 @@ public class MetricsResourceTest
 			@Override
 			protected void configure()
 			{
+				bind(EventBus.class).toInstance(m_eventBus);
+				//Need to register an exception handler
+				bindListener(Matchers.any(), new TypeListener()
+				{
+					public <I> void hear(TypeLiteral<I> typeLiteral, TypeEncounter<I> typeEncounter)
+					{
+						typeEncounter.register(new InjectionListener<I>()
+						{
+							public void afterInjection(I i)
+							{
+								m_eventBus.register(i);
+							}
+						});
+					}
+				});
 				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_ADDRESS_PROPERTY)).toInstance("0.0.0.0");
 				bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9001);
 				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
@@ -86,7 +107,6 @@ public class MetricsResourceTest
 				bind(AggregatorFactory.class).to(TestAggregatorFactory.class);
 				bind(GroupByFactory.class).to(TestGroupByFactory.class);
 				bind(QueryParser.class).in(Singleton.class);
-				bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
 				bind(QueryQueuingManager.class).toInstance(queuingManager);
 				bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
 				bindConstant().annotatedWith(Names.named("kairosdb.datastore.concurrentQueryThreads")).to(1);
@@ -318,13 +338,6 @@ public class MetricsResourceTest
 
 		@Override
 		public void close() throws InterruptedException
-		{
-		}
-
-		@Override
-		public void putDataPoint(String metricName,
-				ImmutableSortedMap<String, String> tags,
-				DataPoint dataPoint, int ttl) throws DatastoreException
 		{
 		}
 

@@ -17,14 +17,20 @@ package org.kairosdb.core.http.rest.json;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.junit.Test;
 import org.kairosdb.core.*;
 import org.kairosdb.core.datapoints.StringDataPoint;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.events.DataPointEvent;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -46,12 +52,9 @@ public class DataPointsParserTest
 	public void test_emptyJson_Invalid() throws DatastoreException, IOException
 	{
 		String json = "";
+		EventBus eventBus = new EventBus();
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
-
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json), new Gson(),
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json), new Gson(),
 				dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -65,11 +68,9 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 456, \"datapoints\": [[1,2]], \"tags\":{\"foo\":\"bar\"}}, {\"datapoints\": [[1,2]], \"tags\":{\"foo\":\"bar\"}}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+		EventBus eventBus = new EventBus();
 
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -83,10 +84,9 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"tags\": {\"foo\":\"bar\"}}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -100,10 +100,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"value\": 1234, \"tags\":{\"foo\":\"bar\"}}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -117,10 +115,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 0, \"value\": 1234, \"tags\":{\"foo\":\"bar\"}}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -134,10 +130,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": -1, \"value\": 1234, \"tags\":{\"foo\":\"bar\"}}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -151,10 +145,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -168,10 +160,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[2,]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -185,10 +175,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[,2]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -202,10 +190,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[1,2]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -219,10 +205,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"bad:你好name\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[1,2]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -236,10 +220,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"timestamp\": 12345, \"value\": 456, \"datapoints\": [[1,2]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -253,10 +235,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[0,2]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -270,10 +250,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[-1,2]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -287,10 +265,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"\":\"bar\"}, \"datapoints\": [[1,2]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -305,10 +281,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"bad:name\":\"bar\"}, \"datapoints\": [[1,2]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -323,10 +297,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"foo\":\"\"}, \"datapoints\": [[1,2]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -340,10 +312,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"foo\":\"bad:value\"}, \"datapoints\": [[1,2]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -358,10 +328,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"timestamp\": 456, \"value\":\"\", \"tags\":{\"name\":\"\"}}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -379,10 +347,8 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[1, \"0.000000\"]]}]";
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -395,10 +361,10 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 4321, \"tags\":{\"foo\":\"bar\"}}]";
 
+		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		eventBus.register(fakeds);
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -421,10 +387,10 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": }]";
 
+		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		eventBus.register(fakeds);
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -446,10 +412,10 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"time\": 1234, \"value\": 4321, \"datapoints\": [[456, 654]], \"tags\":{\"foo\":\"bar\"}}]";
 
+		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		eventBus.register(fakeds);
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -476,10 +442,10 @@ public class DataPointsParserTest
 	{
 		String json = Resources.toString(Resources.getResource("json-metric-parser-multiple-metric.json"), Charsets.UTF_8);
 
+		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		eventBus.register(fakeds);
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -516,10 +482,10 @@ public class DataPointsParserTest
 	{
 		String json = Resources.toString(Resources.getResource("json-metric-parser-metrics-with-type.json"), Charsets.UTF_8);
 
+		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		eventBus.register(fakeds);
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -569,10 +535,10 @@ public class DataPointsParserTest
 	{
 		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 4321, \"tags\":{\"foo\":\"bar\"}}";
 
+		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		eventBus.register(fakeds);
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -595,10 +561,10 @@ public class DataPointsParserTest
 	{
 		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": \"The Value\", \"tags\":{\"foo\":\"bar\"}}";
 
+		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		eventBus.register(fakeds);
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -621,10 +587,10 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\",\"datapoints\": [[1234, \"The Value\"]],\"tags\": {\"foo\": \"bar\"}}]";
 
+		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		eventBus.register(fakeds);
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -647,10 +613,10 @@ public class DataPointsParserTest
 	{
 		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": \"123\", \"tags\":{\"foo\":\"bar\"}}";
 
+		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		eventBus.register(fakeds);
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -673,10 +639,10 @@ public class DataPointsParserTest
 	{
 		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": \"123.3\", \"tags\":{\"foo\":\"bar\"}}";
 
+		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
-		DataPointsParser parser = new DataPointsParser(datastore, new StringReader(json),
+		eventBus.register(fakeds);
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
 		ValidationErrors validationErrors = parser.parse();
@@ -705,11 +671,9 @@ public class DataPointsParserTest
 		Reader reader = new InputStreamReader(
 				new GZIPInputStream(ClassLoader.getSystemResourceAsStream("large_import.gz")));
 
-		FakeDataStore fakeds = new FakeDataStore();
-		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+		EventBus eventBus = new EventBus();
 
-		DataPointsParser parser = new DataPointsParser(datastore, skipReader,
+		DataPointsParser parser = new DataPointsParser(eventBus, skipReader,
 				new Gson(), dataPointFactory);
 		ValidationErrors validationErrors = parser.parse();
 
@@ -717,7 +681,7 @@ public class DataPointsParserTest
 		System.out.println("No Validation");
 		System.out.println(parser.getIngestTime());
 
-		parser = new DataPointsParser(datastore, reader, new Gson(), dataPointFactory);
+		parser = new DataPointsParser(eventBus, reader, new Gson(), dataPointFactory);
 		validationErrors = parser.parse();
 		System.out.println("With Validation");
 		System.out.println(parser.getIngestTime());
@@ -742,17 +706,17 @@ public class DataPointsParserTest
 		{
 		}
 
-		@Override
-		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint, int tll) throws DatastoreException
+		@Subscribe
+		public void putDataPoint(DataPointEvent event) throws DatastoreException
 		{
-			if ((lastDataPointSet == null) || (!lastDataPointSet.getName().equals(metricName)) ||
-					(!lastDataPointSet.getTags().equals(tags)))
+			if ((lastDataPointSet == null) || (!lastDataPointSet.getName().equals(event.getMetricName())) ||
+					(!lastDataPointSet.getTags().equals(event.getTags())))
 			{
-				lastDataPointSet = new DataPointSet(metricName, tags, Collections.EMPTY_LIST);
+				lastDataPointSet = new DataPointSet(event.getMetricName(), event.getTags(), Collections.EMPTY_LIST);
 				dataPointSetList.add(lastDataPointSet);
 			}
 
-			lastDataPointSet.addDataPoint(dataPoint);
+			lastDataPointSet.addDataPoint(event.getDataPoint());
 		}
 
 		/*@Override

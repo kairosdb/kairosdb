@@ -17,6 +17,7 @@
 package org.kairosdb.core.telnet;
 
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.jboss.netty.channel.Channel;
@@ -43,10 +44,10 @@ import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 public class PutCommand extends PutMillisecondCommand
 {
 	@Inject
-	public PutCommand(KairosDatastore datastore, @Named("HOSTNAME") String hostname,
+	public PutCommand(EventBus eventBus, @Named("HOSTNAME") String hostname,
 			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
-		super(datastore, hostname, longFactory, doubleFactory);
+		super(eventBus, hostname, longFactory, doubleFactory);
 	}
 
 	@Override

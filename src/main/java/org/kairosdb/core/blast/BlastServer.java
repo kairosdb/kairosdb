@@ -1,6 +1,7 @@
 package org.kairosdb.core.blast;
 
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import org.h2.store.DataReader;
 import org.kairosdb.core.DataPoint;
@@ -10,6 +11,7 @@ import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.events.DataPointEvent;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -24,15 +26,15 @@ import java.net.Socket;
 public class BlastServer implements KairosDBService, Runnable
 {
 	private Thread m_serverThread;
-	private final KairosDatastore m_datastore;
+	private final EventBus m_evenBus;
 	private final LongDataPointFactory m_longDataPointFactory;
 	private boolean m_keepRunning = true;
 	private ServerSocket m_serverSocket;
 
 	@Inject
-	public BlastServer(KairosDatastore datastore, LongDataPointFactory longDataPointFactory)
+	public BlastServer(EventBus evenBus, LongDataPointFactory longDataPointFactory)
 	{
-		m_datastore = datastore;
+		m_evenBus = evenBus;
 		m_longDataPointFactory = longDataPointFactory;
 	}
 
@@ -83,14 +85,10 @@ public class BlastServer implements KairosDBService, Runnable
 
 						DataPoint dp = m_longDataPointFactory.createDataPoint(System.currentTimeMillis(), value);
 
-						m_datastore.putDataPoint(metric, ImmutableSortedMap.of("host", host), dp, 0);
+						m_evenBus.post(new DataPointEvent(metric, ImmutableSortedMap.of("host", host), dp, 0));
 					}
 				}
 				catch (IOException e)
-				{
-					e.printStackTrace();
-				}
-				catch (DatastoreException e)
 				{
 					e.printStackTrace();
 				}

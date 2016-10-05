@@ -27,6 +27,7 @@ import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreMetricQueryImpl;
 import org.kairosdb.datastore.DatastoreTestHelper;
+import org.kairosdb.events.DataPointEvent;
 
 import java.io.IOException;
 import java.util.*;
@@ -58,7 +59,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	{
 		for (DataPoint dataPoint : dps.getDataPoints())
 		{
-			s_datastore.putDataPoint(dps.getName(), dps.getTags(), dataPoint, 0);
+			s_eventBus.post(new DataPointEvent(dps.getName(), dps.getTags(), dataPoint, 0));
 		}
 	}
 
@@ -178,12 +179,14 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		if (System.getenv("CASSANDRA_HOST") != null)
 			cassandraHost = System.getenv("CASSANDRA_HOST");
 
-		s_datastore = new CassandraDatastore("hostname", new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
-				1000, 50000, "kairosdb_test"), new HectorConfiguration(cassandraHost), dataPointFactory);
+		/*s_datastore = new CassandraDatastore("hostname", new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
+				1000, 50000, "kairosdb_test"), new HectorConfiguration(cassandraHost), dataPointFactory);*/
 
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
 				new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
+				dataPointFactory, false);
+
+		s_eventBus.register(s_datastore);
 
 		loadCassandraData();
 		loadData();
@@ -454,8 +457,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		set.addDataPoint(new LongDataPoint(5, 6L));
 		putDataPoints(set);
 
-		s_datastore.putDataPoint("ttlMetric", set.getTags(),
-				new LongDataPoint(50, 7L), 1);
+		s_eventBus.post(new DataPointEvent("ttlMetric", set.getTags(),
+				new LongDataPoint(50, 7L), 1));
 
 		Thread.sleep(2000);
 		Map<String, String> tags = new TreeMap<String, String>();

@@ -17,12 +17,14 @@
 package org.kairosdb.core.reporting;
 
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.EventBus;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.Tags;
 
 import java.util.LinkedList;
@@ -187,24 +189,26 @@ public class ThreadReporter
 
 	public static void submitData(LongDataPointFactory longDataPointFactory,
 			StringDataPointFactory stringDataPointFactory,
-			KairosDatastore datastore) throws DatastoreException
+			EventBus eventBus) throws DatastoreException
 	{
 		while (s_reporterData.getListSize() != 0)
 		{
 			ReporterDataPoint dp = s_reporterData.getNextDataPoint();
+			DataPointEvent dataPointEvent;
 
 			if (dp.isStringValue())
 			{
-				datastore.putDataPoint(dp.getMetricName(), dp.getTags(),
+				dataPointEvent = new DataPointEvent(dp.getMetricName(), dp.getTags(),
 						stringDataPointFactory.createDataPoint(s_reportTime.get(), dp.getStrValue()),
 						dp.getTtl());
 			}
 			else
 			{
-				datastore.putDataPoint(dp.getMetricName(), dp.getTags(),
+				dataPointEvent = new DataPointEvent(dp.getMetricName(), dp.getTags(),
 						longDataPointFactory.createDataPoint(s_reportTime.get(), dp.getValue()),
 						dp.getTtl());
 			}
+			eventBus.post(dataPointEvent);
 		}
 	}
 

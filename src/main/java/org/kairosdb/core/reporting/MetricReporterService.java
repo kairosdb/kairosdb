@@ -16,6 +16,7 @@
 package org.kairosdb.core.reporting;
 
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
@@ -24,6 +25,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.scheduler.KairosDBJob;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.Tags;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobExecutionContext;
@@ -47,6 +49,7 @@ public class MetricReporterService implements KairosDBJob
 	public static final String SCHEDULE_PROPERTY = "kairosdb.reporter.schedule";
 
 	private KairosDatastore m_datastore;
+	private EventBus m_eventBus;
 	private List<KairosMetricReporter> m_reporters;
 	private final String m_hostname;
 	private final String m_schedule;
@@ -55,12 +58,12 @@ public class MetricReporterService implements KairosDBJob
 	private LongDataPointFactory m_dataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
-	public MetricReporterService(KairosDatastore datastore,
+	public MetricReporterService(EventBus eventBus,
 			List<KairosMetricReporter> reporters,
 			@Named(SCHEDULE_PROPERTY) String schedule,
 			@Named(HOSTNAME) String hostname)
 	{
-		m_datastore = checkNotNull(datastore);
+		m_eventBus = checkNotNull(eventBus);
 		m_hostname = checkNotNullOrEmpty(hostname);
 		m_reporters = reporters;
 		m_schedule = schedule;
@@ -101,8 +104,8 @@ public class MetricReporterService implements KairosDBJob
 				{
 					for (DataPoint dataPoint : dataPointSet.getDataPoints())
 					{
-						m_datastore.putDataPoint(dataPointSet.getName(),
-								dataPointSet.getTags(), dataPoint);
+						m_eventBus.post(new DataPointEvent(dataPointSet.getName(),
+								dataPointSet.getTags(), dataPoint, 0));
 					}
 				}
 			}
@@ -111,14 +114,14 @@ public class MetricReporterService implements KairosDBJob
 			Runtime runtime = Runtime.getRuntime();
 			ImmutableSortedMap<String, String> tags = Tags.create()
 					.put("host", m_hostname).build();
-			m_datastore.putDataPoint("kairosdb.jvm.free_memory",
-					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.freeMemory()));
-			m_datastore.putDataPoint("kairosdb.jvm.total_memory",
-					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.totalMemory()));
-			m_datastore.putDataPoint("kairosdb.jvm.max_memory",
-					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.maxMemory()));
-			m_datastore.putDataPoint("kairosdb.jvm.thread_count",
-					tags, m_dataPointFactory.createDataPoint(timestamp, getThreadCount()));
+			m_eventBus.post(new DataPointEvent("kairosdb.jvm.free_memory",
+					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.freeMemory()), 0));
+			m_eventBus.post(new DataPointEvent("kairosdb.jvm.total_memory",
+					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.totalMemory()), 0));
+			m_eventBus.post(new DataPointEvent("kairosdb.jvm.max_memory",
+					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.maxMemory()), 0));
+			m_eventBus.post(new DataPointEvent("kairosdb.jvm.thread_count",
+					tags, m_dataPointFactory.createDataPoint(timestamp, getThreadCount()), 0));
 		}
 		catch (Throwable e)
 		{

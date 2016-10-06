@@ -84,6 +84,10 @@ public class RollUpJob implements InterruptableJob
 							dpCount = executeRollup(datastore, queryMetric);
 							log.info("Tried again Rollup Task: " + task.getName() + " for Rollup " + rollup.getSaveAs() + " data point count of " + dpCount);
 						}
+						if (rollup.isInPlace()) {
+							log.info("Cleaning Rollup Task data for "+ dpCount + " data points");
+							datastore.delete(queryMetric);
+						}
 					}
 					catch (DatastoreException e)
 					{

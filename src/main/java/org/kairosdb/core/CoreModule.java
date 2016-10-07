@@ -101,7 +101,7 @@ public class CoreModule extends AbstractModule
 		bind(SaveAsAggregator.class);
 		bind(TrimAggregator.class);
 		bind(SmaAggregator.class);
-
+		bind(FilterAggregator.class);
 
 		bind(ValueGroupBy.class);
 		bind(TimeGroupBy.class);

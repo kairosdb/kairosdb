@@ -22,6 +22,7 @@ kairosdb.Aggregators =
 	GAPS: "gaps",
 	FIRST: "first",
 	LAST: "last",
+	FILTER: "filter",
 	TRIM: "trim",
 	SAVE_AS: "save_as"
 };
@@ -124,6 +125,21 @@ kairosdb.Metric = function (name) {
 		aggregator.name = "div";
 		if (divisor) {
 			aggregator.divisor= divisor;
+		}
+
+		this.aggregators.push(aggregator);
+		return this;
+	};
+
+	this.addFilterAggregator = function (filterop, threshold) {
+		if (!this.aggregators)
+			this.aggregators = [];
+
+		var aggregator = {};
+		aggregator.name = "filter";
+		aggregator.filter_op = filterop;
+		if (threshold) {
+			aggregator.threshold = threshold;
 		}
 
 		this.aggregators.push(aggregator);

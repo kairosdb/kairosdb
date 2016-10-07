@@ -78,4 +78,31 @@ public class DataPointsRowKeySerializerTest
 		assertThat(rowKey.getTags().get("e"), equalTo("f"));
 
 	}
+
+	@Test
+	public void test_toByteBuffer_tagsWithColonEquals()
+	{
+		SortedMap<String, String> map = new TreeMap<String, String>();
+		map.put("a:a", "b:b");
+		map.put("c=c", "d=d");
+		map.put(":e", "f\\");
+
+		DataPointsRowKeySerializer serializer = new DataPointsRowKeySerializer();
+		ByteBuffer buffer = serializer.toByteBuffer(new DataPointsRowKey("myMetric", 12345L, "myDataType", map));
+
+		DataPointsRowKey rowKey = serializer.fromByteBuffer(buffer);
+
+		assertThat(rowKey.getMetricName(), equalTo("myMetric"));
+		assertThat(rowKey.getDataType(), equalTo("myDataType"));
+		assertThat(rowKey.getTimestamp(), equalTo(12345L));
+		assertThat(rowKey.getTags().size(), equalTo(3));
+		assertThat(rowKey.getTags().get("a:a"), equalTo("b:b"));
+		assertThat(rowKey.getTags().get("c=c"), equalTo("d=d"));
+		assertThat(rowKey.getTags().get(":e"), equalTo("f\\"));
+
+		//  === -> :====
+		//  ::: -> =::::
+		//  =:= -> ==::=
+		//  :=: -> ::==:
+	}
 }

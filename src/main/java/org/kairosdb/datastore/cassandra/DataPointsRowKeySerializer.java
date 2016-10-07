@@ -106,14 +106,36 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 		return buffer;
 	}
 
+	private StringBuilder escapeAppend(StringBuilder sb, String value, char escape)
+	{
+		int startPos = 0;
+
+		for (int i = 0; i < value.length(); i++)
+		{
+			char ch = value.charAt(i);
+			if (ch == ':' || ch == '=')
+			{
+				sb.append(value, startPos, i);
+				sb.append(escape).append(ch);
+				startPos = i + 1;
+			}
+		}
+		if (startPos <= value.length())
+		{
+			sb.append(value, startPos, value.length());
+		}
+
+		return sb;
+	}
+
 
 	private String generateTagString(SortedMap<String, String> tags)
 	{
 		StringBuilder sb = new StringBuilder();
 		for (String key : tags.keySet())
 		{
-			sb.append(key).append("=");
-			sb.append(tags.get(key)).append(":");
+			escapeAppend(sb, key, ':').append("=");
+			escapeAppend(sb, tags.get(key), '=').append(":");
 		}
 
 		return (sb.toString());
@@ -135,6 +157,11 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 					tag = tagString.substring(mark, position);
 					mark = position +1;
 				}
+
+				if (tagString.charAt(position) == ':')
+				{
+					position ++;
+				}
 			}
 			else
 			{
@@ -145,6 +172,11 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 
 					rowKey.addTag(getString(tag), getString(value));
 					tag = null;
+				}
+
+				if (tagString.charAt(position) == '=')
+				{
+					position ++;
 				}
 			}
 		}

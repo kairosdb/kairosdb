@@ -69,7 +69,7 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 		Validator.validateNotNullOrEmpty("metricName", command[1]);
 
 		String metricName = command[1];
-
+		int ttl = 0;
 
 		DataPoint dp;
 		try
@@ -92,15 +92,30 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 			String[] tag = command[i].split("=");
 			validateTag(tagCount, tag);
 
-			tags.put(tag[0], tag[1]);
-			tagCount++;
+			if ("kairos_opt.ttl".equals(tag[0]))
+			{
+				try
+				{
+					ttl = Integer.parseInt(tag[1]);
+				}
+				catch (NumberFormatException nfe)
+				{
+					throw new ValidationException("tag[kairos_opt.ttl] must be a number");
+				}
+
+			}
+			else
+			{
+				tags.put(tag[0], tag[1]);
+				tagCount++;
+			}
 		}
 
 		if (tagCount == 0)
 			tags.put("add", "tag");
 
 		m_counter.incrementAndGet();
-		m_datastore.putDataPoint(metricName, tags.build(), dp);
+		m_datastore.putDataPoint(metricName, tags.build(), dp, ttl);
 	}
 
 	private void validateTag(int tagCount, String[] tag) throws ValidationException

@@ -6,7 +6,7 @@ This API provides an operation to store metrics and query for the current versio
 
 Data points have a metric name, a value, a timestamp, and a list of one or more tags. Tags are named properties that identify the data, such as its type and where it comes from.
 
-Metric names, tag names and values are case sensitive and can only contain the following characters: alphanumeric characters, period ".", slash "/", dash "-", and underscore "`_`".  
+Metric names, tag names and values are case sensitive and can contain any character except spaces and in the case of tags anything except '='.
 
 If a data point names a metric that does not exist, the metric is created.
 

@@ -239,6 +239,12 @@ public class WebServer implements KairosDBService
 		constraint.setRoles(new String[]{"user"});
 		constraint.setAuthenticate(true);
 
+		Constraint noConstraint = new Constraint();
+
+		ConstraintMapping healthcheckConstraintMapping = new ConstraintMapping();
+		healthcheckConstraintMapping.setConstraint(noConstraint);
+		healthcheckConstraintMapping.setPathSpec("/api/v1/health/check");
+
 		ConstraintMapping cm = new ConstraintMapping();
 		cm.setConstraint(constraint);
 		cm.setPathSpec("/*");
@@ -246,6 +252,7 @@ public class WebServer implements KairosDBService
 		ConstraintSecurityHandler csh = new ConstraintSecurityHandler();
 		csh.setAuthenticator(new BasicAuthenticator());
 		csh.setRealmName("myrealm");
+		csh.addConstraintMapping(healthcheckConstraintMapping);
 		csh.addConstraintMapping(cm);
 		csh.setLoginService(l);
 

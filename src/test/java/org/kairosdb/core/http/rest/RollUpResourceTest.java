@@ -327,6 +327,7 @@ public class RollUpResourceTest
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testUpdate_internalError() throws IOException, QueryException, RollUpException
 	{
 		Level previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);

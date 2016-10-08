@@ -462,7 +462,7 @@ public class Main
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (KairosDBService.class.isAssignableFrom(bindingClass))
 			{
 				KairosDBService service = (KairosDBService) m_injector.getInstance(bindingClass);

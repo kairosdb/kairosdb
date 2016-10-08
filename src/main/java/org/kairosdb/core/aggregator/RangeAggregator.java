@@ -89,6 +89,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	 @param timestamp
 	 @return
 	 */
+	@SuppressWarnings("fallthrough")
 	private long alignRangeBoundary(long timestamp)
 	{
 		DateTime dt = new DateTime(timestamp, m_timeZone);

@@ -102,7 +102,7 @@ public class CassandraDatastore implements Datastore
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
-	private List<RowKeyListener> m_rowKeyListeners = Collections.EMPTY_LIST;
+	private List<RowKeyListener> m_rowKeyListeners = Collections.emptyList();
 
 
 	@Inject
@@ -186,9 +186,9 @@ public class CassandraDatastore implements Datastore
 	private WriteBufferStats createWriteBufferStats(final String cfName, final String hostname) {
 		return new WriteBufferStats()
 		{
-			private ImmutableSortedMap m_tags;
+			private ImmutableSortedMap<String, String> m_tags;
 			{
-				m_tags = ImmutableSortedMap.naturalOrder()
+				m_tags = ImmutableSortedMap.<String, String>naturalOrder()
 						.put("host", hostname)
 						.put("buffer", cfName)
 						.build();

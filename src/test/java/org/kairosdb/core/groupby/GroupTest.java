@@ -31,7 +31,7 @@ public class GroupTest
 		groupIds.add(2);
 		groupIds.add(3);
 
-		Group group = Group.createGroup(dataPointGroup, groupIds, Collections.EMPTY_LIST, kairosDataPointFactory);
+		Group group = Group.createGroup(dataPointGroup, groupIds, Collections.<GroupByResult>emptyList(), kairosDataPointFactory);
 
 		group.addDataPoint(new LongDataPoint(1, 1));
 		group.addDataPoint(new LongDataPoint(2, 2));

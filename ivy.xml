@@ -19,7 +19,7 @@
 		<!--<dependency org="org.mockito" name="mockito-all" rev="1.9.5" />-->
 		<dependency org="org.mockito" name="mockito-core" rev="1.9.5" conf="test->default"/>
 		<!--<dependency org="io.netty" name="netty" rev="3.5.11.Final" />-->
-		<dependency org="io.netty" name="netty" rev="3.6.5.Final" />
+		<dependency org="io.netty" name="netty" rev="3.10.6.Final" />
 		<!--<dependency org="org.powermock" name="powermock-api-mockito" rev="1.4.12" />
 		<dependency org="org.powermock" name="powermock-module-junit4" rev="1.4.12" />-->
 		<!--<dependency org="org.apache.zookeeper" name="zookeeper" rev="3.4.5" transitive="false" />-->

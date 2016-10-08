@@ -199,4 +199,10 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 
 		return builder.toString();
 	}
+
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
+	{
+		logger.error("Error in TelnetServer", e.getCause());
+	}
 }

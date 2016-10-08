@@ -296,6 +296,18 @@ public class PutCommandTest
 		}
 
 		@Override
+		public boolean getUserDefinedWritability(int index)
+		{
+			return false;
+		}
+
+		@Override
+		public void setUserDefinedWritability(int index, boolean isWritable)
+		{
+
+		}
+
+		@Override
 		public Object getAttachment()
 		{
 			return null;

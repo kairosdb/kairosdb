@@ -196,7 +196,7 @@ public class TelnetServerTest
 		commandProvider.putCommand("put", new PutCommand(m_datastore, "localhost",
 				new LongDataPointFactoryImpl(), new DoubleDataPointFactoryImpl()));
 		m_server.stop();
-		m_server = new TelnetServer(TELNET_PORT, 3072, commandProvider);
+		m_server = new TelnetServer(TELNET_PORT, 4148, commandProvider);
 		m_server.start();
 		m_client = new TelnetClient("127.0.0.1", TELNET_PORT);
 

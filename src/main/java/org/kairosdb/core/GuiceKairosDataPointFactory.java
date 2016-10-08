@@ -55,7 +55,7 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (DataPointFactory.class.isAssignableFrom(bindingClass))
 			{
 				DataPointFactory factory = (DataPointFactory)injector.getInstance(bindingClass);
@@ -80,7 +80,7 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 				String type = key.substring(DATAPOINTS_FACTORY_PROP_PREFIX.length());
 				try
 				{
-					Class factoryClass = Class.forName(className);
+					Class<?> factoryClass = Class.forName(className);
 
 					DataPointFactory factory = (DataPointFactory) injector.getInstance(factoryClass);
 

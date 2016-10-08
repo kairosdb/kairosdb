@@ -50,6 +50,7 @@ public class CoreModule extends AbstractModule
 		m_props = props;
 	}
 
+	@SuppressWarnings("rawtypes")
 	private Class getClassForProperty(String property)
 	{
 		String className = m_props.getProperty(property);

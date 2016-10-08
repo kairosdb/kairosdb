@@ -26,7 +26,7 @@ public class DataPointListenerProvider implements Provider<List<DataPointListene
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (DataPointListener.class.isAssignableFrom(bindingClass))
 			{
 				DataPointListener listener = (DataPointListener)injector.getInstance(bindingClass);

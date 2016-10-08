@@ -13,8 +13,6 @@ import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.testing.ListDataPointGroup;
 
 import java.util.Collections;
-import java.util.Map;
-import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;

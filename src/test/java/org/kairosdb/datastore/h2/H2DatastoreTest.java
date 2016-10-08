@@ -33,9 +33,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static junit.framework.Assert.assertFalse;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
 
 public class H2DatastoreTest extends DatastoreTestHelper
 {

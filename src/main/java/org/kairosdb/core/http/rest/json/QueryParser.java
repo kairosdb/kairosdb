@@ -459,7 +459,7 @@ public class QueryParser
 				throw new QueryException(msg);
 			}
 
-			Class propClass = pd.getPropertyType();
+			Class<?> propClass = pd.getPropertyType();
 
 			Object propValue;
 			try

@@ -31,13 +31,13 @@ import org.kairosdb.datastore.DatastoreTestHelper;
 import java.io.IOException;
 import java.util.*;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 
 
 public class CassandraDatastoreTest extends DatastoreTestHelper

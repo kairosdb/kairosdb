@@ -18,6 +18,7 @@ public class GuiceQueryPluginFactory implements QueryPluginFactory
 	private final Injector m_injector;
 
 	@Inject
+	@SuppressWarnings("unchecked")
 	public GuiceQueryPluginFactory(Injector injector)
 	{
 		m_injector = injector;
@@ -25,7 +26,7 @@ public class GuiceQueryPluginFactory implements QueryPluginFactory
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (QueryPlugin.class.isAssignableFrom(bindingClass))
 			{
 				PluginName ann = (PluginName) bindingClass.getAnnotation(PluginName.class);
@@ -33,7 +34,7 @@ public class GuiceQueryPluginFactory implements QueryPluginFactory
 					throw new IllegalStateException("Aggregator class " + bindingClass.getName() +
 							" does not have required annotation " + PluginName.class.getName());
 
-				m_plugins.put(ann.name(), bindingClass);
+				m_plugins.put(ann.name(), (Class<QueryPlugin>)bindingClass);
 			}
 		}
 	}

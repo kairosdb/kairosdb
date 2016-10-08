@@ -20,8 +20,6 @@ import com.google.inject.Binding;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import com.google.inject.name.Names;
-import org.kairosdb.core.reporting.KairosMetricReporter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +35,7 @@ public class GuiceCommandProvider implements CommandProvider
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (TelnetCommand.class.isAssignableFrom(bindingClass))
 			{
 				TelnetCommand command = (TelnetCommand)injector.getInstance(bindingClass);

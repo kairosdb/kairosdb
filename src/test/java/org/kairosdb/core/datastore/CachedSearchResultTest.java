@@ -47,7 +47,7 @@ public class CachedSearchResultTest
 
 		long now = System.currentTimeMillis();
 
-		Map<String, String> tags = new HashMap();
+		Map<String, String> tags = new HashMap<String, String>();
 		tags.put("host", "A");
 		tags.put("client", "foo");
 		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
@@ -58,7 +58,7 @@ public class CachedSearchResultTest
 		csResult.addDataPoint(new LegacyDoubleDataPoint(now+3, 43.1));
 
 
-		tags = new HashMap();
+		tags = new HashMap<String, String>();
 		tags.put("host", "B");
 		tags.put("client", "foo");
 		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
@@ -68,7 +68,7 @@ public class CachedSearchResultTest
 		csResult.addDataPoint(new LegacyLongDataPoint(now+2, 2));
 		csResult.addDataPoint(new LegacyDoubleDataPoint(now+3, 2.1));
 
-		tags = new HashMap();
+		tags = new HashMap<String, String>();
 		tags.put("host", "A");
 		tags.put("client", "bar");
 		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);

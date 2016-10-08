@@ -24,7 +24,7 @@ public class KairosMetricReporterListProvider implements Provider<List<KairosMet
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (KairosMetricReporter.class.isAssignableFrom(bindingClass))
 			{
 				KairosMetricReporter reporter = (KairosMetricReporter)injector.getInstance(bindingClass);

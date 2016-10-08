@@ -82,6 +82,8 @@ jc.addDepend(ivyDefaultResolve)
 jc.getDefinition().set("target", "1.7")
 jc.getDefinition().set("source", "1.7")
 jc.getDefinition().set("encoding", "UTF8")
+jc.getDefinition().set("deprecation")
+jc.getDefinition().set("unchecked")
 
 jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
 jp.getJarRule().addFiles("src/main/resources", "create.sql")

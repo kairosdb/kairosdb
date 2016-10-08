@@ -21,7 +21,7 @@ public class RowKeyListenerProvider implements Provider<List<RowKeyListener>>
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (RowKeyListener.class.isAssignableFrom(bindingClass))
 			{
 				RowKeyListener listener = (RowKeyListener) injector.getInstance(bindingClass);

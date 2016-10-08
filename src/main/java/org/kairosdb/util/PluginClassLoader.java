@@ -70,7 +70,8 @@ public class PluginClassLoader extends URLClassLoader
 	@Override
 	public Enumeration<URL> getResources(String name) throws IOException
 	{
-		Enumeration[] tmp = new Enumeration[2];
+		@SuppressWarnings("unchecked")
+		Enumeration<URL>[] tmp = new Enumeration[2];
 		tmp[0] = findResources(name);
 		tmp[1] = m_parentLoader.getResources(name);
 

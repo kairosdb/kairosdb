@@ -26,11 +26,12 @@ import java.util.*;
 
 public class GuiceAggregatorFactory implements AggregatorFactory
 {
-	private Map<String, Class<Aggregator>> m_aggregators = new HashMap<String, Class<Aggregator>>();
+	private Map<String, Class<Aggregator>> m_aggregators = new HashMap<>();
 	private Injector m_injector;
 
 
 	@Inject
+	@SuppressWarnings("unchecked")
 	public GuiceAggregatorFactory(Injector injector)
 	{
 		m_injector = injector;
@@ -38,7 +39,7 @@ public class GuiceAggregatorFactory implements AggregatorFactory
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (Aggregator.class.isAssignableFrom(bindingClass))
 			{
 				AggregatorName ann = (AggregatorName)bindingClass.getAnnotation(AggregatorName.class);
@@ -46,7 +47,7 @@ public class GuiceAggregatorFactory implements AggregatorFactory
 					throw new IllegalStateException("Aggregator class "+bindingClass.getName()+
 							" does not have required annotation "+AggregatorName.class.getName());
 
-				m_aggregators.put(ann.name(), bindingClass);
+				m_aggregators.put(ann.name(), (Class<Aggregator>)bindingClass);
 			}
 		}
 	}

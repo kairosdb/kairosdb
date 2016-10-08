@@ -25,7 +25,7 @@ public class HealthCheckServiceImpl implements HealthCheckService
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (HealthStatus.class.isAssignableFrom(bindingClass))
 			{
 				checks.add((HealthStatus) injector.getInstance(bindingClass));

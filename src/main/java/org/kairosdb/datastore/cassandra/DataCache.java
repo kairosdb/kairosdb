@@ -60,7 +60,7 @@ public class DataCache<T>
 	public DataCache(int cacheSize)
 	{
 		//m_cache = new InternalCache(cacheSize);
-		m_hashMap = new ConcurrentHashMap();
+		m_hashMap = new ConcurrentHashMap<>();
 		m_maxSize = cacheSize;
 
 		m_front.m_next = m_back;

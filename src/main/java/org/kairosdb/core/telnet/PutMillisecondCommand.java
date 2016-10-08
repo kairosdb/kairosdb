@@ -109,10 +109,8 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 			throw new ValidationException(String.format("tag[%d] must be in the format 'name=value'.", tagCount));
 
 		Validator.validateNotNullOrEmpty(String.format("tag[%d].name", tagCount), tag[0]);
-		Validator.validateCharacterSet(String.format("tag[%d].name", tagCount), tag[0]);
 
 		Validator.validateNotNullOrEmpty(String.format("tag[%d].value", tagCount), tag[1]);
-		Validator.validateCharacterSet(String.format("tag[%d].value", tagCount), tag[1]);
 	}
 
 	@Override

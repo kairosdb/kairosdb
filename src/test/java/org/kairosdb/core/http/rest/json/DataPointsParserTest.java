@@ -302,7 +302,7 @@ public class DataPointsParserTest
 	}
 
 	@Test
-	public void test_tagName_invalidCharacters() throws DatastoreException, IOException
+	public void test_tagName_withColon() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"bad:name\":\"bar\"}, \"datapoints\": [[1,2]]}]";
 
@@ -314,9 +314,7 @@ public class DataPointsParserTest
 
 		ValidationErrors validationErrors = parser.parse();
 
-		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(),
-				equalTo("metric[0](name=metricName).tag[bad:name] may contain any character except colon ':', and equals '='."));
+		assertThat(validationErrors.size(), equalTo(0));
 	}
 
 	@Test
@@ -337,7 +335,7 @@ public class DataPointsParserTest
 	}
 
 	@Test
-	public void test_tagValue_invalidCharacters() throws DatastoreException, IOException
+	public void test_tagValue_withColon() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"foo\":\"bad:value\"}, \"datapoints\": [[1,2]]}]";
 
@@ -349,9 +347,7 @@ public class DataPointsParserTest
 
 		ValidationErrors validationErrors = parser.parse();
 
-		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(),
-				equalTo("metric[0](name=metricName).tag[foo].value may contain any character except colon ':', and equals '='."));
+		assertThat(validationErrors.size(), equalTo(0));
 	}
 
 	@Test

@@ -120,6 +120,7 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 				startPos = i + 1;
 			}
 		}
+
 		if (startPos <= value.length())
 		{
 			sb.append(value, startPos, value.length());
@@ -128,13 +129,39 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 		return sb;
 	}
 
+	private String unEscape(CharSequence source, int start, int end, char escape)
+	{
+		int startPos = start;
+		StringBuilder sb = new StringBuilder(end - start);
+
+		for (int i = start; i < end; i++)
+		{
+			char ch = source.charAt(i);
+			if (ch == escape)
+			{
+				sb.append(source, startPos, i);
+				i++; //Skip next char as it was escaped
+				startPos = i;
+			}
+		}
+
+		if (startPos <= end)
+		{
+			sb.append(source, startPos, end);
+		}
+
+		return sb.toString();
+	}
+
 
 	private String generateTagString(SortedMap<String, String> tags)
 	{
 		StringBuilder sb = new StringBuilder();
 		for (String key : tags.keySet())
 		{
+			//Escape tag names using :
 			escapeAppend(sb, key, ':').append("=");
+			//Escape tag values using =
 			escapeAppend(sb, tags.get(key), '=').append(":");
 		}
 
@@ -154,7 +181,7 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 			{
 				if (tagString.charAt(position) == '=')
 				{
-					tag = tagString.substring(mark, position);
+					tag = unEscape(tagString, mark, position, ':');
 					mark = position +1;
 				}
 
@@ -167,7 +194,7 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 			{
 				if (tagString.charAt(position) == ':')
 				{
-					value = tagString.substring(mark, position);
+					value = unEscape(tagString, mark, position, '=');
 					mark = position +1;
 
 					rowKey.addTag(getString(tag), getString(value));

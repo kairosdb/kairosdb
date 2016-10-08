@@ -86,6 +86,11 @@ public class DataPointsRowKeySerializerTest
 		map.put("a:a", "b:b");
 		map.put("c=c", "d=d");
 		map.put(":e", "f\\");
+		map.put("=a=", "===");
+		map.put(":a:", ":::");
+		map.put("=b=", ":::");
+		map.put(":b:", "===");
+		map.put("=c=", "normal");
 
 		DataPointsRowKeySerializer serializer = new DataPointsRowKeySerializer();
 		ByteBuffer buffer = serializer.toByteBuffer(new DataPointsRowKey("myMetric", 12345L, "myDataType", map));
@@ -95,14 +100,14 @@ public class DataPointsRowKeySerializerTest
 		assertThat(rowKey.getMetricName(), equalTo("myMetric"));
 		assertThat(rowKey.getDataType(), equalTo("myDataType"));
 		assertThat(rowKey.getTimestamp(), equalTo(12345L));
-		assertThat(rowKey.getTags().size(), equalTo(3));
+		assertThat(rowKey.getTags().size(), equalTo(8));
 		assertThat(rowKey.getTags().get("a:a"), equalTo("b:b"));
 		assertThat(rowKey.getTags().get("c=c"), equalTo("d=d"));
 		assertThat(rowKey.getTags().get(":e"), equalTo("f\\"));
-
-		//  === -> :====
-		//  ::: -> =::::
-		//  =:= -> ==::=
-		//  :=: -> ::==:
+		assertThat(rowKey.getTags().get("=a="), equalTo("==="));
+		assertThat(rowKey.getTags().get(":a:"), equalTo(":::"));
+		assertThat(rowKey.getTags().get("=b="), equalTo(":::"));
+		assertThat(rowKey.getTags().get(":b:"), equalTo("==="));
+		assertThat(rowKey.getTags().get("=c="), equalTo("normal"));
 	}
 }

@@ -287,10 +287,10 @@ public class DataPointsParser
 					if (Validator.isNotNullOrEmpty(validationErrors, tagContext.setAttribute("name"), entry.getKey()))
 					{
 						tagContext.setName(entry.getKey());
-						Validator.isValidateCharacterSet(validationErrors, tagContext, entry.getKey());
+						Validator.isNotNullOrEmpty(validationErrors, tagContext, entry.getKey());
 					}
 					if (Validator.isNotNullOrEmpty(validationErrors, tagContext.setAttribute("value"), entry.getValue()))
-						Validator.isValidateCharacterSet(validationErrors, tagContext, entry.getValue());
+						Validator.isNotNullOrEmpty(validationErrors, tagContext, entry.getValue());
 
 					tagCount++;
 				}

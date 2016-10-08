@@ -740,22 +740,73 @@ public class DataPointsParserTest
 		Reader reader = new InputStreamReader(
 				new GZIPInputStream(ClassLoader.getSystemResourceAsStream("large_import.gz")));
 
-		FakeDataStore fakeds = new FakeDataStore();
+		DevNullDataStore fakeds = new DevNullDataStore();
 		KairosDatastore datastore = new KairosDatastore(fakeds, new QueryQueuingManager(1, "hostname"),
 				Collections.<DataPointListener>emptyList(), dataPointFactory, false);
 
 		DataPointsParser parser = new DataPointsParser(datastore, skipReader,
 				new Gson(), dataPointFactory);
 		ValidationErrors validationErrors = parser.parse();
-
 		System.out.println(parser.getDataPointCount());
 		System.out.println("No Validation");
 		System.out.println(parser.getIngestTime());
+
 
 		parser = new DataPointsParser(datastore, reader, new Gson(), dataPointFactory);
 		validationErrors = parser.parse();
 		System.out.println("With Validation");
 		System.out.println(parser.getIngestTime());
+	}
+
+	private static class DevNullDataStore implements Datastore
+	{
+		@Override
+		public void close() throws InterruptedException, DatastoreException
+		{
+
+		}
+
+		@Override
+		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint, int ttl) throws DatastoreException
+		{
+
+		}
+
+		@Override
+		public Iterable<String> getMetricNames() throws DatastoreException
+		{
+			return null;
+		}
+
+		@Override
+		public Iterable<String> getTagNames() throws DatastoreException
+		{
+			return null;
+		}
+
+		@Override
+		public Iterable<String> getTagValues() throws DatastoreException
+		{
+			return null;
+		}
+
+		@Override
+		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
+		{
+
+		}
+
+		@Override
+		public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
+		{
+
+		}
+
+		@Override
+		public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
+		{
+			return null;
+		}
 	}
 
 	private static class FakeDataStore implements Datastore

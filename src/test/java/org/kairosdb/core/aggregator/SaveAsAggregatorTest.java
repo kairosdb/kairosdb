@@ -37,6 +37,7 @@ public class SaveAsAggregatorTest
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testTtl() throws DatastoreException
 	{
 		m_aggregator.setMetricName("testTtl");
@@ -67,6 +68,7 @@ public class SaveAsAggregatorTest
 
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testNoTtl() throws DatastoreException
 	{
 		m_aggregator.setMetricName("testTtl");

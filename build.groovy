@@ -166,6 +166,10 @@ testSources = new RegExFileSet("src/test/java", ".*Test\\.java").recurse()
 testCompileRule = jp.getTestCompileRule()
 ivyTestResolve = ivy.getResolveRule("test")
 testCompileRule.addDepend(ivyTestResolve)
+testCompileRule.getDefinition().set("unchecked")
+testCompileRule.getDefinition().set("deprecation")
+
+new SimpleRule("compile-test").addDepend(testCompileRule)
 
 junitClasspath = new Classpath(testCompileRule.getClasspath())
 junitClasspath.addPaths(testClasspath)

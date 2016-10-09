@@ -141,7 +141,7 @@ manifest.putValue("Build-Date", buildDateFormat.format(new Date()))
 buildNumberFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
 buildNumber = buildNumberFormat.format(new Date())
 manifest.putValue("Implementation-Title", "KairosDB")
-manifest.putValue("Implementation-Vendor", "Proofpoint Inc.")
+manifest.putValue("Implementation-Vendor", "KairosDB")
 manifest.putValue("Implementation-Version", "${version}-${release}.${buildNumber}")
 
 //Add git revision information
@@ -284,7 +284,7 @@ def doRPM(Rule rule)
 				summary = summary
 				type = RpmType.BINARY
 				url = "http://kairosdb.org"
-				vendor = "Proofpoint Inc."
+				vendor = "KairosDB"
 				provides = programName
 				//prefixes = rpmBaseInstallDir
 				buildHost = host

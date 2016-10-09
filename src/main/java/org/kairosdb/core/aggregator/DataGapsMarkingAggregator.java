@@ -51,7 +51,7 @@ public class DataGapsMarkingAggregator extends RangeAggregator
 		return groupType;
 	}
 
-	private class MarkDataGapsAggregator implements RangeSubAggregator
+	private static class MarkDataGapsAggregator implements RangeSubAggregator
 	{
 		@Override
 		public Iterable<DataPoint> getNextDataPoints(long returnTime, Iterator<DataPoint> dataPointRange)

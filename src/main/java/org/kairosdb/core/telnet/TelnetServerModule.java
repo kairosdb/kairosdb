@@ -27,12 +27,9 @@ public class TelnetServerModule extends AbstractModule
 {
 	public static final Logger logger = LoggerFactory.getLogger(TelnetServerModule.class);
 
-	private Properties m_props;
-
-
 	public TelnetServerModule(Properties props)
 	{
-		m_props = props;
+
 	}
 
 	@Override

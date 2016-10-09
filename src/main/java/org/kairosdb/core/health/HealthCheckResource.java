@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.core.http.rest.MetricsResource.setHeaders;
 
 /**
  Provides REST APIs for health checks
@@ -107,13 +108,4 @@ public class HealthCheckResource
 		return setHeaders(Response.ok(entity)).build();
 	}
 
-	private Response.ResponseBuilder setHeaders(Response.ResponseBuilder responseBuilder)
-	{
-		responseBuilder.header("Access-Control-Allow-Origin", "*");
-		responseBuilder.header("Pragma", "no-cache");
-		responseBuilder.header("Cache-Control", "no-cache");
-		responseBuilder.header("Expires", 0);
-
-		return (responseBuilder);
-	}
 }

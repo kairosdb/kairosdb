@@ -35,7 +35,7 @@
 		<dependency org="org.apache.commons" name="commons-math3" rev="3.2" />
 		<dependency org="commons-io" name="commons-io" rev="2.4" />
 		<dependency org="com.beust" name="jcommander" rev="1.35" />
-		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.2.5" />
+		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.3.6" />
 		<dependency org="joda-time" name="joda-time" rev="2.3" />
 
 		<dependency org="ch.qos.logback" name="logback-core" rev="1.1.7" />
@@ -74,12 +74,12 @@
 		<dependency org="com.sun.jersey.contribs" name="jersey-guice"
 		            rev="1.18.3"/>
 		<dependency org="com.sun.jersey" name="jersey-server" rev="1.18.3"/>
-		<dependency org="com.sun.jersey" name="jersey-json" rev="1.18.3"/>
+		<dependency org="com.fasterxml.jackson.jaxrs" name="jackson-jaxrs-json-provider" rev="2.2.3"/>
 		<dependency org="com.sun.jersey" name="jersey-core" rev="1.18.3"/>
 		<dependency org="com.sun.jersey" name="jersey-servlet" rev="1.18.3"
 		            transitive="false"/>
-		<dependency org="com.sun.jersey.oauth" name="oauth-signature" rev="1.1.1-ea" />
-		<dependency org="com.sun.jersey.oauth" name="oauth-server" rev="1.1.1-ea" />
+		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-signature" rev="1.18.3" />
+		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-server" rev="1.18.3" />
 
 		<!-- Pulse -->
 		<dependency org="javax.validation" name="validation-api" rev="1.0.0.GA"/>

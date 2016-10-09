@@ -5,6 +5,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Enumeration;
 
+import com.google.common.collect.Iterators;
+
 /**
  Created by bhawkins on 3/13/15.
  */
@@ -25,7 +27,7 @@ public class PluginClassLoader extends URLClassLoader
 		synchronized (getClassLoadingLock(name))
 		{
 			// First, check if the class has already been loaded
-			Class c = findLoadedClass(name);
+			Class<?> c = findLoadedClass(name);
 
 			if (c == null)
 			{
@@ -68,14 +70,10 @@ public class PluginClassLoader extends URLClassLoader
 
 
 	@Override
-	public Enumeration<URL> getResources(String name) throws IOException
-	{
-		@SuppressWarnings("unchecked")
-		Enumeration<URL>[] tmp = new Enumeration[2];
-		tmp[0] = findResources(name);
-		tmp[1] = m_parentLoader.getResources(name);
-
-		return new CompoundEnumeration<URL>(tmp);
+	public Enumeration<URL> getResources(String name) throws IOException {
+		return Iterators.asEnumeration(Iterators.concat(//
+				Iterators.forEnumeration(findResources(name)), //
+				Iterators.forEnumeration(m_parentLoader.getResources(name))));
 	}
 
 }

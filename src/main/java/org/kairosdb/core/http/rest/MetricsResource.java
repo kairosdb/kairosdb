@@ -76,7 +76,7 @@ public class MetricsResource implements KairosMetricReporter
 	public static final String QUERY_URL = "/datapoints/query";
 
 	private final KairosDatastore datastore;
-	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
+	private final Map<String, DataFormatter> formatters = new HashMap<>();
 	private final QueryParser queryParser;
 
 	//Used for parsing incoming metrics
@@ -123,7 +123,7 @@ public class MetricsResource implements KairosMetricReporter
 		gson = builder.create();
 	}
 
-	private ResponseBuilder setHeaders(ResponseBuilder responseBuilder)
+	public static ResponseBuilder setHeaders(ResponseBuilder responseBuilder)
 	{
 		responseBuilder.header("Access-Control-Allow-Origin", "*");
 		responseBuilder.header("Pragma", "no-cache");
@@ -688,14 +688,14 @@ public class MetricsResource implements KairosMetricReporter
 
 		dpsCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, count));
 		dpsTime.addDataPoint(m_longDataPointFactory.createDataPoint(now, time));
-		List<DataPointSet> ret = new ArrayList<DataPointSet>();
+		List<DataPointSet> ret = new ArrayList<>();
 		ret.add(dpsCount);
 		ret.add(dpsTime);
 
 		return ret;
 	}
 
-	public class ValuesStreamingOutput implements StreamingOutput
+	public static class ValuesStreamingOutput implements StreamingOutput
 	{
 		private DataFormatter m_formatter;
 		private Iterable<String> m_values;
@@ -724,7 +724,7 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
-	public class FileStreamingOutput implements StreamingOutput
+	public static class FileStreamingOutput implements StreamingOutput
 	{
 		private File m_responseFile;
 

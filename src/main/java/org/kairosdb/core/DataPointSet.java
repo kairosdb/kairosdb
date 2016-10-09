@@ -23,39 +23,29 @@ import java.util.*;
 
 public class DataPointSet
 {
-	private String m_name;
-	private ImmutableSortedMap.Builder<String, String> m_tags;
-	private List<DataPoint> m_dataPoints;
-	private String m_dataType;
+	private final String m_name;
+	private final ImmutableSortedMap.Builder<String, String> m_tags;
+	private final List<DataPoint> m_dataPoints;
 
 	public DataPointSet(String name)
 	{
 		m_name = name;
 		m_tags = Tags.create();
-		m_dataPoints = new ArrayList<DataPoint>();
+		m_dataPoints = new ArrayList<>();
 	}
 
 	public DataPointSet(String mName, Map<String, String> tags, List<DataPoint> dataPoints)
 	{
 		this.m_name = mName;
 		this.m_tags = Tags.create().putAll(tags);
-		this.m_dataPoints = new ArrayList<DataPoint>(dataPoints);
+		this.m_dataPoints = new ArrayList<>(dataPoints);
 	}
 
-	public void setDataStoreDataType(String dataType)
-	{
-		m_dataType = dataType;
-	}
 
 	public void addTag(String name, String value)
 	{
 		m_tags.put(name, value);
 	}
-
-	/*public void setTags(SortedMap<String, String> tags)
-	{
-		m_tags = tags;
-	}*/
 
 	@Override
 	public String toString()
@@ -84,10 +74,6 @@ public class DataPointSet
 		return (Collections.unmodifiableList(m_dataPoints));
 	}
 
-	public String getDataStoreDataType()
-	{
-		return (m_dataType);
-	}
 
 	@Override
 	public boolean equals(Object o)
@@ -97,14 +83,16 @@ public class DataPointSet
 
 		DataPointSet that = (DataPointSet) o;
 
-		if (m_dataPoints != null ? !m_dataPoints.equals(that.m_dataPoints) : that.m_dataPoints != null)
-			return false;
-		if (m_name != null ? !m_name.equals(that.m_name) : that.m_name != null)
-			return false;
-		if (m_tags != null ? !m_tags.equals(that.m_tags) : that.m_tags != null)
-			return false;
+		return m_name.equals(that.m_name) && m_tags.equals(that.m_tags) && m_dataPoints.equals(that.m_dataPoints);
 
-		return true;
 	}
 
+	@Override
+	public int hashCode()
+	{
+		int result = m_name.hashCode();
+		result = 31 * result + m_tags.hashCode();
+		result = 31 * result + m_dataPoints.hashCode();
+		return result;
+	}
 }

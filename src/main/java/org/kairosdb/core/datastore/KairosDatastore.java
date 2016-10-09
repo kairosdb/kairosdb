@@ -378,9 +378,9 @@ public class KairosDatastore
 	private static String getTagsKey(LinkedHashMap<String, String> tags)
 	{
 		StringBuilder builder = new StringBuilder();
-		for (String name : tags.keySet())
+		for (Map.Entry<String,String> entry : tags.entrySet())
 		{
-			builder.append(name).append(tags.get(name));
+			builder.append(entry.getKey()).append(entry.getValue());
 		}
 
 		return builder.toString();

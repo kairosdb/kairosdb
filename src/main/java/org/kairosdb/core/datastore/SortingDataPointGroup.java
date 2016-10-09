@@ -28,12 +28,12 @@ public class SortingDataPointGroup extends AbstractDataPointGroup
 {
 	private TournamentTree<DataPoint> m_tree;
 	//We keep this list so we can close the iterators
-	private List<DataPointGroup> m_taggedDataPointsList = new ArrayList<DataPointGroup>();
+	private List<DataPointGroup> m_taggedDataPointsList = new ArrayList<>();
 
 	public SortingDataPointGroup(String name, Order order)
 	{
 		super(name);
-		m_tree = new TournamentTree<DataPoint>(new DataPointComparator(), order);
+		m_tree = new TournamentTree<>(new DataPointComparator(), order);
 	}
 
 	public SortingDataPointGroup(List<DataPointGroup> listDataPointGroup, Order order)
@@ -85,7 +85,7 @@ public class SortingDataPointGroup extends AbstractDataPointGroup
 	}
 
 
-	private class DataPointComparator implements Comparator<DataPoint>
+	private static class DataPointComparator implements Comparator<DataPoint>
 	{
 		@Override
 		public int compare(DataPoint point1, DataPoint point2)

@@ -75,7 +75,7 @@ public class QueryParser
 		m_groupByFactory = groupByFactory;
 		m_pluginFactory = pluginFactory;
 
-		m_descriptorMap = new HashMap<Class, Map<String, PropertyDescriptor>>();
+		m_descriptorMap = new HashMap<>();
 
 		GsonBuilder builder = new GsonBuilder();
 		builder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
@@ -103,7 +103,7 @@ public class QueryParser
 
 			if (propMap == null)
 			{
-				propMap = new HashMap<String, PropertyDescriptor>();
+				propMap = new HashMap<>();
 				m_descriptorMap.put(objClass, propMap);
 
 				BeanInfo beanInfo = Introspector.getBeanInfo(objClass);
@@ -162,7 +162,7 @@ public class QueryParser
 
 	private List<QueryMetric> parseQueryMetric(JsonObject obj, String contextPrefix) throws QueryException, BeanValidationException
 	{
-		List<QueryMetric> ret = new ArrayList<QueryMetric>();
+		List<QueryMetric> ret = new ArrayList<>();
 
 		Query query;
 		try
@@ -249,7 +249,7 @@ public class QueryParser
 
 	public List<RollupTask> parseRollupTasks(String json) throws BeanValidationException, QueryException
 	{
-		List<RollupTask> tasks = new ArrayList<RollupTask>();
+		List<RollupTask> tasks = new ArrayList<>();
 		JsonParser parser = new JsonParser();
 		JsonArray rollupTasks = parser.parse(json).getAsJsonArray();
 		for (int i = 0; i < rollupTasks.size(); i++)
@@ -699,7 +699,7 @@ public class QueryParser
 				return null;
 			}
 
-			final Map<String, T> lowercaseToConstant = new HashMap<String, T>();
+			final Map<String, T> lowercaseToConstant = new HashMap<>();
 			for (T constant : rawType.getEnumConstants())
 			{
 				lowercaseToConstant.put(toLowercase(constant), constant);
@@ -741,7 +741,7 @@ public class QueryParser
 	}
 
 	//===========================================================================
-	private class TimeUnitDeserializer implements JsonDeserializer<TimeUnit>
+	private static class TimeUnitDeserializer implements JsonDeserializer<TimeUnit>
 	{
 		public TimeUnit deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
 				throws JsonParseException
@@ -764,7 +764,7 @@ public class QueryParser
 	}
 
 	//===========================================================================
-	private class DateTimeZoneDeserializer implements JsonDeserializer<DateTimeZone>
+	private static class DateTimeZoneDeserializer implements JsonDeserializer<DateTimeZone>
 	{
 		public DateTimeZone deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
 				throws JsonParseException
@@ -792,7 +792,7 @@ public class QueryParser
 
 
 	//===========================================================================
-	private class MetricDeserializer implements JsonDeserializer<Metric>
+	private static class MetricDeserializer implements JsonDeserializer<Metric>
 	{
 		@Override
 		public Metric deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext)

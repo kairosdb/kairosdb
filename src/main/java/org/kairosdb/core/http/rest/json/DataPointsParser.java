@@ -37,7 +37,6 @@ import java.util.Collections;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Originally used Jackson to parse, but this approach failed for a very large JSON because
@@ -78,9 +77,7 @@ public class DataPointsParser
 		long start = System.currentTimeMillis();
 		ValidationErrors validationErrors = new ValidationErrors();
 
-		JsonReader reader = new JsonReader(inputStream);
-
-		try
+		try (JsonReader reader = new JsonReader(inputStream))
 		{
 			int metricCount = 0;
 
@@ -117,10 +114,6 @@ public class DataPointsParser
 		{
 			validationErrors.addErrorMessage("Invalid json. No content due to end of input.");
 		}
-		finally
-		{
-			reader.close();
-		}
 
 		ingestTime = (int)(System.currentTimeMillis() - start);
 
@@ -142,7 +135,7 @@ public class DataPointsParser
 		return metric;
 	}
 
-	private class Context
+	private static class Context
 	{
 		private int m_count;
 		private String m_name;
@@ -180,7 +173,7 @@ public class DataPointsParser
 		}
 	}
 
-	private class SubContext
+	private static class SubContext
 	{
 		private Context m_context;
 		private String m_contextName;
@@ -390,7 +383,7 @@ public class DataPointsParser
 	}
 
 	@SuppressWarnings({"MismatchedReadAndWriteOfArray", "UnusedDeclaration"})
-	private class NewMetric
+	private static class NewMetric
 	{
 		private String name;
 		private Long timestamp = null;

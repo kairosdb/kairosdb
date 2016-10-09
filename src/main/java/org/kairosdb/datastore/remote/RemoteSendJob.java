@@ -35,6 +35,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
  To change this template use File | Settings | File Templates.
  */
 @DisallowConcurrentExecution
+@SuppressWarnings("deprecation")
 public class RemoteSendJob implements KairosDBJob
 {
 	public static final Logger logger = LoggerFactory.getLogger(RemoteSendJob.class);
@@ -80,7 +81,7 @@ public class RemoteSendJob implements KairosDBJob
 
 			try
 			{
-				Thread.sleep(delay * 1000);
+				Thread.sleep(delay * 1000L);
 			}
 			catch (InterruptedException e)
 			{

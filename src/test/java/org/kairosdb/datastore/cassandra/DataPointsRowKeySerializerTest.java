@@ -10,7 +10,6 @@ import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 public class DataPointsRowKeySerializerTest
 {
@@ -36,13 +35,13 @@ public class DataPointsRowKeySerializerTest
 
 		assertThat(rowKey.getMetricName(), equalTo(metricName));
 		assertThat(rowKey.getDataType(), equalTo(LegacyDataPointFactory.DATASTORE_TYPE));
-		assertThat(rowKey.getTimestamp(), equalTo((long) now));
+		assertThat(rowKey.getTimestamp(), equalTo(now));
 	}
 
 	@Test
 	public void test_toByteBuffer_legacyType()
 	{
-		SortedMap<String, String> map = new TreeMap<String, String>();
+		SortedMap<String, String> map = new TreeMap<>();
 		map.put("a", "b");
 
 		DataPointsRowKeySerializer serializer = new DataPointsRowKeySerializer();
@@ -59,7 +58,7 @@ public class DataPointsRowKeySerializerTest
 	@Test
 	public void test_toByteBuffer_newFormat()
 	{
-		SortedMap<String, String> map = new TreeMap<String, String>();
+		SortedMap<String, String> map = new TreeMap<>();
 		map.put("a", "b");
 		map.put("c", "d");
 		map.put("e", "f");
@@ -82,7 +81,7 @@ public class DataPointsRowKeySerializerTest
 	@Test
 	public void test_toByteBuffer_tagsWithColonEquals()
 	{
-		SortedMap<String, String> map = new TreeMap<String, String>();
+		SortedMap<String, String> map = new TreeMap<>();
 		map.put("a:a", "b:b");
 		map.put("c=c", "d=d");
 		map.put(":e", "f\\");

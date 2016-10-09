@@ -176,6 +176,7 @@ public class QueryRunner
 				byte[] value = column.getValue();
 				long timestamp = getColumnTimestamp(rowKey.getTimestamp(), columnTime);
 
+				//If type is legacy type it will point to the same object, no need for equals
 				if (type == LegacyDataPointFactory.DATASTORE_TYPE)
 				{
 					if (isLongValue(columnTime))

@@ -147,7 +147,6 @@ public class CassandraDatastore implements Datastore
 			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
 
 			ReentrantLock mutatorLock = new ReentrantLock();
-			Condition lockCondition = mutatorLock.newCondition();
 
 			m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, byte[]>(
 					m_keyspace, CF_DATA_POINTS, m_cassandraConfiguration.getWriteDelay(),
@@ -156,7 +155,7 @@ public class CassandraDatastore implements Datastore
 					IntegerSerializer.get(),
 					BytesArraySerializer.get(),
 					createWriteBufferStats(CF_DATA_POINTS, hostname),
-					mutatorLock, lockCondition, threadCount);
+					mutatorLock, threadCount);
 
 			m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
 					m_keyspace, CF_ROW_KEY_INDEX, m_cassandraConfiguration.getWriteDelay(),
@@ -165,7 +164,7 @@ public class CassandraDatastore implements Datastore
 					DATA_POINTS_ROW_KEY_SERIALIZER,
 					StringSerializer.get(),
 					createWriteBufferStats(CF_ROW_KEY_INDEX, hostname),
-					mutatorLock, lockCondition, threadCount);
+					mutatorLock, threadCount);
 
 			m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
 					m_keyspace, CF_STRING_INDEX,
@@ -175,7 +174,7 @@ public class CassandraDatastore implements Datastore
 					StringSerializer.get(),
 					StringSerializer.get(),
 					createWriteBufferStats(CF_STRING_INDEX, hostname),
-					mutatorLock, lockCondition, threadCount);
+					mutatorLock, threadCount);
 		}
 		catch (HectorException e)
 		{
@@ -186,13 +185,11 @@ public class CassandraDatastore implements Datastore
 	private WriteBufferStats createWriteBufferStats(final String cfName, final String hostname) {
 		return new WriteBufferStats()
 		{
-			private ImmutableSortedMap<String, String> m_tags;
-			{
-				m_tags = ImmutableSortedMap.<String, String>naturalOrder()
+			private ImmutableSortedMap<String, String> m_tags =
+					ImmutableSortedMap.<String, String>naturalOrder()
 						.put("host", hostname)
 						.put("buffer", cfName)
 						.build();
-			}
 
 			@Override
 			public void saveWriteSize(int pendingWrites)
@@ -337,7 +334,7 @@ public class CassandraDatastore implements Datastore
 				String cachedValue = m_tagValueCache.cacheItem(value);
 				if (cachedValue == null)
 				{
-					if (value.toString().length() == 0)
+					if (value.length() == 0)
 					{
 						logger.warn(
 								"Attempted to add empty tagValue (tag name " + tagName + ") to string cache for metric: " + metricName

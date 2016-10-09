@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 
@@ -44,7 +43,6 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 	private Mutator<RowKeyType> m_mutator;
 	private volatile int m_bufferCount = 0;
 	private ReentrantLock m_mutatorLock;
-	private Condition m_lockCondition;
 
 	private Thread m_writeThread;
 	private boolean m_exit = false;
@@ -63,7 +61,6 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			Serializer<ValueType> valueSerializer,
 			WriteBufferStats stats,
 			ReentrantLock mutatorLock,
-			Condition lockCondition,
 			int threadCount)
 	{
 		m_executorService = Executors.newFixedThreadPool(threadCount,
@@ -78,10 +75,9 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 		m_valueSerializer = valueSerializer;
 		m_writeStats = stats;
 		m_mutatorLock = mutatorLock;
-		m_lockCondition = lockCondition;
 
-		m_buffer = new ArrayList<Triple<RowKeyType, ColumnKeyType, ValueType>>();
-		m_mutator = new MutatorImpl<RowKeyType>(keyspace, keySerializer);
+		m_buffer = new ArrayList<>();
+		m_mutator = new MutatorImpl<>(keyspace, keySerializer);
 		m_writeThread = new Thread(this, "WriteBuffer Scheduler for "+cfName);
 		m_writeThread.start();
 	}
@@ -118,7 +114,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 
 			if (columnKey.toString().length() > 0)
 			{
-				m_buffer.add(new Triple<RowKeyType, ColumnKeyType, ValueType>(rowKey, columnKey, value, timestamp, ttl));
+				m_buffer.add(new Triple<>(rowKey, columnKey, value, timestamp, ttl));
 			}
 			else
 			{
@@ -196,15 +192,15 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 
 	private void submitJob()
 	{
-		Mutator<RowKeyType> pendingMutations = null;
-		List<Triple<RowKeyType, ColumnKeyType, ValueType>> buffer = null;
+		Mutator<RowKeyType> pendingMutations;
+		List<Triple<RowKeyType, ColumnKeyType, ValueType>> buffer;
 
 		m_writeStats.saveWriteSize(m_bufferCount);
 
 		pendingMutations = m_mutator;
 		buffer = m_buffer;
-		m_mutator = new MutatorImpl<RowKeyType>(m_keyspace, m_rowKeySerializer);
-		m_buffer = new ArrayList<Triple<RowKeyType, ColumnKeyType, ValueType>>();
+		m_mutator = new MutatorImpl<>(m_keyspace, m_rowKeySerializer);
+		m_buffer = new ArrayList<>();
 		m_bufferCount = 0;
 
 		WriteDataJob writeDataJob = new WriteDataJob(pendingMutations, buffer);
@@ -225,9 +221,6 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 			}
 			catch (InterruptedException ignored) {}
 
-			Mutator<RowKeyType> pendingMutations = null;
-			List<Triple<RowKeyType, ColumnKeyType, ValueType>> buffer = null;
-
 			if (m_bufferCount != 0)
 			{
 				m_mutatorLock.lock();
@@ -245,7 +238,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 
 	private class WriteDataJob implements Runnable
 	{
-		private Object m_jobLock = new Object();
+		private final Object m_jobLock = new Object();
 		private boolean m_started = false;
 		private Mutator<RowKeyType> m_pendingMutations;
 		private final List<Triple<RowKeyType, ColumnKeyType, ValueType>> m_buffer;
@@ -290,7 +283,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 					for (Triple<RowKeyType, ColumnKeyType, ValueType> data : m_buffer)
 					{
 						HColumnImpl<ColumnKeyType, ValueType> col =
-								new HColumnImpl<ColumnKeyType, ValueType>(data.getSecond(), data.getThird(), data.getTime(), m_columnKeySerializer, m_valueSerializer);
+								new HColumnImpl<>(data.getSecond(), data.getThird(), data.getTime(), m_columnKeySerializer, m_valueSerializer);
 
 						//if a TTL is set apply it to the column. This will
 						//cause it to be removed after this number of seconds

@@ -88,6 +88,7 @@
 			$(".aggregatorPercentile").hide();
 			$(".divisor").hide();
 			$(".scalingFactor").hide();
+			$(".aggregatorFilter").hide();
 			$(".aggregatorTrim").hide();
 			$(".aggregatorSaveAs").hide();
 			$(".aggregatorRate").hide();
@@ -1051,6 +1052,7 @@
 				<option value="scale">SCALE</option>
 				<option value="sum" selected="selected">SUM</option>
 				<option value="trim">TRIM</option>
+				<option value="filter">FILTER</option>
 			</select>
 		</div>
 		<div>
@@ -1125,6 +1127,24 @@
 				<option value="milliseconds" selected="selected">Milliseconds
 				</option>
 			</select>
+		</div>
+
+		<div style="float: left" class="aggregatorFilter">
+			<span class="header"
+				style="margin-left: 10px; vertical-align: top;">Filter Operation</span>
+			<select class="ui-widget aggregatorFilterOpValue"
+					style="margin-left: 10px;">
+				<option value="eq" selected="selected">EQ</option>
+				<option value="lt">LT</option>
+				<option value="lte">LTE</option>
+				<option value="gt">GT</option>
+				<option value="gte">GTE</option>
+			</select>
+
+			<span class="header"
+				style="margin-left: 10px; vertical-align: top;">Threshold</span>
+			<input class="ui-widget aggregatorFilterThresholdValue"
+				style="width: 60px; margin-left: 10px;" type="text"/>
 		</div>
 
 		<div style="float: left" class="aggregatorTrim">

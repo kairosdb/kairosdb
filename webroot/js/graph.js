@@ -98,14 +98,14 @@ function buildKairosDBQuery() {
 				}
 				metric.addGroupBy(new kairosdb.ValueGroupBy(size));
 			}
-			else if(name == "bin"){
-			    var bins = $(groupBy).find(".groupByBinValue").val().split(',');
-			    if(bins.length < 1){
-			        showErrorMessage("Missing Bin Group By size. Values must be separated by commas.");
-                    hasError = true;
-                    return true;
-			    }
-			    metric.addGroupBy(new kairosdb.BinGroupBy(bins));
+			else if (name == "bin") {
+				var bins = $(groupBy).find(".groupByBinValue").val().split(',');
+				if (bins.length < 1) {
+					showErrorMessage("Missing Bin Group By size. Values must be separated by commas.");
+					hasError = true;
+					return true;
+				}
+				metric.addGroupBy(new kairosdb.BinGroupBy(bins));
 			}
 		});
 
@@ -158,6 +158,17 @@ function buildKairosDBQuery() {
 				}
 				metric.addScaleAggregator(scalingFactor);
 			}
+                        else if (name == 'filter')
+                        {
+                                var filterop = $(aggregator).find(".aggregatorFilterOpValue").val();
+				var threshold = $(aggregator).find(".aggregatorFilterThresholdValue").val();
+				if (!$.isNumeric(threshold))
+				{
+					showErrorMessage("filter threshold value must be a numeric value.");
+					return true;
+				}
+				metric.addFilterAggregator(filterop, threshold);
+                        }
 			else if (name == 'trim')
 			{
 				var agg = metric.addAggregator(name);
@@ -251,7 +262,7 @@ function buildKairosDBQuery() {
 
 	var startTimeAbsolute = $("#startTime").datetimepicker("getDate");
 	var startTimeRelativeValue = $("#startRelativeValue").val();
-	
+
 	if (startTimeAbsolute != null) {
 		if (time_zone) {
 			startTimeAbsolute = convertToTimezone(startTimeAbsolute, time_zone);
@@ -280,7 +291,11 @@ function buildKairosDBQuery() {
 			query.setEndRelative(endRelativeValue, $("#endRelativeUnit").val())
 		}
 	}
-	
+
+	var time_zone = $(".timeZone").val();
+	if (time_zone != '')
+		query.setTimeZone(time_zone)
+
 	return hasError ? null : query;
 }
 
@@ -319,11 +334,11 @@ function removeMetric(removeButton) {
 	if (metricCount == 0) {
 		return;
 	}
-	
+
 	var count = removeButton.data("metricCount");
 	for (var index = 0; index < tabContainerMap.length; ++index) {
-		if(tabContainerMap[index]===count) {
-			tabContainerMap.splice(index,1);
+		if (tabContainerMap[index] === count) {
+			tabContainerMap.splice(index, 1);
 			break;
 		}
 	}
@@ -506,10 +521,10 @@ function addGroupBy(container) {
 			$groupBy.removeAttr("id").appendTo(groupByContainer);
 			$groupBy.show();
 		}
-		else if(newName == "bin"){
-		    $groupBy = $("#groupByBinTemplate").clone();
-            $groupBy.removeAttr("id").appendTo(groupByContainer);
-            $groupBy.show();
+		else if (newName == "bin") {
+			$groupBy = $("#groupByBinTemplate").clone();
+			$groupBy.removeAttr("id").appendTo(groupByContainer);
+			$groupBy.show();
 		}
 	});
 
@@ -607,6 +622,7 @@ function addAggregator(container) {
 		$aggregatorContainer.find(".aggregatorPercentile").hide();
 		$aggregatorContainer.find(".divisor").hide();
 		$aggregatorContainer.find(".scalingFactor").hide();
+		$aggregatorContainer.find(".aggregatorFilter").hide();
 		$aggregatorContainer.find(".aggregatorTrim").hide();
 		$aggregatorContainer.find(".aggregatorSaveAs").hide();
 		$aggregatorContainer.find(".aggregatorRate").hide();
@@ -628,6 +644,9 @@ function addAggregator(container) {
 		}
 		else if (name == 'scale') {
 			$aggregatorContainer.find(".scalingFactor").show();
+		}
+		else if (name == 'filter') {
+			$aggregatorContainer.find(".aggregatorFilter").show();
 		}
 		else if (name == 'trim') {
 			$aggregatorContainer.find(".aggregatorTrim").show();
@@ -796,12 +815,12 @@ function showChart(subTitle, queries, metricData) {
 
                     var first = true;
 					$.each(group.group, function (key, value) {
-                        if (value.length > 0) {
-                            if (!first)
-                                groupByMessage += ", ";
-                            groupByMessage += key + '=' + value;
-                            first = false;
-                        }
+						if (value.length > 0) {
+							if (!first)
+								groupByMessage += ", ";
+							groupByMessage += key + '=' + value;
+							first = false;
+						}
 					});
 
 					groupByMessage += ')';

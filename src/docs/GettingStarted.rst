@@ -6,7 +6,7 @@ Getting Started
 Install
 =======
 
-KairosDB runs with java 1.6 or later.
+KairosDB runs with java 1.7 or later.
 
   #. Download the tar.gz file from the Downloads section
   #. Extract to where you wish to run from

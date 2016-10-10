@@ -4,23 +4,23 @@
 	<div class="editor-row small" style="padding-bottom: 0;">
 		<label>Axis:</label>
 		<button ng-click="toggleYAxis(series);dismiss();"
-			class="btn btn-mini"
-			ng-class="{'btn-success': series.yaxis === 1 }">
+				class="btn btn-mini"
+				ng-class="{'btn-success': series.yaxis === 1 }">
 			Left
 		</button>
 		<button ng-click="toggleYAxis(series);dismiss();"
-			class="btn btn-mini"
-			ng-class="{'btn-success': series.yaxis === 2 }">
+				class="btn btn-mini"
+				ng-class="{'btn-success': series.yaxis === 2 }">
 			Right
 		</button>
 	</div>
 
 	<div class="editor-row">
 		<i ng-repeat="color in colors"
-			class="pointer"
-			ng-class="{'icon-circle-blank': color === series.color,'icon-circle': color !== series.color}"
-			ng-style="{color:color}"
-			ng-click="changeSeriesColor(series, color);dismiss();">&nbsp;</i>
+		   class="pointer"
+		   ng-class="{'icon-circle-blank': color === series.color,'icon-circle': color !== series.color}"
+		   ng-style="{color:color}"
+		   ng-click="changeSeriesColor(series, color);dismiss();">&nbsp;</i>
 	</div>
 </div>
 

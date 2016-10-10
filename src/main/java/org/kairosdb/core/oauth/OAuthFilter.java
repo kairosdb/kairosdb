@@ -10,6 +10,8 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 
 /**
@@ -120,9 +122,19 @@ public class OAuthFilter implements Filter
 		}
 
 		@Override
-		public String getRequestURL()
+		public URL getRequestURL()
 		{
-			return (m_request.getRequestURL().toString());
+			URL url = null;
+			try
+			{
+				url = new URL(m_request.getRequestURL().toString());
+			}
+			catch (MalformedURLException e)
+			{
+				logger.error("Malformed URL", e);
+			}
+
+			return url;
 		}
 
 		@Override

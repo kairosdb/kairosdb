@@ -10,7 +10,6 @@ import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 public class DataPointsRowKeySerializerTest
 {
@@ -36,13 +35,13 @@ public class DataPointsRowKeySerializerTest
 
 		assertThat(rowKey.getMetricName(), equalTo(metricName));
 		assertThat(rowKey.getDataType(), equalTo(LegacyDataPointFactory.DATASTORE_TYPE));
-		assertThat(rowKey.getTimestamp(), equalTo((long) now));
+		assertThat(rowKey.getTimestamp(), equalTo(now));
 	}
 
 	@Test
 	public void test_toByteBuffer_legacyType()
 	{
-		SortedMap<String, String> map = new TreeMap<String, String>();
+		SortedMap<String, String> map = new TreeMap<>();
 		map.put("a", "b");
 
 		DataPointsRowKeySerializer serializer = new DataPointsRowKeySerializer();
@@ -59,7 +58,7 @@ public class DataPointsRowKeySerializerTest
 	@Test
 	public void test_toByteBuffer_newFormat()
 	{
-		SortedMap<String, String> map = new TreeMap<String, String>();
+		SortedMap<String, String> map = new TreeMap<>();
 		map.put("a", "b");
 		map.put("c", "d");
 		map.put("e", "f");
@@ -77,5 +76,37 @@ public class DataPointsRowKeySerializerTest
 		assertThat(rowKey.getTags().get("c"), equalTo("d"));
 		assertThat(rowKey.getTags().get("e"), equalTo("f"));
 
+	}
+
+	@Test
+	public void test_toByteBuffer_tagsWithColonEquals()
+	{
+		SortedMap<String, String> map = new TreeMap<>();
+		map.put("a:a", "b:b");
+		map.put("c=c", "d=d");
+		map.put(":e", "f\\");
+		map.put("=a=", "===");
+		map.put(":a:", ":::");
+		map.put("=b=", ":::");
+		map.put(":b:", "===");
+		map.put("=c=", "normal");
+
+		DataPointsRowKeySerializer serializer = new DataPointsRowKeySerializer();
+		ByteBuffer buffer = serializer.toByteBuffer(new DataPointsRowKey("myMetric", 12345L, "myDataType", map));
+
+		DataPointsRowKey rowKey = serializer.fromByteBuffer(buffer);
+
+		assertThat(rowKey.getMetricName(), equalTo("myMetric"));
+		assertThat(rowKey.getDataType(), equalTo("myDataType"));
+		assertThat(rowKey.getTimestamp(), equalTo(12345L));
+		assertThat(rowKey.getTags().size(), equalTo(8));
+		assertThat(rowKey.getTags().get("a:a"), equalTo("b:b"));
+		assertThat(rowKey.getTags().get("c=c"), equalTo("d=d"));
+		assertThat(rowKey.getTags().get(":e"), equalTo("f\\"));
+		assertThat(rowKey.getTags().get("=a="), equalTo("==="));
+		assertThat(rowKey.getTags().get(":a:"), equalTo(":::"));
+		assertThat(rowKey.getTags().get("=b="), equalTo(":::"));
+		assertThat(rowKey.getTags().get(":b:"), equalTo("==="));
+		assertThat(rowKey.getTags().get("=c="), equalTo("normal"));
 	}
 }

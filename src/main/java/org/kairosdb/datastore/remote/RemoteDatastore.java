@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ import com.google.common.collect.Multimap;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONWriter;
@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.zip.GZIPOutputStream;
 
 
@@ -72,7 +71,7 @@ public class RemoteDatastore implements Datastore
 	private volatile Multimap<DataPointKey, DataPoint> m_dataPointMultimap;
 	private Object m_mapLock = new Object();  //Lock for the above map
 
-	private HttpClient m_client;
+	private CloseableHttpClient m_client;
 	private boolean m_running;
 
 	@Inject
@@ -89,7 +88,7 @@ public class RemoteDatastore implements Datastore
 	{
 		m_dataDirectory = dataDir;
 		m_remoteUrl = remoteUrl;
-		m_client = new DefaultHttpClient();
+		m_client = HttpClients.createDefault();
 
 		createNewMap();
 
@@ -212,15 +211,15 @@ public class RemoteDatastore implements Datastore
 		{
 			HttpGet get = new HttpGet(m_remoteUrl+"/api/v1/version");
 
-			HttpResponse response = m_client.execute(get);
-
-			ByteArrayOutputStream bout = new ByteArrayOutputStream();
-			response.getEntity().writeTo(bout);
-
-			JSONObject respJson = new JSONObject(bout.toString("UTF-8"));
-
-			logger.info("Connecting to remote Kairos version: "+ respJson.getString("version"));
-
+			try(CloseableHttpResponse response = m_client.execute(get))
+			{
+				ByteArrayOutputStream bout = new ByteArrayOutputStream();
+				response.getEntity().writeTo(bout);
+	
+				JSONObject respJson = new JSONObject(bout.toString("UTF-8"));
+	
+				logger.info("Connecting to remote Kairos version: "+ respJson.getString("version"));
+			}
 		}
 		catch (IOException e)
 		{
@@ -297,19 +296,21 @@ public class RemoteDatastore implements Datastore
 		post.setHeader("Content-Type", "application/gzip");
 		
 		post.setEntity(new InputStreamEntity(zipStream, zipFileObj.length()));
-		HttpResponse response = m_client.execute(post);
+		try(CloseableHttpResponse response = m_client.execute(post))
+		{
 
-		zipStream.close();
-		if (response.getStatusLine().getStatusCode() == 204)
-		{
-			zipFileObj.delete();
-		}
-		else
-		{
-			ByteArrayOutputStream body = new ByteArrayOutputStream();
-			response.getEntity().writeTo(body);
-			logger.error("Unable to send file " + zipFile + ": " + response.getStatusLine() +
-					" - "+ body.toString("UTF-8"));
+			zipStream.close();
+			if (response.getStatusLine().getStatusCode() == 204)
+			{
+				zipFileObj.delete();
+			}
+			else
+			{
+				ByteArrayOutputStream body = new ByteArrayOutputStream();
+				response.getEntity().writeTo(body);
+				logger.error("Unable to send file " + zipFile + ": " + response.getStatusLine() +
+						" - "+ body.toString("UTF-8"));
+			}
 		}
 	}
 
@@ -328,6 +329,8 @@ public class RemoteDatastore implements Datastore
 						return (name.endsWith(".gz"));
 					}
 				});
+		if(zipFiles == null)
+			return;
 
 		for (String zipFile : zipFiles)
 		{

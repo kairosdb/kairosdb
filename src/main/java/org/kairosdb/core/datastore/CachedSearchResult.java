@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -397,7 +397,7 @@ public class CachedSearchResult implements QueryCallback
 
 		private void allocateReadBuffer()
 		{
-			int rowSize = (int)(m_endPostition - m_currentPosition);
+			int rowSize = (int) (m_endPostition - m_currentPosition);
 			int bufferSize = (rowSize < m_maxReadBufferSize ? rowSize : m_maxReadBufferSize);
 
 			m_readBuffer = new BufferedDataInputStream(m_randomAccessFile, m_currentPosition, bufferSize);

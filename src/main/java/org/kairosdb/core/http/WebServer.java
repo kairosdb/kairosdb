@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.security.Credential;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.ExecutorThreadPool;
 import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.exception.KairosDBException;
 import org.slf4j.Logger;
@@ -43,9 +44,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-
 import java.util.concurrent.LinkedBlockingQueue;
-import org.eclipse.jetty.util.thread.ExecutorThreadPool;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -92,8 +91,8 @@ public class WebServer implements KairosDBService
 
 	@Inject
 	public WebServer(@Named(JETTY_ADDRESS_PROPERTY) String address,
-	                 @Named(JETTY_PORT_PROPERTY) int port,
-	                 @Named(JETTY_WEB_ROOT_PROPERTY) String webRoot)
+			@Named(JETTY_PORT_PROPERTY) int port,
+			@Named(JETTY_WEB_ROOT_PROPERTY) String webRoot)
 			throws UnknownHostException
 	{
 		checkNotNull(webRoot);
@@ -166,7 +165,7 @@ public class WebServer implements KairosDBService
 				if (m_cipherSuites != null && m_cipherSuites.length > 0)
 					sslContextFactory.setIncludeCipherSuites(m_cipherSuites);
 
-				if (m_protocols!= null && m_protocols.length > 0)
+				if (m_protocols != null && m_protocols.length > 0)
 					sslContextFactory.setIncludeProtocols(m_protocols);
 
 				sslContextFactory.setKeyStorePassword(m_keyStorePassword);
@@ -240,6 +239,12 @@ public class WebServer implements KairosDBService
 		constraint.setRoles(new String[]{"user"});
 		constraint.setAuthenticate(true);
 
+		Constraint noConstraint = new Constraint();
+
+		ConstraintMapping healthcheckConstraintMapping = new ConstraintMapping();
+		healthcheckConstraintMapping.setConstraint(noConstraint);
+		healthcheckConstraintMapping.setPathSpec("/api/v1/health/check");
+
 		ConstraintMapping cm = new ConstraintMapping();
 		cm.setConstraint(constraint);
 		cm.setPathSpec("/*");
@@ -247,6 +252,7 @@ public class WebServer implements KairosDBService
 		ConstraintSecurityHandler csh = new ConstraintSecurityHandler();
 		csh.setAuthenticator(new BasicAuthenticator());
 		csh.setRealmName("myrealm");
+		csh.addConstraintMapping(healthcheckConstraintMapping);
 		csh.addConstraintMapping(cm);
 		csh.setLoginService(l);
 

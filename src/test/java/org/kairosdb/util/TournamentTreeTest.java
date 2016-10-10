@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -61,21 +61,21 @@ public class TournamentTreeTest
 	@Test
 	public void testTwoIterators()
 	{
-		TournamentTree<RowData> tt = new TournamentTree<RowData>(new RowDataComparator(), Order.ASC);
+		TournamentTree<RowData> tt = new TournamentTree<>(new RowDataComparator(), Order.ASC);
 
-		List<RowData> list1 = new ArrayList<RowData>();
+		List<RowData> list1 = new ArrayList<>();
 		list1.add(new RowData(1, 0));
 		list1.add(new RowData(2, 0));
 		list1.add(new RowData(3, 0));
 		list1.add(new RowData(4, 0));
 
-		List<RowData> list2 = new ArrayList<RowData>();
+		List<RowData> list2 = new ArrayList<>();
 		list2.add(new RowData(5, 0));
 		list2.add(new RowData(6, 0));
 		list2.add(new RowData(7, 0));
 		list2.add(new RowData(8, 0));
 
-		List<RowData> list3 = new ArrayList<RowData>();
+		List<RowData> list3 = new ArrayList<>();
 		list3.add(new RowData(9, 0));
 		list3.add(new RowData(10, 0));
 		list3.add(new RowData(11, 0));
@@ -104,15 +104,15 @@ public class TournamentTreeTest
 	@Test
 	public void testTwoIteratorsSameData()
 	{
-		TournamentTree<RowData> tt = new TournamentTree<RowData>(new RowDataComparator(), Order.ASC);
+		TournamentTree<RowData> tt = new TournamentTree<>(new RowDataComparator(), Order.ASC);
 
-		List<RowData> list1 = new ArrayList<RowData>();
+		List<RowData> list1 = new ArrayList<>();
 		list1.add(new RowData(1, 0));
 		list1.add(new RowData(3, 0));
 		list1.add(new RowData(5, 0));
 		list1.add(new RowData(7, 0));
 
-		List<RowData> list2 = new ArrayList<RowData>();
+		List<RowData> list2 = new ArrayList<>();
 		list2.add(new RowData(1, 0));
 		list2.add(new RowData(3, 0));
 		list2.add(new RowData(5, 0));
@@ -137,21 +137,21 @@ public class TournamentTreeTest
 	@Test
 	public void testThreeIterators()
 	{
-		TournamentTree<RowData> tt = new TournamentTree<RowData>(new RowDataComparator(), Order.ASC);
+		TournamentTree<RowData> tt = new TournamentTree<>(new RowDataComparator(), Order.ASC);
 
-		List<RowData> list1 = new ArrayList<RowData>();
+		List<RowData> list1 = new ArrayList<>();
 		list1.add(new RowData(1, 0));
 		list1.add(new RowData(3, 0));
 		list1.add(new RowData(5, 0));
 		list1.add(new RowData(7, 0));
 
-		List<RowData> list2 = new ArrayList<RowData>();
+		List<RowData> list2 = new ArrayList<>();
 		list2.add(new RowData(1, 0));
 		list2.add(new RowData(2, 0));
 		list2.add(new RowData(3, 0));
 		list2.add(new RowData(4, 0));
 
-		List<RowData> list3 = new ArrayList<RowData>();
+		List<RowData> list3 = new ArrayList<>();
 		list3.add(new RowData(2, 0));
 		list3.add(new RowData(4, 0));
 		list3.add(new RowData(6, 0));

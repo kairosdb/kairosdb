@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,16 +16,17 @@
 
 package org.kairosdb.testclient;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.ByteStreams;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.json.JSONException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Parameters;
@@ -72,66 +73,72 @@ public class QueryTests
 
 	private JsonElement readJsonFromStream(String path, String metricName) throws IOException, JSONException
 	{
-		InputStream is = ClassLoader.getSystemResourceAsStream(path);
-		if (is == null)
-			return (null);
+		try (InputStream is = ClassLoader.getSystemResourceAsStream(path))
+		{
+			if (is == null)
+				return (null);
 
-		String str = IOUtils.toString(is);
+			String str = new String(ByteStreams.toByteArray(is), Charsets.UTF_8);
 
-		//replace metric name
-		str = str.replace("<metric_name>", metricName);
+			// replace metric name
+			str = str.replace("<metric_name>", metricName);
 
-		return (m_parser.parse(str));
+			return (m_parser.parse(str));
+		}
 	}
 
 	private JsonElement postQuery(JsonElement query) throws IOException, JSONException
 	{
-		HttpClient client = new DefaultHttpClient();
-		HttpPost post = new HttpPost("http://" + m_host + ":" + m_port + "/api/v1/datapoints/query");
-		post.setHeader("Content-Type", "application/json");
-
-		post.setEntity(new StringEntity(query.toString()));
-		HttpResponse httpResponse = client.execute(post);
-
-		if (httpResponse.getStatusLine().getStatusCode() != 200)
+		try(CloseableHttpClient client = HttpClients.createDefault())
 		{
-			httpResponse.getEntity().writeTo(System.out);
-			return (null);
+			HttpPost post = new HttpPost("http://" + m_host + ":" + m_port + "/api/v1/datapoints/query");
+			post.setHeader("Content-Type", "application/json");
+	
+			post.setEntity(new StringEntity(query.toString()));
+			try(CloseableHttpResponse httpResponse = client.execute(post))
+			{
+				if (httpResponse.getStatusLine().getStatusCode() != 200)
+				{
+					httpResponse.getEntity().writeTo(System.out);
+					return (null);
+				}
+		
+				ByteArrayOutputStream output = new ByteArrayOutputStream(1024);
+				httpResponse.getEntity().writeTo(output);
+		
+				return (m_parser.parse(output.toString("UTF-8")));
+			}
 		}
-
-		ByteArrayOutputStream output = new ByteArrayOutputStream(1024);
-		httpResponse.getEntity().writeTo(output);
-
-		client.getConnectionManager().shutdown();
-		return (m_parser.parse(output.toString("UTF-8")));
 	}
 
 	private int putDataPoints(JsonElement dataPoints) throws IOException, JSONException
 	{
-		HttpClient client = new DefaultHttpClient();
-		HttpPost post = new HttpPost("http://" + m_host + ":" + m_port + "/api/v1/datapoints");
-		post.setHeader("Content-Type", "application/json");
-
-		post.setEntity(new StringEntity(dataPoints.toString()));
-		HttpResponse httpResponse = client.execute(post);
-
-		client.getConnectionManager().shutdown();
-
-		return httpResponse.getStatusLine().getStatusCode();
+		try(CloseableHttpClient client = HttpClients.createDefault())
+		{
+			HttpPost post = new HttpPost("http://" + m_host + ":" + m_port + "/api/v1/datapoints");
+			post.setHeader("Content-Type", "application/json");
+	
+			post.setEntity(new StringEntity(dataPoints.toString()));
+			try(CloseableHttpResponse httpResponse = client.execute(post))
+			{
+				return httpResponse.getStatusLine().getStatusCode();
+			}
+		}
 	}
 
 	private int deleteDataPoints(JsonElement query) throws IOException, JSONException
 	{
-		HttpClient client = new DefaultHttpClient();
-		HttpPost post = new HttpPost("http://" + m_host + ":" + m_port + "/api/v1/datapoints/delete");
-		post.setHeader("Content-Type", "application/json");
-
-		post.setEntity(new StringEntity(query.toString()));
-		HttpResponse httpResponse = client.execute(post);
-
-		client.getConnectionManager().shutdown();
-
-		return httpResponse.getStatusLine().getStatusCode();
+		try(CloseableHttpClient client = HttpClients.createDefault())
+		{
+			HttpPost post = new HttpPost("http://" + m_host + ":" + m_port + "/api/v1/datapoints/delete");
+			post.setHeader("Content-Type", "application/json");
+	
+			post.setEntity(new StringEntity(query.toString()));
+			try(CloseableHttpResponse httpResponse = client.execute(post))
+			{
+				return httpResponse.getStatusLine().getStatusCode();
+			}
+		}
 	}
 
 	@DataProvider(name = "query-provider")

@@ -1,8 +1,9 @@
 package org.kairosdb.core.datastore;
 
+import org.kairosdb.core.DataPoint;
+
 import java.io.IOException;
 import java.util.Map;
-import org.kairosdb.core.DataPoint;
 
 /**
  Created with IntelliJ IDEA.

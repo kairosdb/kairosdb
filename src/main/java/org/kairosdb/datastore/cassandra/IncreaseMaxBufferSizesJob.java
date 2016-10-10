@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.google.inject.Inject;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.scheduler.KairosDBJob;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobExecutionContext;
@@ -60,5 +58,10 @@ public class IncreaseMaxBufferSizesJob implements KairosDBJob
 				.withIdentity(this.getClass().getSimpleName())
 				.withSchedule(CronScheduleBuilder.cronSchedule(schedule))
 				.build();
+	}
+
+	@Override
+	public void interrupt()
+	{
 	}
 }

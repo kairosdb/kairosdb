@@ -6,8 +6,6 @@ import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
@@ -34,6 +32,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 		m_eventBus = eventBus;
 		m_tags = new HashMap<>();
 	}
+
 
 	public void setAddSavedFrom(boolean addSavedFrom)
 	{
@@ -105,7 +104,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 		public SaveAsDataPointAggregator(DataPointGroup innerDataPointGroup)
 		{
 			m_innerDataPointGroup = innerDataPointGroup;
-			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.<String, String>naturalOrder();
+			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.naturalOrder();
 			mapBuilder.putAll(m_tags);
 			if (m_addSavedFrom)
 				mapBuilder.put("saved_from", innerDataPointGroup.getName());

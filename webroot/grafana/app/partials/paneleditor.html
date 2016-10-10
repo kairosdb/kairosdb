@@ -12,11 +12,14 @@
 </div>
 
 <div class="dashboard-editor-body">
-	<div ng-repeat="tab in panelMeta.editorTabs" ng-show="editor.index == $index">
+	<div ng-repeat="tab in panelMeta.editorTabs"
+		 ng-show="editor.index == $index">
 		<div ng-include src="tab.src"></div>
 	</div>
 </div>
 
 <div class="dashboard-editor-footer">
-	<button type="button" class="btn btn-success pull-right" ng-click="editor.index=0;dismiss()">Close</button>
+	<button type="button" class="btn btn-success pull-right"
+			ng-click="editor.index=0;dismiss()">Close
+	</button>
 </div>

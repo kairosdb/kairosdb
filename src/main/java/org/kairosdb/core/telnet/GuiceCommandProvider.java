@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import com.google.inject.Binding;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import com.google.inject.name.Names;
-import org.kairosdb.core.reporting.KairosMetricReporter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +35,7 @@ public class GuiceCommandProvider implements CommandProvider
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (TelnetCommand.class.isAssignableFrom(bindingClass))
 			{
 				TelnetCommand command = (TelnetCommand)injector.getInstance(bindingClass);

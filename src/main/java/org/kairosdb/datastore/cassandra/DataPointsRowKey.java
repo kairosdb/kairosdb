@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ public class DataPointsRowKey
 	private final String m_dataType;
 	private final SortedMap<String, String> m_tags;
 	private boolean m_endSearchKey; //Only used for end slice operations.  Serialization
-		//adds a 0xFF after the timestamp to make sure we get all data for that timestamp.
+	//adds a 0xFF after the timestamp to make sure we get all data for that timestamp.
 
 	private ByteBuffer m_serializedBuffer;
 

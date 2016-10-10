@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.google.common.eventbus.Subscribe;
 import org.jboss.netty.channel.*;
 import org.junit.Before;
 import org.junit.Test;
+import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
@@ -29,6 +29,7 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.ValidationException;
 
+import javax.annotation.Nullable;
 import java.net.SocketAddress;
 import java.util.Collections;
 
@@ -40,16 +41,15 @@ public class PutCommandTest
 {
 	private PutCommand m_command;
 	private FakeDatastore m_datastore;
-	private EventBus m_eventBus;
 
 	@Before
 	public void setup() throws DatastoreException
 	{
-		m_eventBus = new EventBus();
+		EventBus eventBus = new EventBus();
 		m_datastore = new FakeDatastore();
-		m_eventBus.register(m_datastore);
+		eventBus.register(m_datastore);
 
-		m_command = new PutCommand(m_eventBus, "test", new LongDataPointFactoryImpl(),
+		m_command = new PutCommand(eventBus, "test", new LongDataPointFactoryImpl(),
 				new DoubleDataPointFactoryImpl());
 	}
 
@@ -109,21 +109,9 @@ public class PutCommandTest
 	}
 
 	@Test
-	public void test_tagName_characters_invalid() throws DatastoreException, ValidationException
+	public void test_tagName_characters_validColonTagName() throws DatastoreException, ValidationException
 	{
-		try
-		{
-			m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum:fi=barfum"});
-			fail("ValidationException expected");
-		}
-		catch (DatastoreException e)
-		{
-			fail("ValidationException expected");
-		}
-		catch (ValidationException e)
-		{
-			assertThat(e.getMessage(), equalTo("tag[1].name may contain any character except colon ':', and equals '='."));
-		}
+		m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum:fi=barfum"});
 	}
 
 	@Test
@@ -145,21 +133,9 @@ public class PutCommandTest
 	}
 
 	@Test
-	public void test_tagValue_characters_invalid() throws DatastoreException, ValidationException
+	public void test_tagValue_characters_validColonTagValue() throws DatastoreException, ValidationException
 	{
-		try
-		{
-			m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum=bar:fum"});
-			fail("ValidationException expected");
-		}
-		catch (DatastoreException e)
-		{
-			fail("ValidationException expected");
-		}
-		catch (ValidationException e)
-		{
-			assertThat(e.getMessage(), equalTo("tag[1].value may contain any character except colon ':', and equals '='."));
-		}
+		m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum=bar:fum"});
 	}
 
 	@Test
@@ -180,7 +156,7 @@ public class PutCommandTest
 		}
 	}
 
-	public class FakeChannel implements Channel
+	public static class FakeChannel implements Channel
 	{
 		@Override
 		public Integer getId()
@@ -321,6 +297,18 @@ public class PutCommandTest
 		}
 
 		@Override
+		public boolean getUserDefinedWritability(int index)
+		{
+			return false;
+		}
+
+		@Override
+		public void setUserDefinedWritability(int index, boolean isWritable)
+		{
+
+		}
+
+		@Override
 		public Object getAttachment()
 		{
 			return null;
@@ -332,13 +320,13 @@ public class PutCommandTest
 		}
 
 		@Override
-		public int compareTo(Channel o)
+		public int compareTo(@Nullable Channel o)
 		{
 			return 0;
 		}
 	}
 
-	private class FakeDatastore implements Datastore
+	private static class FakeDatastore implements Datastore
 	{
 		private DataPointSet set;
 
@@ -356,7 +344,7 @@ public class PutCommandTest
 		public void putDataPoint(DataPointEvent event) throws DatastoreException
 		{
 			if (set == null)
-				set = new DataPointSet(event.getMetricName(), event.getTags(), Collections.EMPTY_LIST);
+				set = new DataPointSet(event.getMetricName(), event.getTags(), Collections.<DataPoint>emptyList());
 
 			set.addDataPoint(event.getDataPoint());
 		}

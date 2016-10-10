@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -84,6 +84,8 @@ public class TimeGroupBy implements GroupBy
 		long milliseconds = rangeSize.getValue();
 		switch(rangeSize.getUnit())
 		{
+			case MONTHS:
+				throw new AssertionError();
 			case YEARS: milliseconds *= 52;
 			case WEEKS: milliseconds *= 7;
 			case DAYS: milliseconds *= 24;

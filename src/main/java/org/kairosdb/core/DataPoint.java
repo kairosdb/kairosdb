@@ -6,7 +6,6 @@ import org.kairosdb.core.datastore.DataPointGroup;
 
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 
 
@@ -50,7 +49,9 @@ public interface DataPoint
 	public long getLongValue();
 	public boolean isDouble();
 	public double getDoubleValue();
+
 	public DataPointGroup getDataPointGroup();
+
 	public void setDataPointGroup(DataPointGroup dataPointGroup);
 
 }

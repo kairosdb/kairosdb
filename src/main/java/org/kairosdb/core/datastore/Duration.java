@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -55,5 +55,30 @@ public class Duration
 				"value=" + value +
 				", unit=" + unit +
 				'}';
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o)
+		{
+			return true;
+		}
+		if (o == null || getClass() != o.getClass())
+		{
+			return false;
+		}
+
+		Duration duration = (Duration) o;
+
+		return value == duration.value && unit == duration.unit;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		int result = (int) (value ^ (value >>> 32));
+		result = 31 * result + (unit != null ? unit.hashCode() : 0);
+		return result;
 	}
 }

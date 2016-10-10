@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -32,13 +32,13 @@ import org.kairosdb.events.DataPointEvent;
 import java.io.IOException;
 import java.util.*;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 
 
 public class CassandraDatastoreTest extends DatastoreTestHelper
@@ -207,7 +207,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 	private static List<DataPointsRowKey> readIterator(Iterator<DataPointsRowKey> it)
 	{
-		List<DataPointsRowKey> ret = new ArrayList<DataPointsRowKey>();
+		List<DataPointsRowKey> ret = new ArrayList<>();
 		while (it.hasNext())
 			ret.add(it.next());
 
@@ -248,7 +248,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@Test
 	public void test_rowLargerThanMaxReadSize() throws DatastoreException
 	{
-		Map<String, String> tagFilter = new HashMap<String, String>();
+		Map<String, String> tagFilter = new HashMap<>();
 		tagFilter.put("host", "E");
 
 		QueryMetric query = new QueryMetric(s_dataPointTime - OVERFLOW_SIZE, 0, ROW_KEY_BIG_METRIC);
@@ -400,19 +400,19 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 	/**
 	 This is here because hbase throws an exception in this case
-	 @throws DatastoreException
+	 @throws DatastoreException bla
 	 */
 	@Test
 	public void test_queryDatabase_noMetric() throws DatastoreException
 	{
 
-		Map<String, String> tags = new TreeMap<String, String>();
+		Map<String, String> tags = new TreeMap<>();
 		QueryMetric query = new QueryMetric(500, 0, "metric_not_there");
 		query.setEndTime(3000);
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = super.s_datastore.createQuery(query);
+		DatastoreQuery dq = DatastoreTestHelper.s_datastore.createQuery(query);
 
 		List<DataPointGroup> results = dq.execute();
 
@@ -461,12 +461,12 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				new LongDataPoint(50, 7L), 1));
 
 		Thread.sleep(2000);
-		Map<String, String> tags = new TreeMap<String, String>();
+		Map<String, String> tags = new TreeMap<>();
 		QueryMetric query = new QueryMetric(0, 500, 0, "ttlMetric");
 
 		query.setTags(tags);
 
-		DatastoreQuery dq = super.s_datastore.createQuery(query);
+		DatastoreQuery dq = DatastoreTestHelper.s_datastore.createQuery(query);
 
 		List<DataPointGroup> results = dq.execute();
 		try

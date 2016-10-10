@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.util.Tags;
@@ -48,7 +47,6 @@ public class TelnetServerTest
 {
 	private static final int TELNET_PORT = 4244;
 	private static final int MAX_COMMAND_LENGTH = 1024;
-	private KairosDatastore m_datastore;
 	private EventBus m_eventBus;
 	private TelnetServer m_server;
 	private TelnetClient m_client;
@@ -121,7 +119,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verifyEvent(m_eventBus, "test.metric", tags, dp);
+		verifyEvent(m_eventBus, "test.metric", tags, dp, 0);
 	}
 
 	@Test
@@ -136,7 +134,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verifyEvent(m_eventBus, "test.metric", tags, dp);
+		verifyEvent(m_eventBus, "test.metric", tags, dp, 0);
 	}
 
 	@Test
@@ -151,7 +149,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verifyEvent(m_eventBus, "test.metric", tags, dp);
+		verifyEvent(m_eventBus, "test.metric", tags, dp, 0);
 	}
 
 	@Test
@@ -166,7 +164,22 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verifyEvent(m_eventBus, "test.metric", tags, dp);
+		verifyEvent(m_eventBus, "test.metric", tags, dp, 0);
+	}
+
+	@Test
+	public void test_sendTtl() throws DatastoreException
+	{
+		long now = System.currentTimeMillis() / 1000;
+
+		m_client.sendText("put test.metric "+now+" 123 host=test_host kairos_opt.ttl=30");
+
+		ImmutableSortedMap<String, String> tags = Tags.create()
+				.put("host", "test_host")
+				.build();
+		DataPoint dp = new LongDataPoint(now * 1000, 123);
+
+		verifyEvent(m_eventBus, "test.metric", tags, dp, 30);
 	}
 
 	@Test
@@ -176,13 +189,6 @@ public class TelnetServerTest
 		String metricName = createLongString(2048);
 		String tagValue = createLongString(2048);
 		m_client.sendText("put " + metricName + " " + now + " 123 host=test_host foo=bar customer=" + tagValue);
-
-		ImmutableSortedMap<String, String> tags = Tags.create()
-				.put("host", "test_host")
-				.put("foo", "bar")
-				.put("customer", tagValue)
-				.build();
-		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
 		verifyZeroInteractions(m_eventBus);
 	}
@@ -194,7 +200,7 @@ public class TelnetServerTest
 		commandProvider.putCommand("put", new PutCommand(m_eventBus, "localhost",
 				new LongDataPointFactoryImpl(), new DoubleDataPointFactoryImpl()));
 		m_server.stop();
-		m_server = new TelnetServer(TELNET_PORT, 3072, commandProvider);
+		m_server = new TelnetServer(TELNET_PORT, 4148, commandProvider);
 		m_server.start();
 		m_client = new TelnetClient("127.0.0.1", TELNET_PORT);
 
@@ -210,13 +216,13 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verifyEvent(m_eventBus, metricName, tags, dp);
+		verifyEvent(m_eventBus, metricName, tags, dp, 0);
 	}
 
 	private String createLongString(int length)
 	{
 		StringBuilder builder = new StringBuilder();
-		for(int i = 0; i < length; i++)
+		for (int i = 0; i < length; i++)
 		{
 			builder.append('k');
 		}

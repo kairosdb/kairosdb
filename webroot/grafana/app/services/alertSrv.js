@@ -1,85 +1,87 @@
 define([
-  'angular',
-  'lodash'
-],
-function (angular, _) {
-  'use strict';
+		'angular',
+		'lodash'
+	],
+	function (angular, _) {
+		'use strict';
 
-  var module = angular.module('grafana.services');
+		var module = angular.module('grafana.services');
 
-  module.service('alertSrv', function($timeout, $sce, $rootScope, $modal, $q) {
-    var self = this;
+		module.service('alertSrv', function ($timeout, $sce, $rootScope, $modal, $q) {
+			var self = this;
 
-    this.init = function() {
-      $rootScope.onAppEvent('alert-error', function(e, alert) {
-        self.set(alert[0], alert[1], 'error');
-      });
-      $rootScope.onAppEvent('alert-warning', function(e, alert) {
-        self.set(alert[0], alert[1], 'warning', 5000);
-      });
-      $rootScope.onAppEvent('alert-success', function(e, alert) {
-        self.set(alert[0], alert[1], 'success', 3000);
-      });
-      $rootScope.onAppEvent('confirm-modal', this.showConfirmModal);
-    };
+			this.init = function () {
+				$rootScope.onAppEvent('alert-error', function (e, alert) {
+					self.set(alert[0], alert[1], 'error');
+				});
+				$rootScope.onAppEvent('alert-warning', function (e, alert) {
+					self.set(alert[0], alert[1], 'warning', 5000);
+				});
+				$rootScope.onAppEvent('alert-success', function (e, alert) {
+					self.set(alert[0], alert[1], 'success', 3000);
+				});
+				$rootScope.onAppEvent('confirm-modal', this.showConfirmModal);
+			};
 
-    // List of all alert objects
-    this.list = [];
+			// List of all alert objects
+			this.list = [];
 
-    this.set = function(title,text,severity,timeout) {
-      var
-        _a = {
-          title: title || '',
-          text: $sce.trustAsHtml(text || ''),
-          severity: severity || 'info',
-        },
-        _ca = angular.toJson(_a),
-        _clist = _.map(self.list,function(alert) {return angular.toJson(alert);});
+			this.set = function (title, text, severity, timeout) {
+				var
+					_a = {
+						title: title || '',
+						text: $sce.trustAsHtml(text || ''),
+						severity: severity || 'info',
+					},
+					_ca = angular.toJson(_a),
+					_clist = _.map(self.list, function (alert) {
+						return angular.toJson(alert);
+					});
 
-      // If we already have this alert, remove it and add a new one
-      // Why do this instead of skipping the add because it resets the timer
-      if(_.contains(_clist,_ca)) {
-        _.remove(self.list,_.indexOf(_clist,_ca));
-      }
+				// If we already have this alert, remove it and add a new one
+				// Why do this instead of skipping the add because it resets the timer
+				if (_.contains(_clist, _ca)) {
+					_.remove(self.list, _.indexOf(_clist, _ca));
+				}
 
-      self.list.push(_a);
-      if (timeout > 0) {
-        $timeout(function() {
-          self.list = _.without(self.list,_a);
-        }, timeout);
-      }
-      return(_a);
-    };
+				self.list.push(_a);
+				if (timeout > 0) {
+					$timeout(function () {
+						self.list = _.without(self.list, _a);
+					}, timeout);
+				}
+				return (_a);
+			};
 
-    this.clear = function(alert) {
-      self.list = _.without(self.list,alert);
-    };
+			this.clear = function (alert) {
+				self.list = _.without(self.list, alert);
+			};
 
-    this.clearAll = function() {
-      self.list = [];
-    };
+			this.clearAll = function () {
+				self.list = [];
+			};
 
-    this.showConfirmModal = function(e, payload) {
-      var scope = $rootScope.$new();
+			this.showConfirmModal = function (e, payload) {
+				var scope = $rootScope.$new();
 
-      scope.title = payload.title;
-      scope.text = payload.text;
-      scope.onConfirm = payload.onConfirm;
+				scope.title = payload.title;
+				scope.text = payload.text;
+				scope.onConfirm = payload.onConfirm;
 
-      var confirmModal = $modal({
-        template: './app/partials/confirm_modal.html',
-        persist: true,
-        modalClass: 'confirm-modal',
-        show: false,
-        scope: scope,
-        keyboard: false
-      });
+				var confirmModal = $modal({
+					template: './app/partials/confirm_modal.html',
+					persist: true,
+					modalClass: 'confirm-modal',
+					show: false,
+					scope: scope,
+					keyboard: false
+				});
 
-      $q.when(confirmModal).then(function(modalEl) {
-        modalEl.modal('show');
-      });
+				$q.when(confirmModal).then(function (modalEl) {
+					modalEl.modal('show');
+				});
 
-    };
+			};
 
-  });
-});
+		});
+	});

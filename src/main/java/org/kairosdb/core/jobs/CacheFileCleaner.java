@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -58,5 +58,10 @@ public class CacheFileCleaner implements KairosDBJob
 				.withIdentity(this.getClass().getSimpleName())
 				.withSchedule(CronScheduleBuilder.cronSchedule(schedule))
 				.build();
+	}
+
+	@Override
+	public void interrupt()
+	{
 	}
 }

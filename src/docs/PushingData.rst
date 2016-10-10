@@ -17,7 +17,7 @@ The format of the data is
 
 	put <metric name> <time stamp> <value> <tag> <tag>... \n
 
-**Metric name** must be one word and is limited to alpha numerics with "-_.".
+**Metric name** must be one word no spaces.
 
 **Time stamp** can either be in milliseconds or in seconds since Jan 1, 1970 (unix epoch) - seconds are for backwards compatibility with the original opentsdb.  The Cassandra datastore supports milliseconds.
 

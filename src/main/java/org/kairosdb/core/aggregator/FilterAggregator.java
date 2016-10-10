@@ -27,42 +27,44 @@ import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.util.Util;
 
 
-
 @AggregatorName(name = "filter", description = "Filters datapoints according to filter operation with a null data point.")
 public class FilterAggregator implements Aggregator
 {
-        public enum FilterOperation
-        {
-                LTE, LT, GTE, GT, EQUAL
-        };
+	public enum FilterOperation
+	{
+		LTE, LT, GTE, GT, EQUAL
+	}
 
-        public FilterAggregator()
-        {
-                m_threshold = 0.0;
-        }
+	;
 
-        public FilterAggregator(FilterOperation filterop, double threshold)
-        {
-                m_filterop = filterop;
-                m_threshold = threshold;
-        }
+	public FilterAggregator()
+	{
+		m_threshold = 0.0;
+	}
 
-        private FilterOperation m_filterop;
-        private double m_threshold;
+	public FilterAggregator(FilterOperation filterop, double threshold)
+	{
+		m_filterop = filterop;
+		m_threshold = threshold;
+	}
 
-        /**
-         Sets filter operation to apply to data points. Values can be LTE, LE, GTE, GT, or EQUAL.
-         @param filterop
-         */
-        public void setFilterOp(FilterOperation filterop)
-        {
-                m_filterop = filterop;
-        }
+	private FilterOperation m_filterop;
+	private double m_threshold;
 
-        public void setThreshold(double threshold)
-        {
-                m_threshold = threshold;
-        }
+	/**
+	 Sets filter operation to apply to data points. Values can be LTE, LE, GTE, GT, or EQUAL.
+
+	 @param filterop
+	 */
+	public void setFilterOp(FilterOperation filterop)
+	{
+		m_filterop = filterop;
+	}
+
+	public void setThreshold(double threshold)
+	{
+		m_threshold = threshold;
+	}
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{

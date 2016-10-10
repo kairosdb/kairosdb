@@ -148,8 +148,6 @@ public class CassandraDatastore implements Datastore {
 
     private final Cache<String, Boolean> m_tagNameCache;
 
-    private final Cache<String, Boolean> m_tagValueCache;
-
     private final KairosDataPointFactory m_kairosDataPointFactory;
 
     private final List<String> m_indexTagList;
@@ -187,11 +185,6 @@ public class CassandraDatastore implements Datastore {
         m_tagNameCache = Caffeine.newBuilder()
                 .initialCapacity(cassandraConfiguration.getTagNameCacheSize()/3 + 1)
                 .maximumSize(cassandraConfiguration.getTagNameCacheSize())
-                .expireAfterWrite(24, TimeUnit.HOURS).build();
-
-        m_tagValueCache = Caffeine.newBuilder()
-                .initialCapacity(cassandraConfiguration.getTagValueCacheSize()/3 + 1)
-                .maximumSize(cassandraConfiguration.getTagValueCacheSize())
                 .expireAfterWrite(24, TimeUnit.HOURS).build();
 
         m_indexTagList = Arrays.asList(cassandraConfiguration.getIndexTagList().split(",")).stream().map(String::trim).collect(Collectors.toList());
@@ -397,31 +390,11 @@ public class CassandraDatastore implements Datastore {
                     bs.setString(1, tagName);
                     m_session.executeAsync(bs);
                 }
-
-                String value = tags.get(tagName);
-                Boolean isCachedValue = m_tagValueCache.getIfPresent(value);
-                if (isCachedValue == null) {
-                    m_tagValueCache.put(value, CACHE_BOOLEAN);
-                    if (value.toString().length() == 0) {
-                        logger.warn(
-                                "Attempted to add empty tagValue (tag name " + tagName + ") to string cache for metric: " + metricName
-                        );
-                    }
-                    BoundStatement bs = new BoundStatement(m_psInsertString);
-                    bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_VALUES.getBytes(UTF_8)));
-                    bs.setString(1, value);
-                    m_session.executeAsync(bs);
-					/*m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
-							value, "", now);*/
-                }
             }
 
             int columnTime = getColumnName(rowTime, dataPoint.getTimestamp());
             KDataOutput kDataOutput = new KDataOutput();
             dataPoint.writeValueToBuffer(kDataOutput);
-			/*m_dataPointWriteBuffer.addData(rowKey, columnTime,
-					kDataOutput.getBytes(), writeTime, ttl);*/
-
 
             BoundStatement boundStatement = new BoundStatement(m_psInsertData);
             boundStatement.setBytes(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));

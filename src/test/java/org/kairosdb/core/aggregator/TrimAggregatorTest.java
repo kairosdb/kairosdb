@@ -2,14 +2,12 @@ package org.kairosdb.core.aggregator;
 
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.testing.ListDataPointGroup;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
-
 
 /**
  Created by bhawkins on 8/28/15.

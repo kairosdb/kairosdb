@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ public class RateAggregator implements Aggregator, TimezoneAware
 				}
 			}
 
-			double rate = (x1 - x0)/(y1 - y0) * Util.getSamplingDuration(y0, m_sampling, m_timeZone);
+			double rate = (x1 - x0) / (y1 - y0) * Util.getSamplingDuration(y0, m_sampling, m_timeZone);
 
 			return (m_dataPointFactory.createDataPoint(y1, rate));
 		}

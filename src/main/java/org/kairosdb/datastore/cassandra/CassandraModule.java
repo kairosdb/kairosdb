@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -70,7 +70,9 @@ public class CassandraModule extends AbstractModule
 		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);
 		bind(CassandraClient.class).to(CassandraClientImpl.class);
 
-		bind(new TypeLiteral<List<RowKeyListener>>(){}).toProvider(RowKeyListenerProvider.class);
+		bind(new TypeLiteral<List<RowKeyListener>>()
+		{
+		}).toProvider(RowKeyListenerProvider.class);
 
 		bind(new TypeLiteral<Map<String, String>>(){}).annotatedWith(Names.named(CASSANDRA_AUTH_MAP))
 				.toInstance(m_authMap);

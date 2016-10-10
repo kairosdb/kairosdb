@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -55,7 +55,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static javax.ws.rs.core.Response.ResponseBuilder;
 
@@ -79,10 +78,10 @@ public class MetricsResource implements KairosMetricReporter
 
 	private final KairosDatastore datastore;
 	private final EventBus m_eventBus;
-	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
+	private final Map<String, DataFormatter> formatters = new HashMap<>();
 	private final QueryParser queryParser;
 
-	//Used for parsing incomming metrices
+	//Used for parsing incoming metrics
 	private final Gson gson;
 
 	//These two are used to track rate of ingestion
@@ -127,7 +126,7 @@ public class MetricsResource implements KairosMetricReporter
 		gson = builder.create();
 	}
 
-	private ResponseBuilder setHeaders(ResponseBuilder responseBuilder)
+	public static ResponseBuilder setHeaders(ResponseBuilder responseBuilder)
 	{
 		responseBuilder.header("Access-Control-Allow-Origin", "*");
 		responseBuilder.header("Pragma", "no-cache");
@@ -515,7 +514,7 @@ public class MetricsResource implements KairosMetricReporter
 		}
 		catch (IOException e)
 		{
-			logger.error("Failed to open temp folder "+datastore.getCacheDir(), e);
+			logger.error("Failed to open temp folder " + datastore.getCacheDir(), e);
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}
 		catch (Exception e)
@@ -692,14 +691,14 @@ public class MetricsResource implements KairosMetricReporter
 
 		dpsCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, count));
 		dpsTime.addDataPoint(m_longDataPointFactory.createDataPoint(now, time));
-		List<DataPointSet> ret = new ArrayList<DataPointSet>();
+		List<DataPointSet> ret = new ArrayList<>();
 		ret.add(dpsCount);
 		ret.add(dpsTime);
 
 		return ret;
 	}
 
-	public class ValuesStreamingOutput implements StreamingOutput
+	public static class ValuesStreamingOutput implements StreamingOutput
 	{
 		private DataFormatter m_formatter;
 		private Iterable<String> m_values;
@@ -728,7 +727,7 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
-	public class FileStreamingOutput implements StreamingOutput
+	public static class FileStreamingOutput implements StreamingOutput
 	{
 		private File m_responseFile;
 

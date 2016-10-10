@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,17 +20,15 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.DataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.util.BufferedDataOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Util.*;
+import static org.kairosdb.util.Util.packLong;
+import static org.kairosdb.util.Util.unpackLong;
 
 /**
  *  A grouping of data points. The group is written to disk.

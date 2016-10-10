@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -101,6 +101,7 @@ public class KairosDatastore
 
 	/**
 	 Make sure the folder exists
+
 	 @param path
 	 */
 	private static void ensureFolder(String path)
@@ -167,6 +168,11 @@ public class KairosDatastore
 		logger.debug("Deleting cache files in " + dir.getAbsolutePath());
 
 		cleanDirectory(dir);
+	}
+
+	public Datastore getDatastore()
+	{
+		return m_datastore;
 	}
 
 	/**
@@ -364,9 +370,9 @@ public class KairosDatastore
 	private static String getTagsKey(LinkedHashMap<String, String> tags)
 	{
 		StringBuilder builder = new StringBuilder();
-		for (String name : tags.keySet())
+		for (Map.Entry<String,String> entry : tags.entrySet())
 		{
-			builder.append(name).append(tags.get(name));
+			builder.append(entry.getKey()).append(entry.getValue());
 		}
 
 		return builder.toString();

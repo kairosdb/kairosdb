@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
@@ -277,7 +278,7 @@ public class DataPointsParserTest
 	}
 
 	@Test
-	public void test_tagName_invalidCharacters() throws DatastoreException, IOException
+	public void test_tagName_withColon() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"bad:name\":\"bar\"}, \"datapoints\": [[1,2]]}]";
 
@@ -287,9 +288,7 @@ public class DataPointsParserTest
 
 		ValidationErrors validationErrors = parser.parse();
 
-		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(),
-				equalTo("metric[0](name=metricName).tag[bad:name] may contain any character except colon ':', and equals '='."));
+		assertThat(validationErrors.size(), equalTo(0));
 	}
 
 	@Test
@@ -308,7 +307,7 @@ public class DataPointsParserTest
 	}
 
 	@Test
-	public void test_tagValue_invalidCharacters() throws DatastoreException, IOException
+	public void test_tagValue_withColon() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"foo\":\"bad:value\"}, \"datapoints\": [[1,2]]}]";
 
@@ -318,9 +317,7 @@ public class DataPointsParserTest
 
 		ValidationErrors validationErrors = parser.parse();
 
-		assertThat(validationErrors.size(), equalTo(1));
-		assertThat(validationErrors.getFirstError(),
-				equalTo("metric[0](name=metricName).tag[foo].value may contain any character except colon ':', and equals '='."));
+		assertThat(validationErrors.size(), equalTo(0));
 	}
 
 	@Test
@@ -663,6 +660,40 @@ public class DataPointsParserTest
 	}
 
 	@Test
+	public void test_valueType_invalid() throws DatastoreException, IOException
+	{
+		// Value is a map which is not valid
+		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": " + new HashMap() + ", \"tags\":{\"foo\":\"bar\"}}";
+
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.hasErrors(), equalTo(true));
+		assertThat(validationErrors.size(), equalTo(1));
+		assertThat(validationErrors.getErrors().get(0), equalTo("metric[0](name=metric1) value is an invalid type"));
+	}
+
+	@Test
+	public void test_valueType_dataPointArray_invalid() throws DatastoreException, IOException
+	{
+		// Value is a map which is not valid
+		String json = "{\"name\": \"metric1\", \"datapoints\": [[1349109376, " + new HashMap() + "]], \"tags\":{\"foo\":\"bar\"}}";
+
+		EventBus eventBus = new EventBus();
+		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.hasErrors(), equalTo(true));
+		assertThat(validationErrors.size(), equalTo(1));
+		assertThat(validationErrors.getErrors().get(0), equalTo("metric[0](name=metric1) value is an invalid type"));
+	}
+
+	@Test
 	public void test_parserSpeed() throws DatastoreException, IOException
 	{
 		Reader skipReader = new InputStreamReader(
@@ -676,7 +707,6 @@ public class DataPointsParserTest
 		DataPointsParser parser = new DataPointsParser(eventBus, skipReader,
 				new Gson(), dataPointFactory);
 		ValidationErrors validationErrors = parser.parse();
-
 		System.out.println(parser.getDataPointCount());
 		System.out.println("No Validation");
 		System.out.println(parser.getIngestTime());
@@ -687,9 +717,10 @@ public class DataPointsParserTest
 		System.out.println(parser.getIngestTime());
 	}
 
+
 	private static class FakeDataStore implements Datastore
 	{
-		List<DataPointSet> dataPointSetList = new ArrayList<DataPointSet>();
+		List<DataPointSet> dataPointSetList = new ArrayList<>();
 		private DataPointSet lastDataPointSet;
 
 		protected FakeDataStore() throws DatastoreException
@@ -712,7 +743,7 @@ public class DataPointsParserTest
 			if ((lastDataPointSet == null) || (!lastDataPointSet.getName().equals(event.getMetricName())) ||
 					(!lastDataPointSet.getTags().equals(event.getTags())))
 			{
-				lastDataPointSet = new DataPointSet(event.getMetricName(), event.getTags(), Collections.EMPTY_LIST);
+				lastDataPointSet = new DataPointSet(event.getMetricName(), event.getTags(), Collections.<DataPoint>emptyList());
 				dataPointSetList.add(lastDataPointSet);
 			}
 

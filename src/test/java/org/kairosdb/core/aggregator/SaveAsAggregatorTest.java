@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.TagGroupBy;
@@ -28,7 +27,6 @@ import static org.mockito.Mockito.mock;
 public class SaveAsAggregatorTest
 {
 	private SaveAsAggregator m_aggregator;
-	private Datastore m_mockDatastore;
 	private EventBus m_mockEventBus;
 	ArgumentCaptor<DataPointEvent> m_event;
 
@@ -36,7 +34,6 @@ public class SaveAsAggregatorTest
 	@Before
 	public void setup()
 	{
-		m_mockDatastore = mock(Datastore.class);
 		m_mockEventBus = mock(EventBus.class);
 		m_aggregator = new SaveAsAggregator(m_mockEventBus);
 
@@ -44,6 +41,7 @@ public class SaveAsAggregatorTest
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testTtl() throws DatastoreException
 	{
 		m_aggregator.setMetricName("testTtl");
@@ -74,6 +72,7 @@ public class SaveAsAggregatorTest
 
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testNoTtl() throws DatastoreException
 	{
 		m_aggregator.setMetricName("testTtl");
@@ -105,7 +104,7 @@ public class SaveAsAggregatorTest
 	public void testNotAddingSavedFrom() throws DatastoreException
 	{
 		m_aggregator.setMetricName("testTtl");
-		m_aggregator.setTags(ImmutableSortedMap.<String, String>of("sweet_tag", "value"));
+		m_aggregator.setTags(ImmutableSortedMap.of("sweet_tag", "value"));
 		m_aggregator.setAddSavedFrom(false);
 
 		ImmutableSortedMap<String, String> verifyMap = ImmutableSortedMap.<String, String>naturalOrder()
@@ -140,7 +139,7 @@ public class SaveAsAggregatorTest
 	public void testAddedTags() throws DatastoreException
 	{
 		m_aggregator.setMetricName("testTtl");
-		m_aggregator.setTags(ImmutableSortedMap.<String, String>of("sweet_tag", "value"));
+		m_aggregator.setTags(ImmutableSortedMap.of("sweet_tag", "value"));
 
 		ImmutableSortedMap<String, String> verifyMap = ImmutableSortedMap.<String, String>naturalOrder()
 				.put("saved_from", "group")

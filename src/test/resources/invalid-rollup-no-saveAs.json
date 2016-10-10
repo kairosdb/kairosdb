@@ -1,0 +1,50 @@
+{
+  "name": "Rollup",
+  "execution_interval": {
+    "value": 1,
+    "unit": "hours"
+  },
+  "rollups": [
+    {
+      "save_as": "",
+      "query": {
+        "cache_time": 0,
+        "start_relative": {
+          "value": "1",
+          "unit": "hours"
+        },
+        "metrics": [
+          {
+            "name": "kairosdb.http.query_time",
+            "limit": 10000,
+            "tags": {
+              "host": [
+                "foo",
+                "bar"
+              ],
+              "customer": [
+                "foobar"
+              ]
+            },
+            "aggregators": [
+              {
+                "name": "sum",
+                "sampling": {
+                  "value": 10,
+                  "unit": "minutes"
+                }
+              },
+              {
+                "name": "avg",
+                "sampling": {
+                  "value": 10,
+                  "unit": "hours"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

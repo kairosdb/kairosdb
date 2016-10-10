@@ -39,7 +39,8 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	private boolean m_started = false;
 	private boolean m_alignSampling;
 	private boolean m_exhaustive;
-	private DateTimeZone m_timeZone = DateTimeZone.UTC;;
+	private DateTimeZone m_timeZone = DateTimeZone.UTC;
+	;
 
 	@NotNull
 	@Valid
@@ -63,10 +64,10 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 		if (m_alignSampling)
 			m_startTime = alignRangeBoundary(m_startTime);
 
-		if(m_exhaustive)
-			return(new ExhaustiveRangeDataPointAggregator(dataPointGroup, getSubAggregator()));
+		if (m_exhaustive)
+			return (new ExhaustiveRangeDataPointAggregator(dataPointGroup, getSubAggregator()));
 		else
-			return(new RangeDataPointAggregator(dataPointGroup, getSubAggregator()));
+			return (new RangeDataPointAggregator(dataPointGroup, getSubAggregator()));
 	}
 
 	/**
@@ -88,6 +89,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	 @param timestamp
 	 @return
 	 */
+	@SuppressWarnings("fallthrough")
 	private long alignRangeBoundary(long timestamp)
 	{
 		DateTime dt = new DateTime(timestamp, m_timeZone);
@@ -119,7 +121,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 
 	public void setSampling(Sampling sampling)
 	{
-        m_sampling = sampling;
+		m_sampling = sampling;
 	}
 
 	/**
@@ -155,7 +157,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	public void setStartTime(long startTime)
 	{
 		m_startTime = startTime;
-    }
+	}
 
 	/**
 	 Return a RangeSubAggregator that will be used to aggregate data over a
@@ -174,6 +176,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 
 	/**
 	 Sets the time zone to use for range calculations
+
 	 @param timeZone
 	 */
 	public void setTimeZone(DateTimeZone timeZone)
@@ -181,8 +184,10 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 		m_timeZone = timeZone;
 	}
 
-
-
+	public Sampling getSampling()
+	{
+		return m_sampling;
+	}
 
 	//===========================================================================
 	/**
@@ -275,23 +280,24 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 		}
 
 
-        /**
-         * Computes the data point time for the aggregated value.
-         * Different strategies could be added here such as
-         * datapoint time = range start time
-         *                = range end time
-         *                = range median
-         *                = current datapoint time
-         * @return
-         */
-        private long getDataPointTime() {
-            return currentDataPoint.getTimestamp();
-        }
+		/**
+		 Computes the data point time for the aggregated value.
+		 Different strategies could be added here such as
+		 datapoint time = range start time
+		 = range end time
+		 = range median
+		 = current datapoint time
 
-        /**
-         *
-         * @return true if there is a subrange left
-         */
+		 @return
+		 */
+		private long getDataPointTime()
+		{
+			return currentDataPoint.getTimestamp();
+		}
+
+		/**
+		 @return true if there is a subrange left
+		 */
 		@Override
 		public boolean hasNext()
 		{
@@ -346,7 +352,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 			m_nextExpectedRangeStartTime = m_startTime;
 		}
 
-		private void setNextStartTime( long timeStamp)
+		private void setNextStartTime(long timeStamp)
 		{
 			m_nextExpectedRangeStartTime = timeStamp;
 		}
@@ -359,9 +365,10 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 				//We calculate start and end ranges as the ranges may not be
 				//consecutive if data does not show up in each range.
 				long startTime = m_nextExpectedRangeStartTime;
-				if( !m_started ){
-					m_started=true;
-					startTime=currentDataPoint.getTimestamp();
+				if (!m_started)
+				{
+					m_started = true;
+					startTime = currentDataPoint.getTimestamp();
 				}
 				long startRange = getStartRange(startTime);
 				long endRange = getEndRange(startTime);

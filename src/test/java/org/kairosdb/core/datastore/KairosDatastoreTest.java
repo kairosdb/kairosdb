@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.kairosdb.core.datastore;
 
-import com.google.common.collect.ImmutableSortedMap;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -198,7 +197,7 @@ public class KairosDatastoreTest
 				new TestDataPointFactory());
 
 		TagGroupBy groupBy = new TagGroupBy("tag1", "tag2");
-		List<DataPointRow> rows = new ArrayList<DataPointRow>();
+		List<DataPointRow> rows = new ArrayList<>();
 
 		DataPointRowImpl row1 = new DataPointRowImpl();
 		row1.addTag("tag1", "value");
@@ -229,7 +228,7 @@ public class KairosDatastoreTest
 				new TestDataPointFactory());
 
 		TagGroupBy groupBy = new TagGroupBy("tag1", "tag2");
-		List<DataPointRow> rows = new ArrayList<DataPointRow>();
+		List<DataPointRow> rows = new ArrayList<>();
 
 		DataPointRowImpl row1 = new DataPointRowImpl();
 		row1.addTag("tag1", "value1");
@@ -264,7 +263,7 @@ public class KairosDatastoreTest
 		then by tag 2 as specified in the caller group by.
 		 */
 		TagGroupBy groupBy = new TagGroupBy("tag1", "tag2");
-		List<DataPointRow> rows = new ArrayList<DataPointRow>();
+		List<DataPointRow> rows = new ArrayList<>();
 
 		DataPointRowImpl row1 = new DataPointRowImpl();
 		row1.addTag("tag1", "value1");
@@ -305,13 +304,13 @@ public class KairosDatastoreTest
 		for (GroupByResult groupByResult : dataPointGroup.getGroupByResult())
 		{
 			if (groupByResult instanceof TagGroupByResult)
-				return ((TagGroupByResult)groupByResult).getTagResults();
+				return ((TagGroupByResult) groupByResult).getTagResults();
 		}
 
 		return null;
 	}
 
-	private class TestKairosDatastore extends KairosDatastore
+	private static class TestKairosDatastore extends KairosDatastore
 	{
 
 		public TestKairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
@@ -321,7 +320,7 @@ public class KairosDatastoreTest
 		}
 	}
 
-	private class TestDatastore implements Datastore
+	private static class TestDatastore implements Datastore
 	{
 		private DatastoreException m_toThrow = null;
 

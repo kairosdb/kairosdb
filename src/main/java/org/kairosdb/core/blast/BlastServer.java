@@ -3,7 +3,6 @@ package org.kairosdb.core.blast;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
-import org.h2.store.DataReader;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
@@ -14,7 +13,6 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.events.DataPointEvent;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;

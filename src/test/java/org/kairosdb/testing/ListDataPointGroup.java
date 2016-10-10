@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@ package org.kairosdb.testing;
 
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.AbstractDataPointGroup;
+import org.kairosdb.core.datastore.Order;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class ListDataPointGroup extends AbstractDataPointGroup
 {
@@ -58,5 +57,33 @@ public class ListDataPointGroup extends AbstractDataPointGroup
 			iterator = dataPoints.iterator();
 
 		return (iterator.next());
+	}
+
+	public void sort(Order order)
+	{
+		if (order == Order.ASC)
+			Collections.sort(dataPoints, new DataPointComparator());
+		else
+			Collections.sort(dataPoints, Collections.reverseOrder(new DataPointComparator()));
+
+	}
+
+	private class DataPointComparator implements Comparator<DataPoint>
+	{
+		@Override
+		public int compare(DataPoint point1, DataPoint point2)
+		{
+			long ret = point1.getTimestamp() - point2.getTimestamp();
+
+			if (ret == 0L)
+				ret = Double.compare(point1.getDoubleValue(), point2.getDoubleValue());
+
+			if (ret == 0L)
+			{  //Simple hack to break a tie.
+				ret = System.identityHashCode(point1) - System.identityHashCode(point2);
+			}
+
+			return (ret < 0L ? -1 : 1);
+		}
 	}
 }

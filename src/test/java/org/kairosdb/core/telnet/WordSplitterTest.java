@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -21,29 +21,27 @@ import static org.junit.Assert.assertArrayEquals;
 
 public class WordSplitterTest
 {
-	private WordSplitter wordsplitter;
-
 	@Test
 	public void test()
 	{
 		assertArrayEquals(new String[]{"simple", "white", "space", "string"},
-		                  wordsplitter.splitString("simple white space string"));
+		                  WordSplitter.splitString("simple white space string"));
 		assertArrayEquals(new String[]{"uses", "tab", "separators"},
-		                  wordsplitter.splitString("uses\ttab\tseparators"));
+		                  WordSplitter.splitString("uses\ttab\tseparators"));
 		assertArrayEquals(new String[]{},
-		                  wordsplitter.splitString(""));  // empty string
+		                  WordSplitter.splitString(""));  // empty string
 		assertArrayEquals(new String[]{},
-		                  wordsplitter.splitString("  \t  \t"));  // only spaces
+		                  WordSplitter.splitString("  \t  \t"));  // only spaces
 		assertArrayEquals(new String[]{"multiple", "interstitial", "space", "chars"},
-		                  wordsplitter.splitString("multiple \tinterstitial\t space \t chars"));
+		                  WordSplitter.splitString("multiple \tinterstitial\t space \t chars"));
 		assertArrayEquals(new String[]{"space", "at", "start"},
-		                  wordsplitter.splitString("  space at start"));
+		                  WordSplitter.splitString("  space at start"));
 		assertArrayEquals(new String[]{"space", "at", "end"},
-		                  wordsplitter.splitString("space at end  "));
+		                  WordSplitter.splitString("space at end  "));
 		assertArrayEquals(new String[]{"space", "at", "start", "and", "end"},
-		                  wordsplitter.splitString("  space at start and end  "));
+		                  WordSplitter.splitString("  space at start and end  "));
 		assertArrayEquals(new String[]{"nospace"},
-		                  wordsplitter.splitString("nospace"));
+		                  WordSplitter.splitString("nospace"));
 	}
 
 	/*@Test

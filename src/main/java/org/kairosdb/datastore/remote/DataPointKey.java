@@ -2,9 +2,6 @@ package org.kairosdb.datastore.remote;
 
 import com.google.common.collect.ImmutableSortedMap;
 
-import java.util.SortedMap;
-import java.util.TreeMap;
-
 /**
  Created with IntelliJ IDEA.
  User: bhawkins
@@ -25,7 +22,7 @@ public class DataPointKey
 		m_name = name;
 		m_tags = tags;
 		m_type = type;
-		m_ttl  = ttl;
+		m_ttl = ttl;
 	}
 
 	public String getName()

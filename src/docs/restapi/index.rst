@@ -19,6 +19,7 @@ Contents:
    QueryMetrics
    Aggregators
    QueryMetricTags
+   Roll-ups
    Version
 
 

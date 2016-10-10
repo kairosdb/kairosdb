@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import me.prettyprint.cassandra.service.ColumnSliceIterator;
 import me.prettyprint.cassandra.service.ThriftKsDef;
 import me.prettyprint.hector.api.Cluster;
 import me.prettyprint.hector.api.Keyspace;
-import me.prettyprint.hector.api.Serializer;
 import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
 import me.prettyprint.hector.api.ddl.ComparatorType;
 import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
@@ -117,7 +116,7 @@ public class CassandraDatastore implements Datastore
 	public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
 
 	public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
-
+	public static final String ROW_KEY_COUNT = "kairosdb.datastore.cassandra.row_key_count";
 
 
 	public static final String CF_DATA_POINTS = "data_points";
@@ -167,12 +166,12 @@ public class CassandraDatastore implements Datastore
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
-	private List<RowKeyListener> m_rowKeyListeners = Collections.EMPTY_LIST;
+	private List<RowKeyListener> m_rowKeyListeners = Collections.emptyList();
 
 
 
 	@Inject
-	public CassandraDatastore(@Named("HOSTNAME")final String hostname,
+	public CassandraDatastore(@Named("HOSTNAME") final String hostname,
 			CassandraClient cassandraClient,
 			CassandraConfiguration cassandraConfiguration,
 			HectorConfiguration configuration,
@@ -204,14 +203,15 @@ public class CassandraDatastore implements Datastore
 			m_tagValueCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
 
 			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
-			int threadCount = hostConfig.buildCassandraHosts().length +3;
+			int threadCount = hostConfig.buildCassandraHosts().length + 3;
 
 			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
 					hostConfig, m_cassandraConfiguration.getCassandraAuthentication());
 
 			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
 
-			if (keyspaceDef == null) {
+			if (keyspaceDef == null)
+			{
 				createSchema(m_cassandraConfiguration.getReplicationFactor());
 			}
 
@@ -224,7 +224,6 @@ public class CassandraDatastore implements Datastore
 			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
 
 			ReentrantLock mutatorLock = new ReentrantLock();
-			Condition lockCondition = mutatorLock.newCondition();
 
 			/*m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, byte[]>(
 					m_keyspace, CF_DATA_POINTS, m_cassandraConfiguration.getWriteDelay(),
@@ -233,7 +232,7 @@ public class CassandraDatastore implements Datastore
 					IntegerSerializer.get(),
 					BytesArraySerializer.get(),
 					createWriteBufferStats(CF_DATA_POINTS, hostname),
-					mutatorLock, lockCondition, threadCount);*/
+					mutatorLock, threadCount);*/
 
 			/*m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
 					m_keyspace, CF_ROW_KEY_INDEX, m_cassandraConfiguration.getWriteDelay(),
@@ -242,7 +241,7 @@ public class CassandraDatastore implements Datastore
 					DATA_POINTS_ROW_KEY_SERIALIZER,
 					StringSerializer.get(),
 					createWriteBufferStats(CF_ROW_KEY_INDEX, hostname),
-					mutatorLock, lockCondition, threadCount);*/
+					mutatorLock, threadCount);/*
 
 			/*m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
 					m_keyspace, CF_STRING_INDEX,
@@ -252,7 +251,7 @@ public class CassandraDatastore implements Datastore
 					StringSerializer.get(),
 					StringSerializer.get(),
 					createWriteBufferStats(CF_STRING_INDEX, hostname),
-					mutatorLock, lockCondition, threadCount);*/
+					mutatorLock, threadCount);*/
 		}
 		catch (HectorException e)
 		{
@@ -263,13 +262,11 @@ public class CassandraDatastore implements Datastore
 	private WriteBufferStats createWriteBufferStats(final String cfName, final String hostname) {
 		return new WriteBufferStats()
 		{
-			private ImmutableSortedMap m_tags;
-			{
-				m_tags = ImmutableSortedMap.naturalOrder()
+			private ImmutableSortedMap<String, String> m_tags =
+					ImmutableSortedMap.<String, String>naturalOrder()
 						.put("host", hostname)
 						.put("buffer", cfName)
 						.build();
-			}
 
 			@Override
 			public void saveWriteSize(int pendingWrites)
@@ -448,9 +445,9 @@ public class CassandraDatastore implements Datastore
 			int rowKeyTtl = 0;
 			//Row key will expire 3 weeks after the data in the row expires
 			if (ttl != 0)
-				rowKeyTtl = ttl + ((int)(ROW_WIDTH / 1000));
+				rowKeyTtl = ttl + ((int) (ROW_WIDTH / 1000));
 
-			long rowTime= calculateRowTime(dataPoint.getTimestamp());
+			long rowTime = calculateRowTime(dataPoint.getTimestamp());
 
 			rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
 					tags);
@@ -481,7 +478,7 @@ public class CassandraDatastore implements Datastore
 				if (metricName.length() == 0)
 				{
 					logger.warn(
-							"Attempted to add empty metric name to string index. Row looks like: "+dataPoint
+							"Attempted to add empty metric name to string index. Row looks like: " + dataPoint
 					);
 				}
 				BoundStatement bs = new BoundStatement(m_psInsertString);
@@ -498,10 +495,10 @@ public class CassandraDatastore implements Datastore
 				String cachedTagName = m_tagNameCache.cacheItem(tagName);
 				if (cachedTagName == null)
 				{
-					if(tagName.length() == 0)
+					if (tagName.length() == 0)
 					{
 						logger.warn(
-								"Attempted to add empty tagName to string cache for metric: "+metricName
+								"Attempted to add empty tagName to string cache for metric: " + metricName
 						);
 					}
 					BoundStatement bs = new BoundStatement(m_psInsertString);
@@ -517,10 +514,10 @@ public class CassandraDatastore implements Datastore
 				String cachedValue = m_tagValueCache.cacheItem(value);
 				if (cachedValue == null)
 				{
-					if(value.toString().length() == 0)
+					if (value.length() == 0)
 					{
 						logger.warn(
-								"Attempted to add empty tagValue (tag name "+tagName+") to string cache for metric: "+metricName
+								"Attempted to add empty tagValue (tag name " + tagName + ") to string cache for metric: " + metricName
 						);
 					}
 					BoundStatement bs = new BoundStatement(m_psInsertString);
@@ -640,6 +637,7 @@ public class CassandraDatastore implements Datastore
 		long startTime = System.currentTimeMillis();
 		long currentTimeTier = 0L;
 		String currentType = null;
+		int rowCount = 0;
 
 		List<QueryRunner> runners = new ArrayList<QueryRunner>();
 		List<DataPointsRowKey> queryKeys = new ArrayList<DataPointsRowKey>();
@@ -647,6 +645,7 @@ public class CassandraDatastore implements Datastore
 		MemoryMonitor mm = new MemoryMonitor(20);
 		while (rowKeys.hasNext())
 		{
+			rowCount++;
 			DataPointsRowKey rowKey = rowKeys.next();
 			if (currentTimeTier == 0L)
 				currentTimeTier = rowKey.getTimestamp();
@@ -674,6 +673,8 @@ public class CassandraDatastore implements Datastore
 
 			mm.checkMemoryAndThrowException();
 		}
+
+		ThreadReporter.addDataPoint(ROW_KEY_COUNT, rowCount);
 
 		//There may be stragglers that are not ran
 		if (!queryKeys.isEmpty())
@@ -908,7 +909,7 @@ public class CassandraDatastore implements Datastore
 		{
 			DataPointsRowKey next = null;
 
-			outer:
+outer:
 			while (iterator.hasNext())
 			{
 				DataPointsRowKey rowKey = iterator.next().getName();

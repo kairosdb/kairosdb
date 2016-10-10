@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Random;
 
 import static org.quartz.TriggerBuilder.newTrigger;
@@ -36,6 +35,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
  To change this template use File | Settings | File Templates.
  */
 @DisallowConcurrentExecution
+@SuppressWarnings("deprecation")
 public class RemoteSendJob implements KairosDBJob
 {
 	public static final Logger logger = LoggerFactory.getLogger(RemoteSendJob.class);
@@ -68,6 +68,11 @@ public class RemoteSendJob implements KairosDBJob
 	}
 
 	@Override
+	public void interrupt()
+	{
+	}
+
+	@Override
 	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
 	{
 		if (m_delay != 0)
@@ -76,7 +81,7 @@ public class RemoteSendJob implements KairosDBJob
 
 			try
 			{
-				Thread.sleep(delay * 1000);
+				Thread.sleep(delay * 1000L);
 			}
 			catch (InterruptedException e)
 			{

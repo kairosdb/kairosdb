@@ -13,9 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.core.http.rest.MetricsResource.setHeaders;
 
 /**
- * Provides REST APIs for health checks
+ Provides REST APIs for health checks
  */
 @Path("/api/v1/health")
 public class HealthCheckResource
@@ -44,8 +45,9 @@ public class HealthCheckResource
 	}
 
 	/**
-	 * Health check
-	 * @return 204 if healthy otherwise 500
+	 Health check
+
+	 @return 204 if healthy otherwise 500
 	 */
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
@@ -77,8 +79,9 @@ public class HealthCheckResource
 
 
 	/**
-	 * Returns the status of each health check.
-	 * @return 200
+	 Returns the status of each health check.
+
+	 @return 200
 	 */
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
@@ -99,17 +102,10 @@ public class HealthCheckResource
 			}
 		}
 
-		GenericEntity<List<String>> entity = new GenericEntity<List<String>>(messages) {};
+		GenericEntity<List<String>> entity = new GenericEntity<List<String>>(messages)
+		{
+		};
 		return setHeaders(Response.ok(entity)).build();
 	}
 
-	private Response.ResponseBuilder setHeaders(Response.ResponseBuilder responseBuilder)
-	{
-		responseBuilder.header("Access-Control-Allow-Origin", "*");
-		responseBuilder.header("Pragma", "no-cache");
-		responseBuilder.header("Cache-Control", "no-cache");
-		responseBuilder.header("Expires", 0);
-
-		return (responseBuilder);
-	}
 }

@@ -1,0 +1,58 @@
+<div ng-init="init()">
+	<div class="modal-header">
+		<h3 class="modal-title">Roll-up Query</h3>
+	</div>
+
+	<div class="modal-body">
+		<div>
+			<span class="tight-form-warning">
+				<i class="invisible"
+				   ng-show="!errors.query">i</i>
+				<a bs-tooltip="errors.query"
+				   style="color: rgb(229, 189, 28)"
+				   ng-show="errors.query">
+					<i class="glyphicon glyphicon-warning-sign"></i>
+				</a>
+			</span>
+
+			<textarea
+					style="vertical-align:top"
+					ng-class="(target.query == 'Paste Query') ? 'placeholder' : ''"
+					ng-model="target.query" cols="40" rows="10"
+					ng-click="clearQuery()"
+					ng-change="suggestSaveAs()"
+					ng-blur="targetBlur()">
+			</textarea>
+		</div>
+		<br>
+
+		<div>
+			<span class="tight-form-warning">
+				<i class="invisible"
+				   ng-show="!errors.save_as">i</i>
+				<a bs-tooltip="errors.save_as"
+				   style="color: rgb(229, 189, 28)"
+				   ng-show="errors.save_as">
+					<i class="glyphicon glyphicon-warning-sign"></i>
+				</a>
+			</span>
+
+			<input type="text"
+				   class="save_as"
+				   ng-model="target.save_as" spellcheck="false"
+				   ng-click="clearSaveAs()"
+				   ng-class="(target.save_as == 'Save As') ? 'placeholder' : ''"
+				   ng-change="targetChanged()"
+				   ng-blur="targetBlur()"
+					>
+		</div>
+	</div>
+
+	<div class="modal-footer">
+		<button class="btn btn-primary" type="button" ng-click="ok()"
+				ng-disabled="hasErrors()">OK
+		</button>
+		<button class="btn btn-warning" type="button" ng-click="cancel()">Cancel
+		</button>
+	</div>
+</div>

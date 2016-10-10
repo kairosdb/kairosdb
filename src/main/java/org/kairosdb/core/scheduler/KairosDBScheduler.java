@@ -1,106 +1,40 @@
-/*
- * Copyright 2013 Proofpoint Inc.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
 package org.kairosdb.core.scheduler;
 
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.exception.KairosDBException;
-import org.quartz.*;
-import org.quartz.impl.StdSchedulerFactory;
-import org.quartz.impl.matchers.GroupMatcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.quartz.JobDetail;
+import org.quartz.JobKey;
+import org.quartz.Trigger;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Properties;
+import java.util.Set;
 
-import static org.quartz.JobBuilder.newJob;
-
-public class KairosDBScheduler implements KairosDBService
+public interface KairosDBScheduler
 {
-	private static final Logger log = LoggerFactory.getLogger(KairosDBScheduler.class);
+	void start() throws KairosDBException;
 
-	private final Scheduler scheduler;
-	private final Injector guice;
+	void stop();
 
-	@Inject
-	public KairosDBScheduler(Injector guice) throws SchedulerException
-	{
-		this.guice = guice;
+	/**
+	 Schedules a job with the specified id and trigger
 
-		Properties props = new Properties();
-		props.setProperty("org.quartz.threadPool.threadCount", "4");
+	 @param jobDetail job id
+	 @param trigger   job trigger
+	 @throws KairosDBException if the job could not be schedule
+	 */
+	void schedule(JobDetail jobDetail, Trigger trigger) throws KairosDBException;
 
-		StdSchedulerFactory factory = new StdSchedulerFactory(props);
-		scheduler = factory.getScheduler();
-		scheduler.setJobFactory(new KairosDBJobFactory(guice));
-	}
+	/**
+	 Cancels a scheduled job.
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public void start() throws KairosDBException
-	{
-		try
-		{
-			scheduler.start();
+	 @param jobKey key of the job to cancel
+	 @throws KairosDBException if the job could not be canceled
+	 */
+	void cancel(JobKey jobKey) throws KairosDBException;
 
-			for (Key<?> key : guice.getAllBindings().keySet())
-			{
-				Class bindingClass = key.getTypeLiteral().getRawType();
-				if (KairosDBJob.class.isAssignableFrom(bindingClass))
-				{
-					KairosDBJob job = (KairosDBJob) guice.getInstance(bindingClass);
-					JobDetail jobDetail = newJob(job.getClass())
-							.withIdentity(job.getClass().getName()).build();
+	/**
+	 Returns a list of schedule job ids
 
-					scheduler.scheduleJob(jobDetail, job.getTrigger());
-				}
-			}
-
-			for (String groupName : scheduler.getJobGroupNames()) {
-
-				for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
-
-					String jobName = jobKey.getName();
-					List<Trigger> triggers = (List<Trigger>) scheduler.getTriggersOfJob(jobKey);
-					Date nextFireTime = triggers.get(0).getNextFireTime();
-					log.info("*** Scheduled job " + jobName + " to execute next on " + nextFireTime);
-				}
-
-			}
-		}
-		catch (SchedulerException e)
-		{
-			throw new KairosDBException("Failed to start " + getClass().getName(), e);
-		}
-	}
-
-	@Override
-	public void stop()
-	{
-		try
-		{
-			scheduler.shutdown(true);
-		}
-		catch (SchedulerException e)
-		{
-			log.error("Failed to start " + getClass().getName(), e);
-		}
-	}
+	 @return list of scheduled job ids
+	 @throws KairosDBException if could not get the list
+	 */
+	Set<String> getScheduledJobIds() throws KairosDBException;
 }

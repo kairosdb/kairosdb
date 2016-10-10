@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
-import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.events.DataPointEvent;
@@ -36,8 +35,6 @@ import org.kairosdb.util.Validator;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
@@ -73,7 +70,7 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 		Validator.validateNotNullOrEmpty("metricName", command[1]);
 
 		String metricName = command[1];
-
+		int ttl = 0;
 
 		DataPoint dp;
 		try
@@ -96,15 +93,30 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 			String[] tag = command[i].split("=");
 			validateTag(tagCount, tag);
 
-			tags.put(tag[0], tag[1]);
-			tagCount++;
+			if ("kairos_opt.ttl".equals(tag[0]))
+			{
+				try
+				{
+					ttl = Integer.parseInt(tag[1]);
+				}
+				catch (NumberFormatException nfe)
+				{
+					throw new ValidationException("tag[kairos_opt.ttl] must be a number");
+				}
+
+			}
+			else
+			{
+				tags.put(tag[0], tag[1]);
+				tagCount++;
+			}
 		}
 
 		if (tagCount == 0)
 			tags.put("add", "tag");
 
 		m_counter.incrementAndGet();
-		m_eventBus.post(new DataPointEvent(metricName, tags.build(), dp, 0));
+		m_eventBus.post(new DataPointEvent(metricName, tags.build(), dp, ttl));
 	}
 
 	private void validateTag(int tagCount, String[] tag) throws ValidationException
@@ -113,10 +125,8 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 			throw new ValidationException(String.format("tag[%d] must be in the format 'name=value'.", tagCount));
 
 		Validator.validateNotNullOrEmpty(String.format("tag[%d].name", tagCount), tag[0]);
-		Validator.validateCharacterSet(String.format("tag[%d].name", tagCount), tag[0]);
 
 		Validator.validateNotNullOrEmpty(String.format("tag[%d].value", tagCount), tag[1]);
-		Validator.validateCharacterSet(String.format("tag[%d].value", tagCount), tag[1]);
 	}
 
 	@Override

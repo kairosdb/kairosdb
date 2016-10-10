@@ -15,6 +15,7 @@ import tablesaw.addons.java.JavaCRule
 import tablesaw.addons.java.JavaProgram
 import tablesaw.addons.junit.JUnitRule
 import tablesaw.definitions.Definition
+import tablesaw.rules.CopyRule
 import tablesaw.rules.DirectoryRule
 import tablesaw.rules.Rule
 import tablesaw.rules.SimpleRule
@@ -27,7 +28,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "1.1.2"
+version = "1.1.3"
 release = "1" //package release number
 summary = "KairosDB"
 description = """\
@@ -81,6 +82,8 @@ jc.addDepend(ivyDefaultResolve)
 jc.getDefinition().set("target", "1.7")
 jc.getDefinition().set("source", "1.7")
 jc.getDefinition().set("encoding", "UTF8")
+jc.getDefinition().set("deprecation")
+jc.getDefinition().set("unchecked")
 
 jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
 jp.getJarRule().addFiles("src/main/resources", "create.sql")
@@ -123,27 +126,6 @@ publishRule.addArtifact(jp.getJarRule().getTarget())
 		.setType("jar")
 		.setExt("jar")
 
-//------------------------------------------------------------------------------
-//==-- Maven Artifacts --==
-mavenArtifactsRule = new SimpleRule("maven-artifacts").setDescription("Create maven artifacts for maven central")
-		.addSource(jp.getJarRule().getTarget())
-		.addSource(jp.getJavaDocJarRule().getTarget())
-		.addSource(jp.getSourceJarRule().getTarget())
-		.addSource("build/jar/pom.xml")
-		.setMakeAction("signArtifacts")
-
-void signArtifacts(Rule rule)
-{
-	for (String source : rule.getSources())
-	{
-		cmd = "gpg -ab "+source
-		saw.exec(cmd)
-	}
-}
-
-new JarRule("maven-bundle", "build/bundle.jar").setDescription("Create bundle for uploading to maven central")
-		.addDepend(mavenArtifactsRule)
-		.addFileSet(new RegExFileSet(saw.getProperty(JavaProgram.JAR_DIRECTORY_PROPERTY), ".*"))
 
 //------------------------------------------------------------------------------
 //Set information in the manifest file
@@ -159,7 +141,7 @@ manifest.putValue("Build-Date", buildDateFormat.format(new Date()))
 buildNumberFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
 buildNumber = buildNumberFormat.format(new Date())
 manifest.putValue("Implementation-Title", "KairosDB")
-manifest.putValue("Implementation-Vendor", "Proofpoint Inc.")
+manifest.putValue("Implementation-Vendor", "KairosDB")
 manifest.putValue("Implementation-Version", "${version}-${release}.${buildNumber}")
 
 //Add git revision information
@@ -184,6 +166,10 @@ testSources = new RegExFileSet("src/test/java", ".*Test\\.java").recurse()
 testCompileRule = jp.getTestCompileRule()
 ivyTestResolve = ivy.getResolveRule("test")
 testCompileRule.addDepend(ivyTestResolve)
+testCompileRule.getDefinition().set("unchecked")
+testCompileRule.getDefinition().set("deprecation")
+
+new SimpleRule("compile-test").addDepend(testCompileRule)
 
 junitClasspath = new Classpath(testCompileRule.getClasspath())
 junitClasspath.addPaths(testClasspath)
@@ -298,7 +284,7 @@ def doRPM(Rule rule)
 				summary = summary
 				type = RpmType.BINARY
 				url = "http://kairosdb.org"
-				vendor = "Proofpoint Inc."
+				vendor = "KairosDB"
 				provides = programName
 				//prefixes = rpmBaseInstallDir
 				buildHost = host
@@ -466,7 +452,7 @@ def doGenorm(Rule rule)
 //------------------------------------------------------------------------------
 //Build Integration tests
 integrationClassPath = new Classpath(jp.getLibraryJars())
-		//.addPaths(new RegExFileSet("lib/ivy/integration", ".*\\.jar").getFullFilePaths())
+//.addPaths(new RegExFileSet("lib/ivy/integration", ".*\\.jar").getFullFilePaths())
 		.addPath("src/integration-test/resources")
 
 integrationBuildRule = new JavaCRule("build/integration")
@@ -508,6 +494,44 @@ def doDocs(Rule rule)
     if (sudo.getExitCode() != 0)
         throw new TablesawException("Unable to run sphinx-build")
 }
+
+
+
+//------------------------------------------------------------------------------
+//==-- Maven Artifacts --==
+bundleDir = new DirectoryRule("build/bundle")
+copyBundleBits = new CopyRule()
+		.addDepend(bundleDir)
+		.addDepend(gzipRule)
+		.addDepend(jp.getJarRule())
+		.addDepend(jp.getJavaDocJarRule())
+		.addDepend(jp.getSourceJarRule())
+		.addDepend(pomRule)
+		.addFile(gzipRule.getTarget())
+		.addFile(jp.getJarRule().getTarget())
+		.addFile(jp.getJavaDocJarRule().getTarget())
+		.addFile(jp.getSourceJarRule().getTarget())
+		.addFile("build/jar/pom.xml")
+		.setDestination("build/bundle")
+
+mavenArtifactsRule = new SimpleRule("maven-artifacts").setDescription("Create maven artifacts for maven central")
+		.addDepend(copyBundleBits)
+
+		.setMakeAction("signArtifacts")
+
+void signArtifacts(Rule rule)
+{
+	for (String source : new RegExFileSet("build/bundle", ".*").getFullFilePaths())
+	{
+		cmd = "gpg -ab "+source
+		saw.exec(cmd)
+	}
+}
+
+new JarRule("maven-bundle", "build/bundle.jar").setDescription("Create bundle for uploading to maven central")
+		.addDepend(mavenArtifactsRule)
+		.addFileSet(new RegExFileSet("build/bundle", ".*"))
+
 
 
 saw.setDefaultTarget("jar")

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.jobs.CacheFileCleaner;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
+import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.Util;
 
@@ -55,6 +56,7 @@ public class CoreModule extends AbstractModule
 		m_props = props;
 	}
 
+	@SuppressWarnings("rawtypes")
 	private Class getClassForProperty(String property)
 	{
 		String className = m_props.getProperty(property);
@@ -103,7 +105,8 @@ public class CoreModule extends AbstractModule
 		bind(QueryPluginFactory.class).to(GuiceQueryPluginFactory.class).in(Singleton.class);
 		bind(QueryParser.class).in(Singleton.class);
 		bind(CacheFileCleaner.class).in(Singleton.class);
-		bind(KairosDBScheduler.class).in(Singleton.class);
+		bind(KairosDBScheduler.class).to(KairosDBSchedulerImpl.class).in(Singleton.class);
+		bind(KairosDBSchedulerImpl.class).in(Singleton.class);
 		bind(MemoryMonitor.class).in(Singleton.class);
 
 		bind(SumAggregator.class);
@@ -125,7 +128,7 @@ public class CoreModule extends AbstractModule
 		bind(SaveAsAggregator.class);
 		bind(TrimAggregator.class);
 		bind(SmaAggregator.class);
-
+		bind(FilterAggregator.class);
 
 		bind(ValueGroupBy.class);
 		bind(TimeGroupBy.class);
@@ -152,7 +155,7 @@ public class CoreModule extends AbstractModule
 		bind(LegacyDataPointFactory.class).in(Singleton.class);
 
 		bind(StringDataPointFactory.class).in(Singleton.class);
-                
+
 		bind(StringDataPointFactory.class).in(Singleton.class);
 
 		bind(NullDataPointFactory.class).in(Singleton.class);

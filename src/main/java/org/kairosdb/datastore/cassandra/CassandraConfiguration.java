@@ -35,7 +35,7 @@ public class CassandraConfiguration
 	@Named(READ_CONSISTENCY_LEVEL)
 	private ConsistencyLevel m_dataReadLevel = ConsistencyLevel.ONE;
 
-	@Inject(optional=true)
+	@Inject(optional = true)
 	@Named(DATAPOINT_TTL)
 	private int m_datapointTtl = 0; //Zero ttl means data lives forever.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -23,9 +23,7 @@ import com.google.inject.name.Named;
 import com.mchange.v2.c3p0.DataSources;
 import org.agileclick.genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
-import org.kairosdb.core.*;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.h2.orm.*;
@@ -37,8 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.*;
-import java.nio.ByteBuffer;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -58,15 +57,19 @@ public class H2Datastore implements Datastore
 			KairosDataPointFactory dataPointFactory) throws DatastoreException
 	{
 		m_dataPointFactory = dataPointFactory;
-		logger.info("Starting H2 database in " + dbPath);
 		boolean createDB = false;
 
 		File dataDir = new File(dbPath);
 		if (!dataDir.exists())
 			createDB = true;
-
+	
+		dbPath = dbPath.replace('\\', '/');
+		//newer H2 is more strict about relative paths
+		String jdbcPath = (dataDir.isAbsolute() || dbPath.startsWith("./") ? "" : "./") + dbPath;
+		logger.info("Starting H2 database in " + jdbcPath);
+		
 		JdbcDataSource ds = new JdbcDataSource();
-		ds.setURL("jdbc:h2:" + dbPath + "/kairosdb");
+		ds.setURL("jdbc:h2:" + jdbcPath + "/kairosdb");
 		ds.setUser("sa");
 
 		try
@@ -104,12 +107,14 @@ public class H2Datastore implements Datastore
 		m_holdConnection.setAutoCommit(false);
 
 		StringBuilder sb = new StringBuilder();
-		InputStreamReader reader = new InputStreamReader(getClass().getClassLoader()
-				.getResourceAsStream("create.sql"));
+		try(InputStreamReader reader = new InputStreamReader(getClass().getClassLoader()
+				.getResourceAsStream("create.sql")))
+		{
 
-		int ch;
-		while ((ch = reader.read()) != -1)
-			sb.append((char) ch);
+			int ch;
+			while ((ch = reader.read()) != -1)
+				sb.append((char) ch);
+		}
 
 		String[] tableCommands = sb.toString().split(";");
 
@@ -186,7 +191,7 @@ public class H2Datastore implements Datastore
 		MetricNamesQuery query = new MetricNamesQuery();
 		MetricNamesQuery.ResultSet results = query.runQuery();
 
-		List<String> metricNames = new ArrayList<String>();
+		List<String> metricNames = new ArrayList<>();
 		while (results.next())
 		{
 			metricNames.add(results.getRecord().getName());
@@ -202,7 +207,7 @@ public class H2Datastore implements Datastore
 	{
 		TagNamesQuery.ResultSet results = new TagNamesQuery().runQuery();
 
-		List<String> tagNames = new ArrayList<String>();
+		List<String> tagNames = new ArrayList<>();
 		while (results.next())
 			tagNames.add(results.getRecord().getName());
 
@@ -216,7 +221,7 @@ public class H2Datastore implements Datastore
 	{
 		TagValuesQuery.ResultSet results = new TagValuesQuery().runQuery();
 
-		List<String> tagValues = new ArrayList<String>();
+		List<String> tagValues = new ArrayList<>();
 		while (results.next())
 			tagValues.add(results.getRecord().getValue());
 
@@ -229,7 +234,7 @@ public class H2Datastore implements Datastore
 	{
 		StringBuilder sb = new StringBuilder();
 
-		GenOrmQueryResultSet<? extends MetricIdResults> idQuery = null;
+		GenOrmQueryResultSet<? extends MetricIdResults> idQuery;
 
 		//Manually build the where clause for the tags
 		//This is subject to sql injection
@@ -291,7 +296,7 @@ public class H2Datastore implements Datastore
 
 				//Collect the tags in the results
 				MetricTag.ResultSet tags = MetricTag.factory.getByMetric(metricId);
-				Map<String, String> tagMap = new TreeMap<String, String>();
+				Map<String, String> tagMap = new TreeMap<>();
 
 				while (tags.next())
 				{

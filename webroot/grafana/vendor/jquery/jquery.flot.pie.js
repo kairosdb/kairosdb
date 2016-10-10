@@ -1,61 +1,61 @@
 /* Flot plugin for rendering pie charts.
 
-Copyright (c) 2007-2013 IOLA and Ole Laursen.
-Licensed under the MIT license.
+ Copyright (c) 2007-2013 IOLA and Ole Laursen.
+ Licensed under the MIT license.
 
-The plugin assumes that each series has a single data value, and that each
-value is a positive integer or zero.  Negative numbers don't make sense for a
-pie chart, and have unpredictable results.  The values do NOT need to be
-passed in as percentages; the plugin will calculate the total and per-slice
-percentages internally.
+ The plugin assumes that each series has a single data value, and that each
+ value is a positive integer or zero.  Negative numbers don't make sense for a
+ pie chart, and have unpredictable results.  The values do NOT need to be
+ passed in as percentages; the plugin will calculate the total and per-slice
+ percentages internally.
 
-* Created by Brian Medendorp
+ * Created by Brian Medendorp
 
-* Updated with contributions from btburnett3, Anthony Aragues and Xavi Ivars
+ * Updated with contributions from btburnett3, Anthony Aragues and Xavi Ivars
 
-The plugin supports these options:
+ The plugin supports these options:
 
-	series: {
-		pie: {
-			show: true/false
-			radius: 0-1 for percentage of fullsize, or a specified pixel length, or 'auto'
-			innerRadius: 0-1 for percentage of fullsize or a specified pixel length, for creating a donut effect
-			startAngle: 0-2 factor of PI used for starting angle (in radians) i.e 3/2 starts at the top, 0 and 2 have the same result
-			tilt: 0-1 for percentage to tilt the pie, where 1 is no tilt, and 0 is completely flat (nothing will show)
-			offset: {
-				top: integer value to move the pie up or down
-				left: integer value to move the pie left or right, or 'auto'
-			},
-			stroke: {
-				color: any hexidecimal color value (other formats may or may not work, so best to stick with something like '#FFF')
-				width: integer pixel width of the stroke
-			},
-			label: {
-				show: true/false, or 'auto'
-				formatter:  a user-defined function that modifies the text/style of the label text
-				radius: 0-1 for percentage of fullsize, or a specified pixel length
-				background: {
-					color: any hexidecimal color value (other formats may or may not work, so best to stick with something like '#000')
-					opacity: 0-1
-				},
-				threshold: 0-1 for the percentage value at which to hide labels (if they're too small)
-			},
-			combine: {
-				threshold: 0-1 for the percentage value at which to combine slices (if they're too small)
-				color: any hexidecimal color value (other formats may or may not work, so best to stick with something like '#CCC'), if null, the plugin will automatically use the color of the first slice to be combined
-				label: any text value of what the combined slice should be labeled
-			}
-			highlight: {
-				opacity: 0-1
-			}
-		}
-	}
+ series: {
+ pie: {
+ show: true/false
+ radius: 0-1 for percentage of fullsize, or a specified pixel length, or 'auto'
+ innerRadius: 0-1 for percentage of fullsize or a specified pixel length, for creating a donut effect
+ startAngle: 0-2 factor of PI used for starting angle (in radians) i.e 3/2 starts at the top, 0 and 2 have the same result
+ tilt: 0-1 for percentage to tilt the pie, where 1 is no tilt, and 0 is completely flat (nothing will show)
+ offset: {
+ top: integer value to move the pie up or down
+ left: integer value to move the pie left or right, or 'auto'
+ },
+ stroke: {
+ color: any hexidecimal color value (other formats may or may not work, so best to stick with something like '#FFF')
+ width: integer pixel width of the stroke
+ },
+ label: {
+ show: true/false, or 'auto'
+ formatter:  a user-defined function that modifies the text/style of the label text
+ radius: 0-1 for percentage of fullsize, or a specified pixel length
+ background: {
+ color: any hexidecimal color value (other formats may or may not work, so best to stick with something like '#000')
+ opacity: 0-1
+ },
+ threshold: 0-1 for the percentage value at which to hide labels (if they're too small)
+ },
+ combine: {
+ threshold: 0-1 for the percentage value at which to combine slices (if they're too small)
+ color: any hexidecimal color value (other formats may or may not work, so best to stick with something like '#CCC'), if null, the plugin will automatically use the color of the first slice to be combined
+ label: any text value of what the combined slice should be labeled
+ }
+ highlight: {
+ opacity: 0-1
+ }
+ }
+ }
 
-More detail and specific examples can be found in the included HTML file.
+ More detail and specific examples can be found in the included HTML file.
 
-*/
+ */
 
-(function($) {
+(function ($) {
 
 	// Maximum redraw attempts when fitting labels within the plot
 
@@ -81,7 +81,7 @@ More detail and specific examples can be found in the included HTML file.
 
 		// add hook to determine if pie plugin in enabled, and then perform necessary operations
 
-		plot.hooks.processOptions.push(function(plot, options) {
+		plot.hooks.processOptions.push(function (plot, options) {
 			if (options.series.pie.show) {
 
 				options.grid.show = false;
@@ -100,7 +100,7 @@ More detail and specific examples can be found in the included HTML file.
 
 				if (options.series.pie.radius == "auto") {
 					if (options.series.pie.label.show) {
-						options.series.pie.radius = 3/4;
+						options.series.pie.radius = 3 / 4;
 					} else {
 						options.series.pie.radius = 1;
 					}
@@ -116,7 +116,7 @@ More detail and specific examples can be found in the included HTML file.
 			}
 		});
 
-		plot.hooks.bindEvents.push(function(plot, eventHolder) {
+		plot.hooks.bindEvents.push(function (plot, eventHolder) {
 			var options = plot.getOptions();
 			if (options.series.pie.show) {
 				if (options.grid.hoverable) {
@@ -128,21 +128,21 @@ More detail and specific examples can be found in the included HTML file.
 			}
 		});
 
-		plot.hooks.processDatapoints.push(function(plot, series, data, datapoints) {
+		plot.hooks.processDatapoints.push(function (plot, series, data, datapoints) {
 			var options = plot.getOptions();
 			if (options.series.pie.show) {
 				processDatapoints(plot, series, data, datapoints);
 			}
 		});
 
-		plot.hooks.drawOverlay.push(function(plot, octx) {
+		plot.hooks.drawOverlay.push(function (plot, octx) {
 			var options = plot.getOptions();
 			if (options.series.pie.show) {
 				drawOverlay(plot, octx);
 			}
 		});
 
-		plot.hooks.draw.push(function(plot, newCtx) {
+		plot.hooks.draw.push(function (plot, newCtx) {
 			var options = plot.getOptions();
 			if (options.series.pie.show) {
 				draw(plot, newCtx);
@@ -150,7 +150,7 @@ More detail and specific examples can be found in the included HTML file.
 		});
 
 		function processDatapoints(plot, series, datapoints) {
-			if (!processed)	{
+			if (!processed) {
 				processed = true;
 				canvas = plot.getCanvas();
 				target = $(canvas).parent();
@@ -181,7 +181,7 @@ More detail and specific examples can be found in the included HTML file.
 				// that the user may have stored in higher indexes.
 
 				if ($.isArray(value) && value.length == 1) {
-    				value = value[0];
+					value = value[0];
 				}
 
 				if ($.isArray(value)) {
@@ -283,7 +283,7 @@ More detail and specific examples can be found in the included HTML file.
 
 			// calculate maximum radius and center point
 
-			maxRadius =  Math.min(canvasWidth, canvasHeight / options.series.pie.tilt) / 2;
+			maxRadius = Math.min(canvasWidth, canvasHeight / options.series.pie.tilt) / 2;
 			centerTop = canvasHeight / 2 + options.series.pie.offset.top;
 			centerLeft = canvasWidth / 2;
 
@@ -350,13 +350,13 @@ More detail and specific examples can be found in the included HTML file.
 				}
 
 				ctx.save();
-				ctx.translate(shadowLeft,shadowTop);
+				ctx.translate(shadowLeft, shadowTop);
 				ctx.globalAlpha = alpha;
 				ctx.fillStyle = "#000";
 
 				// center and rotate to starting position
 
-				ctx.translate(centerLeft,centerTop);
+				ctx.translate(centerLeft, centerTop);
 				ctx.scale(1, options.series.pie.tilt);
 
 				//radius -= edge;
@@ -379,7 +379,7 @@ More detail and specific examples can be found in the included HTML file.
 				// center and rotate to starting position
 
 				ctx.save();
-				ctx.translate(centerLeft,centerTop);
+				ctx.translate(centerLeft, centerTop);
 				ctx.scale(1, options.series.pie.tilt);
 				//ctx.rotate(startAngle); // start at top; -- This doesn't work properly in Opera
 
@@ -436,8 +436,8 @@ More detail and specific examples can be found in the included HTML file.
 					}
 
 					//ctx.arc(0, 0, radius, 0, angle, false); // This doesn't work properly in Opera
-					ctx.arc(0, 0, radius,currentAngle, currentAngle + angle / 2, false);
-					ctx.arc(0, 0, radius,currentAngle + angle / 2, currentAngle + angle, false);
+					ctx.arc(0, 0, radius, currentAngle, currentAngle + angle / 2, false);
+					ctx.arc(0, 0, radius, currentAngle + angle / 2, currentAngle + angle, false);
 					ctx.closePath();
 					//ctx.rotate(angle); // This doesn't work properly in Opera
 					currentAngle += angle;
@@ -561,8 +561,8 @@ More detail and specific examples can be found in the included HTML file.
 		//-- Additional Interactive related functions --
 
 		function isPointInPoly(poly, pt) {
-			for(var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
-				((poly[i][1] <= pt[1] && pt[1] < poly[j][1]) || (poly[j][1] <= pt[1] && pt[1]< poly[i][1]))
+			for (var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
+				((poly[i][1] <= pt[1] && pt[1] < poly[j][1]) || (poly[j][1] <= pt[1] && pt[1] < poly[i][1]))
 				&& (pt[0] < (poly[j][0] - poly[i][0]) * (pt[1] - poly[i][1]) / (poly[j][1] - poly[i][1]) + poly[i][0])
 				&& (c = !c);
 			return c;
@@ -652,7 +652,7 @@ More detail and specific examples can be found in the included HTML file.
 
 			var offset = plot.offset();
 			var canvasX = parseInt(e.pageX - offset.left);
-			var canvasY =  parseInt(e.pageY - offset.top);
+			var canvasY = parseInt(e.pageY - offset.top);
 			var item = findNearbySlice(canvasX, canvasY);
 
 			if (options.grid.autoHighlight) {
@@ -675,7 +675,7 @@ More detail and specific examples can be found in the included HTML file.
 
 			// trigger any hover bind events
 
-			var pos = { pageX: e.pageX, pageY: e.pageY };
+			var pos = {pageX: e.pageX, pageY: e.pageY};
 			target.trigger(eventname, [pos, item]);
 		}
 
@@ -687,7 +687,7 @@ More detail and specific examples can be found in the included HTML file.
 			var i = indexOfHighlight(s);
 
 			if (i == -1) {
-				highlights.push({ series: s, auto: auto });
+				highlights.push({series: s, auto: auto});
 				plot.triggerRedrawOverlay();
 			} else if (!auto) {
 				highlights[i].auto = false;
@@ -767,7 +767,7 @@ More detail and specific examples can be found in the included HTML file.
 				show: false,
 				radius: "auto",	// actual radius of the visible pie (based on full calculated radius if <=1, or hard pixel value)
 				innerRadius: 0, /* for donut */
-				startAngle: 3/2,
+				startAngle: 3 / 2,
 				tilt: 1,
 				shadow: {
 					left: 5,	// shadow left offset
@@ -784,7 +784,7 @@ More detail and specific examples can be found in the included HTML file.
 				},
 				label: {
 					show: "auto",
-					formatter: function(label, slice) {
+					formatter: function (label, slice) {
 						return "<div style='font-size:x-small;text-align:center;padding:2px;color:" + slice.color + ";'>" + label + "<br/>" + Math.round(slice.percent) + "%</div>";
 					},	// formatter function
 					radius: 1,	// radius at which to place the labels (based on full calculated radius if <=1, or hard pixel value)

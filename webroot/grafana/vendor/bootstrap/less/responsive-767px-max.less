@@ -2,7 +2,6 @@
 // Responsive: Landscape phone to desktop/tablet
 // --------------------------------------------------
 
-
 @media (max-width: 767px) {
 
   // Padding to set content in a bit
@@ -10,6 +9,7 @@
     padding-left: 20px;
     padding-right: 20px;
   }
+
   // Negative indent the now static "fixed" navbar
   .navbar-fixed-top,
   .navbar-fixed-bottom,
@@ -17,6 +17,7 @@
     margin-left: -20px;
     margin-right: -20px;
   }
+
   // Remove padding on container given explicit padding set on body
   .container-fluid {
     padding: 0;
@@ -43,19 +44,23 @@
   .container {
     width: auto;
   }
+
   // Fluid rows
   .row-fluid {
     width: 100%;
   }
+
   // Undo negative margin on rows and thumbnails
   .row,
   .thumbnails {
     margin-left: 0;
   }
+
   .thumbnails > li {
     float: none;
     margin-left: 0; // Reset the default margin for all li elements when no .span* classes are present
   }
+
   // Make all grid-sized elements block level again
   [class*="span"],
   .uneditable-input[class*="span"], // Makes uneditable inputs full-width when using grid sizing
@@ -66,11 +71,13 @@
     margin-left: 0;
     .box-sizing(border-box);
   }
+
   .span12,
   .row-fluid .span12 {
     width: 100%;
     .box-sizing(border-box);
   }
+
   .row-fluid [class*="offset"]:first-child {
     margin-left: 0;
   }
@@ -87,6 +94,7 @@
   .uneditable-input {
     .input-block-level();
   }
+
   // But don't let it screw up prepend/append inputs
   .input-prepend input,
   .input-append input,
@@ -95,6 +103,7 @@
     display: inline-block; // redeclare so they don't wrap to new lines
     width: auto;
   }
+
   .controls-row [class*="span"] + [class*="span"] {
     margin-left: 0;
   }
@@ -102,18 +111,20 @@
   // Modals
   .modal {
     position: fixed;
-    top:   20px;
-    left:  20px;
+    top: 20px;
+    left: 20px;
     right: 20px;
     width: auto;
     margin: 0;
-    &.fade  { top: -100px; }
-    &.fade.in { top: 20px; }
+    &.fade {
+      top: -100px;
+    }
+    &.fade.in {
+      top: 20px;
+    }
   }
 
 }
-
-
 
 // UP TO LANDSCAPE PHONE
 // ---------------------
@@ -163,11 +174,12 @@
   // Medias
   // Reset float and spacing to stack
   .media .pull-left,
-  .media .pull-right  {
+  .media .pull-right {
     float: none;
     display: block;
     margin-bottom: 10px;
   }
+
   // Remove side margins since we stack instead of indent
   .media-object {
     margin-right: 0;
@@ -176,10 +188,11 @@
 
   // Modals
   .modal {
-    top:   10px;
-    left:  10px;
+    top: 10px;
+    left: 10px;
     right: 10px;
   }
+
   .modal-header .close {
     padding: 10px;
     margin: -10px;

@@ -527,6 +527,7 @@ public class RangeAggregatorTest
 	/**
 	 This makes test makes the RangeAggregator do time calculations larger than an
 	 int.
+
 	 @throws Exception
 	 */
 	@Test
@@ -554,7 +555,6 @@ public class RangeAggregatorTest
 
 		while (dpg.hasNext())
 			dpg.next();
-
 
 
 	}

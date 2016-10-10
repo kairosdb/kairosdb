@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -15,10 +15,16 @@
  */
 package org.kairosdb.core.scheduler;
 
-import org.quartz.Job;
+import org.quartz.InterruptableJob;
 import org.quartz.Trigger;
 
-public interface KairosDBJob extends Job
+public interface KairosDBJob extends InterruptableJob
 {
+
 	Trigger getTrigger();
+
+	/**
+	 Called by the scheduler when the job is to be interrupted.
+	 */
+	void interrupt();
 }

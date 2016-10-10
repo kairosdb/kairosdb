@@ -303,7 +303,7 @@ public class CassandraDatastore implements Datastore {
             // Write out the row key if it is not cached
             boolean writeRowKey = false;
             Boolean isCachedKey = m_rowKeyCache.getIfPresent(rowKey);
-            if (isCachedKey == null) {
+            if (false && isCachedKey == null) {
                 synchronized (LOCK_ROW_KEY) {
                     isCachedKey = m_rowKeyCache.getIfPresent(rowKey);
                     if (null == isCachedKey) {

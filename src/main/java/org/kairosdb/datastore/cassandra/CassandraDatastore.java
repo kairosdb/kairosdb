@@ -303,7 +303,7 @@ public class CassandraDatastore implements Datastore {
             // Write out the row key if it is not cached
             boolean writeRowKey = false;
             Boolean isCachedKey = m_rowKeyCache.getIfPresent(rowKey);
-            if (isCachedKey == null) {
+            if (false && isCachedKey == null) {
                 synchronized (LOCK_ROW_KEY) {
                     isCachedKey = m_rowKeyCache.getIfPresent(rowKey);
                     if (null == isCachedKey) {
@@ -400,7 +400,7 @@ public class CassandraDatastore implements Datastore {
 
                 String value = tags.get(tagName);
                 Boolean isCachedValue = m_tagValueCache.getIfPresent(value);
-                if (isCachedValue == null) {
+                if (false && isCachedValue == null) {
                     m_tagValueCache.put(value, CACHE_BOOLEAN);
                     if (value.toString().length() == 0) {
                         logger.warn(

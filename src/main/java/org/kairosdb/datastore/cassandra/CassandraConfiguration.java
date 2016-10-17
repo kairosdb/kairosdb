@@ -120,9 +120,9 @@ public class CassandraConfiguration
 	@Named(REPLICATION_FACTOR_PROPERTY)
 	private int m_replicationFactor;
 
-	@Inject
+	@Inject(optional=true)
 	@Named(KEYSPACE_PROPERTY)
-	private String m_keyspaceName;
+	private String m_keyspaceName = "kairosdb";
 
 	@Inject(optional=true)
 	@Named(CASSANDRA_USER)

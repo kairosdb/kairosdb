@@ -168,6 +168,8 @@ public class CassandraDatastore implements Datastore {
                               CassandraConfiguration cassandraConfiguration,
                               KairosDataPointFactory kairosDataPointFactory) throws DatastoreException {
 
+        m_cassandraConfiguration = cassandraConfiguration;
+
         logger.warn("Setting tag index: {}", cassandraConfiguration.getIndexTagList());
         logger.warn("Setting metric name cache size: {}", cassandraConfiguration.getMetricNameCacheSize());
         logger.warn("Setting row key cache size: {}", cassandraConfiguration.getRowKeyCacheSize());
@@ -211,8 +213,6 @@ public class CassandraDatastore implements Datastore {
         m_psQueryRowKeyIndex = m_session.prepare(QUERY_ROW_KEY_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryRowKeySplitIndex = m_session.prepare(QUERY_ROW_KEY_SPLIT_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryDataPoints = m_session.prepare(QUERY_DATA_POINTS).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
-
-        m_cassandraConfiguration = cassandraConfiguration;
 
         m_rowWidthRead = cassandraConfiguration.getRowWidthRead();
         m_rowWidthWrite = cassandraConfiguration.getRowWidthWrite();

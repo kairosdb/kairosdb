@@ -243,10 +243,12 @@ public class CassandraDatastore implements Datastore {
                 return;
             }
 
-            session.execute(String.format(CREATE_KEYSPACE, m_cassandraClient.getKeyspace(), m_cassandraConfiguration.getReplicationFactor()));
+            logger.info("Creating keyspace ... {}", m_cassandraConfiguration.getKeyspaceName());
+            session.execute(String.format(CREATE_KEYSPACE, m_cassandraConfiguration.getKeyspaceName(), m_cassandraConfiguration.getReplicationFactor()));
         }
 
         try (Session session = m_cassandraClient.getKeyspaceSession()) {
+            logger.info("Creating column families ...");
             session.execute(DATA_POINTS_TABLE);
             session.execute(ROW_KEY_INDEX_TABLE);
             session.execute(ROW_KEY_SPLIT_INDEX_TABLE);

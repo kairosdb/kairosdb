@@ -72,7 +72,7 @@ public class CassandraDatastore implements Datastore {
             "CREATE TABLE IF NOT EXISTS row_key_split_index (" +
             "  metric_name text," +
             "  tag_name text," +
-            "  tag_value, " +
+            "  tag_value text, " +
             "  column1 blob," +
             "  value blob," +
             "  PRIMARY KEY ((metric_name, tag_name, tag_value), column1)" +

@@ -76,7 +76,7 @@ public class CassandraDatastore implements Datastore {
             "  column1 blob," +
             "  value blob," +
             "  PRIMARY KEY ((metric_name, tag_name, tag_value), column1)" +
-            ");";
+            ") WITH CLUSTERING ORDER BY (column1 DESC);";
 
     public static final String ROW_KEY_INDEX_TABLE = "" +
             "CREATE TABLE IF NOT EXISTS row_key_index (\n" +
@@ -84,7 +84,7 @@ public class CassandraDatastore implements Datastore {
             "  column1 blob,\n" +
             "  value blob,\n" +
             "  PRIMARY KEY ((key), column1)\n" +
-            ");";
+            ") WITH CLUSTERING ORDER BY (column1 DESC);";
 
     public static final String STRING_INDEX_TABLE = "" +
             "CREATE TABLE IF NOT EXISTS string_index (\n" +

@@ -381,6 +381,7 @@ public class CassandraDatastore implements Datastore {
             boundStatement.setInt(3, ttl);
             m_session.executeAsync(boundStatement);
         } catch (Exception e) {
+            logger.error("Failed to put data point for metric={} tags={}", metricName, tags);
             throw new DatastoreException(e);
         }
     }

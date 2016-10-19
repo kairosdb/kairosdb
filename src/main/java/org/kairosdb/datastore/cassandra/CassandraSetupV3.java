@@ -20,5 +20,4 @@ public class CassandraSetupV3 extends CassandraSetup {
         List<Row> rows = session.execute(ps.bind(keySpace, tableName)).all();
         return rows.size() == 1;
     }
-
 }

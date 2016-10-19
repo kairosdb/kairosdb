@@ -187,17 +187,21 @@ public class CassandraDatastore implements Datastore {
 
         try (Session session = m_cassandraClient.getSession()) {
             ResultSet rs = session.execute("SELECT release_version FROM system.local");
-
             final String version = rs.all().get(0).getString(0);
             if (version.startsWith("3")) {
+                logger.info("Selecting V3 Cassandra Schema Setup");
                 setup = new CassandraSetupV3(m_cassandraClient, m_cassandraConfiguration.getKeyspaceName(), m_cassandraConfiguration.getReplicationFactor());
             } else {
+                logger.info("Selecting V2 Cassandra Schema Setup");
                 setup = new CassandraSetupV2(m_cassandraClient, m_cassandraConfiguration.getKeyspaceName(), m_cassandraConfiguration.getReplicationFactor());
             }
         }
 
         if (null != setup) {
             setup.initSchema();
+        }
+        else {
+            logger.info("Not Cassandra Setup being performced");
         }
 
         return;

@@ -51,50 +51,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class CassandraDatastore implements Datastore {
     public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
 
-    public static final String CREATE_KEYSPACE = "" +
-            "CREATE KEYSPACE IF NOT EXISTS %s" +
-            "  WITH REPLICATION = {'class': 'SimpleStrategy'," +
-            "  'replication_factor' : %d }";
-
-    public static final String DATA_POINTS_TABLE = "" +
-            "CREATE TABLE IF NOT EXISTS data_points (\n" +
-            "  key blob,\n" +
-            "  column1 blob,\n" +
-            "  value blob,\n" +
-            "  PRIMARY KEY ((key), column1)\n" +
-            ") WITH CLUSTERING ORDER BY (column1 DESC) " + // This should fit the default use case better
-            "   AND compaction = {'timestamp_resolution': 'MICROSECONDS'," +
-            "                     'max_sstable_age_days': '31'," +
-            "                     'base_time_seconds': '7200'," +
-            "                     'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy'}";
-
-    public static final String ROW_KEY_SPLIT_INDEX_TABLE = "" +
-            "CREATE TABLE IF NOT EXISTS row_key_split_index (" +
-            "  metric_name text," +
-            "  tag_name text," +
-            "  tag_value text, " +
-            "  column1 blob," +
-            "  value blob," +
-            "  PRIMARY KEY ((metric_name, tag_name, tag_value), column1)" +
-            ") WITH CLUSTERING ORDER BY (column1 DESC);";
-
-    public static final String ROW_KEY_INDEX_TABLE = "" +
-            "CREATE TABLE IF NOT EXISTS row_key_index (\n" +
-            "  key blob,\n" +
-            "  column1 blob,\n" +
-            "  value blob,\n" +
-            "  PRIMARY KEY ((key), column1)\n" +
-            ") WITH CLUSTERING ORDER BY (column1 DESC);";
-
-    public static final String STRING_INDEX_TABLE = "" +
-            "CREATE TABLE IF NOT EXISTS string_index (\n" +
-            "  key blob,\n" +
-            "  column1 text,\n" +
-            "  value blob,\n" +
-            "  PRIMARY KEY ((key), column1)\n" +
-            ");";
-
-
     public static final String DATA_POINTS_INSERT = "INSERT INTO data_points " +
             "(key, column1, value) VALUES (?, ?, ?) USING TTL ?";
 
@@ -227,33 +183,24 @@ public class CassandraDatastore implements Datastore {
     }
 
     private void setupSchema() {
+        CassandraSetup setup = null;
+
         try (Session session = m_cassandraClient.getSession()) {
             ResultSet rs = session.execute("SELECT release_version FROM system.local");
 
             final String version = rs.all().get(0).getString(0);
-            if(version.startsWith("3")) {
-                logger.info("Warning: V3 auto setup not supported, schema needs to exist");
-                return;
+            if (version.startsWith("3")) {
+                setup = new CassandraSetupV3(m_cassandraClient, m_cassandraConfiguration.getKeyspaceName(), m_cassandraConfiguration.getReplicationFactor());
+            } else {
+                setup = new CassandraSetupV2(m_cassandraClient, m_cassandraConfiguration.getKeyspaceName(), m_cassandraConfiguration.getReplicationFactor());
             }
-
-            PreparedStatement ps = session.prepare("SELECT * FROM system.schema_keyspaces WHERE keyspace_name = ?");
-            List<Row> rows = session.execute(ps.bind(m_cassandraClient.getKeyspace())).all();
-            if (rows.size() != 0) {
-                logger.info("Keyspace '" + m_cassandraClient.getKeyspace() + "' already exists");
-                return;
-            }
-
-            logger.info("Creating keyspace ... {}", m_cassandraConfiguration.getKeyspaceName());
-            session.execute(String.format(CREATE_KEYSPACE, m_cassandraConfiguration.getKeyspaceName(), m_cassandraConfiguration.getReplicationFactor()));
         }
 
-        try (Session session = m_cassandraClient.getKeyspaceSession()) {
-            logger.info("Creating column families ...");
-            session.execute(DATA_POINTS_TABLE);
-            session.execute(ROW_KEY_INDEX_TABLE);
-            session.execute(ROW_KEY_SPLIT_INDEX_TABLE);
-            session.execute(STRING_INDEX_TABLE);
+        if (null != setup) {
+            setup.initSchema();
         }
+
+        return;
     }
 
     public void increaseMaxBufferSizes() {

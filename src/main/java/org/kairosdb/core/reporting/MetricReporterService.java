@@ -23,7 +23,6 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.scheduler.KairosDBJob;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.Tags;
@@ -46,12 +45,13 @@ public class MetricReporterService implements KairosDBJob
 
 	public static final String HOSTNAME = "HOSTNAME";
 	public static final String SCHEDULE_PROPERTY = "kairosdb.reporter.schedule";
+	public static final String REPORTER_TTL = "kairosdb.reporter.ttl";
 
-	private KairosDatastore m_datastore;
 	private EventBus m_eventBus;
 	private List<KairosMetricReporter> m_reporters;
 	private final String m_hostname;
 	private final String m_schedule;
+	private final int m_ttl;
 
 	@Inject
 	private LongDataPointFactory m_dataPointFactory = new LongDataPointFactoryImpl();
@@ -60,12 +60,14 @@ public class MetricReporterService implements KairosDBJob
 	public MetricReporterService(EventBus eventBus,
 			List<KairosMetricReporter> reporters,
 			@Named(SCHEDULE_PROPERTY) String schedule,
-			@Named(HOSTNAME) String hostname)
+			@Named(HOSTNAME) String hostname,
+			@Named(REPORTER_TTL) int ttl)
 	{
 		m_eventBus = checkNotNull(eventBus);
 		m_hostname = checkNotNullOrEmpty(hostname);
 		m_reporters = reporters;
 		m_schedule = schedule;
+		m_ttl = ttl;
 	}
 
 	private int getThreadCount()
@@ -108,7 +110,7 @@ public class MetricReporterService implements KairosDBJob
 					for (DataPoint dataPoint : dataPointSet.getDataPoints())
 					{
 						m_eventBus.post(new DataPointEvent(dataPointSet.getName(),
-								dataPointSet.getTags(), dataPoint, 0));
+								dataPointSet.getTags(), dataPoint, m_ttl));
 					}
 				}
 			}
@@ -118,13 +120,13 @@ public class MetricReporterService implements KairosDBJob
 			ImmutableSortedMap<String, String> tags = Tags.create()
 					.put("host", m_hostname).build();
 			m_eventBus.post(new DataPointEvent("kairosdb.jvm.free_memory",
-					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.freeMemory()), 0));
+					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.freeMemory()), m_ttl));
 			m_eventBus.post(new DataPointEvent("kairosdb.jvm.total_memory",
-					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.totalMemory()), 0));
+					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.totalMemory()), m_ttl));
 			m_eventBus.post(new DataPointEvent("kairosdb.jvm.max_memory",
-					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.maxMemory()), 0));
+					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.maxMemory()), m_ttl));
 			m_eventBus.post(new DataPointEvent("kairosdb.jvm.thread_count",
-					tags, m_dataPointFactory.createDataPoint(timestamp, getThreadCount()), 0));
+					tags, m_dataPointFactory.createDataPoint(timestamp, getThreadCount()), m_ttl));
 		}
 		catch (Throwable e)
 		{

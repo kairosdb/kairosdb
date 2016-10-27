@@ -19,13 +19,14 @@ package org.kairosdb.core;
 import com.google.common.eventbus.EventBus;
 import com.google.common.net.InetAddresses;
 import com.google.inject.AbstractModule;
-import com.google.inject.Singleton;
+import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.name.Names;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import org.apache.commons.math3.analysis.function.Sin;
 import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.GuiceQueryPluginFactory;
@@ -35,17 +36,29 @@ import org.kairosdb.core.datastore.QueryQueuingManager;
 import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.jobs.CacheFileCleaner;
+import org.kairosdb.core.queue.DataPointEventSerializer;
+import org.kairosdb.core.queue.QueueProcessor;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.Util;
+import se.ugli.bigqueue.BigArray;
 
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.Properties;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR;
 
 public class CoreModule extends AbstractModule
 {
+	public static final String QUEUE_PATH = "kairosdb.queue_processor.queue_path";
+	public static final String PAGE_SIZE = "kairosdb.queue_processor.page_size";
+
 	public static final String DATAPOINTS_FACTORY_LONG = "kairosdb.datapoints.factory.long";
 	public static final String DATAPOINTS_FACTORY_DOUBLE = "kairosdb.datapoints.factory.double";
 	private Properties m_props;
@@ -108,6 +121,8 @@ public class CoreModule extends AbstractModule
 		bind(KairosDBScheduler.class).to(KairosDBSchedulerImpl.class).in(Singleton.class);
 		bind(KairosDBSchedulerImpl.class).in(Singleton.class);
 		bind(MemoryMonitor.class).in(Singleton.class);
+		bind(QueueProcessor.class).in(Singleton.class);
+		bind(DataPointEventSerializer.class).in(Singleton.class);
 
 		bind(SumAggregator.class);
 		bind(MinAggregator.class);
@@ -164,5 +179,19 @@ public class CoreModule extends AbstractModule
 
 		String hostIp = m_props.getProperty("kairosdb.host_ip");
 		bindConstant().annotatedWith(Names.named("HOST_IP")).to(hostIp != null ? hostIp: InetAddresses.toAddrString(Util.findPublicIp()));
+	}
+
+	@Provides
+	@Singleton
+	public BigArray getBigArray(@Named(QUEUE_PATH) String queuePath,
+			@Named(PAGE_SIZE) int pageSize)
+	{
+		return new BigArray(queuePath, "kairos_queue", pageSize);
+	}
+
+	@Provides @Named(QUEUE_PROCESSOR) @Singleton
+	public Executor getQueueExecutor()
+	{
+		return Executors.newSingleThreadExecutor();
 	}
 }

@@ -3,7 +3,6 @@ package org.kairosdb.events;
 import com.google.common.collect.ImmutableSortedMap;
 import org.kairosdb.core.DataPoint;
 
-import java.util.SortedMap;
 
 /**
  Created by bhawkins on 9/17/16.

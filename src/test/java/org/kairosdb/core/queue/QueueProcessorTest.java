@@ -2,6 +2,7 @@ package org.kairosdb.core.queue;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.eventbus.EventBus;
+import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.TestDataPointFactory;
@@ -9,7 +10,6 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.events.DataPointEvent;
 import org.mockito.Matchers;
-import org.testng.annotations.BeforeTest;
 import se.ugli.bigqueue.BigArray;
 
 import java.util.Arrays;
@@ -37,7 +37,7 @@ public class QueueProcessorTest
 		}
 	}
 
-	@BeforeTest
+	@Before
 	public void setup()
 	{
 		m_deliveryThread = null;
@@ -90,7 +90,7 @@ public class QueueProcessorTest
 		DataPointEventSerializer serializer = new DataPointEventSerializer(new TestDataPointFactory());
 		ProcessorHandler processorHandler = mock(ProcessorHandler.class);
 
-		QueueProcessor queueProcessor = new QueueProcessor(eventBus, serializer,
+		QueueProcessor queueProcessor = new QueueProcessor(serializer,
 				bigArray, new TestExecutor(), 2, 10, 500);
 
 		queueProcessor.setProcessorHandler(processorHandler);
@@ -119,7 +119,7 @@ public class QueueProcessorTest
 		DataPointEventSerializer serializer = new DataPointEventSerializer(new TestDataPointFactory());
 		ProcessorHandler processorHandler = mock(ProcessorHandler.class);
 
-		QueueProcessor queueProcessor = new QueueProcessor(eventBus, serializer,
+		QueueProcessor queueProcessor = new QueueProcessor(serializer,
 				bigArray, new TestExecutor(), 3, 1, 500);
 
 		queueProcessor.setProcessorHandler(processorHandler);
@@ -158,7 +158,7 @@ public class QueueProcessorTest
 			}
 		};
 
-		QueueProcessor queueProcessor = new QueueProcessor(eventBus, serializer,
+		QueueProcessor queueProcessor = new QueueProcessor(serializer,
 				bigArray, new TestExecutor(), 3, 1, -1);
 
 		queueProcessor.setProcessorHandler(processorHandler);
@@ -175,6 +175,6 @@ public class QueueProcessorTest
 
 		verify(bigArray, times(2)).append(eq(serializer.serializeEvent(event)));
 		verify(bigArray, times(1)).get(anyLong());
-		verify(bigArray, times(1)).removeBeforeIndex(eq(2l));
+		verify(bigArray, times(1)).removeBeforeIndex(eq(1l));
 	}
 }

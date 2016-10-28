@@ -42,6 +42,7 @@ public class QueueProcessor implements KairosMetricReporter
 	private final DataPointEventSerializer m_eventSerializer;
 
 	private AtomicInteger m_readFromFileCount = new AtomicInteger();
+	private AtomicInteger m_readFromQueueCount = new AtomicInteger();
 
 	private ProcessorHandler m_processorHandler;
 	private long m_nextIndex = -1L;
@@ -68,7 +69,6 @@ public class QueueProcessor implements KairosMetricReporter
 		m_secondsTillCheckpoint = secondsTillCheckpoint;
 		m_eventSerializer = eventSerializer;
 		m_nextIndex = m_bigArray.getTailIndex();
-		System.out.println("Next index: "+m_nextIndex);
 
 		executor.execute(m_deliveryThread);
 	}
@@ -147,6 +147,8 @@ public class QueueProcessor implements KairosMetricReporter
 			}
 		}
 
+		m_readFromQueueCount.getAndAdd(ret.size());
+
 		return Pair.of(returnIndex, ret);
 	}
 
@@ -202,6 +204,12 @@ public class QueueProcessor implements KairosMetricReporter
 		dps = new DataPointSet("kairosdb.queue.read_from_file");
 		dps.addTag("host", m_hostName);
 		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, m_readFromFileCount.getAndSet(0)));
+
+		ret.add(dps);
+
+		dps = new DataPointSet("kairosdb.queue.process_count");
+		dps.addTag("host", m_hostName);
+		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, m_readFromQueueCount.getAndSet(0)));
 
 		ret.add(dps);
 

@@ -40,6 +40,7 @@ import org.kairosdb.core.queue.DataPointEventSerializer;
 import org.kairosdb.core.queue.QueueProcessor;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
+import org.kairosdb.util.CongestionExecutorService;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.Util;
 import se.ugli.bigqueue.BigArray;
@@ -176,6 +177,8 @@ public class CoreModule extends AbstractModule
 		bind(NullDataPointFactory.class).in(Singleton.class);
 
 		bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class).in(Singleton.class);
+
+		bind(CongestionExecutorService.class);
 
 		String hostIp = m_props.getProperty("kairosdb.host_ip");
 		bindConstant().annotatedWith(Names.named("HOST_IP")).to(hostIp != null ? hostIp: InetAddresses.toAddrString(Util.findPublicIp()));

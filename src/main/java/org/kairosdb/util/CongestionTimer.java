@@ -8,13 +8,15 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
  */
 public class CongestionTimer
 {
-	private int m_taskPerBatch;
+	private volatile int m_taskPerBatch;
 	private final DescriptiveStatistics m_stats;
+	private final Object m_statsLock;
 
 	public CongestionTimer(int taskPerBatch)
 	{
 		m_taskPerBatch = taskPerBatch;
 		m_stats = new DescriptiveStatistics();
+		m_statsLock = new Object();
 	}
 
 	public void setTaskPerBatch(int taskPerBatch)
@@ -24,16 +26,19 @@ public class CongestionTimer
 
 	public TimerStat reportTaskTime(long time)
 	{
-		m_stats.addValue(time);
-
-		if (m_stats.getN() == m_taskPerBatch)
+		synchronized(m_statsLock)
 		{
-			TimerStat ts = new TimerStat(m_stats.getMin(), m_stats.getMax(),
-					m_stats.getMean(), m_stats.getPercentile(50));
+			m_stats.addValue(time);
 
-			m_stats.clear();
+			if (m_stats.getN() == m_taskPerBatch)
+			{
+				TimerStat ts = new TimerStat(m_stats.getMin(), m_stats.getMax(),
+						m_stats.getMean(), m_stats.getPercentile(50));
 
-			return ts;
+				m_stats.clear();
+
+				return ts;
+			}
 		}
 
 		return null;

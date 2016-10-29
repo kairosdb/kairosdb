@@ -21,7 +21,7 @@ public class CongestionExecutorService extends AbstractExecutorService
 	private final ThreadGroup m_threadGroup;
 	private final CongestionSemaphore m_semaphore;
 	private final CongestionTimer m_congestionTimer;
-	private int m_permitCount = 10;
+	private int m_permitCount = 1;
 
 	@Inject
 	private DoubleDataPointFactory m_dataPointFactory = new DoubleDataPointFactoryImpl();
@@ -44,6 +44,13 @@ public class CongestionExecutorService extends AbstractExecutorService
 		});*/
 
 		m_internalExecutor = Executors.newCachedThreadPool();
+	}
+
+	private void increasePermitCount()
+	{
+		m_permitCount ++;
+		m_congestionTimer.setTaskPerBatch(m_permitCount);
+		m_semaphore.release();
 	}
 
 	@Override
@@ -76,9 +83,18 @@ public class CongestionExecutorService extends AbstractExecutorService
 		return false;
 	}
 
+	private Stopwatch m_timer = Stopwatch.createStarted();
+
 	@Override
 	public void execute(Runnable command)
 	{
+		if (m_timer.elapsed(TimeUnit.SECONDS) >= 15)
+		{
+			m_timer.reset();
+			m_timer.start();
+			increasePermitCount();
+		}
+
 		try
 		{
 			//System.out.println("Execute called");
@@ -115,7 +131,7 @@ public class CongestionExecutorService extends AbstractExecutorService
 		@Override
 		public void run()
 		{
-			System.out.println("DynamicFutureTask.run");
+			//System.out.println("DynamicFutureTask.run");
 			//Todo start stopwatch
 			m_stopwatch.start();
 			super.run();
@@ -128,7 +144,7 @@ public class CongestionExecutorService extends AbstractExecutorService
 
 			if (timerStat != null)
 			{
-				System.out.println("Sending stats");
+				//System.out.println("Sending stats");
 				long now = System.currentTimeMillis();
 				ImmutableSortedMap<String, String> tags = ImmutableSortedMap.of("host", "test");
 				DataPointEvent dpe = new DataPointEvent("kairosdb.congestion.stats.min", tags,
@@ -145,6 +161,10 @@ public class CongestionExecutorService extends AbstractExecutorService
 
 				dpe = new DataPointEvent("kairosdb.congestion.stats.median", tags,
 						m_dataPointFactory.createDataPoint(now, timerStat.median));
+				m_eventBus.post(dpe);
+
+				dpe = new DataPointEvent("kairosdb.congestion.stats.permit_count", tags,
+						m_dataPointFactory.createDataPoint(now, m_permitCount));
 				m_eventBus.post(dpe);
 			}
 

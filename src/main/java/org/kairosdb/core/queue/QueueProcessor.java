@@ -1,6 +1,7 @@
 package org.kairosdb.core.queue;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.ImmutableSortedMap;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.tuple.Pair;
 import org.kairosdb.core.DataPointSet;
@@ -15,6 +16,7 @@ import se.ugli.bigqueue.BigArray;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +42,7 @@ public class QueueProcessor implements KairosMetricReporter
 	private final int m_batchSize;
 	private final int m_secondsTillCheckpoint;
 	private final DataPointEventSerializer m_eventSerializer;
+	private final List<DataPointEvent> m_internalMetrics = new ArrayList<>();
 
 	private AtomicInteger m_readFromFileCount = new AtomicInteger();
 	private AtomicInteger m_readFromQueueCount = new AtomicInteger();
@@ -88,6 +91,7 @@ public class QueueProcessor implements KairosMetricReporter
 		//m_deliveryThread.interrupt();
 	}
 
+
 	public void put(DataPointEvent dataPointEvent)
 	{
 		byte[] eventBytes = m_eventSerializer.serializeEvent(dataPointEvent);
@@ -117,7 +121,10 @@ public class QueueProcessor implements KairosMetricReporter
 
 		synchronized (m_lock)
 		{
-			for (int i = 0; i < m_batchSize; i++)
+			ret.addAll(m_internalMetrics);
+			m_internalMetrics.clear();
+
+			for (int i = ret.size(); i < m_batchSize; i++)
 			{
 				//System.out.println(m_nextIndex);
 				IndexedEvent event = m_memoryQueue.peek();
@@ -168,6 +175,7 @@ public class QueueProcessor implements KairosMetricReporter
 			{
 				try
 				{
+					System.out.println("Waiting for event");
 					m_lock.wait();
 				}
 				catch (InterruptedException e)
@@ -193,27 +201,22 @@ public class QueueProcessor implements KairosMetricReporter
 	@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
-		List<DataPointSet> ret = new ArrayList<>();
+		//todo make member variable
+		ImmutableSortedMap<String, String> tag = ImmutableSortedMap.of("host", m_hostName);
 
-		DataPointSet dps = new DataPointSet("kairosdb.queue.file_queue.size");
-		dps.addTag("host", m_hostName);
-		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, m_bigArray.size()));
+		synchronized (m_lock)
+		{
+			m_internalMetrics.add(new DataPointEvent("kairosdb.queue.file_queue.size", tag,
+					m_dataPointFactory.createDataPoint(now, m_bigArray.size())));
 
-		ret.add(dps);
+			m_internalMetrics.add(new DataPointEvent("kairosdb.queue.read_from_file", tag,
+					m_dataPointFactory.createDataPoint(now, m_readFromFileCount.getAndSet(0))));
 
-		dps = new DataPointSet("kairosdb.queue.read_from_file");
-		dps.addTag("host", m_hostName);
-		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, m_readFromFileCount.getAndSet(0)));
+			m_internalMetrics.add(new DataPointEvent("kairosdb.queue.process_count", tag,
+					m_dataPointFactory.createDataPoint(now, m_readFromQueueCount.getAndSet(0))));
+		}
 
-		ret.add(dps);
-
-		dps = new DataPointSet("kairosdb.queue.process_count");
-		dps.addTag("host", m_hostName);
-		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, m_readFromQueueCount.getAndSet(0)));
-
-		ret.add(dps);
-
-		return ret;
+		return Collections.emptyList();
 	}
 
 

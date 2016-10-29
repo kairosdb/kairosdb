@@ -140,7 +140,7 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 	{
 		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
 		dps.addTag("host", m_hostName);
-		dps.addTag("method", "putm");
+		dps.addTag("method", getCommand());
 		dps.addDataPoint(m_longFactory.createDataPoint(now, m_counter.getAndSet(0)));
 
 		return (Collections.singletonList(dps));

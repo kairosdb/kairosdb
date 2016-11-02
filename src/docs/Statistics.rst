@@ -27,7 +27,7 @@ Metrics Reported
 * *kairosdb.datastore.query_collisions* - Number of identical queries that are ran at the same time.  Or one was started before the other finished.
 * *kairosdb.datastore.query_row_count* - The number of chunks fetched by the datastore.  Example. If it takes two queries to get the data from a single row in Cassandra then this value will be 2.  The higher this number the more memory the query will require to process.
 * *kairosdb.datastore.query_sample_size* - The number of data points a query retrieves from Cassandra (before aggregation).
-* *kairosdb.datastore.query_time* - The number of milliseconds to retreive the data out of Cassandra for a query (not including key lookup).
+* *kairosdb.datastore.query_time* - The number of milliseconds to retreive the data out of Cassandra for a query.
 * *kairosdb.datastore.write_size* - The number of data points written to the data store during the last write.
 * *kairosdb.http.ingest_count* - The number of data points ingested via HTTP since the last report.
 * *kairosdb.http.ingest_time* - The amount of time to ingest the number of metrics from kairosdb.http.ingest_count.  So ingest_count / ingest_time is an average of how fast a single metric is inserted.

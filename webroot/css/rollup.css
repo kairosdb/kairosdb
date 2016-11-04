@@ -62,3 +62,8 @@ h1 {
     word-wrap: break-word;
     max-width: 300px;
 }
+
+.small-input {
+    padding:0;
+    line-height:16px;
+}

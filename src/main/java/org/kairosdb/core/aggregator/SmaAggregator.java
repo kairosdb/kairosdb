@@ -17,22 +17,27 @@
 package org.kairosdb.core.aggregator;
 
 
-import static com.google.common.base.Preconditions.checkState;
-
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
+import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
 
-import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
-@AggregatorName(name = "sma", description = "Simple moving average.")
+import static com.google.common.base.Preconditions.checkState;
+
+@AggregatorName(
+        name = "sma",
+        description = "Simple moving average.",
+        properties = {
+                @AggregatorProperty(name = "size", type = "integer")
+        }
+)
 public class SmaAggregator implements Aggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;

@@ -18,6 +18,7 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 
 import java.util.Collections;
@@ -26,7 +27,14 @@ import java.util.Iterator;
 /**
  Converts all longs to double. This will cause a loss of precision for very large long values.
  */
-@AggregatorName(name = "last", description = "Returns the last value data point for the time range.")
+@AggregatorName(
+        name = "last",
+        description = "Returns the last value data point for the time range.",
+        properties = {
+                @AggregatorProperty(name = "sampling", type = "duration"),
+                @AggregatorProperty(name="align_start_time", type="boolean")
+        }
+)
 public class LastAggregator extends RangeAggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;

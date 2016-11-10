@@ -16,7 +16,11 @@
 
 package org.kairosdb.core.aggregator;
 
+import com.google.common.collect.ImmutableList;
+
 public interface AggregatorFactory
 {
-	public Aggregator createAggregator(String name);
+	Aggregator createAggregator(String name);
+
+    ImmutableList<AggregatorMetadata> getAggregatorMetadata();
 }

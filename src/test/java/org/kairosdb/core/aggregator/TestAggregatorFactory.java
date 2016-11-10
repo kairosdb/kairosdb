@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.aggregator;
 
+import com.google.common.collect.ImmutableList;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.exception.KairosDBException;
@@ -53,4 +54,10 @@ public class TestAggregatorFactory implements AggregatorFactory
 	{
 		return (m_aggregators.get(name));
 	}
+
+    @Override
+    public ImmutableList<AggregatorMetadata> getAggregatorMetadata()
+    {
+        return null;
+    }
 }

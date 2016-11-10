@@ -474,7 +474,7 @@ module.directive('aggregatornamedropdown', function ($compile)
             html += '	</button>';
             html += '	<ul class="dropdown-menu" aria-labelledby="aggregatorDropdown">';
             html += '   <li ng-repeat="descriptor in descriptors">';
-            html += '       <a href="#" ng-click="setName(agg, descriptor.name, descriptors)" bs-tooltip="" ' +
+			html += '       <a href="#" ng-click="setName(agg, descriptor.name, descriptors)"' +
                     '           title="{{descriptor.description}}">';
             html += '           {{ descriptor.name }}';
             html += '       </a>';

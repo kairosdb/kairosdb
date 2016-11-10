@@ -16,23 +16,26 @@
 package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.datapoints.DataPointFactory;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.exception.KairosDBException;
 
 import java.util.Collections;
 import java.util.Iterator;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.core.DataPoint.API_DOUBLE;
-
 /**
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
-@AggregatorName(name = "avg", description = "Averages the data points together.")
+@AggregatorName(
+        name = "avg",
+        description = "Averages the data points together.",
+        properties = {
+                @AggregatorProperty(name = "sampling", type = "duration"),
+                @AggregatorProperty(name="align_start_time", type="boolean")
+        }
+)
 public class AvgAggregator extends RangeAggregator
 {
 	DoubleDataPointFactory m_dataPointFactory;

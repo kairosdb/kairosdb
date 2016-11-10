@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.exception.DatastoreException;
@@ -11,12 +12,22 @@ import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  Created by bhawkins on 8/28/15.
  */
-@AggregatorName(name = "save_as", description = "Saves the results to a new metric.")
+@AggregatorName(
+        name = "save_as",
+        description = "Saves the results to a new metric.",
+        properties = {
+                @AggregatorProperty(name = "metric_name", type = "string")
+        }
+)
 public class SaveAsAggregator implements Aggregator, GroupByAware
 {
 	private Datastore m_datastore;

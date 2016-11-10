@@ -18,6 +18,7 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,12 +26,17 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.Iterator;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 /**
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
-@AggregatorName(name = "sum", description = "Adds data points together.")
+@AggregatorName(
+        name = "sum",
+        description = "Adds data points together.",
+        properties = {
+                @AggregatorProperty(name = "sampling", type = "duration"),
+                @AggregatorProperty(name="align_start_time", type="boolean")
+        }
+)
 public class SumAggregator extends RangeAggregator
 {
 	public static final Logger logger = LoggerFactory.getLogger(SumAggregator.class);

@@ -1,4 +1,5 @@
 var ROLLUP_URL = "/api/v1/rollups/";
+var AGGREGATORS_URL = "/api/v1/aggregators";
 var semaphore = false;
 var metricList = null;
 
@@ -42,243 +43,47 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		{'name': 'least_squares', 'sampling': $scope.DEFAULT_SAMPLING},
 		{'name': 'count', 'sampling': $scope.DEFAULT_SAMPLING},
 		{'name': 'percentile', 'sampling': $scope.DEFAULT_SAMPLING}];
-    
-	$scope.AGGREGATORS_JSON = [
-		{
-			'name': 'avg',
-			'description': 'Averages data points for the given sampling range',
-			'properties': [
-				{
-					'name': 'sampling',
-					'type': 'duration'
-				},
-				{
-					'name': 'align_start_time',
-					'type': 'boolean'
-				}
-			]
-		},
-        {
-			'name': 'count',
-			'description': 'Counts the data points for the given sampling range',
-			'properties': [
-				{
-					'name': 'sampling',
-					'type': 'duration'
-				},
-				{
-					'name': 'align_start_time',
-					'type': 'boolean'
-				}
-			]
-		},
-        {
-			'name': 'dev',
-			'description': 'Calculates the standard deviation for the data points for the given sampling range',
-			'properties': [
-				{
-					'name': 'sampling',
-					'type': 'duration'
-				},
-				{
-					'name': 'align_start_time',
-					'type': 'boolean'
-				}
-			]
-		},
-        {
-			'name': 'first',
-			'description': '',
-			'properties': [
-				{
-					'name': 'sampling',
-					'type': 'duration'
-				},
-				{
-					'name': 'align_start_time',
-					'type': 'boolean'
-				}
-			]
-		},
-        {
-			'name': 'gaps',
-			'description': '',
-			'properties': [
-				{
-					'name': 'sampling',
-					'type': 'duration'
-				},
-				{
-					'name': 'align_start_time',
-					'type': 'boolean'
-				}
-			]
-		},
-        {
-			'name': 'last',
-			'description': '',
-			'properties': [
-				{
-					'name': 'sampling',
-					'type': 'duration'
-				},
-				{
-					'name': 'align_start_time',
-					'type': 'boolean'
-				}
-			]
-		},
-        {
-			'name': 'least_squares',
-			'description': '',
-			'properties': [
-				{
-					'name': 'sampling',
-					'type': 'duration'
-				},
-				{
-					'name': 'align_start_time',
-					'type': 'boolean'
-				}
-			]
-		},
-        {
-			'name': 'max',
-			'description': '',
-			'properties': [
-				{
-					'name': 'sampling',
-					'type': 'duration'
-				},
-				{
-					'name': 'align_start_time',
-					'type': 'boolean'
-				}
-			]
-		},
-        {
-			'name': 'min',
-			'description': '',
-			'properties': [
-				{
-					'name': 'sampling',
-					'type': 'duration'
-				},
-				{
-					'name': 'align_start_time',
-					'type': 'boolean'
-				}
-			]
-		},
-        {
-			'name': 'percentile',
-			'description': '',
-			'properties': [
-				{
-					'name': 'percentile',
-					'type': 'double'
-				}
-			]
-		},
-        {
-			'name': 'diff',
-			'description': 'Difference between two data points',
-			'properties': []
-		},
-        {
-			'name': 'sum',
-			'description': 'Adds datapoints together',
-			'properties': [
-				{
-					'name': 'sampling',
-					'type': 'duration'
-				},
-				{
-					'name': 'align_start_time',
-					'type': 'boolean'
-				}
-			]
-		},
-		{
-			'name': 'div',
-			'description': 'Divides the datapoint by the divisor',
-			'properties': [
-				{
-					'name': 'divisor',
-					'type': 'double'
-				}
-			]
-		},
-		{
-			'name': 'trim',
-			'description': 'Something here',
-			'properties': [
-				{
-					'name': 'trim',
-					'type': 'enum',
-					'value': [
-						'first',
-						'last',
-						'both'
-					]
-				}
-			]
-		},
-		{
-			'name': 'save_as',
-			'description': 'Something here',
-			'properties': [
-				{
-					'type': 'string',
-					'name': 'metric_name'
-				}
-			]
-		},
-		{
-			'name': 'sma',
-			'description': 'Something here',
-			'properties': [
-				{
-					'name': 'size',
-					'type': 'integer'
-				}
-			]
-		},
-		{
-			'name': 'rate',
-			'description': 'Something here',
-			'properties': [
-				{
-					'name': 'Rate',
-					'type': 'timeUnit'
-				}
-			]
-		},
-        {
-			'name': 'sampler',
-			'description': '',
-			'properties': [
-				{
-					'name': 'unit',
-					'type': 'timeUnit'
-				}
-			]
-		},
-        {
-			'name': 'scale',
-			'description': '',
-			'properties': [
-				{
-					'name': 'factor',
-					'type': 'double'
-				}
-			]
-		}
-	];
-    
+
+    $scope.aggregatorDescriptor = {};
+
 	$scope.DEFAULT_AGGREGATOR = $scope.AGGREGATORS[4];
 
 	$scope.tasks = [];
+
+    $scope.init = function() {
+        $http.get(ROLLUP_URL)
+                .success(function (response)
+                {
+
+                    if (response) {
+                        _.each(response, function (rollupTask)
+                        {
+                            // convert to a simpler model
+                            var task = $scope.toSimpleTask(rollupTask);
+                            $scope.tasks.push(task);
+                            $scope.checkForIncompleteTask(task)
+                        });
+
+                        $scope.tasks = orderByFilter($scope.tasks, "name");
+                    }
+                })
+                .error(function (data, status, headers, config)
+                {
+                    $scope.alert("Could not read list of roll-ups from server.", status, data);
+                });
+
+        $http.get(AGGREGATORS_URL)
+                .success(function (response)
+                {
+                    $scope.aggregatorDescriptor = response;
+                })
+                .error(function (data, status, headers, config)
+                {
+                    $scope.alert("Could not read aggregator metadata from server.", status, data);
+                });
+    };
+
+    $scope.init();
 
     $scope.getIncompleteTooltip = function()
     {
@@ -299,28 +104,11 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
         });
         // todo this should be error condition throw exception?
     };
-    
-	$scope.getAggregatorDescriptors = function () {
-		return $scope.AGGREGATORS_JSON;	
-	};
 
-	$http.get(ROLLUP_URL)
-		.success(function (response) {
-
-			if (response) {
-				_.each(response, function (rollupTask) {
-					// convert to a simpler model
-					var task = $scope.toSimpleTask(rollupTask);
-					$scope.tasks.push(task);
-					$scope.checkForIncompleteTask(task)
-				});
-
-				$scope.tasks = orderByFilter($scope.tasks, "name");
-			}
-		})
-		.error(function (data, status, headers, config) {
-			$scope.alert("Could not read list of roll-ups from server.", status, data);
-		});
+    $scope.getAggregatorDescriptors = function ()
+    {
+        return $scope.aggregatorDescriptor;
+    };
 
 	$scope.onBlur = function (task) {
 		$scope.errors = $scope.validate(task);

@@ -20,6 +20,7 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
@@ -29,7 +30,13 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-@AggregatorName(name = "scale", description = "Scales each data point by a factor.")
+@AggregatorName(
+        name = "scale",
+        description = "Scales each data point by a factor.",
+        properties = {
+                @AggregatorProperty(name = "factor", type = "double")
+        }
+)
 public class ScaleAggregator implements Aggregator
 {
 	private double m_factor;

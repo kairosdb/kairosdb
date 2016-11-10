@@ -545,7 +545,7 @@ module.directive('aggregatorproperties', function ($compile)
                             else if (property.type == 'enum') {
                                 // todo how to make this a directive?
                                 html += "<span>" + property.name + "</span> ";
-                                scope.values = property.value;
+                                scope.values = property.values;
                                 scope.agg[property.name] = scope.values[0];
                                 html += '<div class="dropdown" style="display:inline-block">';
                                 html += '	<button class="btn btn-default dropdown-toggle" type="button" ' +

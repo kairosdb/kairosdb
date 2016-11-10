@@ -25,11 +25,7 @@ import com.google.inject.Key;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class GuiceAggregatorFactory implements AggregatorFactory
 {
@@ -61,14 +57,14 @@ public class GuiceAggregatorFactory implements AggregatorFactory
                 m_aggregatorsMetadata.add(new AggregatorMetadata(ann.name(), ann.description(), properties));
 			}
 		}
-        m_aggregatorsMetadata.sort(new Comparator<AggregatorMetadata>()
-        {
-            @Override
-            public int compare(AggregatorMetadata o1, AggregatorMetadata o2)
-            {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
+		Collections.sort(m_aggregatorsMetadata, new Comparator<AggregatorMetadata>()
+		{
+			@Override
+			public int compare(AggregatorMetadata o1, AggregatorMetadata o2)
+			{
+				return o1.getName().compareTo(o2.getName());
+			}
+		});
 	}
 
     private ImmutableList<AggregatorPropertyMetadata> getAggregatorPropertyMetadata(AggregatorName ann)

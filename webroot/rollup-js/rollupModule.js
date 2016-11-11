@@ -413,7 +413,7 @@ module.directive('aggregator', function ($compile)
     return {
         link: function (scope, element, attributes)
         {
-            oldAgg = _.clone(scope.agg);
+            var oldAgg = angular.copy(scope.agg);
 
             var html = '';
             html += '<table width="250px">';

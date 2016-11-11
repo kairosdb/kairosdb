@@ -168,7 +168,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	};
 
 	$scope.addAggregator = function (task) {
-		task.aggregators.push(_.clone($scope.DEFAULT_AGGREGATOR));
+		task.aggregators.push(angular.copy($scope.DEFAULT_AGGREGATOR));
 		$scope.onBlur(task);
 	};
     

@@ -50,18 +50,29 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 
 	$scope.tasks = [];
 
-    $scope.init = function() {
+    $scope.init = function ()
+    {
         $http.get(ROLLUP_URL)
                 .success(function (response)
                 {
-
                     if (response) {
                         _.each(response, function (rollupTask)
                         {
-                            // convert to a simpler model
-                            var task = $scope.toSimpleTask(rollupTask);
-                            $scope.tasks.push(task);
-                            $scope.checkForIncompleteTask(task)
+                            $http.get(AGGREGATORS_URL)
+                                    .success(function (descriptorResponse)
+                                    {
+                                        $scope.aggregatorDescriptor = descriptorResponse;
+
+                                        // convert to a simpler model
+                                        var task = $scope.toSimpleTask(rollupTask);
+                                        $scope.tasks.push(task);
+                                        $scope.checkForIncompleteTask(task)
+                                    })
+                                    .error(function (data, status, headers, config)
+                                    {
+                                        $scope.alert("Could not read aggregator metadata from server.", status, data);
+                                    });
+
                         });
 
                         $scope.tasks = orderByFilter($scope.tasks, "name");
@@ -70,16 +81,6 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
                 .error(function (data, status, headers, config)
                 {
                     $scope.alert("Could not read list of roll-ups from server.", status, data);
-                });
-
-        $http.get(AGGREGATORS_URL)
-                .success(function (response)
-                {
-                    $scope.aggregatorDescriptor = response;
-                })
-                .error(function (data, status, headers, config)
-                {
-                    $scope.alert("Could not read aggregator metadata from server.", status, data);
                 });
     };
 

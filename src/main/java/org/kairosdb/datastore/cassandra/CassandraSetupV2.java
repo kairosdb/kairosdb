@@ -15,6 +15,16 @@ public class CassandraSetupV2 extends  CassandraSetup {
     }
 
     @Override
+    protected boolean keyspaceExists(Session session, String keySpace) {
+        PreparedStatement ps = session.prepare("SELECT * FROM system.schema_keyspaces WHERE keyspace_name = ?");
+        List<Row> rows = session.execute(ps.bind(keySpace)).all();
+        if (rows.size() == 0) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     protected boolean tableExists(Session session, String tableName) {
         PreparedStatement ps = session.prepare("SELECT * FROM system.schema_columnfamilies WHERE keyspace_name = ? and columnfamily_name = ?");
         List<Row> rows = session.execute(ps.bind(keySpace, tableName)).all();

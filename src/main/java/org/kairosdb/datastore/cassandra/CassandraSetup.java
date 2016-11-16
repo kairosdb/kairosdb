@@ -70,35 +70,35 @@ public abstract class CassandraSetup {
 
     protected abstract boolean tableExists(Session session, String tableName);
 
+    protected abstract boolean keyspaceExists(Session session, String keySpace);
+
     public void initSchema() {
         try(Session session = client.getSession()) {
-            PreparedStatement ps = session.prepare("SELECT * FROM system.schema_keyspaces WHERE keyspace_name = ?");
-            List<Row> rows = session.execute(ps.bind(keySpace)).all();
-            if (rows.size() == 0) {
+            if (!keyspaceExists(session, keySpace)) {
                 logger.info("Creating keyspace ... {}", keySpace);
                 session.execute(String.format(CREATE_KEYSPACE, keySpace, replicationFactor));
             }
         }
 
         try(Session session = client.getKeyspaceSession()) {
-            logger.info("Creating column families ...");
+            logger.info("Checking and or creating column families ...");
             if(!tableExists(session, "data_points")) {
-                logger.info("Creating table 'data_pints'");
+                logger.info("Creating table 'data_pints' ...");
                 session.execute(DATA_POINTS_TABLE);
             }
 
             if(!tableExists(session, "row_key_index")) {
-                logger.info("Creating table 'row_key_index'");
+                logger.info("Creating table 'row_key_index' ...");
                 session.execute(ROW_KEY_INDEX_TABLE);
             }
 
             if(!tableExists(session, "row_key_split_index")) {
-                logger.info("Creating table 'row_key_split_index'");
+                logger.info("Creating table 'row_key_split_index' ...");
                 session.execute(ROW_KEY_SPLIT_INDEX_TABLE);
             }
 
             if(!tableExists(session, "string_index")) {
-                logger.info("Creating table 'string_index'");
+                logger.info("Creating table 'string_index' ...");
                 session.execute(STRING_INDEX_TABLE);
             }
         }

@@ -69,7 +69,7 @@ public class CassandraDatastore implements Datastore {
 
     public static final String QUERY_ROW_KEY_SPLIT_INDEX = "SELECT column1 FROM row_key_split_index WHERE metric_name = ? AND tag_name = ? and tag_value IN ? AND column1 >= ? and column1 <= ? ORDER BY column1 ASC LIMIT ?";
 
-    public static final String QUERY_DATA_POINTS = "SELECT column1, value FROM data_points WHERE key IN ( ? ) AND column1 >= ? and column1 < ? ORDER BY column1 ASC";
+    public static final String QUERY_DATA_POINTS = "SELECT column1, value FROM data_points WHERE key IN ( ? ) AND column1 >= ? and column1 < ?";
 
     public static final int LONG_FLAG = 0x0;
     public static final int FLOAT_FLAG = 0x1;

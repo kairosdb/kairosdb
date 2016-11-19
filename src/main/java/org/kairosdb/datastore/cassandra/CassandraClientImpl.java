@@ -1,9 +1,7 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.QueryOptions;
-import com.datastax.driver.core.Session;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.google.inject.Inject;
@@ -28,6 +26,7 @@ public class CassandraClientImpl implements CassandraClient
 			@Named(HOST_LIST_PROPERTY)String hostList)
 	{
 		final Cluster.Builder builder = new Cluster.Builder()
+				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL, 3, 100))
 				.withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
 				.withQueryOptions(new QueryOptions().setConsistencyLevel(ConsistencyLevel.QUORUM));
 

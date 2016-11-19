@@ -452,6 +452,163 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 		m_congestionExecutor.submit(batchHandler);
 	}
 
+	private void submitEvents(List<DataPointEvent> events, EventCompletionCallBack callBack)
+	{
+		//System.out.println("Running Batch");
+		/*BatchStatement metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+		BatchStatement tagNameBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+		BatchStatement tagValueBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+		BatchStatement dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+		BatchStatement rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);*/
+
+		//System.out.println(events.size());
+		try
+		{
+			for (DataPointEvent event : events)
+			{
+				String metricName = event.getMetricName();
+				ImmutableSortedMap<String, String> tags = event.getTags();
+				DataPoint dataPoint = event.getDataPoint();
+				int ttl = event.getTtl();
+
+				DataPointsRowKey rowKey = null;
+				//time the data is written.
+				long writeTime = System.currentTimeMillis();
+				if (0 == ttl)
+					ttl = m_cassandraConfiguration.getDatapointTtl();
+
+				int rowKeyTtl = 0;
+				//Row key will expire 3 weeks after the data in the row expires
+				if (ttl != 0)
+					rowKeyTtl = ttl + ((int) (ROW_WIDTH / 1000));
+
+				long rowTime = calculateRowTime(dataPoint.getTimestamp());
+
+				rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
+						tags);
+
+				//Write out the row key if it is not cached
+				DataPointsRowKey cachedKey = m_rowKeyCache.cacheItem(rowKey);
+				if (cachedKey == null)
+				{
+					BoundStatement bs = new BoundStatement(m_psInsertRowKey);
+					bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
+					bs.setBytes(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+					bs.setInt(2, rowKeyTtl);
+					m_session.executeAsync(bs);
+					//rowKeyBatch.add(bs);
+
+					m_eventBus.post(new RowKeyEvent(metricName, rowKey, rowKeyTtl));
+				}
+				else
+					rowKey = cachedKey;
+
+				//Write metric name if not in cache
+				String cachedName = m_metricNameCache.cacheItem(metricName);
+				if (cachedName == null)
+				{
+					if (metricName.length() == 0)
+					{
+						logger.warn(
+								"Attempted to add empty metric name to string index. Row looks like: " + dataPoint
+						);
+					}
+					BoundStatement bs = new BoundStatement(m_psInsertString);
+					bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
+					bs.setString(1, metricName);
+
+					m_session.executeAsync(bs);
+					//metricNamesBatch.add(bs);
+				/*m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
+						metricName, "", now);*/
+				}
+
+				//Check tag names and values to write them out
+				for (String tagName : tags.keySet())
+				{
+					String cachedTagName = m_tagNameCache.cacheItem(tagName);
+					if (cachedTagName == null)
+					{
+						if (tagName.length() == 0)
+						{
+							logger.warn(
+									"Attempted to add empty tagName to string cache for metric: " + metricName
+							);
+						}
+						BoundStatement bs = new BoundStatement(m_psInsertString);
+						bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_NAMES.getBytes(UTF_8)));
+						bs.setString(1, tagName);
+
+						tagNameBatch.add(bs);
+
+					}
+
+					String value = tags.get(tagName);
+					String cachedValue = m_tagValueCache.cacheItem(value);
+					if (cachedValue == null)
+					{
+						if (value.length() == 0)
+						{
+							logger.warn(
+									"Attempted to add empty tagValue (tag name " + tagName + ") to string cache for metric: " + metricName
+							);
+						}
+						BoundStatement bs = new BoundStatement(m_psInsertString);
+						bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_VALUES.getBytes(UTF_8)));
+						bs.setString(1, value);
+
+						tagValueBatch.add(bs);
+					/*m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
+							value, "", now);*/
+					}
+				}
+
+				int columnTime = getColumnName(rowTime, dataPoint.getTimestamp());
+				KDataOutput kDataOutput = new KDataOutput();
+				dataPoint.writeValueToBuffer(kDataOutput);
+			/*m_dataPointWriteBuffer.addData(rowKey, columnTime,
+					kDataOutput.getBytes(), writeTime, ttl);*/
+
+
+				BoundStatement boundStatement = new BoundStatement(m_psInsertData);
+				boundStatement.setBytes(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+				ByteBuffer b = ByteBuffer.allocate(4);
+				b.putInt(columnTime);
+				b.rewind();
+				boundStatement.setBytes(1, b);
+				boundStatement.setBytes(2, ByteBuffer.wrap(kDataOutput.getBytes()));
+				boundStatement.setInt(3, ttl);
+				//m_session.executeAsync(boundStatement);
+
+				dataPointBatch.add(boundStatement);
+
+				ResultSetFuture future = m_session.executeAsync(boundStatement);
+
+				//m_session.executeAsync(m_batchStatement);
+			}
+
+			if (metricNamesBatch.size() != 0)
+				m_session.executeAsync(metricNamesBatch);
+
+			if (tagNameBatch.size() != 0)
+				m_session.executeAsync(tagNameBatch);
+
+			if (tagValueBatch.size() != 0)
+				m_session.executeAsync(tagValueBatch);
+
+			if (rowKeyBatch.size() != 0)
+				m_session.executeAsync(rowKeyBatch);
+
+			m_session.execute(dataPointBatch);
+			callBack.complete();
+
+		}
+		catch (Exception e)
+		{
+			logger.error("Error sending data points", e);
+		}
+	}
+
 
 	private Iterable<String> queryStringIndex(final String key) {
 		SliceQuery<String, String, String> sliceQuery =
@@ -742,155 +899,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 		@Override
 		public Long call()
 		{
-			//System.out.println("Running Batch");
-			BatchStatement metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-			BatchStatement tagNameBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-			BatchStatement tagValueBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-			BatchStatement dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-			BatchStatement rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-
-			//System.out.println(events.size());
-			try
-			{
-				for (DataPointEvent event : m_events)
-				{
-					String metricName = event.getMetricName();
-					ImmutableSortedMap<String, String> tags = event.getTags();
-					DataPoint dataPoint = event.getDataPoint();
-					int ttl = event.getTtl();
-
-					DataPointsRowKey rowKey = null;
-					//time the data is written.
-					long writeTime = System.currentTimeMillis();
-					if (0 == ttl)
-						ttl = m_cassandraConfiguration.getDatapointTtl();
-
-					int rowKeyTtl = 0;
-					//Row key will expire 3 weeks after the data in the row expires
-					if (ttl != 0)
-						rowKeyTtl = ttl + ((int) (ROW_WIDTH / 1000));
-
-					long rowTime = calculateRowTime(dataPoint.getTimestamp());
-
-					rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(),
-							tags);
-
-					//Write out the row key if it is not cached
-					DataPointsRowKey cachedKey = m_rowKeyCache.cacheItem(rowKey);
-					if (cachedKey == null)
-					{
-						BoundStatement bs = new BoundStatement(m_psInsertRowKey);
-						bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
-						bs.setBytes(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
-						bs.setInt(2, rowKeyTtl);
-						rowKeyBatch.add(bs);
-
-						m_eventBus.post(new RowKeyEvent(metricName, rowKey, rowKeyTtl));
-					}
-					else
-						rowKey = cachedKey;
-
-					//Write metric name if not in cache
-					String cachedName = m_metricNameCache.cacheItem(metricName);
-					if (cachedName == null)
-					{
-						if (metricName.length() == 0)
-						{
-							logger.warn(
-									"Attempted to add empty metric name to string index. Row looks like: " + dataPoint
-							);
-						}
-						BoundStatement bs = new BoundStatement(m_psInsertString);
-						bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
-						bs.setString(1, metricName);
-
-						metricNamesBatch.add(bs);
-				/*m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
-						metricName, "", now);*/
-					}
-
-					//Check tag names and values to write them out
-					for (String tagName : tags.keySet())
-					{
-						String cachedTagName = m_tagNameCache.cacheItem(tagName);
-						if (cachedTagName == null)
-						{
-							if (tagName.length() == 0)
-							{
-								logger.warn(
-										"Attempted to add empty tagName to string cache for metric: " + metricName
-								);
-							}
-							BoundStatement bs = new BoundStatement(m_psInsertString);
-							bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_NAMES.getBytes(UTF_8)));
-							bs.setString(1, tagName);
-
-							tagNameBatch.add(bs);
-
-						}
-
-						String value = tags.get(tagName);
-						String cachedValue = m_tagValueCache.cacheItem(value);
-						if (cachedValue == null)
-						{
-							if (value.length() == 0)
-							{
-								logger.warn(
-										"Attempted to add empty tagValue (tag name " + tagName + ") to string cache for metric: " + metricName
-								);
-							}
-							BoundStatement bs = new BoundStatement(m_psInsertString);
-							bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_VALUES.getBytes(UTF_8)));
-							bs.setString(1, value);
-
-							tagValueBatch.add(bs);
-					/*m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
-							value, "", now);*/
-						}
-					}
-
-					int columnTime = getColumnName(rowTime, dataPoint.getTimestamp());
-					KDataOutput kDataOutput = new KDataOutput();
-					dataPoint.writeValueToBuffer(kDataOutput);
-			/*m_dataPointWriteBuffer.addData(rowKey, columnTime,
-					kDataOutput.getBytes(), writeTime, ttl);*/
-
-
-					BoundStatement boundStatement = new BoundStatement(m_psInsertData);
-					boundStatement.setBytes(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
-					ByteBuffer b = ByteBuffer.allocate(4);
-					b.putInt(columnTime);
-					b.rewind();
-					boundStatement.setBytes(1, b);
-					boundStatement.setBytes(2, ByteBuffer.wrap(kDataOutput.getBytes()));
-					boundStatement.setInt(3, ttl);
-					//m_session.executeAsync(boundStatement);
-
-					dataPointBatch.add(boundStatement);
-
-					//m_session.executeAsync(m_batchStatement);
-				}
-
-				if (metricNamesBatch.size() != 0)
-					m_session.executeAsync(metricNamesBatch);
-
-				if (tagNameBatch.size() != 0)
-					m_session.executeAsync(tagNameBatch);
-
-				if (tagValueBatch.size() != 0)
-					m_session.executeAsync(tagValueBatch);
-
-				if (rowKeyBatch.size() != 0)
-					m_session.executeAsync(rowKeyBatch);
-
-				m_session.execute(dataPointBatch);
-				m_callBack.complete();
-
-			}
-			catch (Exception e)
-			{
-				logger.error("Error sending data points", e);
-			}
+			submitEvents(m_events, m_callBack);
 
 			return null;
 		}

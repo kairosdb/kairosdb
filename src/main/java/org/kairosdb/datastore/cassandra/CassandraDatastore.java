@@ -455,7 +455,7 @@ public class CassandraDatastore implements Datastore {
 
         List<DataPointsRowKey> sorted = new ArrayList<>();
         sorted.addAll(rowKeys);
-        sorted.sort((t1, t2) -> Long.compare(t2.getTimestamp(), t1.getTimestamp()));
+        sorted.sort((t1, t2) -> Long.compare(t1.getTimestamp(), t2.getTimestamp()));
         rowKeys = sorted;
 
         if (rowKeys.size() < 64) {

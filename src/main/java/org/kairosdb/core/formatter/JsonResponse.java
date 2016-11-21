@@ -110,7 +110,7 @@ public class JsonResponse
 				while (group.hasNext()) {
 					points.add(group.next());
 				}
-				
+
 				points.sort((t1, t2) -> Long.compare(t1.getTimestamp(), t2.getTimestamp()));
 
 				for(DataPoint dataPoint : points) {

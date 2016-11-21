@@ -453,6 +453,11 @@ public class CassandraDatastore implements Datastore {
 
         MemoryMonitor mm = new MemoryMonitor(20);
 
+        List<DataPointsRowKey> sorted = new ArrayList<>();
+        sorted.addAll(rowKeys);
+        sorted.sort((t1, t2) -> Long.compare(t1.getTimestamp(), t2.getTimestamp()));
+        rowKeys = sorted;
+
         if (rowKeys.size() < 64) {
             queryKeys.addAll(rowKeys);
         } else {

@@ -189,7 +189,8 @@ public class MetricsResource implements KairosMetricReporter
 	@Path("/tagvalues")
 	public Response getTagValues()
 	{
-		return executeNameQuery(NameType.TAG_VALUES);
+		return
+				executeNameQuery(NameType.TAG_VALUES);
 	}
 
 	@OPTIONS

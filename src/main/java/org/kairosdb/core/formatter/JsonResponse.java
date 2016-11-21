@@ -24,6 +24,7 @@ import org.kairosdb.core.groupby.GroupByResult;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.List;
 
 public class JsonResponse
@@ -105,9 +106,15 @@ public class JsonResponse
 				}
 
 				m_jsonWriter.key("values").array();
-				while (group.hasNext())
-				{
-					DataPoint dataPoint = group.next();
+				List<DataPoint> points = new ArrayList<>();
+				while (group.hasNext()) {
+					points.add(group.next());
+				}
+				
+				points.sort((t1, t2) -> Long.compare(t1.getTimestamp(), t2.getTimestamp()));
+
+				for(DataPoint dataPoint : points) {
+					// DataPoint dataPoint = group.next();
 
 					m_jsonWriter.array().value(dataPoint.getTimestamp());
 					dataPoint.writeValueToJson(m_jsonWriter);

@@ -106,15 +106,9 @@ public class JsonResponse
 				}
 
 				m_jsonWriter.key("values").array();
-				List<DataPoint> points = new ArrayList<>();
-				while (group.hasNext()) {
-					points.add(group.next());
-				}
 
-				points.sort((t1, t2) -> Long.compare(t1.getTimestamp(), t2.getTimestamp()));
-
-				for(DataPoint dataPoint : points) {
-					// DataPoint dataPoint = group.next();
+				while(group.hasNext()) {
+					DataPoint dataPoint = group.next();
 
 					m_jsonWriter.array().value(dataPoint.getTimestamp());
 					dataPoint.writeValueToJson(m_jsonWriter);

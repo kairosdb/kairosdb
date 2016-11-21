@@ -459,6 +459,10 @@ public class CassandraDatastore implements Datastore {
         rowKeys = sorted;
 
         if (rowKeys.size() < 64) {
+            for(DataPointsRowKey k : rowKeys) {
+                logger.info("<64: delta={}", k.getTimestamp() - currentTimeTier);
+                currentTimeTier = k.getTimestamp();
+            }
             queryKeys.addAll(rowKeys);
         } else {
             for (DataPointsRowKey rowKey : rowKeys) {
@@ -472,7 +476,7 @@ public class CassandraDatastore implements Datastore {
                         (currentType.equals(rowKey.getDataType()))) {
                     queryKeys.add(rowKey);
                 } else {
-                    // logger.info("Creating new query runner: metric={} size={}", queryKeys.get(0).getMetricName(), queryKeys.size());
+                    logger.info("Creating new query runner: metric={} size={} ts-delta={}", queryKeys.get(0).getMetricName(), queryKeys.size(), currentTimeTier - rowKey.getTimestamp());
                     runners.add(new CQLQueryRunner(m_session, m_psQueryDataPoints, m_kairosDataPointFactory,
                             queryKeys,
                             query.getStartTime(), query.getEndTime(), m_rowWidthRead, queryCallback, query.getLimit(), query.getOrder()));

@@ -18,7 +18,6 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.exception.KairosDBException;
 
@@ -30,11 +29,12 @@ import java.util.Iterator;
  */
 @AggregatorName(
         name = "avg",
-        description = "Averages the data points together.",
-        properties = {
-                @AggregatorProperty(name = "sampling", type = "duration"),
-                @AggregatorProperty(name="align_start_time", type="boolean")
-        }
+		description = "Averages the data points together."
+
+		//        properties = {
+		//                @AggregatorProperty(name = "sampling", type = "duration"),
+		//                @AggregatorProperty(name="align_start_time", type="boolean")
+		//        }
 )
 public class AvgAggregator extends RangeAggregator
 {

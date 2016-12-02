@@ -33,16 +33,20 @@ import static com.google.common.base.Preconditions.checkState;
 
 @AggregatorName(
         name = "div",
-        description = "Divides each data point by a divisor.",
-        properties = {
-                @AggregatorProperty(name = "divisor", type = "double"),
-        }
+		description = "Divides each data point by a divisor."
 )
 public class DivideAggregator implements Aggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;
 
 	@NonZero
+	@AggregatorProperty(
+			name = "divisor",
+			label = "divisor",
+			description = "The value each data point is divided by.",
+			type = "double",
+			default_value = "1"
+	)
 	private double m_divisor;
 
 	@Inject

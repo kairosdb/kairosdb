@@ -21,6 +21,7 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.chrono.GregorianChronology;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorCompoundProperty;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
@@ -36,16 +37,54 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class RangeAggregator implements Aggregator, TimezoneAware
 {
-	private long m_startTime = 0L;
 	private boolean m_started = false;
-	private boolean m_alignSampling;
 	private boolean m_exhaustive;
 	private DateTimeZone m_timeZone = DateTimeZone.UTC;
-	;
+
+	@AggregatorProperty(
+			name = "align_start_time",
+			label = "Align start time",
+			description = "Setting this to true will cause the aggregation range to be aligned based on the sampling size. \" +\n" +
+					"                \"For example if your sample size is either milliseconds, seconds, minutes or hours then the start of the range will always be at the top of the hour. \" +\n" +
+					"                \"The effect of setting this to true is that your data will take the same shape when graphed as you refresh the data. \" +\n" +
+					"                \"Note that align_sampling and align_start_time are mutually exclusive. If both are set, unexpected results will occur.",
+			type = "boolean",
+			default_value = "false"
+	)
+	private long m_startTime = 0L;
+
+	@AggregatorProperty(
+			name = "align_sampling",
+			label = "Align sampling",
+			description = "When set to true the time for the aggregated data point for each range will fall\" +\n" +
+					"                \"on the start of the range instead of being the value for the first data point within that range. \" +\n" +
+					"                \"Note that align_sampling and align_start_time are mutually exclusive. If both are set, unexpected results will occur.",
+			type = "boolean",
+			default_value = "true"
+	)
+	private boolean m_alignSampling;
 
 	@NotNull
 	@Valid
-	@AggregatorCompoundProperty(name = "sampling")
+	@AggregatorCompoundProperty(label = "sampling",
+			properties = {
+					@AggregatorProperty(
+							name = "value",
+							label = "value",
+							description = "The number of units for the aggregation buckets",
+							type = "integer",
+							default_value = "1"
+					),
+					@AggregatorProperty(
+							name = "unit",
+							label = "unit",
+							description = "The unit for the aggregation buckets",
+							type = "enum",
+							options = {"years", "months", "weeks", "days", "hours", "minutes", "seconds", "milliseconds"},
+							default_value = "milliseconds"
+					)
+			}
+	)
 	protected Sampling m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
 	protected boolean m_alignStartTime;
 

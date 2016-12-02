@@ -27,5 +27,4 @@ public @interface AggregatorName
 {
 	String name();
 	String description();
-	//    AggregatorProperty[] properties() default {};
 }

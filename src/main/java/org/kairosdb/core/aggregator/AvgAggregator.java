@@ -28,13 +28,8 @@ import java.util.Iterator;
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
 @AggregatorName(
-        name = "avg",
+		name = "avg",
 		description = "Averages the data points together."
-
-		//        properties = {
-		//                @AggregatorProperty(name = "sampling", type = "duration"),
-		//                @AggregatorProperty(name="align_start_time", type="boolean")
-		//        }
 )
 public class AvgAggregator extends RangeAggregator
 {

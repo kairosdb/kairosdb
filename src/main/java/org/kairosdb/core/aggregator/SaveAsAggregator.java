@@ -12,30 +12,32 @@ import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  Created by bhawkins on 8/28/15.
  */
 @AggregatorName(
         name = "save_as",
-        description = "Saves the results to a new metric.",
-        properties = {
-                @AggregatorProperty(name = "metric_name", type = "string")
-        }
+		description = "Saves the results to a new metric."
 )
 public class SaveAsAggregator implements Aggregator, GroupByAware
 {
 	private Datastore m_datastore;
-	private String m_metricName;
 	private Map<String, String> m_tags;
 	private int m_ttl = 0;
 	private Set<String> m_tagsToKeep = new HashSet<>();
 	private boolean m_addSavedFrom = true;
+
+	@AggregatorProperty(
+			name = "save_as",
+			label = "Save As",
+			description = "The name of the new metric.",
+			type = "string",
+			default_value = "<new metric name>"
+	)
+	private String m_metricName;
+
 
 	@Inject
 	public SaveAsAggregator(Datastore datastore)

@@ -18,7 +18,6 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 
 import java.util.Collections;
@@ -26,11 +25,7 @@ import java.util.Iterator;
 
 @AggregatorName(
         name = "count",
-        description = "Counts the number of data points.",
-        properties = {
-                @AggregatorProperty(name = "sampling", type = "duration"),
-                @AggregatorProperty(name="align_start_time", type="boolean")
-        }
+		description = "Counts the number of data points."
 )
 public class CountAggregator extends RangeAggregator
 {

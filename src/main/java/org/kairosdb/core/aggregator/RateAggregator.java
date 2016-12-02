@@ -29,14 +29,20 @@ import org.kairosdb.util.Util;
 
 @AggregatorName(
         name = "rate",
-        description = "Computes the rate of change for the data points.",
-        properties = {
-                @AggregatorProperty(name = "rate", type = "timeUnit")
-        }
+		description = "Computes the rate of change for the data points."
 )
 public class RateAggregator implements Aggregator, TimezoneAware
 {
+	@AggregatorProperty(
+			name = "unit",
+			label = "Unit",
+			description = "The time unit for the rate.",
+			type = "enum",
+			options = {"MILLISECONDS", "SECONDS", "MINUTES", "HOURS", "DAYS", "WEEKS", "MONTHS", "YEARS"},
+			default_value = "MILLISECONDS"
+	)
 	private Sampling m_sampling;
+
 	private DoubleDataPointFactory m_dataPointFactory;
 	private DateTimeZone m_timeZone;
 

@@ -17,13 +17,11 @@
 package org.kairosdb.core.aggregator;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
 import com.google.inject.Binding;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 
 import java.util.*;
 
@@ -53,8 +51,8 @@ public class GuiceAggregatorFactory implements AggregatorFactory
 
 				m_aggregators.put(ann.name(), (Class<Aggregator>)bindingClass);
 
-                ImmutableList<AggregatorPropertyMetadata> properties = getAggregatorPropertyMetadata(ann);
-                m_aggregatorsMetadata.add(new AggregatorMetadata(ann.name(), ann.description(), properties));
+				//                ImmutableList<AggregatorPropertyMetadata> properties = getAggregatorPropertyMetadata(ann);
+				//                m_aggregatorsMetadata.add(new AggregatorMetadata(ann.name(), ann.description(), properties));
 			}
 		}
 		Collections.sort(m_aggregatorsMetadata, new Comparator<AggregatorMetadata>()
@@ -67,13 +65,13 @@ public class GuiceAggregatorFactory implements AggregatorFactory
 		});
 	}
 
-    private ImmutableList<AggregatorPropertyMetadata> getAggregatorPropertyMetadata(AggregatorName ann)
-    {
-        Builder<AggregatorPropertyMetadata> builder = new ImmutableList.Builder<>();
-        for (AggregatorProperty aggregatorProperty : ann.properties()) {
-            builder.add(new AggregatorPropertyMetadata(aggregatorProperty.name(), aggregatorProperty.type(), aggregatorProperty.values()));
-        } return builder.build();
-    }
+	//    private ImmutableList<AggregatorPropertyMetadata> getAggregatorPropertyMetadata(AggregatorName ann)
+	//    {
+	//        Builder<AggregatorPropertyMetadata> builder = new ImmutableList.Builder<>();
+	//        for (AggregatorProperty aggregatorProperty : ann.properties()) {
+	//            builder.add(new AggregatorPropertyMetadata(aggregatorProperty.name(), aggregatorProperty.type(), aggregatorProperty.values()));
+	//        } return builder.build();
+	//    }
 
     public Aggregator createAggregator(String name)
 	{

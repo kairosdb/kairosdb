@@ -15,10 +15,7 @@ import org.kairosdb.core.datastore.DataPointGroup;
  */
 @AggregatorName(
         name = "trim",
-        description = "Trims off the first, last or both (first and last) data points from the results.",
-        properties = {
-                @AggregatorProperty(name = "trim", type = "enum", values={"first", "last", "both"})
-        }
+		description = "Trims off the first, last or both (first and last) data points from the results."
 )
 public class TrimAggregator implements Aggregator
 {
@@ -36,6 +33,14 @@ public class TrimAggregator implements Aggregator
 		m_trim = trim;
 	}
 
+	@AggregatorProperty(
+			name = "trim",
+			label = "Trim",
+			description = "Which data point to trim",
+			type = "enum",
+			options = {"first", "last", "both"},
+			default_value = "both"
+	)
 	private Trim m_trim;
 
 	@Override

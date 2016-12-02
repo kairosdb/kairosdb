@@ -24,11 +24,7 @@ import org.kairosdb.core.datastore.DataPointGroup;
 
 @AggregatorName(
         name = "filter",
-        description = "Filters datapoints according to filter operation with a null data point.",
-        properties = {
-                @AggregatorProperty(name = "filter_op", type = "enum", values = {"lte", "lt", "gte", "gt", "equal"}),
-                @AggregatorProperty(name="threshold", type="double")
-        }
+		description = "Filters datapoints according to filter operation with a null data point."
 )
 public class FilterAggregator implements Aggregator
 {
@@ -50,7 +46,23 @@ public class FilterAggregator implements Aggregator
 		m_threshold = threshold;
 	}
 
+	@AggregatorProperty(
+			name = "filter_op",
+			label = "Filter operation",
+			description = "The operation performed for each data point.",
+			type = "enum",
+			options = {"lte", "lt", "gte", "gt", "equal"},
+			default_value = "equal"
+	)
 	private FilterOperation m_filterop;
+
+	@AggregatorProperty(
+			name = "threshold",
+			label = "Threshold",
+			description = "The value the operation is performed on. If the operation is lt, then a null data point is returned if the data point is less than the threshold.",
+			type = "double",
+			default_value = "equal"
+	)
 	private double m_threshold;
 
 	/**

@@ -34,10 +34,8 @@ import java.util.Iterator;
 import static java.lang.Math.floor;
 
 @AggregatorName(
-        name = "percentile",
-        description = "Finds the percentile of the data range.",properties = {
-            @AggregatorProperty(name = "percentile", type = "double")
-        }
+		name = "percentile",
+		description = "Finds the percentile of the data range."
 )
 public class PercentileAggregator extends RangeAggregator
 {
@@ -64,6 +62,13 @@ public class PercentileAggregator extends RangeAggregator
 	}
 
 	@NonZero
+	@AggregatorProperty(
+			name = "percentile",
+			label = "Percentile",
+			description = "Data points returned will be in this percentile.",
+			type = "double",
+			default_value = "10"
+	)
 	private double percentile;
 
 	public void setPercentile(double percentile)

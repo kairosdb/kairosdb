@@ -33,16 +33,20 @@ import static com.google.common.base.Preconditions.checkState;
 
 @AggregatorName(
         name = "sma",
-        description = "Simple moving average.",
-        properties = {
-                @AggregatorProperty(name = "size", type = "integer")
-        }
+		description = "Simple moving average."
 )
 public class SmaAggregator implements Aggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;
 
 	//@NonZero
+	@AggregatorProperty(
+			name = "size",
+			label = "Size",
+			description = "The period of the moving average. This is the number of data point to use each time the average is calculated.",
+			type = "integer",
+			default_value = "10"
+	)
 	private int m_size;
 
 	@Inject

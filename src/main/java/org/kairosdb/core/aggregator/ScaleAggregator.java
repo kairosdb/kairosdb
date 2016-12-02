@@ -32,13 +32,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 @AggregatorName(
         name = "scale",
-        description = "Scales each data point by a factor.",
-        properties = {
-                @AggregatorProperty(name = "factor", type = "double")
-        }
+		description = "Scales each data point by a factor."
 )
 public class ScaleAggregator implements Aggregator
 {
+	@AggregatorProperty(
+			name = "factor",
+			label = "Factor",
+			description = "The value to scale each data point by.",
+			type = "double",
+			default_value = "1"
+	)
 	private double m_factor;
 	private DoubleDataPointFactory m_dataPointFactory;
 

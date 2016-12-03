@@ -21,14 +21,18 @@ import com.google.inject.Binding;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import org.kairosdb.core.aggregator.annotation.AggregatorCompoundProperty;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.util.*;
 
 public class GuiceAggregatorFactory implements AggregatorFactory
 {
 	private Map<String, Class<Aggregator>> m_aggregators = new HashMap<>();
-    private List<AggregatorMetadata> m_aggregatorsMetadata = new ArrayList<>();
+	private List<AggregatorMetadata> m_aggregatorsMetadata = new ArrayList<>();
 	private Injector m_injector;
 
 
@@ -39,20 +43,19 @@ public class GuiceAggregatorFactory implements AggregatorFactory
 		m_injector = injector;
 		Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
 
-        for (Key<?> key : bindings.keySet())
+		for (Key<?> key : bindings.keySet())
 		{
 			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (Aggregator.class.isAssignableFrom(bindingClass))
 			{
 				AggregatorName ann = bindingClass.getAnnotation(AggregatorName.class);
 				if (ann == null)
-					throw new IllegalStateException("Aggregator class " + bindingClass.getName()+
+					throw new IllegalStateException("Aggregator class " + bindingClass.getName() +
 							" does not have required annotation " + AggregatorName.class.getName());
 
-				m_aggregators.put(ann.name(), (Class<Aggregator>)bindingClass);
-
-				//                ImmutableList<AggregatorPropertyMetadata> properties = getAggregatorPropertyMetadata(ann);
-				//                m_aggregatorsMetadata.add(new AggregatorMetadata(ann.name(), ann.description(), properties));
+				m_aggregators.put(ann.name(), (Class<Aggregator>) bindingClass);
+				List<Annotation> fieldAnnotations = getFieldAnnotations(new ArrayList<Annotation>(), bindingClass);
+				m_aggregatorsMetadata.add(new AggregatorMetadata(ann, fieldAnnotations));
 			}
 		}
 		Collections.sort(m_aggregatorsMetadata, new Comparator<AggregatorMetadata>()
@@ -65,28 +68,42 @@ public class GuiceAggregatorFactory implements AggregatorFactory
 		});
 	}
 
-	//    private ImmutableList<AggregatorPropertyMetadata> getAggregatorPropertyMetadata(AggregatorName ann)
-	//    {
-	//        Builder<AggregatorPropertyMetadata> builder = new ImmutableList.Builder<>();
-	//        for (AggregatorProperty aggregatorProperty : ann.properties()) {
-	//            builder.add(new AggregatorPropertyMetadata(aggregatorProperty.name(), aggregatorProperty.type(), aggregatorProperty.values()));
-	//        } return builder.build();
-	//    }
-
-    public Aggregator createAggregator(String name)
+	public Aggregator createAggregator(String name)
 	{
 		Class<Aggregator> aggClass = m_aggregators.get(name);
 
 		if (aggClass == null)
 			return (null);
 
-        return (m_injector.getInstance(aggClass));
+		return (m_injector.getInstance(aggClass));
 	}
 
-    @Override
-    public ImmutableList<AggregatorMetadata> getAggregatorMetadata()
-    {
-        return new ImmutableList.Builder<AggregatorMetadata>().addAll(m_aggregatorsMetadata).build();
-    }
+	@Override
+	public ImmutableList<AggregatorMetadata> getAggregatorMetadata()
+	{
+		return new ImmutableList.Builder<AggregatorMetadata>().addAll(m_aggregatorsMetadata).build();
+	}
 
+	private List<Annotation> getFieldAnnotations(List<Annotation> annotations, Class type)
+	{
+		Field[] fields = type.getDeclaredFields();
+		for (Field field : fields)
+		{
+			if (field.getAnnotation(AggregatorProperty.class) != null)
+			{
+				annotations.add(field.getAnnotation(AggregatorProperty.class));
+			}
+			if (field.getAnnotation(AggregatorCompoundProperty.class) != null)
+			{
+				annotations.add(field.getAnnotation(AggregatorCompoundProperty.class));
+			}
+		}
+
+		if (type.getSuperclass() != null)
+		{
+			getFieldAnnotations(annotations, type.getSuperclass());
+		}
+
+		return annotations;
+	}
 }

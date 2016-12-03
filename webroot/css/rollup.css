@@ -67,3 +67,13 @@ h1 {
     padding:0;
     line-height:16px;
 }
+
+.word-break-tooltip + .tooltip > .tooltip-inner {
+    word-break: break-all;
+}
+
+.ellipsis {
+    width: 170px;
+    display:block;
+}
+

@@ -9,23 +9,24 @@ module.directive('editable', function ($compile)
 {
     var template = '' +
             '<span>' +
-            '<input class="small-input" type="text" ' +
-            '	ng-model="model"  ' +
-            '	ng-blur="$parent.onBlur($parent.task)" ' +
-            '	ng-show="edit" ' +
-            '	my-blur="edit">' +
-            '</>' +
+            '   <input class="small-input" type="text" ' +
+            '	    ng-model="model"  ' +
+            '	    ng-blur="$parent.onBlur($parent.task)" ' +
+            '	    ng-show="edit" ' +
+            '	    my-blur="edit">' +
 
-            '<a href="" ' +
-            '	ng-show="!edit && !$parent.task.complex" ' +
-            '	ng-click="onClick()" ' +
-            '	ng-class="model.indexOf(\'<\') == 0 ? \'gray\' : \'black\'">{{model}}</a>' +
-
-            '	<span ng-show="$parent.task.complex">{{model}}</span> ' +
+            '   <a href="" ' +
+            '       class="ellipsis word-break-tooltip"' +
+            '	    ng-show="!edit && !$parent.task.complex" ' +
+            '	    ng-click="onClick()" ' +
+            '       data-title="{{model}}" bs-tooltip ' +
+            '	    ng-class="model.indexOf(\'<\') == 0 ? \'gray\' : \'black\'">{{model}}</a>' +
+            '   <span class="ellipsis" ng-show="$parent.task.complex">{{model}}</span> ' +
             '</span>';
 
     var linker = function (scope, element, attributes)
     {
+        scope.$watch();
 
         scope.onClick = function ()
         {
@@ -49,8 +50,20 @@ module.directive('editable', function ($compile)
             });
         };
 
-        element.html(template).show();
+        scope.ellipsify = function (element)
+        {
+            if (element.scrollWidth > element.offsetWidth) {
+                var textNode = element.firstChild;
+                var value = '...' + textNode.nodeValue;
+                do {
+                    value = '...' + value.substr(4);
+                    textNode.nodeValue = value;
 
+                } while (element.scrollWidth > element.offsetWidth);
+            }
+        };
+
+        element.html(template).show();
         $compile(element.contents())(scope);
     };
 
@@ -89,7 +102,9 @@ module.directive('autocompleteeditable', function ()
         '</>' +
 
         '<a href="" ' +
+        '   class="ellipsis word-break-tooltip"' +
         '	ng-show="!edit && !task.complex" ' +
+        '   data-title="{{task.metric_name}}" bs-tooltip' +
         '	ng-class="task.metric_name.indexOf(\'<\') == 0 ? \'gray\' : \'black\'"' +
         '>{{task.metric_name}}</a>' +
 
@@ -182,27 +197,6 @@ module.directive('focusOnShow', function ($timeout)
                 })
             }
 
-        }
-    };
-});
-
-// This is needed by dynamically created elements. The regular tooltip mechanism
-// does not work for dynamic elements
-module.directive('bsTooltip', function ()
-{
-    return {
-        restrict: 'A',
-        link: function (scope, element, attrs)
-        {
-            $(element).hover(function ()
-            {
-                // on mouseenter
-                $(element).tooltip('show');
-            }, function ()
-            {
-                // on mouseleave
-                $(element).tooltip('hide');
-            });
         }
     };
 });
@@ -475,7 +469,7 @@ module.directive('aggregatornamedropdown', function ($compile)
             html += '	<ul class="dropdown-menu" aria-labelledby="aggregatorDropdown">';
             html += '   <li ng-repeat="descriptor in descriptors">';
 			html += '       <a href="#" ng-click="setName(agg, descriptor.name, descriptors)"' +
-                    '           title="{{descriptor.description}}">';
+                    '           data-title="{{descriptor.description}}" bs-tooltip data-placement="left">';
             html += '           {{ descriptor.name }}';
             html += '       </a>';
             html += '   </li>';
@@ -622,3 +616,6 @@ module.directive('samplingunitdropdown', function ($compile)
         }
     }
 });
+
+
+// todo change use of "scope" to "$scope" for consistency

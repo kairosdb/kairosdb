@@ -20,6 +20,7 @@ import org.joda.time.DateTimeField;
 import org.joda.time.DateTimeZone;
 import org.joda.time.chrono.GregorianChronology;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;

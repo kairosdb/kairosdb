@@ -9,7 +9,6 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	$scope.TOOLTIP_ADD_ROLL_UP = "Add new roll-up";
 	$scope.TOOLTIP_PASTE_QUERY = "Paste query to create a roll-up";
 	$scope.TOOLTIP_DELETE_ROLLUP = "Delete roll-up";
-	$scope.TOOLTIP_SAMPLING_HELP = "Sampling help";
 	$scope.TOOLTIP_TASK_NAME = "The name of the roll-up name";
 	$scope.TOOLTIP_METRIC_NAME = "The metric the roll-up will query";
 	$scope.TOOLTIP_SAVE_AS = "The new metric that will be created by the roll-up";

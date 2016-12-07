@@ -28,7 +28,8 @@ Metrics Reported
 * *kairosdb.datastore.query_time* - The number of milliseconds to retreive the data out of Cassandra for a query (not including key lookup).
 * *kairosdb.datastore.write_size* - The number of data points written to the data store during the last write.
 * *kairosdb.http.ingest_count* - The number of data points ingested via HTTP since the last report.
-* *kairosdb.http.ingest_time* - The amount of time to ingest the number of metrics from kairosdb.http.ingest_count. More specifically, it is the time it takes for KairosDB to process the incoming data points and add them to a queue to be flushed to Cassandra. Ingest_count / ingest_time is an average of how fast a single metric is inserted.* *kairosdb.http.query_time* - The amount of time a query takes from processing the request to formating the response.  Does not include time to send data to client.
+* *kairosdb.http.ingest_time* - The amount of time to ingest the number of metrics from kairosdb.http.ingest_count. More specifically, it is the time it takes for KairosDB to process the incoming data points and add them to a queue to be flushed to Cassandra. Ingest_count / ingest_time is an average of how fast a single metric is inserted.
+* *kairosdb.http.query_time* - The amount of time a query takes from processing the request to formating the response.  Does not include time to send data to client.
 * *kairosdb.http.request_time* - The total amount of time an HTTP request takes from recieving data to sending response.
 * *kairosdb.jvm.free_memory* - The amount of free memory available in the JVM.
 * *kairosdb.jvm.total_memory* - The amount of total memory in the JVM.

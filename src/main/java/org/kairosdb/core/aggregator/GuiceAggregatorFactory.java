@@ -24,10 +24,16 @@ import com.google.inject.Key;
 import org.kairosdb.core.aggregator.annotation.AggregatorCompoundProperty;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.aggregator.json.AggregatorMetadata;
+import org.kairosdb.core.aggregator.json.AggregatorPropertyMetadata;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class GuiceAggregatorFactory implements AggregatorFactory
 {
@@ -54,8 +60,8 @@ public class GuiceAggregatorFactory implements AggregatorFactory
 							" does not have required annotation " + AggregatorName.class.getName());
 
 				m_aggregators.put(ann.name(), (Class<Aggregator>) bindingClass);
-				List<Annotation> fieldAnnotations = getFieldAnnotations(new ArrayList<Annotation>(), bindingClass);
-				m_aggregatorsMetadata.add(new AggregatorMetadata(ann, fieldAnnotations));
+				List<AggregatorPropertyMetadata> properties = getPropertyMetadata(new ArrayList<AggregatorPropertyMetadata>(), bindingClass);
+				m_aggregatorsMetadata.add(new AggregatorMetadata(ann, properties));
 			}
 		}
 		Collections.sort(m_aggregatorsMetadata, new Comparator<AggregatorMetadata>()
@@ -84,26 +90,35 @@ public class GuiceAggregatorFactory implements AggregatorFactory
 		return new ImmutableList.Builder<AggregatorMetadata>().addAll(m_aggregatorsMetadata).build();
 	}
 
-	private List<Annotation> getFieldAnnotations(List<Annotation> annotations, Class type)
+	private List<AggregatorPropertyMetadata> getPropertyMetadata(List<AggregatorPropertyMetadata> properties, Class type)
 	{
 		Field[] fields = type.getDeclaredFields();
 		for (Field field : fields)
 		{
 			if (field.getAnnotation(AggregatorProperty.class) != null)
 			{
-				annotations.add(field.getAnnotation(AggregatorProperty.class));
+				properties.add(new AggregatorPropertyMetadata(field.getAnnotation(AggregatorProperty.class)));
 			}
 			if (field.getAnnotation(AggregatorCompoundProperty.class) != null)
 			{
-				annotations.add(field.getAnnotation(AggregatorCompoundProperty.class));
+				properties.add(new AggregatorPropertyMetadata(field.getAnnotation(AggregatorCompoundProperty.class)));
 			}
 		}
 
 		if (type.getSuperclass() != null)
 		{
-			getFieldAnnotations(annotations, type.getSuperclass());
+			getPropertyMetadata(properties, type.getSuperclass());
 		}
 
-		return annotations;
+        Collections.sort(properties, new Comparator<AggregatorPropertyMetadata>()
+        {
+            @Override
+            public int compare(AggregatorPropertyMetadata o1, AggregatorPropertyMetadata o2)
+            {
+                return o1.getLabel().compareTo(o2.getLabel());
+            }
+        });
+
+		return properties;
 	}
 }

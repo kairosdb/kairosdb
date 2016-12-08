@@ -18,6 +18,7 @@ package org.kairosdb.core.aggregator;
 
 import com.google.common.collect.ImmutableList;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.aggregator.json.AggregatorMetadata;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.exception.KairosDBException;
 

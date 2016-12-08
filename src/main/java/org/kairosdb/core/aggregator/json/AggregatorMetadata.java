@@ -1,10 +1,11 @@
-package org.kairosdb.core.aggregator;
+package org.kairosdb.core.aggregator.json;
 
 
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Inject;
+import com.google.common.collect.ImmutableList.Builder;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+
+import java.util.List;
 
 public class AggregatorMetadata
 {
@@ -12,18 +13,12 @@ public class AggregatorMetadata
 	private final String description;
 	private final ImmutableList<AggregatorPropertyMetadata> properties;
 
-	@Inject
-	public AggregatorMetadata(AggregatorName name, AggregatorProperty[] propertyArray)
+	public AggregatorMetadata(AggregatorName name, List<AggregatorPropertyMetadata> properties)
 	{
 		this.name = name.name();
 		this.description = name.description();
-
-		ImmutableList.Builder<AggregatorPropertyMetadata> builder = ImmutableList.builder();
-		for (AggregatorProperty property : propertyArray)
-		{
-			builder.add(new AggregatorPropertyMetadata(property));
-		}
-		properties = builder.build();
+        Builder<AggregatorPropertyMetadata> builder = ImmutableList.builder();
+        this.properties = builder.addAll(properties).build();
 	}
 
 	public String getName()

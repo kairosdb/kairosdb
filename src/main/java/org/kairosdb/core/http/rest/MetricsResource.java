@@ -27,7 +27,7 @@ import com.google.inject.name.Named;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.aggregator.AggregatorFactory;
-import org.kairosdb.core.aggregator.AggregatorMetadata;
+import org.kairosdb.core.aggregator.json.AggregatorMetadata;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.StringDataPointFactory;

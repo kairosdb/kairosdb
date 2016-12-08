@@ -1,6 +1,8 @@
-package org.kairosdb.core.aggregator;
+package org.kairosdb.core.aggregator.json;
 
-import com.google.inject.Inject;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
+import org.kairosdb.core.aggregator.annotation.AggregatorCompoundProperty;
 import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 
 public class AggregatorPropertyMetadata
@@ -13,8 +15,8 @@ public class AggregatorPropertyMetadata
     private String[] options;
     private Object defaultValue;
     private String validation;
+    private ImmutableList<AggregatorPropertyMetadata> properties;
 
-    @Inject
     public AggregatorPropertyMetadata(AggregatorProperty property)
     {
         this.name = property.name();
@@ -25,6 +27,17 @@ public class AggregatorPropertyMetadata
         this.options = property.options();
         this.defaultValue = property.default_value();
         this.validation = property.validation();
+    }
+
+    public AggregatorPropertyMetadata(AggregatorCompoundProperty compoundProperty)
+    {
+        this.label = compoundProperty.label();
+
+        Builder<AggregatorPropertyMetadata> builder = ImmutableList.builder();
+        for (AggregatorProperty aggregatorProperty : compoundProperty.properties()) {
+            builder.add(new AggregatorPropertyMetadata(aggregatorProperty));
+        }
+        properties = builder.build();
     }
 
     public String getName()
@@ -65,5 +78,10 @@ public class AggregatorPropertyMetadata
     public String getValidation()
     {
         return validation;
+    }
+
+    public ImmutableList<AggregatorPropertyMetadata> getProperties()
+    {
+        return properties;
     }
 }

@@ -442,6 +442,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	@Subscribe
 	public void putDataPoint(DataPointEvent dataPointEvent) throws DatastoreException
 	{
+		if (dataPointEvent.getMetricName().startsWith("blast"))
+			return;
 		m_queueProcessor.put(dataPointEvent);
 	}
 
@@ -455,11 +457,11 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	private void submitEvents(List<DataPointEvent> events, EventCompletionCallBack callBack)
 	{
 		//System.out.println("Running Batch");
-		/*BatchStatement metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+		BatchStatement metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 		BatchStatement tagNameBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 		BatchStatement tagValueBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 		BatchStatement dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-		BatchStatement rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);*/
+		BatchStatement rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 
 		//System.out.println(events.size());
 		try
@@ -467,6 +469,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 			for (DataPointEvent event : events)
 			{
 				String metricName = event.getMetricName();
+				if (metricName.startsWith("blast"))
+					continue;
+
 				ImmutableSortedMap<String, String> tags = event.getTags();
 				DataPoint dataPoint = event.getDataPoint();
 				int ttl = event.getTtl();

@@ -21,7 +21,7 @@ public class CongestionExecutorService extends AbstractExecutorService
 	private final ThreadGroup m_threadGroup;
 	private final CongestionSemaphore m_semaphore;
 	private final CongestionTimer m_congestionTimer;
-	private int m_permitCount = 1;
+	private int m_permitCount = 3;
 
 	@Inject
 	private DoubleDataPointFactory m_dataPointFactory = new DoubleDataPointFactoryImpl();
@@ -48,9 +48,9 @@ public class CongestionExecutorService extends AbstractExecutorService
 
 	private void increasePermitCount()
 	{
-		m_permitCount ++;
+		/*m_permitCount ++;
 		m_congestionTimer.setTaskPerBatch(m_permitCount);
-		m_semaphore.release();
+		m_semaphore.release();*/
 	}
 
 	@Override
@@ -132,7 +132,6 @@ public class CongestionExecutorService extends AbstractExecutorService
 		public void run()
 		{
 			//System.out.println("DynamicFutureTask.run");
-			//Todo start stopwatch
 			m_stopwatch.start();
 			super.run();
 			m_stopwatch.stop();

@@ -442,8 +442,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	@Subscribe
 	public void putDataPoint(DataPointEvent dataPointEvent) throws DatastoreException
 	{
-		if (dataPointEvent.getMetricName().startsWith("blast"))
-			return;
+		/*if (dataPointEvent.getMetricName().startsWith("blast"))
+			return;*/
 		m_queueProcessor.put(dataPointEvent);
 	}
 
@@ -469,8 +469,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 			for (DataPointEvent event : events)
 			{
 				String metricName = event.getMetricName();
-				if (metricName.startsWith("blast"))
-					continue;
+				/*if (metricName.startsWith("blast"))
+					continue;*/
 
 				ImmutableSortedMap<String, String> tags = event.getTags();
 				DataPoint dataPoint = event.getDataPoint();

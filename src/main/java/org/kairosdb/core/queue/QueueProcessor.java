@@ -214,8 +214,15 @@ public class QueueProcessor implements KairosMetricReporter
 
 			m_internalMetrics.add(new DataPointEvent("kairosdb.queue.process_count", tag,
 					m_dataPointFactory.createDataPoint(now, m_readFromQueueCount.getAndSet(0))));
+
+			//todo: need to report how far behind current index is from the head of the queue
+
+			//todo: report memory queue size as well.
 		}
 
+		//metrics are sent directly to the datastore instead of the usual means
+		//other wise queue size information would get behind if the queue was
+		//overflowing
 		return Collections.emptyList();
 	}
 
@@ -293,6 +300,7 @@ public class QueueProcessor implements KairosMetricReporter
 							stopwatch.start();
 						}
 
+						//System.out.println(results.getRight().size());
 						m_processorHandler.handleEvents(results.getRight(), callbackToPass);
 					}
 				}

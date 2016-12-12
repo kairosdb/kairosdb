@@ -51,6 +51,7 @@ public class RemoteDatastore implements Datastore
 	public static final Logger logger = LoggerFactory.getLogger(RemoteDatastore.class);
 	public static final String DATA_DIR_PROP = "kairosdb.datastore.remote.data_dir";
 	public static final String REMOTE_URL_PROP = "kairosdb.datastore.remote.remote_url";
+	public static final String METRIC_PREFIX_FILTER = "kairosdb.datastore.remote.prefix_filter";
 
 	public static final String FILE_SIZE_METRIC = "kairosdb.datastore.remote.file_size";
 	public static final String ZIP_FILE_SIZE_METRIC = "kairosdb.datastore.remote.zip_file_size";
@@ -75,6 +76,10 @@ public class RemoteDatastore implements Datastore
 	@Inject
 	@Named("HOSTNAME")
 	private String m_hostName = "localhost";
+
+	@Inject(optional = true)
+	@Named(METRIC_PREFIX_FILTER)
+	private String m_prefixFilter = null;
 
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
@@ -273,6 +278,8 @@ public class RemoteDatastore implements Datastore
 			DataPoint dataPoint, int ttl) throws DatastoreException
 	{
 		DataPointKey key = new DataPointKey(metricName, tags, dataPoint.getApiDataType(), ttl);
+		if ((m_prefixFilter != null) && (!metricName.startsWith(m_prefixFilter)))
+			return;
 
 		synchronized (m_mapLock)
 		{

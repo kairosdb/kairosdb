@@ -203,27 +203,49 @@ public class QueueProcessor implements KairosMetricReporter
 	{
 		//todo make member variable
 		ImmutableSortedMap<String, String> tag = ImmutableSortedMap.of("host", m_hostName);
+		long arraySize = m_bigArray.size();
+		long readFromFile = m_readFromFileCount.getAndSet(0);
+		long readFromQueue = m_readFromQueueCount.getAndSet(0);
 
 		synchronized (m_lock)
 		{
 			m_internalMetrics.add(new DataPointEvent("kairosdb.queue.file_queue.size", tag,
-					m_dataPointFactory.createDataPoint(now, m_bigArray.size())));
+					m_dataPointFactory.createDataPoint(now, arraySize)));
 
 			m_internalMetrics.add(new DataPointEvent("kairosdb.queue.read_from_file", tag,
-					m_dataPointFactory.createDataPoint(now, m_readFromFileCount.getAndSet(0))));
+					m_dataPointFactory.createDataPoint(now, readFromFile)));
 
 			m_internalMetrics.add(new DataPointEvent("kairosdb.queue.process_count", tag,
-					m_dataPointFactory.createDataPoint(now, m_readFromQueueCount.getAndSet(0))));
+					m_dataPointFactory.createDataPoint(now, readFromQueue)));
 
 			//todo: need to report how far behind current index is from the head of the queue
 
 			//todo: report memory queue size as well.
 		}
 
-		//metrics are sent directly to the datastore instead of the usual means
-		//other wise queue size information would get behind if the queue was
-		//overflowing
-		return Collections.emptyList();
+		//Todo: add reason why double reporting.
+
+		ArrayList<DataPointSet> ret = new ArrayList<>();
+
+		DataPointSet dps = new DataPointSet("kairosdb.queue.file_queue.size");
+		dps.addTag("host", m_hostName);
+		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, arraySize));
+
+		ret.add(dps);
+
+		dps = new DataPointSet("kairosdb.queue.read_from_file");
+		dps.addTag("host", m_hostName);
+		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, readFromFile));
+
+		ret.add(dps);
+
+		dps = new DataPointSet("kairosdb.queue.process_count");
+		dps.addTag("host", m_hostName);
+		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, readFromQueue));
+
+		ret.add(dps);
+
+		return ret;
 	}
 
 

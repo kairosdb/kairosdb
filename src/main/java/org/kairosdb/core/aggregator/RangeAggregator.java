@@ -40,7 +40,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	private boolean m_alignSampling;
 	private boolean m_exhaustive;
 	private DateTimeZone m_timeZone = DateTimeZone.UTC;
-	;
+	
 
 	@NotNull
 	@Valid

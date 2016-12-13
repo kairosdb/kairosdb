@@ -60,6 +60,10 @@
 			<exclude org="javax.servlet" module="servlet-api"/>
 		</dependency>
 
+		<dependency org="com.netflix.astyanax" name="astyanax-core" rev="3.9.0" />
+		<dependency org="com.netflix.astyanax" name="astyanax-thrift" rev="3.9.0" />
+		<dependency org="com.netflix.astyanax" name="astyanax-cassandra" rev="3.9.0" />
+
 		<!-- Jetty server stuff -->
 		<dependency org="org.eclipse.jetty" name="jetty-server"
 		            rev="8.1.16.v20140903"/>

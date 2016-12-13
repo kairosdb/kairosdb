@@ -21,7 +21,7 @@ public class CongestionExecutorService extends AbstractExecutorService
 	private final ThreadGroup m_threadGroup;
 	private final CongestionSemaphore m_semaphore;
 	private final CongestionTimer m_congestionTimer;
-	private int m_permitCount = 3;
+	private int m_permitCount = 10;
 
 	@Inject
 	private DoubleDataPointFactory m_dataPointFactory = new DoubleDataPointFactoryImpl();

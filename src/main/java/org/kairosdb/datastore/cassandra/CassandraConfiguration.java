@@ -26,6 +26,8 @@ public class CassandraConfiguration
 	public static final String MULTI_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_read_size";
 	public static final String MULTI_ROW_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_size";
 
+	public static final String USE_THRIFT = "kairosdb.datastore.cassandra.use_thrift";
+
 
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
@@ -78,6 +80,10 @@ public class CassandraConfiguration
 	@Inject
 	@Named(KEYSPACE_PROPERTY)
 	private String m_keyspaceName;
+
+	@Inject
+	@Named(USE_THRIFT)
+	private boolean m_useThrift = false;
 
 
 	public CassandraConfiguration()
@@ -164,5 +170,10 @@ public class CassandraConfiguration
 	public String getKeyspaceName()
 	{
 		return m_keyspaceName;
+	}
+
+	public boolean isUseThrift()
+	{
+		return m_useThrift;
 	}
 }

@@ -23,21 +23,15 @@ import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import me.prettyprint.cassandra.model.ConfigurableConsistencyLevel;
-import me.prettyprint.cassandra.serializers.BytesArraySerializer;
-import me.prettyprint.cassandra.serializers.IntegerSerializer;
 import me.prettyprint.cassandra.serializers.StringSerializer;
 import me.prettyprint.cassandra.service.CassandraHostConfigurator;
 import me.prettyprint.cassandra.service.ColumnSliceIterator;
-import me.prettyprint.cassandra.service.ThriftKsDef;
 import me.prettyprint.hector.api.Cluster;
 import me.prettyprint.hector.api.Keyspace;
-import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
-import me.prettyprint.hector.api.ddl.ComparatorType;
 import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
 import me.prettyprint.hector.api.exceptions.HectorException;
 import me.prettyprint.hector.api.factory.HFactory;
 import me.prettyprint.hector.api.query.SliceQuery;
-import org.h2.command.Prepared;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
@@ -52,18 +46,14 @@ import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.events.RowKeyEvent;
 import org.kairosdb.util.CongestionExecutorService;
-import org.kairosdb.util.KDataOutput;
 import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -123,9 +113,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	public static final String ROW_KEY_COUNT = "kairosdb.datastore.cassandra.row_key_count";
 
 
-	public static final String CF_DATA_POINTS = "data_points";
-	public static final String CF_ROW_KEY_INDEX = "row_key_index";
-	public static final String CF_STRING_INDEX = "string_index";
+	public static final String CF_DATA_POINTS_NAME = "data_points";
+	public static final String CF_ROW_KEY_INDEX_NAME = "row_key_index";
+	public static final String CF_STRING_INDEX_NAME = "string_index";
 
 	public static final String ROW_KEY_METRIC_NAMES = "metric_names";
 	public static final String ROW_KEY_TAG_NAMES = "tag_names";
@@ -138,7 +128,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 
 
 	//new properties
-	CassandraClient m_cassandraClient;
+	private final CassandraClient m_cassandraClient;
+	private final AstyanaxClient m_astyanaxClient;
 
 	private Session m_session;
 	private final PreparedStatement m_psInsertData;
@@ -146,6 +137,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	private final PreparedStatement m_psInsertString;
 	private BatchStatement m_batchStatement;
 	private final Object m_batchLock = new Object();
+
+	private final boolean m_useThrift;
 	//End new props
 
 
@@ -175,6 +168,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	@Inject
 	public CassandraDatastore(@Named("HOSTNAME") final String hostname,
 			CassandraClient cassandraClient,
+			AstyanaxClient astyanaxClient,
 			CassandraConfiguration cassandraConfiguration,
 			HectorConfiguration configuration,
 			KairosDataPointFactory kairosDataPointFactory,
@@ -183,10 +177,13 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 			CongestionExecutorService congestionExecutor) throws DatastoreException
 	{
 		m_cassandraClient = cassandraClient;
+		m_astyanaxClient = astyanaxClient;
 		m_kairosDataPointFactory = kairosDataPointFactory;
 		m_queueProcessor = queueProcessor;
 		m_congestionExecutor = congestionExecutor;
 		m_eventBus = eventBus;
+
+		m_useThrift = cassandraConfiguration.isUseThrift();
 
 		setupSchema();
 
@@ -218,10 +215,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 
 			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
 
-			if (keyspaceDef == null)
-			{
-				createSchema(m_cassandraConfiguration.getReplicationFactor());
-			}
 
 			//set global consistency level
 			ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
@@ -231,40 +224,12 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 			//create keyspace instance with specified consistency
 			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
 
-			ReentrantLock mutatorLock = new ReentrantLock();
-
-			/*m_dataPointWriteBuffer = new WriteBuffer<DataPointsRowKey, Integer, byte[]>(
-					m_keyspace, CF_DATA_POINTS, m_cassandraConfiguration.getWriteDelay(),
-					m_cassandraConfiguration.getMaxWriteSize(),
-					DATA_POINTS_ROW_KEY_SERIALIZER,
-					IntegerSerializer.get(),
-					BytesArraySerializer.get(),
-					createWriteBufferStats(CF_DATA_POINTS, hostname),
-					mutatorLock, threadCount);*/
-
-			/*m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
-					m_keyspace, CF_ROW_KEY_INDEX, m_cassandraConfiguration.getWriteDelay(),
-					m_cassandraConfiguration.getMaxWriteSize(),
-					StringSerializer.get(),
-					DATA_POINTS_ROW_KEY_SERIALIZER,
-					StringSerializer.get(),
-					createWriteBufferStats(CF_ROW_KEY_INDEX, hostname),
-					mutatorLock, threadCount);/*
-
-			/*m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
-					m_keyspace, CF_STRING_INDEX,
-					m_cassandraConfiguration.getWriteDelay(),
-					m_cassandraConfiguration.getMaxWriteSize(),
-					StringSerializer.get(),
-					StringSerializer.get(),
-					StringSerializer.get(),
-					createWriteBufferStats(CF_STRING_INDEX, hostname),
-					mutatorLock, threadCount);*/
 		}
 		catch (HectorException e)
 		{
 			throw new DatastoreException(e);
 		}
+
 
 		//This needs to be done last as it tells the processor we are ready for data
 		m_queueProcessor.setProcessorHandler(this);
@@ -389,13 +354,13 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 		/*List<ColumnFamilyDefinition> cfDef = new ArrayList<ColumnFamilyDefinition>();
 
 		cfDef.add(HFactory.createColumnFamilyDefinition(
-				m_keyspaceName, CF_DATA_POINTS, ComparatorType.BYTESTYPE));
+				m_keyspaceName, CF_DATA_POINTS_NAME, ComparatorType.BYTESTYPE));
 
 		cfDef.add(HFactory.createColumnFamilyDefinition(
-				m_keyspaceName, CF_ROW_KEY_INDEX, ComparatorType.BYTESTYPE));
+				m_keyspaceName, CF_ROW_KEY_INDEX_NAME, ComparatorType.BYTESTYPE));
 
 		cfDef.add(HFactory.createColumnFamilyDefinition(
-				m_keyspaceName, CF_STRING_INDEX, ComparatorType.UTF8TYPE));
+				m_keyspaceName, CF_STRING_INDEX_NAME, ComparatorType.UTF8TYPE));
 
 		KeyspaceDefinition newKeyspace = HFactory.createKeyspaceDefinition(
 				m_keyspaceName, ThriftKsDef.DEF_STRATEGY_CLASS,
@@ -450,18 +415,20 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	@Override
 	public void handleEvents(List<DataPointEvent> events, EventCompletionCallBack eventCompletionCallBack)
 	{
-		BatchHandler batchHandler = new BatchHandler(events, eventCompletionCallBack);
+		Callable<Long> batchHandler;
+
+		if (m_useThrift)
+			batchHandler = new AstyanaxBatchHandler(events, eventCompletionCallBack);
+		else
+			batchHandler = new CQLBatchHandler(events, eventCompletionCallBack);
+
 		m_congestionExecutor.submit(batchHandler);
 	}
 
-	private void submitEvents(List<DataPointEvent> events, EventCompletionCallBack callBack)
+	private void submitEvents(List<DataPointEvent> events, EventCompletionCallBack callBack,
+			BatchClient batchClient)
 	{
 		//System.out.println("Running Batch");
-		BatchStatement metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-		BatchStatement tagNameBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-		BatchStatement tagValueBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-		BatchStatement dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-		BatchStatement rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 
 		//System.out.println(events.size());
 		try
@@ -496,12 +463,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 				DataPointsRowKey cachedKey = m_rowKeyCache.cacheItem(rowKey);
 				if (cachedKey == null)
 				{
-					BoundStatement bs = new BoundStatement(m_psInsertRowKey);
-					bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
-					bs.setBytes(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
-					bs.setInt(2, rowKeyTtl);
-					m_session.executeAsync(bs);
-					//rowKeyBatch.add(bs);
+					batchClient.addRowKey(metricName, rowKey, rowKeyTtl);
 
 					m_eventBus.post(new RowKeyEvent(metricName, rowKey, rowKeyTtl));
 				}
@@ -518,12 +480,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 								"Attempted to add empty metric name to string index. Row looks like: " + dataPoint
 						);
 					}
-					BoundStatement bs = new BoundStatement(m_psInsertString);
-					bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
-					bs.setString(1, metricName);
+					batchClient.addMetricName(metricName);
 
-					m_session.executeAsync(bs);
-					//metricNamesBatch.add(bs);
 				/*m_stringIndexWriteBuffer.addData(ROW_KEY_METRIC_NAMES,
 						metricName, "", now);*/
 				}
@@ -540,12 +498,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 									"Attempted to add empty tagName to string cache for metric: " + metricName
 							);
 						}
-						BoundStatement bs = new BoundStatement(m_psInsertString);
-						bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_NAMES.getBytes(UTF_8)));
-						bs.setString(1, tagName);
-
-						tagNameBatch.add(bs);
-
+						batchClient.addTagName(tagName);
 					}
 
 					String value = tags.get(tagName);
@@ -558,53 +511,27 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 									"Attempted to add empty tagValue (tag name " + tagName + ") to string cache for metric: " + metricName
 							);
 						}
-						BoundStatement bs = new BoundStatement(m_psInsertString);
-						bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_VALUES.getBytes(UTF_8)));
-						bs.setString(1, value);
+						batchClient.addTagValue(value);
 
-						tagValueBatch.add(bs);
 					/*m_stringIndexWriteBuffer.addData(ROW_KEY_TAG_VALUES,
 							value, "", now);*/
 					}
 				}
 
 				int columnTime = getColumnName(rowTime, dataPoint.getTimestamp());
-				KDataOutput kDataOutput = new KDataOutput();
-				dataPoint.writeValueToBuffer(kDataOutput);
+
 			/*m_dataPointWriteBuffer.addData(rowKey, columnTime,
 					kDataOutput.getBytes(), writeTime, ttl);*/
 
+				batchClient.addDataPoint(rowKey, columnTime, dataPoint, ttl);
 
-				BoundStatement boundStatement = new BoundStatement(m_psInsertData);
-				boundStatement.setBytes(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
-				ByteBuffer b = ByteBuffer.allocate(4);
-				b.putInt(columnTime);
-				b.rewind();
-				boundStatement.setBytes(1, b);
-				boundStatement.setBytes(2, ByteBuffer.wrap(kDataOutput.getBytes()));
-				boundStatement.setInt(3, ttl);
-				//m_session.executeAsync(boundStatement);
-
-				dataPointBatch.add(boundStatement);
-
-				ResultSetFuture future = m_session.executeAsync(boundStatement);
+				//ResultSetFuture future = m_session.executeAsync(boundStatement);
 
 				//m_session.executeAsync(m_batchStatement);
 			}
 
-			if (metricNamesBatch.size() != 0)
-				m_session.executeAsync(metricNamesBatch);
+			batchClient.submitBatch();
 
-			if (tagNameBatch.size() != 0)
-				m_session.executeAsync(tagNameBatch);
-
-			if (tagValueBatch.size() != 0)
-				m_session.executeAsync(tagValueBatch);
-
-			if (rowKeyBatch.size() != 0)
-				m_session.executeAsync(rowKeyBatch);
-
-			m_session.execute(dataPointBatch);
 			callBack.complete();
 
 		}
@@ -620,7 +547,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 				HFactory.createSliceQuery(m_keyspace, StringSerializer.get(), StringSerializer.get(),
 						StringSerializer.get());
 
-		sliceQuery.setColumnFamily(CF_STRING_INDEX);
+		sliceQuery.setColumnFamily(CF_STRING_INDEX_NAME);
 		sliceQuery.setKey(key);
 
 		ColumnSliceIterator<String, String, String> columnIterator =
@@ -708,7 +635,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 			}
 			else
 			{
-				runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS, m_kairosDataPointFactory,
+				runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS_NAME, m_kairosDataPointFactory,
 						queryKeys,
 						query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
 						m_multiRowReadSize, query.getLimit(), query.getOrder()));
@@ -727,7 +654,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 		//There may be stragglers that are not ran
 		if (!queryKeys.isEmpty())
 		{
-			runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS, m_kairosDataPointFactory,
+			runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS_NAME, m_kairosDataPointFactory,
 					queryKeys,
 					query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
 					m_multiRowReadSize, query.getLimit(), query.getOrder()));
@@ -890,12 +817,33 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	}
 
 
-	private class BatchHandler implements Callable<Long>
+
+	private class AstyanaxBatchHandler implements Callable<Long>
 	{
 		private final List<DataPointEvent> m_events;
 		private final EventCompletionCallBack m_callBack;
 
-		public BatchHandler(List<DataPointEvent> events, EventCompletionCallBack eventCompletionCallBack)
+		public AstyanaxBatchHandler(List<DataPointEvent> events, EventCompletionCallBack eventCompletionCallBack)
+		{
+			m_events = events;
+			m_callBack = eventCompletionCallBack;
+		}
+
+		@Override
+		public Long call() throws Exception
+		{
+			submitEvents(m_events, m_callBack, m_astyanaxClient.getBatchClient());
+
+			return null;
+		}
+	}
+
+	private class CQLBatchHandler implements Callable<Long>
+	{
+		private final List<DataPointEvent> m_events;
+		private final EventCompletionCallBack m_callBack;
+
+		public CQLBatchHandler(List<DataPointEvent> events, EventCompletionCallBack eventCompletionCallBack)
 		{
 			m_events = events;
 			m_callBack = eventCompletionCallBack;
@@ -904,7 +852,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 		@Override
 		public Long call()
 		{
-			submitEvents(m_events, m_callBack);
+			submitEvents(m_events, m_callBack, new CQLBatchClient(m_session,
+					m_psInsertData, m_psInsertRowKey, m_psInsertString));
 
 			return null;
 		}
@@ -934,7 +883,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 					HFactory.createSliceQuery(m_keyspace, StringSerializer.get(),
 							new DataPointsRowKeySerializer(true), StringSerializer.get());
 
-			sliceQuery.setColumnFamily(CF_ROW_KEY_INDEX)
+			sliceQuery.setColumnFamily(CF_ROW_KEY_INDEX_NAME)
 					.setKey(metricName);
 
 			if ((startTime < 0) && (endTime >= 0))
@@ -946,7 +895,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 						HFactory.createSliceQuery(m_keyspace, StringSerializer.get(),
 								new DataPointsRowKeySerializer(true), StringSerializer.get());
 
-				sliceQuery2.setColumnFamily(CF_ROW_KEY_INDEX)
+				sliceQuery2.setColumnFamily(CF_ROW_KEY_INDEX_NAME)
 						.setKey(metricName);
 
 				m_continueSliceIterator = createSliceIterator(sliceQuery2, metricName,

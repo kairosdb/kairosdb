@@ -391,40 +391,50 @@ new SimpleRule("import").setDescription("Imports metrics." +
 
 def doRun(Rule rule)
 {
+	kairosDefinition = saw.getDefinition("kairos")
+
 	if (rule.getProperty("ACTION") == "export")
 	{
-		args = "-c export "
+		kairosDefinition.set("command", "export")
 		metricName = saw.getProperty("n", "")
 		if (metricName.length() > 0)
-			args += "-n " + metricName
+			kairosDefinition.set("export_metric", metricName)
 		filename = saw.getProperty("f", "")
 		if (filename.length() > 0)
-			args += " -f " + filename
+			kairosDefinition.set("import_export_file", filename)
 	}
 	else if (rule.getProperty("ACTION") == "import")
 	{
-		args = "-c import "
+		kairosDefinition.set("command", "import")
 		filename = saw.getProperty("f", "")
 		if (filename.length() > 0)
-			args += " -f " + filename
+			kairosDefinition.set("import_export_file", filename)
 	}
 	else
-		args = "-c run"
+		kairosDefinition.set("command", "run")
 
 	//Check if you have a custom kairosdb.properties file and load it.
 	customProps = new File("kairosdb.properties")
 	if (customProps.exists())
-		args += " -p kairosdb.properties"
+		kairosDefinition.set("properties", "kairosdb.properties")
 
-	debug = ""
 	if (rule.getProperty("DEBUG"))
-		debug = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+		kairosDefinition.set("debug")
+
+	/*
+	  This is for use with visual vm.  Set the startup agent command in
+	  tablesaw.properties and this will inject it into the startup command
+	 */
+	if (saw.getProperty("profile") != null)
+		kairosDefinition.set("profile", saw.getProperty("profile"))
 
 	//this is to load logback into classpath
 	runClasspath = jc.getClasspath()
 	runClasspath.addPaths(ivyDefaultResolve.getClasspath())
 	runClasspath.addPath("src/main/resources").addPath("src/main/java")
-	ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
+	kairosDefinition.set("classpath", runClasspath)
+	//ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
+	ret = saw.exec(kairosDefinition.getCommand())
 	println(ret);
 }
 

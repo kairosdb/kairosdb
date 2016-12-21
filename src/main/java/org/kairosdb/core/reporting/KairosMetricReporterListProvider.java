@@ -8,14 +8,11 @@ package org.kairosdb.core.reporting;
 
 import com.google.inject.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class KairosMetricReporterListProvider implements Provider<List<KairosMetricReporter>>
+public class KairosMetricReporterListProvider implements Provider<Set<KairosMetricReporter>>
 {
-	private List<KairosMetricReporter> m_reporters = new ArrayList<KairosMetricReporter>();
+	private Set<KairosMetricReporter> m_reporters = new HashSet<KairosMetricReporter>();
 
 	@Inject
 	public KairosMetricReporterListProvider(Injector injector)
@@ -34,8 +31,8 @@ public class KairosMetricReporterListProvider implements Provider<List<KairosMet
 	}
 
 	@Override
-	public List<KairosMetricReporter> get()
+	public Set<KairosMetricReporter> get()
 	{
-		return (Collections.unmodifiableList(m_reporters));
+		return (Collections.unmodifiableSet(m_reporters));
 	}
 }

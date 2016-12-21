@@ -54,6 +54,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR;
+import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR_CLASS;
 
 public class CoreModule extends AbstractModule
 {
@@ -122,7 +123,6 @@ public class CoreModule extends AbstractModule
 		bind(KairosDBScheduler.class).to(KairosDBSchedulerImpl.class).in(Singleton.class);
 		bind(KairosDBSchedulerImpl.class).in(Singleton.class);
 		bind(MemoryMonitor.class).in(Singleton.class);
-		bind(QueueProcessor.class).in(Singleton.class);
 		bind(DataPointEventSerializer.class).in(Singleton.class);
 
 		bind(SumAggregator.class);
@@ -156,6 +156,12 @@ public class CoreModule extends AbstractModule
 
 		String hostname = m_props.getProperty("kairosdb.hostname");
 		bindConstant().annotatedWith(Names.named("HOSTNAME")).to(hostname != null ? hostname: Util.getHostName());
+
+		//bind queue processor impl
+		//Have to bind the class directly so metrics reporter can get metrics off of them
+		bind(getClassForProperty(QUEUE_PROCESSOR_CLASS)).in(Singleton.class);
+		bind(QueueProcessor.class)
+				.to(getClassForProperty(QUEUE_PROCESSOR_CLASS)).in(Singleton.class);
 
 		//bind datapoint default impls
 		bind(DoubleDataPointFactory.class)

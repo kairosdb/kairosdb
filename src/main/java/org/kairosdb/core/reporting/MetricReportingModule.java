@@ -22,6 +22,7 @@ import com.google.inject.servlet.ServletModule;
 import org.kairosdb.core.http.MonitorFilter;
 
 import java.util.List;
+import java.util.Set;
 
 public class MetricReportingModule extends ServletModule
 {
@@ -35,6 +36,6 @@ public class MetricReportingModule extends ServletModule
 
 		bind(DataPointsMonitor.class).in(Scopes.SINGLETON);
 
-		bind(new TypeLiteral<List<KairosMetricReporter>>(){}).toProvider(KairosMetricReporterListProvider.class);
+		bind(new TypeLiteral<Set<KairosMetricReporter>>(){}).toProvider(KairosMetricReporterListProvider.class);
 	}
 }

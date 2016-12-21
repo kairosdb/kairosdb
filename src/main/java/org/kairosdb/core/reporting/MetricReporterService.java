@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
@@ -48,7 +49,7 @@ public class MetricReporterService implements KairosDBJob
 	public static final String REPORTER_TTL = "kairosdb.reporter.ttl";
 
 	private EventBus m_eventBus;
-	private List<KairosMetricReporter> m_reporters;
+	private Set<KairosMetricReporter> m_reporters;
 	private final String m_hostname;
 	private final String m_schedule;
 	private final int m_ttl;
@@ -58,7 +59,7 @@ public class MetricReporterService implements KairosDBJob
 
 	@Inject
 	public MetricReporterService(EventBus eventBus,
-			List<KairosMetricReporter> reporters,
+			Set<KairosMetricReporter> reporters,
 			@Named(SCHEDULE_PROPERTY) String schedule,
 			@Named(HOSTNAME) String hostname,
 			@Named(REPORTER_TTL) int ttl)

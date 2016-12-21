@@ -43,4 +43,16 @@
 		<option>"</option>
 	</definition>
 
+	<definition name="kairos" command="java">
+		<option name="debug">-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005</option>
+		<option name="profile" pattern="(.+)">$1</option>
+		<option>-Dio.netty.epollBugWorkaround=true</option>
+		<option name="classpath" pattern="(.+)">-cp $1</option>
+		<option>org.kairosdb.core.Main</option>
+		<option name="command" pattern="(.+)">-c $1</option>
+		<option name="export_metric" pattern="(.+)">-n $1</option>
+		<option name="import_export_file" pattern="(.+)">-f $1</option>
+		<option name="properties" pattern="(.+)">-p $1</option>
+	</definition>
+
 </definitions>

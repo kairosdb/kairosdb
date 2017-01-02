@@ -174,7 +174,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
 		System.out.println("Starting Cassandra Connection");
-		String cassandraHost = "kairos04:9160";
+		String cassandraHost = "localhost:9160";
 		if (System.getenv("CASSANDRA_HOST") != null)
 			cassandraHost = System.getenv("CASSANDRA_HOST");
 

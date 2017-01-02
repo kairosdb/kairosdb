@@ -571,6 +571,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 		{
 			rowCount ++;
 			DataPointsRowKey rowKey = rowKeys.next();
+			System.out.println("Query for "+rowKey.toString());
 			long tierRowTime = rowKey.getTimestamp();
 			int startTime;
 			int endTime;
@@ -609,6 +610,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 
 			Futures.addCallback(resultSetFuture, new QueryListener(rowKey, queryCallback, querySemaphor), resultsExecutor);
 		}
+
+		ThreadReporter.addDataPoint(KEY_QUERY_TIME, System.currentTimeMillis() - timerStart);
+		ThreadReporter.addDataPoint(ROW_KEY_COUNT, rowCount);
 
 		try
 		{
@@ -764,6 +768,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	 */
 	public Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query)
 	{
+		System.out.println("Fetching row keys");
 		Iterator<DataPointsRowKey> ret = null;
 
 		List<QueryPlugin> plugins = query.getPlugins();
@@ -784,6 +789,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 			ret = new FilteredRowKeyIterator(query.getName(), query.getStartTime(),
 					query.getEndTime(), query.getTags());
 		}
+
+		System.out.println("Done");
 
 		return (ret);
 	}

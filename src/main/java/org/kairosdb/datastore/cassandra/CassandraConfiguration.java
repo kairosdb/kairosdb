@@ -25,7 +25,11 @@ public class CassandraConfiguration
 	public static final String SINGLE_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.single_row_read_size";
 	public static final String MULTI_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_read_size";
 	public static final String MULTI_ROW_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_size";
+	public static final String WRITE_BUFFER_JOB_QUEUE_SIZE = "kairosdb.datastore.cassandra.write_buffer_job_queue_size";
 
+	@Inject
+	@Named(WRITE_BUFFER_JOB_QUEUE_SIZE)
+	private int m_writeBufferJobQueueSize = 300;
 
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
@@ -164,5 +168,10 @@ public class CassandraConfiguration
 	public String getKeyspaceName()
 	{
 		return m_keyspaceName;
+	}
+
+	public int getWriteBufferJobQueueSize()
+	{
+		return m_writeBufferJobQueueSize;
 	}
 }

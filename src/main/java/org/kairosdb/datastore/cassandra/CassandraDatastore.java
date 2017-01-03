@@ -155,7 +155,8 @@ public class CassandraDatastore implements Datastore
 					IntegerSerializer.get(),
 					BytesArraySerializer.get(),
 					createWriteBufferStats(CF_DATA_POINTS, hostname),
-					mutatorLock, threadCount);
+					mutatorLock, threadCount,
+					m_cassandraConfiguration.getWriteBufferJobQueueSize());
 
 			m_rowKeyWriteBuffer = new WriteBuffer<String, DataPointsRowKey, String>(
 					m_keyspace, CF_ROW_KEY_INDEX, m_cassandraConfiguration.getWriteDelay(),
@@ -164,7 +165,8 @@ public class CassandraDatastore implements Datastore
 					DATA_POINTS_ROW_KEY_SERIALIZER,
 					StringSerializer.get(),
 					createWriteBufferStats(CF_ROW_KEY_INDEX, hostname),
-					mutatorLock, threadCount);
+					mutatorLock, threadCount,
+					m_cassandraConfiguration.getWriteBufferJobQueueSize());
 
 			m_stringIndexWriteBuffer = new WriteBuffer<String, String, String>(
 					m_keyspace, CF_STRING_INDEX,
@@ -174,7 +176,8 @@ public class CassandraDatastore implements Datastore
 					StringSerializer.get(),
 					StringSerializer.get(),
 					createWriteBufferStats(CF_STRING_INDEX, hostname),
-					mutatorLock, threadCount);
+					mutatorLock, threadCount,
+					m_cassandraConfiguration.getWriteBufferJobQueueSize());
 		}
 		catch (HectorException e)
 		{
@@ -776,7 +779,14 @@ outer:
 			else
 				columnName = getColumnName(rowTime, time);
 
-			m_dataPointWriteBuffer.deleteColumn(m_currentRow, columnName, m_now);
+			try
+			{
+				m_dataPointWriteBuffer.deleteColumn(m_currentRow, columnName, m_now);
+			}
+			catch (DatastoreException e)
+			{
+				throw new IOException("Unable to delete data", e);
+			}
 		}
 
 		@Override

@@ -384,6 +384,7 @@ public class QueryParser
 			{
 				RangeAggregator ra = (RangeAggregator) aggregator;
 				ra.setStartTime(queryMetric.getStartTime());
+				ra.setEndTime(queryMetric.getEndTime());
 			}
 
 			if (aggregator instanceof TimezoneAware)

@@ -396,7 +396,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 				if (currentDataPoint != null)
 					dataPointTime = currentDataPoint.getTimestamp();
 
-				if (m_alignStartTime || endRange < dataPointTime)
+				if (m_alignStartTime || endRange <= dataPointTime)
 					dataPointTime = startRange;
 
 				m_dpIterator = m_subAggregator.getNextDataPoints(dataPointTime,

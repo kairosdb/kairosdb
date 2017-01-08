@@ -44,8 +44,8 @@ public class CQLBatchClient implements BatchClient
 	public void addRowKey(String metricName, DataPointsRowKey rowKey, int rowKeyTtl)
 	{
 		BoundStatement bs = new BoundStatement(m_psInsertRowKey);
-		bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
-		bs.setBytes(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+		bs.setBytesUnsafe(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
+		bs.setBytesUnsafe(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 		bs.setInt(2, rowKeyTtl);
 		//m_session.executeAsync(bs);
 		rowKeyBatch.add(bs);
@@ -55,7 +55,7 @@ public class CQLBatchClient implements BatchClient
 	public void addMetricName(String metricName)
 	{
 		BoundStatement bs = new BoundStatement(m_psInsertString);
-		bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
+		bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
 		bs.setString(1, metricName);
 
 		//m_session.executeAsync(bs);
@@ -66,7 +66,7 @@ public class CQLBatchClient implements BatchClient
 	public void addTagName(String tagName)
 	{
 		BoundStatement bs = new BoundStatement(m_psInsertString);
-		bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_NAMES.getBytes(UTF_8)));
+		bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_TAG_NAMES.getBytes(UTF_8)));
 		bs.setString(1, tagName);
 
 		tagNameBatch.add(bs);
@@ -76,7 +76,7 @@ public class CQLBatchClient implements BatchClient
 	public void addTagValue(String value)
 	{
 		BoundStatement bs = new BoundStatement(m_psInsertString);
-		bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_VALUES.getBytes(UTF_8)));
+		bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_TAG_VALUES.getBytes(UTF_8)));
 		bs.setString(1, value);
 
 		tagValueBatch.add(bs);
@@ -89,12 +89,12 @@ public class CQLBatchClient implements BatchClient
 		dataPoint.writeValueToBuffer(kDataOutput);
 
 		BoundStatement boundStatement = new BoundStatement(m_psInsertData);
-		boundStatement.setBytes(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+		boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 		ByteBuffer b = ByteBuffer.allocate(4);
 		b.putInt(columnTime);
 		b.rewind();
-		boundStatement.setBytes(1, b);
-		boundStatement.setBytes(2, ByteBuffer.wrap(kDataOutput.getBytes()));
+		boundStatement.setBytesUnsafe(1, b);
+		boundStatement.setBytesUnsafe(2, ByteBuffer.wrap(kDataOutput.getBytes()));
 		boundStatement.setInt(3, ttl);
 
 		dataPointBatch.add(boundStatement);

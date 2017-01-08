@@ -28,7 +28,8 @@ public class CassandraClientImpl implements CassandraClient
 		final Cluster.Builder builder = new Cluster.Builder()
 				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL, 3, 100))
 				.withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
-				.withQueryOptions(new QueryOptions().setConsistencyLevel(ConsistencyLevel.QUORUM));
+				.withQueryOptions(new QueryOptions().setConsistencyLevel(ConsistencyLevel.QUORUM))
+				.withCompression(ProtocolOptions.Compression.LZ4);
 
 		for (String node : hostList.split(","))
 		{

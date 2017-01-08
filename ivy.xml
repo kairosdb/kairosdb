@@ -54,6 +54,7 @@
 
 		<!-- Cassandra Client -->
 		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.1.2" />
+		<dependency org="net.jpountz.lz4" name="lz4" rev="1.3.0"/>
 
 		<dependency org="org.hectorclient" name="hector-core" rev="1.1-4">
 			<artifact name="hector-core" type="bundle" ext="jar"/>

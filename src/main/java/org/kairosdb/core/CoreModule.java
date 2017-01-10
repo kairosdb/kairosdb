@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ public class CoreModule extends AbstractModule
 		m_props = props;
 	}
 
+	@SuppressWarnings("rawtypes")
 	private Class getClassForProperty(String property)
 	{
 		String className = m_props.getProperty(property);
@@ -101,7 +102,7 @@ public class CoreModule extends AbstractModule
 		bind(SaveAsAggregator.class);
 		bind(TrimAggregator.class);
 		bind(SmaAggregator.class);
-
+		bind(FilterAggregator.class);
 
 		bind(ValueGroupBy.class);
 		bind(TimeGroupBy.class);

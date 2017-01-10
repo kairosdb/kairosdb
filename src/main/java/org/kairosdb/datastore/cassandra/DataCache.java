@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class DataCache<T>
 	public DataCache(int cacheSize)
 	{
 		//m_cache = new InternalCache(cacheSize);
-		m_hashMap = new ConcurrentHashMap();
+		m_hashMap = new ConcurrentHashMap<>();
 		m_maxSize = cacheSize;
 
 		m_front.m_next = m_back;

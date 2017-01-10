@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -94,18 +94,18 @@ public class Util
 		{
 			Runtime run = Runtime.getRuntime();
 			Process process = run.exec("hostname");
-			InputStreamReader isr = new InputStreamReader(process.getInputStream());
-			BufferedReader br = new BufferedReader(isr);
-
-			// Need to read all lines from the stream or the process could hang
-			StringBuilder buffer = new StringBuilder();
-			String line;
-			while ((line = br.readLine()) != null)
-				buffer.append(line);
-
-			int returnValue = process.waitFor();
-			if (returnValue == 0)
-				return buffer.toString();
+			try(BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream())))
+			{
+				// Need to read all lines from the stream or the process could hang
+				StringBuilder buffer = new StringBuilder();
+				String line;
+				while ((line = br.readLine()) != null)
+					buffer.append(line);
+	
+				int returnValue = process.waitFor();
+				if (returnValue == 0)
+					return buffer.toString();
+			}
 		}
 		catch (Exception e)
 		{
@@ -317,7 +317,7 @@ public class Util
 				ret = new org.joda.time.Duration(dt, dt.plusSeconds((int) sampling.getValue())).getMillis();
 				break;
 			case MILLISECONDS:
-				ret = (long) sampling.getValue();
+				ret = sampling.getValue();
 				break;
 		}
 		return ret;

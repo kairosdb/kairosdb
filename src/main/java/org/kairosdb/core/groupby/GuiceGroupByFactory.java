@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ public class GuiceGroupByFactory implements GroupByFactory
 
 
 	@Inject
+	@SuppressWarnings("unchecked")
 	public GuiceGroupByFactory(Injector injector)
 	{
 		this.injector = injector;
@@ -38,7 +39,7 @@ public class GuiceGroupByFactory implements GroupByFactory
 
 		for (Key<?> key : bindings.keySet())
 		{
-			Class bindingClass = key.getTypeLiteral().getRawType();
+			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (GroupBy.class.isAssignableFrom(bindingClass))
 			{
 				GroupByName name = (GroupByName)bindingClass.getAnnotation(GroupByName.class);
@@ -46,7 +47,7 @@ public class GuiceGroupByFactory implements GroupByFactory
 					throw new IllegalStateException("Aggregator class "+bindingClass.getName()+
 							" does not have required annotation "+GroupByName.class.getName());
 
-				groupBys.put(name.name(), bindingClass);
+				groupBys.put(name.name(), (Class<GroupBy>)bindingClass);
 			}
 		}
 	}

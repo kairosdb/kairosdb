@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -107,21 +107,10 @@ public class PutCommandTest
 	}
 
 	@Test
-	public void test_tagName_characters_invalid() throws DatastoreException, ValidationException
+	public void test_tagName_characters_validColonTagName() throws DatastoreException, ValidationException
 	{
-		try
-		{
-			command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum:fi=barfum"});
-			fail("ValidationException expected");
-		}
-		catch (DatastoreException e)
-		{
-			fail("ValidationException expected");
-		}
-		catch (ValidationException e)
-		{
-			assertThat(e.getMessage(), equalTo("tag[1].name may contain any character except colon ':', and equals '='."));
-		}
+		command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum:fi=barfum"});
+
 	}
 
 	@Test
@@ -143,21 +132,9 @@ public class PutCommandTest
 	}
 
 	@Test
-	public void test_tagValue_characters_invalid() throws DatastoreException, ValidationException
+	public void test_tagValue_characters_validColonTagValue() throws DatastoreException, ValidationException
 	{
-		try
-		{
-			command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum=bar:fum"});
-			fail("ValidationException expected");
-		}
-		catch (DatastoreException e)
-		{
-			fail("ValidationException expected");
-		}
-		catch (ValidationException e)
-		{
-			assertThat(e.getMessage(), equalTo("tag[1].value may contain any character except colon ':', and equals '='."));
-		}
+		command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum=bar:fum"});
 	}
 
 	@Test
@@ -319,6 +296,18 @@ public class PutCommandTest
 		}
 
 		@Override
+		public boolean getUserDefinedWritability(int index)
+		{
+			return false;
+		}
+
+		@Override
+		public void setUserDefinedWritability(int index, boolean isWritable)
+		{
+
+		}
+
+		@Override
 		public Object getAttachment()
 		{
 			return null;
@@ -356,7 +345,7 @@ public class PutCommandTest
 				DataPoint dataPoint, int ttl) throws DatastoreException
 		{
 			if (set == null)
-				set = new DataPointSet(metricName, tags, Collections.EMPTY_LIST);
+				set = new DataPointSet(metricName, tags, Collections.<DataPoint>emptyList());
 
 			set.addDataPoint(dataPoint);
 		}

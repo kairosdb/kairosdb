@@ -1,6 +1,6 @@
 
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -27,4 +27,5 @@ public @interface AggregatorName
 {
 	String name();
 	String description();
+    AggregatorProperty[] properties() default {};
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -20,13 +20,20 @@ import com.google.inject.Inject;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.util.Util;
 
-@AggregatorName(name = "rate", description = "Computes the rate of change for the data points.")
+@AggregatorName(
+        name = "rate",
+        description = "Computes the rate of change for the data points.",
+        properties = {
+                @AggregatorProperty(name = "rate", type = "timeUnit")
+        }
+)
 public class RateAggregator implements Aggregator, TimezoneAware
 {
 	private Sampling m_sampling;

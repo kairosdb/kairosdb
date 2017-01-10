@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -42,10 +42,8 @@ public class ResponseToMetricConverter
 	public void convert(InputStream inputStream, OutputStream outStream) throws IOException
 	{
 
-		JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
-		JsonWriter writer = new JsonWriter(new OutputStreamWriter(outStream));
-
-		try
+		try (JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
+		     JsonWriter writer = new JsonWriter(new OutputStreamWriter(outStream)))
 		{
 			writer.beginArray();
 
@@ -79,11 +77,6 @@ public class ResponseToMetricConverter
 		catch (RuntimeException e)
 		{
 			e.printStackTrace();
-		}
-		finally
-		{
-			reader.close();
-			writer.close();
 		}
 	}
 

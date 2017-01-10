@@ -158,6 +158,17 @@ function buildKairosDBQuery() {
 				}
 				metric.addScaleAggregator(scalingFactor);
 			}
+                        else if (name == 'filter')
+                        {
+                                var filterop = $(aggregator).find(".aggregatorFilterOpValue").val();
+				var threshold = $(aggregator).find(".aggregatorFilterThresholdValue").val();
+				if (!$.isNumeric(threshold))
+				{
+					showErrorMessage("filter threshold value must be a numeric value.");
+					return true;
+				}
+				metric.addFilterAggregator(filterop, threshold);
+                        }
 			else if (name == 'trim')
 			{
 				var agg = metric.addAggregator(name);
@@ -611,6 +622,7 @@ function addAggregator(container) {
 		$aggregatorContainer.find(".aggregatorPercentile").hide();
 		$aggregatorContainer.find(".divisor").hide();
 		$aggregatorContainer.find(".scalingFactor").hide();
+		$aggregatorContainer.find(".aggregatorFilter").hide();
 		$aggregatorContainer.find(".aggregatorTrim").hide();
 		$aggregatorContainer.find(".aggregatorSaveAs").hide();
 		$aggregatorContainer.find(".aggregatorRate").hide();
@@ -632,6 +644,9 @@ function addAggregator(container) {
 		}
 		else if (name == 'scale') {
 			$aggregatorContainer.find(".scalingFactor").show();
+		}
+		else if (name == 'filter') {
+			$aggregatorContainer.find(".aggregatorFilter").show();
 		}
 		else if (name == 'trim') {
 			$aggregatorContainer.find(".aggregatorTrim").show();

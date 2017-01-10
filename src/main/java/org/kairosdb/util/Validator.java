@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -25,12 +25,6 @@ public class Validator
 	{
 	}
 
-	public static void validateCharacterSet(String name, String value) throws ValidationException
-	{
-		ValidationErrors errors = new ValidationErrors();
-		if (!isValidateCharacterSet(errors, name, value))
-			throw new ValidationException(errors.getFirstError());
-	}
 
 	public static void validateNotNullOrEmpty(String name, String value) throws ValidationException
 	{
@@ -46,15 +40,6 @@ public class Validator
 			throw new ValidationException(errors.getFirstError());
 	}
 
-	public static boolean isValidateCharacterSet(ValidationErrors validationErrors, Object name, String value)
-	{
-		if (value == null || value.isEmpty() || !CharacterSet.isValidTagNameValue(value))
-		{
-			validationErrors.addErrorMessage(name + " may contain any character except colon ':', and equals '='.");
-			return false;
-		}
-		return true;
-	}
 
 	public static boolean isNotNullOrEmpty(ValidationErrors validationErrors, Object name, String value)
 	{

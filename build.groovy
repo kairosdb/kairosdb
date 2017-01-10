@@ -28,10 +28,8 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "1.1.2"
-release = System.getenv()['KAIROS_RELEASE_NUMBER']
-if(release == null)
-	release = "1" //package release number
+version = "1.1.3"
+release = saw.getProperty("KAIROS_RELEASE_NUMBER", "1") //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -84,6 +82,8 @@ jc.addDepend(ivyDefaultResolve)
 jc.getDefinition().set("target", "1.7")
 jc.getDefinition().set("source", "1.7")
 jc.getDefinition().set("encoding", "UTF8")
+jc.getDefinition().set("deprecation")
+jc.getDefinition().set("unchecked")
 
 jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
 jp.getJarRule().addFiles("src/main/resources", "create.sql")
@@ -141,7 +141,7 @@ manifest.putValue("Build-Date", buildDateFormat.format(new Date()))
 buildNumberFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
 buildNumber = buildNumberFormat.format(new Date())
 manifest.putValue("Implementation-Title", "KairosDB")
-manifest.putValue("Implementation-Vendor", "Proofpoint Inc.")
+manifest.putValue("Implementation-Vendor", "KairosDB")
 manifest.putValue("Implementation-Version", "${version}-${release}.${buildNumber}")
 
 //Add git revision information
@@ -166,6 +166,10 @@ testSources = new RegExFileSet("src/test/java", ".*Test\\.java").recurse()
 testCompileRule = jp.getTestCompileRule()
 ivyTestResolve = ivy.getResolveRule("test")
 testCompileRule.addDepend(ivyTestResolve)
+testCompileRule.getDefinition().set("unchecked")
+testCompileRule.getDefinition().set("deprecation")
+
+new SimpleRule("compile-test").addDepend(testCompileRule)
 
 junitClasspath = new Classpath(testCompileRule.getClasspath())
 junitClasspath.addPaths(testClasspath)
@@ -280,7 +284,7 @@ def doRPM(Rule rule)
 				summary = summary
 				type = RpmType.BINARY
 				url = "http://kairosdb.org"
-				vendor = "Proofpoint Inc."
+				vendor = "KairosDB"
 				provides = programName
 				//prefixes = rpmBaseInstallDir
 				buildHost = host

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -106,14 +106,63 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 		return buffer;
 	}
 
+	private StringBuilder escapeAppend(StringBuilder sb, String value, char escape)
+	{
+		int startPos = 0;
+
+		for (int i = 0; i < value.length(); i++)
+		{
+			char ch = value.charAt(i);
+			if (ch == ':' || ch == '=')
+			{
+				sb.append(value, startPos, i);
+				sb.append(escape).append(ch);
+				startPos = i + 1;
+			}
+		}
+
+		if (startPos <= value.length())
+		{
+			sb.append(value, startPos, value.length());
+		}
+
+		return sb;
+	}
+
+	private String unEscape(CharSequence source, int start, int end, char escape)
+	{
+		int startPos = start;
+		StringBuilder sb = new StringBuilder(end - start);
+
+		for (int i = start; i < end; i++)
+		{
+			char ch = source.charAt(i);
+			if (ch == escape)
+			{
+				sb.append(source, startPos, i);
+				i++; //Skip next char as it was escaped
+				startPos = i;
+			}
+		}
+
+		if (startPos <= end)
+		{
+			sb.append(source, startPos, end);
+		}
+
+		return sb.toString();
+	}
+
 
 	private String generateTagString(SortedMap<String, String> tags)
 	{
 		StringBuilder sb = new StringBuilder();
 		for (String key : tags.keySet())
 		{
-			sb.append(key).append("=");
-			sb.append(tags.get(key)).append(":");
+			//Escape tag names using :
+			escapeAppend(sb, key, ':').append("=");
+			//Escape tag values using =
+			escapeAppend(sb, tags.get(key), '=').append(":");
 		}
 
 		return (sb.toString());
@@ -132,19 +181,29 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 			{
 				if (tagString.charAt(position) == '=')
 				{
-					tag = tagString.substring(mark, position);
+					tag = unEscape(tagString, mark, position, ':');
 					mark = position +1;
+				}
+
+				if (tagString.charAt(position) == ':')
+				{
+					position ++;
 				}
 			}
 			else
 			{
 				if (tagString.charAt(position) == ':')
 				{
-					value = tagString.substring(mark, position);
+					value = unEscape(tagString, mark, position, '=');
 					mark = position +1;
 
 					rowKey.addTag(getString(tag), getString(value));
 					tag = null;
+				}
+
+				if (tagString.charAt(position) == '=')
+				{
+					position ++;
 				}
 			}
 		}

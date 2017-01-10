@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -31,24 +31,24 @@ import org.kairosdb.core.groupby.TagGroupBy;
 
 import java.util.*;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public abstract class DatastoreTestHelper
 {
 	protected static KairosDatastore s_datastore;
-	protected static final List<String> metricNames = new ArrayList<String>();
+	protected static final List<String> metricNames = new ArrayList<>();
 	private static long s_startTime;
 	private static String s_unicodeNameWithSpace = "你好 means hello";
 	private static String s_unicodeName = "你好";
 
 	private static List<String> listFromIterable(Iterable<String> iterable)
 	{
-		List<String> ret = new ArrayList<String>();
+		List<String> ret = new ArrayList<>();
 		for (String s : iterable)
 		{
 			ret.add(s);
@@ -211,7 +211,7 @@ public abstract class DatastoreTestHelper
 	public void test_queryDatabase_noTags() throws DatastoreException
 	{
 
-		Map<String, String> tags = new TreeMap<String, String>();
+		Map<String, String> tags = new TreeMap<>();
 		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1");
 		query.setEndTime(s_startTime + 3000);
 
@@ -252,7 +252,7 @@ public abstract class DatastoreTestHelper
 	public void test_queryDatabase_withTags() throws DatastoreException
 	{
 
-		Map<String, String> tags = new TreeMap<String, String>();
+		Map<String, String> tags = new TreeMap<>();
 		tags.put("client", "foo");
 		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1");
 		query.setEndTime(s_startTime + 3000);
@@ -291,7 +291,7 @@ public abstract class DatastoreTestHelper
 	@Test
 	public void test_queryDatabase_withTagGroupBy() throws DatastoreException
 	{
-		Map<String, String> tags = new TreeMap<String, String>();
+		Map<String, String> tags = new TreeMap<>();
 		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1");
 		query.addGroupBy(new TagGroupBy(Collections.singletonList("host")));
 		query.setEndTime(s_startTime + 3000);
@@ -340,7 +340,7 @@ public abstract class DatastoreTestHelper
 	@Test
 	public void test_queryDatabase_withMultipleTagGroupBy() throws DatastoreException
 	{
-		Map<String, String> tags = new TreeMap<String, String>();
+		Map<String, String> tags = new TreeMap<>();
 		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1");
 		query.addGroupBy(new TagGroupBy("host", "client"));
 		query.setEndTime(s_startTime + 3000);
@@ -408,7 +408,7 @@ public abstract class DatastoreTestHelper
 	@Test
 	public void test_queryDatabase_withGroupBy_nonMatchingTag() throws DatastoreException
 	{
-		Map<String, String> tags = new TreeMap<String, String>();
+		Map<String, String> tags = new TreeMap<>();
 		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1");
 		query.addGroupBy(new TagGroupBy("bogus"));
 		query.setEndTime(s_startTime + 3000);
@@ -445,7 +445,7 @@ public abstract class DatastoreTestHelper
 	@Test
 	public void test_queryWithMultipleTagsFilter() throws DatastoreException
 	{
-		Map<String, String> tags = new TreeMap<String, String>();
+		Map<String, String> tags = new TreeMap<>();
 		tags.put("host", "A");
 		tags.put("client", "bar");
 		QueryMetric query = new QueryMetric(s_startTime, 0, "metric1");
@@ -549,7 +549,7 @@ public abstract class DatastoreTestHelper
 	public void test_queryDatabase_noResults() throws DatastoreException
 	{
 
-		Map<String, String> tags = new TreeMap<String, String>();
+		Map<String, String> tags = new TreeMap<>();
 		QueryMetric query = new QueryMetric(500, 0, "metric1");
 		query.setEndTime(1000);
 
@@ -574,7 +574,6 @@ public abstract class DatastoreTestHelper
 	@Test
 	public void test_queryNegativeAndPositiveTime() throws DatastoreException
 	{
-		SetMultimap<String, String> tags = HashMultimap.create();
 		QueryMetric query = new QueryMetric(-2000000000L, 0, "old_data");
 		query.setEndTime(2000000000L);
 
@@ -596,9 +595,6 @@ public abstract class DatastoreTestHelper
 
 			assertThat(resTags, is(expectedTags));
 
-			/*while (dpg.hasNext())
-				System.out.println(dpg.next());*/
-
 			assertValues(dpg, 80, 40, 20, 3, 33);
 		}
 		finally
@@ -610,7 +606,6 @@ public abstract class DatastoreTestHelper
 	@Test
 	public void test_queryNegativeTime() throws DatastoreException
 	{
-		SetMultimap<String, String> tags = HashMultimap.create();
 		QueryMetric query = new QueryMetric(-2000000000L, 0, "old_data");
 		query.setEndTime(-1L);
 

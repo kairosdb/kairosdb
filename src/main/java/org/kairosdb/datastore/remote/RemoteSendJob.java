@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import static org.quartz.TriggerBuilder.newTrigger;
  To change this template use File | Settings | File Templates.
  */
 @DisallowConcurrentExecution
+@SuppressWarnings("deprecation")
 public class RemoteSendJob implements KairosDBJob
 {
 	public static final Logger logger = LoggerFactory.getLogger(RemoteSendJob.class);
@@ -80,7 +81,7 @@ public class RemoteSendJob implements KairosDBJob
 
 			try
 			{
-				Thread.sleep(delay * 1000);
+				Thread.sleep(delay * 1000L);
 			}
 			catch (InterruptedException e)
 			{

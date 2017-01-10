@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -26,25 +26,6 @@ import static org.junit.Assert.fail;
 
 public class ValidatorTest
 {
-	@Test
-	public void test_validateCharacterSet_valid() throws ValidationException
-	{
-		Validator.validateCharacterSet("test", "ABC-123_xyz/456.789");
-	}
-
-	@Test
-	public void test_validateCharacterSet_invalid() throws ValidationException
-	{
-		try
-		{
-			Validator.validateCharacterSet("test", "abc:123");
-			fail("Expected ValidationException");
-		}
-		catch (ValidationException e)
-		{
-			assertThat(e.getMessage(), equalTo("test may contain any character except colon ':', and equals '='."));
-		}
-	}
 
 	@Test
 	public void test_validateNotNullOrEmpty_valid() throws ValidationException
@@ -100,23 +81,6 @@ public class ValidatorTest
 		}
 	}
 
-	@Test
-	public void test_isValidateCharacterSet_valid()
-	{
-		ValidationErrors errors = new ValidationErrors();
-
-		assertThat(Validator.isValidateCharacterSet(errors, "test", "ABC-123_xyz/456.789"), equalTo(true));
-		assertThat(errors.size(), equalTo(0));
-	}
-
-	@Test
-	public void test_isValidateCharacterSet_invalid() throws ValidationException
-	{
-		ValidationErrors errors = new ValidationErrors();
-
-		assertThat(Validator.isValidateCharacterSet(errors, "test", "ABC:123"), equalTo(false));
-		assertThat(errors.getErrors(), hasItem("test may contain any character except colon ':', and equals '='."));
-	}
 
 	@Test
 	public void test_isNotNullOrEmpty_string_valid()

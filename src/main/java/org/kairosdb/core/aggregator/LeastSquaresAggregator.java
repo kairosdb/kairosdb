@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 
 import java.util.ArrayList;
@@ -17,7 +18,14 @@ import java.util.List;
  Time: 3:10 PM
  To change this template use File | Settings | File Templates.
  */
-@AggregatorName(name = "least_squares", description = "Returns a best fit line through the datapoints using the least squares algorithm.")
+@AggregatorName(
+        name = "least_squares",
+        description = "Returns a best fit line through the datapoints using the least squares algorithm.",
+        properties = {
+                @AggregatorProperty(name = "sampling", type = "duration"),
+                @AggregatorProperty(name="align_start_time", type="boolean")
+        }
+)
 public class LeastSquaresAggregator extends RangeAggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;

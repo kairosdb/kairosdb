@@ -63,6 +63,7 @@
 	<table class="table table-striped table-bordered" data-sort-name="metric-name"  data-sort-order="asc">
 		<thead>
 		<tr class="text-info">
+            <th></th>
 			<th data-field="select" data-sortable="false">
 				<div class="dropdown">
 					<button id="small"
@@ -88,11 +89,9 @@
 			<th data-field="group-by" data-sortable="true">
 				<span title="{{TOOLTIP_TAGS}}" bs-tooltip="">Tags</span></th>
 			<th data-field="aggregator" data-sortable="true">
-				<span title="{{TOOLTIP_AGGREGATOR}}" bs-tooltip="">Aggregator</span></th>
-			<th data-field="aggregator_sampling" data-sortable="true">
 				<table>
 					<tr>
-						<td><span title="{{TOOLTIP_AGGREGATOR_SAMPLING}}" bs-tooltip="">Aggregator Sampling</span></td>
+                        <td><span title="{{TOOLTIP_AGGREGATOR}}" bs-tooltip="">Aggregators</span></td>
 						<td valign="top" style="padding-left:3px;">
 							<span custom-popover
 							  popover-html="Sampling is specified as a number and a time unit.
@@ -137,16 +136,20 @@
 		</tr>
 		</thead>
 		<tbody>
-		<tr ng-repeat="task in tasks">
-			<td style="text-align: center; vertical-align: middle">
+ 		<tr ng-repeat="task in tasks">
+            <td>
+                <i class="glyphicon glyphicon-info-sign text-info" title="{{TOOLTIP_COMPLEX}}" bs-tooltip="" ng-show="task.complex"></i>
+                <i class="glyphicon glyphicon-warning-sign text-warning" title="{{getIncompleteTooltip()}}" bs-tooltip="" ng-show="!task.complex && task.incomplete"></i>
+                <i class="glyphicon glyphicon-ok text-success" title="{{TOOLTIP_COMPLETE}}" bs-tooltip="" ng-show="!task.incomplete"></i>
+            </td>
+
+            <td style="text-align: center; vertical-align: top">
 				<input type="checkbox" value="" ng-checked="task.selected" ng-model="task.selected">
 			</td>
 
 			<td>
 				<table width="100%">
 					<tr>
-						<td valign="top"><i class="glyphicon glyphicon-info-sign text-info" title="{{TOOLTIP_COMPLEX}}" bs-tooltip="" ng-show="task.complex"></i></td>
-						<td valign="top"><i class="glyphicon glyphicon-warning-sign text-warning" title="{{TOOLTIP_INCOMPLETE}}" bs-tooltip="" ng-show="!task.complex && task.incomplete"></i></td>
 						<td class="text-columns" style="padding-left: 5px; width:99%;"><editable model="task.name" ng-blur="onBlur(task)"></editable></td>
 					</tr>
 				</table>
@@ -186,7 +189,7 @@
 			</td>
 
 			<td>
-				<autocomplete-with-buttons model="task" on-blur="onBlur(task)" list="suggestTagKeys(task)"'/>
+				<autocomplete-with-buttons model="task" on-blur="onBlur(task)" list="suggestTagKeys(task)"/>
 			</td>
 
 			<td>
@@ -194,32 +197,35 @@
 			</td>
 
 			<td>
-				<span ng-show="task.complex">{{ task.aggregator }}</span>
-				<a href="" ng-show="!task.aggregatorEdit && !task.complex" ng-click="task.aggregatorEdit=true" style="color:black">{{ task.aggregator }}</a>
-				<div class="dropdown" ng-show="task.aggregatorEdit">
-					<button class="btn btn-default dropdown-toggle"
-							type="button" id="aggregatorDropdown"
-							data-toggle="dropdown" aria-haspopup="true"
-							aria-expanded="true">
-						{{ task.aggregator }}
-						<span class="caret"></span>
-					</button>
-					<ul class="dropdown-menu"
-						aria-labelledby="aggregatorDropdown">
-						<li ng-repeat="aggregator in AGGREGATORS">
-							<a href="#"
-							   ng-click="task.aggregatorEdit = false; setAggregator(task, aggregator)">
-								{{ aggregator }}
-							</a>
-						</li>
-					</ul>
-				</div>
-			</td>
+				<table width="100%">
+					<tr ng-repeat="aggregator in task.aggregators track by $index">
+						<td>
+							<span ng-show="task.complex">{{ toHumanReadableAggregator(aggregator) }}</span>
+ 							<span ng-show="aggregator.edit">
+								<aggregator agg="aggregator"
+                                            descriptors="getAggregatorDescriptors()"
+                                            units="SAMPLING_UNITS"
+                                            on-blur="onBlur(task)">
+                                </aggregator>
+							</span>
+                            <a href="" ng-show="!aggregator.edit && !task.complex"
+                               ng-click="aggregator.edit=true" style="color:black">
+                                {{ toHumanReadableAggregator(aggregator) }}</a>
 
-			<td>
-				<editable model="task.aggregator_sampling" ng-blur="onBlur(task)">{{task.aggregator}}</editable>
-			</td>
+                            <a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"
+                               ng-click="removeAggregator(task, $index)"
+                               ng-show="task.aggregators.length > 1 && !aggregator.edit && !model.complex">
+                                <span class="glyphicon glyphicon-remove text-danger"></span></a>
 
+                            <a href="#" class="btn-sm btn-circle text-right" style="margin-left:1px; margin-right:5px;"
+                               ng-click="addAggregator(task);scope.renderHtml();"
+                               ng-if="$first"
+                               ng-show="!aggregator.edit && !model.complex">
+                                <span class="glyphicon glyphicon-plus shift-1-up"></span></a>
+						</td>
+					</tr>
+				</table>
+			</td>
 			<td class="text-center">
 				<a href="#" ng-click="deleteTaskWithConfirm(task)"
 				   ng-show="!task.complex"
@@ -231,7 +237,7 @@
 	</table>
 </div>
 
-  <!--{{ tasks }}-->
+  {{ tasks }}
 <script>
 	$(document).ready(function () {
 		$("[data-toggle=tooltip]").tooltip();

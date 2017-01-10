@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.util.Util;
+import org.kairosdb.util.ValidationException;
 import org.kairosdb.util.Validator;
 
 import java.io.EOFException;
@@ -36,7 +37,6 @@ import java.util.Collections;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Originally used Jackson to parse, but this approach failed for a very large JSON because
@@ -77,9 +77,7 @@ public class DataPointsParser
 		long start = System.currentTimeMillis();
 		ValidationErrors validationErrors = new ValidationErrors();
 
-		JsonReader reader = new JsonReader(inputStream);
-
-		try
+		try (JsonReader reader = new JsonReader(inputStream))
 		{
 			int metricCount = 0;
 
@@ -116,10 +114,6 @@ public class DataPointsParser
 		{
 			validationErrors.addErrorMessage("Invalid json. No content due to end of input.");
 		}
-		finally
-		{
-			reader.close();
-		}
 
 		ingestTime = (int)(System.currentTimeMillis() - start);
 
@@ -141,7 +135,7 @@ public class DataPointsParser
 		return metric;
 	}
 
-	private class Context
+	private static class Context
 	{
 		private int m_count;
 		private String m_name;
@@ -179,7 +173,7 @@ public class DataPointsParser
 		}
 	}
 
-	private class SubContext
+	private static class SubContext
 	{
 		private Context m_context;
 		private String m_contextName;
@@ -231,9 +225,11 @@ public class DataPointsParser
 		}
 	}
 
-	private String findType(JsonElement value)
+	private String findType(JsonElement value) throws ValidationException
 	{
-		checkState(value.isJsonPrimitive());
+		if (!value.isJsonPrimitive()){
+			throw new ValidationException("value is an invalid type");
+		}
 
 		JsonPrimitive primitiveValue = (JsonPrimitive) value;
 		if (primitiveValue.isNumber() || (primitiveValue.isString() && Util.isNumber(value.getAsString())))
@@ -284,10 +280,10 @@ public class DataPointsParser
 					if (Validator.isNotNullOrEmpty(validationErrors, tagContext.setAttribute("name"), entry.getKey()))
 					{
 						tagContext.setName(entry.getKey());
-						Validator.isValidateCharacterSet(validationErrors, tagContext, entry.getKey());
+						Validator.isNotNullOrEmpty(validationErrors, tagContext, entry.getKey());
 					}
 					if (Validator.isNotNullOrEmpty(validationErrors, tagContext.setAttribute("value"), entry.getValue()))
-						Validator.isValidateCharacterSet(validationErrors, tagContext, entry.getValue());
+						Validator.isNotNullOrEmpty(validationErrors, tagContext, entry.getValue());
 
 					tagCount++;
 				}
@@ -297,24 +293,31 @@ public class DataPointsParser
 
 		if (!validationErrors.hasErrors())
 		{
-			//DataPointSet dataPointSet = new DataPointSet(metric.getName(), metric.getTags(), Collections.<DataPoint>emptyList());
 			ImmutableSortedMap<String, String> tags = ImmutableSortedMap.copyOf(metric.getTags());
 
 			if (metric.getTimestamp() != null && metric.getValue() != null)
 			{
 				String type = metric.getType();
-				if (type == null)
-					type = findType(metric.getValue());
+				if (type == null) {
+                    try {
+                        type = findType(metric.getValue());
+                    }
+                    catch (ValidationException e) {
+                        validationErrors.addErrorMessage(context + " " + e.getMessage());
+                    }
+                }
 
-				if (dataPointFactory.isRegisteredType(type))
-				{
-					datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
-							type, metric.getTimestamp(), metric.getValue()), metric.getTtl());
-					dataPointCount++;
-				}
-				else
-					validationErrors.addErrorMessage("Unregistered data point type '"+type+"'");
-			}
+                if (type != null) {
+                    if (dataPointFactory.isRegisteredType(type)) {
+                        datastore.putDataPoint(metric.getName(), tags, dataPointFactory.createDataPoint(
+                                type, metric.getTimestamp(), metric.getValue()), metric.getTtl());
+                        dataPointCount++;
+                    }
+                    else {
+                        validationErrors.addErrorMessage("Unregistered data point type '" + type + "'");
+                    }
+                }
+            }
 
 			if (metric.getDatapoints() != null && metric.getDatapoints().length > 0)
 			{
@@ -349,8 +352,15 @@ public class DataPointsParser
 						if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
 							continue;
 
-						if (type == null)
-							type = findType(dataPoint[1]);
+						if (type == null) {
+                            try {
+                                type = findType(dataPoint[1]);
+                            }
+                            catch (ValidationException e) {
+                                validationErrors.addErrorMessage(context + " " + e.getMessage());
+                                continue;
+                            }
+                        }
 
 						if (!dataPointFactory.isRegisteredType(type))
 						{
@@ -373,7 +383,7 @@ public class DataPointsParser
 	}
 
 	@SuppressWarnings({"MismatchedReadAndWriteOfArray", "UnusedDeclaration"})
-	private class NewMetric
+	private static class NewMetric
 	{
 		private String name;
 		private Long timestamp = null;

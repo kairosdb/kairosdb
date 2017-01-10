@@ -40,7 +40,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	private boolean m_alignSampling;
 	private boolean m_exhaustive;
 	private DateTimeZone m_timeZone = DateTimeZone.UTC;
-	;
+	
 
 	@NotNull
 	@Valid
@@ -89,6 +89,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	 @param timestamp
 	 @return
 	 */
+	@SuppressWarnings("fallthrough")
 	private long alignRangeBoundary(long timestamp)
 	{
 		DateTime dt = new DateTime(timestamp, m_timeZone);

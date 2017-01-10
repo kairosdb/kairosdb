@@ -36,7 +36,7 @@ public class UniformReservoir implements Reservoir
 	private static final int BITS_PER_LONG = 63;
 	private final AtomicLong count = new AtomicLong();
 	private final AtomicDoubleArray values;
-	private static Random random;
+	private static Random random = new Random();
 
 	/**
 	 * Creates a new {@link UniformReservoir} of 1028 elements, which offers a 99.9% confidence level
@@ -57,7 +57,6 @@ public class UniformReservoir implements Reservoir
 			values.set(i, 0);
 		}
 		count.set(0);
-		random = new Random();
 	}
 
 	@Override

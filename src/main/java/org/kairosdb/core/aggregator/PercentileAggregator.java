@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.http.rest.validation.NonZero;
 import org.kairosdb.util.Reservoir;
@@ -32,7 +33,12 @@ import java.util.Iterator;
 
 import static java.lang.Math.floor;
 
-@AggregatorName(name = "percentile", description = "Finds the percentile of the data range.")
+@AggregatorName(
+        name = "percentile",
+        description = "Finds the percentile of the data range.",properties = {
+            @AggregatorProperty(name = "percentile", type = "double")
+        }
+)
 public class PercentileAggregator extends RangeAggregator
 {
 	public static final Logger logger = LoggerFactory.getLogger(PercentileAggregator.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.aggregator;
 
+import com.google.common.collect.ImmutableList;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.exception.KairosDBException;
@@ -53,4 +54,10 @@ public class TestAggregatorFactory implements AggregatorFactory
 	{
 		return (m_aggregators.get(name));
 	}
+
+    @Override
+    public ImmutableList<AggregatorMetadata> getAggregatorMetadata()
+    {
+        return null;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class CachedSearchResultTest
 
 		long now = System.currentTimeMillis();
 
-		Map<String, String> tags = new HashMap();
+		Map<String, String> tags = new HashMap<>();
 		tags.put("host", "A");
 		tags.put("client", "foo");
 		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
@@ -58,7 +58,7 @@ public class CachedSearchResultTest
 		csResult.addDataPoint(new LegacyDoubleDataPoint(now+3, 43.1));
 
 
-		tags = new HashMap();
+		tags = new HashMap<>();
 		tags.put("host", "B");
 		tags.put("client", "foo");
 		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
@@ -68,7 +68,7 @@ public class CachedSearchResultTest
 		csResult.addDataPoint(new LegacyLongDataPoint(now+2, 2));
 		csResult.addDataPoint(new LegacyDoubleDataPoint(now+3, 2.1));
 
-		tags = new HashMap();
+		tags = new HashMap<>();
 		tags.put("host", "A");
 		tags.put("client", "bar");
 		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
@@ -196,7 +196,7 @@ public class CachedSearchResultTest
 			else
 			{
 				Double value = (Double)numbers[count];
-				assertEquals(value.doubleValue(), dp.getDoubleValue());
+				assertEquals(value, dp.getDoubleValue());
 			}
 
 			count ++;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -176,6 +176,7 @@ public class QueryRunner
 				byte[] value = column.getValue();
 				long timestamp = getColumnTimestamp(rowKey.getTimestamp(), columnTime);
 
+				//If type is legacy type it will point to the same object, no need for equals
 				if (type == LegacyDataPointFactory.DATASTORE_TYPE)
 				{
 					if (isLongValue(columnTime))

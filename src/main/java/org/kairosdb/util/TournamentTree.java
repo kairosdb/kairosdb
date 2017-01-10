@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.TreeSet;
 
 public class TournamentTree<T>
 	{
-	private class TreeValue<T>
+	private static class TreeValue<T>
 		{
 		private int m_iteratorNum;
 		private T m_value;

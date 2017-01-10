@@ -26,7 +26,7 @@ import static org.mockito.Mockito.mock;
 
 public class RollUpJobTest
 {
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SS");
+	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SS",Locale.ENGLISH);
 
 	@Rule
 	public ExpectedException expectedException = ExpectedException.none();

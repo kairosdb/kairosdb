@@ -2,6 +2,7 @@ package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 
 /**
@@ -12,7 +13,13 @@ import org.kairosdb.core.datastore.DataPointGroup;
 
  Created by bhawkins on 8/28/15.
  */
-@AggregatorName(name = "trim", description = "Trims off the first, last or both (first and last) data points from the results.")
+@AggregatorName(
+        name = "trim",
+        description = "Trims off the first, last or both (first and last) data points from the results.",
+        properties = {
+                @AggregatorProperty(name = "trim", type = "enum", values={"first", "last", "both"})
+        }
+)
 public class TrimAggregator implements Aggregator
 {
 	public enum Trim

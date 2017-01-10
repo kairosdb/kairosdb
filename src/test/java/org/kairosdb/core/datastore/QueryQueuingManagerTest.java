@@ -1,7 +1,7 @@
 //
 //  QueryQueuingManagerTest.java
 //
-// Copyright 2013, Proofpoint Inc. All rights reserved.
+// Copyright 2016, KairosDB Authors
 //        
 package org.kairosdb.core.datastore;
 

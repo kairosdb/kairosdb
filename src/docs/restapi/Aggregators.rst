@@ -271,4 +271,28 @@ Save As
 
 		**add_saved_from** (boolean) - Tells the aggregator to add the saved_from tag to the new metric.  Defaults to true.
 
+------
+Filter
+------
+.. js:data:: filter
 
+	Filters out data points matching given critera.
+
+	Parameters:
+		**filter_op** (LTE, LT, GTE, GT, EQUAL) - Defines what data points to filter in relation to the threshold.
+
+		**threshold** (double) - Sets the threshold value for filtering data points.
+
+-------------
+JS Aggregator
+-------------
+.. js:data:: js_function
+.. js:data:: js_filter
+.. js:data:: js_range
+
+	The JS Aggregator is provided as a thrid party module found here
+
+	https://github.com/Kratos-ISE/kise-kairosdb-module/
+
+	The module requires Java 8 and provides a way to pass javascript code as the
+	aggregator.

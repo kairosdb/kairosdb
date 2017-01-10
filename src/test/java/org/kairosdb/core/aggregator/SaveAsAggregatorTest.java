@@ -13,8 +13,6 @@ import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.testing.ListDataPointGroup;
 
 import java.util.Collections;
-import java.util.Map;
-import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -39,6 +37,7 @@ public class SaveAsAggregatorTest
 	}
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testTtl() throws DatastoreException
 	{
 		m_aggregator.setMetricName("testTtl");
@@ -69,6 +68,7 @@ public class SaveAsAggregatorTest
 
 
 	@Test
+	@SuppressWarnings("unchecked")
 	public void testNoTtl() throws DatastoreException
 	{
 		m_aggregator.setMetricName("testTtl");

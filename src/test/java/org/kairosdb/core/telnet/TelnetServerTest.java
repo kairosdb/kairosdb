@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ public class TelnetServerTest
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
 		verify(m_datastore, timeout(5000).times(1))
-				.putDataPoint("test.metric", tags, dp);
+				.putDataPoint("test.metric", tags, dp, 0);
 	}
 
 	@Test
@@ -135,7 +135,7 @@ public class TelnetServerTest
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
 		verify(m_datastore, timeout(5000).times(1))
-				.putDataPoint("test.metric", tags, dp);
+				.putDataPoint("test.metric", tags, dp, 0);
 	}
 
 	@Test
@@ -151,7 +151,7 @@ public class TelnetServerTest
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
 		verify(m_datastore, timeout(5000).times(1))
-				.putDataPoint("test.metric", tags, dp);
+				.putDataPoint("test.metric", tags, dp, 0);
 	}
 
 	@Test
@@ -167,7 +167,23 @@ public class TelnetServerTest
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
 		verify(m_datastore, timeout(5000).times(1))
-				.putDataPoint("test.metric", tags, dp);
+				.putDataPoint("test.metric", tags, dp, 0);
+	}
+
+	@Test
+	public void test_sendTtl() throws DatastoreException
+	{
+		long now = System.currentTimeMillis() / 1000;
+
+		m_client.sendText("put test.metric "+now+" 123 host=test_host kairos_opt.ttl=30");
+
+		ImmutableSortedMap<String, String> tags = Tags.create()
+				.put("host", "test_host")
+				.build();
+		DataPoint dp = new LongDataPoint(now * 1000, 123);
+
+		verify(m_datastore, timeout(5000).times(1))
+				.putDataPoint("test.metric", tags, dp, 30);
 	}
 
 	@Test
@@ -186,7 +202,7 @@ public class TelnetServerTest
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
 		verify(m_datastore, timeout(5000).times(0))
-				.putDataPoint(metricName, tags, dp);
+				.putDataPoint(metricName, tags, dp, 0);
 	}
 
 	@Test
@@ -196,7 +212,7 @@ public class TelnetServerTest
 		commandProvider.putCommand("put", new PutCommand(m_datastore, "localhost",
 				new LongDataPointFactoryImpl(), new DoubleDataPointFactoryImpl()));
 		m_server.stop();
-		m_server = new TelnetServer(TELNET_PORT, 3072, commandProvider);
+		m_server = new TelnetServer(TELNET_PORT, 4148, commandProvider);
 		m_server.start();
 		m_client = new TelnetClient("127.0.0.1", TELNET_PORT);
 
@@ -213,7 +229,7 @@ public class TelnetServerTest
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
 		verify(m_datastore, timeout(5000).times(1))
-				.putDataPoint(metricName, tags, dp);
+				.putDataPoint(metricName, tags, dp, 0);
 	}
 
 	private String createLongString(int length)

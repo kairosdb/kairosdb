@@ -1,4 +1,5 @@
 var ROLLUP_URL = "/api/v1/rollups/";
+var AGGREGATORS_URL = "/api/v1/aggregators";
 var semaphore = false;
 var metricList = null;
 
@@ -17,52 +18,109 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	$scope.TOOLTIP_TAGS = "Narrows query down by tags";
 	$scope.TOOLTIP_AGGREGATOR = "Aggregators perform an operation on data points and down samples";
 	$scope.TOOLTIP_AGGREGATOR_SAMPLING = "Down sampling for the aggregator";
+	$scope.TOOLTIP_COMPLETE = "Roll-up contains all necessary data.";
 	$scope.TOOLTIP_INCOMPLETE = "Roll-up is not complete. Complete all grey-out fields.";
 	$scope.TOOLTIP_COMPLEX = "This roll-up is a complex roll-up and cannot be managed from this UI.";
 
 	$scope.EXECUTION_TYPES = ["Hourly", "Daily", "Weekly", "Monthly", "Yearly"];
 	$scope.GROUP_BY_TYPES = ["tag", "time"];
-	$scope.AGGREGATORS = ['avg', 'dev', 'max', 'min', 'sum', 'least_squares', 'count', 'percentile'];
+	$scope.SAMPLING_UNITS = ['milliseconds', 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'];
 
 	$scope.DEFAULT_TASK_NAME = "<roll-up name>";
 	$scope.DEFAULT_METRIC_NAME = "<metric name>";
 	$scope.DEFAULT_SAVE_AS = "<new metric name>";
 	$scope.DEFAULT_EXECUTE = $scope.EXECUTION_TYPES[1];
-	$scope.DEFAULT_AGGREGATOR = $scope.AGGREGATORS[4];
 	$scope.METRIC_NAME_LIST_MAX_LENGTH = 20;
-	$scope.DEFAULT_AGGREGATOR_SAMPLING = "1h";
 	$scope.DEFAULT_GROUP_BY_TYPE = "tag";
+	$scope.DEFAULT_SAMPLING = {"value": 1, "unit": "hours"};
+
+	$scope.AGGREGATORS = [
+		{'name': 'avg', 'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'dev', 'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'max', 'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'min', 'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'sum', 'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'least_squares', 'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'count', 'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'percentile', 'sampling': $scope.DEFAULT_SAMPLING}];
+
+    $scope.aggregatorDescriptor = {};
+
+	$scope.DEFAULT_AGGREGATOR = $scope.AGGREGATORS[4];
 
 	$scope.tasks = [];
 
-	$http.get(ROLLUP_URL)
-		.success(function (response) {
+    $scope.init = function ()
+    {
+        $http.get(ROLLUP_URL)
+                .success(function (response)
+                {
+                    if (response) {
+                        _.each(response, function (rollupTask)
+                        {
+                            $http.get(AGGREGATORS_URL)
+                                    .success(function (descriptorResponse)
+                                    {
+                                        $scope.aggregatorDescriptor = descriptorResponse;
 
-			if (response) {
-				_.each(response, function(rollupTask){
-					// convert to a simpler model
-					var task = $scope.toSimpleTask(rollupTask);
-					$scope.tasks.push(task);
-					$scope.checkForIncompleteTask(task)
-				});
+                                        // convert to a simpler model
+                                        var task = $scope.toSimpleTask(rollupTask);
+                                        $scope.tasks.push(task);
+                                        $scope.checkForIncompleteTask(task)
+                                    })
+                                    .error(function (data, status, headers, config)
+                                    {
+                                        $scope.alert("Could not read aggregator metadata from server.", status, data);
+                                    });
 
-				$scope.tasks = orderByFilter($scope.tasks, "name");
-			}
-		})
-		.error(function (data, status, headers, config) {
-			$scope.alert("Could not read list of roll-ups from server.", status, data);
-		});
+                        });
+
+                        $scope.tasks = orderByFilter($scope.tasks, "name");
+                    }
+                })
+                .error(function (data, status, headers, config)
+                {
+                    $scope.alert("Could not read list of roll-ups from server.", status, data);
+                });
+    };
+
+    $scope.init();
+
+    $scope.getIncompleteTooltip = function()
+    {
+        var errors = "";
+        if ($scope.errors   ) {
+            errors = JSON.stringify($scope.errors);
+        }
+        return $scope.TOOLTIP_INCOMPLETE + "Errors: " + errors;
+    };
+
+    $scope.getDescriptorProperties = function(name)
+    {
+        _.each($scope.descriptors, function (descriptor) {
+            if (descriptor.name == name)
+            {
+                return descriptor;
+            }
+        });
+        // todo this should be error condition throw exception?
+    };
+
+    $scope.getAggregatorDescriptors = function ()
+    {
+        return $scope.aggregatorDescriptor;
+    };
 
 	$scope.onBlur = function (task) {
 		$scope.errors = $scope.validate(task);
 		$scope.checkForIncompleteTask(task);
 
-		if (!$scope.hasErrors()) {
+		if (!$scope.hasErrors() && !task.incomplete) {
 			$scope.saveTask(task)
 		}
 	};
 
-	$scope.deleteSelected = function() {
+	$scope.deleteSelected = function () {
 		bootbox.confirm({
 			size: 'medium',
 			message: "Are you sure you want to delete the selected rollups?",
@@ -79,22 +137,24 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		});
 	};
 
-	$scope.anyTasksSelected = function(){
-		for(var i = 0; i < $scope.tasks.length; i++)
-		{
-			if ($scope.tasks[i].selected)
-			{
+	$scope.anyTasksSelected = function () {
+		for (var i = 0; i < $scope.tasks.length; i++) {
+			if ($scope.tasks[i].selected) {
 				return true;
 			}
 		}
 	};
 
-	$scope.selectAllTasks = function(){
-		_.each($scope.tasks, function(task){task.selected = true;});
+	$scope.selectAllTasks = function () {
+		_.each($scope.tasks, function (task) {
+			task.selected = true;
+		});
 	};
 
-	$scope.selectNoTasks = function() {
-		_.each($scope.tasks, function(task){task.selected = false;});
+	$scope.selectNoTasks = function () {
+		_.each($scope.tasks, function (task) {
+			task.selected = false;
+		});
 	};
 
 	$scope.setExecution = function (task, type) {
@@ -107,10 +167,60 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		$scope.onBlur(task);
 	};
 
-	$scope.setAggregator = function (task, aggregator) {
-		task.aggregator = aggregator;
+	$scope.addAggregator = function (task) {
+		task.aggregators.push(angular.copy($scope.DEFAULT_AGGREGATOR));
 		$scope.onBlur(task);
 	};
+    
+    $scope.removeAggregator = function(task, index)
+    {
+        task.aggregators.splice(index, 1);
+        $scope.onBlur(task);
+    };
+
+	$scope.setAggregatorName = function (task, aggregator, name) {
+		aggregator.name = name;
+		$scope.onBlur(task);
+	};
+
+	$scope.setSamplingUnit = function (task, aggregator, unit) {
+		if (!aggregator.sampling) {
+			aggregator.sampling = $scope.DEFAULT_SAMPLING;
+		}
+		aggregator.sampling.unit = unit;
+		$scope.onBlur(task);
+	};
+
+    $scope.toHumanReadableAggregator = function (aggregator)
+    {
+        var result = aggregator.name + ' (';
+        if (aggregator.sampling) {
+            result += $scope.toHumanReadableTimeUnit(aggregator.sampling);
+            result += aggregator.align_start_time ? ", align-start" : "";
+            result += aggregator.align_sampling ? ", align-sampling" : "";
+        }
+        else {
+            result = $scope.printObject(aggregator, result);
+        }
+        result += ') ';
+        return result;
+    };
+
+    $scope.printObject = function(obj, result){
+        for (var property in obj)
+        {
+            if (obj.hasOwnProperty(property)){
+                if (typeof obj[property] == "object")
+                {
+                    printObject(obj[property], result);
+                }
+                else if (property != 'name' && property != '$$hashKey' && property != "edit"){
+                    result += property + ':' + obj[property] +  ',';
+                }
+            }
+        }
+         return result.substring(0, result.length - 1); // Remove trailing comma
+    };
 
 	$scope.toHumanReadableTimeUnit = function (timeUnit) {
 		if (timeUnit) {
@@ -127,12 +237,12 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 			metric_name: $scope.DEFAULT_METRIC_NAME,
 			save_as: $scope.DEFAULT_SAVE_AS,
 			executionType: $scope.DEFAULT_EXECUTE,
-			aggregator: $scope.DEFAULT_AGGREGATOR,
-			aggregator_sampling: $scope.DEFAULT_AGGREGATOR_SAMPLING,
+			aggregators: [$scope.DEFAULT_AGGREGATOR],
 			group_by_type: $scope.DEFAULT_GROUP_BY_TYPE
 		};
 		task.incomplete = true;
-		$scope.tasks.push(task);
+
+    	$scope.tasks.push(task);
 		return task;
 	};
 
@@ -145,7 +255,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		newTask.name = task.name;
 		newTask.executionType = $scope.convertFromExecutionInterval(task.execution_interval);
 
-		if (task.rollups.length > 1){
+		if (task.rollups.length > 1) {
 			newTask.complex = true;
 		}
 
@@ -160,7 +270,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		return newTask;
 	};
 
-	$scope.toSimpleQuery = function(query, newTask) {
+	$scope.toSimpleQuery = function (query, newTask) {
 		if (query.metrics) {
 			if (query.metrics.length > 0) {
 				newTask.metric_name = query.metrics[0].name;
@@ -174,11 +284,10 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 				}
 
 				if (query.metrics[0].aggregators.length > 0) {
-					newTask.aggregator = query.metrics[0].aggregators[0].name;
-					newTask.aggregator_sampling = KairosDBDatasource.convertToShortTimeUnit(query.metrics[0].aggregators[0].sampling);
+					newTask.aggregators = query.metrics[0].aggregators;
 				}
 
-				if (query.metrics[0].tags){
+				if (query.metrics[0].tags) {
 					newTask.tags = query.metrics[0].tags;
 				}
 			}
@@ -202,7 +311,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		rollup.save_as = task.save_as;
 		metric.name = task.metric_name;
 
-		if (task.tags){
+		if (task.tags) {
 			metric.tags = task.tags;
 		}
 
@@ -215,13 +324,12 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 			metric.group_by = group_by;
 		}
 
-		var aggregators = [];
-		var aggregator = {
-			name: task.aggregator,
-			sampling: KairosDBDatasource.convertToKairosInterval(task.aggregator_sampling)
-		};
-		aggregators.push(aggregator);
-		metric.aggregators = aggregators;
+		_.each(task.aggregators, function (aggregator) {
+			// Remove edit property
+			delete aggregator.edit;
+		});
+
+		metric.aggregators = task.aggregators;
 
 		metrics.push(metric);
 		query.metrics = metrics;
@@ -229,15 +337,18 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		rollups.push(rollup);
 		newTask.rollups = rollups;
 
-		newTask.execution_interval = {value: 1, unit: $scope.convertToExecutionInterval(task.executionType)};
+		newTask.execution_interval = {
+			value: 1,
+			unit: $scope.convertToExecutionInterval(task.executionType)
+		};
 
 		query.start_relative = {value: 1, unit: "hours"};
 
 		return newTask;
 	};
 
-	$scope.convertFromExecutionInterval = function(executionInterval){
-		switch(executionInterval.unit.toLowerCase()){
+	$scope.convertFromExecutionInterval = function (executionInterval) {
+		switch (executionInterval.unit.toLowerCase()) {
 			case 'milliseconds':
 			case 'seconds':
 			case 'minutes':
@@ -256,8 +367,8 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		}
 	};
 
-	$scope.convertToExecutionInterval = function(executionType){
-		switch(executionType){
+	$scope.convertToExecutionInterval = function (executionType) {
+		switch (executionType) {
 			case $scope.EXECUTION_TYPES[0]:
 				return 'hours';
 			case $scope.EXECUTION_TYPES[1]:
@@ -273,8 +384,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		}
 	};
 
-	$scope.displayLastSaved = function()
-	{
+	$scope.displayLastSaved = function () {
 		currentDate = new Date();
 		$scope.lastSaved = (currentDate.getHours() < 10 ? "0" + currentDate.getHours() : currentDate.getHours()) + ":" +
 			(currentDate.getMinutes() < 10 ? "0" + currentDate.getMinutes() : currentDate.getMinutes()) + ":" +
@@ -327,9 +437,9 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		});
 	};
 
-	$scope.removeTaskFromTasks = function(task) {
-		for(var i = 0; i < $scope.tasks.length; i++){
-			if (_.isEqual($scope.tasks[i], task)){
+	$scope.removeTaskFromTasks = function (task) {
+		for (var i = 0; i < $scope.tasks.length; i++) {
+			if (_.isEqual($scope.tasks[i], task)) {
 				$scope.tasks.splice(i, 1);
 				break;
 			}
@@ -446,29 +556,43 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 			});
 	};
 
-	$scope.checkForIncompleteTask = function(task){
+	$scope.checkForIncompleteTask = function (task) {
 		if (!task.name || _.isEmpty(task.name) || task.name == $scope.DEFAULT_TASK_NAME) {
 			task.incomplete = true;
 		}
-		else if (!task.metric_name|| _.isEmpty(task.metric_name) || task.metric_name == $scope.DEFAULT_METRIC_NAME) {
+		else if (!task.metric_name || _.isEmpty(task.metric_name) || task.metric_name == $scope.DEFAULT_METRIC_NAME) {
 			task.incomplete = true;
 		}
-		else if (!task.save_as|| _.isEmpty(task.save_as) || task.save_as == $scope.DEFAULT_SAVE_AS) {
+		else if (!task.save_as || _.isEmpty(task.save_as) || task.save_as == $scope.DEFAULT_SAVE_AS) {
 			task.incomplete = true;
 		}
-		else if (!task.aggregator_sampling || _.isEmpty(task.aggregator_sampling)) {
-			task.incomplete = true;
-		}
-		else {
+		else  if (!task.aggregators || task.aggregators.size < 1) {
+            task.incomplete = true;
+        }
+        else if (task.aggregators && !$scope.hasSamplingAggregator(task)) {
+            task.incomplete = true;
+        }
+        else {
 			task.incomplete = false;
 		}
 	};
+
+    $scope.hasSamplingAggregator = function(task){
+        var samplingCount = 0;
+        _.each(task.aggregators, function (aggregator)
+        {
+            if (aggregator.sampling && !_.isEmpty(aggregator.sampling)) {
+                samplingCount++;
+            }
+        });
+        return samplingCount > 0;
+    };
 
 	$scope.hasErrors = function () {
 		return !_.isEmpty($scope.errors);
 	};
 
-	$scope.validate = function(task) {
+	$scope.validate = function (task) {
 		var errs = {};
 
 		if (!task.name || _.isEmpty(task.name)) {
@@ -476,30 +600,21 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 			task.name = $scope.DEFAULT_TASK_NAME;
 			$scope.alert(errs.name);
 		}
-		if (!task.metric_name|| _.isEmpty(task.metric_name)) {
+		if (!task.metric_name || _.isEmpty(task.metric_name)) {
 			errs.name = "Metric cannot be empty.";
 			task.metric_name = $scope.DEFAULT_METRIC_NAME;
 			$scope.alert(errs.name);
 		}
-		if (!task.save_as|| _.isEmpty(task.save_as)) {
+		if (!task.save_as || _.isEmpty(task.save_as)) {
 			errs.name = "Save As cannot be empty.";
 			task.save_as = $scope.DEFAULT_SAVE_AS;
 			$scope.alert(errs.name);
 		}
-		if (!task.aggregator_sampling|| _.isEmpty(task.aggregator_sampling)) {
-			errs.name = "aggregator Sampling cannot be empty.";
-			task.aggregator_sampling =  $scope.DEFAULT_AGGREGATOR_SAMPLING;
-			$scope.alert(errs.name);
-		}
-		if (task.aggregator_sampling) {
-			try {
-				KairosDBDatasource.convertToKairosInterval(task.aggregator_sampling);
-			}
-			catch(err){
-				errs.name = "Invalid aggregator Sampling: " + err.message;
-				$scope.alert(errs.name);
-			}
-		}
+
+        if (!$scope.hasSamplingAggregator(task)) {
+            errs.name = "At least one sampling aggregator is required.";
+            $scope.alert(errs.name);
+        }
 
 		return errs;
 	}

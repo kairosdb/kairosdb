@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -15,9 +15,7 @@
  */
 package org.kairosdb.core.datastore;
 
-import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.collect.SetMultimap;
-import com.google.common.collect.TreeMultimap;
+import com.google.common.collect.*;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.util.Preconditions;
 
@@ -32,7 +30,7 @@ public abstract class AbstractDataPointGroup implements DataPointGroup
 {
 	private String name;
 	private TreeMultimap<String, String> tags = TreeMultimap.create();
-	private List<GroupByResult> groupByResult = new ArrayList<GroupByResult>();
+	private List<GroupByResult> groupByResult = new ArrayList<>();
 
 	public AbstractDataPointGroup(String name)
 	{
@@ -57,10 +55,7 @@ public abstract class AbstractDataPointGroup implements DataPointGroup
 
 	public void addTags(Map<String, String> tags)
 	{
-		for (String key : tags.keySet())
-		{
-			this.tags.put(key, tags.get(key));
-		}
+		this.tags.putAll(Multimaps.forMap(tags));
 	}
 
 	public void addTags(DataPointGroup dpGroup)

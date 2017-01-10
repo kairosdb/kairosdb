@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Proofpoint Inc.
+ * Copyright 2016 KairosDB Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
@@ -30,7 +31,13 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
-@AggregatorName(name = "div", description = "Divides each data point by a divisor.")
+@AggregatorName(
+        name = "div",
+        description = "Divides each data point by a divisor.",
+        properties = {
+                @AggregatorProperty(name = "divisor", type = "double"),
+        }
+)
 public class DivideAggregator implements Aggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;

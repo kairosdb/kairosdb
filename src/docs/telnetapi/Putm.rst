@@ -29,7 +29,7 @@ Here is a simple shell script that inserts data using netcat.
 	#!/bin/bash
 
 	# Current time in milliseconds
-	now=$(($(date +%s%N)/1000000))
+	now=$(($(date +%s%N)/1000))
 	metric=load_value_test
 	value=42
 	host=10.92.4.4

@@ -29,7 +29,8 @@ public class Duration
             name = "value",
             label = "Value",
             description = "The number of units for the aggregation buckets",
-            default_value = "1"
+            default_value = "1",
+            validation = "value > 0"
     )
 	protected long value;
 

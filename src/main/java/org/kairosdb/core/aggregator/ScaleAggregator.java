@@ -38,7 +38,8 @@ public class ScaleAggregator implements Aggregator
 {
 	@AggregatorProperty(
 			label = "Factor",
-			description = "The value to scale each data point by."
+			description = "The value to scale each data point by.",
+            validation = "value > 0"
 	)
 	private double m_factor;
 	private DoubleDataPointFactory m_dataPointFactory;

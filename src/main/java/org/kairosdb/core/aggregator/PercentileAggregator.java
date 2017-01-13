@@ -63,11 +63,10 @@ public class PercentileAggregator extends RangeAggregator
 
 	@NonZero
 	@AggregatorProperty(
-			name = "percentile",
 			label = "Percentile",
 			description = "Data points returned will be in this percentile.",
-			type = "double",
-			default_value = "10"
+			default_value = "10",
+            validation =  "value > 0"
 	)
 	private double percentile;
 

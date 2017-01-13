@@ -36,7 +36,8 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	@AggregatorProperty(
 			label = "Save As",
 			description = "The name of the new metric.",
-			default_value = "<new name>"
+			default_value = "<new name>",
+            validation = "!value && value.length > 0"
 	)
 	private String m_metricName;
 

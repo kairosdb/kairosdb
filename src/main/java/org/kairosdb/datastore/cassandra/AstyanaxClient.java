@@ -1,5 +1,8 @@
 package org.kairosdb.datastore.cassandra;
 
+import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.Session;
+import com.google.common.eventbus.EventBus;
 import com.google.inject.name.Named;
 import com.netflix.astyanax.AstyanaxContext;
 import com.netflix.astyanax.Keyspace;
@@ -68,26 +71,33 @@ public class AstyanaxClient
 	}
 
 
-	public BatchClient getBatchClient()
+	public BatchHandler getBatchHandler(List<DataPointEvent> events, EventCompletionCallBack callBack,
+			int defaultTtl, DataCache<DataPointsRowKey>
+			rowKeyCache, DataCache<String> metricNameCache, EventBus eventBus,
+			Session session, PreparedStatement psInsertData,
+			PreparedStatement psInsertRowKey, PreparedStatement psInsertString)
 	{
-		return new AstyanaxBatchClient();
+		return new AstyanaxBatchHandler(events, callBack, defaultTtl,
+				rowKeyCache, metricNameCache, eventBus, session, psInsertData,
+				psInsertRowKey, psInsertString);
 	}
 
-	private class AstyanaxBatchClient implements BatchClient
+	private class AstyanaxBatchHandler extends CQLBatchHandler
 	{
 		MutationBatch m_batch;
 
-		public AstyanaxBatchClient()
+		public AstyanaxBatchHandler(List<DataPointEvent> events, EventCompletionCallBack callBack,
+				int defaultTtl, DataCache<DataPointsRowKey>
+				rowKeyCache, DataCache<String> metricNameCache, EventBus eventBus,
+				Session session, PreparedStatement psInsertData,
+				PreparedStatement psInsertRowKey, PreparedStatement psInsertString)
 		{
+			super(events, callBack, defaultTtl, rowKeyCache, metricNameCache, eventBus,
+					session, psInsertData, psInsertRowKey, psInsertString);
+
 			m_batch = m_keyspace.prepareMutationBatch();
 		}
 
-		@Override
-		public void addRowKey(String metricName, DataPointsRowKey rowKey, int rowKeyTtl)
-		{
-			m_batch.withRow(CF_ROW_KEY_INDEX, metricName)
-					.putColumn(rowKey, (String)null, rowKeyTtl);
-		}
 
 		@Override
 		public void addMetricName(String metricName)
@@ -96,19 +106,6 @@ public class AstyanaxClient
 					.putColumn(metricName, (String)null);
 		}
 
-		@Override
-		public void addTagName(String tagName)
-		{
-			m_batch.withRow(CF_STRING_INDEX, ROW_KEY_TAG_NAMES)
-					.putColumn(tagName, (String)null);
-		}
-
-		@Override
-		public void addTagValue(String value)
-		{
-			m_batch.withRow(CF_STRING_INDEX, ROW_KEY_TAG_VALUES)
-					.putColumn(value, (String)null);
-		}
 
 		@Override
 		public void addDataPoint(DataPointsRowKey rowKey, int columnTime, DataPoint dataPoint, int ttl) throws IOException
@@ -125,6 +122,7 @@ public class AstyanaxClient
 		{
 			try
 			{
+				super.submitBatch();
 				m_batch.execute();
 			}
 			catch (ConnectionException e)

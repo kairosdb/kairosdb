@@ -4,19 +4,24 @@ import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
+import com.google.common.eventbus.EventBus;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.queue.EventCompletionCallBack;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.KDataOutput;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.List;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.*;
+import static org.kairosdb.datastore.cassandra.CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER;
 
 /**
- Created by bhawkins on 12/12/16.
+ Created by bhawkins on 1/11/17.
  */
-public class CQLBatchClient implements BatchClient
+public class CQLBatchHandler extends BatchHandler
 {
 	private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -26,14 +31,18 @@ public class CQLBatchClient implements BatchClient
 	private final PreparedStatement m_psInsertString;
 
 	private BatchStatement metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-	private BatchStatement tagNameBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-	private BatchStatement tagValueBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 	private BatchStatement dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 	private BatchStatement rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 
-	public CQLBatchClient(Session session, PreparedStatement psInsertData,
+	public CQLBatchHandler(List<DataPointEvent> events, EventCompletionCallBack callBack,
+			int defaultTtl, DataCache<DataPointsRowKey>
+			rowKeyCache, DataCache<String> metricNameCache, EventBus eventBus,
+			Session session, PreparedStatement psInsertData,
 			PreparedStatement psInsertRowKey, PreparedStatement psInsertString)
 	{
+		super(events, callBack, defaultTtl, rowKeyCache, metricNameCache, eventBus);
+
+
 		m_session = session;
 		m_psInsertData = psInsertData;
 		m_psInsertRowKey = psInsertRowKey;
@@ -47,7 +56,6 @@ public class CQLBatchClient implements BatchClient
 		bs.setBytesUnsafe(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
 		bs.setBytesUnsafe(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 		bs.setInt(2, rowKeyTtl);
-		//m_session.executeAsync(bs);
 		rowKeyBatch.add(bs);
 	}
 
@@ -58,28 +66,7 @@ public class CQLBatchClient implements BatchClient
 		bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
 		bs.setString(1, metricName);
 
-		//m_session.executeAsync(bs);
 		metricNamesBatch.add(bs);
-	}
-
-	@Override
-	public void addTagName(String tagName)
-	{
-		BoundStatement bs = new BoundStatement(m_psInsertString);
-		bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_TAG_NAMES.getBytes(UTF_8)));
-		bs.setString(1, tagName);
-
-		tagNameBatch.add(bs);
-	}
-
-	@Override
-	public void addTagValue(String value)
-	{
-		BoundStatement bs = new BoundStatement(m_psInsertString);
-		bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_TAG_VALUES.getBytes(UTF_8)));
-		bs.setString(1, value);
-
-		tagValueBatch.add(bs);
 	}
 
 	@Override
@@ -106,15 +93,10 @@ public class CQLBatchClient implements BatchClient
 		if (metricNamesBatch.size() != 0)
 			m_session.executeAsync(metricNamesBatch);
 
-		if (tagNameBatch.size() != 0)
-			m_session.executeAsync(tagNameBatch);
-
-		if (tagValueBatch.size() != 0)
-			m_session.executeAsync(tagValueBatch);
-
 		if (rowKeyBatch.size() != 0)
 			m_session.executeAsync(rowKeyBatch);
 
-		m_session.execute(dataPointBatch);
+		if (dataPointBatch.size() != 0)
+			m_session.execute(dataPointBatch);
 	}
 }

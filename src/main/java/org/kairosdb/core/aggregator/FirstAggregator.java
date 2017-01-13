@@ -29,10 +29,6 @@ import java.util.Iterator;
 @AggregatorName(
         name = "first",
 		description = "Returns the first value data point for the time range."
-		//        properties = {
-		//                @AggregatorProperty(name = "sampling", type = "duration"),
-		//                @AggregatorProperty(name="align_start_time", type="boolean")
-		//        }
 )
 public class FirstAggregator extends RangeAggregator
 {

@@ -186,26 +186,26 @@ module.directive('focusOnShow', function ($timeout)
     };
 });
 
-// This is needed by dynamically created elements. The regular tooltip mechanism
-// does not work for dynamic elements
-module.directive('bsTooltip', function ()
-{
-    return {
-        restrict: 'A',
-        link: function (scope, element, attrs)
-        {
-            $(element).hover(function ()
-            {
-                // on mouseenter
-                $(element).tooltip('show');
-            }, function ()
-            {
-                // on mouseleave
-                $(element).tooltip('hide');
-            });
-        }
-    };
-});
+// // This is needed by dynamically created elements. The regular tooltip mechanism
+// // does not work for dynamic elements
+// module.directive('bsTooltip', function ()
+// {
+//     return {
+//         restrict: 'A',
+//         link: function (scope, element, attrs)
+//         {
+//             $(element).hover(function ()
+//             {
+//                 // on mouseenter
+//                 $(element).tooltip('show');
+//             }, function ()
+//             {
+//                 // on mouseleave
+//                 $(element).tooltip('hide');
+//             });
+//         }
+//     };
+// });
 
 module.directive('autocompleteWithButtons', function ($compile)
 {
@@ -419,7 +419,13 @@ module.directive('aggregator', function ($compile)
             html += '<table width="250px">';
             html += '<tr>';
             html += '	<td><aggregatornamedropdown agg="scope.agg.name" descriptors="scope.descriptors"></aggregatornamedropdown>';
-            html += '       <aggregatorproperties agg="scope.agg" descriptors="scope.descriptors">';
+            html += '       <table style="padding: 0">';
+            html += '           <tr>';
+            html += '               <td style="padding-left: 20px">';
+            html += '                   <aggregatorproperties agg="scope.agg" descriptors="scope.descriptors">';
+            html += '               </td>';
+            html += '           </tr>';
+            html += '       </table>';
             html += '   </td>';
             html += '   <td width="10%" valign="top">';
             html += '		<a href="#" class="btn-sm btn-circle" style="margin-right:10px;"';
@@ -475,7 +481,7 @@ module.directive('aggregatornamedropdown', function ($compile)
             html += '	<ul class="dropdown-menu" aria-labelledby="aggregatorDropdown">';
             html += '   <li ng-repeat="descriptor in descriptors">';
 			html += '       <a href="#" ng-click="setName(agg, descriptor.name, descriptors)"' +
-                    '           title="{{descriptor.description}}">';
+                    '           title="{{descriptor.description}}" bs-tooltip>';
             html += '           {{ descriptor.name }}';
             html += '       </a>';
             html += '   </li>';
@@ -518,51 +524,10 @@ module.directive('aggregatorproperties', function ($compile)
                     if (descriptor.name == scope.agg.name) {
                         _.each(descriptor.properties, function (property)
                         {
-                            if (property.type == 'duration') {
-                                html += "<input  class='small-input' type='text' style='width:30px' ng-model='agg.sampling.value'>";
-                                html += "<samplingunitdropdown></samplingunitdropdown>";
+                            if (html.length > 0) {
+                                html += "<br/>";
                             }
-                            else if (property.type == 'boolean') {
-                                html += "<span>" + property.name + "</span> ";
-                                html += "<input type='checkbox' ng-model='agg." + property.name + "'>";
-                            }
-                            else if (property.type == 'double') {
-                                scope.agg[property.name] = 1;
-                                html += "<span>" + property.name + "</span> ";
-                                html += "<input  class='small-input' type='text' style='width:30px' ng-model='agg." + property.name + "'>";
-                            }
-                            else if (property.type == 'integer') {
-                                html += "<span>" + property.name + "</span> ";
-                                html += "<input  class='small-input' type='text' style='width:30px' ng-model='agg." + property.name + "'>";
-                            }
-                            else if (property.type == 'string') {
-                                html += "<span>" + property.name + "</span> ";
-                                html += "<input class='small-input' type='text' style='width:80px' ng-model='agg." + property.name + "'>";
-                            }
-                            else if (property.type == 'timeUnit') {
-                                html += "<samplingunitdropdown></samplingunitdropdown>";
-                            }
-                            else if (property.type == 'enum') {
-                                // todo how to make this a directive?
-                                html += "<span>" + property.name + "</span> ";
-                                scope.values = property.values;
-                                scope.agg[property.name] = scope.values[0];
-                                html += '<div class="dropdown" style="display:inline-block">';
-                                html += '	<button class="btn btn-default dropdown-toggle" type="button" ' +
-                                        'id="aggregatorDropdown" data-toggle="dropdown" ' +
-                                        'aria-haspopup="true" aria-expanded="true">';
-                                html += '       {{ agg.' + [property.name] + ' }}';
-                                html += '		<span class="caret"></span>';
-                                html += '	</button>';
-                                html += '	<ul class="dropdown-menu" aria-labelledby="aggregatorDropdown">';
-                                html += '   <li ng-repeat="unit in values">';
-                                html += '       <a href="#" ng-click="agg.' + [property.name] + '=unit">';
-                                html += '           {{ unit }}';
-                                html += '       <a>';
-                                html += '   </li>';
-                                html += '	</ul>';
-                                html += '</div>';
-                            }
+                            html += scope.getHtml(property);
                         });
                     }
                 });
@@ -581,44 +546,75 @@ module.directive('aggregatorproperties', function ($compile)
                 scope.renderHtml();
             });
 
+            scope.setValue = function (obj, path, value)
+            {
+                path = path.split('.');
+                for(var i = 1; i < path.length - 1; i++){
+                    if (!obj[path[i]])
+                    {
+                        obj[path[i]] = {}; // create object if doesn't exist
+                    }
+                    obj = obj[path[i]];
+                }
+                obj[path[i]] = value;
+            };
+
+            scope.getHtml = function(property, parentName)
+            {
+                var name = parentName ? parentName + "." + property.name: property.name;
+                var html = "";
+                var modelName = 'agg.' + name;
+                if (property.type == 'boolean') {
+                    html += "<span>" + property.name + "</span> ";
+                    html += "<input name='" + modelName + "' type='checkbox' ng-init=\"" + modelName + "=" + property.defaultValue + "\" + ng-model='" + modelName + "' >";
+                }
+                else if (property.type == 'double') {
+                    html += "<span>" + property.name + "</span> ";
+                    html += "<input  class='small-input' type='text' ng-init=\"" + modelName + "=" + property.defaultValue + "\" + ng-model='" + modelName + "' style='width:30px'>";
+                }
+                else if (property.type == 'int' || property.type == 'long') {
+                    html += "<span>" + property.name + "</span> ";
+                    html += "<input  name='" + modelName + "' class='small-input' type='text' ng-init=\"" + modelName + "='" + property.defaultValue + "'\" + ng-model='" + modelName + "' value='" + property.defaultValue + "' style='width:30px'>";
+                }
+                else if (property.type == 'String') {
+                    html += "<span>" + property.name + "</span> ";
+                    html += "<input class='small-input' type='text' ng-init=\"" + modelName + "='" + property.defaultValue + "'\" ng-model='" + modelName + "' style='width:90px' ng-model='agg." + property.name + "'>";
+                }
+                else if (property.type == "Object")
+                {
+                    _.each(property.properties, function (subProperty)
+                    {
+                        html += scope.getHtml(subProperty, property.name);
+                    });
+                }
+                else if (property.type == 'enum') {
+                    scope.values = property.options;
+                    scope.setValue(scope.agg, modelName, property.defaultValue);
+                    html += "<span>" + property.name + "</span> ";
+                    html += '<div class="dropdown" style="display:inline-block">';
+                    html += '	<button class="btn btn-default dropdown-toggle" type="button" ' +
+                            'id="aggregatorDropdown" data-toggle="dropdown" ' +
+                            'aria-haspopup="true" aria-expanded="true" style="font-size: 11px;">';
+                    html += '       {{ ' + modelName + ' }}';
+                    html += '		<span class="caret"></span>';
+                    html += '	</button>';
+                    html += '	<ul class="dropdown-menu" aria-labelledby="aggregatorDropdown">';
+                    html += '   <li ng-repeat="value in values">';
+                    html += '       <a href="#" ng-click="' + modelName + '=value" style="font-size: 11px;">{{ value }}</a>';
+                    html += '   </li>';
+                    html += '	</ul>';
+                    html += '</div>';
+                }
+                else {
+                    scope.$parent.alert("Invalid aggregator property type. Property name: '" +
+                            property.name + "'. Type: '" + property.type + "'.");
+                }
+
+                return html;
+            };
+
+
             scope.renderHtml();
-        }
-    }
-});
-
-module.directive('samplingunitdropdown', function ($compile)
-{
-    return {
-        link: function (scope, element, attributes)
-        {
-            if (!scope.agg.sampling)
-            {
-                scope.agg.sampling = scope.$parent.DEFAULT_SAMPLING;
-            }
-            var html = '';
-            html += '<div class="dropdown" style="display:inline-block">';
-            html += '	<button class="btn btn-default dropdown-toggle" ' +
-                    'type="button" id="aggregatorDropdown" data-toggle="dropdown" ' +
-                    'aria-haspopup="true" aria-expanded="true">';
-            html += '       {{ agg.sampling.unit }}';
-            html += '		<span class="caret"></span>';
-            html += '	</button>';
-            html += '	<ul class="dropdown-menu" aria-labelledby="aggregatorDropdown">';
-            html += '   <li ng-repeat="unit in units">';
-            html += '       <a href="#" ng-click="setUnit(agg, unit)">';
-            html += '           {{ unit }}';
-            html += '       </a>';
-            html += '   </li>';
-            html += '	</ul>';
-            html += '</div>';
-
-            element.append(html);
-            $compile(element.contents())(scope);
-
-            scope.setUnit = function (agg, unit)
-            {
-                agg.sampling.unit = unit
-            }
         }
     }
 });

@@ -28,6 +28,7 @@ import org.kairosdb.core.aggregator.json.AggregatorMetadata;
 import org.kairosdb.core.aggregator.json.AggregatorPropertyMetadata;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -35,80 +36,93 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 public class GuiceAggregatorFactory implements AggregatorFactory
 {
-	private Map<String, Class<Aggregator>> m_aggregators = new HashMap<>();
-	private List<AggregatorMetadata> m_aggregatorsMetadata = new ArrayList<>();
-	private Injector m_injector;
+    private Map<String, Class<Aggregator>> m_aggregators = new HashMap<>();
+    private List<AggregatorMetadata> m_aggregatorsMetadata = new ArrayList<>();
+    private Injector m_injector;
 
 
-	@Inject
-	@SuppressWarnings("unchecked")
-	public GuiceAggregatorFactory(Injector injector)
-	{
-		m_injector = injector;
-		Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
+    @Inject
+    @SuppressWarnings("unchecked")
+    public GuiceAggregatorFactory(Injector injector)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, ClassNotFoundException
+    {
+        m_injector = injector;
+        Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
 
-		for (Key<?> key : bindings.keySet())
-		{
-			Class<?> bindingClass = key.getTypeLiteral().getRawType();
-			if (Aggregator.class.isAssignableFrom(bindingClass))
-			{
-				AggregatorName ann = bindingClass.getAnnotation(AggregatorName.class);
-				if (ann == null)
-					throw new IllegalStateException("Aggregator class " + bindingClass.getName() +
-							" does not have required annotation " + AggregatorName.class.getName());
+        for (Key<?> key : bindings.keySet()) {
+            Class<?> bindingClass = key.getTypeLiteral().getRawType();
+            if (Aggregator.class.isAssignableFrom(bindingClass)) {
+                AggregatorName ann = bindingClass.getAnnotation(AggregatorName.class);
+                if (ann == null) {
+                    throw new IllegalStateException("Aggregator class " + bindingClass.getName() +
+                            " does not have required annotation " + AggregatorName.class.getName());
+                }
 
-				m_aggregators.put(ann.name(), (Class<Aggregator>) bindingClass);
-				List<AggregatorPropertyMetadata> properties = getPropertyMetadata(new ArrayList<AggregatorPropertyMetadata>(), bindingClass);
-				m_aggregatorsMetadata.add(new AggregatorMetadata(ann, properties));
-			}
-		}
-		Collections.sort(m_aggregatorsMetadata, new Comparator<AggregatorMetadata>()
-		{
-			@Override
-			public int compare(AggregatorMetadata o1, AggregatorMetadata o2)
-			{
-				return o1.getName().compareTo(o2.getName());
-			}
-		});
-	}
+                m_aggregators.put(ann.name(), (Class<Aggregator>) bindingClass);
+                List<AggregatorPropertyMetadata> properties = getPropertyMetadata(bindingClass);
+                m_aggregatorsMetadata.add(new AggregatorMetadata(ann, properties));
+            }
+        }
+        Collections.sort(m_aggregatorsMetadata, new Comparator<AggregatorMetadata>()
+        {
+            @Override
+            public int compare(AggregatorMetadata o1, AggregatorMetadata o2)
+            {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+    }
 
-	public Aggregator createAggregator(String name)
-	{
-		Class<Aggregator> aggClass = m_aggregators.get(name);
+    public Aggregator createAggregator(String name)
+    {
+        Class<Aggregator> aggClass = m_aggregators.get(name);
 
-		if (aggClass == null)
-			return (null);
+        if (aggClass == null) {
+            return (null);
+        }
 
-		return (m_injector.getInstance(aggClass));
-	}
+        return (m_injector.getInstance(aggClass));
+    }
 
-	@Override
-	public ImmutableList<AggregatorMetadata> getAggregatorMetadata()
-	{
-		return new ImmutableList.Builder<AggregatorMetadata>().addAll(m_aggregatorsMetadata).build();
-	}
+    @Override
+    public ImmutableList<AggregatorMetadata> getAggregatorMetadata()
+    {
+        return new ImmutableList.Builder<AggregatorMetadata>().addAll(m_aggregatorsMetadata).build();
+    }
 
-	private List<AggregatorPropertyMetadata> getPropertyMetadata(List<AggregatorPropertyMetadata> properties, Class type)
-	{
-		Field[] fields = type.getDeclaredFields();
-		for (Field field : fields)
-		{
-			if (field.getAnnotation(AggregatorProperty.class) != null)
-			{
-				properties.add(new AggregatorPropertyMetadata(field.getAnnotation(AggregatorProperty.class)));
-			}
-			if (field.getAnnotation(AggregatorCompoundProperty.class) != null)
-			{
-				properties.add(new AggregatorPropertyMetadata(field.getAnnotation(AggregatorCompoundProperty.class)));
-			}
-		}
+    // todo what if no type specified and not primitive or String or enum???
+    private List<AggregatorPropertyMetadata> getPropertyMetadata(Class clazz)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, ClassNotFoundException
+    {
+        List<AggregatorPropertyMetadata> properties = new ArrayList<>();
+        Field[] fields = clazz.getDeclaredFields();
+        for (Field field : fields) {
+            if (field.getAnnotation(AggregatorProperty.class) != null) {
+                String type = field.getType().getSimpleName();
+                String options = null;
+                if (field.getType().isEnum())
+                {
+                    options = getEnumAsString(field.getType());
+                    type = "enum";
+                }
 
-		if (type.getSuperclass() != null)
-		{
-			getPropertyMetadata(properties, type.getSuperclass());
-		}
+                properties.add(new AggregatorPropertyMetadata(field.getName(), type,
+                        options,
+                        field.getAnnotation(AggregatorProperty.class)));
+            }
+
+            AggregatorCompoundProperty annotation = field.getAnnotation(AggregatorCompoundProperty.class);
+            if (annotation != null) {
+                properties.add(new AggregatorPropertyMetadata(field.getName(), annotation, getPropertyMetadata(field.getType())));
+            }
+        }
+
+        if (clazz.getSuperclass() != null) {
+            properties.addAll(getPropertyMetadata(clazz.getSuperclass()));
+        }
 
         Collections.sort(properties, new Comparator<AggregatorPropertyMetadata>()
         {
@@ -119,6 +133,23 @@ public class GuiceAggregatorFactory implements AggregatorFactory
             }
         });
 
-		return properties;
-	}
+        return properties;
+    }
+
+    private String getEnumAsString(Class type)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
+    {
+        StringBuilder builder = new StringBuilder();
+        Field[] declaredFields = type.getDeclaredFields();
+        for (Field declaredField : declaredFields) {
+            if (declaredField.isEnumConstant()){
+                if (builder.length() > 0) {
+                    builder.append(',');
+                }
+                builder.append(declaredField.getName());
+            }
+        }
+
+        return builder.toString();
+    }
 }

@@ -13,7 +13,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AggregatorCompoundProperty
 {
+    String name() default "";
 	String label();
 
-	AggregatorProperty[] properties();
+	AggregatorProperty[] properties() default {};
+	String[] order() default {};
 }

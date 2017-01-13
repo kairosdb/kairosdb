@@ -19,11 +19,10 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.aggregator.annotation.AggregatorCompoundProperty;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.util.Util;
 
@@ -33,13 +32,9 @@ import org.kairosdb.util.Util;
 )
 public class SamplerAggregator implements Aggregator, TimezoneAware
 {
-	@AggregatorProperty(
-			name = "unit",
-			label = "Unit",
-			description = "The time unit for the sampling rate.",
-			type = "enum",
-			options = {"MILLISECONDS", "SECONDS", "MINUTES", "HOURS", "DAYS", "WEEKS", "MONTHS", "YEARS"},
-			default_value = "MILLISECONDS"
+	@AggregatorCompoundProperty(
+			label = "Sampling",
+            order = {"Value", "Unit"}
 	)
 	private Sampling m_sampling;
 

@@ -41,10 +41,8 @@ public class SmaAggregator implements Aggregator
 
 	//@NonZero
 	@AggregatorProperty(
-			name = "size",
 			label = "Size",
 			description = "The period of the moving average. This is the number of data point to use each time the average is calculated.",
-			type = "integer",
 			default_value = "10"
 	)
 	private int m_size;

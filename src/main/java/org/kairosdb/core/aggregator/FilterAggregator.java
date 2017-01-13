@@ -47,7 +47,6 @@ public class FilterAggregator implements Aggregator
 	}
 
 	@AggregatorProperty(
-			name = "filter_op",
 			label = "Filter operation",
 			description = "The operation performed for each data point.",
 			type = "enum",
@@ -57,11 +56,8 @@ public class FilterAggregator implements Aggregator
 	private FilterOperation m_filterop;
 
 	@AggregatorProperty(
-			name = "threshold",
 			label = "Threshold",
-			description = "The value the operation is performed on. If the operation is lt, then a null data point is returned if the data point is less than the threshold.",
-			type = "double",
-			default_value = "equal"
+			description = "The value the operation is performed on. If the operation is lt, then a null data point is returned if the data point is less than the threshold."
 	)
 	private double m_threshold;
 

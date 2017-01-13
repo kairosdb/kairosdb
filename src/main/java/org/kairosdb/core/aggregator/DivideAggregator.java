@@ -41,11 +41,9 @@ public class DivideAggregator implements Aggregator
 
 	@NonZero
 	@AggregatorProperty(
-			name = "divisor",
 			label = "divisor",
 			description = "The value each data point is divided by.",
-			type = "double",
-			default_value = "1"
+            default_value = "1"
 	)
 	private double m_divisor;
 

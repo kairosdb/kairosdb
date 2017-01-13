@@ -17,6 +17,7 @@ package org.kairosdb.core.datastore;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Test;
+import org.kairosdb.core.aggregator.Sampling;
 import org.kairosdb.util.Util;
 
 import static org.hamcrest.MatcherAssert.assertThat;

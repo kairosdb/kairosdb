@@ -17,15 +17,29 @@
 package org.kairosdb.core.datastore;
 
 
+import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 public class Duration
 {
 	@Min(1)
+    @AggregatorProperty(
+            name = "value",
+            label = "Value",
+            description = "The number of units for the aggregation buckets",
+            default_value = "1"
+    )
 	protected long value;
 
 	@NotNull
+    @AggregatorProperty(
+            name = "unit",
+            label = "Unit",
+            description = "The time unit for the sampling rate",
+            default_value = "MILLISECONDS"
+    )
 	protected TimeUnit unit;
 
 	public Duration()

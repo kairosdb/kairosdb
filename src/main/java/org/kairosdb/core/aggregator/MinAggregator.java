@@ -34,7 +34,6 @@ public class MinAggregator extends RangeAggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;
 
-
 	@Inject
 	public MinAggregator(DoubleDataPointFactory dataPointFactory)
 	{

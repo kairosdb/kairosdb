@@ -9,19 +9,19 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AggregatorProperty
 {
-	String name();
+    String name() default "";
 
-	String label();
+    String label() default "";
 
-	String description();
+    String description();
 
-	boolean optional() default false;
+    boolean optional() default false;
 
-	String type();
+    String type() default "";
 
-	String[] options() default {};
+    String[] options() default {};
 
-	String default_value();
+    String default_value() default "";
 
-	String validation() default "";
+    String validation() default "";
 }

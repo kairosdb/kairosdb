@@ -14,8 +14,11 @@
  *    limitations under the License.
  */
 
-package org.kairosdb.core.datastore;
+package org.kairosdb.core.aggregator;
 
+
+import org.kairosdb.core.datastore.Duration;
+import org.kairosdb.core.datastore.TimeUnit;
 
 public class Sampling extends Duration
 {

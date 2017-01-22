@@ -19,7 +19,7 @@ package org.kairosdb.core.groupby;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.GroupByName;
+import org.kairosdb.core.annotation.GroupByName;
 import org.kairosdb.core.formatter.FormatterException;
 
 import java.io.StringWriter;

@@ -14,7 +14,7 @@ module.directive('editable', function ($compile)
             '	ng-blur="$parent.onBlur($parent.task)" ' +
             '	ng-show="edit" ' +
             '	my-blur="edit">' +
-            '</>' +
+            '/>' +
 
             '<a href="" ' +
             '	ng-show="!edit && !$parent.task.complex" ' +
@@ -574,7 +574,7 @@ module.directive('aggregatorproperties', function ($compile)
                 }
                 else if (property.type == 'int' || property.type == 'long') {
                     html += "<span>" + property.name + "</span> ";
-                    html += "<input  name='" + modelName + "' class='small-input' type='text' ng-init=\"" + modelName + "='" + property.defaultValue + "'\" + ng-model='" + modelName + "' value='" + property.defaultValue + "' style='width:30px'>";
+                    html += "<input name='" + modelName + "' class='small-input' type='text' ng-init=\"" + modelName + "='" + property.defaultValue + "'\" + ng-model='" + modelName + "' value='" + property.defaultValue + "' style='width:30px'>";
                 }
                 else if (property.type == 'String') {
                     html += "<span>" + property.name + "</span> ";

@@ -19,8 +19,8 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
@@ -40,7 +40,7 @@ public class DivideAggregator implements Aggregator
 	private DoubleDataPointFactory m_dataPointFactory;
 
 	@NonZero
-	@AggregatorProperty(
+	@QueryProperty(
 			label = "divisor",
 			description = "The value each data point is divided by.",
             default_value = "1",
@@ -82,7 +82,7 @@ public class DivideAggregator implements Aggregator
 	{
 		private DataPointGroup m_innerDataPointGroup;
 
-		public DivideDataPointGroup(DataPointGroup innerDataPointGroup)
+		DivideDataPointGroup(DataPointGroup innerDataPointGroup)
 		{
 			m_innerDataPointGroup = innerDataPointGroup;
 		}

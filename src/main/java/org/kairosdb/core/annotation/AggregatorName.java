@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2016 KairosDB Authors
  *
@@ -13,7 +14,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.kairosdb.core.aggregator.annotation;
+
+package org.kairosdb.core.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -21,9 +23,8 @@ import java.lang.annotation.Target;
 
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-public @interface GroupByName
+public @interface AggregatorName
 {
 	String name();
 	String description();
 }
-

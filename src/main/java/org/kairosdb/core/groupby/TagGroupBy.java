@@ -17,7 +17,8 @@ package org.kairosdb.core.groupby;
 
 import org.apache.bval.constraints.NotEmpty;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.GroupByName;
+import org.kairosdb.core.annotation.GroupByName;
+import org.kairosdb.core.annotation.QueryProperty;
 
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
@@ -32,6 +33,11 @@ public class TagGroupBy implements GroupBy
 {
 	@NotNull
 	@NotEmpty()
+    @QueryProperty(
+            label = "Tags",
+            description = "A list of tags to group by.",
+            validation = "value.length > 0"
+    )
 	private List<String> tags;
 
 	public TagGroupBy()

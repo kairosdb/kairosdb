@@ -2,12 +2,12 @@ package org.kairosdb.core.annotatedAggregator;
 
 
 import org.kairosdb.core.aggregator.Aggregator;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 
 public class BAggregator implements Aggregator
 {
-    @AggregatorProperty(
+    @QueryProperty(
             name = "inherited",
             label = "Inherited",
             description = "This is alpha",

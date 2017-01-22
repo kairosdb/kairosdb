@@ -2,7 +2,7 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.annotation.AggregatorName;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 
@@ -41,7 +41,7 @@ public class DiffAggregator implements Aggregator
 	private class DiffDataPointGroup extends AggregatedDataPointGroupWrapper
 	{
 
-		public DiffDataPointGroup(DataPointGroup innerDataPointGroup)
+		DiffDataPointGroup(DataPointGroup innerDataPointGroup)
 		{
 			super(innerDataPointGroup);
 		}

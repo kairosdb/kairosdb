@@ -21,26 +21,24 @@ import com.google.inject.Binding;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import org.kairosdb.core.aggregator.annotation.AggregatorCompoundProperty;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
-import org.kairosdb.core.aggregator.json.AggregatorMetadata;
-import org.kairosdb.core.aggregator.json.AggregatorPropertyMetadata;
+import org.kairosdb.core.aggregator.json.QueryMetadata;
+import org.kairosdb.core.aggregator.json.QueryPropertyMetadata;
+import org.kairosdb.core.annotation.AggregatorName;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.kairosdb.core.annotation.AnnotationUtils.getPropertyMetadata;
+
 
 public class GuiceAggregatorFactory implements AggregatorFactory
 {
     private Map<String, Class<Aggregator>> m_aggregators = new HashMap<>();
-    private List<AggregatorMetadata> m_aggregatorsMetadata = new ArrayList<>();
+    private List<QueryMetadata> m_queryMetadata = new ArrayList<>();
     private Injector m_injector;
 
 
@@ -62,14 +60,15 @@ public class GuiceAggregatorFactory implements AggregatorFactory
                 }
 
                 m_aggregators.put(ann.name(), (Class<Aggregator>) bindingClass);
-                List<AggregatorPropertyMetadata> properties = getPropertyMetadata(bindingClass);
-                m_aggregatorsMetadata.add(new AggregatorMetadata(ann, properties));
+                List<QueryPropertyMetadata> properties = getPropertyMetadata(bindingClass);
+                m_queryMetadata.add(new QueryMetadata(ann.name(), ann.description(), properties));
             }
         }
-        Collections.sort(m_aggregatorsMetadata, new Comparator<AggregatorMetadata>()
+        //noinspection Convert2Lambda
+        m_queryMetadata.sort(new Comparator<QueryMetadata>()
         {
             @Override
-            public int compare(AggregatorMetadata o1, AggregatorMetadata o2)
+            public int compare(QueryMetadata o1, QueryMetadata o2)
             {
                 return o1.getName().compareTo(o2.getName());
             }
@@ -88,68 +87,8 @@ public class GuiceAggregatorFactory implements AggregatorFactory
     }
 
     @Override
-    public ImmutableList<AggregatorMetadata> getAggregatorMetadata()
+    public ImmutableList<QueryMetadata> getQueryMetadata()
     {
-        return new ImmutableList.Builder<AggregatorMetadata>().addAll(m_aggregatorsMetadata).build();
-    }
-
-    // todo what if no type specified and not primitive or String or enum???
-    private List<AggregatorPropertyMetadata> getPropertyMetadata(Class clazz)
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, ClassNotFoundException
-    {
-        List<AggregatorPropertyMetadata> properties = new ArrayList<>();
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields) {
-            if (field.getAnnotation(AggregatorProperty.class) != null) {
-                String type = field.getType().getSimpleName();
-                String options = null;
-                if (field.getType().isEnum())
-                {
-                    options = getEnumAsString(field.getType());
-                    type = "enum";
-                }
-
-                properties.add(new AggregatorPropertyMetadata(field.getName(), type,
-                        options,
-                        field.getAnnotation(AggregatorProperty.class)));
-            }
-
-            AggregatorCompoundProperty annotation = field.getAnnotation(AggregatorCompoundProperty.class);
-            if (annotation != null) {
-                properties.add(new AggregatorPropertyMetadata(field.getName(), annotation, getPropertyMetadata(field.getType())));
-            }
-        }
-
-        if (clazz.getSuperclass() != null) {
-            properties.addAll(getPropertyMetadata(clazz.getSuperclass()));
-        }
-
-        Collections.sort(properties, new Comparator<AggregatorPropertyMetadata>()
-        {
-            @Override
-            public int compare(AggregatorPropertyMetadata o1, AggregatorPropertyMetadata o2)
-            {
-                return o1.getLabel().compareTo(o2.getLabel());
-            }
-        });
-
-        return properties;
-    }
-
-    private String getEnumAsString(Class type)
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
-    {
-        StringBuilder builder = new StringBuilder();
-        Field[] declaredFields = type.getDeclaredFields();
-        for (Field declaredField : declaredFields) {
-            if (declaredField.isEnumConstant()){
-                if (builder.length() > 0) {
-                    builder.append(',');
-                }
-                builder.append(declaredField.getName());
-            }
-        }
-
-        return builder.toString();
+        return new ImmutableList.Builder<QueryMetadata>().addAll(m_queryMetadata).build();
     }
 }

@@ -27,7 +27,7 @@ import com.google.inject.name.Named;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.aggregator.AggregatorFactory;
-import org.kairosdb.core.aggregator.json.AggregatorMetadata;
+import org.kairosdb.core.aggregator.json.QueryMetadata;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
@@ -39,6 +39,7 @@ import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
 import org.kairosdb.core.formatter.JsonResponse;
+import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.http.rest.json.DataPointsParser;
 import org.kairosdb.core.http.rest.json.ErrorResponse;
 import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
@@ -110,6 +111,7 @@ public class MetricsResource implements KairosMetricReporter
 	private final Map<String, DataFormatter> formatters = new HashMap<>();
 	private final QueryParser queryParser;
     private final AggregatorFactory aggregatorFactory;
+    private final GroupByFactory groupByFactory;
 
 	//Used for parsing incoming metrics
 	private final Gson gson;
@@ -144,16 +146,17 @@ public class MetricsResource implements KairosMetricReporter
 
 	@Inject
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
-			KairosDataPointFactory dataPointFactory, AggregatorFactory aggregatorFactory)
+			KairosDataPointFactory dataPointFactory, AggregatorFactory aggregatorFactory, GroupByFactory groupByFactory)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.queryParser = checkNotNull(queryParser);
         this.aggregatorFactory = checkNotNull(aggregatorFactory);
+        this.groupByFactory = checkNotNull(groupByFactory);
 		m_kairosDataPointFactory = dataPointFactory;
 		formatters.put("json", new JsonFormatter());
 
 		GsonBuilder builder = new GsonBuilder();
-		gson = builder.create();
+		gson = builder.disableHtmlEscaping().create();
 	}
 
 	public static ResponseBuilder setHeaders(ResponseBuilder responseBuilder)
@@ -248,8 +251,19 @@ public class MetricsResource implements KairosMetricReporter
     @Path("/aggregators")
     public Response getAggregators()
     {
-        ImmutableList<AggregatorMetadata> aggregatorMetadata = aggregatorFactory.getAggregatorMetadata();
-        ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(gson.toJson(aggregatorMetadata));
+        ImmutableList<QueryMetadata> queryMetadata = aggregatorFactory.getQueryMetadata();
+        ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(gson.toJson(queryMetadata));
+        setHeaders(responseBuilder);
+        return responseBuilder.build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+    @Path("/groupbys")
+    public Response getGroupBys()
+    {
+        ImmutableList<QueryMetadata> queryMetadata = groupByFactory.getQueryMetadata();
+        ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(gson.toJson(queryMetadata));
         setHeaders(responseBuilder);
         return responseBuilder.build();
     }

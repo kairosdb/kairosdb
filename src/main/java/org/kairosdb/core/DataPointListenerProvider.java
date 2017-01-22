@@ -6,9 +6,11 @@
 
 package org.kairosdb.core;
 
-import com.google.inject.*;
-import org.kairosdb.core.aggregator.Aggregator;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import com.google.inject.Binding;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.Collections;

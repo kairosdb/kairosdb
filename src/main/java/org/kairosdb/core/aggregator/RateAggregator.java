@@ -19,8 +19,8 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorCompoundProperty;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryCompoundProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.TimeUnit;
@@ -32,7 +32,7 @@ import org.kairosdb.util.Util;
 )
 public class RateAggregator implements Aggregator, TimezoneAware
 {
-    @AggregatorCompoundProperty(
+    @QueryCompoundProperty(
             label = "Sampling",
             order = {"Value", "Unit"}
     )
@@ -84,7 +84,7 @@ public class RateAggregator implements Aggregator, TimezoneAware
 
 	private class RateDataPointAggregator extends AggregatedDataPointGroupWrapper
 	{
-		public RateDataPointAggregator(DataPointGroup innerDataPointGroup)
+		RateDataPointAggregator(DataPointGroup innerDataPointGroup)
 		{
 			super(innerDataPointGroup);
 		}

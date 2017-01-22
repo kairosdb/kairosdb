@@ -19,7 +19,9 @@ package org.kairosdb.core.groupby;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.GroupByName;
+import org.kairosdb.core.annotation.GroupByName;
+import org.kairosdb.core.annotation.QueryCompoundProperty;
+import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.formatter.FormatterException;
@@ -38,9 +40,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class TimeGroupBy implements GroupBy
 {
 	@NotNull
+    @QueryCompoundProperty(
+            label = "Range Size",
+            order = {"Value", "Unit"}
+    )
 	private Duration rangeSize;
 
 	@Min(1)
+    @QueryProperty(
+            label = "Count",
+            description = "The number of groups. This would typically be 7 to group by day of week.",
+            validation = "value > 0"
+    )
 	private int groupCount;
 
 	private long startDate;

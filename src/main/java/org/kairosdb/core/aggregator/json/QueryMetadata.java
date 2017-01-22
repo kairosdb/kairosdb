@@ -2,26 +2,26 @@ package org.kairosdb.core.aggregator.json;
 
 
 import com.google.common.collect.ImmutableList;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
 
 import java.util.Comparator;
 import java.util.List;
 
-public class AggregatorMetadata
+public class QueryMetadata
 {
 	private final String name;
 	private final String description;
-	private final ImmutableList<AggregatorPropertyMetadata> properties;
+	private final ImmutableList<QueryPropertyMetadata> properties;
 
-	public AggregatorMetadata(AggregatorName name, List<AggregatorPropertyMetadata> properties)
+	public QueryMetadata(String name, String description, List<QueryPropertyMetadata> properties)
 	{
-		this.name = name.name();
-		this.description = name.description();
+		this.name = name;
+		this.description = description;
 
-        properties.sort(new Comparator<AggregatorPropertyMetadata>()
+        //noinspection Convert2Lambda
+        properties.sort(new Comparator<QueryPropertyMetadata>()
         {
             @Override
-            public int compare(AggregatorPropertyMetadata o1, AggregatorPropertyMetadata o2)
+            public int compare(QueryPropertyMetadata o1, QueryPropertyMetadata o2)
             {
                 return o1.getLabel().compareTo(o2.getLabel());
             }
@@ -39,7 +39,7 @@ public class AggregatorMetadata
 		return description;
 	}
 
-	public ImmutableList<AggregatorPropertyMetadata> getProperties()
+	public ImmutableList<QueryPropertyMetadata> getProperties()
 	{
 		return properties;
 	}

@@ -3,7 +3,7 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.annotation.AggregatorName;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ public class LeastSquaresAggregator extends RangeAggregator
 
 	private class LeastSquaresDataPointAggregator implements RangeSubAggregator
 	{
-		public LeastSquaresDataPointAggregator()
+		LeastSquaresDataPointAggregator()
 		{
 		}
 

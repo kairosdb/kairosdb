@@ -16,7 +16,7 @@ package org.kairosdb.core.aggregator;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.annotation.AggregatorName;
 import org.kairosdb.core.datapoints.NullDataPoint;
 
 import java.util.Collections;

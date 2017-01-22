@@ -17,7 +17,7 @@
 package org.kairosdb.core.datastore;
 
 
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.QueryProperty;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -25,7 +25,7 @@ import javax.validation.constraints.NotNull;
 public class Duration
 {
 	@Min(1)
-    @AggregatorProperty(
+    @QueryProperty(
             name = "value",
             label = "Value",
             description = "The number of units for the aggregation buckets",
@@ -35,7 +35,7 @@ public class Duration
 	protected long value;
 
 	@NotNull
-    @AggregatorProperty(
+    @QueryProperty(
             name = "unit",
             label = "Unit",
             description = "The time unit for the sampling rate",

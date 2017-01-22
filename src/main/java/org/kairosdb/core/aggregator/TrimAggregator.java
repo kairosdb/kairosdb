@@ -1,8 +1,8 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 
 /**
@@ -33,7 +33,7 @@ public class TrimAggregator implements Aggregator
 		m_trim = trim;
 	}
 
-	@AggregatorProperty(
+	@QueryProperty(
 			name = "trim",
 			label = "Trim",
 			description = "Which data point to trim",

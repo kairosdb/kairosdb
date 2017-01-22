@@ -3,9 +3,9 @@ package org.kairosdb.core.annotatedAggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.aggregator.Sampling;
-import org.kairosdb.core.aggregator.annotation.AggregatorCompoundProperty;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryCompoundProperty;
+import org.kairosdb.core.annotation.QueryProperty;
 
 @AggregatorName(
         name = "A",
@@ -13,7 +13,7 @@ import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 )
 public class AAggregator extends BAggregator
 {
-    @AggregatorProperty(
+    @QueryProperty(
             name = "allAnnotation",
             label = "AllAnnotation",
             description = "This is allAnnotation",
@@ -24,37 +24,37 @@ public class AAggregator extends BAggregator
     )
     private int allAnnotation;
 
-    @AggregatorProperty(
+    @QueryProperty(
             label = "MyDouble",
             description = "This is myDouble"
     )
     private double myDouble;
 
-    @AggregatorProperty(
+    @QueryProperty(
             label = "MyLong",
             description = "This is myLong"
     )
     private long myLong;
 
-    @AggregatorProperty(
+    @QueryProperty(
             label = "MyInt",
             description = "This is myInt"
     )
     private int myInt;
 
-   @AggregatorProperty(
+   @QueryProperty(
             label = "MyBoolean",
             description = "This is myBoolean"
     )
     private boolean myBoolean;
 
-   @AggregatorProperty(
+   @QueryProperty(
             label = "MyString",
             description = "This is myString"
     )
     private String myString;
 
-    @AggregatorCompoundProperty(
+    @QueryCompoundProperty(
             label = "Sampling",
             order = {"Value", "Unit"}
     )

@@ -3,8 +3,8 @@ package org.kairosdb.core.aggregator;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.exception.DatastoreException;
@@ -33,7 +33,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	private Set<String> m_tagsToKeep = new HashSet<>();
 	private boolean m_addSavedFrom = true;
 
-	@AggregatorProperty(
+	@QueryProperty(
 			label = "Save As",
 			description = "The name of the new metric.",
 			default_value = "<new name>",

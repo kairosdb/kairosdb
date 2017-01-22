@@ -18,8 +18,8 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.http.rest.validation.NonZero;
 import org.kairosdb.util.Reservoir;
@@ -62,7 +62,7 @@ public class PercentileAggregator extends RangeAggregator
 	}
 
 	@NonZero
-	@AggregatorProperty(
+	@QueryProperty(
 			label = "Percentile",
 			description = "Data points returned will be in this percentile.",
 			default_value = "10",

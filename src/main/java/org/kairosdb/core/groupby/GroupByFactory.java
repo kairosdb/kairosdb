@@ -16,7 +16,12 @@
 
 package org.kairosdb.core.groupby;
 
+import com.google.common.collect.ImmutableList;
+import org.kairosdb.core.aggregator.json.QueryMetadata;
+
 public interface GroupByFactory
 {
 	GroupBy createGroupBy(String name);
+
+    ImmutableList<QueryMetadata> getQueryMetadata();
 }

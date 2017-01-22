@@ -17,8 +17,8 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 
 
@@ -46,7 +46,7 @@ public class FilterAggregator implements Aggregator
 		m_threshold = threshold;
 	}
 
-	@AggregatorProperty(
+	@QueryProperty(
 			label = "Filter operation",
 			description = "The operation performed for each data point.",
 			type = "enum",
@@ -55,7 +55,7 @@ public class FilterAggregator implements Aggregator
 	)
 	private FilterOperation m_filterop;
 
-	@AggregatorProperty(
+	@QueryProperty(
 			label = "Threshold",
 			description = "The value the operation is performed on. If the operation is lt, then a null data point is returned if the data point is less than the threshold."
 	)

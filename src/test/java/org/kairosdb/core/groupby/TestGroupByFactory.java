@@ -15,7 +15,9 @@
  */
 package org.kairosdb.core.groupby;
 
-import org.kairosdb.core.aggregator.annotation.GroupByName;
+import com.google.common.collect.ImmutableList;
+import org.kairosdb.core.aggregator.json.QueryMetadata;
+import org.kairosdb.core.annotation.GroupByName;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,4 +45,10 @@ public class TestGroupByFactory implements GroupByFactory
 	{
 		return groupBys.get(name);
 	}
+
+    @Override
+    public ImmutableList<QueryMetadata> getQueryMetadata()
+    {
+        return null;
+    }
 }

@@ -19,8 +19,8 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
@@ -40,7 +40,7 @@ public class SmaAggregator implements Aggregator
 	private DoubleDataPointFactory m_dataPointFactory;
 
 	//@NonZero
-	@AggregatorProperty(
+	@QueryProperty(
 			label = "Size",
 			description = "The period of the moving average. This is the number of data point to use each time the average is calculated.",
 			default_value = "10",

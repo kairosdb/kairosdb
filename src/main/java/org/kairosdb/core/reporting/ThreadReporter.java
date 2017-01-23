@@ -25,6 +25,7 @@ import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.util.StatsMap;
 import org.kairosdb.util.Tags;
 
 import java.util.LinkedList;
@@ -209,6 +210,24 @@ public class ThreadReporter
 						dp.getTtl());
 			}
 			eventBus.post(dataPointEvent);
+		}
+	}
+
+
+	public static void gatherData(StatsMap statsMap)
+	{
+		while (s_reporterData.getListSize() != 0)
+		{
+			ReporterDataPoint dp = s_reporterData.getNextDataPoint();
+
+			if (dp.isStringValue())
+			{
+				continue;
+			}
+			else
+			{
+				statsMap.addMetric(dp.getMetricName(), dp.getValue());
+			}
 		}
 	}
 

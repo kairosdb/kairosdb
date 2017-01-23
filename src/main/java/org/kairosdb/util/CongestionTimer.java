@@ -37,6 +37,7 @@ public class CongestionTimer
 
 				m_stats.clear();
 
+
 				return ts;
 			}
 		}

@@ -24,11 +24,10 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.datapoints.LongDataPointFactory;
-import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datapoints.StringDataPointFactory;
+import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -41,6 +40,7 @@ import org.kairosdb.core.http.rest.json.*;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.util.MemoryMonitorException;
+import org.kairosdb.util.StatsMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,13 +88,22 @@ public class MetricsResource implements KairosMetricReporter
 	private final AtomicInteger m_ingestedDataPoints = new AtomicInteger();
 	private final AtomicInteger m_ingestTime = new AtomicInteger();
 
+	private final StatsMap m_statsMap = new StatsMap();
+
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
+	private DoubleDataPointFactory m_doubleDataPointFactory = new DoubleDataPointFactoryImpl();
+
+	@Inject
 	private StringDataPointFactory m_stringDataPointFactory = new StringDataPointFactory();
+
+	@Inject(optional=true)
+	@Named("kairosdb.queries.aggregate_stats")
+	private boolean m_aggregatedQueryMetrics = false;
 
 	@Inject(optional=true)
 	@Named("kairosdb.log.queries.enable")
@@ -480,9 +489,15 @@ public class MetricsResource implements KairosMetricReporter
 			ThreadReporter.addDataPoint(REQUEST_TIME, queryTime);
 
 
-
-			ThreadReporter.submitData(m_longDataPointFactory,
-					m_stringDataPointFactory, m_eventBus);
+			if (m_aggregatedQueryMetrics)
+			{
+				ThreadReporter.gatherData(m_statsMap);
+			}
+			else
+			{
+				ThreadReporter.submitData(m_longDataPointFactory,
+						m_stringDataPointFactory, m_eventBus);
+			}
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new FileStreamingOutput(respFile));
@@ -679,21 +694,56 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		int time = m_ingestTime.getAndSet(0);
 		int count = m_ingestedDataPoints.getAndSet(0);
-
-		if (count == 0)
-			return Collections.emptyList();
-
-		DataPointSet dpsCount = new DataPointSet(INGEST_COUNT);
-		DataPointSet dpsTime = new DataPointSet(INGEST_TIME);
-
-		dpsCount.addTag("host", hostName);
-		dpsTime.addTag("host", hostName);
-
-		dpsCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, count));
-		dpsTime.addDataPoint(m_longDataPointFactory.createDataPoint(now, time));
 		List<DataPointSet> ret = new ArrayList<>();
-		ret.add(dpsCount);
-		ret.add(dpsTime);
+
+		if (count != 0)
+		{
+			DataPointSet dpsCount = new DataPointSet(INGEST_COUNT);
+			DataPointSet dpsTime = new DataPointSet(INGEST_TIME);
+
+			dpsCount.addTag("host", hostName);
+			dpsTime.addTag("host", hostName);
+
+			dpsCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, count));
+			dpsTime.addDataPoint(m_longDataPointFactory.createDataPoint(now, time));
+
+			ret.add(dpsCount);
+			ret.add(dpsTime);
+		}
+
+		Map<String, DescriptiveStatistics> statsMap = m_statsMap.getStatsMap();
+
+		for (Map.Entry<String, DescriptiveStatistics> entry : statsMap.entrySet())
+		{
+			String metric = entry.getKey();
+			DescriptiveStatistics stats = entry.getValue();
+
+			DataPointSet min = new DataPointSet(new StringBuilder(metric).append(".").append("min").toString());
+			min.addTag("host", hostName);
+			min.addDataPoint(m_doubleDataPointFactory.createDataPoint(now, stats.getMin()));
+			ret.add(min);
+
+			DataPointSet max = new DataPointSet(new StringBuilder(metric).append(".").append("max").toString());
+			max.addTag("host", hostName);
+			max.addDataPoint(m_doubleDataPointFactory.createDataPoint(now, stats.getMax()));
+			ret.add(max);
+
+			DataPointSet avg = new DataPointSet(new StringBuilder(metric).append(".").append("avg").toString());
+			avg.addTag("host", hostName);
+			avg.addDataPoint(m_doubleDataPointFactory.createDataPoint(now, stats.getMean()));
+			ret.add(avg);
+
+			DataPointSet statCnt = new DataPointSet(new StringBuilder(metric).append(".").append("count").toString());
+			statCnt.addTag("host", hostName);
+			statCnt.addDataPoint(m_doubleDataPointFactory.createDataPoint(now, stats.getN()));
+			ret.add(statCnt);
+
+			DataPointSet sum = new DataPointSet(new StringBuilder(metric).append(".").append("sum").toString());
+			sum.addTag("host", hostName);
+			sum.addDataPoint(m_doubleDataPointFactory.createDataPoint(now, stats.getSum()));
+			ret.add(sum);
+
+		}
 
 		return ret;
 	}

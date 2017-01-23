@@ -360,7 +360,7 @@ public class WriteBuffer<RowKeyType, ColumnKeyType, ValueType>  implements Runna
 				}
 				catch (Exception e)
 				{
-					logger.error("Error resending data");
+					logger.error("Error resending data", e);
 				}
 			}
 		}

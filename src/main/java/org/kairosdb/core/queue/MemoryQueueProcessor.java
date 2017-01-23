@@ -79,7 +79,7 @@ public class MemoryQueueProcessor extends QueueProcessor implements KairosMetric
 		try
 		{
 			ret.add(m_queue.take());
-			Thread.sleep(50);
+			//Thread.sleep(50);
 		}
 		catch (InterruptedException e)
 		{
@@ -87,7 +87,7 @@ public class MemoryQueueProcessor extends QueueProcessor implements KairosMetric
 		}
 		m_queue.drainTo(ret, m_batchSize -1);
 
-		System.out.println(ret.size());
+		//System.out.println(ret.size());
 		m_readFromQueueCount.getAndAdd(ret.size());
 		return ret;
 	}

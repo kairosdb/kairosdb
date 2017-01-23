@@ -704,7 +704,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	 */
 	public Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query) throws DatastoreException
 	{
-		System.out.println("Fetching row keys");
 		Iterator<DataPointsRowKey> ret = null;
 
 		List<QueryPlugin> plugins = query.getPlugins();
@@ -731,7 +730,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 					query.getEndTime(), query.getTags());
 		}
 
-		System.out.println("Done");
 
 		return (ret);
 	}

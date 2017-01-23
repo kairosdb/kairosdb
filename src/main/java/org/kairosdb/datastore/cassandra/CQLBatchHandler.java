@@ -64,7 +64,7 @@ public class CQLBatchHandler extends BatchHandler
 	{
 		BoundStatement bs = new BoundStatement(m_psInsertString);
 		bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
-		bs.setString(1, metricName);
+		bs.setBytesUnsafe(1, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
 
 		metricNamesBatch.add(bs);
 	}

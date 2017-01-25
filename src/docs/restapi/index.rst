@@ -15,6 +15,7 @@ Contents:
    DeleteMetric
    Health
    ListAggregators
+   ListGroupBys
    ListMetricNames
    ListTagNames
    ListTagValues

@@ -24,6 +24,7 @@ import javax.validation.ConstraintViolation;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -31,7 +32,7 @@ import static org.junit.Assert.assertThat;
 
 public class RelativeTimeTest
 {
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SS");
+	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SS", Locale.ENGLISH);
 	private long timeRelativeTo;
 
 	@Before

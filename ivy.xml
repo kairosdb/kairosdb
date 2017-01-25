@@ -10,6 +10,7 @@
 		<dependency org="com.google.guava" name="guava" rev="19.0">
 			<artifact name="guava" type="bundle" ext="jar"/>
 		</dependency>
+		<dependency org="org.apache.commons" name="commons-lang3" rev="3.4" />
 		<!--<dependency org="org.javassist" name="javassist" rev="3.17.1-GA" />-->
 		<dependency org="org.json" name="org.json" rev="chargebee-1.0" />
 		<dependency org="com.google.code.gson" name="gson" rev="2.2.4" />

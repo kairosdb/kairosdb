@@ -182,7 +182,7 @@ public class Main
 				Class<?> aClass;
 				try
 				{
-					if ("".equals(props.getProperty(propName)))
+					if ("".equals(props.getProperty(propName)) || "<disabled>".equals(props.getProperty(propName)))
 						continue;
 
 					String serviceName = propName.substring(SERVICE_PREFIX.length());

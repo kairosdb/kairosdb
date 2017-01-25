@@ -33,7 +33,7 @@ GroupBys and aggregators require annotations. They require a name annotation (Ag
 which is applied to the class and QueryPropery or QueryCompoundProperty annotations which are applied to member
 variables (properties of the aggregator or groupBy).
 
-The groupbys and aggregators REST APIs return a list of groupBys and aggregators and their properties.
+The :doc:`groupbys </restapi/ListGroupBys>` and :doc:`aggregators </restapi/ListAggregators>` REST APIs return a list of groupBys and aggregators and their properties.
 These APIs are used by clients such as the UI to help facilitate the creation of queries.
 
 

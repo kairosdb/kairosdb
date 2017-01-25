@@ -39,10 +39,9 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	private long m_startTime = 0L;
 	private long m_queryStartTime = 0L;
 	private long m_queryEndTime = 0L;
-	private boolean m_started = false;
+//	private boolean m_started = false;
 	private boolean m_exhaustive;
 	private DateTimeZone m_timeZone = DateTimeZone.UTC;
-	private long m_startTime = 0L;
 
 	@QueryProperty(
 			name = "align_sampling",

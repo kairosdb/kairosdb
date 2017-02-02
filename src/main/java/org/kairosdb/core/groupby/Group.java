@@ -50,6 +50,7 @@ public class Group
 	private String name;
 	private HashMultimap<String, String> tags = HashMultimap.create();
 	private int m_dataPointCount; //Number of datapoints written to file
+	private DataPointGroup m_dataPointGroup;
 
 	private final KairosDataPointFactory dataPointFactory;
 	private final Map<String, Integer> storageTypeIdMap;
@@ -66,6 +67,7 @@ public class Group
 		storageTypeIdMap = new HashMap<String, Integer>();
 		dataPointFactories = new ArrayList<DataPointFactory>();
 
+		m_dataPointGroup = dataPointGroup;
 		m_groupCacheFile = file;
 
 		m_dataOutputStream = new DataOutputStream(new BufferedOutputStream(
@@ -183,6 +185,8 @@ public class Group
 		@Override
 		public void close()
 		{
+			m_dataPointGroup.close();
+
 			try
 			{
 				m_dataInputStream.close();

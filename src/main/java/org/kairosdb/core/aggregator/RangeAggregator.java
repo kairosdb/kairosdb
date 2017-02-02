@@ -164,7 +164,14 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 
 	public void setEndTime(long endTime)
 	{
-		m_queryEndTime = endTime;
+		//This is to tell the exhaustive agg when to stop.
+		//If the end time is not specified in the query the end time is
+		//set to MAX_LONG which causes exhaustive agg to go on forever.
+		long now = System.currentTimeMillis();
+		if (endTime > now)
+			m_queryEndTime = now;
+		else
+			m_queryEndTime = endTime;
 	}
 
 	/**

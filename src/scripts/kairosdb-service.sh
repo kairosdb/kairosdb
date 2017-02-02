@@ -43,7 +43,15 @@ case "$1" in
         stop
         ;;
   status)
-        status kairosdb
+        pid=`ps ax | grep -i 'org.kairosdb.core.Main' | grep -v grep | awk '{print $1}'`
+        if [ -n "$pid" ]
+          then
+          echo "KairosDB is running at PID: $pid"
+          exit 0
+        else
+          echo "KairosDB is not Running"
+          exit 3
+        fi
         ;;
   restart|reload|condrestart)
         stop

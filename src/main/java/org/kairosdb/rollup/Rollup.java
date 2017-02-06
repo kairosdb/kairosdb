@@ -15,6 +15,9 @@ public class Rollup
 	@SerializedName("save_as")
 	private String saveAs;
 
+	@SerializedName("in_place")
+	private boolean inPlace = false;
+
 	private final transient List<QueryMetric> queryMetrics = new ArrayList<QueryMetric>();
 	// todo add tags
 
@@ -43,5 +46,13 @@ public class Rollup
 	public void addQuery(QueryMetric query)
 	{
 		queryMetrics.add(query);
+	}
+
+	public boolean isInPlace() {
+		return inPlace;
+	}
+
+	public void setInPlace(boolean inPlace) {
+		this.inPlace = inPlace;
 	}
 }

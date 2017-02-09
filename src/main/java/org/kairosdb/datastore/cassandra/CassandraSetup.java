@@ -23,10 +23,11 @@ public abstract class CassandraSetup {
             "  value blob,\n" +
             "  PRIMARY KEY ((key), column1)\n" +
             ") WITH CLUSTERING ORDER BY (column1 DESC) " + // This should fit the default use case better
-            "   AND compaction = {'timestamp_resolution': 'MICROSECONDS'," +
-            "                     'max_sstable_age_days': '31'," +
-            "                     'base_time_seconds': '7200'," +
-            "                     'class': 'org.apache.cassandra.db.compaction.DateTieredCompactionStrategy'}";
+            "   AND compaction = {'compaction_window_unit': 'MINUTES'," +
+            "                     'min_threshold': '4'," +
+            "                     'max_threshold': '32'," +
+            "                     'compaction_window_size': '1440'," +
+            "                     'class': 'org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy'}";
 
     public static final String ROW_KEY_SPLIT_INDEX_TABLE = "" +
             "CREATE TABLE IF NOT EXISTS row_key_split_index (" +

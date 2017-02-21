@@ -14,7 +14,6 @@ module.directive('editable', function ($compile)
             '	ng-blur="$parent.onBlur($parent.task)" ' +
             '	ng-show="edit" ' +
             '	my-blur="edit">' +
-            '/>' +
 
             '<a href="" ' +
             '	ng-show="!edit && !$parent.task.complex" ' +
@@ -70,23 +69,22 @@ module.directive('autocompleteeditable', function ()
         replace: false,
         template: '<span>' +
         '<input ' +
-        'class="small-input"' +
-        'type="text"' +
-        'ng-show="edit"' +
-        'my-blur="edit"' +
-        'ng-blur="suggestSaveAs(task)"' +
-        'ng-model="task.metric_name"' +
-        'myblur="edit" spellcheck="false"' +
-        'bs-typeahead bs-options="metric for metric in suggestMetrics(task.metric_name)"' +
-        'placeholder="<metric name>"' +
-        'min-length="0"' +
-        'limit="METRIC_NAME_LIST_MAX_LENGTH"' +
-        'ng-change="targetBlur()"' +
-        'ng-blur="suggestSaveAs()"' +
-        'data-provide="typeahead"' +
-        'style="width:100%;"' +
-        'ng-focus autofocus>' +
-        '</>' +
+        '   class="small-input"' +
+        '   type="text"' +
+        '   ng-show="edit"' +
+        '   my-blur="edit"' +
+        '   ng-blur="suggestSaveAs(task)"' +
+        '   ng-model="task.metric_name"' +
+        '   myblur="edit" spellcheck="false"' +
+        '   bs-typeahead bs-options="metric for metric in suggestMetrics(task.metric_name)"' +
+        '   placeholder="<metric name>"' +
+        '   min-length="0"' +
+        '   limit="METRIC_NAME_LIST_MAX_LENGTH"' +
+        '   ng-change="targetBlur()"' +
+        '   ng-blur="suggestSaveAs()"' +
+        '   data-provide="typeahead"' +
+        '   style="width:100%;"' +
+        '   ng-focus autofocus>' +
 
         '<a href="" ' +
         '	ng-show="!edit && !task.complex" ' +
@@ -186,34 +184,13 @@ module.directive('focusOnShow', function ($timeout)
     };
 });
 
-// // This is needed by dynamically created elements. The regular tooltip mechanism
-// // does not work for dynamic elements
-// module.directive('bsTooltip', function ()
-// {
-//     return {
-//         restrict: 'A',
-//         link: function (scope, element, attrs)
-//         {
-//             $(element).hover(function ()
-//             {
-//                 // on mouseenter
-//                 $(element).tooltip('show');
-//             }, function ()
-//             {
-//                 // on mouseleave
-//                 $(element).tooltip('hide');
-//             });
-//         }
-//     };
-// });
-
 module.directive('autocompleteWithButtons', function ($compile)
 {
     var template = '' +
             '<table width="100%">' +
             '		<tr>' +
-            '			<td>' +
-            '			<span ng-show="!model.edit" style="margin: 0 10px 0 0">{{model.group_by_values}}</span>' +
+            '			<td style="padding-right: 10px">' +
+            '			<span ng-show="!model.edit">{{model.group_by_values}}</span>' +
             '			<input type="text" style="width:85px;"' +
             '               class="small-input"' +
             '				focus-on-show ' +
@@ -227,8 +204,8 @@ module.directive('autocompleteWithButtons', function ($compile)
             '				ng-show="model.edit"' +
             '			/>' +
             '			</td>' +
-            '			<td width="10%">' +
-            '				<a href="#" class="btn-sm btn-circle text-right" style="margin-left:1px; margin-right:5px;"' +
+            '			<td style="width:20%; vertical-align:top; text-align:right; margin-left: 5px; margin-right: 5px">' +
+            '				<a href="#" class="btn-sm btn-circle text-right" style="padding:0"' +
             '					ng-click="model.edit = true"' +
             '					ng-show="!model.edit && !model.complex">' +
             '					<span class="glyphicon glyphicon-plus shift-1-up"></span>' +
@@ -238,8 +215,8 @@ module.directive('autocompleteWithButtons', function ($compile)
             '					ng-show="model.edit">' +
             '				<span class="glyphicon glyphicon-ok text-success"></span></a>' +
             '			</td>' +
-            '			<td width="10%">' +
-            '				<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"' +
+            '			<td width="10%" style="vertical-align:top;">' +
+            '				<a href="#" class="btn-sm btn-circle" style="padding:0; margin-left:1px; margin-right:1px;"' +
             '					ng-click="removeGroupValues(model);onBlur(model)"' +
             '					ng-show="model.group_by_values.length > 0 && !model.edit">' +
             '				<span class="glyphicon glyphicon-remove text-danger"></span></a>' +
@@ -301,7 +278,7 @@ module.directive('autocompleteTags', function ($compile)
             '<table width="100%">' +
             '		<tr>' +
             '			<td>' +
-            '			<table ng-show="!model.tagEdit"> ' +
+            '			<table ng-show="!model.tagEdit" style="margin: 0 10px 0 0"> ' +
             '				<tr ng-repeat="(tag, value) in model.tags"> ' +
             '				<td> ' +
             '					{{tag}}=<span ng-repeat="val in value">{{val}}{{$last ? "" : ", "}}</span>' +
@@ -334,26 +311,32 @@ module.directive('autocompleteTags', function ($compile)
             '				ng-show="model.tagEdit"' +
             '			/>' +
             '			</td>' +
-            '			<td width="10%" valign="top">' +
-            '				<a href="#" class="btn-sm btn-circle text-right" style="margin-left:1px; margin-right:5px;"' +
+            '			<td style="vertical-align: top">' +
+            '				<a href="#" class="btn-sm btn-circle text-right" ' +
+            '                   style="padding:0"' +
             '					ng-click="model.tagEdit = true"' +
             '					ng-show="!model.tagEdit && !model.complex">' +
             '					<span class="glyphicon glyphicon-plus shift-1-up"></span>' +
             '				</a>' +
-            '				<a href="#" class="btn-sm btn-circle" style="margin-right:10px;"' +
+            '				<a href="#" class="btn-sm btn-circle" ' +
+            '                   style="padding:0"' +
             '					ng-click="setTag(model);onBlur(model)"' +
             '					ng-show="model.tagEdit">' +
             '				<span class="glyphicon glyphicon-ok text-success"></span></a>' +
             '			</td>' +
-            '			<td width="10%" valign="top">' +
-            '				<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"' +
+            '			<td style="vertical-align: top">' +
+            '				<a href="#" class="btn-sm btn-circle" ' +
+            '                   style="padding:0"' +
             '					ng-click="removeTag(model);onBlur(model)"' +
             '					ng-show="model.tags && !model.tagEdit && !model.complex">' +
-            '				<span class="glyphicon glyphicon-remove text-danger"></span></a>' +
-            '					<a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"' +
+            '				    <span class="glyphicon glyphicon-remove text-danger"></span>' +
+            '               </a>' +
+            '				<a href="#" class="btn-sm btn-circle" ' +
+            '                       style="padding:0"' +
             '						ng-click="cancelTagValues(model)"' +
             '						ng-show="model.tagEdit">' +
-            '				<span class="glyphicon glyphicon-remove-sign text-danger"></span></a>' +
+            '				    <span class="glyphicon glyphicon-remove-sign text-danger"></span>' +
+            '               </a>' +
             '			</td>' +
             '		</tr>' +
             '</table>';
@@ -480,8 +463,9 @@ module.directive('aggregatornamedropdown', function ($compile)
             html += '	</button>';
             html += '	<ul class="dropdown-menu" aria-labelledby="aggregatorDropdown">';
             html += '   <li ng-repeat="descriptor in descriptors">';
-			html += '       <a href="#" ng-click="setName(agg, descriptor.name, descriptors)"' +
-                    '           title="{{descriptor.description}}" bs-tooltip>';
+			html += '       <a href="#" ng-click="setName(agg, descriptor.name, descriptors)"';
+            html += '           title="{{descriptor.description}}" bs-tooltip';
+            html += '       >';
             html += '           {{ descriptor.name }}';
             html += '       </a>';
             html += '   </li>';

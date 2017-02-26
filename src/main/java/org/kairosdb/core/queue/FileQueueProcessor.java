@@ -171,12 +171,9 @@ public class FileQueueProcessor extends QueueProcessor
 						}
 					}
 
-					if (event != null)
-					{
-						returnIndex = m_nextIndex;
-						m_nextIndex = incrementIndex(m_nextIndex);
-						ret.add(event.m_dataPointEvent);
-					}
+					returnIndex = m_nextIndex;
+					m_nextIndex = incrementIndex(m_nextIndex);
+					ret.add(event.m_dataPointEvent);
 				}
 				else
 					break; //exhausted queue
@@ -184,7 +181,7 @@ public class FileQueueProcessor extends QueueProcessor
 			}
 		}
 
-		System.out.println(ret.size());
+		//System.out.println(ret.size());
 		m_readFromQueueCount.getAndAdd(ret.size());
 
 		m_lastCallback.increment();
@@ -199,7 +196,7 @@ public class FileQueueProcessor extends QueueProcessor
 
 		if (m_stopwatch.elapsed(TimeUnit.SECONDS) > m_secondsTillCheckpoint)
 		{
-			System.out.println("Checkpoint");
+			//System.out.println("Checkpoint");
 			callbackToReturn.finalize();
 			m_lastCallback = new CompletionCallBack();
 			callbackToReturn.setChildCallBack(m_lastCallback);
@@ -215,13 +212,12 @@ public class FileQueueProcessor extends QueueProcessor
 	@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
-		System.out.println("Called");
 		//todo make member variable
 		ImmutableSortedMap<String, String> tag = ImmutableSortedMap.of("host", m_hostName);
 		long arraySize = m_bigArray.getHeadIndex() - m_nextIndex;
 		long readFromFile = m_readFromFileCount.getAndSet(0);
 		long readFromQueue = m_readFromQueueCount.getAndSet(0);
-		System.out.println(readFromQueue);
+		//System.out.println(readFromQueue);
 
 		synchronized (m_lock)
 		{
@@ -314,7 +310,6 @@ public class FileQueueProcessor extends QueueProcessor
 		{
 			if (m_counter.decrementAndGet() == 0 && m_finalized)
 			{
-				System.out.println("Setting index");
 				m_childCallBack.complete();
 				//Checkpoint big queue
 				m_bigArray.removeBeforeIndex(m_completionIndex);

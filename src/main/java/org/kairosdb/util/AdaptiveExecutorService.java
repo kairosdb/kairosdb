@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.eventbus.EventBus;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.datastore.cassandra.BatchHandler;
 import org.kairosdb.events.DataPointEvent;
 
 import javax.inject.Inject;
@@ -14,20 +15,20 @@ import java.util.concurrent.*;
 /**
  Created by bhawkins on 10/27/16.
  */
-public class CongestionExecutorService extends AbstractExecutorService
+public class AdaptiveExecutorService
 {
 	private final EventBus m_eventBus;
 	private final ExecutorService m_internalExecutor;
 	private final ThreadGroup m_threadGroup;
 	private final CongestionSemaphore m_semaphore;
 	private final CongestionTimer m_congestionTimer;
-	private int m_permitCount = 10;
+	private int m_permitCount = 5;
 
 	@Inject
 	private DoubleDataPointFactory m_dataPointFactory = new DoubleDataPointFactoryImpl();
 
 	@Inject
-	public CongestionExecutorService(EventBus eventBus)
+	public AdaptiveExecutorService(EventBus eventBus)
 	{
 		m_eventBus = eventBus;
 		m_congestionTimer = new CongestionTimer(m_permitCount);
@@ -48,51 +49,30 @@ public class CongestionExecutorService extends AbstractExecutorService
 
 	private void increasePermitCount()
 	{
-		/*m_permitCount ++;
+		m_permitCount ++;
 		m_congestionTimer.setTaskPerBatch(m_permitCount);
-		m_semaphore.release();*/
+		m_semaphore.release();
 	}
 
-	@Override
 	public void shutdown()
 	{
 
 	}
 
-	@Override
-	public List<Runnable> shutdownNow()
-	{
-		return null;
-	}
-
-	@Override
-	public boolean isShutdown()
-	{
-		return false;
-	}
-
-	@Override
-	public boolean isTerminated()
-	{
-		return false;
-	}
-
-	@Override
-	public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException
-	{
-		return false;
-	}
 
 	private Stopwatch m_timer = Stopwatch.createStarted();
 
-	@Override
-	public void execute(Runnable command)
+	public void submit(BatchHandler batchHandler)
 	{
-		if (m_timer.elapsed(TimeUnit.SECONDS) >= 15)
+		if (m_timer.elapsed(TimeUnit.SECONDS) >= 5)
 		{
+			/*if ((m_semaphore.availablePermits() == 0) && (batchHandler.isFullBatch()))
+			{
+				increasePermitCount();
+			}*/
+
 			m_timer.reset();
 			m_timer.start();
-			increasePermitCount();
 		}
 
 		try
@@ -100,7 +80,7 @@ public class CongestionExecutorService extends AbstractExecutorService
 			//System.out.println("Execute called");
 			m_semaphore.acquire();
 			//System.out.println("Submitting");
-			m_internalExecutor.submit(command);
+			m_internalExecutor.submit(newTaskFor(batchHandler));
 			//System.out.println("Done submitting");
 		}
 		catch (InterruptedException e)
@@ -109,7 +89,6 @@ public class CongestionExecutorService extends AbstractExecutorService
 		}
 	}
 
-	@Override
 	protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable)
 	{
 		//System.out.println("Returning new future");
@@ -137,7 +116,7 @@ public class CongestionExecutorService extends AbstractExecutorService
 			m_stopwatch.stop();
 
 			//Todo do something with elapsed time
-			CongestionTimer.TimerStat timerStat = m_congestionTimer.reportTaskTime(m_stopwatch.elapsed(TimeUnit.MILLISECONDS));
+			SimpleStats.Data timerStat = m_congestionTimer.reportTaskTime(m_stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
 			m_semaphore.release();
 
@@ -156,10 +135,6 @@ public class CongestionExecutorService extends AbstractExecutorService
 
 				dpe = new DataPointEvent("kairosdb.congestion.stats.avg", tags,
 						m_dataPointFactory.createDataPoint(now, timerStat.avg));
-				m_eventBus.post(dpe);
-
-				dpe = new DataPointEvent("kairosdb.congestion.stats.median", tags,
-						m_dataPointFactory.createDataPoint(now, timerStat.median));
 				m_eventBus.post(dpe);
 
 				dpe = new DataPointEvent("kairosdb.congestion.stats.permit_count", tags,

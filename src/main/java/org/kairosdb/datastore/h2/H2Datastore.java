@@ -17,6 +17,7 @@
 package org.kairosdb.datastore.h2;
 
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -26,9 +27,11 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.datastore.cassandra.DataPointsRowKey;
 import org.kairosdb.datastore.h2.orm.*;
 import org.kairosdb.datastore.h2.orm.DataPoint;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.events.RowKeyEvent;
 import org.kairosdb.util.KDataInput;
 import org.kairosdb.util.KDataOutput;
 import org.slf4j.Logger;
@@ -50,13 +53,16 @@ public class H2Datastore implements Datastore
 	public static final String DATABASE_PATH_PROPERTY = "kairosdb.datastore.h2.database_path";
 
 	private Connection m_holdConnection;  //Connection that holds the database open
-	private KairosDataPointFactory m_dataPointFactory;
+	private final KairosDataPointFactory m_dataPointFactory;
+	private final EventBus m_eventBus;
 
 	@Inject
 	public H2Datastore(@Named(DATABASE_PATH_PROPERTY) String dbPath, 
-			KairosDataPointFactory dataPointFactory) throws DatastoreException
+			KairosDataPointFactory dataPointFactory,
+			EventBus eventBus) throws DatastoreException
 	{
 		m_dataPointFactory = dataPointFactory;
+		m_eventBus = eventBus;
 		boolean createDB = false;
 
 		File dataDir = new File(dbPath);
@@ -164,6 +170,10 @@ public class H2Datastore implements Datastore
 				}
 
 				GenOrmDataSource.flush();
+				DataPointsRowKey dataPointsRowKey = new DataPointsRowKey(metricName,
+						0, dataPoint.getDataStoreDataType(), tags);
+				m_eventBus.post(new RowKeyEvent(metricName, dataPointsRowKey, 0));
+
 			}
 
 			KDataOutput dataOutput = new KDataOutput();
@@ -418,6 +428,96 @@ public class H2Datastore implements Datastore
 		}
 
 		return tagSet;
+	}
+
+	@Override
+	public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
+	{
+		GenOrmDataSource.attachAndBegin();
+		try
+		{
+			ServiceIndex serviceIndex = ServiceIndex.factory.create(service, serviceKey, key);
+			if (value != null)
+				serviceIndex.setValue(value);
+
+			GenOrmDataSource.commit();
+		}
+		finally
+		{
+			GenOrmDataSource.close();
+		}
+	}
+
+	@Override
+	public String getValue(String service, String serviceKey, String key) throws DatastoreException
+	{
+		ServiceIndex serviceIndex = ServiceIndex.factory.find(service, serviceKey, key);
+		if (serviceIndex != null)
+			return serviceIndex.getValue();
+		else
+			return null;
+	}
+
+	@Override
+	public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
+	{
+		final ServiceIndex_base.ResultSet keys = ServiceIndex.factory.getKeys(service, serviceKey);
+
+		return new Iterable<String>()
+		{
+			@Override
+			public Iterator<String> iterator()
+			{
+				return new Iterator<String>()
+				{
+					@Override
+					public boolean hasNext()
+					{
+						return keys.next();
+					}
+
+					@Override
+					public String next()
+					{
+						return keys.getRecord().getKey();
+					}
+
+					@Override
+					public void remove() { }
+				};
+			}
+		};
+	}
+
+	@Override
+	public Iterable<String> listKeys(String service, String serviceKey, String keyStartsWith) throws DatastoreException
+	{
+		final ServiceIndex_base.ResultSet keys = ServiceIndex.factory.getKeysLike(service, serviceKey, keyStartsWith+"%");
+
+		return new Iterable<String>()
+		{
+			@Override
+			public Iterator<String> iterator()
+			{
+				return new Iterator<String>()
+				{
+					@Override
+					public boolean hasNext()
+					{
+						return keys.next();
+					}
+
+					@Override
+					public String next()
+					{
+						return keys.getRecord().getKey();
+					}
+
+					@Override
+					public void remove() { }
+				};
+			}
+		};
 	}
 
 	private String createMetricKey(String metricName, SortedMap<String, String> tags,

@@ -451,7 +451,7 @@ public class KairosDatastore
 		{
 			long queryStartTime = System.currentTimeMillis();
 			
-			CachedSearchResult cachedResults = null;
+			SearchResult searchResult = null;
 
 			List<DataPointRow> returnedRows = null;
 
@@ -459,28 +459,33 @@ public class KairosDatastore
 			{
 				String tempFile = m_cacheDir + m_cacheFilename;
 
+				/*searchResult = new MemorySearchResult(m_metric.getName());
+				m_datastore.queryDatabase(m_metric, searchResult);
+				returnedRows = searchResult.getRows();*/
+
 				if (m_metric.getCacheTime() > 0)
 				{
-					cachedResults = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
+					searchResult = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
 							tempFile, m_metric.getCacheTime(), m_dataPointFactory, m_keepCacheFiles);
-					if (cachedResults != null)
+					if (searchResult != null)
 					{
-						returnedRows = cachedResults.getRows();
+						returnedRows = searchResult.getRows();
 						logger.debug("Cache HIT!");
 					}
 				}
 
-				if (cachedResults == null)
+				if (searchResult == null)
 				{
 					logger.debug("Cache MISS!");
-					cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
+					searchResult = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
 							tempFile, m_dataPointFactory, m_keepCacheFiles);
-					m_datastore.queryDatabase(m_metric, cachedResults);
-					returnedRows = cachedResults.getRows();
+					m_datastore.queryDatabase(m_metric, searchResult);
+					returnedRows = searchResult.getRows();
 				}
 			}
 			catch (Exception e)
 			{
+				logger.error("Query Error", e);
 				throw new DatastoreException(e);
 			}
 

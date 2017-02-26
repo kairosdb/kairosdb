@@ -29,7 +29,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CachedSearchResult implements QueryCallback
+public class CachedSearchResult implements SearchResult
 {
 	public static final Logger logger = LoggerFactory.getLogger(CachedSearchResult.class);
 
@@ -250,6 +250,7 @@ public class CachedSearchResult implements QueryCallback
 	 */
 	public void startDataPointSet(String type, Map<String, String> tags) throws IOException
 	{
+		//todo: need a lock around this, cql returns results overlapping.
 		if (m_randomAccessFile == null)
 			openCacheFile();
 
@@ -270,6 +271,7 @@ public class CachedSearchResult implements QueryCallback
 		m_currentFilePositionMarker.incrementDataPointCount();
 	}
 
+	@Override
 	public List<DataPointRow> getRows()
 	{
 		List<DataPointRow> ret = new ArrayList<DataPointRow>();

@@ -36,7 +36,7 @@
 		</encoder>
 	</appender>
 
-	<logger name="com.mchange.v2.c3p0" level="WARN"/>
+	<logger name="org.kairosdb.datastore.h2.orm" level="WARN"/>
 
 	<!--<logger name="org.hbase.async.RegionClient" level="DEBUG"/>-->
 

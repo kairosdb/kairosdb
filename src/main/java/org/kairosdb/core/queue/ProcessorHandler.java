@@ -9,5 +9,6 @@ import java.util.List;
  */
 public interface ProcessorHandler
 {
-	void handleEvents(List<DataPointEvent> events, EventCompletionCallBack eventCompletionCallBack);
+	void handleEvents(List<DataPointEvent> events, EventCompletionCallBack eventCompletionCallBack,
+			boolean fullBatch);
 }

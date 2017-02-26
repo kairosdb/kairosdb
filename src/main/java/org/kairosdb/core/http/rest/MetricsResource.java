@@ -24,7 +24,6 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.*;
@@ -40,6 +39,8 @@ import org.kairosdb.core.http.rest.json.*;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.util.MemoryMonitorException;
+import org.kairosdb.util.SimpleStats;
+import org.kairosdb.util.SimpleStatsReporter;
 import org.kairosdb.util.StatsMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,6 +121,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Inject
 	@Named("HOSTNAME")
 	private String hostName = "localhost";
+
+	@Inject
+	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
 	@Inject
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
@@ -711,38 +715,14 @@ public class MetricsResource implements KairosMetricReporter
 			ret.add(dpsTime);
 		}
 
-		Map<String, DescriptiveStatistics> statsMap = m_statsMap.getStatsMap();
+		Map<String, SimpleStats> statsMap = m_statsMap.getStatsMap();
 
-		for (Map.Entry<String, DescriptiveStatistics> entry : statsMap.entrySet())
+		for (Map.Entry<String, SimpleStats> entry : statsMap.entrySet())
 		{
 			String metric = entry.getKey();
-			DescriptiveStatistics stats = entry.getValue();
+			SimpleStats.Data stats = entry.getValue().getAndClear();
 
-			DataPointSet min = new DataPointSet(new StringBuilder(metric).append(".").append("min").toString());
-			min.addTag("host", hostName);
-			min.addDataPoint(m_doubleDataPointFactory.createDataPoint(now, stats.getMin()));
-			ret.add(min);
-
-			DataPointSet max = new DataPointSet(new StringBuilder(metric).append(".").append("max").toString());
-			max.addTag("host", hostName);
-			max.addDataPoint(m_doubleDataPointFactory.createDataPoint(now, stats.getMax()));
-			ret.add(max);
-
-			DataPointSet avg = new DataPointSet(new StringBuilder(metric).append(".").append("avg").toString());
-			avg.addTag("host", hostName);
-			avg.addDataPoint(m_doubleDataPointFactory.createDataPoint(now, stats.getMean()));
-			ret.add(avg);
-
-			DataPointSet statCnt = new DataPointSet(new StringBuilder(metric).append(".").append("count").toString());
-			statCnt.addTag("host", hostName);
-			statCnt.addDataPoint(m_doubleDataPointFactory.createDataPoint(now, stats.getN()));
-			ret.add(statCnt);
-
-			DataPointSet sum = new DataPointSet(new StringBuilder(metric).append(".").append("sum").toString());
-			sum.addTag("host", hostName);
-			sum.addDataPoint(m_doubleDataPointFactory.createDataPoint(now, stats.getSum()));
-			ret.add(sum);
-
+			m_simpleStatsReporter.reportStats(stats, now, metric, ret);
 		}
 
 		return ret;

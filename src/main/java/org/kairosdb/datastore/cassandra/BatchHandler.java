@@ -30,10 +30,11 @@ public abstract class BatchHandler implements Callable<Long>
 	private final DataCache<DataPointsRowKey> m_rowKeyCache;
 	private final DataCache<String> m_metricNameCache;
 	private final EventBus m_eventBus;
+	private final boolean m_fullBatch;
 
 	public BatchHandler(List<DataPointEvent> events, EventCompletionCallBack callBack,
 			int defaultTtl, DataCache<DataPointsRowKey> rowKeyCache,
-			DataCache<String> metricNameCache, EventBus eventBus)
+			DataCache<String> metricNameCache, EventBus eventBus, boolean fullBatch)
 	{
 		m_events = events;
 		m_callBack = callBack;
@@ -41,6 +42,7 @@ public abstract class BatchHandler implements Callable<Long>
 		m_rowKeyCache = rowKeyCache;
 		m_metricNameCache = metricNameCache;
 		m_eventBus = eventBus;
+		m_fullBatch = fullBatch;
 	}
 
 	protected abstract void addRowKey(String metricName, DataPointsRowKey rowKey,
@@ -52,6 +54,11 @@ public abstract class BatchHandler implements Callable<Long>
 			DataPoint dataPoint, int ttl) throws IOException;
 
 	protected abstract void submitBatch();
+
+	public boolean isFullBatch()
+	{
+		return m_fullBatch;
+	}
 
 	@Override
 	public Long call() throws Exception

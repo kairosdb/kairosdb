@@ -360,6 +360,30 @@ public class RollUpJobTest
 		{
 			throw new UnsupportedOperationException();
 		}
+
+		@Override
+		public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
+		{
+
+		}
+
+		@Override
+		public String getValue(String service, String serviceKey, String key) throws DatastoreException
+		{
+			return null;
+		}
+
+		@Override
+		public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
+		{
+			return null;
+		}
+
+		@Override
+		public Iterable<String> listKeys(String service, String serviceKey, String keyStartsWith) throws DatastoreException
+		{
+			return null;
+		}
 	}
 
 

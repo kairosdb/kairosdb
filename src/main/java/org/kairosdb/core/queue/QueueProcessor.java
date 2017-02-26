@@ -73,7 +73,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 		}
 
 		/**
-		 Used for testing the queue processor to reset the running state
+		 Used for testing the queue processor to clear the running state
 		 @param running
 		 */
 		public void setRunning(boolean running)
@@ -115,8 +115,12 @@ public abstract class QueueProcessor implements KairosMetricReporter
 					//getCompletionCallBack must be called after get()
 					EventCompletionCallBack callbackToPass = getCompletionCallBack();
 
-					//System.out.println(results.size());
-					m_processorHandler.handleEvents(results, callbackToPass);
+					boolean fullBatch = false;
+
+					if (results.size() == m_batchSize)
+						fullBatch = true;
+
+					m_processorHandler.handleEvents(results, callbackToPass, fullBatch);
 				}
 				catch (Exception e)
 				{

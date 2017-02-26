@@ -221,7 +221,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	}
 
 	@Test
-	public void test_getKeysForQuery()
+	public void test_getKeysForQuery() throws DatastoreException
 	{
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
 				HashMultimap.<String, String>create(), s_dataPointTime, s_dataPointTime);
@@ -232,7 +232,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	}
 
 	@Test
-	public void test_getKeysForQuery_withFilter()
+	public void test_getKeysForQuery_withFilter() throws DatastoreException
 	{
 		SetMultimap<String, String> tagFilter = HashMultimap.create();
 		tagFilter.put("client", "bar");

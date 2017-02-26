@@ -13,6 +13,8 @@ import java.util.Iterator;
 import java.sql.Timestamp;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Attributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.agileclick.genorm.runtime.*;
 
 
@@ -120,7 +122,7 @@ public class MetricIdsWithTagsQuery extends org.agileclick.genorm.runtime.SQLQue
 			genorm_statement.setInt(2, tagCount);
 
 			long genorm_queryTimeStart = 0L;
-			if (s_logger.isInfo())
+			if (s_logger.isInfoEnabled())
 				{
 				genorm_queryTimeStart = System.currentTimeMillis();
 				}
@@ -130,7 +132,7 @@ public class MetricIdsWithTagsQuery extends org.agileclick.genorm.runtime.SQLQue
 			if (genorm_queryTimeStart != 0L)
 				{
 				long genorm_quryTime = System.currentTimeMillis() - genorm_queryTimeStart;
-				s_logger.info(genorm_quryTime);
+				s_logger.info(String.valueOf(genorm_quryTime));
 				}
 			
 			ResultSet genorm_ret = new SQLResultSet(genorm_resultSet, genorm_statement, genorm_query);
@@ -165,7 +167,7 @@ public class MetricIdsWithTagsQuery extends org.agileclick.genorm.runtime.SQLQue
 			genorm_statement.setInt(2, m_tagCount);
 
 			long genorm_queryTimeStart = 0L;
-			if (s_logger.isInfo())
+			if (s_logger.isInfoEnabled())
 				{
 				genorm_queryTimeStart = System.currentTimeMillis();
 				}
@@ -175,7 +177,7 @@ public class MetricIdsWithTagsQuery extends org.agileclick.genorm.runtime.SQLQue
 			if (genorm_queryTimeStart != 0L)
 				{
 				long genorm_quryTime = System.currentTimeMillis() - genorm_queryTimeStart;
-				s_logger.info(genorm_quryTime);
+				s_logger.info(String.valueOf(genorm_quryTime));
 				}
 			
 			ResultSet genorm_ret = new SQLResultSet(genorm_resultSet, genorm_statement, genorm_query);

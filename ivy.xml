@@ -15,7 +15,7 @@
 
 		<dependency org="org.json" name="org.json" rev="chargebee-1.0" />
 		<dependency org="com.google.code.gson" name="gson" rev="2.2.4" />
-		<dependency org="junit" name="junit" rev="4.11" conf="test->default" />
+		<dependency org="junit" name="junit" rev="4.12" conf="test->default" />
 
 		<dependency org="org.hamcrest" name="hamcrest-library" rev="1.3"
 		            conf="test->default"/>
@@ -47,7 +47,11 @@
 		<dependency org="ch.qos.logback" name="logback-classic" rev="1.1.7" />
 
 		<!--Genormous dependencies-->
-		<dependency org="org.agileclick.genorm" name="genormous" rev="1.6.0.jdbc4"/>
+		<dependency org="org.agileclick.genorm" name="genormous" rev="1.6.4.jdbc41">
+			<exclude org="javax.servlet" name="servlet-api"/>
+			<exclude org="org.agileclick.slickxml" name="slickxml"/>
+			<exclude org="org.agileclick.ultramc" name="ultramc"/>
+		</dependency>
 		<dependency org="jaxen" name="jaxen" rev="1.1.6" transitive="false">
 			<artifact name="jaxen" type="jar"/>
 		</dependency>
@@ -56,14 +60,14 @@
 		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.1.2" />
 		<dependency org="net.jpountz.lz4" name="lz4" rev="1.3.0"/>
 
-		<dependency org="org.hectorclient" name="hector-core" rev="1.1-4">
+		<!--<dependency org="org.hectorclient" name="hector-core" rev="1.1-4">
 			<artifact name="hector-core" type="bundle" ext="jar"/>
 			<exclude org="javax.servlet" module="servlet-api"/>
-		</dependency>
+		</dependency>-->
 
-		<dependency org="com.netflix.astyanax" name="astyanax-core" rev="3.9.0" />
+		<!--<dependency org="com.netflix.astyanax" name="astyanax-core" rev="3.9.0" />
 		<dependency org="com.netflix.astyanax" name="astyanax-thrift" rev="3.9.0" />
-		<dependency org="com.netflix.astyanax" name="astyanax-cassandra" rev="3.9.0" />
+		<dependency org="com.netflix.astyanax" name="astyanax-cassandra" rev="3.9.0" />-->
 
 		<!-- Jetty server stuff -->
 		<dependency org="org.eclipse.jetty" name="jetty-server"

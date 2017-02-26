@@ -94,8 +94,8 @@ public class DataPointsMonitor implements KairosMetricReporter
 	{
 		String metricName = event.getMetricName();
 
-		if (metricName.startsWith("kairosdb"))
-			return; //Skip our own metrics.
+		//if (metricName.startsWith("kairosdb"))
+		//	return; //Skip our own metrics.
 
 		addCounter(metricName, 1);
 	}

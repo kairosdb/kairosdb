@@ -27,4 +27,13 @@ public interface Datastore
 	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException;
 
 	public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException;
+
+	void setValue(String service, String serviceKey, String key, String value) throws DatastoreException;
+
+	String getValue(String service, String serviceKey, String key) throws DatastoreException;
+
+	Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException;
+
+	Iterable<String> listKeys(String service, String serviceKey, String keyStartsWith) throws DatastoreException;
+
 }

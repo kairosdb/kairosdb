@@ -24,18 +24,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-//import com.netflix.astyanax.serializers.StringSerializer;
-import me.prettyprint.cassandra.model.ConfigurableConsistencyLevel;
-import me.prettyprint.cassandra.serializers.StringSerializer;
-import me.prettyprint.cassandra.service.CassandraHostConfigurator;
-import me.prettyprint.cassandra.service.ColumnSliceIterator;
-import me.prettyprint.hector.api.Cluster;
-import me.prettyprint.hector.api.Keyspace;
-import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
-import me.prettyprint.hector.api.exceptions.HectorException;
-import me.prettyprint.hector.api.factory.HFactory;
-import me.prettyprint.hector.api.query.SliceQuery;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.*;
@@ -43,11 +33,13 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.core.queue.ProcessorHandler;
 import org.kairosdb.core.queue.QueueProcessor;
+import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.events.DataPointEvent;
-import org.kairosdb.util.CongestionExecutorService;
+import org.kairosdb.util.AdaptiveExecutorService;
 import org.kairosdb.util.KDataInput;
 import org.kairosdb.util.MemoryMonitor;
+import org.kairosdb.util.SimpleStatsReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +52,7 @@ import java.util.concurrent.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class CassandraDatastore implements Datastore, ProcessorHandler
+public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
 
@@ -112,26 +104,54 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 			"  PRIMARY KEY ((key), column1)\n" +
 			") WITH COMPACT STORAGE";
 
+	public static final String SERVICE_INDEX = "" +
+			"CREATE TABLE IF NOT EXISTS service_index (" +
+			" service text," +
+			" service_key text," +
+			" key text," +
+			" value text," +
+			" PRIMARY KEY ((service, service_key), key)" +
+			")";
 
-	//todo desc order for data queries
+	//All inserts and deletes add millisecond timestamp consistency with old code and TWCS instead of nanos
 	public static final String DATA_POINTS_INSERT = "INSERT INTO data_points " +
-			"(key, column1, value) VALUES (?, ?, ?) USING TTL ?";
+			"(key, column1, value) VALUES (?, ?, ?) USING TTL ? AND TIMESTAMP ?";
 
-	public static final String ROW_KEY_INDEX_INSERT = "INSERT INTO row_key_index " +
-			"(key, column1, value) VALUES (?, ?, 0x00) USING TTL ?";
+	public static final String ROW_KEY_TIME_INSERT = "INSERT INTO row_key_time_index " +
+			"(metric, row_time) VALUES (?, ?) USING TTL ? AND TIMESTAMP ?";
+
+	public static final String ROW_KEY_INSERT = "INSERT INTO row_keys " +
+			"(metric, row_time, data_type, tags) VALUES (?, ?, ?, ?) USING TTL ?"; // AND TIMESTAMP ?";
 
 	public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
 			"(key, column1, value) VALUES (?, ?, 0x00)";
 
 	public static final String DATA_POINTS_QUERY = "SELECT column1, value FROM data_points WHERE key = ? AND " +
-			"column1 >= ? AND column1 < ?";
+			"column1 >= ? AND column1 < ? ORDER BY column1";
 
-	public static final String STRING_QUERY = "SELECT column1 FROM string_index " +
+	public static final String DATA_POINTS_QUERY_ASC = DATA_POINTS_QUERY+" ASC";
+	public static final String DATA_POINTS_QUERY_DESC = DATA_POINTS_QUERY+" DESC";
+
+	public static final String DATA_POINTS_DELETE = "DELETE FROM data_points " +
+			"WHERE key = ? AND column1 = ?";
+
+	public static final String DATA_POINTS_DELETE_ROW = "DELETE FROM data_points " +
 			"WHERE key = ?";
 
+	public static final String STRING_INDEX_QUERY = "SELECT column1 FROM string_index " +
+			"WHERE key = ?";
+
+	//This is the old row key index query
 	public static final String ROW_KEY_INDEX_QUERY = "SELECT column1 FROM row_key_index " +
 			"WHERE key = ? AND column1 >= ? AND column1 < ?";
 
+	public static final String ROW_KEY_INDEX_DELETE = "DELETE FROM row_key_index " +
+			"WHERE KEY = ? AND column1 = ?";
+
+	public static final String ROW_KEY_INDEX_DELETE_ROW = "DELETE FROM row_key_index " +
+			"WHERE KEY = ?";
+
+	//New Row key queries
 	public static final String ROW_KEY_TIME_QUERY = "SELECT row_time " +
 			"FROM row_key_time_index WHERE metric = ? AND " +
 			"row_time >= ? AND row_time <= ?";
@@ -163,121 +183,109 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	public static final String ROW_KEY_TAG_VALUES = "tag_values";
 	private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-	private final Cluster m_cluster;
-	private final Keyspace m_keyspace;
+	//private final Cluster m_cluster;
 	private final EventBus m_eventBus;
 
 
 	//new properties
 	private final CassandraClient m_cassandraClient;
-	private final AstyanaxClient m_astyanaxClient;
+	//private final AstyanaxClient m_astyanaxClient;
 
+
+	private final PreparedStatements m_preparedStatements;
 	private Session m_session;
-	private final PreparedStatement m_psInsertData;
-	private final PreparedStatement m_psInsertRowKey;
-	private final PreparedStatement m_psInsertString;
-	private final PreparedStatement m_psQueryData;
-	private final PreparedStatement m_psStringQuery;
-	private final PreparedStatement m_psRowKeyIndexQuery;
-	private final PreparedStatement m_psRowKeyQuery;
-	private final PreparedStatement m_psRowKeyTimeQuery;
 
-	private BatchStatement m_batchStatement;
-	private final Object m_batchLock = new Object();
 
-	private final boolean m_useThrift;
-	//End new props
+	public class PreparedStatements
+	{
+		public final PreparedStatement psDataPointsInsert;
+		//public final PreparedStatement m_psInsertRowKey;
+		public final PreparedStatement psStringIndexInsert;
+		public final PreparedStatement psDataPointsQueryAsc;
+		public final PreparedStatement psStringIndexQuery;
+		public final PreparedStatement psRowKeyIndexQuery;
+		public final PreparedStatement psRowKeyQuery;
+		public final PreparedStatement psRowKeyTimeQuery;
+		public final PreparedStatement psDataPointsDeleteRow;
+		public final PreparedStatement psDataPointsDelete;
+		public final PreparedStatement psRowKeyIndexDelete;
+		public final PreparedStatement psRowKeyIndexDeleteRow;
+		public final PreparedStatement psDataPointsQueryDesc;
+		public final PreparedStatement psRowKeyTimeInsert;
+		public final PreparedStatement psRowKeyInsert;
 
-	private String m_keyspaceName;
-	private int m_singleRowReadSize;
-	private int m_multiRowSize;
-	private int m_multiRowReadSize;
+		public PreparedStatements()
+		{
+			psDataPointsInsert  = m_session.prepare(DATA_POINTS_INSERT);
+			//m_psInsertRowKey      = m_session.prepare(ROW_KEY_INDEX_INSERT);
+			psRowKeyTimeInsert = m_session.prepare(ROW_KEY_TIME_INSERT);
+			psRowKeyInsert = m_session.prepare(ROW_KEY_INSERT);
+			psStringIndexInsert = m_session.prepare(STRING_INDEX_INSERT);
+			psDataPointsQueryAsc = m_session.prepare(DATA_POINTS_QUERY_ASC);
+			psDataPointsQueryDesc = m_session.prepare(DATA_POINTS_QUERY_DESC);
+			psStringIndexQuery = m_session.prepare(STRING_INDEX_QUERY);
+			psRowKeyIndexQuery  = m_session.prepare(ROW_KEY_INDEX_QUERY);
+			psRowKeyQuery       = m_session.prepare(ROW_KEY_QUERY);
+			psRowKeyTimeQuery   = m_session.prepare(ROW_KEY_TIME_QUERY);
+			psDataPointsDelete = m_session.prepare(DATA_POINTS_DELETE);
+			psDataPointsDeleteRow = m_session.prepare(DATA_POINTS_DELETE_ROW);
+			psRowKeyIndexDelete = m_session.prepare(ROW_KEY_INDEX_DELETE);
+			psRowKeyIndexDeleteRow = m_session.prepare(ROW_KEY_INDEX_DELETE_ROW);
+		}
+	}
+
+
+
+	private final BatchStats m_batchStats = new BatchStats();
 
 	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
 	private DataCache<String> m_metricNameCache = new DataCache<String>(1024);
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 	private final QueueProcessor m_queueProcessor;
-	private final CongestionExecutorService m_congestionExecutor;
+	private final AdaptiveExecutorService m_congestionExecutor;
 
 	private CassandraConfiguration m_cassandraConfiguration;
 
 	@Inject
-	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
+	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
 
 	@Inject
 	public CassandraDatastore(@Named("HOSTNAME") final String hostname,
 			CassandraClient cassandraClient,
-			AstyanaxClient astyanaxClient,
 			CassandraConfiguration cassandraConfiguration,
-			HectorConfiguration configuration,
 			KairosDataPointFactory kairosDataPointFactory,
 			QueueProcessor queueProcessor,
 			EventBus eventBus,
-			CongestionExecutorService congestionExecutor) throws DatastoreException
+			AdaptiveExecutorService congestionExecutor) throws DatastoreException
 	{
 		m_cassandraClient = cassandraClient;
-		m_astyanaxClient = astyanaxClient;
+		//m_astyanaxClient = astyanaxClient;
 		m_kairosDataPointFactory = kairosDataPointFactory;
 		m_queueProcessor = queueProcessor;
 		m_congestionExecutor = congestionExecutor;
 		m_eventBus = eventBus;
 
-		m_useThrift = cassandraConfiguration.isUseThrift();
-
 		setupSchema();
 
 		m_session = m_cassandraClient.getKeyspaceSession();
 		//Prepare queries
-
-		m_psInsertData = m_session.prepare(DATA_POINTS_INSERT);
-		m_psInsertRowKey = m_session.prepare(ROW_KEY_INDEX_INSERT);
-		m_psInsertString = m_session.prepare(STRING_INDEX_INSERT);
-		m_psQueryData = m_session.prepare(DATA_POINTS_QUERY);
-		m_psStringQuery = m_session.prepare(STRING_QUERY);
-		m_psRowKeyIndexQuery = m_session.prepare(ROW_KEY_INDEX_QUERY);
-		m_psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
-		m_psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);
+		m_preparedStatements = new PreparedStatements();
 
 		m_cassandraConfiguration = cassandraConfiguration;
-		m_singleRowReadSize = m_cassandraConfiguration.getSingleRowReadSize();
-		m_multiRowSize = m_cassandraConfiguration.getMultiRowSize();
-		m_multiRowReadSize = m_cassandraConfiguration.getMultiRowReadSize();
-		m_keyspaceName = m_cassandraConfiguration.getKeyspaceName();
 
 		m_rowKeyCache = new DataCache<DataPointsRowKey>(m_cassandraConfiguration.getRowKeyCacheSize());
 		m_metricNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
-
-		try
-		{
-			CassandraHostConfigurator hostConfig = configuration.getConfiguration();
-			int threadCount = hostConfig.buildCassandraHosts().length + 3;
-
-			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
-					hostConfig, m_cassandraConfiguration.getCassandraAuthentication());
-
-			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
-
-
-			//set global consistency level
-			ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
-			confConsLevel.setDefaultReadConsistencyLevel(m_cassandraConfiguration.getDataReadLevel().getHectorLevel());
-			confConsLevel.setDefaultWriteConsistencyLevel(m_cassandraConfiguration.getDataWriteLevel().getHectorLevel());
-
-			//create keyspace instance with specified consistency
-			m_keyspace = HFactory.createKeyspace(m_keyspaceName, m_cluster, confConsLevel);
-		}
-		catch (HectorException e)
-		{
-			throw new DatastoreException(e);
-		}
-
 
 		//This needs to be done last as it tells the processor we are ready for data
 		m_queueProcessor.setProcessorHandler(this);
 	}
 
+	private static ByteBuffer serializeString(String str)
+	{
+		return ByteBuffer.wrap(str.getBytes(UTF_8));
+	}
 
 	private void setupSchema()
 	{
@@ -325,26 +333,20 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	@Subscribe
 	public void putDataPoint(DataPointEvent dataPointEvent) throws DatastoreException
 	{
-		/*if (dataPointEvent.getMetricName().startsWith("blast"))
-			return;*/
 		m_queueProcessor.put(dataPointEvent);
 	}
 
 	@Override
-	public void handleEvents(List<DataPointEvent> events, EventCompletionCallBack eventCompletionCallBack)
+	public void handleEvents(List<DataPointEvent> events, EventCompletionCallBack eventCompletionCallBack,
+			boolean fullBatch)
 	{
 		BatchHandler batchHandler;
 
-		if (m_useThrift)
-			batchHandler = m_astyanaxClient.getBatchHandler(events, eventCompletionCallBack,
-					m_cassandraConfiguration.getDatapointTtl(),
-					m_rowKeyCache, m_metricNameCache, m_eventBus, m_session,
-					m_psInsertData, m_psInsertRowKey, m_psInsertString);
-		else
-			batchHandler = new CQLBatchHandler(events, eventCompletionCallBack,
-					m_cassandraConfiguration.getDatapointTtl(),
-					m_rowKeyCache, m_metricNameCache, m_eventBus, m_session,
-					m_psInsertData, m_psInsertRowKey, m_psInsertString);
+		batchHandler = new CQLBatchHandler(events, eventCompletionCallBack,
+				m_cassandraConfiguration.getDatapointTtl(),
+				m_cassandraConfiguration.getDataWriteLevel(),
+				m_rowKeyCache, m_metricNameCache, m_eventBus, m_session,
+				m_preparedStatements, fullBatch, m_batchStats);
 
 		m_congestionExecutor.submit(batchHandler);
 	}
@@ -352,8 +354,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 
 	private Iterable<String> queryStringIndex(final String key)
 	{
-		BoundStatement boundStatement = new BoundStatement(m_psStringQuery);
-		boundStatement.setBytesUnsafe(0, StringSerializer.get().toByteBuffer(key));
+		BoundStatement boundStatement = new BoundStatement(m_preparedStatements.psStringIndexQuery);
+		boundStatement.setBytesUnsafe(0, serializeString(key));
+		boundStatement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 
 		ResultSet resultSet = m_session.execute(boundStatement);
 
@@ -362,7 +365,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 		while (!resultSet.isExhausted())
 		{
 			Row row = resultSet.one();
-			ret.add(StringSerializer.get().fromByteBuffer(row.getBytes(0)));
+			ret.add(UTF_8.decode(row.getBytes(0)).toString());
 		}
 
 		return ret;
@@ -407,10 +410,51 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 	}
 
 	@Override
+	public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
+	{
+
+	}
+
+	@Override
+	public String getValue(String service, String serviceKey, String key) throws DatastoreException
+	{
+		return null;
+	}
+
+	@Override
+	public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
+	{
+		return null;
+	}
+
+	@Override
+	public Iterable<String> listKeys(String service, String serviceKey, String keyStartsWith) throws DatastoreException
+	{
+		return null;
+	}
+
+	@Override
 	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 	{
-		//queryWithRowKeys(query, queryCallback, getKeysForQueryIterator(query));
 		cqlQueryWithRowKeys(query, queryCallback, getKeysForQueryIterator(query));
+	}
+
+	@Override
+	public List<DataPointSet> getMetrics(long now)
+	{
+		List<DataPointSet> ret = new ArrayList<>();
+
+		m_simpleStatsReporter.reportStats(m_batchStats.getNameStats(), now,
+				"kairosdb.datastore.cassandra.write_batch",
+				"table", "string_index", ret);
+		m_simpleStatsReporter.reportStats(m_batchStats.getDataPointStats(), now,
+				"kairosdb.datastore.cassandra.write_batch",
+				"table", "data_points", ret);
+		m_simpleStatsReporter.reportStats(m_batchStats.getRowKeyStats(), now,
+				"kairosdb.datastore.cassandra.write_batch",
+				"table", "row_keys", ret);
+
+		return ret;
 	}
 
 	private class QueryListener implements FutureCallback<ResultSet>
@@ -498,15 +542,15 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 		int rowCount = 0;
 		long queryStartTime = query.getStartTime();
 		long queryEndTime = query.getEndTime();
+
 		ExecutorService resultsExecutor = Executors.newSingleThreadExecutor();
 		//Controls the number of queries sent out at the same time.
-		Semaphore querySemaphor = new Semaphore(100); //todo: add config for this
+		Semaphore querySemaphor = new Semaphore(m_cassandraConfiguration.getSimultaneousQueries());
 
 		while (rowKeys.hasNext())
 		{
 			rowCount ++;
 			DataPointsRowKey rowKey = rowKeys.next();
-			//System.out.println("Query for "+rowKey.toString());
 			long tierRowTime = rowKey.getTimestamp();
 			int startTime;
 			int endTime;
@@ -528,10 +572,18 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 			endBuffer.putInt(endTime);
 			endBuffer.rewind();
 
-			BoundStatement boundStatement = new BoundStatement(m_psQueryData);
+			BoundStatement boundStatement;
+			if (query.getOrder() == Order.ASC)
+				boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryAsc);
+			else
+				boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryDesc);
+
 			boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 			boundStatement.setBytesUnsafe(1, startBuffer);
 			boundStatement.setBytesUnsafe(2, endBuffer);
+			//boundStatement.setInt(3, Integer.MAX_VALUE);
+
+			boundStatement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 
 			try
 			{
@@ -551,7 +603,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 
 		try
 		{
-			querySemaphor.acquire(100); //todo use same as above
+			querySemaphor.acquire(m_cassandraConfiguration.getSimultaneousQueries());
 			queryCallback.endDataPoints();
 			resultsExecutor.shutdown();
 		}
@@ -565,86 +617,12 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 		}
 	}
 
-	private void queryWithRowKeys(DatastoreMetricQuery query,
-			QueryCallback queryCallback, Iterator<DataPointsRowKey> rowKeys)
-	{
-		long startTime = System.currentTimeMillis();
-		long currentTimeTier = 0L;
-		String currentType = null;
-		int rowCount = 0;
-
-		List<QueryRunner> runners = new ArrayList<QueryRunner>();
-		List<DataPointsRowKey> queryKeys = new ArrayList<DataPointsRowKey>();
-
-		MemoryMonitor mm = new MemoryMonitor(20);
-		while (rowKeys.hasNext())
-		{
-			rowCount++;
-			DataPointsRowKey rowKey = rowKeys.next();
-			if (currentTimeTier == 0L)
-				currentTimeTier = rowKey.getTimestamp();
-
-			if (currentType == null)
-				currentType = rowKey.getDataType();
-
-			if ((rowKey.getTimestamp() == currentTimeTier) && (queryKeys.size() < m_multiRowSize) &&
-					(currentType.equals(rowKey.getDataType())))
-			{
-				queryKeys.add(rowKey);
-			}
-			else
-			{
-				runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS_NAME, m_kairosDataPointFactory,
-						queryKeys,
-						query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
-						m_multiRowReadSize, query.getLimit(), query.getOrder()));
-
-				queryKeys = new ArrayList<DataPointsRowKey>();
-				queryKeys.add(rowKey);
-				currentTimeTier = rowKey.getTimestamp();
-				currentType = rowKey.getDataType();
-			}
-
-			mm.checkMemoryAndThrowException();
-		}
-
-		ThreadReporter.addDataPoint(ROW_KEY_COUNT, rowCount);
-
-		//There may be stragglers that are not ran
-		if (!queryKeys.isEmpty())
-		{
-			runners.add(new QueryRunner(m_keyspace, CF_DATA_POINTS_NAME, m_kairosDataPointFactory,
-					queryKeys,
-					query.getStartTime(), query.getEndTime(), queryCallback, m_singleRowReadSize,
-					m_multiRowReadSize, query.getLimit(), query.getOrder()));
-		}
-
-		ThreadReporter.addDataPoint(KEY_QUERY_TIME, System.currentTimeMillis() - startTime);
-
-		//Changing the check rate
-		mm.setCheckRate(1);
-		try
-		{
-			//TODO: Run this with multiple threads
-			for (QueryRunner runner : runners)
-			{
-				runner.runQuery();
-
-				mm.checkMemoryAndThrowException();
-			}
-
-			queryCallback.endDataPoints();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
-	}
 
 	@Override
 	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 	{
 		checkNotNull(deleteQuery);
+		boolean clearCache = false;
 
 		long now = System.currentTimeMillis();
 
@@ -662,9 +640,17 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 			if (deleteQuery.getStartTime() <= rowKeyTimestamp && (deleteQuery.getEndTime() >= rowKeyTimestamp + ROW_WIDTH - 1))
 			{
 				//todo fix me
-				//m_dataPointWriteBuffer.deleteRow(rowKey, now);  // delete the whole row
-				//m_rowKeyWriteBuffer.deleteColumn(rowKey.getMetricName(), rowKey, now); // Delete the index
-				m_rowKeyCache.clear();
+				BoundStatement statement = new BoundStatement(m_preparedStatements.psDataPointsDeleteRow);
+				statement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+				m_session.executeAsync(statement);
+
+				statement = new BoundStatement(m_preparedStatements.psRowKeyIndexDelete);
+				statement.setBytesUnsafe(0, serializeString(rowKey.getMetricName()));
+				statement.setBytesUnsafe(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+				m_session.executeAsync(statement);
+				clearCache = true;
 			}
 			else
 			{
@@ -672,17 +658,26 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 			}
 		}
 
-		queryWithRowKeys(deleteQuery, new DeletingCallback(deleteQuery.getName()), partialRows.iterator());
+
+		cqlQueryWithRowKeys(deleteQuery, new DeletingCallback(deleteQuery.getName()), partialRows.iterator());
 
 		// If index is gone, delete metric name from Strings column family
 		if (deleteAll)
 		{
-			//m_rowKeyWriteBuffer.deleteRow(deleteQuery.getName(), now);
+			BoundStatement statement = new BoundStatement(m_preparedStatements.psRowKeyIndexDeleteRow);
+			statement.setBytesUnsafe(0, serializeString(deleteQuery.getName()));
+			statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+			m_session.executeAsync(statement);
+
 			//todo fix me
 			//m_stringIndexWriteBuffer.deleteColumn(ROW_KEY_METRIC_NAMES, deleteQuery.getName(), now);
-			m_rowKeyCache.clear();
+			clearCache = true;
 			m_metricNameCache.clear();
 		}
+
+
+		if (clearCache)
+			m_rowKeyCache.clear();
 	}
 
 	private SortedMap<String, String> getTags(DataPointRow row)
@@ -801,26 +796,29 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 			//Legacy key index - index is all in one row
 			if ((startTime < 0) && (endTime >= 0))
 			{
-				BoundStatement negStatement = new BoundStatement(m_psRowKeyIndexQuery);
-				negStatement.setBytesUnsafe(0, StringSerializer.get().toByteBuffer(metricName));
+				BoundStatement negStatement = new BoundStatement(m_preparedStatements.psRowKeyIndexQuery);
+				negStatement.setBytesUnsafe(0, serializeString(metricName));
 				setStartEndKeys(negStatement, metricName, startTime, -1L);
+				negStatement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 
 				ResultSetFuture future = m_session.executeAsync(negStatement);
 				futures.add(future);
 
 
-				BoundStatement posStatement = new BoundStatement(m_psRowKeyIndexQuery);
-				posStatement.setBytesUnsafe(0, StringSerializer.get().toByteBuffer(metricName));
+				BoundStatement posStatement = new BoundStatement(m_preparedStatements.psRowKeyIndexQuery);
+				posStatement.setBytesUnsafe(0, serializeString(metricName));
 				setStartEndKeys(posStatement, metricName, 0L, endTime);
+				posStatement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 
 				future = m_session.executeAsync(posStatement);
 				futures.add(future);
 			}
 			else
 			{
-				BoundStatement statement = new BoundStatement(m_psRowKeyIndexQuery);
-				statement.setBytesUnsafe(0, StringSerializer.get().toByteBuffer(metricName));
+				BoundStatement statement = new BoundStatement(m_preparedStatements.psRowKeyIndexQuery);
+				statement.setBytesUnsafe(0, serializeString(metricName));
 				setStartEndKeys(statement, metricName, startTime, endTime);
+				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 
 				ResultSetFuture future = m_session.executeAsync(statement);
 				futures.add(future);
@@ -830,9 +828,10 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 			List<Long> queryKeyList = createQueryKeyList(metricName, startTime, endTime);
 			for (Long keyTime : queryKeyList)
 			{
-				BoundStatement statement = new BoundStatement(m_psRowKeyQuery);
+				BoundStatement statement = new BoundStatement(m_preparedStatements.psRowKeyQuery);
 				statement.setString(0, metricName);
-				statement.setTime(1, keyTime);
+				statement.setTimestamp(1, new Date(keyTime));
+				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 
 				ResultSetFuture future = m_session.executeAsync(statement);
 				futures.add(future);
@@ -860,7 +859,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler
 		{
 			DataPointsRowKey next = null;
 			boolean newIndex = false;
-			if (iterator.getColumnDefinitions().contains("metric"))
+			if (iterator.getColumnDefinitions().contains("row_time"))
 				newIndex = true;
 
 outer:
@@ -870,7 +869,7 @@ outer:
 				Row record = iterator.one();
 
 				if (newIndex)
-					rowKey = new DataPointsRowKey(m_metricName, record.getTime(0),
+					rowKey = new DataPointsRowKey(m_metricName, record.getTimestamp(0).getTime(),
 							record.getString(1), new TreeMap<String, String>(record.getMap(2, String.class, String.class)));
 				else
 					rowKey = DATA_POINTS_ROW_KEY_SERIALIZER.fromByteBuffer(record.getBytes(0));
@@ -895,16 +894,17 @@ outer:
 		{
 			List<Long> ret = new ArrayList<>();
 
-			BoundStatement statement = new BoundStatement(m_psRowKeyTimeQuery);
+			BoundStatement statement = new BoundStatement(m_preparedStatements.psRowKeyTimeQuery);
 			statement.setString(0, metricName);
 			statement.setTimestamp(1, new Date(calculateRowTime(startTime)));
 			statement.setTimestamp(2, new Date(endTime));
+			statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 
 			ResultSet rows = m_session.execute(statement);
 
 			while (!rows.isExhausted())
 			{
-				ret.add(rows.one().getTime(0));
+				ret.add(rows.one().getTimestamp(0).getTime());
 			}
 
 			return ret;
@@ -929,7 +929,7 @@ outer:
 		public boolean hasNext()
 		{
 			m_nextKey = null;
-			while (m_currentResultSet != null && !m_currentResultSet.isExhausted())
+			while (m_currentResultSet != null && (!m_currentResultSet.isExhausted() || m_resultSets.hasNext()))
 			{
 				m_nextKey = nextKeyFromIterator(m_currentResultSet);
 
@@ -955,122 +955,11 @@ outer:
 		}
 	}
 
-	private class FilteredRowKeyIterator implements Iterator<DataPointsRowKey>
-	{
-		private ColumnSliceIterator<String, DataPointsRowKey, String> m_sliceIterator;
-
-		/**
-		 Used when a query spans positive and negative time values, we have to
-		 query the positive separate from the negative times as negative times
-		 are sorted after the positive ones.
-		 */
-		private ColumnSliceIterator<String, DataPointsRowKey, String> m_continueSliceIterator;
-		private DataPointsRowKey m_nextKey;
-		private SetMultimap<String, String> m_filterTags;
-
-		public FilteredRowKeyIterator(String metricName, long startTime, long endTime,
-				SetMultimap<String, String> filterTags)
-		{
-			m_filterTags = filterTags;
-			SliceQuery<String, DataPointsRowKey, String> sliceQuery =
-					HFactory.createSliceQuery(m_keyspace, StringSerializer.get(),
-							new DataPointsRowKeySerializer(true), StringSerializer.get());
-
-			sliceQuery.setColumnFamily(CF_ROW_KEY_INDEX_NAME)
-					.setKey(metricName);
-
-			if ((startTime < 0) && (endTime >= 0))
-			{
-				m_sliceIterator = createSliceIterator(sliceQuery, metricName,
-						startTime, -1L);
-
-				SliceQuery<String, DataPointsRowKey, String> sliceQuery2 =
-						HFactory.createSliceQuery(m_keyspace, StringSerializer.get(),
-								new DataPointsRowKeySerializer(true), StringSerializer.get());
-
-				sliceQuery2.setColumnFamily(CF_ROW_KEY_INDEX_NAME)
-						.setKey(metricName);
-
-				m_continueSliceIterator = createSliceIterator(sliceQuery2, metricName,
-						0, endTime);
-			}
-			else
-			{
-				m_sliceIterator = createSliceIterator(sliceQuery, metricName,
-						startTime, endTime);
-			}
-
-		}
-
-		private ColumnSliceIterator<String, DataPointsRowKey, String> createSliceIterator(
-				SliceQuery<String, DataPointsRowKey, String> sliceQuery,
-				String metricName, long startTime, long endTime)
-		{
-			DataPointsRowKey startKey = new DataPointsRowKey(metricName,
-					calculateRowTime(startTime), "");
-
-			DataPointsRowKey endKey = new DataPointsRowKey(metricName,
-					calculateRowTime(endTime), "");
-			endKey.setEndSearchKey(true);
-
-			ColumnSliceIterator<String, DataPointsRowKey, String> iterator = new ColumnSliceIterator<String, DataPointsRowKey, String>(sliceQuery,
-					startKey, endKey, false, m_singleRowReadSize);
-
-			return (iterator);
-		}
-
-		private DataPointsRowKey nextKeyFromIterator(ColumnSliceIterator<String, DataPointsRowKey, String> iterator)
-		{
-			DataPointsRowKey next = null;
-
-outer:
-			while (iterator.hasNext())
-			{
-				DataPointsRowKey rowKey = iterator.next().getName();
-
-				Map<String, String> keyTags = rowKey.getTags();
-				for (String tag : m_filterTags.keySet())
-				{
-					String value = keyTags.get(tag);
-					if (value == null || !m_filterTags.get(tag).contains(value))
-						continue outer; //Don't want this key
-				}
-
-				next = rowKey;
-				break;
-			}
-
-			return (next);
-		}
-
-		@Override
-		public boolean hasNext()
-		{
-			m_nextKey = nextKeyFromIterator(m_sliceIterator);
-
-			if ((m_nextKey == null) && (m_continueSliceIterator != null))
-				m_nextKey = nextKeyFromIterator(m_continueSliceIterator);
-
-			return (m_nextKey != null);
-		}
-
-		@Override
-		public DataPointsRowKey next()
-		{
-			return m_nextKey;
-		}
-
-		@Override
-		public void remove()
-		{
-		}
-	}
 
 	private class DeletingCallback implements QueryCallback
 	{
 		private SortedMap<String, String> m_currentTags;
 		private DataPointsRowKey m_currentRow;
-		private long m_now = System.currentTimeMillis();
 		private final String m_metric;
 		private String m_currentType;
 
@@ -1101,8 +990,15 @@ outer:
 			else
 				columnName = getColumnName(rowTime, time);
 
-			//todo fix me
-			//m_dataPointWriteBuffer.deleteColumn(m_currentRow, columnName, m_now);
+			//Todo: may want to send these off in batches
+			BoundStatement statement = new BoundStatement(m_preparedStatements.psDataPointsDelete);
+			statement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(m_currentRow));
+			ByteBuffer b = ByteBuffer.allocate(4);
+			b.putInt(columnName);
+			b.rewind();
+			statement.setBytesUnsafe(1, b);
+			statement.setConsistencyLevel(m_cassandraConfiguration.getDataWriteLevel());
+			m_session.executeAsync(statement);
 		}
 
 		@Override
@@ -1110,7 +1006,7 @@ outer:
 		{
 			m_currentType = dataType;
 			m_currentTags = new TreeMap<String, String>(tags);
-			//This causes the row key to get reset with the first data point
+			//This causes the row key to get clear with the first data point
 			m_currentRow = null;
 		}
 

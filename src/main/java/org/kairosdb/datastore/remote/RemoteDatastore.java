@@ -154,7 +154,7 @@ public class RemoteDatastore implements Datastore
 				{
 					for (DataPointKey dataPointKey : flushMap.keySet())
 					{
-						//We have to reset the writer every time or it gets confused
+						//We have to clear the writer every time or it gets confused
 						//because we are only writing partial json each time.
 						JSONWriter writer = new JSONWriter(m_dataWriter);
 
@@ -456,6 +456,30 @@ public class RemoteDatastore implements Datastore
 	@Override
 	public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		throw new DatastoreException("Method not implemented.");
+	}
+
+	@Override
+	public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
+	{
+		throw new DatastoreException("Method not implemented.");
+	}
+
+	@Override
+	public String getValue(String service, String serviceKey, String key) throws DatastoreException
+	{
+		throw new DatastoreException("Method not implemented.");
+	}
+
+	@Override
+	public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
+	{
+		throw new DatastoreException("Method not implemented.");
+	}
+
+	@Override
+	public Iterable<String> listKeys(String service, String serviceKey, String keyStartsWith) throws DatastoreException
+	{
+		throw new DatastoreException("Method not implemented.");
 	}
 }

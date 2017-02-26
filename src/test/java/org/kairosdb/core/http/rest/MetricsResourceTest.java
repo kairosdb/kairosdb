@@ -44,6 +44,7 @@ import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.util.LoggingUtils;
+import org.kairosdb.util.SimpleStatsReporter;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
@@ -113,6 +114,7 @@ public class MetricsResourceTest
 				bindConstant().annotatedWith(Names.named("kairosdb.query_cache.keep_cache_files")).to(false);
 				bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
 				bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
+				bind(SimpleStatsReporter.class);
 
 				Properties props = new Properties();
 				InputStream is = getClass().getClassLoader().getResourceAsStream("kairosdb.properties");
@@ -402,6 +404,30 @@ public class MetricsResourceTest
 
 		@Override
 		public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
+		{
+			return null;
+		}
+
+		@Override
+		public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
+		{
+
+		}
+
+		@Override
+		public String getValue(String service, String serviceKey, String key) throws DatastoreException
+		{
+			return null;
+		}
+
+		@Override
+		public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
+		{
+			return null;
+		}
+
+		@Override
+		public Iterable<String> listKeys(String service, String serviceKey, String keyStartsWith) throws DatastoreException
 		{
 			return null;
 		}

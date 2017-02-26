@@ -80,7 +80,6 @@ public class QueueProcessorTest
 	@Test
 	public void test_eventIsPulledFromMemoryQueue()
 	{
-		EventBus eventBus = mock(EventBus.class);
 		BigArray bigArray = mock(BigArray.class);
 
 		when(bigArray.append(Matchers.<byte[]>any())).thenReturn(0L);
@@ -90,7 +89,7 @@ public class QueueProcessorTest
 		DataPointEventSerializer serializer = new DataPointEventSerializer(new TestDataPointFactory());
 		ProcessorHandler processorHandler = mock(ProcessorHandler.class);
 
-		QueueProcessor queueProcessor = new QueueProcessor(serializer,
+		QueueProcessor queueProcessor = new FileQueueProcessor(serializer,
 				bigArray, new TestExecutor(), 2, 10, 500);
 
 		queueProcessor.setProcessorHandler(processorHandler);
@@ -103,14 +102,13 @@ public class QueueProcessorTest
 		m_deliveryThread.run();
 
 		verify(bigArray, times(1)).append(eq(serializer.serializeEvent(event)));
-		verify(processorHandler, times(1)).handleEvents(eq(Arrays.asList(event)), Matchers.<EventCompletionCallBack>any());
+		verify(processorHandler, times(1)).handleEvents(eq(Arrays.asList(event)), Matchers.<EventCompletionCallBack>any(), eq(false));
 		verify(bigArray, times(0)).get(anyLong());
 	}
 
 	@Test
 	public void test_eventIsPulledFromMemoryQueueThenBigArray()
 	{
-		EventBus eventBus = mock(EventBus.class);
 		BigArray bigArray = mock(BigArray.class);
 
 		when(bigArray.append(Matchers.<byte[]>any())).thenReturn(0L);
@@ -119,7 +117,7 @@ public class QueueProcessorTest
 		DataPointEventSerializer serializer = new DataPointEventSerializer(new TestDataPointFactory());
 		ProcessorHandler processorHandler = mock(ProcessorHandler.class);
 
-		QueueProcessor queueProcessor = new QueueProcessor(serializer,
+		QueueProcessor queueProcessor = new FileQueueProcessor(serializer,
 				bigArray, new TestExecutor(), 3, 1, 500);
 
 		queueProcessor.setProcessorHandler(processorHandler);
@@ -127,22 +125,24 @@ public class QueueProcessorTest
 		DataPointEvent event = createDataPointEvent();
 
 		queueProcessor.put(event);
+		when(bigArray.append(Matchers.<byte[]>any())).thenReturn(1L);
 		queueProcessor.put(event);
 
+		when(bigArray.get(0L)).thenReturn(serializer.serializeEvent(event));
 		when(bigArray.get(1L)).thenReturn(serializer.serializeEvent(event));
 
 		m_deliveryThread.setRunOnce(true);
 		m_deliveryThread.run();
 
 		verify(bigArray, times(2)).append(eq(serializer.serializeEvent(event)));
-		verify(processorHandler, times(1)).handleEvents(eq(Arrays.asList(event, event)), Matchers.<EventCompletionCallBack>any());
+		verify(processorHandler, times(1)).handleEvents(eq(Arrays.asList(event, event)), Matchers.<EventCompletionCallBack>any(), eq(false));
 		verify(bigArray, times(1)).get(anyLong());
 	}
 
 	@Test
 	public void test_checkPointIsCalled()
 	{
-		EventBus eventBus = mock(EventBus.class);
+		final EventBus eventBus = mock(EventBus.class);
 		BigArray bigArray = mock(BigArray.class);
 
 		when(bigArray.append(Matchers.<byte[]>any())).thenReturn(0L);
@@ -152,20 +152,22 @@ public class QueueProcessorTest
 		ProcessorHandler processorHandler = new ProcessorHandler()
 		{
 			@Override
-			public void handleEvents(List<DataPointEvent> events, EventCompletionCallBack eventCompletionCallBack)
+			public void handleEvents(List<DataPointEvent> events, EventCompletionCallBack eventCompletionCallBack, boolean fullBatch)
 			{
+				System.out.println("Handling events "+events.size());
 				eventCompletionCallBack.complete();
 			}
 		};
 
-		QueueProcessor queueProcessor = new QueueProcessor(serializer,
-				bigArray, new TestExecutor(), 3, 1, -1);
+		QueueProcessor queueProcessor = new FileQueueProcessor(serializer,
+				bigArray, new TestExecutor(), 3, 2, -1);
 
 		queueProcessor.setProcessorHandler(processorHandler);
 
 		DataPointEvent event = createDataPointEvent();
 
 		queueProcessor.put(event);
+		when(bigArray.append(Matchers.<byte[]>any())).thenReturn(1L);
 		queueProcessor.put(event);
 
 		when(bigArray.get(1L)).thenReturn(serializer.serializeEvent(event));
@@ -174,7 +176,7 @@ public class QueueProcessorTest
 		m_deliveryThread.run();
 
 		verify(bigArray, times(2)).append(eq(serializer.serializeEvent(event)));
-		verify(bigArray, times(1)).get(anyLong());
+		//verify(bigArray, times(1)).get(anyLong()); //Item taken from memory
 		verify(bigArray, times(1)).removeBeforeIndex(eq(1l));
 	}
 }

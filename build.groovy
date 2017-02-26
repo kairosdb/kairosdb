@@ -168,6 +168,7 @@ ivyTestResolve = ivy.getResolveRule("test")
 testCompileRule.addDepend(ivyTestResolve)
 testCompileRule.getDefinition().set("unchecked")
 testCompileRule.getDefinition().set("deprecation")
+//testCompileRule.getDefinition().set("verbose")
 
 new SimpleRule("compile-test").addDepend(testCompileRule)
 
@@ -465,20 +466,25 @@ integrationClassPath = new Classpath(jp.getLibraryJars())
 //.addPaths(new RegExFileSet("lib/ivy/integration", ".*\\.jar").getFullFilePaths())
 		.addPath("src/integration-test/resources")
 
+ivyIntegrationRule = ivy.getResolveRule("integration")
+
 integrationBuildRule = new JavaCRule("build/integration")
 		.addSourceDir("src/integration-test/java")
 		.addClasspath(integrationClassPath)
-		.addDepend(ivy.getResolveRule("integration"))
+		.addDepend(ivyIntegrationRule)
 
 new SimpleRule("integration")
 		.setMakeAction("doIntegration")
 		.addDepend(integrationBuildRule)
+		.addDepend(ivyIntegrationRule)
 
 def doIntegration(Rule rule)
 {
+	integrationClassPath.addPaths(ivyIntegrationRule.getClasspath())
+	integrationClassPath.addPath("build/integration")
 	host = saw.getProperty("host", "127.0.0.1")
 	port = saw.getProperty("port", "8080")
-	saw.exec("java  -Dhost=${host} -Dport=${port} -cp ${integrationBuildRule.classpath} org.testng.TestNG src/integration-test/testng.xml")
+	saw.exec("java  -Dhost=${host} -Dport=${port} -cp ${integrationClassPath} org.testng.TestNG src/integration-test/testng.xml")
 }
 
 //------------------------------------------------------------------------------

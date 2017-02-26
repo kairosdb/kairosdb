@@ -10,74 +10,74 @@ import org.slf4j.LoggerFactory;
 	should not be modified.
 	
 */
-public class MetricTag_base extends GenOrmRecord
+public class ServiceIndex_base extends GenOrmRecord
 	{
-	protected static final Logger s_logger = LoggerFactory.getLogger(MetricTag.class.getName());
+	protected static final Logger s_logger = LoggerFactory.getLogger(ServiceIndex.class.getName());
 
-	public static final String COL_METRIC_ID = "metric_id";
-	public static final String COL_TAG_NAME = "tag_name";
-	public static final String COL_TAG_VALUE = "tag_value";
+	public static final String COL_SERVICE = "service";
+	public static final String COL_SERVICE_KEY = "service_key";
+	public static final String COL_KEY = "key";
+	public static final String COL_VALUE = "value";
 
 	//Change this value to true to turn on warning messages
 	private static final boolean WARNINGS = false;
-	private static final String SELECT = "SELECT this.\"metric_id\", this.\"tag_name\", this.\"tag_value\" ";
-	private static final String FROM = "FROM metric_tag this ";
+	private static final String SELECT = "SELECT this.\"service\", this.\"service_key\", this.\"key\", this.\"value\" ";
+	private static final String FROM = "FROM service_index this ";
 	private static final String WHERE = "WHERE ";
-	private static final String KEY_WHERE = "WHERE \"metric_id\" = ? AND \"tag_name\" = ? AND \"tag_value\" = ?";
+	private static final String KEY_WHERE = "WHERE \"service\" = ? AND \"service_key\" = ? AND \"key\" = ?";
 	
-	public static final String TABLE_NAME = "metric_tag";
-	public static final int NUMBER_OF_COLUMNS = 3;
+	public static final String TABLE_NAME = "service_index";
+	public static final int NUMBER_OF_COLUMNS = 4;
 	
 	
 	private static final String s_fieldEscapeString = "\""; 
 	
-	public static final GenOrmFieldMeta METRIC_ID_FIELD_META = new GenOrmFieldMeta("metric_id", "string", 0, true, true);
-	public static final GenOrmFieldMeta TAG_NAME_FIELD_META = new GenOrmFieldMeta("tag_name", "string", 1, true, true);
-	public static final GenOrmFieldMeta TAG_VALUE_FIELD_META = new GenOrmFieldMeta("tag_value", "string", 2, true, true);
+	public static final GenOrmFieldMeta SERVICE_FIELD_META = new GenOrmFieldMeta("service", "string", 0, true, false);
+	public static final GenOrmFieldMeta SERVICE_KEY_FIELD_META = new GenOrmFieldMeta("service_key", "string", 1, true, false);
+	public static final GenOrmFieldMeta KEY_FIELD_META = new GenOrmFieldMeta("key", "string", 2, true, false);
+	public static final GenOrmFieldMeta VALUE_FIELD_META = new GenOrmFieldMeta("value", "string", 3, false, false);
 
 	
 		
 	//===========================================================================
-	public static MetricTagFactoryImpl factory = new MetricTagFactoryImpl();
+	public static ServiceIndexFactoryImpl factory = new ServiceIndexFactoryImpl();
 	
-	public static interface MetricTagFactory extends GenOrmRecordFactory
+	public static interface ServiceIndexFactory extends GenOrmRecordFactory
 		{
-		public boolean delete(String metricId, String tagName, String tagValue);
-		public MetricTag find(String metricId, String tagName, String tagValue);
-		public MetricTag findOrCreate(String metricId, String tagName, String tagValue);
+		public boolean delete(String service, String serviceKey, String key);
+		public ServiceIndex find(String service, String serviceKey, String key);
+		public ServiceIndex findOrCreate(String service, String serviceKey, String key);
 		/**
 		*/
-		public ResultSet getByTag(String tagName, String tagValue);/**
+		public ResultSet getKeys(String service, String serviceKey);/**
 		*/
-		public ResultSet getByMetric(String metricId);
+		public ResultSet getKeysLike(String service, String serviceKey, String keyPrefix);
 		}
 	
-	public static class MetricTagFactoryImpl //Inherit interfaces
-			implements MetricTagFactory 
+	public static class ServiceIndexFactoryImpl //Inherit interfaces
+			implements ServiceIndexFactory 
 		{
-		public static final String CREATE_SQL = "CREATE CACHED TABLE metric_tag (\n	\"metric_id\" VARCHAR  NOT NULL,\n	\"tag_name\" VARCHAR  NOT NULL,\n	\"tag_value\" VARCHAR  NOT NULL,\n	PRIMARY KEY (\"metric_id\", \"tag_name\", \"tag_value\"),\n	CONSTRAINT metric_tag_metric_id_fkey FOREIGN KEY (\"metric_id\")\n		REFERENCES metric (\"id\") ON DELETE CASCADE,\n	CONSTRAINT metric_tag_tag_name_fkey FOREIGN KEY (\"tag_name\", \"tag_value\")\n		REFERENCES tag (\"name\", \"value\") \n	)";
+		public static final String CREATE_SQL = "CREATE CACHED TABLE service_index (\n	\"service\" VARCHAR  NOT NULL,\n	\"service_key\" VARCHAR  NOT NULL,\n	\"key\" VARCHAR  NOT NULL,\n	\"value\" VARCHAR  NULL,\n	PRIMARY KEY (\"service\", \"service_key\", \"key\")\n	)";
 
 		private ArrayList<GenOrmFieldMeta> m_fieldMeta;
 		private ArrayList<GenOrmConstraint> m_foreignKeyConstraints;
 		
-		protected MetricTagFactoryImpl()
+		protected ServiceIndexFactoryImpl()
 			{
 			m_fieldMeta = new ArrayList<GenOrmFieldMeta>();
-			m_fieldMeta.add(METRIC_ID_FIELD_META);
-			m_fieldMeta.add(TAG_NAME_FIELD_META);
-			m_fieldMeta.add(TAG_VALUE_FIELD_META);
+			m_fieldMeta.add(SERVICE_FIELD_META);
+			m_fieldMeta.add(SERVICE_KEY_FIELD_META);
+			m_fieldMeta.add(KEY_FIELD_META);
+			m_fieldMeta.add(VALUE_FIELD_META);
 
 			m_foreignKeyConstraints = new ArrayList<GenOrmConstraint>();
-			m_foreignKeyConstraints.add(new GenOrmConstraint("metric", "metric_tag_metric_id_fkey", "CONSTRAINT metric_tag_metric_id_fkey FOREIGN KEY (\"metric_id\")\n	REFERENCES metric (\"id\") ON DELETE CASCADE"));
-			m_foreignKeyConstraints.add(new GenOrmConstraint("tag", "metric_tag_tag_name_fkey", "CONSTRAINT metric_tag_tag_name_fkey FOREIGN KEY (\"tag_name\", \"tag_value\")\n	REFERENCES tag (\"name\", \"value\")"));
-
 			}
 			
-		protected MetricTag newMetricTag(java.sql.ResultSet rs)
+		protected ServiceIndex newServiceIndex(java.sql.ResultSet rs)
 			{
-			MetricTag rec = new MetricTag();
-			((MetricTag_base)rec).initialize(rs);
-			return ((MetricTag)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
+			ServiceIndex rec = new ServiceIndex();
+			((ServiceIndex_base)rec).initialize(rs);
+			return ((ServiceIndex)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
 			}
 	
 		//---------------------------------------------------------------------------
@@ -111,39 +111,39 @@ public class MetricTag_base extends GenOrmRecord
 		/**
 			Creates a new entry with the specified primary keys.
 		*/
-		public MetricTag create(String metricId, String tagName, String tagValue)
+		public ServiceIndex create(String service, String serviceKey, String key)
 			{
-			MetricTag rec = new MetricTag();
+			ServiceIndex rec = new ServiceIndex();
 			rec.m_isNewRecord = true;
 			
-			((MetricTag_base)rec).setMetricId(metricId);
-			((MetricTag_base)rec).setTagName(tagName);
-			((MetricTag_base)rec).setTagValue(tagValue);
+			((ServiceIndex_base)rec).setService(service);
+			((ServiceIndex_base)rec).setServiceKey(serviceKey);
+			((ServiceIndex_base)rec).setKey(key);
 
 			
-			return ((MetricTag)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
+			return ((ServiceIndex)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
 			}
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry that is empty
 		*/
-		public MetricTag createRecord()
+		public ServiceIndex createRecord()
 			{
-			MetricTag rec = new MetricTag();
+			ServiceIndex rec = new ServiceIndex();
 			rec.m_isNewRecord = true;
 			
-			return ((MetricTag)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
+			return ((ServiceIndex)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
 			}
 			
 		//---------------------------------------------------------------------------
 		/**
 		If the table has a primary key that has a key generator this method will 
 		return a new table entry with a generated primary key.
-		@return MetricTag with generated primary key
+		@return ServiceIndex with generated primary key
 		*/
-		public MetricTag createWithGeneratedKey()
+		public ServiceIndex createWithGeneratedKey()
 			{
-			throw new UnsupportedOperationException("MetricTag does not support a generated primary key");
+			throw new UnsupportedOperationException("ServiceIndex does not support a generated primary key");
 			}
 			
 		//---------------------------------------------------------------------------
@@ -152,9 +152,9 @@ public class MetricTag_base extends GenOrmRecord
 		@param keys This must match the primary key for this record.  If the 
 		record has multiple primary keys this parameter must be of type Object[] 
 		where each element is the corresponding key.
-		@return MetricTag or null if no record is found
+		@return ServiceIndex or null if no record is found
 		*/
-		public MetricTag findRecord(Object keys)
+		public ServiceIndex findRecord(Object keys)
 			{
 			Object[] kArr = (Object[])keys;
 			return (find((String)kArr[0], (String)kArr[1], (String)kArr[2]));
@@ -170,14 +170,14 @@ public class MetricTag_base extends GenOrmRecord
 			@return Returns true if the record was previous created and existed
 			either in the transaction cache or the db.
 		*/
-		public boolean delete(String metricId, String tagName, String tagValue)
+		public boolean delete(String service, String serviceKey, String key)
 			{
 			boolean ret = false;
-			MetricTag rec = new MetricTag();
+			ServiceIndex rec = new ServiceIndex();
 			
-			((MetricTag_base)rec).initialize(metricId, tagName, tagValue);
+			((ServiceIndex_base)rec).initialize(service, serviceKey, key);
 			GenOrmConnection con = GenOrmDataSource.getGenOrmConnection();
-			MetricTag cachedRec = (MetricTag)con.getCachedRecord(rec.getRecordKey());
+			ServiceIndex cachedRec = (ServiceIndex)con.getCachedRecord(rec.getRecordKey());
 			
 			if (cachedRec != null)
 				{
@@ -186,7 +186,7 @@ public class MetricTag_base extends GenOrmRecord
 				}
 			else
 				{
-				rec = (MetricTag)con.getUniqueRecord(rec);  //This adds the record to the cache
+				rec = (ServiceIndex)con.getUniqueRecord(rec);  //This adds the record to the cache
 				rec.delete();
 				ret = rec.flush();
 				rec.setIgnored(true); //So the system does not try to delete it again at commmit
@@ -198,15 +198,15 @@ public class MetricTag_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 		Find the record with the specified primary keys
-		@return MetricTag or null if no record is found
+		@return ServiceIndex or null if no record is found
 		*/
-		public MetricTag find(String metricId, String tagName, String tagValue)
+		public ServiceIndex find(String service, String serviceKey, String key)
 			{
-			MetricTag rec = new MetricTag();
+			ServiceIndex rec = new ServiceIndex();
 			
 			//Create temp object and look in cache for it
-			((MetricTag_base)rec).initialize(metricId, tagName, tagValue);
-			rec = (MetricTag)GenOrmDataSource.getGenOrmConnection().getCachedRecord(rec.getRecordKey());
+			((ServiceIndex_base)rec).initialize(service, serviceKey, key);
+			rec = (ServiceIndex)GenOrmDataSource.getGenOrmConnection().getCachedRecord(rec.getRecordKey());
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			java.sql.ResultSet genorm_rs = null;
@@ -217,15 +217,15 @@ public class MetricTag_base extends GenOrmRecord
 					{
 					//No cached object so look in db
 					genorm_statement = GenOrmDataSource.prepareStatement(SELECT+FROM+KEY_WHERE);
-					genorm_statement.setString(1, metricId);
-					genorm_statement.setString(2, tagName);
-					genorm_statement.setString(3, tagValue);
+					genorm_statement.setString(1, service);
+					genorm_statement.setString(2, serviceKey);
+					genorm_statement.setString(3, key);
 
 					s_logger.debug(genorm_statement.toString());
 						
 					genorm_rs = genorm_statement.executeQuery();
 					if (genorm_rs.next())
-						rec = newMetricTag(genorm_rs);
+						rec = newServiceIndex(genorm_rs);
 					}
 				catch (java.sql.SQLException sqle)
 					{
@@ -257,11 +257,11 @@ public class MetricTag_base extends GenOrmRecord
 		is created with the specified primary keys
 		@return A new or existing record.  
 		*/
-		public MetricTag findOrCreate(String metricId, String tagName, String tagValue)
+		public ServiceIndex findOrCreate(String service, String serviceKey, String key)
 			{
-			MetricTag rec = find(metricId, tagName, tagValue);
+			ServiceIndex rec = find(service, serviceKey, key);
 			if (rec == null)
-				rec = create(metricId, tagName, tagValue);
+				rec = create(service, serviceKey, key);
 				
 			return (rec);
 			}
@@ -328,16 +328,16 @@ public class MetricTag_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 		*/
-		public ResultSet getByTag(String tagName, String tagValue)
+		public ResultSet getKeys(String service, String serviceKey)
 			{
-			String query = SELECT+"FROM metric_tag this WHERE this.\"tag_name\" = ? AND this.\"tag_value\" = ?";
+			String query = SELECT+"from service_index this\n				where\n				this.\"service\" = ?\n				and this.\"service_key\" = ?\n				order by this.\"key\" asc";
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			
 			try
 				{
 				genorm_statement = GenOrmDataSource.prepareStatement(query);
-				genorm_statement.setString(1, tagName);genorm_statement.setString(2, tagValue);
+				genorm_statement.setString(1, service);genorm_statement.setString(2, serviceKey);
 				
 				s_logger.debug(genorm_statement.toString());
 				
@@ -363,16 +363,16 @@ public class MetricTag_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 		*/
-		public ResultSet getByMetric(String metricId)
+		public ResultSet getKeysLike(String service, String serviceKey, String keyPrefix)
 			{
-			String query = SELECT+"FROM metric_tag this WHERE this.\"metric_id\" = ?";
+			String query = SELECT+"from service_index this\n				where\n				this.\"service\" = ?\n				AND this.\"service_key\" = ?\n				AND this.\"key\" LIKE ?\n				ORDER BY this.\"key\" asc";
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			
 			try
 				{
 				genorm_statement = GenOrmDataSource.prepareStatement(query);
-				genorm_statement.setString(1, metricId);
+				genorm_statement.setString(1, service);genorm_statement.setString(2, serviceKey);genorm_statement.setString(3, keyPrefix);
 				
 				s_logger.debug(genorm_statement.toString());
 				
@@ -404,16 +404,23 @@ public class MetricTag_base extends GenOrmRecord
 		public void testQueryMethods()
 			{
 			ResultSet rs;
+			System.out.println("ServiceIndex.getKeys");
+			rs = getKeys("foo", "foo");
+			rs.close();
+			System.out.println("ServiceIndex.getKeysLike");
+			rs = getKeysLike("foo", "foo", "key%");
+			rs.close();
+
 			}
 		}
 		
 	//===========================================================================
 	public static interface ResultSet extends GenOrmResultSet
 		{
-		public ArrayList<MetricTag> getArrayList(int maxRows);
-		public ArrayList<MetricTag> getArrayList();
-		public MetricTag getRecord();
-		public MetricTag getOnlyRecord();
+		public ArrayList<ServiceIndex> getArrayList(int maxRows);
+		public ArrayList<ServiceIndex> getArrayList();
+		public ServiceIndex getRecord();
+		public ServiceIndex getOnlyRecord();
 		}
 		
 	//===========================================================================
@@ -459,9 +466,9 @@ public class MetricTag_base extends GenOrmRecord
 			@param maxRows if the result set contains more than this param
 				then an exception is thrown
 		*/
-		public ArrayList<MetricTag> getArrayList(int maxRows)
+		public ArrayList<ServiceIndex> getArrayList(int maxRows)
 			{
-			ArrayList<MetricTag> results = new ArrayList<MetricTag>();
+			ArrayList<ServiceIndex> results = new ArrayList<ServiceIndex>();
 			int count = 0;
 			
 			try
@@ -469,13 +476,13 @@ public class MetricTag_base extends GenOrmRecord
 				if (m_onFirstResult)
 					{
 					count ++;
-					results.add(factory.newMetricTag(m_resultSet));
+					results.add(factory.newServiceIndex(m_resultSet));
 					}
 					
 				while (m_resultSet.next() && (count < maxRows))
 					{
 					count ++;
-					results.add(factory.newMetricTag(m_resultSet));
+					results.add(factory.newServiceIndex(m_resultSet));
 					}
 					
 				if (m_resultSet.next())
@@ -496,17 +503,17 @@ public class MetricTag_base extends GenOrmRecord
 			Returns the reults as an ArrayList of Record objects.
 			The Result set is closed within this call
 		*/
-		public ArrayList<MetricTag> getArrayList()
+		public ArrayList<ServiceIndex> getArrayList()
 			{
-			ArrayList<MetricTag> results = new ArrayList<MetricTag>();
+			ArrayList<ServiceIndex> results = new ArrayList<ServiceIndex>();
 			
 			try
 				{
 				if (m_onFirstResult)
-					results.add(factory.newMetricTag(m_resultSet));
+					results.add(factory.newServiceIndex(m_resultSet));
 					
 				while (m_resultSet.next())
-					results.add(factory.newMetricTag(m_resultSet));
+					results.add(factory.newServiceIndex(m_resultSet));
 				}
 			catch (java.sql.SQLException sqle)
 				{
@@ -531,9 +538,9 @@ public class MetricTag_base extends GenOrmRecord
 		/**
 			Returns the current record in the result set
 		*/
-		public MetricTag getRecord()
+		public ServiceIndex getRecord()
 			{
-			return (factory.newMetricTag(m_resultSet));
+			return (factory.newServiceIndex(m_resultSet));
 			}
 			
 		//------------------------------------------------------------------------
@@ -542,17 +549,17 @@ public class MetricTag_base extends GenOrmRecord
 			are found an excpetion is thrown.
 			The ResultSet object is automatically closed by this call.
 		*/
-		public MetricTag getOnlyRecord()
+		public ServiceIndex getOnlyRecord()
 			{
-			MetricTag ret = null;
+			ServiceIndex ret = null;
 			
 			try
 				{
 				if (m_resultSet.next())
-					ret = factory.newMetricTag(m_resultSet);
+					ret = factory.newServiceIndex(m_resultSet);
 					
 				if (m_resultSet.next())
-					throw new GenOrmException("Multiple rows returned in call from MetricTag.getOnlyRecord");
+					throw new GenOrmException("Multiple rows returned in call from ServiceIndex.getOnlyRecord");
 				}
 			catch (java.sql.SQLException sqle)
 				{
@@ -586,9 +593,10 @@ public class MetricTag_base extends GenOrmRecord
 		
 	//===========================================================================
 		
-	private GenOrmString m_metricId;
-	private GenOrmString m_tagName;
-	private GenOrmString m_tagValue;
+	private GenOrmString m_service;
+	private GenOrmString m_serviceKey;
+	private GenOrmString m_key;
+	private GenOrmString m_value;
 
 	
 	private List<GenOrmRecordKey> m_foreignKeys;
@@ -599,10 +607,10 @@ public class MetricTag_base extends GenOrmRecord
 	//---------------------------------------------------------------------------
 	/**
 	*/
-	public String getMetricId() { return (m_metricId.getValue()); }
-	public MetricTag setMetricId(String data)
+	public String getService() { return (m_service.getValue()); }
+	public ServiceIndex setService(String data)
 		{
-		boolean changed = m_metricId.setValue(data);
+		boolean changed = m_service.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
@@ -610,23 +618,23 @@ public class MetricTag_base extends GenOrmRecord
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
-			m_dirtyFlags.set(METRIC_ID_FIELD_META.getDirtyFlag());
+			m_dirtyFlags.set(SERVICE_FIELD_META.getDirtyFlag());
 			
 			if (m_isNewRecord) //Force set the prev value
-				m_metricId.setPrevValue(data);
+				m_service.setPrevValue(data);
 			}
 			
-		return ((MetricTag)this);
+		return ((ServiceIndex)this);
 		}
 		
 
 	//---------------------------------------------------------------------------
 	/**
 	*/
-	public String getTagName() { return (m_tagName.getValue()); }
-	public MetricTag setTagName(String data)
+	public String getServiceKey() { return (m_serviceKey.getValue()); }
+	public ServiceIndex setServiceKey(String data)
 		{
-		boolean changed = m_tagName.setValue(data);
+		boolean changed = m_serviceKey.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
@@ -634,23 +642,23 @@ public class MetricTag_base extends GenOrmRecord
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
-			m_dirtyFlags.set(TAG_NAME_FIELD_META.getDirtyFlag());
+			m_dirtyFlags.set(SERVICE_KEY_FIELD_META.getDirtyFlag());
 			
 			if (m_isNewRecord) //Force set the prev value
-				m_tagName.setPrevValue(data);
+				m_serviceKey.setPrevValue(data);
 			}
 			
-		return ((MetricTag)this);
+		return ((ServiceIndex)this);
 		}
 		
 
 	//---------------------------------------------------------------------------
 	/**
 	*/
-	public String getTagValue() { return (m_tagValue.getValue()); }
-	public MetricTag setTagValue(String data)
+	public String getKey() { return (m_key.getValue()); }
+	public ServiceIndex setKey(String data)
 		{
-		boolean changed = m_tagValue.setValue(data);
+		boolean changed = m_key.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
@@ -658,83 +666,71 @@ public class MetricTag_base extends GenOrmRecord
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
-			m_dirtyFlags.set(TAG_VALUE_FIELD_META.getDirtyFlag());
+			m_dirtyFlags.set(KEY_FIELD_META.getDirtyFlag());
 			
 			if (m_isNewRecord) //Force set the prev value
-				m_tagValue.setPrevValue(data);
+				m_key.setPrevValue(data);
 			}
 			
-		return ((MetricTag)this);
+		return ((ServiceIndex)this);
 		}
 		
+
+	//---------------------------------------------------------------------------
+	/**
+	*/
+	public String getValue() { return (m_value.getValue()); }
+	public ServiceIndex setValue(String data)
+		{
+		boolean changed = m_value.setValue(data);
+		
+		//Add the now dirty record to the transaction only if it is not previously dirty
+		if (changed)
+			{
+			if (m_dirtyFlags.isEmpty())
+				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
+				
+			m_dirtyFlags.set(VALUE_FIELD_META.getDirtyFlag());
+			
+			if (m_isNewRecord) //Force set the prev value
+				m_value.setPrevValue(data);
+			}
+			
+		return ((ServiceIndex)this);
+		}
+		
+	public boolean isValueNull()
+		{
+		return (m_value.isNull());
+		}
+		
+	public ServiceIndex setValueNull()
+		{
+		boolean changed = m_value.setNull();
+		
+		if (changed)
+			{
+			if (m_dirtyFlags.isEmpty())
+				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
+				
+			m_dirtyFlags.set(VALUE_FIELD_META.getDirtyFlag());
+			}
+		
+		return ((ServiceIndex)this);
+		}
+	
+	
 	
 	
 	//---------------------------------------------------------------------------
-	public Metric getMetricRef()
+	protected void initialize(String service, String serviceKey, String key)
 		{
-		return (Metric.factory.find(m_metricId.getValue()));
-		}
-		
-	//--------------------------------------------------------------------------
-	public MetricTag setMetricRef(Metric table)
-		{
-		//We add the record to the transaction if one of the key values change
-		if (m_metricId.setValue(table.getId()))
-			{
-			if ((m_dirtyFlags.isEmpty()) && (GenOrmDataSource.getGenOrmConnection() != null))
-				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
-			
-			m_dirtyFlags.set(METRIC_ID_FIELD_META.getDirtyFlag());
-			}
-
-
-			
-		return ((MetricTag)this);
-		}
-
-	//---------------------------------------------------------------------------
-	public Tag getTagRef()
-		{
-		return (Tag.factory.find(m_tagName.getValue(), m_tagValue.getValue()));
-		}
-		
-	//--------------------------------------------------------------------------
-	public MetricTag setTagRef(Tag table)
-		{
-		//We add the record to the transaction if one of the key values change
-		if (m_tagName.setValue(table.getName()))
-			{
-			if ((m_dirtyFlags.isEmpty()) && (GenOrmDataSource.getGenOrmConnection() != null))
-				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
-			
-			m_dirtyFlags.set(TAG_NAME_FIELD_META.getDirtyFlag());
-			}
-
-		if (m_tagValue.setValue(table.getValue()))
-			{
-			if ((m_dirtyFlags.isEmpty()) && (GenOrmDataSource.getGenOrmConnection() != null))
-				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
-			
-			m_dirtyFlags.set(TAG_VALUE_FIELD_META.getDirtyFlag());
-			}
-
-
-			
-		return ((MetricTag)this);
-		}
-
-
-	
-	
-	//---------------------------------------------------------------------------
-	protected void initialize(String metricId, String tagName, String tagValue)
-		{
-		m_metricId.setValue(metricId);
-		m_metricId.setPrevValue(metricId);
-		m_tagName.setValue(tagName);
-		m_tagName.setPrevValue(tagName);
-		m_tagValue.setValue(tagValue);
-		m_tagValue.setPrevValue(tagValue);
+		m_service.setValue(service);
+		m_service.setPrevValue(service);
+		m_serviceKey.setValue(serviceKey);
+		m_serviceKey.setPrevValue(serviceKey);
+		m_key.setValue(key);
+		m_key.setPrevValue(key);
 
 		}
 		
@@ -751,9 +747,10 @@ public class MetricTag_base extends GenOrmRecord
 					s_logger.debug("Reading - "+meta.getColumnName(I) +" : "+rs.getString(I));
 					}
 				}
-			m_metricId.setValue(rs, 1);
-			m_tagName.setValue(rs, 2);
-			m_tagValue.setValue(rs, 3);
+			m_service.setValue(rs, 1);
+			m_serviceKey.setValue(rs, 2);
+			m_key.setValue(rs, 3);
+			m_value.setValue(rs, 4);
 
 			}
 		catch (java.sql.SQLException sqle)
@@ -763,7 +760,7 @@ public class MetricTag_base extends GenOrmRecord
 		}
 	
 	//---------------------------------------------------------------------------
-	/*package*/ MetricTag_base()
+	/*package*/ ServiceIndex_base()
 		{
 		super(TABLE_NAME);
 		m_logger = s_logger;
@@ -771,27 +768,19 @@ public class MetricTag_base extends GenOrmRecord
 		m_dirtyFlags = new java.util.BitSet(NUMBER_OF_COLUMNS);
 		
 
-		m_metricId = new GenOrmString(METRIC_ID_FIELD_META);
-		addField(COL_METRIC_ID, m_metricId);
+		m_service = new GenOrmString(SERVICE_FIELD_META);
+		addField(COL_SERVICE, m_service);
 
-		m_tagName = new GenOrmString(TAG_NAME_FIELD_META);
-		addField(COL_TAG_NAME, m_tagName);
+		m_serviceKey = new GenOrmString(SERVICE_KEY_FIELD_META);
+		addField(COL_SERVICE_KEY, m_serviceKey);
 
-		m_tagValue = new GenOrmString(TAG_VALUE_FIELD_META);
-		addField(COL_TAG_VALUE, m_tagValue);
+		m_key = new GenOrmString(KEY_FIELD_META);
+		addField(COL_KEY, m_key);
+
+		m_value = new GenOrmString(VALUE_FIELD_META);
+		addField(COL_VALUE, m_value);
 
 		GenOrmRecordKey foreignKey;
-		foreignKey = new GenOrmRecordKey("metric");
-		foreignKey.addKeyField("id", m_metricId);
-
-		m_foreignKeys.add(foreignKey);
-
-		foreignKey = new GenOrmRecordKey("tag");
-		foreignKey.addKeyField("name", m_tagName);
-		foreignKey.addKeyField("value", m_tagValue);
-
-		m_foreignKeys.add(foreignKey);
-
 		}
 	
 	//---------------------------------------------------------------------------
@@ -825,14 +814,17 @@ public class MetricTag_base extends GenOrmRecord
 		{
 		StringBuilder sb = new StringBuilder();
 		
-		sb.append("metric_id=\"");
-		sb.append(m_metricId.getValue());
+		sb.append("service=\"");
+		sb.append(m_service.getValue());
 		sb.append("\" ");
-		sb.append("tag_name=\"");
-		sb.append(m_tagName.getValue());
+		sb.append("service_key=\"");
+		sb.append(m_serviceKey.getValue());
 		sb.append("\" ");
-		sb.append("tag_value=\"");
-		sb.append(m_tagValue.getValue());
+		sb.append("key=\"");
+		sb.append(m_key.getValue());
+		sb.append("\" ");
+		sb.append("value=\"");
+		sb.append(m_value.getValue());
 		sb.append("\" ");
 
 		

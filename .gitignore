@@ -17,6 +17,7 @@ lib/ivy/test/*
 .DS_Store
 myivysettings.xml
 tablesaw.properties
+scm-source.json
 
 target
 .classpath

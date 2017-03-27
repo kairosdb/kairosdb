@@ -19,7 +19,7 @@ import static org.kairosdb.datastore.cassandra.CassandraDatastore.DATA_POINTS_RO
 /**
  Created by bhawkins on 1/11/17.
  */
-public class CQLBatchHandler extends BatchHandler
+public class CQLBatch
 {
 	private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -33,14 +33,10 @@ public class CQLBatchHandler extends BatchHandler
 	private BatchStatement dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 	private BatchStatement rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 
-	public CQLBatchHandler(List<DataPointEvent> events, EventCompletionCallBack callBack,
-			int defaultTtl, ConsistencyLevel consistencyLevel, DataCache<DataPointsRowKey>
-			rowKeyCache, DataCache<String> metricNameCache, EventBus eventBus,
-			Session session, CassandraDatastore.PreparedStatements preparedStatements,
-			boolean fullBatch, BatchStats batchStats)
+	public CQLBatch(
+			ConsistencyLevel consistencyLevel, Session session,
+			CassandraDatastore.PreparedStatements preparedStatements, BatchStats batchStats)
 	{
-		super(events, callBack, defaultTtl, rowKeyCache, metricNameCache, eventBus, fullBatch);
-
 		m_consistencyLevel = consistencyLevel;
 		m_session = session;
 		m_preparedStatements = preparedStatements;
@@ -48,7 +44,6 @@ public class CQLBatchHandler extends BatchHandler
 		m_now = System.currentTimeMillis();
 	}
 
-	@Override
 	public void addRowKey(String metricName, DataPointsRowKey rowKey, int rowKeyTtl)
 	{
 		ByteBuffer bb = ByteBuffer.allocate(8);
@@ -79,7 +74,6 @@ public class CQLBatchHandler extends BatchHandler
 		rowKeyBatch.add(bs);
 	}
 
-	@Override
 	public void addMetricName(String metricName)
 	{
 		BoundStatement bs = new BoundStatement(m_preparedStatements.psStringIndexInsert);
@@ -89,7 +83,6 @@ public class CQLBatchHandler extends BatchHandler
 		metricNamesBatch.add(bs);
 	}
 
-	@Override
 	public void addDataPoint(DataPointsRowKey rowKey, int columnTime, DataPoint dataPoint, int ttl) throws IOException
 	{
 		KDataOutput kDataOutput = new KDataOutput();
@@ -109,7 +102,6 @@ public class CQLBatchHandler extends BatchHandler
 		dataPointBatch.add(boundStatement);
 	}
 
-	@Override
 	public void submitBatch()
 	{
 		if (metricNamesBatch.size() != 0)

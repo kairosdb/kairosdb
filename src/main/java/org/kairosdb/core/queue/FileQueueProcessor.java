@@ -138,7 +138,7 @@ public class FileQueueProcessor extends QueueProcessor
 		}
 	}
 
-	protected List<DataPointEvent> get()
+	protected List<DataPointEvent> get(int batchSize)
 	{
 		if (m_memoryQueue.isEmpty())
 			waitForEvent();
@@ -151,7 +151,7 @@ public class FileQueueProcessor extends QueueProcessor
 			ret.addAll(m_internalMetrics);
 			m_internalMetrics.clear();
 
-			for (int i = ret.size(); i < m_batchSize; i++)
+			for (int i = ret.size(); i < batchSize; i++)
 			{
 				//System.out.println(m_nextIndex);
 				IndexedEvent event = m_memoryQueue.peek();

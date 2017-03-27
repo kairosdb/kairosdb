@@ -4,6 +4,7 @@ import com.codahale.metrics.*;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
+import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -46,6 +47,7 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		final Cluster.Builder builder = new Cluster.Builder()
 				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL, 3, 100)
 					.setMaxRequestsPerConnection(HostDistance.LOCAL, 1024))
+				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 10 * 1000))
 				.withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
 				.withQueryOptions(new QueryOptions().setConsistencyLevel(ConsistencyLevel.QUORUM))
 				.withCompression(ProtocolOptions.Compression.LZ4)

@@ -73,9 +73,9 @@ public class MemoryQueueProcessor extends QueueProcessor implements KairosMetric
 	}
 
 	@Override
-	protected List<DataPointEvent> get()
+	protected List<DataPointEvent> get(int batchSize)
 	{
-		List<DataPointEvent> ret = new ArrayList<>(m_batchSize/4);
+		List<DataPointEvent> ret = new ArrayList<>(batchSize/4);
 		try
 		{
 			ret.add(m_queue.take());
@@ -85,7 +85,7 @@ public class MemoryQueueProcessor extends QueueProcessor implements KairosMetric
 		{
 			logger.error("Error taking from queue", e);
 		}
-		m_queue.drainTo(ret, m_batchSize -1);
+		m_queue.drainTo(ret, batchSize -1);
 
 		//System.out.println(ret.size());
 		m_readFromQueueCount.getAndAdd(ret.size());

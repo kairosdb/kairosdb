@@ -27,7 +27,7 @@ public class AdaptiveExecutorService
 	private final ThreadGroup m_threadGroup;
 	private final CongestionSemaphore m_semaphore;
 	private final CongestionTimer m_congestionTimer;
-	private int m_permitCount = 5;
+	private int m_permitCount = 10;
 	private final Retryer<Long> m_retryer;
 
 	@Inject

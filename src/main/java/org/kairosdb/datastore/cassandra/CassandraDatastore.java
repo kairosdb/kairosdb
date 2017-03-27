@@ -132,6 +132,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	public static final String DATA_POINTS_QUERY_ASC = DATA_POINTS_QUERY+" ASC";
 	public static final String DATA_POINTS_QUERY_DESC = DATA_POINTS_QUERY+" DESC";
 
+	public static final String DATA_POINTS_QUERY_ASC_LIMIT = DATA_POINTS_QUERY_ASC+" LIMIT ?";
+	public static final String DATA_POINTS_QUERY_DESC_LIMIT = DATA_POINTS_QUERY_DESC+" LIMIT ?";
+
 	public static final String DATA_POINTS_DELETE = "DELETE FROM data_points " +
 			"WHERE key = ? AND column1 = ?";
 
@@ -213,6 +216,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		public final PreparedStatement psDataPointsQueryDesc;
 		public final PreparedStatement psRowKeyTimeInsert;
 		public final PreparedStatement psRowKeyInsert;
+		public final PreparedStatement psDataPointsQueryAscLimit;
+		public final PreparedStatement psDataPointsQueryDescLimit;
 
 		public PreparedStatements()
 		{
@@ -223,6 +228,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			psStringIndexInsert = m_session.prepare(STRING_INDEX_INSERT);
 			psDataPointsQueryAsc = m_session.prepare(DATA_POINTS_QUERY_ASC);
 			psDataPointsQueryDesc = m_session.prepare(DATA_POINTS_QUERY_DESC);
+			psDataPointsQueryAscLimit = m_session.prepare(DATA_POINTS_QUERY_ASC_LIMIT);
+			psDataPointsQueryDescLimit = m_session.prepare(DATA_POINTS_QUERY_DESC_LIMIT);
 			psStringIndexQuery = m_session.prepare(STRING_INDEX_QUERY);
 			psRowKeyIndexQuery  = m_session.prepare(ROW_KEY_INDEX_QUERY);
 			psRowKeyQuery       = m_session.prepare(ROW_KEY_QUERY);
@@ -542,6 +549,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		int rowCount = 0;
 		long queryStartTime = query.getStartTime();
 		long queryEndTime = query.getEndTime();
+		boolean useLimit = query.getLimit() != 0;
+
+		//todo add memory monitor
 
 		ExecutorService resultsExecutor = Executors.newSingleThreadExecutor();
 		//Controls the number of queries sent out at the same time.
@@ -573,15 +583,27 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			endBuffer.rewind();
 
 			BoundStatement boundStatement;
-			if (query.getOrder() == Order.ASC)
-				boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryAsc);
+			if (useLimit)
+			{
+				if (query.getOrder() == Order.ASC)
+					boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryAscLimit);
+				else
+					boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryDescLimit);
+			}
 			else
-				boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryDesc);
+			{
+				if (query.getOrder() == Order.ASC)
+					boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryAsc);
+				else
+					boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryDesc);
+			}
 
 			boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 			boundStatement.setBytesUnsafe(1, startBuffer);
 			boundStatement.setBytesUnsafe(2, endBuffer);
-			//boundStatement.setInt(3, Integer.MAX_VALUE);
+
+			if (useLimit)
+				boundStatement.setInt(3, query.getLimit());
 
 			boundStatement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 

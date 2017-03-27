@@ -342,7 +342,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	{
 		BatchHandler batchHandler;
 
-		batchHandler = new CQLBatchHandler(events, eventCompletionCallBack,
+		batchHandler = new BatchHandler(events, eventCompletionCallBack,
 				m_cassandraConfiguration.getDatapointTtl(),
 				m_cassandraConfiguration.getDataWriteLevel(),
 				m_rowKeyCache, m_metricNameCache, m_eventBus, m_session,

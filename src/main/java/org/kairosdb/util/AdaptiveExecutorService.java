@@ -1,5 +1,10 @@
 package org.kairosdb.util;
 
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.WaitStrategies;
+import com.google.common.base.Predicates;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.eventbus.EventBus;
@@ -23,6 +28,7 @@ public class AdaptiveExecutorService
 	private final CongestionSemaphore m_semaphore;
 	private final CongestionTimer m_congestionTimer;
 	private int m_permitCount = 5;
+	private final Retryer<Long> m_retryer;
 
 	@Inject
 	private DoubleDataPointFactory m_dataPointFactory = new DoubleDataPointFactoryImpl();
@@ -44,6 +50,10 @@ public class AdaptiveExecutorService
 			}
 		});*/
 
+		m_retryer = RetryerBuilder.<Long>newBuilder()
+				.retryIfExceptionOfType(NoHostAvailableException.class)
+				.withWaitStrategy(WaitStrategies.fibonacciWait(10, TimeUnit.SECONDS))
+				.build();
 		m_internalExecutor = Executors.newCachedThreadPool();
 	}
 
@@ -80,7 +90,7 @@ public class AdaptiveExecutorService
 			//System.out.println("Execute called");
 			m_semaphore.acquire();
 			//System.out.println("Submitting");
-			m_internalExecutor.submit(newTaskFor(batchHandler));
+			m_internalExecutor.submit(newTaskFor(m_retryer.wrap(batchHandler)));
 			//System.out.println("Done submitting");
 		}
 		catch (InterruptedException e)

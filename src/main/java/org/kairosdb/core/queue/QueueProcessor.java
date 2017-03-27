@@ -1,6 +1,8 @@
 package org.kairosdb.core.queue;
 
+import com.google.common.eventbus.Subscribe;
 import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.events.BatchReductionEvent;
 import org.kairosdb.events.DataPointEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +24,8 @@ public abstract class QueueProcessor implements KairosMetricReporter
 
 
 	private final DeliveryThread m_deliveryThread;
-	protected final int m_batchSize;
+	private int m_batchSize;
+	private final int m_initialBatchSize;
 
 	private volatile ProcessorHandler m_processorHandler;
 
@@ -30,9 +33,17 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	public QueueProcessor(Executor executor, int batchSize)
 	{
 		m_deliveryThread = new DeliveryThread();
-		m_batchSize = batchSize;
+		m_initialBatchSize = m_batchSize = batchSize;
 
 		executor.execute(m_deliveryThread);
+	}
+
+	@Subscribe
+	public void reduceBatch(BatchReductionEvent reductionEvent)
+	{
+		m_batchSize = Math.min(m_batchSize, reductionEvent.getBatchSize());
+
+		logger.info("Reducing queue batch size to "+m_batchSize);
 	}
 
 
@@ -53,7 +64,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	 @return Returns a Pair containing the latest index
 	 and a list of events from the queue, maybe empty
 	 */
-	protected abstract List<DataPointEvent> get();
+	protected abstract List<DataPointEvent> get(int batchSize);
 
 	protected abstract EventCompletionCallBack getCompletionCallBack();
 
@@ -111,14 +122,18 @@ public abstract class QueueProcessor implements KairosMetricReporter
 
 				try
 				{
-					List<DataPointEvent> results = get();
+					List<DataPointEvent> results = get(m_batchSize);
 					//getCompletionCallBack must be called after get()
 					EventCompletionCallBack callbackToPass = getCompletionCallBack();
 
 					boolean fullBatch = false;
 
 					if (results.size() == m_batchSize)
+					{
 						fullBatch = true;
+						if (m_batchSize < m_initialBatchSize)
+							m_batchSize ++;
+					}
 
 					m_processorHandler.handleEvents(results, callbackToPass, fullBatch);
 				}

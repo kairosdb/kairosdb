@@ -43,7 +43,14 @@ import org.kairosdb.events.DataPointEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.SortedMap;
 import java.util.zip.GZIPOutputStream;
 
@@ -471,7 +478,14 @@ public class RemoteDatastore implements Datastore
 		throw new DatastoreException("Method not implemented.");
 	}
 
-	@Override
+    @Override
+    public Iterable<String> listServiceKeys(String service)
+            throws DatastoreException
+    {
+        throw new DatastoreException("Method not implemented.");
+    }
+
+    @Override
 	public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
 	{
 		throw new DatastoreException("Method not implemented.");
@@ -482,4 +496,10 @@ public class RemoteDatastore implements Datastore
 	{
 		throw new DatastoreException("Method not implemented.");
 	}
+
+    @Override
+    public void deleteKey(String service, String serviceKey, String key)
+            throws DatastoreException
+    {
+    }
 }

@@ -17,14 +17,21 @@ package org.kairosdb.core.telnet;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelConfig;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.ValidationException;
@@ -401,7 +408,14 @@ public class PutCommandTest
 			return null;
 		}
 
-		@Override
+        @Override
+        public Iterable<String> listServiceKeys(String service)
+                throws DatastoreException
+        {
+            return null;
+        }
+
+        @Override
 		public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
 		{
 			return null;
@@ -412,5 +426,11 @@ public class PutCommandTest
 		{
 			return null;
 		}
-	}
+
+        @Override
+        public void deleteKey(String service, String serviceKey, String key)
+                throws DatastoreException
+        {
+        }
+    }
 }

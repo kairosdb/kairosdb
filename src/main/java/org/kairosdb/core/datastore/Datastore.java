@@ -6,34 +6,35 @@
 
 package org.kairosdb.core.datastore;
 
-import com.google.common.collect.ImmutableSortedMap;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.exception.DatastoreException;
 
 public interface Datastore
 {
-	public void close() throws InterruptedException, DatastoreException;
+	void close() throws InterruptedException, DatastoreException;
 
 	//public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint, int ttl) throws DatastoreException;
 
-	public Iterable<String> getMetricNames() throws DatastoreException;
+	Iterable<String> getMetricNames() throws DatastoreException;
 
-	public Iterable<String> getTagNames() throws DatastoreException;
+	Iterable<String> getTagNames() throws DatastoreException;
 
-	public Iterable<String> getTagValues() throws DatastoreException;
+	Iterable<String> getTagValues() throws DatastoreException;
 
-	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException;
+	void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException;
 
-	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException;
+	void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException;
 
-	public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException;
+	TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException;
 
 	void setValue(String service, String serviceKey, String key, String value) throws DatastoreException;
 
 	String getValue(String service, String serviceKey, String key) throws DatastoreException;
 
+	Iterable<String> listServiceKeys(String service) throws DatastoreException;
+
 	Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException;
 
 	Iterable<String> listKeys(String service, String serviceKey, String keyStartsWith) throws DatastoreException;
 
+    void deleteKey(String service, String serviceKey, String key) throws DatastoreException;
 }

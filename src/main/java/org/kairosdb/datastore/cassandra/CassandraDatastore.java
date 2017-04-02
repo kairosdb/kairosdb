@@ -15,7 +15,12 @@
  */
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.*;
+import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.ResultSetFuture;
+import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Session;
 import com.google.common.collect.SetMultimap;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -27,8 +32,18 @@ import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.datapoints.*;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datapoints.DataPointFactory;
+import org.kairosdb.core.datapoints.LegacyDataPointFactory;
+import org.kairosdb.core.datapoints.LegacyDoubleDataPoint;
+import org.kairosdb.core.datapoints.LegacyLongDataPoint;
+import org.kairosdb.core.datastore.DataPointRow;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.Order;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.QueryPlugin;
+import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.datastore.TagSetImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.core.queue.ProcessorHandler;
@@ -47,8 +62,18 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -428,7 +453,14 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		return null;
 	}
 
-	@Override
+    @Override
+    public Iterable<String> listServiceKeys(String service)
+            throws DatastoreException
+    {
+        return null;
+    }
+
+    @Override
 	public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
 	{
 		return null;
@@ -440,7 +472,13 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		return null;
 	}
 
-	@Override
+    @Override
+    public void deleteKey(String service, String serviceKey, String key)
+            throws DatastoreException
+    {
+    }
+
+    @Override
 	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 	{
 		cqlQueryWithRowKeys(query, queryCallback, getKeysForQueryIterator(query));

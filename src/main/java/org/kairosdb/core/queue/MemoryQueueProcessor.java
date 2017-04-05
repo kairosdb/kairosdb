@@ -48,7 +48,7 @@ public class MemoryQueueProcessor extends QueueProcessor implements KairosMetric
 	}
 
 	@Override
-	public List<DataPointSet> getMetrics(long now)
+	public void addReportedMetrics(ArrayList<DataPointSet> metrics, long now)
 	{
 		long readFromQueue = m_readFromQueueCount.getAndSet(0);
 
@@ -56,7 +56,7 @@ public class MemoryQueueProcessor extends QueueProcessor implements KairosMetric
 		dps.addTag("host", m_hostName);
 		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, readFromQueue));
 
-		return Collections.singletonList(dps);
+		metrics.add(dps);
 	}
 
 	@Override

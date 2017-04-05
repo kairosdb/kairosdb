@@ -49,7 +49,7 @@ public class MetricReporterService implements KairosDBJob
 	public static final String REPORTER_TTL = "kairosdb.reporter.ttl";
 
 	private EventBus m_eventBus;
-	private Set<KairosMetricReporter> m_reporters;
+	private KairosMetricReporterListProvider m_reporterProvider;
 	private final String m_hostname;
 	private final String m_schedule;
 	private final int m_ttl;
@@ -59,14 +59,14 @@ public class MetricReporterService implements KairosDBJob
 
 	@Inject
 	public MetricReporterService(EventBus eventBus,
-			Set<KairosMetricReporter> reporters,
+			KairosMetricReporterListProvider reporterProvider,
 			@Named(SCHEDULE_PROPERTY) String schedule,
 			@Named(HOSTNAME) String hostname,
 			@Named(REPORTER_TTL) int ttl)
 	{
 		m_eventBus = checkNotNull(eventBus);
 		m_hostname = checkNotNullOrEmpty(hostname);
-		m_reporters = reporters;
+		m_reporterProvider = reporterProvider;
 		m_schedule = schedule;
 		m_ttl = ttl;
 	}
@@ -103,7 +103,7 @@ public class MetricReporterService implements KairosDBJob
 		long timestamp = System.currentTimeMillis();
 		try
 		{
-			for (KairosMetricReporter reporter : m_reporters)
+			for (KairosMetricReporter reporter : m_reporterProvider.get())
 			{
 				List<DataPointSet> dpList = reporter.getMetrics(timestamp);
 				for (DataPointSet dataPointSet : dpList)

@@ -36,7 +36,7 @@ import org.kairosdb.core.queue.QueueProcessor;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.events.DataPointEvent;
-import org.kairosdb.util.AdaptiveExecutorService;
+import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.KDataInput;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.SimpleStatsReporter;
@@ -250,7 +250,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 	private final QueueProcessor m_queueProcessor;
-	private final AdaptiveExecutorService m_congestionExecutor;
+	private final IngestExecutorService m_congestionExecutor;
 
 	private CassandraConfiguration m_cassandraConfiguration;
 
@@ -265,7 +265,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			KairosDataPointFactory kairosDataPointFactory,
 			QueueProcessor queueProcessor,
 			EventBus eventBus,
-			AdaptiveExecutorService congestionExecutor) throws DatastoreException
+			IngestExecutorService congestionExecutor) throws DatastoreException
 	{
 		m_cassandraClient = cassandraClient;
 		//m_astyanaxClient = astyanaxClient;
@@ -452,13 +452,13 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		List<DataPointSet> ret = new ArrayList<>();
 
 		m_simpleStatsReporter.reportStats(m_batchStats.getNameStats(), now,
-				"kairosdb.datastore.cassandra.write_batch",
+				"kairosdb.datastore.cassandra.write_batch_size",
 				"table", "string_index", ret);
 		m_simpleStatsReporter.reportStats(m_batchStats.getDataPointStats(), now,
-				"kairosdb.datastore.cassandra.write_batch",
+				"kairosdb.datastore.cassandra.write_batch_size",
 				"table", "data_points", ret);
 		m_simpleStatsReporter.reportStats(m_batchStats.getRowKeyStats(), now,
-				"kairosdb.datastore.cassandra.write_batch",
+				"kairosdb.datastore.cassandra.write_batch_size",
 				"table", "row_keys", ret);
 
 		return ret;

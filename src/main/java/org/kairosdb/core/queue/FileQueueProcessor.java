@@ -210,7 +210,7 @@ public class FileQueueProcessor extends QueueProcessor
 
 
 	@Override
-	public List<DataPointSet> getMetrics(long now)
+	public void addReportedMetrics(ArrayList<DataPointSet> metrics, long now)
 	{
 		//todo make member variable
 		ImmutableSortedMap<String, String> tag = ImmutableSortedMap.of("host", m_hostName);
@@ -237,27 +237,23 @@ public class FileQueueProcessor extends QueueProcessor
 
 		//Todo: add reason why double reporting.
 
-		ArrayList<DataPointSet> ret = new ArrayList<>();
-
 		DataPointSet dps = new DataPointSet("kairosdb.queue.file_queue.size");
 		dps.addTag("host", m_hostName);
 		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, arraySize));
 
-		ret.add(dps);
+		metrics.add(dps);
 
 		dps = new DataPointSet("kairosdb.queue.read_from_file");
 		dps.addTag("host", m_hostName);
 		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, readFromFile));
 
-		ret.add(dps);
+		metrics.add(dps);
 
 		dps = new DataPointSet("kairosdb.queue.process_count");
 		dps.addTag("host", m_hostName);
 		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, readFromQueue));
 
-		ret.add(dps);
-
-		return ret;
+		metrics.add(dps);
 	}
 
 

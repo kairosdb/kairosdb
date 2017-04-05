@@ -112,7 +112,7 @@ public class CQLBatch
 
 		if (rowKeyBatch.size() != 0)
 		{
-			rowKeyBatch.enableTracing();
+			//rowKeyBatch.enableTracing();
 			ResultSet resultSet = m_session.execute(rowKeyBatch);
 			m_batchStats.addRowKeyBatch(rowKeyBatch.size());
 		}

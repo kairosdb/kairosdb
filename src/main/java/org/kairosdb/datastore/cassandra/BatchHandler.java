@@ -4,8 +4,10 @@ import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.InvalidQueryException;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.datastax.driver.core.exceptions.UnavailableException;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.eventbus.EventBus;
+import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.events.BatchReductionEvent;
@@ -15,8 +17,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.ROW_WIDTH;
@@ -26,9 +30,10 @@ import static org.kairosdb.datastore.cassandra.CassandraDatastore.getColumnName;
 /**
  Created by bhawkins on 1/11/17.
  */
-public class BatchHandler implements Callable<Long>
+public class BatchHandler implements Callable<Boolean>
 {
 	public static final Logger logger = LoggerFactory.getLogger(BatchHandler.class);
+	public static final Logger failedLogger = LoggerFactory.getLogger("failed_logger");
 
 	private final List<DataPointEvent> m_events;
 	private final EventCompletionCallBack m_callBack;
@@ -132,7 +137,7 @@ public class BatchHandler implements Callable<Long>
 
 
 	@Override
-	public Long call() throws Exception
+	public Boolean call() throws Exception
 	{
 		int divisor = 1;
 		boolean retry = false;
@@ -160,10 +165,18 @@ public class BatchHandler implements Callable<Long>
 				}
 
 			}
+			//If More exceptions are added to retry they need to be added to AdaptiveExecutorService
 			catch (NoHostAvailableException nae)
 			{
 				//Throw this out so the back off retry can happen
+				logger.error(nae.getMessage());
 				throw nae;
+			}
+			catch (UnavailableException ue)
+			{
+				//Throw this out so the back off retry can happen
+				logger.error(ue.getMessage());
+				throw ue;
 			}
 			catch (Exception e)
 			{
@@ -180,7 +193,30 @@ public class BatchHandler implements Callable<Long>
 				else
 				{
 					logger.error("Failed to send data points", e);
-					//Todo add logging for data points
+					for (DataPointEvent event : m_events)
+					{
+						StringWriter sw = new StringWriter();
+						JSONWriter jsonWriter = new JSONWriter(sw);
+						jsonWriter.object();
+						jsonWriter.key("name").value(event.getMetricName());
+						jsonWriter.key("timestamp").value(event.getDataPoint().getTimestamp());
+						jsonWriter.key("value");
+						event.getDataPoint().writeValueToJson(jsonWriter);
+
+						jsonWriter.key("tags").object();
+						ImmutableSortedMap<String, String> tags = event.getTags();
+						for (Map.Entry<String, String> entry : tags.entrySet())
+						{
+							jsonWriter.key(entry.getKey()).value(entry.getValue());
+						}
+						jsonWriter.endObject();
+
+						jsonWriter.key("ttl").value(event.getTtl());
+
+						jsonWriter.endObject();
+
+						failedLogger.trace(sw.toString());
+					}
 				}
 			}
 			divisor++;
@@ -194,6 +230,6 @@ public class BatchHandler implements Callable<Long>
 
 		m_callBack.complete();
 
-		return 1L;
+		return m_fullBatch;
 	}
 }

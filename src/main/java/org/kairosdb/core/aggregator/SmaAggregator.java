@@ -33,6 +33,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 @AggregatorName(
         name = "sma",
+		label = "SMA",
 		description = "Simple moving average."
 )
 public class SmaAggregator implements Aggregator

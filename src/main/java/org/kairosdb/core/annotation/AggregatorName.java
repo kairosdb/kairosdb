@@ -24,6 +24,8 @@ import java.lang.annotation.Target;
 public @interface AggregatorName
 {
     String name();
+
     String label() default "";
+
     String description();
 }

@@ -23,5 +23,5 @@ public @interface QueryProperty
 
     String default_value() default "";
 
-    String validation() default "";
+    ValidationProperty[] validations() default { };
 }

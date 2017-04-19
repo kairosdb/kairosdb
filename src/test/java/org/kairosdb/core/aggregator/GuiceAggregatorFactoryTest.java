@@ -69,6 +69,6 @@ public class GuiceAggregatorFactoryTest
         assertThat("Descriptions don't match", property.getDescription(), equalTo(description));
         assertThat("Types don't match", property.getType(), equalTo(type));
         assertThat("Default values don't match", property.getDefaultValue(), equalTo(defaultValue));
-        assertThat("Validation does not match", property.getValidation(), equalTo(validation));
+        assertThat("ValidationProperty.java does not match", property.getValidation(), equalTo(validation));
     }
 }

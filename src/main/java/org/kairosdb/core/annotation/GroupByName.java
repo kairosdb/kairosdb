@@ -24,7 +24,9 @@ import java.lang.annotation.Target;
 public @interface GroupByName
 {
     String name();
+
     String label() default "";
+
     String description();
 }
 

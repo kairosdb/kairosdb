@@ -8,14 +8,16 @@ import java.util.List;
 
 public class QueryMetadata
 {
-	private final String name;
-	private final String description;
-	private final ImmutableList<QueryPropertyMetadata> properties;
+    private final String name;
+    private final String label;
+    private final String description;
+    private final ImmutableList<QueryPropertyMetadata> properties;
 
-	public QueryMetadata(String name, String description, List<QueryPropertyMetadata> properties)
-	{
-		this.name = name;
-		this.description = description;
+    public QueryMetadata(String name, String label, String description, List<QueryPropertyMetadata> properties)
+    {
+        this.name = name;
+        this.label = label;
+        this.description = description;
 
         //noinspection Convert2Lambda
         properties.sort(new Comparator<QueryPropertyMetadata>()
@@ -27,20 +29,20 @@ public class QueryMetadata
             }
         });
         this.properties = ImmutableList.copyOf(properties);
-	}
+    }
 
-	public String getName()
-	{
-		return name;
-	}
+    public String getName()
+    {
+        return name;
+    }
 
-	public String getDescription()
-	{
-		return description;
-	}
+    public String getDescription()
+    {
+        return description;
+    }
 
-	public ImmutableList<QueryPropertyMetadata> getProperties()
-	{
-		return properties;
-	}
+    public ImmutableList<QueryPropertyMetadata> getProperties()
+    {
+        return properties;
+    }
 }

@@ -3,10 +3,12 @@ package org.kairosdb.core.aggregator.json;
 import com.google.common.collect.ImmutableList;
 import org.kairosdb.core.annotation.QueryCompoundProperty;
 import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.LinkedList;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.commons.lang.StringUtils.isEmpty;
@@ -20,7 +22,7 @@ public class QueryPropertyMetadata
     private String type;
     private String[] options;
     private String defaultValue;
-    private String validation;
+    private ImmutableList<ValidationMetadata> validations;
     private ImmutableList<QueryPropertyMetadata> properties;
 
     public QueryPropertyMetadata(String name, String type, String options, String defaultValue, QueryProperty property)
@@ -33,7 +35,7 @@ public class QueryPropertyMetadata
         this.type = isEmpty(property.type()) ? type : property.type();
         this.options = options == null ? property.options() : options.split(",");
         this.defaultValue = isEmpty(property.default_value()) ? defaultValue : property.default_value();
-        this.validation = property.validation();
+        this.validations = extractValidators(property);
 
         fixupName();
     }
@@ -96,14 +98,20 @@ public class QueryPropertyMetadata
         return defaultValue;
     }
 
-    public String getValidation()
-    {
-        return validation;
-    }
+    public ImmutableList<ValidationMetadata> getValidations() { return validations; }
 
     public ImmutableList<QueryPropertyMetadata> getProperties()
     {
         return properties;
+    }
+
+    private ImmutableList<ValidationMetadata> extractValidators(QueryProperty property)
+    {
+        LinkedList<ValidationMetadata> validations = new LinkedList<ValidationMetadata>();
+
+        for (ValidationProperty validator : property.validations())
+            validations.addFirst(new ValidationMetadata(validator.expression(), validator.type(), validator.message()));
+        return ImmutableList.copyOf(validations);
     }
 
     private class LabelComparator implements Comparator<QueryPropertyMetadata>

@@ -22,6 +22,7 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.annotation.GroupByName;
 import org.kairosdb.core.annotation.QueryCompoundProperty;
 import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.formatter.FormatterException;
@@ -50,7 +51,12 @@ public class TimeGroupBy implements GroupBy
     @QueryProperty(
             label = "Count",
             description = "The number of groups. This would typically be 7 to group by day of week.",
-            validation = "value > 0"
+            validations = {
+            		@ValidationProperty(
+            				expression = "value > 0",
+							message = "Count must be greater than 0."
+					)
+			}
     )
 	private int groupCount;
 

@@ -20,6 +20,7 @@ import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.annotation.GroupByName;
 import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.formatter.FormatterException;
 
 import java.io.StringWriter;
@@ -37,7 +38,12 @@ public class BinGroupBy implements GroupBy
     @QueryProperty(
             label = "Bin Values",
             description = "List of bin values. For example, if the list of bins is 10, 20, 30, then values less than 10 are placed in the first group, values between 10-19 into the second group, and so forth.",
-            validation = "value.length > 0"
+            validations = {
+            		@ValidationProperty(
+            				expression = "value.length > 0",
+							message = "The list can't be empty."
+					)
+			}
     )
 	private double[] bins;
 

@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.annotation.AggregatorName;
 import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.exception.DatastoreException;
@@ -37,7 +38,12 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 			label = "Save As",
 			description = "The name of the new metric.",
 			default_value = "<new name>",
-            validation = "!value && value.length > 0"
+            validations = {
+					@ValidationProperty(
+							expression = "!value && value.length > 0",
+							message = "The name can't be empty."
+					)
+			}
 	)
 	private String m_metricName;
 

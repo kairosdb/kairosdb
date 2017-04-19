@@ -19,6 +19,7 @@ import org.apache.bval.constraints.NotEmpty;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.annotation.GroupByName;
 import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
@@ -36,7 +37,12 @@ public class TagGroupBy implements GroupBy
     @QueryProperty(
             label = "Tags",
             description = "A list of tags to group by.",
-            validation = "value.length > 0"
+            validations = {
+            		@ValidationProperty(
+            				expression = "value.length > 0",
+							message = "Tags can't be empty."
+					)
+			}
     )
 	private List<String> tags;
 

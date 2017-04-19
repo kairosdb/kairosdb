@@ -21,6 +21,7 @@ import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.annotation.AggregatorName;
 import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
@@ -39,7 +40,12 @@ public class ScaleAggregator implements Aggregator
 	@QueryProperty(
 			label = "Factor",
 			description = "The value to scale each data point by.",
-            validation = "value > 0"
+            validations = {
+					@ValidationProperty(
+							expression = "value > 0",
+							message = "Factor must be greater than 0."
+					)
+			}
 	)
 	private double m_factor;
 	private DoubleDataPointFactory m_dataPointFactory;

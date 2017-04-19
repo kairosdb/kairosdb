@@ -23,7 +23,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 public @interface GroupByName
 {
-	String name();
-	String description();
+    String name();
+    String label() default "";
+    String description();
 }
 

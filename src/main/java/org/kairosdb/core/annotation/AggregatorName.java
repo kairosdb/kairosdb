@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2016 KairosDB Authors
  *
@@ -14,7 +13,6 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package org.kairosdb.core.annotation;
 
 import java.lang.annotation.ElementType;
@@ -25,6 +23,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 public @interface AggregatorName
 {
-	String name();
-	String description();
+    String name();
+    String label() default "";
+    String description();
 }

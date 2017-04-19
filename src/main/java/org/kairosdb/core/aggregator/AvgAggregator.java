@@ -29,6 +29,7 @@ import java.util.Iterator;
  */
 @AggregatorName(
 		name = "avg",
+		label = "AVG",
 		description = "Averages the data points together."
 )
 public class AvgAggregator extends RangeAggregator

@@ -16,11 +16,10 @@
 package org.kairosdb.core.groupby;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.process.Process;
 
 import java.util.Map;
 
-public interface GroupBy extends Process
+public interface GroupBy
 {
 	int getGroupId(DataPoint dataPoint, Map<String, String> tags);
 

@@ -15,95 +15,18 @@
  */
 package org.kairosdb.core.groupby;
 
-import com.google.common.collect.ImmutableList;
-import com.google.inject.Binding;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Key;
-import org.kairosdb.core.aggregator.json.QueryMetadata;
-import org.kairosdb.core.aggregator.json.QueryPropertyMetadata;
-import org.kairosdb.core.annotation.GroupByName;
+import org.kairosdb.core.process.GenericProcessFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-import static org.kairosdb.core.annotation.AnnotationUtils.getPropertyMetadata;
-
-public class GuiceGroupByFactory implements GroupByFactory
+public class GuiceGroupByFactory extends GenericProcessFactory<GroupBy>
 {
-    private Map<String, Class<GroupBy>> groupBys = new HashMap<String, Class<GroupBy>>();
-    private Injector injector;
-    private List<QueryMetadata> m_queryMetadata = new ArrayList<>();
-
     @Inject
-    @SuppressWarnings("unchecked")
     public GuiceGroupByFactory(Injector injector)
-            throws InvocationTargetException, NoSuchMethodException, ClassNotFoundException, IllegalAccessException
+            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
-        this.injector = injector;
-        Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
-
-        for (Key<?> key : bindings.keySet())
-        {
-            Class<?> bindingClass = key.getTypeLiteral().getRawType();
-            if (GroupBy.class.isAssignableFrom(bindingClass))
-            {
-                GroupByName annotation = bindingClass.getAnnotation(GroupByName.class);
-                if (annotation == null)
-                    throw new IllegalStateException("Aggregator class " + bindingClass.getName() +
-                            " does not have required annotation " + GroupByName.class.getName());
-
-                groupBys.put(annotation.name(), (Class<GroupBy>) bindingClass);
-                List<QueryPropertyMetadata> properties = getPropertyMetadata(bindingClass);
-                m_queryMetadata.add(new QueryMetadata(annotation.name(), labelizeGroupBy(annotation), annotation.description(), properties));
-            }
-            Collections.sort(m_queryMetadata, new Comparator<QueryMetadata>()
-            {
-                @Override
-                public int compare(QueryMetadata o1, QueryMetadata o2)
-                {
-                    return o1.getName().compareTo(o2.getName());
-                }
-            });
-        }
-    }
-
-    public GroupBy createGroupBy(String name)
-    {
-        Class<GroupBy> groupByClass = groupBys.get(name);
-
-        if (groupByClass == null)
-            return (null);
-
-        GroupBy groupBy = injector.getInstance(groupByClass);
-        return (groupBy);
-    }
-
-    @Override
-    public ImmutableList<QueryMetadata> getQueryMetadata()
-    {
-        return new ImmutableList.Builder<QueryMetadata>().addAll(m_queryMetadata).build();
-    }
-
-    private String labelizeGroupBy(GroupByName annotation)
-    {
-        if (!annotation.label().isEmpty())
-        {
-            return annotation.label();
-        }
-
-        StringBuilder label = new StringBuilder();
-        for (String word : annotation.name().toLowerCase().split("_"))
-        {
-            label.append(word.substring(0, 1).toUpperCase());
-            label.append(word.substring(1));
-            label.append(" ");
-        }
-        return label.toString().trim();
+        super(injector, GroupBy.class);
     }
 }

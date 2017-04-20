@@ -9,7 +9,10 @@ import org.kairosdb.core.datastore.DataPointGroup;
 /**
  Created by bhawkins on 12/16/14.
  */
-@ProcessProperty(name = "diff", description = "Computes the difference between successive data points.")
+@ProcessProperty(
+		name = "diff",
+		description = "Computes the difference between successive data points."
+)
 public class DiffAggregator implements Aggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;

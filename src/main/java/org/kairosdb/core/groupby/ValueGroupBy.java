@@ -32,7 +32,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 /**
  * Groups data points by value. Data points are a range of values specified by range size.
  */
-@ProcessProperty(name = "value", description = "Groups data points by value.")
+@ProcessProperty(
+        name = "value",
+        description = "Groups data points by value."
+)
 public class ValueGroupBy implements GroupBy
 {
     @Min(1)

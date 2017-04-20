@@ -2,10 +2,8 @@ package org.kairosdb.core.process;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Binding;
-import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-
 import org.kairosdb.core.aggregator.json.QueryMetadata;
 import org.kairosdb.core.aggregator.json.QueryPropertyMetadata;
 import org.kairosdb.core.annotation.ProcessProperty;
@@ -15,15 +13,14 @@ import java.util.*;
 
 import static org.kairosdb.core.annotation.AnnotationUtils.getPropertyMetadata;
 
-public class GuiceProcessFactory<ProcessType extends Process> implements ProcessFactory<ProcessType>
+public class GenericProcessFactory<ProcessType> implements ProcessFactory<ProcessType>
 {
     private Map<String, Class<ProcessType>> processes = new HashMap<String, Class<ProcessType>>();
     private List<QueryMetadata> queryMetadata = new ArrayList<QueryMetadata>();
     private Injector injector;
 
-    @Inject
     @SuppressWarnings("unchecked")
-    public GuiceProcessFactory(Injector injector)
+    public GenericProcessFactory(Injector injector, Class<ProcessType> processType)
             throws InvocationTargetException, NoSuchMethodException, ClassNotFoundException, IllegalAccessException
     {
         this.injector = injector;
@@ -32,7 +29,8 @@ public class GuiceProcessFactory<ProcessType extends Process> implements Process
         for (Key<?> key : bindings.keySet())
         {
             Class<?> bindingClass = key.getTypeLiteral().getRawType();
-            if (Process.class.isAssignableFrom(bindingClass))
+
+            if (processType.isAssignableFrom(bindingClass))
             {
                 ProcessProperty annotation = bindingClass.getAnnotation(ProcessProperty.class);
                 if (annotation == null)

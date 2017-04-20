@@ -17,12 +17,12 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.ProcessProperty;
 import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 
 
-@AggregatorName(
+@ProcessProperty(
         name = "filter",
 		description = "Filters datapoints according to filter operation with a null data point."
 )

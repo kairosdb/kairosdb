@@ -18,7 +18,7 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.ProcessProperty;
 import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
@@ -34,7 +34,7 @@ import java.util.Iterator;
 
 import static java.lang.Math.floor;
 
-@AggregatorName(
+@ProcessProperty(
 		name = "percentile",
 		description = "Finds the percentile of the data range."
 )

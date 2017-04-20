@@ -16,13 +16,13 @@ package org.kairosdb.core.aggregator;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.ProcessProperty;
 import org.kairosdb.core.datapoints.NullDataPoint;
 
 import java.util.Collections;
 import java.util.Iterator;
 
-@AggregatorName(
+@ProcessProperty(
         name = "gaps",
 		description = "Marks gaps in data according to sampling rate with a null data point."
 )

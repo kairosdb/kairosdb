@@ -32,7 +32,10 @@ import static com.google.common.base.Preconditions.checkArgument;
  Groups data points by bin values. Data points are a range of values specified by bins.
  Bins array needs to be in ascending order.
  */
-@ProcessProperty(name = "bin", description = "Groups data points by bins or buckets.")
+@ProcessProperty(
+		name = "bin",
+		description = "Groups data points by bins or buckets."
+)
 public class BinGroupBy implements GroupBy
 {
     @QueryProperty(

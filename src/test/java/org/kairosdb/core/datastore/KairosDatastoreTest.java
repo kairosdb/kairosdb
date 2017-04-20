@@ -21,7 +21,6 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.TestDataPointFactory;
-import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyLongDataPoint;

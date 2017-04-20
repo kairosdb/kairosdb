@@ -16,9 +16,8 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.process.Process;
 
-public interface Aggregator extends Process
+public interface Aggregator
 {
 	DataPointGroup aggregate(DataPointGroup dataPointGroup);
 	boolean canAggregate(String groupType);

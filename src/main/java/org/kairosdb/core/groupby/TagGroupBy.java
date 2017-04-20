@@ -29,7 +29,10 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-@ProcessProperty(name = "tag", description = "Groups data points by tag names.")
+@ProcessProperty(
+		name = "tag",
+		description = "Groups data points by tag names."
+)
 public class TagGroupBy implements GroupBy
 {
 	@NotNull

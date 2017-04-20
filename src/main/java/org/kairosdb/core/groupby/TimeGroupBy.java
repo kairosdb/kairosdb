@@ -19,10 +19,7 @@ package org.kairosdb.core.groupby;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.GroupByName;
-import org.kairosdb.core.annotation.QueryCompoundProperty;
-import org.kairosdb.core.annotation.QueryProperty;
-import org.kairosdb.core.annotation.ValidationProperty;
+import org.kairosdb.core.annotation.*;
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.formatter.FormatterException;
@@ -37,7 +34,7 @@ import java.util.TimeZone;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-@GroupByName(name = "time", description = "Groups data points in time ranges.")
+@ProcessProperty(name = "time", description = "Groups data points in time ranges.")
 public class TimeGroupBy implements GroupBy
 {
 	@NotNull

@@ -18,7 +18,7 @@ package org.kairosdb.core.groupby;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.GroupByName;
+import org.kairosdb.core.annotation.ProcessProperty;
 import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.formatter.FormatterException;
@@ -32,7 +32,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  Groups data points by bin values. Data points are a range of values specified by bins.
  Bins array needs to be in ascending order.
  */
-@GroupByName(name = "bin", description = "Groups data points by bins or buckets.")
+@ProcessProperty(name = "bin", description = "Groups data points by bins or buckets.")
 public class BinGroupBy implements GroupBy
 {
     @QueryProperty(

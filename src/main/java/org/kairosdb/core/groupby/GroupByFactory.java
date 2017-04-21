@@ -21,10 +21,10 @@ import org.kairosdb.core.process.GenericProcessFactory;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class GuiceGroupByFactory extends GenericProcessFactory<GroupBy>
+public class GroupByFactory extends GenericProcessFactory<GroupBy>
 {
     @Inject
-    public GuiceGroupByFactory(Injector injector)
+    public GroupByFactory(Injector injector)
             throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
         super(injector, GroupBy.class);

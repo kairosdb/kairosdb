@@ -76,8 +76,8 @@ public class CoreModule extends AbstractModule
 		bind(QueryQueuingManager.class).in(Singleton.class);
 		bind(KairosDatastore.class).in(Singleton.class);
 
-		bind(new TypeLiteral<ProcessFactory<Aggregator>>() {}).to(GuiceAggregatorFactory.class).in(Singleton.class);
-		bind(new TypeLiteral<ProcessFactory<GroupBy>>() {}).to(GenericGroupByFactory.class).in(Singleton.class);
+		bind(new TypeLiteral<ProcessFactory<Aggregator>>() {}).to(AggregatorFactory.class).in(Singleton.class);
+		bind(new TypeLiteral<ProcessFactory<GroupBy>>() {}).to(GroupByFactory.class).in(Singleton.class);
 
 		bind(QueryPluginFactory.class).to(GuiceQueryPluginFactory.class).in(Singleton.class);
 		bind(QueryParser.class).in(Singleton.class);

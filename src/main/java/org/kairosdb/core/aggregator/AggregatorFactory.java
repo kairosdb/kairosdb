@@ -21,10 +21,10 @@ import org.kairosdb.core.process.GenericProcessFactory;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class GuiceAggregatorFactory extends GenericProcessFactory<Aggregator>
+public class AggregatorFactory extends GenericProcessFactory<Aggregator>
 {
     @Inject
-    public GuiceAggregatorFactory(Injector injector)
+    public AggregatorFactory(Injector injector)
             throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
         super(injector, Aggregator.class);

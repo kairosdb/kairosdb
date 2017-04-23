@@ -5,6 +5,7 @@ import com.datastax.driver.core.*;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -29,6 +30,7 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 
 	private final Cluster m_cluster;
 	private String m_keyspace;
+	private LoadBalancingPolicy m_loadBalancingPolicy;
 
 	@Inject
 	@Named("HOSTNAME")
@@ -44,11 +46,13 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	public CassandraClientImpl(@Named(KEYSPACE_PROPERTY)String keyspace,
 			@Named(HOST_LIST_PROPERTY)String hostList)
 	{
+		m_loadBalancingPolicy = new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build());
 		final Cluster.Builder builder = new Cluster.Builder()
-				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL, 3, 100)
-					.setMaxRequestsPerConnection(HostDistance.LOCAL, 1024))
+				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL, 5, 100)
+					.setMaxRequestsPerConnection(HostDistance.LOCAL, 1024*2)
+					.setMaxQueueSize(500))
 				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 10 * 1000))
-				.withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
+				.withLoadBalancingPolicy(m_loadBalancingPolicy)
 				.withQueryOptions(new QueryOptions().setConsistencyLevel(ConsistencyLevel.QUORUM))
 				.withCompression(ProtocolOptions.Compression.LZ4)
 				.withoutJMXReporting()
@@ -71,6 +75,10 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		m_keyspace = keyspace;
 	}
 
+	public LoadBalancingPolicy getLoadBalancingPolicy()
+	{
+		return m_loadBalancingPolicy;
+	}
 
 	@Override
 	public Session getKeyspaceSession()

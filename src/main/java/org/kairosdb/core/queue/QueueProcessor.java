@@ -26,11 +26,13 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	public static final String QUEUE_PROCESSOR = "queue_processor";
 	public static final String BATCH_SIZE = "kairosdb.queue_processor.batch_size";
 	public static final String MEMORY_QUEUE_SIZE = "kairosdb.queue_processor.memory_queue_size";
+	public static final String MINIMUM_BATCH_SIZE = "kairosdb.queue_processor.min_batch_size";
 
 
 	private final DeliveryThread m_deliveryThread;
 	private int m_batchSize;
 	private final int m_initialBatchSize;
+	private final int m_minimumBatchSize;
 	private final SimpleStats m_batchStats = new SimpleStats();
 
 	private volatile ProcessorHandler m_processorHandler;
@@ -39,10 +41,11 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
 
-	public QueueProcessor(Executor executor, int batchSize)
+	public QueueProcessor(Executor executor, int batchSize, int minimumBatchSize)
 	{
 		m_deliveryThread = new DeliveryThread();
 		m_initialBatchSize = m_batchSize = batchSize;
+		m_minimumBatchSize = minimumBatchSize;
 
 		executor.execute(m_deliveryThread);
 	}
@@ -74,6 +77,8 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	 and a list of events from the queue, maybe empty
 	 */
 	protected abstract List<DataPointEvent> get(int batchSize);
+
+	protected abstract int getAvailableDataPointEvents();
 
 	protected abstract EventCompletionCallBack getCompletionCallBack();
 
@@ -144,6 +149,11 @@ public abstract class QueueProcessor implements KairosMetricReporter
 
 				try
 				{
+					if (getAvailableDataPointEvents() < m_minimumBatchSize)
+					{
+						Thread.sleep(500);
+					}
+
 					List<DataPointEvent> results = get(m_batchSize);
 					//getCompletionCallBack must be called after get()
 					EventCompletionCallBack callbackToPass = getCompletionCallBack();
@@ -156,7 +166,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 					{
 						fullBatch = true;
 						if (m_batchSize < m_initialBatchSize)
-							m_batchSize ++;
+							m_batchSize += 5;
 					}
 
 					m_processorHandler.handleEvents(results, callbackToPass, fullBatch);

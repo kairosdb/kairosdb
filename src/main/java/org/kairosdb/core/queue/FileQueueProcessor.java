@@ -55,9 +55,10 @@ public class FileQueueProcessor extends QueueProcessor
 			@Named(QUEUE_PROCESSOR) Executor executor,
 			@Named(BATCH_SIZE) int batchSize,
 			@Named(MEMORY_QUEUE_SIZE) int memoryQueueSize,
-			@Named(SECONDS_TILL_CHECKPOINT) int secondsTillCheckpoint)
+			@Named(SECONDS_TILL_CHECKPOINT) int secondsTillCheckpoint,
+			@Named(MINIMUM_BATCH_SIZE) int minimumBatchSize)
 	{
-		super(executor, batchSize);
+		super(executor, batchSize, minimumBatchSize);
 		m_bigArray = bigArray;
 		m_memoryQueue = new CircularFifoQueue<>(memoryQueueSize);
 		m_eventSerializer = eventSerializer;
@@ -138,6 +139,13 @@ public class FileQueueProcessor extends QueueProcessor
 		}
 	}
 
+	@Override
+	protected int getAvailableDataPointEvents()
+	{
+		return m_memoryQueue.size();
+	}
+
+	@Override
 	protected List<DataPointEvent> get(int batchSize)
 	{
 		if (m_memoryQueue.isEmpty())

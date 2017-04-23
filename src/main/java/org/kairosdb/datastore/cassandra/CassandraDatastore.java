@@ -21,6 +21,7 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.SetMultimap;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -222,6 +223,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 	private final PreparedStatements m_preparedStatements;
 	private Session m_session;
+	private LoadBalancingPolicy m_loadBalancingPolicy;
 
 
 	public class PreparedStatements
@@ -302,6 +304,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		setupSchema();
 
 		m_session = m_cassandraClient.getKeyspaceSession();
+		m_loadBalancingPolicy = m_cassandraClient.getLoadBalancingPolicy();
 		//Prepare queries
 		m_preparedStatements = new PreparedStatements();
 
@@ -378,7 +381,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				m_cassandraConfiguration.getDatapointTtl(),
 				m_cassandraConfiguration.getDataWriteLevel(),
 				m_rowKeyCache, m_metricNameCache, m_eventBus, m_session,
-				m_preparedStatements, fullBatch, m_batchStats);
+				m_preparedStatements, fullBatch, m_batchStats, m_loadBalancingPolicy);
 
 		m_congestionExecutor.submit(batchHandler);
 	}

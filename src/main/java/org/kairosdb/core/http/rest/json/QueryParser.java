@@ -34,7 +34,7 @@ import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
-import org.kairosdb.core.process.ProcessFactory;
+import org.kairosdb.core.processingstage.QueryProcessingStageFactory;
 import org.kairosdb.rollup.Rollup;
 import org.kairosdb.rollup.RollupTask;
 import org.slf4j.Logger;
@@ -60,15 +60,15 @@ public class QueryParser
 
     private static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
 
-    private ProcessFactory<Aggregator> m_aggregatorFactory;
-    private ProcessFactory<GroupBy> m_groupByFactory;
+    private QueryProcessingStageFactory<Aggregator> m_aggregatorFactory;
+    private QueryProcessingStageFactory<GroupBy> m_groupByFactory;
     private QueryPluginFactory m_pluginFactory;
     private Map<Class, Map<String, PropertyDescriptor>> m_descriptorMap;
     private final Object m_descriptorMapLock = new Object();
     private Gson m_gson;
 
     @Inject
-    public QueryParser(ProcessFactory<Aggregator> aggregatorFactory, ProcessFactory<GroupBy> groupByFactory,
+    public QueryParser(QueryProcessingStageFactory<Aggregator> aggregatorFactory, QueryProcessingStageFactory<GroupBy> groupByFactory,
                        QueryPluginFactory pluginFactory)
     {
         m_aggregatorFactory = aggregatorFactory;
@@ -297,10 +297,10 @@ public class QueryParser
                     validateHasRangeAggregator(query, context);
 
                     // Add aggregators needed for rollups
-                    SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_aggregatorFactory.createProcess("save_as");
+                    SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_aggregatorFactory.createQueryProcessor("save_as");
                     saveAsAggregator.setMetricName(rollup.getSaveAs());
 
-                    TrimAggregator trimAggregator = (TrimAggregator) m_aggregatorFactory.createProcess("trim");
+                    TrimAggregator trimAggregator = (TrimAggregator) m_aggregatorFactory.createQueryProcessor("trim");
                     trimAggregator.setTrim(TrimAggregator.Trim.LAST);
 
                     query.addAggregator(saveAsAggregator);
@@ -371,7 +371,7 @@ public class QueryParser
 
             String aggContext = context + ".aggregators[" + J + "]";
             String aggName = name.getAsString();
-            Aggregator aggregator = m_aggregatorFactory.createProcess(aggName);
+            Aggregator aggregator = m_aggregatorFactory.createQueryProcessor(aggName);
 
             if (aggregator == null)
                 throw new BeanValidationException(new SimpleConstraintViolation(aggName, "invalid aggregator name"), aggContext);
@@ -418,7 +418,7 @@ public class QueryParser
 
             String name = nameElement.getAsString();
 
-            GroupBy groupBy = m_groupByFactory.createProcess(name);
+            GroupBy groupBy = m_groupByFactory.createQueryProcessor(name);
             if (groupBy == null)
                 throw new BeanValidationException(new SimpleConstraintViolation(groupContext + "." + name, "invalid group_by name"), context);
 

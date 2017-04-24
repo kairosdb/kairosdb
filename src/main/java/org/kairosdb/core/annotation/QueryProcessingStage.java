@@ -7,11 +7,9 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-public @interface ProcessProperty
+public @interface QueryProcessingStage
 {
     String name();
 
-    String label() default "";
-
-    String description();
+    String label();
 }

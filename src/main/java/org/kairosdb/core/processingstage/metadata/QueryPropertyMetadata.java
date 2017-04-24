@@ -1,4 +1,4 @@
-package org.kairosdb.core.aggregator.json;
+package org.kairosdb.core.processingstage.metadata;
 
 import com.google.common.collect.ImmutableList;
 import org.kairosdb.core.annotation.QueryCompoundProperty;
@@ -22,7 +22,7 @@ public class QueryPropertyMetadata
     private String type;
     private String[] options;
     private String defaultValue;
-    private ImmutableList<ValidationMetadata> validations;
+    private ImmutableList<QueryValidationMetadata> validations;
     private ImmutableList<QueryPropertyMetadata> properties;
 
     public QueryPropertyMetadata(String name, String type, String options, String defaultValue, QueryProperty property)
@@ -58,9 +58,7 @@ public class QueryPropertyMetadata
     private void fixupName()
     {
         if (this.name.startsWith("m_"))
-        {
             this.name = this.name.substring(2);
-        }
     }
 
     public String getName()
@@ -98,19 +96,19 @@ public class QueryPropertyMetadata
         return defaultValue;
     }
 
-    public ImmutableList<ValidationMetadata> getValidations() { return validations; }
+    public ImmutableList<QueryValidationMetadata> getValidations() { return validations; }
 
     public ImmutableList<QueryPropertyMetadata> getProperties()
     {
         return properties;
     }
 
-    private ImmutableList<ValidationMetadata> extractValidators(QueryProperty property)
+    private ImmutableList<QueryValidationMetadata> extractValidators(QueryProperty property)
     {
-        LinkedList<ValidationMetadata> validations = new LinkedList<ValidationMetadata>();
+        LinkedList<QueryValidationMetadata> validations = new LinkedList<QueryValidationMetadata>();
 
         for (ValidationProperty validator : property.validations())
-            validations.addFirst(new ValidationMetadata(validator.expression(), validator.type(), validator.message()));
+            validations.addFirst(new QueryValidationMetadata(validator.expression(), validator.type(), validator.message()));
         return ImmutableList.copyOf(validations);
     }
 

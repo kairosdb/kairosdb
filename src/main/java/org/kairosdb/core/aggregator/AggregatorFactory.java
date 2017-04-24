@@ -17,11 +17,16 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import org.kairosdb.core.process.GenericProcessFactory;
+import org.kairosdb.core.annotation.QueryProcessingStage;
+import org.kairosdb.core.processingstage.GenericQueryProcessingStageFactory;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class AggregatorFactory extends GenericProcessFactory<Aggregator>
+@QueryProcessingStage(
+        name = "aggregator",
+        label = "Aggregator"
+)
+public class AggregatorFactory extends GenericQueryProcessingStageFactory<Aggregator>
 {
     @Inject
     public AggregatorFactory(Injector injector)

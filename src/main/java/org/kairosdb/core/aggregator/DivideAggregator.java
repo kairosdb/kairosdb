@@ -19,7 +19,7 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.ProcessProperty;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
@@ -32,7 +32,7 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
-@ProcessProperty(
+@QueryProcessor(
         name = "div",
 		description = "Divides each data point by a divisor."
 )

@@ -18,7 +18,7 @@ package org.kairosdb.core.groupby;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.ProcessProperty;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.formatter.FormatterException;
@@ -32,7 +32,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 /**
  * Groups data points by value. Data points are a range of values specified by range size.
  */
-@ProcessProperty(
+@QueryProcessor(
         name = "value",
         description = "Groups data points by value."
 )

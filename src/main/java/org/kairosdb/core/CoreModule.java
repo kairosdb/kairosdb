@@ -30,7 +30,8 @@ import org.kairosdb.core.datastore.QueryQueuingManager;
 import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.jobs.CacheFileCleaner;
-import org.kairosdb.core.process.ProcessFactory;
+import org.kairosdb.core.processingstage.QueryProcessingStageFactory;
+import org.kairosdb.core.processingstage.QueryProcessingChain;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
 import org.kairosdb.util.MemoryMonitor;
@@ -76,8 +77,10 @@ public class CoreModule extends AbstractModule
 		bind(QueryQueuingManager.class).in(Singleton.class);
 		bind(KairosDatastore.class).in(Singleton.class);
 
-		bind(new TypeLiteral<ProcessFactory<Aggregator>>() {}).to(AggregatorFactory.class).in(Singleton.class);
-		bind(new TypeLiteral<ProcessFactory<GroupBy>>() {}).to(GroupByFactory.class).in(Singleton.class);
+		bind(new TypeLiteral<QueryProcessingStageFactory<Aggregator>>() {}).to(AggregatorFactory.class).in(Singleton.class);
+		bind(new TypeLiteral<QueryProcessingStageFactory<GroupBy>>() {}).to(GroupByFactory.class).in(Singleton.class);
+
+		bind(QueryProcessingChain.class).to(KairosQueryProcessingChain.class).in(Singleton.class);
 
 		bind(QueryPluginFactory.class).to(GuiceQueryPluginFactory.class).in(Singleton.class);
 		bind(QueryParser.class).in(Singleton.class);

@@ -19,14 +19,14 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.ProcessProperty;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.annotation.QueryCompoundProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.util.Util;
 
-@ProcessProperty(
+@QueryProcessor(
         name = "sampler",
 		description = "Computes the sampling rate of change for the data points."
 )

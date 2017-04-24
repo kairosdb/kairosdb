@@ -16,7 +16,6 @@
 
 package org.kairosdb.core.http.rest;
 
-import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
@@ -26,8 +25,6 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.aggregator.Aggregator;
-import org.kairosdb.core.aggregator.json.QueryMetadata;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
@@ -39,13 +36,7 @@ import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
 import org.kairosdb.core.formatter.JsonResponse;
-import org.kairosdb.core.groupby.GroupBy;
-import org.kairosdb.core.http.rest.json.DataPointsParser;
-import org.kairosdb.core.http.rest.json.ErrorResponse;
-import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
-import org.kairosdb.core.http.rest.json.QueryParser;
-import org.kairosdb.core.http.rest.json.ValidationErrors;
-import org.kairosdb.core.process.ProcessFactory;
+import org.kairosdb.core.http.rest.json.*;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.util.MemoryMonitorException;
@@ -53,37 +44,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
@@ -111,8 +78,6 @@ public class MetricsResource implements KairosMetricReporter
     private final KairosDatastore datastore;
     private final Map<String, DataFormatter> formatters = new HashMap<>();
     private final QueryParser queryParser;
-    private final ProcessFactory<Aggregator> aggregatorFactory;
-    private final ProcessFactory<GroupBy> groupByFactory;
 
     //Used for parsing incoming metrics
     private final Gson gson;
@@ -147,13 +112,10 @@ public class MetricsResource implements KairosMetricReporter
 
     @Inject
     public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
-                           KairosDataPointFactory dataPointFactory,
-                           ProcessFactory<Aggregator> aggregatorFactory, ProcessFactory<GroupBy> groupByFactory)
+                           KairosDataPointFactory dataPointFactory)
     {
         this.datastore = checkNotNull(datastore);
         this.queryParser = checkNotNull(queryParser);
-        this.aggregatorFactory = checkNotNull(aggregatorFactory);
-        this.groupByFactory = checkNotNull(groupByFactory);
         m_kairosDataPointFactory = dataPointFactory;
         formatters.put("json", new JsonFormatter());
 
@@ -246,28 +208,6 @@ public class MetricsResource implements KairosMetricReporter
     public Response getTagValues()
     {
         return executeNameQuery(NameType.TAG_VALUES);
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-    @Path("/aggregators")
-    public Response getAggregators()
-    {
-        ImmutableList<QueryMetadata> queryMetadata = aggregatorFactory.getQueryMetadata();
-        ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(gson.toJson(queryMetadata));
-        setHeaders(responseBuilder);
-        return responseBuilder.build();
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-    @Path("/groupbys")
-    public Response getGroupBys()
-    {
-        ImmutableList<QueryMetadata> queryMetadata = groupByFactory.getQueryMetadata();
-        ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(gson.toJson(queryMetadata));
-        setHeaders(responseBuilder);
-        return responseBuilder.build();
     }
 
     @OPTIONS

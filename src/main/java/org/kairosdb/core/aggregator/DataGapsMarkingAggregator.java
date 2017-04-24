@@ -16,13 +16,13 @@ package org.kairosdb.core.aggregator;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.ProcessProperty;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.datapoints.NullDataPoint;
 
 import java.util.Collections;
 import java.util.Iterator;
 
-@ProcessProperty(
+@QueryProcessor(
         name = "gaps",
 		description = "Marks gaps in data according to sampling rate with a null data point."
 )
@@ -64,7 +64,7 @@ public class DataGapsMarkingAggregator extends RangeAggregator
 				return ImmutableList.copyOf(dataPointRange);
 			}
 
-			return Collections.singletonList((DataPoint) new NullDataPoint(returnTime));
+			return Collections.singletonList(new NullDataPoint(returnTime));
 		}
 	}
 }

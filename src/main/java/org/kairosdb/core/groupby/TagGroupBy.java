@@ -17,7 +17,7 @@ package org.kairosdb.core.groupby;
 
 import org.apache.bval.constraints.NotEmpty;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.ProcessProperty;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 
@@ -29,7 +29,7 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-@ProcessProperty(
+@QueryProcessor(
 		name = "tag",
 		description = "Groups data points by tag names."
 )

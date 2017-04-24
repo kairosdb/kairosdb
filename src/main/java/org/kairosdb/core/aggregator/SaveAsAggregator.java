@@ -3,7 +3,7 @@ package org.kairosdb.core.aggregator;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.ProcessProperty;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -18,7 +18,7 @@ import java.util.*;
 /**
  Created by bhawkins on 8/28/15.
  */
-@ProcessProperty(
+@QueryProcessor(
         name = "save_as",
 		description = "Saves the results to a new metric."
 )
@@ -128,7 +128,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 		public SaveAsDataPointAggregator(DataPointGroup innerDataPointGroup)
 		{
 			m_innerDataPointGroup = innerDataPointGroup;
-			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.<String, String>naturalOrder();
+			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.naturalOrder();
 			mapBuilder.putAll(m_tags);
 			if (m_addSavedFrom)
 				mapBuilder.put("saved_from", innerDataPointGroup.getName());

@@ -1,7 +1,7 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.ProcessProperty;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 
@@ -13,7 +13,7 @@ import org.kairosdb.core.datastore.DataPointGroup;
 
  Created by bhawkins on 8/28/15.
  */
-@ProcessProperty(
+@QueryProcessor(
         name = "trim",
 		description = "Trims off the first, last or both (first and last) data points from the results."
 )
@@ -22,9 +22,9 @@ public class TrimAggregator implements Aggregator
 	public enum Trim
 	{
 		FIRST, LAST, BOTH
-	};
+	}
 
-	public TrimAggregator()
+    public TrimAggregator()
 	{
 	}
 

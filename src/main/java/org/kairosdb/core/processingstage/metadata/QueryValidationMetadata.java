@@ -1,12 +1,12 @@
-package org.kairosdb.core.aggregator.json;
+package org.kairosdb.core.processingstage.metadata;
 
-public class ValidationMetadata
+public class QueryValidationMetadata
 {
     private String expression;
     private String type;
     private String message;
 
-    public ValidationMetadata(String expression, String type, String message)
+    public QueryValidationMetadata(String expression, String type, String message)
     {
         this.expression = expression;
         this.type = type;

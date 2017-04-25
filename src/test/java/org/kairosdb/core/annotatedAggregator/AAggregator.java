@@ -3,11 +3,12 @@ package org.kairosdb.core.annotatedAggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.aggregator.Sampling;
-import org.kairosdb.core.annotation.AggregatorName;
 import org.kairosdb.core.annotation.QueryCompoundProperty;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 
-@AggregatorName(
+@QueryProcessor(
         name = "A",
         description = "The A Aggregator"
 )
@@ -19,7 +20,12 @@ public class AAggregator extends BAggregator
             description = "This is allAnnotation",
             optional = true,
             default_value = "2",
-            validation = "value > 0",
+            validations = {
+                    @ValidationProperty(
+                            expression =  "value > 0",
+                            message = "Value must be greater than 0."
+                    )
+            },
             type = "int"
     )
     private int allAnnotation;

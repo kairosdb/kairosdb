@@ -24,6 +24,9 @@ public abstract class GenericQueryProcessingChain implements QueryProcessingChai
             if (annotation == null)
                 throw new IllegalStateException("Processing Stage class " + factory.getClass().getName() +
                         " does not have required annotation " + QueryProcessingStage.class.getName());
+            if (factory.getQueryProcessorMetadata() == null)
+                throw new IllegalStateException("Processing Stage class " + factory.getClass().getName() +
+                        " does not have query processor metadata");
 
             this.processingChain.add(i, factory);
             queryProcessorMetadata.addAll(factory.getQueryProcessorMetadata());

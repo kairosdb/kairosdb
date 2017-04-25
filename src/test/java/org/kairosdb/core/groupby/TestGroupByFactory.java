@@ -16,39 +16,42 @@
 package org.kairosdb.core.groupby;
 
 import com.google.common.collect.ImmutableList;
-import org.kairosdb.core.aggregator.json.QueryMetadata;
-import org.kairosdb.core.annotation.GroupByName;
+import org.kairosdb.core.annotation.QueryProcessingStage;
+import org.kairosdb.core.annotation.QueryProcessor;
+import org.kairosdb.core.processingstage.QueryProcessingStageFactory;
+import org.kairosdb.core.processingstage.metadata.QueryProcessorMetadata;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class TestGroupByFactory implements GroupByFactory
+@QueryProcessingStage(
+        name = "Test GroupBy",
+        label = "test_groupby"
+)
+public class TestGroupByFactory implements QueryProcessingStageFactory<GroupBy>
 {
-	private Map<String, GroupBy> groupBys = new HashMap<String, GroupBy>();
+    private Map<String, GroupBy> groupBys = new HashMap<String, GroupBy>();
 
-	public TestGroupByFactory()
-	{
-		addGroupBy(new SimpleTimeGroupBy());
-		addGroupBy(new ValueGroupBy());
-		addGroupBy(new TagGroupBy());
-		addGroupBy(new TimeGroupBy());
-	}
+    public TestGroupByFactory()
+    {
+        addGroupBy(new SimpleTimeGroupBy());
+        addGroupBy(new ValueGroupBy());
+        addGroupBy(new TagGroupBy());
+        addGroupBy(new TimeGroupBy());
+    }
 
-	private void addGroupBy(GroupBy groupBy)
-	{
-		String name = (groupBy.getClass().getAnnotation(GroupByName.class)).name();
-		groupBys.put(name, groupBy);
-	}
-
-	@Override
-	public GroupBy createGroupBy(String name)
-	{
-		return groupBys.get(name);
-	}
+    private void addGroupBy(GroupBy groupBy)
+    {
+        String name = (groupBy.getClass().getAnnotation(QueryProcessor.class)).name();
+        groupBys.put(name, groupBy);
+    }
 
     @Override
-    public ImmutableList<QueryMetadata> getQueryMetadata()
-    {
-        return null;
-    }
+    public GroupBy createQueryProcessor(String name) { return groupBys.get(name); }
+
+    @Override
+    public Class<GroupBy> getQueryProcessorFamily() { return GroupBy.class; }
+
+    @Override
+    public ImmutableList<QueryProcessorMetadata> getQueryProcessorMetadata() { return ImmutableList.copyOf(new QueryProcessorMetadata[]{});}
 }

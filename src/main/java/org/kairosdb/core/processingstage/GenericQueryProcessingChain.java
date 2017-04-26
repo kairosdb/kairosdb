@@ -1,10 +1,12 @@
 package org.kairosdb.core.processingstage;
 
 import com.google.common.collect.ImmutableList;
+import org.apache.bval.constraints.NotEmpty;
 import org.kairosdb.core.annotation.QueryProcessingStage;
 import org.kairosdb.core.processingstage.metadata.QueryProcessingStageMetadata;
 import org.kairosdb.core.processingstage.metadata.QueryProcessorMetadata;
 
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +15,7 @@ public abstract class GenericQueryProcessingChain implements QueryProcessingChai
     private List<QueryProcessingStageFactory<?>> processingChain = new ArrayList<>();
     private List<QueryProcessingStageMetadata> queryProcessingStageMetadata = new ArrayList<>();
 
-    protected GenericQueryProcessingChain(List<QueryProcessingStageFactory<?>> processingChain)
+    protected GenericQueryProcessingChain(@NotNull @NotEmpty List<QueryProcessingStageFactory<?>> processingChain)
     {
         for (int i = 0; i < processingChain.size(); i++)
         {

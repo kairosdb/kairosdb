@@ -3,8 +3,8 @@
 language: java
 
 jdk:
-  - oraclejdk7
   - oraclejdk8
+  - oraclejdk9
 
 before_script:
   - export CLASSPATH=tools/tablesaw-1.2.4.jar

@@ -4,10 +4,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Binding;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.processingstage.metadata.QueryProcessorMetadata;
 import org.kairosdb.core.processingstage.metadata.QueryPropertyMetadata;
-import org.kairosdb.core.annotation.QueryProcessor;
 
+import javax.validation.constraints.NotNull;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
@@ -21,7 +22,7 @@ public abstract class GenericQueryProcessingStageFactory<QueryProcessorFamily> i
     protected Injector injector;
 
     @SuppressWarnings("unchecked")
-    protected GenericQueryProcessingStageFactory(Injector injector, Class<QueryProcessorFamily> queryProcessorFamily)
+    protected GenericQueryProcessingStageFactory(@NotNull Injector injector, @NotNull Class<QueryProcessorFamily> queryProcessorFamily)
             throws InvocationTargetException, NoSuchMethodException, ClassNotFoundException, IllegalAccessException
     {
         this.injector = injector;

@@ -25,8 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 @QueryProcessingStage(
-        name = "Test GroupBy",
-        label = "test_groupby"
+        name = "test_groupby",
+        label = "Test GroupBy"
 )
 public class TestGroupByFactory implements QueryProcessingStageFactory<GroupBy>
 {

@@ -28,8 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 @QueryProcessingStage(
-        name = "Test Aggregator",
-        label = "test_aggregator"
+        name = "test_aggregator",
+        label = "Test Aggregator"
 )
 public class TestAggregatorFactory implements QueryProcessingStageFactory<Aggregator>
 {

@@ -78,20 +78,26 @@ public class GuiceAggregatorFactoryTest
         assertEquals("Descriptions don't match", property.getDescription(), description);
         assertEquals("Types don't match", property.getType(), type);
         assertEquals("Default values don't match", property.getDefaultValue(), defaultValue);
-        assertValidations(property.getValidations(), validations);
+        assertValidations(validations, property.getValidations());
     }
 
-    private static void assertValidations(ImmutableList<QueryValidationMetadata> validations, ImmutableList<QueryValidationMetadata> comparators)
+    private static void assertValidations(ImmutableList<QueryValidationMetadata> expectedValidations, ImmutableList<QueryValidationMetadata> actualValidations)
     {
-        assertEquals("Validations number does not match", validations.size(), comparators.size());
-        for (int i = 0; i < validations.size(); i++)
+        if ((expectedValidations == null || actualValidations == null))
         {
-            QueryValidationMetadata validation = validations.get(i);
-            QueryValidationMetadata comparator = comparators.get(i);
+            assertEquals("QueryValidationMetadata don't match", expectedValidations, actualValidations);
+            return;
+        }
 
-            assertEquals("QueryValidationMetadata.expression does not match", validation.getExpression(), comparator.getExpression());
-            assertEquals("QueryValidationMetadata.message does not match", validation.getMessage(), comparator.getMessage());
-            assertEquals("QueryValidationMetadata.type does not match", validation.getType(), comparator.getType());
+        assertEquals("Validations quantity does not match", expectedValidations.size(), actualValidations.size());
+        for (int i = 0; i < actualValidations.size(); i++)
+        {
+            QueryValidationMetadata expectedValidation = expectedValidations.get(i);
+            QueryValidationMetadata actualValidation = actualValidations.get(i);
+
+            assertEquals("QueryValidationMetadata.expression don't match", expectedValidation.getExpression(), actualValidation.getExpression());
+            assertEquals("QueryValidationMetadata.message don't match", expectedValidation.getMessage(), actualValidation.getMessage());
+            assertEquals("QueryValidationMetadata.type don't match", expectedValidation.getType(), actualValidation.getType());
         }
     }
 }

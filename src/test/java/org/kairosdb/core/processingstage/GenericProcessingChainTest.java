@@ -53,40 +53,42 @@ public class GenericProcessingChainTest
     public void chain_getter_factory_with_name()
     {
         QueryProcessingStageFactory<?> factory = GenericProcessingChainTest.processingChain.getQueryProcessingStageFactory(Aggregator.class);
-        assertEquals("Invalid type of QueryProcessingStageFactory", factory.getClass(), AggregatorFactory.class);
+        assertEquals("Invalid type of QueryProcessingStageFactory", AggregatorFactory.class, factory.getClass());
     }
 
     @Test
     public void chain_getter_factory_with_name_failure()
     {
         QueryProcessingStageFactory<?> factory = GenericProcessingChainTest.processingChain.getQueryProcessingStageFactory(GroupBy.class);
-        assertEquals("Invalid type of QueryProcessingStageFactory", factory, null);
+        assertEquals("Invalid type of QueryProcessingStageFactory", null, factory);
     }
 
     @Test
     public void chain_getter_factory_with_class()
     {
         QueryProcessingStageFactory<?> factory = GenericProcessingChainTest.processingChain.getQueryProcessingStageFactory("aggregator");
-        assertEquals("Invalid type of QueryProcessingStageFactory", factory.getClass(), AggregatorFactory.class);
+        assertEquals("Invalid type of QueryProcessingStageFactory", AggregatorFactory.class, factory.getClass());
     }
 
     @Test
     public void chain_getter_factory_with_class_failure()
     {
         QueryProcessingStageFactory<?> factory = GenericProcessingChainTest.processingChain.getQueryProcessingStageFactory("groupby");
-        assertEquals("Invalid type of QueryProcessingStageFactory", factory, null);
+        assertEquals("Invalid type of QueryProcessingStageFactory", null, factory);
     }
 
-    // Linked to QueryProcessorMetadata
-//    @Test
+    @Test
     public void chain_getter_metadata()
-            throws ClassNotFoundException
+            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
-        assertQueryProcessorFactories(this.processingChain.getQueryProcessingChainMetadata(), ImmutableList.copyOf(chain_valid_metadata_generator()));
+        assertQueryProcessorFactories(
+                ImmutableList.copyOf(chain_valid_metadata_generator()),
+                this.processingChain.getQueryProcessingChainMetadata()
+        );
     }
 
     static QueryProcessingStageMetadata[] chain_valid_metadata_generator()
-            throws ClassNotFoundException
+            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
         return new QueryProcessingStageMetadata[]{
                 new QueryProcessingStageMetadata(
@@ -97,17 +99,17 @@ public class GenericProcessingChainTest
         };
     }
 
-    static void assertQueryProcessorFactories(ImmutableList<QueryProcessingStageMetadata> processingChainMetadata,
-                                              ImmutableList<QueryProcessingStageMetadata> processingChainMetadataBase)
+    static void assertQueryProcessorFactories(ImmutableList<QueryProcessingStageMetadata> expectedProcessingChain,
+                                              ImmutableList<QueryProcessingStageMetadata> actualProcessingChain)
     {
-        assertEquals("QueryProcessingStage metadata size don't match", processingChainMetadata.size(), processingChainMetadataBase.size());
-        for (int i = 0; i < processingChainMetadata.size(); i++)
+        assertEquals("QueryProcessingStage metadata size don't match", expectedProcessingChain.size(), actualProcessingChain.size());
+        for (int i = 0; i < actualProcessingChain.size(); i++)
         {
-            QueryProcessingStageMetadata queryProcessorStageMetadata = processingChainMetadata.get(i);
-            QueryProcessingStageMetadata queryProcessorStageBase = processingChainMetadataBase.get(i);
-            assertEquals("QueryProcessingStage metadata name don't match", queryProcessorStageMetadata.getName(), queryProcessorStageBase.getName());
-            assertEquals("QueryProcessingStage metadata label don't match", queryProcessorStageMetadata.getLabel(), queryProcessorStageBase.getLabel());
-            assertQueryProcessors(queryProcessorStageMetadata.getProperties(), queryProcessorStageBase.getProperties());
+            QueryProcessingStageMetadata expectedQueryProcessorStage = expectedProcessingChain.get(i);
+            QueryProcessingStageMetadata actualQueryProcessorStage = actualProcessingChain.get(i);
+            assertEquals("QueryProcessingStage metadata name don't match", expectedQueryProcessorStage.getName(), actualQueryProcessorStage.getName());
+            assertEquals("QueryProcessingStage metadata label don't match", expectedQueryProcessorStage.getLabel(), actualQueryProcessorStage.getLabel());
+            assertQueryProcessors(expectedQueryProcessorStage.getProperties(), actualQueryProcessorStage.getProperties());
         }
     }
 }

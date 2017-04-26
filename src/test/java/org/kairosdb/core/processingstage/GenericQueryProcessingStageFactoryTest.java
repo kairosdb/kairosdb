@@ -17,6 +17,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import static org.junit.Assert.assertEquals;
 import static org.kairosdb.core.aggregator.GuiceAggregatorFactoryTest.assertProperty;
+import static org.kairosdb.core.annotation.AnnotationUtils.getPropertyMetadata;
 
 public class GenericQueryProcessingStageFactoryTest
 {
@@ -48,75 +49,74 @@ public class GenericQueryProcessingStageFactoryTest
     @Test
     public void factory_getter_query_processor_family()
     {
-        assertEquals("QueryProcessor family don't match", GenericQueryProcessingStageFactoryTest.factory.getQueryProcessorFamily(), Aggregator.class);
+        assertEquals("QueryProcessor family don't match", Aggregator.class, GenericQueryProcessingStageFactoryTest.factory.getQueryProcessorFamily());
     }
 
-    // Linked to QueryProcessorMetadata
-//    @Test
+    @Test
     public void factory_getter_query_processor_metadata()
-            throws ClassNotFoundException
+            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
-        assertQueryProcessors(GenericQueryProcessingStageFactoryTest.factory.getQueryProcessorMetadata(), ImmutableList.copyOf(factory_valid_metadata_generator()));
+        assertQueryProcessors(
+                ImmutableList.copyOf(factory_valid_metadata_generator()),
+                GenericQueryProcessingStageFactoryTest.factory.getQueryProcessorMetadata()
+        );
     }
 
     @Test
     public void factory_new_query_processor()
     {
         assertEquals("QueryProcessor created was invalid",
-                GenericQueryProcessingStageFactoryTest.factory.createQueryProcessor("A").getClass(),
-                AAggregator.class);
+                AAggregator.class,
+                GenericQueryProcessingStageFactoryTest.factory.createQueryProcessor("A").getClass());
     }
 
 
     static QueryProcessorMetadata[] factory_valid_metadata_generator()
-            throws ClassNotFoundException
+            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
-//        return new QueryProcessorMetadata[]{
-//                new QueryProcessorMetadata(
-//                        "allAnnotation",
-//                        "AllAnnotation",
-//                        "This is allAnnotation",
-//                        new ArrayList<QueryPropertyMetadata>()
-//                        {{
-//                            add(new QueryPropertyMetadata("", "", "", "",
-//                                    AAggregator.class.getAnnotation(QueryProcessor.class)));
-//                        }}
-//                )
-//        };
-        //TODO: How to generate/get QueryPropertyMetadata
-        return null;
+        return new QueryProcessorMetadata[]{
+                new QueryProcessorMetadata(
+                        "A",
+                        "A",
+                        "The A Aggregator",
+                        getPropertyMetadata(AAggregator.class)
+                )
+        };
     }
 
-    static void assertQueryProcessors(ImmutableList<QueryProcessorMetadata> queryProcessorMetadatas,
-                                      ImmutableList<QueryProcessorMetadata> queryProcessorMetadatasBase)
+    static void assertQueryProcessors(ImmutableList<QueryProcessorMetadata> expectedQueryProcessorMetadatas,
+                                      ImmutableList<QueryProcessorMetadata> actualQueryProcessorMetadatas)
     {
-        assertEquals("QueryProcessor metadata size don't match", queryProcessorMetadatas.size(), queryProcessorMetadatasBase.size());
-        for (int i = 0; i < queryProcessorMetadatas.size(); i++)
+        assertEquals("QueryProcessor metadata quantity don't match", expectedQueryProcessorMetadatas.size(), actualQueryProcessorMetadatas.size());
+        for (int i = 0; i < actualQueryProcessorMetadatas.size(); i++)
         {
-            QueryProcessorMetadata queryProcessorMetadata = queryProcessorMetadatas.get(i);
-            QueryProcessorMetadata queryProcessorBase = queryProcessorMetadatasBase.get(i);
-            assertEquals("QueryProcessor metadata name don't match", queryProcessorMetadata.getName(), queryProcessorBase.getName());
-            assertEquals("QueryProcessor metadata description don't match", queryProcessorMetadata.getDescription(), queryProcessorBase.getDescription());
-            assertEquals("QueryProcessor metadata label don't match", queryProcessorMetadata.getLabel(), queryProcessorBase.getLabel());
+            QueryProcessorMetadata expectedQueryProcessor = expectedQueryProcessorMetadatas.get(i);
+            QueryProcessorMetadata actualQueryProcessorActual = actualQueryProcessorMetadatas.get(i);
 
-            assertQueryProperties(queryProcessorMetadata.getProperties(), queryProcessorBase.getProperties());
+            assertEquals("QueryProcessor metadata name don't match", expectedQueryProcessor.getName(), actualQueryProcessorActual.getName());
+            assertEquals("QueryProcessor metadata description don't match", expectedQueryProcessor.getDescription(), actualQueryProcessorActual.getDescription());
+            assertEquals("QueryProcessor metadata label don't match", expectedQueryProcessor.getLabel(), actualQueryProcessorActual.getLabel());
+            assertQueryProperties(
+                    expectedQueryProcessor.getProperties(),
+                    actualQueryProcessorActual.getProperties()
+            );
         }
     }
 
-    static void assertQueryProperties(ImmutableList<QueryPropertyMetadata> queryPropertyMetadatas,
-                                      ImmutableList<QueryPropertyMetadata> queryPropertyMetadatasBase)
+    static void assertQueryProperties(ImmutableList<QueryPropertyMetadata> expectedQueryPropertyMetadatas,
+                                      ImmutableList<QueryPropertyMetadata> actualQueryPropertyMetadatas)
     {
-        assertEquals("QueryProperty metadata size don't match", queryPropertyMetadatas.size(), queryPropertyMetadatasBase.size());
+        assertEquals("QueryProperty metadata quantity don't match", expectedQueryPropertyMetadatas.size(), actualQueryPropertyMetadatas.size());
 
-        for (int i = 0; i < queryPropertyMetadatas.size(); i++)
+        for (int i = 0; i < actualQueryPropertyMetadatas.size(); i++)
         {
-            QueryPropertyMetadata queryPropertyMetadata = queryPropertyMetadatas.get(i);
-            QueryPropertyMetadata queryPropertyBase = queryPropertyMetadatasBase.get(i);
+            QueryPropertyMetadata expectedQueryProperty = expectedQueryPropertyMetadatas.get(i);
+            QueryPropertyMetadata actualQueryProperty = actualQueryPropertyMetadatas.get(i);
 
-            assertProperty(queryPropertyMetadata,
-                    queryPropertyBase.getName(), queryPropertyBase.getLabel(), queryPropertyBase.getDescription(),
-                    queryPropertyBase.getType(), queryPropertyBase.getDefaultValue(),
-                    queryPropertyBase.getValidations());
+            assertProperty(actualQueryProperty,
+                    expectedQueryProperty.getName(), expectedQueryProperty.getLabel(), expectedQueryProperty.getDescription(),
+                    expectedQueryProperty.getType(), expectedQueryProperty.getDefaultValue(),
+                    expectedQueryProperty.getValidations());
         }
     }
 }

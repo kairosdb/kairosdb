@@ -21,6 +21,12 @@ public abstract class GenericQueryProcessingStageFactory<QueryProcessorFamily> i
     protected List<QueryProcessorMetadata> queryProcessorMetadata = new ArrayList<>();
     protected Injector injector;
 
+    /**
+     * Constructor of a generic class to easily generate a processing stage factory.
+     *
+     * @param injector                      Guice {@link Injector} instance needed for binding
+     * @param queryProcessorFamily          query processor family class
+     */
     @SuppressWarnings("unchecked")
     protected GenericQueryProcessingStageFactory(@NotNull Injector injector, @NotNull Class<QueryProcessorFamily> queryProcessorFamily)
             throws InvocationTargetException, NoSuchMethodException, ClassNotFoundException, IllegalAccessException
@@ -51,6 +57,7 @@ public abstract class GenericQueryProcessingStageFactory<QueryProcessorFamily> i
     @Override
     public Class<QueryProcessorFamily> getQueryProcessorFamily() { return queryProcessorFamily; }
 
+    @Override
     public ImmutableList<QueryProcessorMetadata> getQueryProcessorMetadata()
     {
         return new ImmutableList.Builder<QueryProcessorMetadata>().addAll(queryProcessorMetadata).build();

@@ -292,14 +292,14 @@ public class MetricsResourceTest
 		}
 	}
 
-	private void assertResponse(JsonResponse response, int responseCode, String expectedContent)
+	static void assertResponse(JsonResponse response, int responseCode, String expectedContent)
 	{
 		assertThat(response.getStatusCode(), equalTo(responseCode));
 		assertThat(response.getHeader("Content-Type"), startsWith("application/json"));
 		assertThat(response.getJson(), equalTo(expectedContent));
 	}
 
-	private void assertResponse(JsonResponse response, int responseCode)
+	static void assertResponse(JsonResponse response, int responseCode)
 	{
 		assertThat(response.getStatusCode(), equalTo(responseCode));
 		assertThat(response.getHeader("Content-Type"), startsWith("application/json"));

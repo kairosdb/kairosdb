@@ -14,6 +14,12 @@ public abstract class GenericQueryProcessingChain implements QueryProcessingChai
     private List<QueryProcessingStageFactory<?>> processingChain = new ArrayList<>();
     private List<QueryProcessingStageMetadata> queryProcessingStageMetadata = new ArrayList<>();
 
+    /**
+     * Constructor of a generic class to easily generate a processing chain.
+     *
+     * @param processingChain   list of {@link QueryProcessingStageFactory}
+     *                          instances composing the processing chain
+     */
     protected GenericQueryProcessingChain(@NotNull List<QueryProcessingStageFactory<?>> processingChain)
     {
         if (processingChain.size() == 0)

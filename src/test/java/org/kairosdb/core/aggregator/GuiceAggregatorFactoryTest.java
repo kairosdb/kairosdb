@@ -69,9 +69,9 @@ public class GuiceAggregatorFactoryTest
         assertEquals("Labels don't match", property.getLabel(), label);
     }
 
-    private static void assertProperty(
+    public static void assertProperty(
             QueryPropertyMetadata property,
-            String name, String label, String description, String type, String defaultValue, ImmutableList<QueryValidationMetadata> validations)
+            String name, String label, String description, String type, Object defaultValue, ImmutableList<QueryValidationMetadata> validations)
     {
         assertEquals("Names don't match", property.getName(), name);
         assertEquals("Labels don't match", property.getLabel(), label);

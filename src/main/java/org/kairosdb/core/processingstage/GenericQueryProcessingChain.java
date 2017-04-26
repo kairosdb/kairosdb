@@ -1,7 +1,6 @@
 package org.kairosdb.core.processingstage;
 
 import com.google.common.collect.ImmutableList;
-import org.apache.bval.constraints.NotEmpty;
 import org.kairosdb.core.annotation.QueryProcessingStage;
 import org.kairosdb.core.processingstage.metadata.QueryProcessingStageMetadata;
 import org.kairosdb.core.processingstage.metadata.QueryProcessorMetadata;
@@ -15,8 +14,10 @@ public abstract class GenericQueryProcessingChain implements QueryProcessingChai
     private List<QueryProcessingStageFactory<?>> processingChain = new ArrayList<>();
     private List<QueryProcessingStageMetadata> queryProcessingStageMetadata = new ArrayList<>();
 
-    protected GenericQueryProcessingChain(@NotNull @NotEmpty List<QueryProcessingStageFactory<?>> processingChain)
+    protected GenericQueryProcessingChain(@NotNull List<QueryProcessingStageFactory<?>> processingChain)
     {
+        if (processingChain.size() == 0)
+            throw new IllegalArgumentException("ProcessingChain parameter can't be empty");
         for (int i = 0; i < processingChain.size(); i++)
         {
             QueryProcessingStageFactory<?> factory = processingChain.get(i);

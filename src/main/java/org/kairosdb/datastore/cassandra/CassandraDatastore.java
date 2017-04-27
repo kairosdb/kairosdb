@@ -174,10 +174,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	public static final String ROW_KEY_COUNT = "kairosdb.datastore.cassandra.row_key_count";
 
 
-	public static final String CF_DATA_POINTS_NAME = "data_points";
-	public static final String CF_ROW_KEY_INDEX_NAME = "row_key_index";
-	public static final String CF_STRING_INDEX_NAME = "string_index";
-
 	public static final String ROW_KEY_METRIC_NAMES = "metric_names";
 	public static final String ROW_KEY_TAG_NAMES = "tag_names";
 	public static final String ROW_KEY_TAG_VALUES = "tag_values";
@@ -301,6 +297,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			session.execute(STRING_INDEX_TABLE);
 			session.execute(ROW_KEYS);
 			session.execute(ROW_KEY_TIME_INDEX);
+			session.execute(SERVICE_INDEX);
 		}
 	}
 

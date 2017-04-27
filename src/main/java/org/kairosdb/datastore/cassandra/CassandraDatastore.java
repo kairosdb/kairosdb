@@ -15,7 +15,13 @@
  */
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.*;
+import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.ResultSetFuture;
+import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Session;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.SetMultimap;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -27,8 +33,18 @@ import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.datapoints.*;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datapoints.DataPointFactory;
+import org.kairosdb.core.datapoints.LegacyDataPointFactory;
+import org.kairosdb.core.datapoints.LegacyDoubleDataPoint;
+import org.kairosdb.core.datapoints.LegacyLongDataPoint;
+import org.kairosdb.core.datastore.DataPointRow;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.Order;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.QueryPlugin;
+import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.datastore.TagSetImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.core.queue.ProcessorHandler;
@@ -36,7 +52,7 @@ import org.kairosdb.core.queue.QueueProcessor;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.events.DataPointEvent;
-import org.kairosdb.util.AdaptiveExecutorService;
+import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.KDataInput;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.SimpleStatsReporter;
@@ -47,8 +63,18 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -132,6 +158,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	public static final String DATA_POINTS_QUERY_ASC = DATA_POINTS_QUERY+" ASC";
 	public static final String DATA_POINTS_QUERY_DESC = DATA_POINTS_QUERY+" DESC";
 
+	public static final String DATA_POINTS_QUERY_ASC_LIMIT = DATA_POINTS_QUERY_ASC+" LIMIT ?";
+	public static final String DATA_POINTS_QUERY_DESC_LIMIT = DATA_POINTS_QUERY_DESC+" LIMIT ?";
+
 	public static final String DATA_POINTS_DELETE = "DELETE FROM data_points " +
 			"WHERE key = ? AND column1 = ?";
 
@@ -190,6 +219,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 	private final PreparedStatements m_preparedStatements;
 	private Session m_session;
+	private LoadBalancingPolicy m_loadBalancingPolicy;
 
 
 	public class PreparedStatements
@@ -209,6 +239,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		public final PreparedStatement psDataPointsQueryDesc;
 		public final PreparedStatement psRowKeyTimeInsert;
 		public final PreparedStatement psRowKeyInsert;
+		public final PreparedStatement psDataPointsQueryAscLimit;
+		public final PreparedStatement psDataPointsQueryDescLimit;
 
 		public PreparedStatements()
 		{
@@ -219,6 +251,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			psStringIndexInsert = m_session.prepare(STRING_INDEX_INSERT);
 			psDataPointsQueryAsc = m_session.prepare(DATA_POINTS_QUERY_ASC);
 			psDataPointsQueryDesc = m_session.prepare(DATA_POINTS_QUERY_DESC);
+			psDataPointsQueryAscLimit = m_session.prepare(DATA_POINTS_QUERY_ASC_LIMIT);
+			psDataPointsQueryDescLimit = m_session.prepare(DATA_POINTS_QUERY_DESC_LIMIT);
 			psStringIndexQuery = m_session.prepare(STRING_INDEX_QUERY);
 			psRowKeyIndexQuery  = m_session.prepare(ROW_KEY_INDEX_QUERY);
 			psRowKeyQuery       = m_session.prepare(ROW_KEY_QUERY);
@@ -239,7 +273,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 	private final QueueProcessor m_queueProcessor;
-	private final AdaptiveExecutorService m_congestionExecutor;
+	private final IngestExecutorService m_congestionExecutor;
 
 	private CassandraConfiguration m_cassandraConfiguration;
 
@@ -254,7 +288,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			KairosDataPointFactory kairosDataPointFactory,
 			QueueProcessor queueProcessor,
 			EventBus eventBus,
-			AdaptiveExecutorService congestionExecutor) throws DatastoreException
+			IngestExecutorService congestionExecutor) throws DatastoreException
 	{
 		m_cassandraClient = cassandraClient;
 		//m_astyanaxClient = astyanaxClient;
@@ -266,6 +300,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		setupSchema();
 
 		m_session = m_cassandraClient.getKeyspaceSession();
+		m_loadBalancingPolicy = m_cassandraClient.getLoadBalancingPolicy();
 		//Prepare queries
 		m_preparedStatements = new PreparedStatements();
 
@@ -343,7 +378,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				m_cassandraConfiguration.getDatapointTtl(),
 				m_cassandraConfiguration.getDataWriteLevel(),
 				m_rowKeyCache, m_metricNameCache, m_eventBus, m_session,
-				m_preparedStatements, fullBatch, m_batchStats);
+				m_preparedStatements, fullBatch, m_batchStats, m_loadBalancingPolicy);
 
 		m_congestionExecutor.submit(batchHandler);
 	}
@@ -418,7 +453,14 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		return null;
 	}
 
-	@Override
+    @Override
+    public Iterable<String> listServiceKeys(String service)
+            throws DatastoreException
+    {
+        return null;
+    }
+
+    @Override
 	public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
 	{
 		return null;
@@ -430,7 +472,13 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		return null;
 	}
 
-	@Override
+    @Override
+    public void deleteKey(String service, String serviceKey, String key)
+            throws DatastoreException
+    {
+    }
+
+    @Override
 	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 	{
 		cqlQueryWithRowKeys(query, queryCallback, getKeysForQueryIterator(query));
@@ -442,13 +490,13 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		List<DataPointSet> ret = new ArrayList<>();
 
 		m_simpleStatsReporter.reportStats(m_batchStats.getNameStats(), now,
-				"kairosdb.datastore.cassandra.write_batch",
+				"kairosdb.datastore.cassandra.write_batch_size",
 				"table", "string_index", ret);
 		m_simpleStatsReporter.reportStats(m_batchStats.getDataPointStats(), now,
-				"kairosdb.datastore.cassandra.write_batch",
+				"kairosdb.datastore.cassandra.write_batch_size",
 				"table", "data_points", ret);
 		m_simpleStatsReporter.reportStats(m_batchStats.getRowKeyStats(), now,
-				"kairosdb.datastore.cassandra.write_batch",
+				"kairosdb.datastore.cassandra.write_batch_size",
 				"table", "row_keys", ret);
 
 		return ret;
@@ -539,6 +587,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		int rowCount = 0;
 		long queryStartTime = query.getStartTime();
 		long queryEndTime = query.getEndTime();
+		boolean useLimit = query.getLimit() != 0;
+
+		//todo add memory monitor
 
 		ExecutorService resultsExecutor = Executors.newSingleThreadExecutor();
 		//Controls the number of queries sent out at the same time.
@@ -570,15 +621,27 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			endBuffer.rewind();
 
 			BoundStatement boundStatement;
-			if (query.getOrder() == Order.ASC)
-				boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryAsc);
+			if (useLimit)
+			{
+				if (query.getOrder() == Order.ASC)
+					boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryAscLimit);
+				else
+					boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryDescLimit);
+			}
 			else
-				boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryDesc);
+			{
+				if (query.getOrder() == Order.ASC)
+					boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryAsc);
+				else
+					boundStatement = new BoundStatement(m_preparedStatements.psDataPointsQueryDesc);
+			}
 
 			boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 			boundStatement.setBytesUnsafe(1, startBuffer);
 			boundStatement.setBytesUnsafe(2, endBuffer);
-			//boundStatement.setInt(3, Integer.MAX_VALUE);
+
+			if (useLimit)
+				boundStatement.setInt(3, query.getLimit());
 
 			boundStatement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 

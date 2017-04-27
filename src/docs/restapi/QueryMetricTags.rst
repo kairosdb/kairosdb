@@ -38,15 +38,15 @@ Body
     "metrics": [
         {
             "tags": {
-                "host": ["foo"]
+                "host": ["server1"]
             },
-            "name": "abc.123"
+            "name": "abc_123"
         },
         {
             "tags": {
-                "host": ["foo"]
+                "dc": ["awsuse"]
             },
-            "name": "xyz.123"
+            "name": "xyz_123"
         }
     ]
  }
@@ -94,16 +94,20 @@ Response
             {
                 "name": "abc_123",
                 "tags": {
-                    "host": ["server1","server2"],
+                    "host": ["server1"],
+                    "dc": ["awsuse", "awsusw"],
                     "type": ["bar"]
-                }
+                },
+                "values": [[1492602706055,0],[1492602711000,0],[1492602712000,0],[1492602716055,0]]
             },
             {
                 "name": "xyz_123",
                 "tags": {
                     "host": ["server1","server2"],
+                    "dc": ["awsuse"],
                     "type": ["bar"]
-                }
+                },
+                "values": [[1492602706055,0],[1492602711000,42],[1492602712000,0],[1492602716055,42]]
             }
         ]
     }

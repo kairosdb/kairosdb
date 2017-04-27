@@ -18,6 +18,7 @@ package org.kairosdb.core.reporting;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.matcher.Matchers;
 import com.google.inject.servlet.ServletModule;
 import org.kairosdb.core.http.MonitorFilter;
 
@@ -36,6 +37,9 @@ public class MetricReportingModule extends ServletModule
 
 		bind(DataPointsMonitor.class).in(Scopes.SINGLETON);
 
-		bind(new TypeLiteral<Set<KairosMetricReporter>>(){}).toProvider(KairosMetricReporterListProvider.class);
+		KairosMetricReporterListProvider reporterProvider = new KairosMetricReporterListProvider();
+		bind(KairosMetricReporterListProvider.class).toInstance(reporterProvider);
+
+		bindListener(Matchers.any(), reporterProvider);
 	}
 }

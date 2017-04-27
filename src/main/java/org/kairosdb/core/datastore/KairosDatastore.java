@@ -96,7 +96,7 @@ public class KairosDatastore
 		newCacheDirectory();
 		File cacheDirectory = new File(m_cacheDir);
 		cacheDirectory.mkdirs();
-		checkState(cacheDirectory.exists(), "Cache directory not created");
+		checkState(cacheDirectory.exists(), "Cache directory '"+m_cacheDir+"' not created");
 	}
 
 	/**

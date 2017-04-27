@@ -1,6 +1,7 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.*;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.eventbus.EventBus;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.queue.EventCompletionCallBack;
@@ -10,8 +11,7 @@ import org.kairosdb.util.KDataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.*;
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER;
@@ -28,6 +28,9 @@ public class CQLBatch
 	private final BatchStats m_batchStats;
 	private final ConsistencyLevel m_consistencyLevel;
 	private final long m_now;
+	private final LoadBalancingPolicy m_loadBalancingPolicy;
+
+	//private Map<Host, BatchStatement> m_batchMap = new HashMap<>();
 
 	private BatchStatement metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 	private BatchStatement dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
@@ -35,13 +38,15 @@ public class CQLBatch
 
 	public CQLBatch(
 			ConsistencyLevel consistencyLevel, Session session,
-			CassandraDatastore.PreparedStatements preparedStatements, BatchStats batchStats)
+			CassandraDatastore.PreparedStatements preparedStatements, BatchStats batchStats,
+			LoadBalancingPolicy loadBalancingPolicy)
 	{
 		m_consistencyLevel = consistencyLevel;
 		m_session = session;
 		m_preparedStatements = preparedStatements;
 		m_batchStats = batchStats;
 		m_now = System.currentTimeMillis();
+		m_loadBalancingPolicy = loadBalancingPolicy;
 	}
 
 	public void addRowKey(String metricName, DataPointsRowKey rowKey, int rowKeyTtl)
@@ -98,7 +103,21 @@ public class CQLBatch
 		boundStatement.setInt(3, ttl);
 		boundStatement.setLong(4, m_now);
 		boundStatement.setConsistencyLevel(m_consistencyLevel);
+		boundStatement.setIdempotent(true);
 
+		/*Iterator<Host> hosts = m_loadBalancingPolicy.newQueryPlan("kairosdb", boundStatement);
+		if (hosts.hasNext())
+		{
+			Host host = hosts.next();
+			BatchStatement batchStatement = m_batchMap.get(host);
+			if (batchStatement == null)
+			{
+				batchStatement = new BatchStatement(BatchStatement.Type.UNLOGGED);
+				m_batchMap.put(host, batchStatement);
+			}
+			batchStatement.add(boundStatement);
+
+		}*/
 		dataPointBatch.add(boundStatement);
 	}
 
@@ -112,11 +131,16 @@ public class CQLBatch
 
 		if (rowKeyBatch.size() != 0)
 		{
-			rowKeyBatch.enableTracing();
+			//rowKeyBatch.enableTracing();
 			ResultSet resultSet = m_session.execute(rowKeyBatch);
 			m_batchStats.addRowKeyBatch(rowKeyBatch.size());
 		}
 
+		/*for (BatchStatement batchStatement : m_batchMap.values())
+		{
+			m_session.executeAsync(batchStatement);
+			m_batchStats.addDatapointsBatch(batchStatement.size());
+		}*/
 		if (dataPointBatch.size() != 0)
 		{
 			m_session.execute(dataPointBatch);

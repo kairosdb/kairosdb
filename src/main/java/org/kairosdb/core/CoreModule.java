@@ -26,7 +26,6 @@ import com.google.inject.name.Names;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
-import org.apache.commons.math3.analysis.function.Sin;
 import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.GuiceQueryPluginFactory;
@@ -40,7 +39,7 @@ import org.kairosdb.core.queue.DataPointEventSerializer;
 import org.kairosdb.core.queue.QueueProcessor;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
-import org.kairosdb.util.AdaptiveExecutorService;
+import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.SimpleStatsReporter;
 import org.kairosdb.util.Util;
@@ -185,7 +184,7 @@ public class CoreModule extends AbstractModule
 
 		bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class).in(Singleton.class);
 
-		bind(AdaptiveExecutorService.class);
+		bind(IngestExecutorService.class);
 
 		String hostIp = m_props.getProperty("kairosdb.host_ip");
 		bindConstant().annotatedWith(Names.named("HOST_IP")).to(hostIp != null ? hostIp: InetAddresses.toAddrString(Util.findPublicIp()));

@@ -25,11 +25,29 @@ import com.mchange.v2.c3p0.DataSources;
 import org.agileclick.genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.datastore.TagSetImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.cassandra.DataPointsRowKey;
-import org.kairosdb.datastore.h2.orm.*;
+import org.kairosdb.datastore.h2.orm.DSEnvelope;
 import org.kairosdb.datastore.h2.orm.DataPoint;
+import org.kairosdb.datastore.h2.orm.DeleteMetricsQuery;
+import org.kairosdb.datastore.h2.orm.GenOrmDataSource;
+import org.kairosdb.datastore.h2.orm.InsertDataPointQuery;
+import org.kairosdb.datastore.h2.orm.Metric;
+import org.kairosdb.datastore.h2.orm.MetricIdResults;
+import org.kairosdb.datastore.h2.orm.MetricIdsQuery;
+import org.kairosdb.datastore.h2.orm.MetricIdsWithTagsQuery;
+import org.kairosdb.datastore.h2.orm.MetricNamesQuery;
+import org.kairosdb.datastore.h2.orm.MetricTag;
+import org.kairosdb.datastore.h2.orm.ServiceIndex;
+import org.kairosdb.datastore.h2.orm.ServiceIndex_base;
+import org.kairosdb.datastore.h2.orm.Tag;
+import org.kairosdb.datastore.h2.orm.TagNamesQuery;
+import org.kairosdb.datastore.h2.orm.TagValuesQuery;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.events.RowKeyEvent;
 import org.kairosdb.util.KDataInput;
@@ -45,7 +63,13 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class H2Datastore implements Datastore
 {
@@ -436,7 +460,7 @@ public class H2Datastore implements Datastore
 		GenOrmDataSource.attachAndBegin();
 		try
 		{
-			ServiceIndex serviceIndex = ServiceIndex.factory.create(service, serviceKey, key);
+			ServiceIndex serviceIndex = ServiceIndex.factory.findOrCreate(service, serviceKey, key);
 			if (value != null)
 				serviceIndex.setValue(value);
 
@@ -456,6 +480,37 @@ public class H2Datastore implements Datastore
 			return serviceIndex.getValue();
 		else
 			return null;
+	}
+
+	@Override
+	public Iterable<String> listServiceKeys(String service) throws DatastoreException
+	{
+		final ServiceIndex_base.ResultSet keys = ServiceIndex.factory.getServiceKeys(service);
+
+		return new Iterable<String>()
+		{
+			@Override
+			public Iterator<String> iterator()
+			{
+				return new Iterator<String>()
+				{
+					@Override
+					public boolean hasNext()
+					{
+						return keys.next();
+					}
+
+					@Override
+					public String next()
+					{
+						return keys.getRecord().getServiceKey();
+					}
+
+					@Override
+					public void remove() { }
+				};
+			}
+		};
 	}
 
 	@Override
@@ -520,7 +575,23 @@ public class H2Datastore implements Datastore
 		};
 	}
 
-	private String createMetricKey(String metricName, SortedMap<String, String> tags,
+    @Override
+    public void deleteKey(String service, String serviceKey, String key)
+            throws DatastoreException
+    {
+        GenOrmDataSource.attachAndBegin();
+        try
+        {
+            ServiceIndex.factory.delete(service, serviceKey, key);
+            GenOrmDataSource.commit();
+        }
+        finally
+        {
+            GenOrmDataSource.close();
+        }
+    }
+
+    private String createMetricKey(String metricName, SortedMap<String, String> tags,
 			String type)
 	{
 		StringBuilder sb = new StringBuilder();

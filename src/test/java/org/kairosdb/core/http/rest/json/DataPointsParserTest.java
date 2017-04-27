@@ -16,14 +16,16 @@
 package org.kairosdb.core.http.rest.json;
 
 import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.junit.Test;
-import org.kairosdb.core.*;
+import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datapoints.StringDataPoint;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
@@ -42,7 +44,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
@@ -803,7 +807,14 @@ public class DataPointsParserTest
 			return null;
 		}
 
-		@Override
+        @Override
+        public Iterable<String> listServiceKeys(String service)
+                throws DatastoreException
+        {
+            return null;
+        }
+
+        @Override
 		public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
 		{
 			return null;
@@ -814,5 +825,11 @@ public class DataPointsParserTest
 		{
 			return null;
 		}
-	}
+
+        @Override
+        public void deleteKey(String service, String serviceKey, String key)
+                throws DatastoreException
+        {
+        }
+    }
 }

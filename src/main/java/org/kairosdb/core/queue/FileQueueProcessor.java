@@ -55,9 +55,10 @@ public class FileQueueProcessor extends QueueProcessor
 			@Named(QUEUE_PROCESSOR) Executor executor,
 			@Named(BATCH_SIZE) int batchSize,
 			@Named(MEMORY_QUEUE_SIZE) int memoryQueueSize,
-			@Named(SECONDS_TILL_CHECKPOINT) int secondsTillCheckpoint)
+			@Named(SECONDS_TILL_CHECKPOINT) int secondsTillCheckpoint,
+			@Named(MINIMUM_BATCH_SIZE) int minimumBatchSize)
 	{
-		super(executor, batchSize);
+		super(executor, batchSize, minimumBatchSize);
 		m_bigArray = bigArray;
 		m_memoryQueue = new CircularFifoQueue<>(memoryQueueSize);
 		m_eventSerializer = eventSerializer;
@@ -138,6 +139,13 @@ public class FileQueueProcessor extends QueueProcessor
 		}
 	}
 
+	@Override
+	protected int getAvailableDataPointEvents()
+	{
+		return m_memoryQueue.size();
+	}
+
+	@Override
 	protected List<DataPointEvent> get(int batchSize)
 	{
 		if (m_memoryQueue.isEmpty())
@@ -210,7 +218,7 @@ public class FileQueueProcessor extends QueueProcessor
 
 
 	@Override
-	public List<DataPointSet> getMetrics(long now)
+	public void addReportedMetrics(ArrayList<DataPointSet> metrics, long now)
 	{
 		//todo make member variable
 		ImmutableSortedMap<String, String> tag = ImmutableSortedMap.of("host", m_hostName);
@@ -237,27 +245,23 @@ public class FileQueueProcessor extends QueueProcessor
 
 		//Todo: add reason why double reporting.
 
-		ArrayList<DataPointSet> ret = new ArrayList<>();
-
 		DataPointSet dps = new DataPointSet("kairosdb.queue.file_queue.size");
 		dps.addTag("host", m_hostName);
 		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, arraySize));
 
-		ret.add(dps);
+		metrics.add(dps);
 
 		dps = new DataPointSet("kairosdb.queue.read_from_file");
 		dps.addTag("host", m_hostName);
 		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, readFromFile));
 
-		ret.add(dps);
+		metrics.add(dps);
 
 		dps = new DataPointSet("kairosdb.queue.process_count");
 		dps.addTag("host", m_hostName);
 		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, readFromQueue));
 
-		ret.add(dps);
-
-		return ret;
+		metrics.add(dps);
 	}
 
 

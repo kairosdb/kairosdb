@@ -43,19 +43,19 @@ public class BatchHandler implements Callable<Boolean>
 	private final boolean m_fullBatch;
 	private final ConsistencyLevel m_consistencyLevel;
 	private final Session m_session;
-	private final CassandraDatastore.PreparedStatements m_preparedStatements;
+	private final Schema m_schema;
 	private final BatchStats m_batchStats;
 	private final LoadBalancingPolicy m_loadBalancingPolicy;
 
 	public BatchHandler(List<DataPointEvent> events, EventCompletionCallBack callBack,
 			int defaultTtl, ConsistencyLevel consistencyLevel, DataCache<DataPointsRowKey>
 			rowKeyCache, DataCache<String> metricNameCache, EventBus eventBus,
-			Session session, CassandraDatastore.PreparedStatements preparedStatements,
+			Session session, Schema schema,
 			boolean fullBatch, BatchStats batchStats, LoadBalancingPolicy loadBalancingPolicy)
 	{
 		m_consistencyLevel = consistencyLevel;
 		m_session = session;
-		m_preparedStatements = preparedStatements;
+		m_schema = schema;
 		m_batchStats = batchStats;
 		m_loadBalancingPolicy = loadBalancingPolicy;
 
@@ -156,7 +156,7 @@ public class BatchHandler implements Callable<Boolean>
 
 				while (events.hasNext())
 				{
-					CQLBatch batch = new CQLBatch(m_consistencyLevel, m_session, m_preparedStatements,
+					CQLBatch batch = new CQLBatch(m_consistencyLevel, m_session, m_schema,
 							m_batchStats, m_loadBalancingPolicy);
 
 					loadBatch(limit, batch, events);

@@ -320,7 +320,7 @@ public class KairosDatastoreTest
 		}
 	}
 
-	private static class TestDatastore implements Datastore
+	private static class TestDatastore implements Datastore, ServiceKeyStore
 	{
 		private DatastoreException m_toThrow = null;
 
@@ -414,14 +414,14 @@ public class KairosDatastoreTest
 			return null;
 		}
 
-        @Override
-        public Iterable<String> listServiceKeys(String service)
-                throws DatastoreException
-        {
-            return null;
-        }
+		@Override
+		public Iterable<String> listServiceKeys(String service)
+				throws DatastoreException
+		{
+			return null;
+		}
 
-        @Override
+		@Override
 		public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
 		{
 			return null;
@@ -433,10 +433,10 @@ public class KairosDatastoreTest
 			return null;
 		}
 
-        @Override
-        public void deleteKey(String service, String serviceKey, String key)
-                throws DatastoreException
-        {
-        }
-    }
+		@Override
+		public void deleteKey(String service, String serviceKey, String key)
+				throws DatastoreException
+		{
+		}
+	}
 }

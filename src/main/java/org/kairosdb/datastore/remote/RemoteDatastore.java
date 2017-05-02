@@ -187,7 +187,7 @@ public class RemoteDatastore implements Datastore
 						writer.key("datapoints").array();
 						for (DataPoint dataPoint : flushMap.get(dataPointKey))
 						{
-							m_dataPointCounter ++;
+							m_dataPointCounter++;
 							writer.array();
 							writer.value(dataPoint.getTimestamp());
 							dataPoint.writeValueToJson(writer);
@@ -221,16 +221,16 @@ public class RemoteDatastore implements Datastore
 	{
 		try
 		{
-			HttpGet get = new HttpGet(m_remoteUrl+"/api/v1/version");
+			HttpGet get = new HttpGet(m_remoteUrl + "/api/v1/version");
 
-			try(CloseableHttpResponse response = m_client.execute(get))
+			try (CloseableHttpResponse response = m_client.execute(get))
 			{
 				ByteArrayOutputStream bout = new ByteArrayOutputStream();
 				response.getEntity().writeTo(bout);
-	
+
 				JSONObject respJson = new JSONObject(bout.toString("UTF-8"));
-	
-				logger.info("Connecting to remote Kairos version: "+ respJson.getString("version"));
+
+				logger.info("Connecting to remote Kairos version: " + respJson.getString("version"));
 			}
 		}
 		catch (IOException e)
@@ -245,7 +245,7 @@ public class RemoteDatastore implements Datastore
 
 	private void openDataFile() throws IOException
 	{
-		m_dataFileName = m_dataDirectory+"/"+System.currentTimeMillis();
+		m_dataFileName = m_dataDirectory + "/" + System.currentTimeMillis();
 
 		m_dataWriter = new BufferedWriter(new FileWriter(m_dataFileName));
 		m_dataWriter.write("[\n");
@@ -298,20 +298,21 @@ public class RemoteDatastore implements Datastore
 
 	/**
 	 Sends a single zip file
+
 	 @param zipFile Name of the zip file in the data directory.
 	 @throws IOException
 	 */
 	private void sendZipfile(String zipFile) throws IOException
 	{
 		logger.debug("Sending {}", zipFile);
-		HttpPost post = new HttpPost(m_remoteUrl+"/api/v1/datapoints");
+		HttpPost post = new HttpPost(m_remoteUrl + "/api/v1/datapoints");
 
 		File zipFileObj = new File(m_dataDirectory, zipFile);
 		FileInputStream zipStream = new FileInputStream(zipFileObj);
 		post.setHeader("Content-Type", "application/gzip");
-		
+
 		post.setEntity(new InputStreamEntity(zipStream, zipFileObj.length()));
-		try(CloseableHttpResponse response = m_client.execute(post))
+		try (CloseableHttpResponse response = m_client.execute(post))
 		{
 
 			zipStream.close();
@@ -324,7 +325,7 @@ public class RemoteDatastore implements Datastore
 				ByteArrayOutputStream body = new ByteArrayOutputStream();
 				response.getEntity().writeTo(body);
 				logger.error("Unable to send file " + zipFile + ": " + response.getStatusLine() +
-						" - "+ body.toString("UTF-8"));
+						" - " + body.toString("UTF-8"));
 			}
 		}
 	}
@@ -337,14 +338,14 @@ public class RemoteDatastore implements Datastore
 		File dataDirectory = new File(m_dataDirectory);
 
 		String[] zipFiles = dataDirectory.list(new FilenameFilter()
-				{
-					@Override
-					public boolean accept(File dir, String name)
-					{
-						return (name.endsWith(".gz"));
-					}
-				});
-		if(zipFiles == null)
+		{
+			@Override
+			public boolean accept(File dir, String name)
+			{
+				return (name.endsWith(".gz"));
+			}
+		});
+		if (zipFiles == null)
 			return;
 
 		for (String zipFile : zipFiles)
@@ -355,7 +356,7 @@ public class RemoteDatastore implements Datastore
 			}
 			catch (IOException e)
 			{
-				logger.error("Unable to send data file "+zipFile);
+				logger.error("Unable to send data file " + zipFile);
 				throw (e);
 			}
 		}
@@ -364,12 +365,13 @@ public class RemoteDatastore implements Datastore
 
 	/**
 	 Compresses the given file and removes the uncompressed file
+
 	 @param file
 	 @return Size of the zip file
 	 */
 	private long zipFile(String file) throws IOException
 	{
-		String zipFile = file+".gz";
+		String zipFile = file + ".gz";
 
 		FileInputStream is = new FileInputStream(file);
 		GZIPOutputStream gout = new GZIPOutputStream(new FileOutputStream(zipFile));
@@ -465,41 +467,4 @@ public class RemoteDatastore implements Datastore
 	{
 		throw new DatastoreException("Method not implemented.");
 	}
-
-	@Override
-	public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
-	{
-		throw new DatastoreException("Method not implemented.");
-	}
-
-	@Override
-	public String getValue(String service, String serviceKey, String key) throws DatastoreException
-	{
-		throw new DatastoreException("Method not implemented.");
-	}
-
-    @Override
-    public Iterable<String> listServiceKeys(String service)
-            throws DatastoreException
-    {
-        throw new DatastoreException("Method not implemented.");
-    }
-
-    @Override
-	public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
-	{
-		throw new DatastoreException("Method not implemented.");
-	}
-
-	@Override
-	public Iterable<String> listKeys(String service, String serviceKey, String keyStartsWith) throws DatastoreException
-	{
-		throw new DatastoreException("Method not implemented.");
-	}
-
-    @Override
-    public void deleteKey(String service, String serviceKey, String key)
-            throws DatastoreException
-    {
-    }
 }

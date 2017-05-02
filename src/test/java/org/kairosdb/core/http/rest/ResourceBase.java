@@ -26,13 +26,7 @@ import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.QueryCallback;
-import org.kairosdb.core.datastore.QueryPluginFactory;
-import org.kairosdb.core.datastore.QueryQueuingManager;
-import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.groupby.TestGroupByFactory;
@@ -99,6 +93,7 @@ public abstract class ResourceBase
                 bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9001);
                 bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
                 bind(Datastore.class).toInstance(datastore);
+                bind(ServiceKeyStore.class).toInstance(datastore);
                 bind(KairosDatastore.class).in(Singleton.class);
                 bind(AggregatorFactory.class).to(TestAggregatorFactory.class);
                 bind(GroupByFactory.class).to(TestGroupByFactory.class);
@@ -154,10 +149,10 @@ public abstract class ResourceBase
         }
     }
 
-    public static class TestDatastore implements Datastore
+    public static class TestDatastore implements Datastore, ServiceKeyStore
     {
         private DatastoreException m_toThrow = null;
-        private Map<String, String> metadata = new HashMap<>();
+        private Map<String, String> metadata = new TreeMap<>();
 
         TestDatastore() throws DatastoreException
         {

@@ -2,10 +2,7 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
-import com.google.common.eventbus.EventBus;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.queue.EventCompletionCallBack;
-import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.KDataOutput;
 
 import java.io.IOException;
@@ -24,7 +21,7 @@ public class CQLBatch
 	private static final Charset UTF_8 = Charset.forName("UTF-8");
 
 	private final Session m_session;
-	private final CassandraDatastore.PreparedStatements m_preparedStatements;
+	private final Schema m_schema;
 	private final BatchStats m_batchStats;
 	private final ConsistencyLevel m_consistencyLevel;
 	private final long m_now;
@@ -38,12 +35,12 @@ public class CQLBatch
 
 	public CQLBatch(
 			ConsistencyLevel consistencyLevel, Session session,
-			CassandraDatastore.PreparedStatements preparedStatements, BatchStats batchStats,
+			Schema schema, BatchStats batchStats,
 			LoadBalancingPolicy loadBalancingPolicy)
 	{
 		m_consistencyLevel = consistencyLevel;
 		m_session = session;
-		m_preparedStatements = preparedStatements;
+		m_schema = schema;
 		m_batchStats = batchStats;
 		m_now = System.currentTimeMillis();
 		m_loadBalancingPolicy = loadBalancingPolicy;
@@ -54,7 +51,7 @@ public class CQLBatch
 		ByteBuffer bb = ByteBuffer.allocate(8);
 		bb.putLong(0, rowKey.getTimestamp());
 
-		BoundStatement bs = m_preparedStatements.psRowKeyTimeInsert.bind()
+		BoundStatement bs = m_schema.psRowKeyTimeInsert.bind()
 				.setString(0, metricName)
 				.setTimestamp(1, new Date(rowKey.getTimestamp()))
 				//.setBytesUnsafe(1, bb) //Setting timestamp in a more optimal way
@@ -65,7 +62,7 @@ public class CQLBatch
 
 		rowKeyBatch.add(bs);
 
-		bs = m_preparedStatements.psRowKeyInsert.bind()
+		bs = m_schema.psRowKeyInsert.bind()
 				.setString(0, metricName)
 				.setTimestamp(1, new Date(rowKey.getTimestamp()))
 				//.setBytesUnsafe(1, bb)  //Setting timestamp in a more optimal way
@@ -81,7 +78,7 @@ public class CQLBatch
 
 	public void addMetricName(String metricName)
 	{
-		BoundStatement bs = new BoundStatement(m_preparedStatements.psStringIndexInsert);
+		BoundStatement bs = new BoundStatement(m_schema.psStringIndexInsert);
 		bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
 		bs.setBytesUnsafe(1, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
 		bs.setConsistencyLevel(m_consistencyLevel);
@@ -93,7 +90,7 @@ public class CQLBatch
 		KDataOutput kDataOutput = new KDataOutput();
 		dataPoint.writeValueToBuffer(kDataOutput);
 
-		BoundStatement boundStatement = new BoundStatement(m_preparedStatements.psDataPointsInsert);
+		BoundStatement boundStatement = new BoundStatement(m_schema.psDataPointsInsert);
 		boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 		ByteBuffer b = ByteBuffer.allocate(4);
 		b.putInt(columnTime);

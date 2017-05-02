@@ -17,10 +17,12 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Scope;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.ServiceKeyStore;
 
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +65,7 @@ public class CassandraModule extends AbstractModule
 	protected void configure()
 	{
 		bind(Datastore.class).to(CassandraDatastore.class).in(Scopes.SINGLETON);
+		bind(ServiceKeyStore.class).to(CassandraDatastore.class).in(Scopes.SINGLETON);
 		bind(CassandraDatastore.class).in(Scopes.SINGLETON);
 		bind(CleanRowKeyCache.class).in(Scopes.SINGLETON);
 		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);

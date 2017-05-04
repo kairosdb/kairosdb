@@ -5,6 +5,15 @@ import org.kairosdb.core.processingstage.metadata.QueryProcessingStageMetadata;
 
 public interface QueryProcessingChain
 {
+
+    /**
+     * Returns an {@link ImmutableList} of {@link QueryProcessingStageFactory}
+     * instance contained into the processing chain.
+     *
+     * @return the {@link ImmutableList} describing the processing chain
+     */
+    ImmutableList<QueryProcessingStageFactory<?>> getQueryProcessingStageFactories();
+
     /**
      * Returns an {@link QueryProcessingStageFactory} instance whose can generate
      * query processors.

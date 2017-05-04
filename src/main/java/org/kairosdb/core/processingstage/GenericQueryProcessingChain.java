@@ -44,6 +44,12 @@ public abstract class GenericQueryProcessingChain implements QueryProcessingChai
     }
 
     @Override
+    public ImmutableList<QueryProcessingStageFactory<?>> getQueryProcessingStageFactories()
+    {
+        return new ImmutableList.Builder<QueryProcessingStageFactory<?>>().addAll(processingChain).build();
+    }
+
+    @Override
     public QueryProcessingStageFactory<?> getQueryProcessingStageFactory(Class<?> queryProcessorFamily)
     {
         for (QueryProcessingStageFactory<?> factory : processingChain)

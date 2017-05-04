@@ -30,10 +30,12 @@ import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.aggregator.*;
+import org.kairosdb.core.annotation.QueryProcessingStage;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
+import org.kairosdb.core.processingstage.QueryProcessingChain;
 import org.kairosdb.core.processingstage.QueryProcessingStageFactory;
 import org.kairosdb.rollup.Rollup;
 import org.kairosdb.rollup.RollupTask;
@@ -60,19 +62,16 @@ public class QueryParser
 
     private static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
 
-    private QueryProcessingStageFactory<Aggregator> m_aggregatorFactory;
-    private QueryProcessingStageFactory<GroupBy> m_groupByFactory;
+    private QueryProcessingChain m_processingChain;
     private QueryPluginFactory m_pluginFactory;
     private Map<Class, Map<String, PropertyDescriptor>> m_descriptorMap;
     private final Object m_descriptorMapLock = new Object();
     private Gson m_gson;
 
     @Inject
-    public QueryParser(QueryProcessingStageFactory<Aggregator> aggregatorFactory, QueryProcessingStageFactory<GroupBy> groupByFactory,
-                       QueryPluginFactory pluginFactory)
+    public QueryParser(QueryProcessingChain processingChain, QueryPluginFactory pluginFactory)
     {
-        m_aggregatorFactory = aggregatorFactory;
-        m_groupByFactory = groupByFactory;
+        m_processingChain = processingChain;
         m_pluginFactory = pluginFactory;
 
         m_descriptorMap = new HashMap<>();
@@ -206,19 +205,18 @@ public class QueryParser
 
                 JsonObject jsMetric = metricsArray.get(I).getAsJsonObject();
 
-                JsonElement group_by = jsMetric.get("group_by");
-                if (group_by != null)
+                for (QueryProcessingStageFactory<?> factory : m_processingChain.getQueryProcessingStageFactories())
                 {
-                    JsonArray groupBys = group_by.getAsJsonArray();
-                    parseGroupBy(context, queryMetric, groupBys);
-                }
+                    String factoryName = factory.getClass().getAnnotation(QueryProcessingStage.class).name();
 
-                JsonElement aggregators = jsMetric.get("aggregators");
-                if (aggregators != null)
-                {
-                    JsonArray asJsonArray = aggregators.getAsJsonArray();
-                    if (asJsonArray.size() > 0)
-                        parseAggregators(context, queryMetric, asJsonArray, query.getTimeZone());
+                    JsonElement queryProcessor = jsMetric.get(factoryName);
+                    if (queryProcessor != null)
+                    {
+                        JsonArray queryProcessorArray = queryProcessor.getAsJsonArray();
+                        parseQueryProcessor(context, factoryName,
+                                queryProcessorArray, factory.getQueryProcessorFamily(),
+                                queryMetric, query.getTimeZone());
+                    }
                 }
 
                 JsonElement plugins = jsMetric.get("plugins");
@@ -297,10 +295,10 @@ public class QueryParser
                     validateHasRangeAggregator(query, context);
 
                     // Add aggregators needed for rollups
-                    SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_aggregatorFactory.createQueryProcessor("save_as");
+                    SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_processingChain.getQueryProcessingStageFactory(Aggregator.class).createQueryProcessor("save_as");
                     saveAsAggregator.setMetricName(rollup.getSaveAs());
 
-                    TrimAggregator trimAggregator = (TrimAggregator) m_aggregatorFactory.createQueryProcessor("trim");
+                    TrimAggregator trimAggregator = (TrimAggregator) m_processingChain.getQueryProcessingStageFactory(Aggregator.class).createQueryProcessor("trim");
                     trimAggregator.setTrim(TrimAggregator.Trim.LAST);
 
                     query.addAggregator(saveAsAggregator);
@@ -358,76 +356,66 @@ public class QueryParser
         }
     }
 
-    private void parseAggregators(String context, QueryMetric queryMetric,
-                                  JsonArray aggregators, DateTimeZone timeZone) throws QueryException, BeanValidationException
+    protected void parseSpecificQueryProcessor(Object queryProcessor, QueryMetric queryMetric, DateTimeZone timeZone)
     {
-        for (int J = 0; J < aggregators.size(); J++)
+        if (queryProcessor instanceof RangeAggregator)
         {
-            JsonObject jsAggregator = aggregators.get(J).getAsJsonObject();
+            RangeAggregator ra = (RangeAggregator) queryProcessor;
+            ra.setStartTime(queryMetric.getStartTime());
+            ra.setEndTime(queryMetric.getEndTime());
+        }
 
-            JsonElement name = jsAggregator.get("name");
-            if (name == null || name.getAsString().isEmpty())
-                throw new BeanValidationException(new SimpleConstraintViolation("aggregators[" + J + "]", "must have a name"), context);
+        if (queryProcessor instanceof TimezoneAware)
+        {
+            TimezoneAware ta = (TimezoneAware) queryProcessor;
+            ta.setTimeZone(timeZone);
+        }
 
-            String aggContext = context + ".aggregators[" + J + "]";
-            String aggName = name.getAsString();
-            Aggregator aggregator = m_aggregatorFactory.createQueryProcessor(aggName);
+        if (queryProcessor instanceof GroupByAware)
+        {
+            GroupByAware groupByAware = (GroupByAware) queryProcessor;
+            groupByAware.setGroupBys(queryMetric.getGroupBys());
+        }
 
-            if (aggregator == null)
-                throw new BeanValidationException(new SimpleConstraintViolation(aggName, "invalid aggregator name"), aggContext);
-
-            //If it is a range aggregator we will default the start time to
-            //the start of the query.
-            if (aggregator instanceof RangeAggregator)
-            {
-                RangeAggregator ra = (RangeAggregator) aggregator;
-                ra.setStartTime(queryMetric.getStartTime());
-                ra.setEndTime(queryMetric.getEndTime());
-            }
-
-            if (aggregator instanceof TimezoneAware)
-            {
-                TimezoneAware ta = (TimezoneAware) aggregator;
-                ta.setTimeZone(timeZone);
-            }
-
-            if (aggregator instanceof GroupByAware)
-            {
-                GroupByAware groupByAware = (GroupByAware) aggregator;
-                groupByAware.setGroupBys(queryMetric.getGroupBys());
-            }
-
-            deserializeProperties(aggContext, jsAggregator, aggName, aggregator);
-
-            validateObject(aggregator, aggContext);
-
-            queryMetric.addAggregator(aggregator);
+        if (queryProcessor instanceof GroupBy)
+        {
+            GroupBy groupBy = (GroupBy) queryProcessor;
+            groupBy.setStartDate(queryMetric.getStartTime());
         }
     }
 
-    private void parseGroupBy(String context, QueryMetric queryMetric, JsonArray groupBys) throws QueryException, BeanValidationException
+    protected void addQueryProcessorToMetric(Object queryProcessor, QueryMetric queryMetric)
     {
-        for (int J = 0; J < groupBys.size(); J++)
+        if (queryProcessor instanceof Aggregator)
+            queryMetric.addAggregator((Aggregator) queryProcessor);
+        if (queryProcessor instanceof GroupBy)
+            queryMetric.addGroupBy((GroupBy) queryProcessor);
+    }
+
+    private void parseQueryProcessor(String context, String queryProcessorFamilyName,
+                                     JsonArray queryProcessors, Class<?> queryProcessorFamilyType,
+                                     QueryMetric queryMetric, DateTimeZone dateTimeZone)
+            throws BeanValidationException, QueryException
+    {
+        for (int J = 0; J < queryProcessors.size(); J++)
         {
-            String groupContext = "group_by[" + J + "]";
-            JsonObject jsGroupBy = groupBys.get(J).getAsJsonObject();
+            JsonObject jsQueryProcessor = queryProcessors.get(J).getAsJsonObject();
 
-            JsonElement nameElement = jsGroupBy.get("name");
-            if (nameElement == null || nameElement.getAsString().isEmpty())
-                throw new BeanValidationException(new SimpleConstraintViolation(groupContext, "must have a name"), context);
+            JsonElement name = jsQueryProcessor.get("name");
+            if (name == null || name.getAsString().isEmpty())
+                throw new BeanValidationException(new SimpleConstraintViolation(queryProcessorFamilyName + "[" + J + "]", "must have a name"), context);
 
-            String name = nameElement.getAsString();
+            String qpContext = context + "." + queryProcessorFamilyName + "[" + J + "]";
+            String qpName = name.getAsString();
+            Object queryProcessor = m_processingChain.getQueryProcessingStageFactory(queryProcessorFamilyType).createQueryProcessor(qpName);
 
-            GroupBy groupBy = m_groupByFactory.createQueryProcessor(name);
-            if (groupBy == null)
-                throw new BeanValidationException(new SimpleConstraintViolation(groupContext + "." + name, "invalid group_by name"), context);
+            if (queryProcessor == null)
+                throw new BeanValidationException(new SimpleConstraintViolation(qpName, "invalid " + queryProcessorFamilyType + " name"), qpContext);
 
-            deserializeProperties(context + "." + groupContext, jsGroupBy, name, groupBy);
-            validateObject(groupBy, context + "." + groupContext);
-
-            groupBy.setStartDate(queryMetric.getStartTime());
-
-            queryMetric.addGroupBy(groupBy);
+            parseSpecificQueryProcessor(queryProcessor, queryMetric, dateTimeZone);
+            deserializeProperties(qpContext, jsQueryProcessor, qpName, queryProcessor);
+            validateObject(queryProcessor, qpContext);
+            addQueryProcessorToMetric(queryProcessor, queryMetric);
         }
     }
 

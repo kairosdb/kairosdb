@@ -21,6 +21,7 @@ import com.google.common.io.Resources;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
+import org.kairosdb.core.KairosQueryProcessingChain;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.QueryMetric;
@@ -45,7 +46,7 @@ public class QueryParserTest
 	@Before
 	public void setup() throws KairosDBException
 	{
-		parser = new QueryParser(new TestAggregatorFactory(), new TestGroupByFactory(), new TestQueryPluginFactory());
+		parser = new QueryParser(new KairosQueryProcessingChain(new TestAggregatorFactory(), new TestGroupByFactory()), new TestQueryPluginFactory());
 	}
 
 	@Test

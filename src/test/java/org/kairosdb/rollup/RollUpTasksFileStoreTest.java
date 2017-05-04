@@ -5,6 +5,7 @@ import com.google.common.io.Resources;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.kairosdb.core.KairosQueryProcessingChain;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
@@ -37,7 +38,7 @@ public class RollUpTasksFileStoreTest
 	public void setup() throws IOException, KairosDBException
 	{
 		FileUtils.deleteDirectory(new File(DIRECTORY));
-		parser = new QueryParser(new TestAggregatorFactory(), new TestGroupByFactory(), new TestQueryPluginFactory());
+		parser = new QueryParser(new KairosQueryProcessingChain(new TestAggregatorFactory(), new TestGroupByFactory()), new TestQueryPluginFactory());
 
 		mockListener = mock(RollupTaskChangeListener.class);
 	}

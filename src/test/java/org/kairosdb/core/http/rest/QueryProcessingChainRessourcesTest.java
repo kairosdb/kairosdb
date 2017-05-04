@@ -118,7 +118,7 @@ public class QueryProcessingChainRessourcesTest
     @Test
     public void testGetAggregatorList() throws IOException
     {
-        JsonResponse response = client.get(QUERY_PROCESSING_STAGE_URL + "test_aggregator");
+        JsonResponse response = client.get(QUERY_PROCESSING_STAGE_URL + "aggregators");
         assertResponse(response, 200, "[]");
     }
 
@@ -133,6 +133,6 @@ public class QueryProcessingChainRessourcesTest
     public void getTestGetQueryProcessingChain() throws IOException
     {
         JsonResponse response = client.get(QUERY_PROCESSING_CHAIN_URL);
-        assertResponse(response, 200, "[{\"name\":\"test_groupby\",\"label\":\"Test GroupBy\",\"properties\":[]},{\"name\":\"test_aggregator\",\"label\":\"Test Aggregator\",\"properties\":[]}]");
+        assertResponse(response, 200, "[{\"name\":\"group_by\",\"label\":\"Test GroupBy\",\"properties\":[]},{\"name\":\"aggregators\",\"label\":\"Test Aggregator\",\"properties\":[]}]");
     }
 }

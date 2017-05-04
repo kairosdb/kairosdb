@@ -410,7 +410,7 @@ public class QueryParser
             Object queryProcessor = m_processingChain.getQueryProcessingStageFactory(queryProcessorFamilyType).createQueryProcessor(qpName);
 
             if (queryProcessor == null)
-                throw new BeanValidationException(new SimpleConstraintViolation(qpName, "invalid " + queryProcessorFamilyType + " name"), qpContext);
+                throw new BeanValidationException(new SimpleConstraintViolation(qpName, "invalid " + queryProcessorFamilyName + " name"), qpContext);
 
             parseSpecificQueryProcessor(queryProcessor, queryMetric, dateTimeZone);
             deserializeProperties(qpContext, jsQueryProcessor, qpName, queryProcessor);

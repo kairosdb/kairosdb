@@ -297,7 +297,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].aggregators[0].bogus invalid aggregator name");
+		assertBeanValidation(json, "query.metric[0].aggregators[0].bogus invalid aggregators name");
 	}
 
 	@Test

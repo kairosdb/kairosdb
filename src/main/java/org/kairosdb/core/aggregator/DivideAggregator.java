@@ -42,7 +42,7 @@ public class DivideAggregator implements Aggregator
 
 	@NonZero
 	@QueryProperty(
-			label = "divisor",
+			label = "Divisor",
 			description = "The value each data point is divided by.",
             default_value = "1",
             validations = {

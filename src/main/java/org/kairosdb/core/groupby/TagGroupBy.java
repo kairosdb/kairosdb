@@ -40,6 +40,7 @@ public class TagGroupBy implements GroupBy
     @QueryProperty(
             label = "Tags",
             description = "A list of tags to group by.",
+			autocomplete = "tags",
             validations = {
             		@ValidationProperty(
             				expression = "value.length > 0",

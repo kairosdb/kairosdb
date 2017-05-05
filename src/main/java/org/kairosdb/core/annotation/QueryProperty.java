@@ -23,5 +23,9 @@ public @interface QueryProperty
 
     String default_value() default "";
 
+    String autocomplete() default "";
+
+    boolean multiline() default false;
+
     ValidationProperty[] validations() default { };
 }

@@ -22,6 +22,8 @@ public class QueryPropertyMetadata
     private String type;
     private String[] options;
     private String defaultValue;
+    private String autocomplete;
+    private boolean multiline;
     private ImmutableList<QueryValidationMetadata> validations;
     private ImmutableList<QueryPropertyMetadata> properties;
 
@@ -35,6 +37,8 @@ public class QueryPropertyMetadata
         this.type = isEmpty(property.type()) ? type : property.type();
         this.options = options == null ? property.options() : options.split(",");
         this.defaultValue = isEmpty(property.default_value()) ? defaultValue : property.default_value();
+        this.autocomplete = property.autocomplete();
+        this.multiline = property.multiline();
         this.validations = extractValidators(property);
 
         fixupName();

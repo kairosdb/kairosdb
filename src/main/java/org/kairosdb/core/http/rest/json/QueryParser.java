@@ -151,15 +151,15 @@ public class QueryParser
     {
         JsonParser parser = new JsonParser();
         JsonObject obj = parser.parse(json).getAsJsonObject();
-        return parseQueryMetric(obj);
+        return parseQueryMetric(obj, new KairosQueryMetricFactory());
     }
 
-    private List<QueryMetric> parseQueryMetric(JsonObject obj) throws QueryException, BeanValidationException
+    protected List<QueryMetric> parseQueryMetric(JsonObject obj, QueryMetricFactory queryMetricFactory) throws QueryException, BeanValidationException
     {
-        return parseQueryMetric(obj, "");
+        return parseQueryMetric(obj, "", queryMetricFactory);
     }
 
-    private List<QueryMetric> parseQueryMetric(JsonObject obj, String contextPrefix) throws QueryException, BeanValidationException
+    private List<QueryMetric> parseQueryMetric(JsonObject obj, String contextPrefix, QueryMetricFactory queryMetricFactory) throws QueryException, BeanValidationException
     {
         List<QueryMetric> ret = new ArrayList<>();
 
@@ -189,8 +189,7 @@ public class QueryParser
                 validateObject(metric, context);
 
                 long startTime = getStartTime(query, context);
-                QueryMetric queryMetric = new QueryMetric(startTime, query.getCacheTime(),
-                        metric.getName());
+                QueryMetric queryMetric = queryMetricFactory.createQuery(startTime, query.getCacheTime(), metric.getName());
                 queryMetric.setExcludeTags(metric.isExcludeTags());
                 queryMetric.setLimit(metric.getLimit());
 
@@ -251,7 +250,7 @@ public class QueryParser
         for (int i = 0; i < rollupTasks.size(); i++)
         {
             JsonObject taskObject = rollupTasks.get(i).getAsJsonObject();
-            RollupTask task = parseRollupTask(taskObject, "tasks[" + i + "]");
+            RollupTask task = parseRollupTask(taskObject, "tasks[" + i + "]", new KairosQueryMetricFactory());
             task.addJson(taskObject.toString().replaceAll("\\n", ""));
             tasks.add(task);
         }
@@ -263,12 +262,12 @@ public class QueryParser
     {
         JsonParser parser = new JsonParser();
         JsonObject taskObject = parser.parse(json).getAsJsonObject();
-        RollupTask task = parseRollupTask(taskObject, "");
+        RollupTask task = parseRollupTask(taskObject, "", new KairosQueryMetricFactory());
         task.addJson(taskObject.toString().replaceAll("\\n", ""));
         return task;
     }
 
-    public RollupTask parseRollupTask(JsonObject rollupTask, String context) throws BeanValidationException, QueryException
+    public RollupTask parseRollupTask(JsonObject rollupTask, String context, QueryMetricFactory queryMetricFactory) throws BeanValidationException, QueryException
     {
         RollupTask task = m_gson.fromJson(rollupTask.getAsJsonObject(), RollupTask.class);
 
@@ -286,7 +285,7 @@ public class QueryParser
                 validateObject(rollup, context);
 
                 JsonObject queryObject = rollupObject.getAsJsonObject("query");
-                List<QueryMetric> queries = parseQueryMetric(queryObject, context);
+                List<QueryMetric> queries = parseQueryMetric(queryObject, context, queryMetricFactory);
 
                 for (int k = 0; k < queries.size(); k++)
                 {
@@ -924,4 +923,19 @@ public class QueryParser
         }
     }
 
+
+    //===========================================================================
+
+    protected interface QueryMetricFactory
+    {
+        QueryMetric createQuery(long start_time, int cacheTime, String name);
+    }
+
+    protected class KairosQueryMetricFactory implements QueryMetricFactory
+    {
+        public QueryMetric createQuery(long start_time, int cacheTime, String name)
+        {
+            return new QueryMetric(start_time, cacheTime, name);
+        }
+    }
 }

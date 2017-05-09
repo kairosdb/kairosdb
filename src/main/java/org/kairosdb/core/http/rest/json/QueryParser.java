@@ -58,15 +58,16 @@ import java.util.*;
 
 public class QueryParser
 {
-    private static final Logger logger = LoggerFactory.getLogger(QueryParser.class);
+    protected static final Logger logger = LoggerFactory.getLogger(QueryParser.class);
+    protected static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
 
-    private static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
+    protected QueryProcessingChain m_processingChain;
+    protected QueryPluginFactory m_pluginFactory;
+    protected final GsonBuilder m_gsonBuilder;
 
-    private QueryProcessingChain m_processingChain;
-    private QueryPluginFactory m_pluginFactory;
+    private Gson m_gson;
     private Map<Class, Map<String, PropertyDescriptor>> m_descriptorMap;
     private final Object m_descriptorMapLock = new Object();
-    private Gson m_gson;
 
     @Inject
     public QueryParser(QueryProcessingChain processingChain, QueryPluginFactory pluginFactory)
@@ -76,17 +77,17 @@ public class QueryParser
 
         m_descriptorMap = new HashMap<>();
 
-        GsonBuilder builder = new GsonBuilder();
-        builder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
-        builder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
-        builder.registerTypeAdapter(DateTimeZone.class, new DateTimeZoneDeserializer());
-        builder.registerTypeAdapter(Metric.class, new MetricDeserializer());
-        builder.registerTypeAdapter(SetMultimap.class, new SetMultimapDeserializer());
-        builder.registerTypeAdapter(RelativeTime.class, new RelativeTimeSerializer());
-        builder.registerTypeAdapter(SetMultimap.class, new SetMultimapSerializer());
-        builder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES);
+        m_gsonBuilder = new GsonBuilder();
+        m_gsonBuilder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
+        m_gsonBuilder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
+        m_gsonBuilder.registerTypeAdapter(DateTimeZone.class, new DateTimeZoneDeserializer());
+        m_gsonBuilder.registerTypeAdapter(Metric.class, new MetricDeserializer());
+        m_gsonBuilder.registerTypeAdapter(SetMultimap.class, new SetMultimapDeserializer());
+        m_gsonBuilder.registerTypeAdapter(RelativeTime.class, new RelativeTimeSerializer());
+        m_gsonBuilder.registerTypeAdapter(SetMultimap.class, new SetMultimapSerializer());
+        m_gsonBuilder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES);
 
-        m_gson = builder.create();
+        m_gson = m_gsonBuilder.create();
     }
 
     public Gson getGson()
@@ -94,7 +95,22 @@ public class QueryParser
         return m_gson;
     }
 
-    private PropertyDescriptor getPropertyDescriptor(Class objClass, String property) throws IntrospectionException
+    public static String getUnderscorePropertyName(String camelCaseName)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        for (char c : camelCaseName.toCharArray())
+        {
+            if (Character.isUpperCase(c))
+                sb.append('_').append(Character.toLowerCase(c));
+            else
+                sb.append(c);
+        }
+
+        return (sb.toString());
+    }
+
+    protected PropertyDescriptor getPropertyDescriptor(Class objClass, String property) throws IntrospectionException
     {
         synchronized (m_descriptorMapLock)
         {
@@ -117,27 +133,37 @@ public class QueryParser
         }
     }
 
-    public static String getUnderscorePropertyName(String camelCaseName)
+    protected long getStartTime(Query request, String context) throws BeanValidationException
     {
-        StringBuilder sb = new StringBuilder();
-
-        for (char c : camelCaseName.toCharArray())
+        if (request.getStartAbsolute() != null)
         {
-            if (Character.isUpperCase(c))
-                sb.append('_').append(Character.toLowerCase(c));
-            else
-                sb.append(c);
+            return request.getStartAbsolute();
+        } else if (request.getStartRelative() != null)
+        {
+            return request.getStartRelative().getTimeRelativeTo(System.currentTimeMillis());
+        } else
+        {
+            throw new BeanValidationException(new SimpleConstraintViolation("start_time", "relative or absolute time must be set"), context);
         }
-
-        return (sb.toString());
     }
 
-    private void validateObject(Object object) throws BeanValidationException
+    protected long getEndTime(Query request)
+    {
+        if (request.getEndAbsolute() != null)
+            return request.getEndAbsolute();
+        else if (request.getEndRelative() != null)
+            return request.getEndRelative().getTimeRelativeTo(System.currentTimeMillis());
+        return -1;
+    }
+
+
+
+    protected void validateObject(Object object) throws BeanValidationException
     {
         validateObject(object, null);
     }
 
-    private void validateObject(Object object, String context) throws BeanValidationException
+    protected void validateObject(Object object, String context) throws BeanValidationException
     {
         // validate object using the bean validation framework
         Set<ConstraintViolation<Object>> violations = VALIDATOR.validate(object);
@@ -147,19 +173,39 @@ public class QueryParser
         }
     }
 
+    protected void validateHasRangeAggregator(QueryMetric query, String context) throws BeanValidationException
+    {
+        boolean hasRangeAggregator = false;
+        for (Aggregator aggregator : query.getAggregators())
+        {
+            if (aggregator instanceof RangeAggregator)
+            {
+                hasRangeAggregator = true;
+                break;
+            }
+        }
+
+        if (!hasRangeAggregator)
+        {
+            throw new BeanValidationException(new SimpleConstraintViolation("aggregator", "At least one aggregator must be a range aggregator"), context);
+        }
+    }
+
+
+
     public List<QueryMetric> parseQueryMetric(String json) throws QueryException, BeanValidationException
     {
         JsonParser parser = new JsonParser();
         JsonObject obj = parser.parse(json).getAsJsonObject();
-        return parseQueryMetric(obj, new KairosQueryMetricFactory());
+        return parseQueryMetric(obj);
     }
 
-    protected List<QueryMetric> parseQueryMetric(JsonObject obj, QueryMetricFactory queryMetricFactory) throws QueryException, BeanValidationException
+    protected List<QueryMetric> parseQueryMetric(JsonObject obj) throws QueryException, BeanValidationException
     {
-        return parseQueryMetric(obj, "", queryMetricFactory);
+        return parseQueryMetric(obj, "");
     }
 
-    private List<QueryMetric> parseQueryMetric(JsonObject obj, String contextPrefix, QueryMetricFactory queryMetricFactory) throws QueryException, BeanValidationException
+    protected List<QueryMetric> parseQueryMetric(JsonObject obj, String contextPrefix) throws QueryException, BeanValidationException
     {
         List<QueryMetric> ret = new ArrayList<>();
 
@@ -189,7 +235,7 @@ public class QueryParser
                 validateObject(metric, context);
 
                 long startTime = getStartTime(query, context);
-                QueryMetric queryMetric = queryMetricFactory.createQuery(startTime, query.getCacheTime(), metric.getName());
+                QueryMetric queryMetric = new QueryMetric(startTime, query.getCacheTime(), metric.getName());
                 queryMetric.setExcludeTags(metric.isExcludeTags());
                 queryMetric.setLimit(metric.getLimit());
 
@@ -242,119 +288,6 @@ public class QueryParser
         return (ret);
     }
 
-    public List<RollupTask> parseRollupTasks(String json) throws BeanValidationException, QueryException
-    {
-        List<RollupTask> tasks = new ArrayList<>();
-        JsonParser parser = new JsonParser();
-        JsonArray rollupTasks = parser.parse(json).getAsJsonArray();
-        for (int i = 0; i < rollupTasks.size(); i++)
-        {
-            JsonObject taskObject = rollupTasks.get(i).getAsJsonObject();
-            RollupTask task = parseRollupTask(taskObject, "tasks[" + i + "]", new KairosQueryMetricFactory());
-            task.addJson(taskObject.toString().replaceAll("\\n", ""));
-            tasks.add(task);
-        }
-
-        return tasks;
-    }
-
-    public RollupTask parseRollupTask(String json) throws BeanValidationException, QueryException
-    {
-        JsonParser parser = new JsonParser();
-        JsonObject taskObject = parser.parse(json).getAsJsonObject();
-        RollupTask task = parseRollupTask(taskObject, "", new KairosQueryMetricFactory());
-        task.addJson(taskObject.toString().replaceAll("\\n", ""));
-        return task;
-    }
-
-    public RollupTask parseRollupTask(JsonObject rollupTask, String context, QueryMetricFactory queryMetricFactory) throws BeanValidationException, QueryException
-    {
-        RollupTask task = m_gson.fromJson(rollupTask.getAsJsonObject(), RollupTask.class);
-
-        validateObject(task);
-
-        JsonArray rollups = rollupTask.getAsJsonObject().getAsJsonArray("rollups");
-        if (rollups != null)
-        {
-            for (int j = 0; j < rollups.size(); j++)
-            {
-                JsonObject rollupObject = rollups.get(j).getAsJsonObject();
-                Rollup rollup = m_gson.fromJson(rollupObject, Rollup.class);
-
-                context = context + "rollup[" + j + "]";
-                validateObject(rollup, context);
-
-                JsonObject queryObject = rollupObject.getAsJsonObject("query");
-                List<QueryMetric> queries = parseQueryMetric(queryObject, context, queryMetricFactory);
-
-                for (int k = 0; k < queries.size(); k++)
-                {
-                    QueryMetric query = queries.get(k);
-                    context += ".query[" + k + "]";
-                    validateHasRangeAggregator(query, context);
-
-                    // Add aggregators needed for rollups
-                    SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_processingChain.getQueryProcessingStageFactory(Aggregator.class).createQueryProcessor("save_as");
-                    saveAsAggregator.setMetricName(rollup.getSaveAs());
-
-                    TrimAggregator trimAggregator = (TrimAggregator) m_processingChain.getQueryProcessingStageFactory(Aggregator.class).createQueryProcessor("trim");
-                    trimAggregator.setTrim(TrimAggregator.Trim.LAST);
-
-                    query.addAggregator(saveAsAggregator);
-                    query.addAggregator(trimAggregator);
-                }
-
-                rollup.addQueries(queries);
-                task.addRollup(rollup);
-            }
-        }
-
-        return task;
-    }
-
-    private void validateHasRangeAggregator(QueryMetric query, String context) throws BeanValidationException
-    {
-        boolean hasRangeAggregator = false;
-        for (Aggregator aggregator : query.getAggregators())
-        {
-            if (aggregator instanceof RangeAggregator)
-            {
-                hasRangeAggregator = true;
-                break;
-            }
-        }
-
-        if (!hasRangeAggregator)
-        {
-            throw new BeanValidationException(new SimpleConstraintViolation("aggregator", "At least one aggregator must be a range aggregator"), context);
-        }
-    }
-
-    private void parsePlugins(String context, QueryMetric queryMetric, JsonArray plugins) throws BeanValidationException, QueryException
-    {
-        for (int I = 0; I < plugins.size(); I++)
-        {
-            JsonObject pluginJson = plugins.get(I).getAsJsonObject();
-
-            JsonElement name = pluginJson.get("name");
-            if (name == null || name.getAsString().isEmpty())
-                throw new BeanValidationException(new SimpleConstraintViolation("plugins[" + I + "]", "must have a name"), context);
-
-            String pluginContext = context + ".plugins[" + I + "]";
-            String pluginName = name.getAsString();
-            QueryPlugin plugin = m_pluginFactory.createQueryPlugin(pluginName);
-
-            if (plugin == null)
-                throw new BeanValidationException(new SimpleConstraintViolation(pluginName, "invalid query plugin name"), pluginContext);
-
-            deserializeProperties(pluginContext, pluginJson, pluginName, plugin);
-
-            validateObject(plugin, pluginContext);
-
-            queryMetric.addPlugin(plugin);
-        }
-    }
-
     protected void parseSpecificQueryProcessor(Object queryProcessor, QueryMetric queryMetric, DateTimeZone timeZone)
     {
         if (queryProcessor instanceof RangeAggregator)
@@ -391,9 +324,9 @@ public class QueryParser
             queryMetric.addGroupBy((GroupBy) queryProcessor);
     }
 
-    private void parseQueryProcessor(String context, String queryProcessorFamilyName,
-                                     JsonArray queryProcessors, Class<?> queryProcessorFamilyType,
-                                     QueryMetric queryMetric, DateTimeZone dateTimeZone)
+    protected void parseQueryProcessor(String context, String queryProcessorFamilyName,
+                                       JsonArray queryProcessors, Class<?> queryProcessorFamilyType,
+                                       QueryMetric queryMetric, DateTimeZone dateTimeZone)
             throws BeanValidationException, QueryException
     {
         for (int J = 0; J < queryProcessors.size(); J++)
@@ -418,7 +351,7 @@ public class QueryParser
         }
     }
 
-    private void deserializeProperties(String context, JsonObject jsonObject, String name, Object object) throws QueryException, BeanValidationException
+    protected void deserializeProperties(String context, JsonObject jsonObject, String name, Object object) throws QueryException, BeanValidationException
     {
         Set<Map.Entry<String, JsonElement>> props = jsonObject.entrySet();
         for (Map.Entry<String, JsonElement> prop : props)
@@ -482,27 +415,101 @@ public class QueryParser
         }
     }
 
-    private long getStartTime(Query request, String context) throws BeanValidationException
+    protected void parsePlugins(String context, QueryMetric queryMetric, JsonArray plugins) throws BeanValidationException, QueryException
     {
-        if (request.getStartAbsolute() != null)
+        for (int I = 0; I < plugins.size(); I++)
         {
-            return request.getStartAbsolute();
-        } else if (request.getStartRelative() != null)
-        {
-            return request.getStartRelative().getTimeRelativeTo(System.currentTimeMillis());
-        } else
-        {
-            throw new BeanValidationException(new SimpleConstraintViolation("start_time", "relative or absolute time must be set"), context);
+            JsonObject pluginJson = plugins.get(I).getAsJsonObject();
+
+            JsonElement name = pluginJson.get("name");
+            if (name == null || name.getAsString().isEmpty())
+                throw new BeanValidationException(new SimpleConstraintViolation("plugins[" + I + "]", "must have a name"), context);
+
+            String pluginContext = context + ".plugins[" + I + "]";
+            String pluginName = name.getAsString();
+            QueryPlugin plugin = m_pluginFactory.createQueryPlugin(pluginName);
+
+            if (plugin == null)
+                throw new BeanValidationException(new SimpleConstraintViolation(pluginName, "invalid query plugin name"), pluginContext);
+
+            deserializeProperties(pluginContext, pluginJson, pluginName, plugin);
+
+            validateObject(plugin, pluginContext);
+
+            queryMetric.addPlugin(plugin);
         }
     }
 
-    private long getEndTime(Query request)
+
+
+    public List<RollupTask> parseRollupTasks(String json) throws BeanValidationException, QueryException
     {
-        if (request.getEndAbsolute() != null)
-            return request.getEndAbsolute();
-        else if (request.getEndRelative() != null)
-            return request.getEndRelative().getTimeRelativeTo(System.currentTimeMillis());
-        return -1;
+        List<RollupTask> tasks = new ArrayList<>();
+        JsonParser parser = new JsonParser();
+        JsonArray rollupTasks = parser.parse(json).getAsJsonArray();
+        for (int i = 0; i < rollupTasks.size(); i++)
+        {
+            JsonObject taskObject = rollupTasks.get(i).getAsJsonObject();
+            RollupTask task = parseRollupTask(taskObject, "tasks[" + i + "]");
+            task.addJson(taskObject.toString().replaceAll("\\n", ""));
+            tasks.add(task);
+        }
+
+        return tasks;
+    }
+
+    public RollupTask parseRollupTask(String json) throws BeanValidationException, QueryException
+    {
+        JsonParser parser = new JsonParser();
+        JsonObject taskObject = parser.parse(json).getAsJsonObject();
+        RollupTask task = parseRollupTask(taskObject, "");
+        task.addJson(taskObject.toString().replaceAll("\\n", ""));
+        return task;
+    }
+
+    public RollupTask parseRollupTask(JsonObject rollupTask, String context) throws BeanValidationException, QueryException
+    {
+        RollupTask task = m_gson.fromJson(rollupTask.getAsJsonObject(), RollupTask.class);
+
+        validateObject(task);
+
+        JsonArray rollups = rollupTask.getAsJsonObject().getAsJsonArray("rollups");
+        if (rollups != null)
+        {
+            for (int j = 0; j < rollups.size(); j++)
+            {
+                JsonObject rollupObject = rollups.get(j).getAsJsonObject();
+                Rollup rollup = m_gson.fromJson(rollupObject, Rollup.class);
+
+                context = context + "rollup[" + j + "]";
+                validateObject(rollup, context);
+
+                JsonObject queryObject = rollupObject.getAsJsonObject("query");
+                List<QueryMetric> queries = parseQueryMetric(queryObject, context);
+
+                for (int k = 0; k < queries.size(); k++)
+                {
+                    QueryMetric query = queries.get(k);
+                    context += ".query[" + k + "]";
+                    validateHasRangeAggregator(query, context);
+
+                    // Add aggregators needed for rollups
+                    SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_processingChain.getQueryProcessingStageFactory(Aggregator.class).createQueryProcessor("save_as");
+                    saveAsAggregator.setMetricName(rollup.getSaveAs());
+
+                    TrimAggregator trimAggregator = (TrimAggregator) m_processingChain.getQueryProcessingStageFactory(Aggregator.class).createQueryProcessor("trim");
+                    trimAggregator.setTrim(TrimAggregator.Trim.LAST);
+
+                    query.addAggregator(saveAsAggregator);
+                    query.addAggregator(trimAggregator);
+                }
+
+                rollup.addQueries(queries);
+                task.addRollup(rollup);
+            }
+        }
+
+        return task;
     }
 
     //===========================================================================
@@ -920,22 +927,6 @@ public class QueryParser
         public String toString()
         {
             return context;
-        }
-    }
-
-
-    //===========================================================================
-
-    protected interface QueryMetricFactory
-    {
-        QueryMetric createQuery(long start_time, int cacheTime, String name);
-    }
-
-    protected class KairosQueryMetricFactory implements QueryMetricFactory
-    {
-        public QueryMetric createQuery(long start_time, int cacheTime, String name)
-        {
-            return new QueryMetric(start_time, cacheTime, name);
         }
     }
 }

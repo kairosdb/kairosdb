@@ -90,7 +90,7 @@ public class QueueProcessorTest
 		ProcessorHandler processorHandler = mock(ProcessorHandler.class);
 
 		QueueProcessor queueProcessor = new FileQueueProcessor(serializer,
-				bigArray, new TestExecutor(), 2, 10, 500);
+				bigArray, new TestExecutor(), 2, 10, 500, 1);
 
 		queueProcessor.setProcessorHandler(processorHandler);
 
@@ -118,7 +118,7 @@ public class QueueProcessorTest
 		ProcessorHandler processorHandler = mock(ProcessorHandler.class);
 
 		QueueProcessor queueProcessor = new FileQueueProcessor(serializer,
-				bigArray, new TestExecutor(), 3, 1, 500);
+				bigArray, new TestExecutor(), 3, 1, 500, 1);
 
 		queueProcessor.setProcessorHandler(processorHandler);
 
@@ -160,7 +160,7 @@ public class QueueProcessorTest
 		};
 
 		QueueProcessor queueProcessor = new FileQueueProcessor(serializer,
-				bigArray, new TestExecutor(), 3, 2, -1);
+				bigArray, new TestExecutor(), 3, 2, -1, 1);
 
 		queueProcessor.setProcessorHandler(processorHandler);
 

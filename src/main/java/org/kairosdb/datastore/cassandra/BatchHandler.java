@@ -2,9 +2,9 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.InvalidQueryException;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.datastax.driver.core.exceptions.UnavailableException;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.eventbus.EventBus;
 import org.json.JSONWriter;
@@ -16,7 +16,6 @@ import org.kairosdb.events.RowKeyEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
@@ -44,19 +43,21 @@ public class BatchHandler implements Callable<Boolean>
 	private final boolean m_fullBatch;
 	private final ConsistencyLevel m_consistencyLevel;
 	private final Session m_session;
-	private final CassandraDatastore.PreparedStatements m_preparedStatements;
+	private final Schema m_schema;
 	private final BatchStats m_batchStats;
+	private final LoadBalancingPolicy m_loadBalancingPolicy;
 
 	public BatchHandler(List<DataPointEvent> events, EventCompletionCallBack callBack,
 			int defaultTtl, ConsistencyLevel consistencyLevel, DataCache<DataPointsRowKey>
 			rowKeyCache, DataCache<String> metricNameCache, EventBus eventBus,
-			Session session, CassandraDatastore.PreparedStatements preparedStatements,
-			boolean fullBatch, BatchStats batchStats)
+			Session session, Schema schema,
+			boolean fullBatch, BatchStats batchStats, LoadBalancingPolicy loadBalancingPolicy)
 	{
 		m_consistencyLevel = consistencyLevel;
 		m_session = session;
-		m_preparedStatements = preparedStatements;
+		m_schema = schema;
 		m_batchStats = batchStats;
+		m_loadBalancingPolicy = loadBalancingPolicy;
 
 		m_events = events;
 		m_callBack = callBack;
@@ -155,8 +156,8 @@ public class BatchHandler implements Callable<Boolean>
 
 				while (events.hasNext())
 				{
-					CQLBatch batch = new CQLBatch(m_consistencyLevel, m_session, m_preparedStatements,
-							m_batchStats);
+					CQLBatch batch = new CQLBatch(m_consistencyLevel, m_session, m_schema,
+							m_batchStats, m_loadBalancingPolicy);
 
 					loadBatch(limit, batch, events);
 

@@ -27,10 +27,7 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datapoints.StringDataPoint;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
-import org.kairosdb.core.datastore.QueryCallback;
-import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.events.DataPointEvent;
 
@@ -722,7 +719,7 @@ public class DataPointsParserTest
 	}
 
 
-	private static class FakeDataStore implements Datastore
+	private static class FakeDataStore implements Datastore, ServiceKeyStore
 	{
 		List<DataPointSet> dataPointSetList = new ArrayList<>();
 		private DataPointSet lastDataPointSet;
@@ -807,14 +804,14 @@ public class DataPointsParserTest
 			return null;
 		}
 
-        @Override
-        public Iterable<String> listServiceKeys(String service)
-                throws DatastoreException
-        {
-            return null;
-        }
+		@Override
+		public Iterable<String> listServiceKeys(String service)
+				throws DatastoreException
+		{
+			return null;
+		}
 
-        @Override
+		@Override
 		public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
 		{
 			return null;
@@ -826,10 +823,10 @@ public class DataPointsParserTest
 			return null;
 		}
 
-        @Override
-        public void deleteKey(String service, String serviceKey, String key)
-                throws DatastoreException
-        {
-        }
-    }
+		@Override
+		public void deleteKey(String service, String serviceKey, String key)
+				throws DatastoreException
+		{
+		}
+	}
 }

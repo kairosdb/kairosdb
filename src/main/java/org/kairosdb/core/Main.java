@@ -191,6 +191,12 @@ public class Main
 					String pluginFolder = props.getProperty(SERVICE_FOLDER_PREFIX + serviceName);
 
 					ClassLoader pluginLoader = this.getClass().getClassLoader();
+
+					/*
+					Check to see if a folder for the plugin exists.  If it does we
+					create a new class loader for the plugin's jars, this isolates
+					dependencies.
+					 */
 					if (pluginFolder != null)
 					{
 						pluginLoader = new PluginClassLoader(getJarsInPath(pluginFolder), pluginLoader);

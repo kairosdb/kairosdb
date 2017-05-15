@@ -40,9 +40,11 @@ public class MemoryQueueProcessor extends QueueProcessor implements KairosMetric
 	public MemoryQueueProcessor(
 			@Named(QUEUE_PROCESSOR) Executor executor,
 			@Named(BATCH_SIZE) int batchSize,
-			@Named(MEMORY_QUEUE_SIZE) int memoryQueueSize)
+			@Named(MEMORY_QUEUE_SIZE) int memoryQueueSize,
+			@Named(MINIMUM_BATCH_SIZE) int minimumBatchSize)
+
 	{
-		super(executor, batchSize);
+		super(executor, batchSize, minimumBatchSize);
 
 		m_queue = new ArrayBlockingQueue<>(memoryQueueSize, true);
 	}
@@ -70,6 +72,12 @@ public class MemoryQueueProcessor extends QueueProcessor implements KairosMetric
 		{
 			logger.error("Error putting data", e);
 		}
+	}
+
+	@Override
+	protected int getAvailableDataPointEvents()
+	{
+		return m_queue.size();
 	}
 
 	@Override

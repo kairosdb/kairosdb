@@ -17,8 +17,6 @@ To create a plugin you need to do the following things
   #. Create a class that implements com.google.inject.AbstractModule.
   #. Create a properties file that has an entry kairosdb.service.[your_service_name] that is set to the full class name of your Module.
   #. Install a jar containing your class files to /opt/kairosdb/lib and install the properties file into /opt/kairosdb/conf
-  #. If your jar has a lot of dependencies that may conflict with Kairos, specify the kairosdb.service_folder.[your_service_name]
-     in your properties file and place your jars all in the specified folder.  Kairos will use a separate ClassLoader to load your plugin.
 
 ----------------------
 Plugin Loading Process
@@ -46,9 +44,9 @@ Plugins with extra dependencies
 -------------------------------
 What do you do if you have a plugin that includes some client library that
 requires some old version of guava that conflicts with what is in Kairos?
-Simply place your plugin in a folder of the same name along with all
-of its dependencies.  Kairos will load the plugin using an isolated class
-loader so you have have your own version of guava.
+You can optionally specify a location to load your plugin from by specifying
+the kairosdb.service_folder.[your_plugin_name] property.  When you specify this
+property Kairos will use a new ClassLoader to load your jar and dependencies.
 
 	**Note:** The one downside of this is that you cannot use the method above where by
 	properties are loaded from your jar before the external properties file (chicken
@@ -57,6 +55,7 @@ loader so you have have your own version of guava.
 Lets say you have a plugin called foo.  You install a properties file that contains
 ::
   kairosdb.service.foo=com.foo.MyPluginModule
+  kairosdb.service_folder=lib/foo
 
 You can then place your jar and dependencies in the folder
 ::

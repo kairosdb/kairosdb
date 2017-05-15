@@ -17,6 +17,8 @@ To create a plugin you need to do the following things
   #. Create a class that implements com.google.inject.AbstractModule.
   #. Create a properties file that has an entry kairosdb.service.[your_service_name] that is set to the full class name of your Module.
   #. Install a jar containing your class files to /opt/kairosdb/lib and install the properties file into /opt/kairosdb/conf
+  #. If your jar has a lot of dependencies that may conflict with Kairos, specify the kairosdb.service_folder.[your_service_name]
+     in your properties file and place your jars all in the specified folder.  Kairos will use a separate ClassLoader to load your plugin.
 
 ----------------------
 Plugin Loading Process
@@ -26,8 +28,8 @@ Here is how KairosDB loads libraries and plugins:
   #. Properties in kairosdb.properties are loaded first from the classpath and then from the file.
   #. For every .properties file in the conf directory besides kairosdb.properties, the following happens:
 
-    #. Kairos attempts to load the file from the classpath.  (this lets you add default values to future releases of your plugin)
-    #. Kairos loads the conf properties file.
+     #. Kairos attempts to load the file from the classpath.  (this lets you add default values to future releases of your plugin)
+     #. Kairos loads the conf properties file.
 
   #. Kairos looks through all the loaded properties for ones starting with kairosdb.service.  These are expected to point to Guice modules.
   #. Load all discovered Guice modules.

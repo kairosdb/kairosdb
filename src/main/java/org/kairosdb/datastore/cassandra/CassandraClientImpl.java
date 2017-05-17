@@ -46,10 +46,13 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	public CassandraClientImpl(@Named(KEYSPACE_PROPERTY)String keyspace,
 			@Named(HOST_LIST_PROPERTY)String hostList)
 	{
-		m_loadBalancingPolicy = new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build());
+		//Passing shuffleReplicas = false so we can properly batch data to
+		//instances.
+		m_loadBalancingPolicy = new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build(), false);
 		final Cluster.Builder builder = new Cluster.Builder()
+				//.withProtocolVersion(ProtocolVersion.V3)
 				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL, 5, 100)
-					.setMaxRequestsPerConnection(HostDistance.LOCAL, 1024*2)
+					.setMaxRequestsPerConnection(HostDistance.LOCAL, 128)
 					.setMaxQueueSize(500))
 				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 10 * 1000))
 				.withLoadBalancingPolicy(m_loadBalancingPolicy)

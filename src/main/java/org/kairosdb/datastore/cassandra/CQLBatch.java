@@ -27,7 +27,7 @@ public class CQLBatch
 	private final long m_now;
 	private final LoadBalancingPolicy m_loadBalancingPolicy;
 
-	//private Map<Host, BatchStatement> m_batchMap = new HashMap<>();
+	private Map<Host, BatchStatement> m_batchMap = new HashMap<>();
 
 	private BatchStatement metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 	private BatchStatement dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
@@ -102,20 +102,23 @@ public class CQLBatch
 		boundStatement.setConsistencyLevel(m_consistencyLevel);
 		boundStatement.setIdempotent(true);
 
-		/*Iterator<Host> hosts = m_loadBalancingPolicy.newQueryPlan("kairosdb", boundStatement);
+		Iterator<Host> hosts = m_loadBalancingPolicy.newQueryPlan("kairosdb", boundStatement);
 		if (hosts.hasNext())
 		{
-			Host host = hosts.next();
-			BatchStatement batchStatement = m_batchMap.get(host);
+			Host hostKey = hosts.next();
+
+			BatchStatement batchStatement = m_batchMap.get(hostKey);
 			if (batchStatement == null)
 			{
 				batchStatement = new BatchStatement(BatchStatement.Type.UNLOGGED);
-				m_batchMap.put(host, batchStatement);
+				m_batchMap.put(hostKey, batchStatement);
 			}
 			batchStatement.add(boundStatement);
-
-		}*/
-		dataPointBatch.add(boundStatement);
+		}
+		else
+		{
+			dataPointBatch.add(boundStatement);
+		}
 	}
 
 	public void submitBatch()
@@ -129,15 +132,22 @@ public class CQLBatch
 		if (rowKeyBatch.size() != 0)
 		{
 			//rowKeyBatch.enableTracing();
-			ResultSet resultSet = m_session.execute(rowKeyBatch);
+			m_session.executeAsync(rowKeyBatch);
 			m_batchStats.addRowKeyBatch(rowKeyBatch.size());
 		}
 
-		/*for (BatchStatement batchStatement : m_batchMap.values())
+		for (BatchStatement batchStatement : m_batchMap.values())
 		{
-			m_session.executeAsync(batchStatement);
-			m_batchStats.addDatapointsBatch(batchStatement.size());
-		}*/
+			//batchStatement.enableTracing();
+			if (batchStatement.size() != 0)
+			{
+				m_session.execute(batchStatement);
+				//System.out.println(resultSet.getExecutionInfo().getQueryTrace().getTraceId());
+				m_batchStats.addDatapointsBatch(batchStatement.size());
+			}
+		}
+
+		//Catch all in case of a load balancing problem
 		if (dataPointBatch.size() != 0)
 		{
 			m_session.execute(dataPointBatch);

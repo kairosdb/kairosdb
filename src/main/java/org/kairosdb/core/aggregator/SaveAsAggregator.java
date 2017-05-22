@@ -31,6 +31,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	private boolean m_addSavedFrom = true;
 
 	@QueryProperty(
+			name = "metric_name",
 			label = "Save As",
 			description = "The name of the new metric.",
 			default_value = "<new name>",

@@ -80,6 +80,7 @@ public class QueryParser
         m_gsonBuilder = new GsonBuilder();
         m_gsonBuilder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
         m_gsonBuilder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
+        m_gsonBuilder.registerTypeAdapter(TrimAggregator.Trim.class, new TrimDeserializer());
         m_gsonBuilder.registerTypeAdapter(DateTimeZone.class, new DateTimeZoneDeserializer());
         m_gsonBuilder.registerTypeAdapter(Metric.class, new MetricDeserializer());
         m_gsonBuilder.registerTypeAdapter(SetMultimap.class, new SetMultimapDeserializer());
@@ -743,6 +744,22 @@ public class QueryParser
             }
 
             return tu;
+        }
+    }
+
+    private static class TrimDeserializer implements JsonDeserializer<TrimAggregator.Trim>
+    {
+        public TrimAggregator.Trim deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+                throws JsonParseException
+        {
+            String value = json.getAsString();
+
+            for (TrimAggregator.Trim type : TrimAggregator.Trim.values())
+                if (type.toString().equalsIgnoreCase(value))
+                    return type;
+
+            throw new ContextualJsonSyntaxException(value,
+                    "is not a valid trim type, must be 'first', 'last' or 'both'");
         }
     }
 

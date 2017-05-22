@@ -66,11 +66,15 @@ public class PercentileAggregator extends RangeAggregator
 	@QueryProperty(
 			label = "Percentile",
 			description = "Data points returned will be in this percentile.",
-			default_value = "10",
+			default_value = "0.1",
             validations =  {
 					@ValidationProperty(
 							expression = "value > 0",
 							message = "Percentile must be greater than 0."
+					),
+					@ValidationProperty(
+							expression = "value < 1",
+							message = "Percentile must be smaller than 1."
 					)
 			}
 	)

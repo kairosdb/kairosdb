@@ -45,6 +45,7 @@ public class FilterAggregator implements Aggregator
 	}
 
 	@QueryProperty(
+			name = "filter_op",
 			label = "Filter operation",
 			description = "The operation performed for each data point.",
 			type = "enum",

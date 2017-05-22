@@ -40,6 +40,7 @@ public class ValueGroupBy implements GroupBy
 {
     @Min(1)
     @QueryProperty(
+            name = "range_size",
             label = "Target Size",
             description = "The range for each value. For example, if the range size is 10, then values between 0-9 are placed in the first group, values between 10-19 into the second group, and so forth.",
             validations = {

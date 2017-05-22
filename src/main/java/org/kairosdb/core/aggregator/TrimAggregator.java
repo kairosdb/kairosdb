@@ -38,7 +38,6 @@ public class TrimAggregator implements Aggregator
 			label = "Trim",
 			description = "Which data point to trim",
 			type = "enum",
-			options = {"first", "last", "both"},
 			default_value = "both"
 	)
 	private Trim m_trim;

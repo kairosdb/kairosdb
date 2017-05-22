@@ -42,6 +42,7 @@ public class TimeGroupBy implements GroupBy
 {
 	@NotNull
     @QueryCompoundProperty(
+    		name = "range_size",
             label = "Range Size",
             order = {"Value", "Unit"}
     )
@@ -49,6 +50,7 @@ public class TimeGroupBy implements GroupBy
 
 	@Min(1)
     @QueryProperty(
+    		name = "group_count",
             label = "Count",
             description = "The number of groups. This would typically be 7 to group by day of week.",
             validations = {

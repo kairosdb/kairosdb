@@ -20,7 +20,7 @@ import com.google.inject.Inject;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.annotation.QueryProcessor;
-import org.kairosdb.core.annotation.QueryCompoundProperty;
+import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.TimeUnit;
@@ -32,10 +32,13 @@ import org.kairosdb.util.Util;
 )
 public class SamplerAggregator implements Aggregator, TimezoneAware
 {
-	@QueryCompoundProperty(
-			label = "Sampling",
-            order = {"Value", "Unit"}
+	@QueryProperty(
+			name = "unit",
+			label = "Time Unit",
+			description = "Time unit of sampling",
+			default_value = "milliseconds"
 	)
+	private TimeUnit _ui_unit;
 	private Sampling m_sampling;
 
 	private DoubleDataPointFactory m_dataPointFactory;

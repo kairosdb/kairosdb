@@ -497,9 +497,7 @@ public class CassandraDatastore implements Datastore {
                     queryKeys,
                     query.getStartTime(), query.getEndTime(), m_rowWidthRead, queryCallback, query.getLimit(), query.getOrder()));
         }
-
-        ThreadReporter.addDataPoint(KEY_QUERY_TIME, System.currentTimeMillis() - startTime);
-
+        
         //Changing the check rate
         mm.setCheckRate(1);
         try {

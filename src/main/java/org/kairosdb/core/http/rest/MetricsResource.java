@@ -395,9 +395,6 @@ public class MetricsResource implements KairosMetricReporter
 		checkNotNull(json);
 		logger.debug(json);
 
-		ThreadReporter.setReportTime(System.currentTimeMillis());
-		ThreadReporter.addTag("host", hostName);
-
 		try
 		{
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
@@ -421,8 +418,6 @@ public class MetricsResource implements KairosMetricReporter
 				{
 					List<DataPointGroup> results = dq.execute();
 					jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
-
-					// ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
 				}
 				finally
 				{
@@ -433,13 +428,6 @@ public class MetricsResource implements KairosMetricReporter
 			jsonResponse.end();
 			writer.flush();
 			writer.close();
-
-			ThreadReporter.clearTags();
-			ThreadReporter.addTag("host", hostName);
-			ThreadReporter.addTag("request", QUERY_URL);
-			ThreadReporter.addDataPoint(REQUEST_TIME, System.currentTimeMillis() - ThreadReporter.getReportTime());
-
-			ThreadReporter.submitData(m_longDataPointFactory, datastore);
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new FileStreamingOutput(respFile));

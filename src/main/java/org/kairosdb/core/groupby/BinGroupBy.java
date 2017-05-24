@@ -45,6 +45,10 @@ public class BinGroupBy implements GroupBy
             		@ValidationProperty(
             				expression = "value.length > 0",
 							message = "The list can't be empty."
+					),
+					@ValidationProperty(
+							expression = "value.every((n) => !isNaN(parseFloat(n)) && isFinite(n))",
+							message = "The list must contain only numbers."
 					)
 			}
     )

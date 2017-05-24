@@ -429,10 +429,6 @@ public class KairosDatastore
 		{
 			//Report number of queries waiting
 			int waitingCount = m_queuingManager.getQueryWaitingCount();
-			if (waitingCount != 0)
-			{
-				ThreadReporter.addDataPoint(QUERIES_WAITING_METRIC_NAME, waitingCount);
-			}
 
 			m_metric = metric;
 			m_cacheFilename = calculateFilenameHash(metric);
@@ -465,7 +461,6 @@ public class KairosDatastore
 					if (cachedResults != null)
 					{
 						returnedRows = cachedResults.getRows();
-						ThreadReporter.addDataPoint(METRIC_QUERY_CACHE_READ_TIME, System.currentTimeMillis() - queryStartTime);
 					}
 				}
 
@@ -490,9 +485,6 @@ public class KairosDatastore
 
             m_rowCount = returnedRows.size();
 
-            ThreadReporter.addDataPoint(QUERY_SAMPLE_SIZE, m_dataPointCount);
-            ThreadReporter.addDataPoint(QUERY_ROW_COUNT, m_rowCount);
-
 			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
 					returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
 
@@ -509,15 +501,12 @@ public class KairosDatastore
 			}
 
 			m_results = new ArrayList<DataPointGroup>();
-			for (DataPointGroup queryResult : queryResults)
-			{
+			for (DataPointGroup queryResult : queryResults) {
 				String groupType = DataPoint.GROUP_NUMBER;
 				//todo May want to make group type a first class citizen in DataPointGroup
-				for (GroupByResult groupByResult : queryResult.getGroupByResult())
-				{
-					if (groupByResult instanceof TypeGroupByResult)
-					{
-						groupType = ((TypeGroupByResult)groupByResult).getType();
+				for (GroupByResult groupByResult : queryResult.getGroupByResult()) {
+					if (groupByResult instanceof TypeGroupByResult) {
+						groupType = ((TypeGroupByResult) groupByResult).getType();
 					}
 				}
 
@@ -525,14 +514,12 @@ public class KairosDatastore
 
 				List<Aggregator> aggregators = m_metric.getAggregators();
 
-				if (m_metric.getLimit() != 0)
-				{
+				if (m_metric.getLimit() != 0) {
 					aggregatedGroup = new LimitAggregator(m_metric.getLimit()).aggregate(aggregatedGroup);
 				}
 
 				//This will pipe the aggregators together.
-				for (Aggregator aggregator : aggregators)
-				{
+				for (Aggregator aggregator : aggregators) {
 					//Make sure the aggregator can handle this type of data.
 					if (aggregator.canAggregate(groupType))
 						aggregatedGroup = aggregator.aggregate(aggregatedGroup);
@@ -540,10 +527,6 @@ public class KairosDatastore
 
 				m_results.add(aggregatedGroup);
 			}
-
-
-			//Report how long query took
-			ThreadReporter.addDataPoint(QUERY_METRIC_TIME, System.currentTimeMillis() - queryStartTime);
 
 			return (m_results);
 		}

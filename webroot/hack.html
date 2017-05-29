@@ -1,0 +1,25 @@
+<html xmlns="http://www.w3.org/1999/html">
+
+<head>
+    <link href="css/hack.css" rel="stylesheet">
+
+    <script src="bower_components/d3/d3.js" charset="utf-8"></script>
+    <script src="bower_components/lodash/lodash.js"></script>
+    <script src="bower_components/graphlib/dist/graphlib.core.js"></script>
+    <script src="bower_components/dagre/dist/dagre.core.js"></script>
+    <script src="bower_components/dagre-d3/dist/dagre-d3.core.js"></script>
+    <script src="js/jquery.1.9.0.min.js"></script>
+    <script src="js/numeral.min.js"></script>
+    <script src="js/kairosdb.js"></script>
+    <script src="js/kairosdb-query.js"></script>
+    <script src="js/hack.js"></script>
+</head>
+<body>
+<label for="eventId">Event ID: </label><input id="eventId" type="text"/>
+<button type="button" onclick="queryAndGraph();">Graph</button>
+<br><br>
+<svg id="svg-canvas" width=1200 height=600></svg>
+
+</body>
+
+</html>

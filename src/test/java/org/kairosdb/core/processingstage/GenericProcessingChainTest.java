@@ -66,7 +66,7 @@ public class GenericProcessingChainTest
     @Test
     public void chain_getter_factory_with_class()
     {
-        QueryProcessingStageFactory<?> factory = GenericProcessingChainTest.processingChain.getQueryProcessingStageFactory("aggregator");
+        QueryProcessingStageFactory<?> factory = GenericProcessingChainTest.processingChain.getQueryProcessingStageFactory("aggregators");
         assertEquals("Invalid type of QueryProcessingStageFactory", AggregatorFactory.class, factory.getClass());
     }
 
@@ -92,7 +92,7 @@ public class GenericProcessingChainTest
     {
         return new QueryProcessingStageMetadata[]{
                 new QueryProcessingStageMetadata(
-                        "aggregator",
+                        "aggregators",
                         "Aggregator",
                         Arrays.asList(factory_valid_metadata_generator())
                 )

@@ -81,6 +81,7 @@ public class QueryParser
         m_gsonBuilder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
         m_gsonBuilder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
         m_gsonBuilder.registerTypeAdapter(TrimAggregator.Trim.class, new TrimDeserializer());
+        m_gsonBuilder.registerTypeAdapter(FilterAggregator.FilterOperation.class, new FilterOperationDeserializer());
         m_gsonBuilder.registerTypeAdapter(DateTimeZone.class, new DateTimeZoneDeserializer());
         m_gsonBuilder.registerTypeAdapter(Metric.class, new MetricDeserializer());
         m_gsonBuilder.registerTypeAdapter(SetMultimap.class, new SetMultimapDeserializer());
@@ -158,7 +159,6 @@ public class QueryParser
     }
 
 
-
     protected void validateObject(Object object) throws BeanValidationException
     {
         validateObject(object, null);
@@ -191,7 +191,6 @@ public class QueryParser
             throw new BeanValidationException(new SimpleConstraintViolation("aggregator", "At least one aggregator must be a range aggregator"), context);
         }
     }
-
 
 
     public List<QueryMetric> parseQueryMetric(String json) throws QueryException, BeanValidationException
@@ -440,7 +439,6 @@ public class QueryParser
             queryMetric.addPlugin(plugin);
         }
     }
-
 
 
     public List<RollupTask> parseRollupTasks(String json) throws BeanValidationException, QueryException
@@ -747,19 +745,49 @@ public class QueryParser
         }
     }
 
-    private static class TrimDeserializer implements JsonDeserializer<TrimAggregator.Trim>
+    private static abstract class EnumDeserializer<TEnum extends Enum<TEnum>> implements JsonDeserializer<TEnum>
+    {
+        public TEnum genericDeserializer(JsonElement json, Class<TEnum> type)
+                throws JsonParseException
+        {
+            String jsValue = json.getAsString();
+            TEnum[] enumDefinition = type.getEnumConstants();
+
+            for (TEnum value : enumDefinition)
+                if (value.toString().equalsIgnoreCase(jsValue))
+                    return value;
+
+            StringBuilder values = new StringBuilder("is not a valid trim type, must be ");
+            for (int i = 0; i < enumDefinition.length; i++)
+            {
+                values.append("'").append(enumDefinition[i].toString().toLowerCase()).append("'");
+
+                if (i < enumDefinition.length - 2)
+                    values.append(", ");
+                else if (i < enumDefinition.length - 1)
+                    values.append(" or ");
+                else
+                    values.append(".");
+            }
+            throw new ContextualJsonSyntaxException(jsValue, values.toString());
+        }
+    }
+
+    private static class TrimDeserializer extends EnumDeserializer<TrimAggregator.Trim>
     {
         public TrimAggregator.Trim deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
                 throws JsonParseException
         {
-            String value = json.getAsString();
+            return genericDeserializer(json, TrimAggregator.Trim.class);
+        }
+    }
 
-            for (TrimAggregator.Trim type : TrimAggregator.Trim.values())
-                if (type.toString().equalsIgnoreCase(value))
-                    return type;
-
-            throw new ContextualJsonSyntaxException(value,
-                    "is not a valid trim type, must be 'first', 'last' or 'both'");
+    private static class FilterOperationDeserializer extends EnumDeserializer<FilterAggregator.FilterOperation>
+    {
+        public FilterAggregator.FilterOperation deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+                throws JsonParseException
+        {
+            return genericDeserializer(json, FilterAggregator.FilterOperation.class);
         }
     }
 

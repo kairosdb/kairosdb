@@ -23,7 +23,7 @@ import org.kairosdb.core.processingstage.GenericQueryProcessingStageFactory;
 import java.lang.reflect.InvocationTargetException;
 
 @QueryProcessingStage(
-        name = "aggregator",
+        name = "aggregators",
         label = "Aggregator"
 )
 public class AggregatorFactory extends GenericQueryProcessingStageFactory<Aggregator>

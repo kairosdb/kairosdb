@@ -90,6 +90,7 @@
 			$(".scalingFactor").hide();
 			$(".aggregatorFilter").hide();
 			$(".aggregatorTrim").hide();
+			$(".aggregatorDev").hide();
 			$(".aggregatorSaveAs").hide();
 			$(".aggregatorRate").hide();
 			$("#tabs").tabs({'active': 0});
@@ -785,7 +786,9 @@
 	</table>
 </div>
 
-<p></p>
+<p>
+	Post Processing Script: <input id="post_script" class="ui_widget" type="text" style="width: 150px;"/>
+</p>
 
 <span class="header ui-widget">Metrics</span>
 <button id="addMetricButton"></button>
@@ -1039,6 +1042,7 @@
 				<option value="dev">DEV</option>
 				<option value="diff">DIFF</option>
 				<option value="div">DIV</option>
+				<option value="filter">FILTER</option>
 				<option value="first">FIRST</option>
 				<option value="gaps">GAPS</option>
 				<option value="last">LAST</option>
@@ -1052,7 +1056,7 @@
 				<option value="scale">SCALE</option>
 				<option value="sum" selected="selected">SUM</option>
 				<option value="trim">TRIM</option>
-				<option value="filter">FILTER</option>
+
 			</select>
 		</div>
 		<div>
@@ -1155,6 +1159,16 @@
 				<option value="first" selected="selected">First</option>
 				<option value="last">Last</option>
 				<option value="both">Both</option>
+			</select>
+		</div>
+		<div style="float: left" class="aggregatorDev">
+			<span class="header"
+				  style="margin-left: 10px; vertical-align: top;">Dev Value</span>
+			<select class="ui-widget aggregatorDevValue"
+					style="margin-left: 10px;">
+				<option value="value" selected="selected">Value</option>
+				<option value="pos_sd">+SD</option>
+				<option value="neg_sd">-SD</option>
 			</select>
 		</div>
 		<div style="float: left" class="aggregatorSaveAs">

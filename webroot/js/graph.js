@@ -174,6 +174,23 @@ function buildKairosDBQuery() {
 				var agg = metric.addAggregator(name);
 				agg.trim = $(aggregator).find(".aggregatorTrimValue").val();
 			}
+			else if (name == 'dev') {
+				value = $(aggregator).find(".aggregatorSamplingValue").val();
+				if (!isValidInteger(value)) {
+					showErrorMessage("sampling value must be an integer greater than 0.");
+					return true;
+				}
+				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+				var percentile = $(aggregator).find(".aggregatorPercentileValue").val();
+				if (!isValidPercentile(percentile)) {
+					showErrorMessage("sampling value must be an integer greater than 0.");
+					return true;
+				}
+				var align_start_time = $(aggregator).find(".aggregatorAlignStartTimeValue").prop("checked");
+
+				var agg = metric.addRangeAggregator(name, value, unit, percentile, time_zone, align_start_time);
+				agg.return_type = $(aggregator).find(".aggregatorDevValue").val();
+			}
 			else if (name == 'save_as')
 			{
 				var agg = metric.addAggregator(name);
@@ -290,6 +307,11 @@ function buildKairosDBQuery() {
 		if (endRelativeValue) {
 			query.setEndRelative(endRelativeValue, $("#endRelativeUnit").val())
 		}
+	}
+
+	var postScript = $("#post_script").val();
+	if (postScript != '') {
+		query.setPostScript(postScript);
 	}
 
 	var time_zone = $(".timeZone").val();
@@ -624,6 +646,7 @@ function addAggregator(container) {
 		$aggregatorContainer.find(".scalingFactor").hide();
 		$aggregatorContainer.find(".aggregatorFilter").hide();
 		$aggregatorContainer.find(".aggregatorTrim").hide();
+		$aggregatorContainer.find(".aggregatorDev").hide();
 		$aggregatorContainer.find(".aggregatorSaveAs").hide();
 		$aggregatorContainer.find(".aggregatorRate").hide();
 		$aggregatorContainer.find(".aggregatorAlignStartTime").hide();
@@ -655,6 +678,12 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".aggregatorSaveAs").show();
 		}
 		else if (name == 'diff') {
+		}
+		else if (name == 'dev') {
+			$aggregatorContainer.find(".aggregatorDev").show();
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
+			$aggregatorContainer.find(".aggregatorSampling").show();
+			$aggregatorContainer.find(".aggregatorAlignStartTime").show();
 		}
 		else {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();

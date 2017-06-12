@@ -200,9 +200,8 @@ public class QueryMetric implements DatastoreMetricQuery
 		return Collections.unmodifiableList(plugins);
 	}
 
-	public QueryMetric addPlugin(QueryPlugin plugin)
+	public void addPlugin(QueryPlugin plugin)
 	{
 		this.plugins.add(plugin);
-		return this;
 	}
 }

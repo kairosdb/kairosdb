@@ -205,7 +205,7 @@ public class FileQueueProcessor extends QueueProcessor
 		if (m_stopwatch.elapsed(TimeUnit.SECONDS) > m_secondsTillCheckpoint)
 		{
 			//System.out.println("Checkpoint");
-			callbackToReturn.finalize();
+			callbackToReturn.setFinalized();
 			m_lastCallback = new CompletionCallBack();
 			callbackToReturn.setChildCallBack(m_lastCallback);
 			m_stopwatch.reset();
@@ -304,7 +304,7 @@ public class FileQueueProcessor extends QueueProcessor
 		 The finalize method gets called always before the last call to complete
 		 No need for locking
 		 */
-		public void finalize()
+		public void setFinalized()
 		{
 			m_finalized = true;
 		}

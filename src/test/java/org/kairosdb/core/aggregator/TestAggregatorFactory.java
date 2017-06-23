@@ -19,6 +19,7 @@ package org.kairosdb.core.aggregator;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.plugin.Aggregator;
 
 import java.util.HashMap;
 import java.util.Map;

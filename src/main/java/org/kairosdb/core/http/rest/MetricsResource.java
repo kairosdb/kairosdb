@@ -26,7 +26,6 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.PluginException;
 import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.formatter.DataFormatter;
@@ -96,6 +95,16 @@ public class MetricsResource implements KairosMetricReporter
 
 	@Inject
 	private StringDataPointFactory m_stringDataPointFactory = new StringDataPointFactory();
+
+	@Inject
+	private QueryPreProcessorContainer m_queryPreProcessor = new QueryPreProcessorContainer()
+	{
+		@Override
+		public Query preProcess(Query query)
+		{
+			return query;
+		}
+	};
 
 	@Inject(optional=true)
 	@Named("kairosdb.queries.aggregate_stats")
@@ -431,8 +440,7 @@ public class MetricsResource implements KairosMetricReporter
 
 			Query mainQuery = queryParser.parseQueryMetric(json);
 
-
-			//Add pre processor query plugin point
+			mainQuery = m_queryPreProcessor.preProcess(mainQuery);
 
 			List<QueryMetric> queries = mainQuery.getQueryMetrics();
 

@@ -19,7 +19,6 @@ package org.kairosdb.core.aggregator;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +30,7 @@ import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
 
 import com.google.inject.Inject;
+import org.kairosdb.plugin.Aggregator;
 
 @AggregatorName(name = "sma", description = "Simple moving average.")
 public class SmaAggregator implements Aggregator

@@ -1,6 +1,7 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.plugin.Aggregator;
 
 /**
  Created by bhawkins on 5/18/17.

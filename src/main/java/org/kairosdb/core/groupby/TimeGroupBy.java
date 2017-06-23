@@ -23,6 +23,7 @@ import org.kairosdb.core.aggregator.annotation.GroupByName;
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.formatter.FormatterException;
+import org.kairosdb.plugin.GroupBy;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;

@@ -8,7 +8,7 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.groupby.GroupBy;
+import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.testing.ListDataPointGroup;

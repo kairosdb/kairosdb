@@ -33,6 +33,8 @@ import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryPluginFactory;
 import org.kairosdb.core.datastore.QueryQueuingManager;
 import org.kairosdb.core.groupby.*;
+import org.kairosdb.core.http.rest.GuiceQueryPreProcessor;
+import org.kairosdb.core.http.rest.QueryPreProcessorContainer;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.jobs.CacheFileCleaner;
 import org.kairosdb.core.queue.DataPointEventSerializer;
@@ -188,6 +190,8 @@ public class CoreModule extends AbstractModule
 
 		String hostIp = m_props.getProperty("kairosdb.host_ip");
 		bindConstant().annotatedWith(Names.named("HOST_IP")).to(hostIp != null ? hostIp: InetAddresses.toAddrString(Util.findPublicIp()));
+
+		bind(QueryPreProcessorContainer.class).to(GuiceQueryPreProcessor.class).in(Singleton.class);
 	}
 
 	@Provides

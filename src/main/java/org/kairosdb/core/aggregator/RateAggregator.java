@@ -24,6 +24,7 @@ import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
+import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.util.Util;
 
 @AggregatorName(name = "rate", description = "Computes the rate of change for the data points.")

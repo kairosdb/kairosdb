@@ -16,15 +16,10 @@
 
 package org.kairosdb.core.aggregator;
 
-import com.google.inject.Inject;
-import org.joda.time.DateTimeZone;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.Sampling;
-import org.kairosdb.core.datastore.TimeUnit;
-import org.kairosdb.util.Util;
+import org.kairosdb.plugin.Aggregator;
 
 
 @AggregatorName(name = "filter", description = "Filters datapoints according to filter operation with a null data point.")

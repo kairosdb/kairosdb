@@ -194,29 +194,32 @@ public class BatchHandler implements Callable<Boolean>
 				else
 				{
 					logger.error("Failed to send data points", e);
-					for (DataPointEvent event : m_events)
+					if (failedLogger.isTraceEnabled())
 					{
-						StringWriter sw = new StringWriter();
-						JSONWriter jsonWriter = new JSONWriter(sw);
-						jsonWriter.object();
-						jsonWriter.key("name").value(event.getMetricName());
-						jsonWriter.key("timestamp").value(event.getDataPoint().getTimestamp());
-						jsonWriter.key("value");
-						event.getDataPoint().writeValueToJson(jsonWriter);
-
-						jsonWriter.key("tags").object();
-						ImmutableSortedMap<String, String> tags = event.getTags();
-						for (Map.Entry<String, String> entry : tags.entrySet())
+						for (DataPointEvent event : m_events)
 						{
-							jsonWriter.key(entry.getKey()).value(entry.getValue());
+							StringWriter sw = new StringWriter();
+							JSONWriter jsonWriter = new JSONWriter(sw);
+							jsonWriter.object();
+							jsonWriter.key("name").value(event.getMetricName());
+							jsonWriter.key("timestamp").value(event.getDataPoint().getTimestamp());
+							jsonWriter.key("value");
+							event.getDataPoint().writeValueToJson(jsonWriter);
+
+							jsonWriter.key("tags").object();
+							ImmutableSortedMap<String, String> tags = event.getTags();
+							for (Map.Entry<String, String> entry : tags.entrySet())
+							{
+								jsonWriter.key(entry.getKey()).value(entry.getValue());
+							}
+							jsonWriter.endObject();
+
+							jsonWriter.key("ttl").value(event.getTtl());
+
+							jsonWriter.endObject();
+
+							failedLogger.trace(sw.toString());
 						}
-						jsonWriter.endObject();
-
-						jsonWriter.key("ttl").value(event.getTtl());
-
-						jsonWriter.endObject();
-
-						failedLogger.trace(sw.toString());
 					}
 				}
 			}

@@ -3,6 +3,7 @@ package org.kairosdb.core.aggregator;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.plugin.Aggregator;
 
 /**
  Trims off the first, last or both (first and last) data points.  When aggregating

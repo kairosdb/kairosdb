@@ -132,6 +132,8 @@ public abstract class ResourceBase
                 bind(LegacyDataPointFactory.class).in(Singleton.class);
                 bind(StringDataPointFactory.class).in(Singleton.class);
 
+                bind(QueryPreProcessorContainer.class).to(GuiceQueryPreProcessor.class).in(javax.inject.Singleton.class);
+
             }
         });
         server = injector.getInstance(WebServer.class);

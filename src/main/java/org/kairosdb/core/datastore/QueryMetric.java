@@ -17,8 +17,8 @@ package org.kairosdb.core.datastore;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
-import org.kairosdb.core.aggregator.Aggregator;
-import org.kairosdb.core.groupby.GroupBy;
+import org.kairosdb.plugin.Aggregator;
+import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.util.Preconditions;
 
 import java.util.ArrayList;

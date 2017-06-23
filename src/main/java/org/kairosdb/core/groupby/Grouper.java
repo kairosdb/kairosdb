@@ -18,6 +18,7 @@ package org.kairosdb.core.groupby;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.plugin.GroupBy;
 
 import java.io.IOException;
 import java.util.ArrayList;

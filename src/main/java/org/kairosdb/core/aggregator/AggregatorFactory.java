@@ -16,6 +16,8 @@
 
 package org.kairosdb.core.aggregator;
 
+import org.kairosdb.plugin.Aggregator;
+
 public interface AggregatorFactory
 {
 	public Aggregator createAggregator(String name);

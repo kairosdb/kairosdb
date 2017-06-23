@@ -2,7 +2,7 @@ package org.kairosdb.rollup;
 
 import com.google.common.eventbus.EventBus;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.Aggregator;
+import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.core.aggregator.RangeAggregator;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;

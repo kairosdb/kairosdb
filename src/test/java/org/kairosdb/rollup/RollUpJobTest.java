@@ -8,7 +8,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.TestDataPointFactory;
-import org.kairosdb.core.aggregator.Aggregator;
+import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.core.aggregator.DiffAggregator;
 import org.kairosdb.core.aggregator.DivideAggregator;
 import org.kairosdb.core.aggregator.MaxAggregator;

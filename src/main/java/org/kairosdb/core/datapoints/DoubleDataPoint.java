@@ -45,10 +45,12 @@ public class DoubleDataPoint extends DataPointHelper
 
 	@Override
 	public void writeValueToJson(JSONWriter writer) throws JSONException
-	{
-		if (m_value != m_value || Double.isInfinite(m_value))
+	{	//m_value != m_value?? maybe is a bug
+		//if (m_value != m_value || Double.isInfinite(m_value))
+		//	throw new IllegalStateException("NaN or Infinity:" + m_value + " data point=" + this);
+		if (Double.isInfinite(m_value))
 			throw new IllegalStateException("NaN or Infinity:" + m_value + " data point=" + this);
-
+			
 		writer.value(m_value);
 	}
 

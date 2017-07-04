@@ -21,11 +21,14 @@ import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import com.google.common.eventbus.EventBus;
-import com.google.gson.Gson;
-import com.google.inject.*;
-import com.google.inject.util.Modules;
 import com.google.common.io.Files;
+import com.google.gson.Gson;
+import com.google.inject.Binding;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.Module;
+import com.google.inject.util.Modules;
 import org.h2.util.StringUtils;
 import org.json.JSONException;
 import org.json.JSONWriter;
@@ -37,16 +40,34 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.http.rest.json.DataPointsParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.util.PluginClassLoader;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 public class Main
@@ -440,7 +461,7 @@ public class Main
 	public void runImport(InputStream in) throws IOException, DatastoreException
 	{
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
-		EventBus eventBus = m_injector.getInstance(EventBus.class);
+		EventBusWithFilters eventBus = m_injector.getInstance(EventBusWithFilters.class);
 		KairosDataPointFactory dpFactory = m_injector.getInstance(KairosDataPointFactory.class);
 
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8));

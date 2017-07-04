@@ -22,7 +22,6 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.SetMultimap;
-import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -36,13 +35,22 @@ import org.kairosdb.core.datapoints.DataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDoubleDataPoint;
 import org.kairosdb.core.datapoints.LegacyLongDataPoint;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.DataPointRow;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.Order;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.QueryPlugin;
+import org.kairosdb.core.datastore.ServiceKeyStore;
+import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.datastore.TagSetImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.core.queue.ProcessorHandler;
 import org.kairosdb.core.queue.QueueProcessor;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.KDataInput;
@@ -93,7 +101,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	private static final Charset UTF_8 = Charset.forName("UTF-8");
 
 	//private final Cluster m_cluster;
-	private final EventBus m_eventBus;
+	private final EventBusWithFilters m_eventBus;
 
 
 	//new properties
@@ -127,7 +135,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			CassandraConfiguration cassandraConfiguration,
 			KairosDataPointFactory kairosDataPointFactory,
 			QueueProcessor queueProcessor,
-			EventBus eventBus,
+			EventBusWithFilters eventBus,
 			IngestExecutorService congestionExecutor) throws DatastoreException
 	{
 		m_cassandraClient = cassandraClient;

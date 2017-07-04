@@ -1,16 +1,16 @@
 package org.kairosdb.core.aggregator;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.EventBus;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.core.groupby.TagGroupBy;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.testing.ListDataPointGroup;
 import org.mockito.ArgumentCaptor;
 
@@ -27,14 +27,14 @@ import static org.mockito.Mockito.mock;
 public class SaveAsAggregatorTest
 {
 	private SaveAsAggregator m_aggregator;
-	private EventBus m_mockEventBus;
+	private EventBusWithFilters m_mockEventBus;
 	ArgumentCaptor<DataPointEvent> m_event;
 
 
 	@Before
 	public void setup()
 	{
-		m_mockEventBus = mock(EventBus.class);
+		m_mockEventBus = mock(EventBusWithFilters.class);
 		m_aggregator = new SaveAsAggregator(m_mockEventBus);
 
 		m_event = ArgumentCaptor.forClass(DataPointEvent.class);

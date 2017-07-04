@@ -178,7 +178,12 @@ junitClasspath.addPath("src/main/java")
 junitClasspath.addPath("src/test/resources")
 junitClasspath.addPath("src/main/resources")
 
-junit = new JUnitRule("junit-test").addSources(testSources)
+junitTest = new JUnitRule("junit-test").addSources(testSources)
+		.setClasspath(junitClasspath)
+		.addDepends(testCompileRule)
+		.addDepends(ivyTestResolve)
+
+junit = new JUnitRule("test").addSources(testSources)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
 		.addDepends(ivyTestResolve)

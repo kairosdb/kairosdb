@@ -17,7 +17,6 @@
 package org.kairosdb.datastore.h2;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -25,7 +24,12 @@ import com.mchange.v2.c3p0.DataSources;
 import org.agileclick.genorm.runtime.GenOrmQueryResultSet;
 import org.h2.jdbcx.JdbcDataSource;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.ServiceKeyStore;
+import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.datastore.TagSetImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.cassandra.DataPointsRowKey;
 import org.kairosdb.datastore.h2.orm.DSEnvelope;
@@ -44,6 +48,7 @@ import org.kairosdb.datastore.h2.orm.ServiceIndex_base;
 import org.kairosdb.datastore.h2.orm.Tag;
 import org.kairosdb.datastore.h2.orm.TagNamesQuery;
 import org.kairosdb.datastore.h2.orm.TagValuesQuery;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.events.RowKeyEvent;
 import org.kairosdb.util.KDataInput;
@@ -74,12 +79,12 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 
 	private Connection m_holdConnection;  //Connection that holds the database open
 	private final KairosDataPointFactory m_dataPointFactory;
-	private final EventBus m_eventBus;
+	private final EventBusWithFilters m_eventBus;
 
 	@Inject
 	public H2Datastore(@Named(DATABASE_PATH_PROPERTY) String dbPath, 
 			KairosDataPointFactory dataPointFactory,
-			EventBus eventBus) throws DatastoreException
+			EventBusWithFilters eventBus) throws DatastoreException
 	{
 		m_dataPointFactory = dataPointFactory;
 		m_eventBus = eventBus;

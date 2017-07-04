@@ -16,19 +16,25 @@
 package org.kairosdb.core.http.rest.json;
 
 import com.google.common.base.Charsets;
-import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datapoints.StringDataPoint;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.ServiceKeyStore;
+import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.eventbus.EventBusConfiguration;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.DataPointEvent;
 
 import java.io.IOException;
@@ -39,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
 import java.util.zip.GZIPInputStream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -50,11 +57,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class DataPointsParserTest
 {
 	private static KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
+	private EventBusWithFilters eventBus;
+
+	@Before
+    public void setup()
+    {
+        eventBus = new EventBusWithFilters(new EventBusConfiguration(new Properties()));
+    }
+
 	@Test
 	public void test_emptyJson_Invalid() throws DatastoreException, IOException
 	{
 		String json = "";
-		EventBus eventBus = new EventBus();
 
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json), new Gson(),
 				dataPointFactory);
@@ -70,8 +84,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 456, \"datapoints\": [[1,2]], \"tags\":{\"foo\":\"bar\"}}, {\"datapoints\": [[1,2]], \"tags\":{\"foo\":\"bar\"}}]";
 
-		EventBus eventBus = new EventBus();
-
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -85,8 +97,6 @@ public class DataPointsParserTest
 	public void test_timestampButNoValue_Invalid() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"tags\": {\"foo\":\"bar\"}}]";
-
-		EventBus eventBus = new EventBus();
 
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
@@ -102,7 +112,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"value\": 1234, \"tags\":{\"foo\":\"bar\"}}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -117,7 +126,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 0, \"value\": 1234, \"tags\":{\"foo\":\"bar\"}}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -132,7 +140,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": -1, \"value\": 1234, \"tags\":{\"foo\":\"bar\"}}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -147,7 +154,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -162,7 +168,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[2,]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -177,7 +182,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[,2]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -192,7 +196,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[1,2]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -207,7 +210,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"bad:你好name\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[1,2]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -222,7 +224,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"timestamp\": 12345, \"value\": 456, \"datapoints\": [[1,2]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -237,7 +238,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[0,2]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -252,7 +252,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[-1,2]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -267,7 +266,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"\":\"bar\"}, \"datapoints\": [[1,2]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -283,7 +281,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"bad:name\":\"bar\"}, \"datapoints\": [[1,2]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -297,7 +294,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"foo\":\"\"}, \"datapoints\": [[1,2]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -312,7 +308,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"foo\":\"bad:value\"}, \"datapoints\": [[1,2]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -326,7 +321,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"timestamp\": 456, \"value\":\"\", \"tags\":{\"name\":\"\"}}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -345,7 +339,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metricName\", \"tags\":{\"foo\":\"bar\"}, \"datapoints\": [[1, \"0.000000\"]]}]";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -359,7 +352,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 4321, \"tags\":{\"foo\":\"bar\"}}]";
 
-		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
 		eventBus.register(fakeds);
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
@@ -385,7 +377,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": }]";
 
-		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
 		eventBus.register(fakeds);
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
@@ -410,7 +401,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\", \"time\": 1234, \"value\": 4321, \"datapoints\": [[456, 654]], \"tags\":{\"foo\":\"bar\"}}]";
 
-		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
 		eventBus.register(fakeds);
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
@@ -440,7 +430,6 @@ public class DataPointsParserTest
 	{
 		String json = Resources.toString(Resources.getResource("json-metric-parser-multiple-metric.json"), Charsets.UTF_8);
 
-		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
 		eventBus.register(fakeds);
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
@@ -480,7 +469,6 @@ public class DataPointsParserTest
 	{
 		String json = Resources.toString(Resources.getResource("json-metric-parser-metrics-with-type.json"), Charsets.UTF_8);
 
-		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
 		eventBus.register(fakeds);
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
@@ -533,7 +521,6 @@ public class DataPointsParserTest
 	{
 		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": 4321, \"tags\":{\"foo\":\"bar\"}}";
 
-		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
 		eventBus.register(fakeds);
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
@@ -559,7 +546,6 @@ public class DataPointsParserTest
 	{
 		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": \"The Value\", \"tags\":{\"foo\":\"bar\"}}";
 
-		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
 		eventBus.register(fakeds);
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
@@ -585,7 +571,6 @@ public class DataPointsParserTest
 	{
 		String json = "[{\"name\": \"metric1\",\"datapoints\": [[1234, \"The Value\"]],\"tags\": {\"foo\": \"bar\"}}]";
 
-		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
 		eventBus.register(fakeds);
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
@@ -611,7 +596,6 @@ public class DataPointsParserTest
 	{
 		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": \"123\", \"tags\":{\"foo\":\"bar\"}}";
 
-		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
 		eventBus.register(fakeds);
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
@@ -637,7 +621,6 @@ public class DataPointsParserTest
 	{
 		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": \"123.3\", \"tags\":{\"foo\":\"bar\"}}";
 
-		EventBus eventBus = new EventBus();
 		FakeDataStore fakeds = new FakeDataStore();
 		eventBus.register(fakeds);
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
@@ -666,7 +649,6 @@ public class DataPointsParserTest
 		// Value is a map which is not valid
 		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": " + new HashMap() + ", \"tags\":{\"foo\":\"bar\"}}";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -683,7 +665,6 @@ public class DataPointsParserTest
 		// Value is a map which is not valid
 		String json = "{\"name\": \"metric1\", \"datapoints\": [[1349109376, " + new HashMap() + "]], \"tags\":{\"foo\":\"bar\"}}";
 
-		EventBus eventBus = new EventBus();
 		DataPointsParser parser = new DataPointsParser(eventBus, new StringReader(json),
 				new Gson(), dataPointFactory);
 
@@ -703,7 +684,6 @@ public class DataPointsParserTest
 		Reader reader = new InputStreamReader(
 				new GZIPInputStream(ClassLoader.getSystemResourceAsStream("large_import.gz")));
 
-		EventBus eventBus = new EventBus();
 
 		DataPointsParser parser = new DataPointsParser(eventBus, skipReader,
 				new Gson(), dataPointFactory);

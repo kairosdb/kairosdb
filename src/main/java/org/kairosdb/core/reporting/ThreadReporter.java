@@ -17,13 +17,10 @@
 package org.kairosdb.core.reporting;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.EventBus;
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
-import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.StatsMap;
 import org.kairosdb.util.Tags;
@@ -190,7 +187,7 @@ public class ThreadReporter
 
 	public static void submitData(LongDataPointFactory longDataPointFactory,
 			StringDataPointFactory stringDataPointFactory,
-			EventBus eventBus) throws DatastoreException
+			EventBusWithFilters eventBus) throws DatastoreException
 	{
 		while (s_reporterData.getListSize() != 0)
 		{

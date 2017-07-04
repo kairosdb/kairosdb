@@ -17,7 +17,6 @@
 package org.kairosdb.core.telnet;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.EventBus;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +26,7 @@ import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.util.Tags;
 
 import java.io.IOException;
@@ -35,7 +35,8 @@ import java.net.UnknownHostException;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.kairosdb.util.DataPointEventUtil.verifyEvent;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 /**
  Created with IntelliJ IDEA.
@@ -47,7 +48,7 @@ public class TelnetServerTest
 {
 	private static final int TELNET_PORT = 4244;
 	private static final int MAX_COMMAND_LENGTH = 1024;
-	private EventBus m_eventBus;
+	private EventBusWithFilters m_eventBus;
 	private TelnetServer m_server;
 	private TelnetClient m_client;
 	private TestCommandProvider commandProvider;
@@ -55,7 +56,7 @@ public class TelnetServerTest
 	@Before
 	public void setupDatastore() throws KairosDBException, IOException
 	{
-		m_eventBus = mock(EventBus.class);
+		m_eventBus = mock(EventBusWithFilters.class);
 		commandProvider = new TestCommandProvider();
 		commandProvider.putCommand("put", new PutCommand(m_eventBus, "localhost",
 				new LongDataPointFactoryImpl(), new DoubleDataPointFactoryImpl()));

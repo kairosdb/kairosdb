@@ -1,7 +1,6 @@
 package org.kairosdb.core.http.rest;
 
 
-import com.google.common.eventbus.EventBus;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -26,7 +25,14 @@ import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.QueryPluginFactory;
+import org.kairosdb.core.datastore.QueryQueuingManager;
+import org.kairosdb.core.datastore.ServiceKeyStore;
+import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.groupby.TestGroupByFactory;
@@ -34,6 +40,8 @@ import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
+import org.kairosdb.eventbus.EventBusConfiguration;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.testing.Client;
 import org.kairosdb.util.SimpleStatsReporter;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -42,7 +50,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +59,7 @@ import java.util.TreeMap;
 
 public abstract class ResourceBase
 {
-    private static final EventBus eventBus = new EventBus();
+    private static final EventBusWithFilters eventBus = new EventBusWithFilters(new EventBusConfiguration(new Properties()));
     private static WebServer server;
 
     static QueryQueuingManager queuingManager;
@@ -74,7 +81,7 @@ public abstract class ResourceBase
             @Override
             protected void configure()
             {
-                bind(EventBus.class).toInstance(eventBus);
+                bind(EventBusWithFilters.class).toInstance(eventBus);
                 //Need to register an exception handler
                 bindListener(Matchers.any(), new TypeListener()
                 {

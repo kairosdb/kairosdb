@@ -6,10 +6,10 @@ import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.datastax.driver.core.exceptions.UnavailableException;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.EventBus;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.queue.EventCompletionCallBack;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.BatchReductionEvent;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.events.RowKeyEvent;
@@ -39,7 +39,7 @@ public class BatchHandler implements Callable<Boolean>
 	private final int m_defaultTtl;
 	private final DataCache<DataPointsRowKey> m_rowKeyCache;
 	private final DataCache<String> m_metricNameCache;
-	private final EventBus m_eventBus;
+	private final EventBusWithFilters m_eventBus;
 	private final boolean m_fullBatch;
 	private final ConsistencyLevel m_consistencyLevel;
 	private final Session m_session;
@@ -49,7 +49,7 @@ public class BatchHandler implements Callable<Boolean>
 
 	public BatchHandler(List<DataPointEvent> events, EventCompletionCallBack callBack,
 			int defaultTtl, ConsistencyLevel consistencyLevel, DataCache<DataPointsRowKey>
-			rowKeyCache, DataCache<String> metricNameCache, EventBus eventBus,
+			rowKeyCache, DataCache<String> metricNameCache, EventBusWithFilters eventBus,
 			Session session, Schema schema,
 			boolean fullBatch, BatchStats batchStats, LoadBalancingPolicy loadBalancingPolicy)
 	{

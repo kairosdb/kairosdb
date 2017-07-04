@@ -6,20 +6,23 @@ import com.github.rholder.retry.Retryer;
 import com.github.rholder.retry.RetryerBuilder;
 import com.github.rholder.retry.WaitStrategies;
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.EventBus;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.reporting.KairosMetricReporter;
-import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.eventbus.EventBusWithFilters;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  Created by bhawkins on 10/27/16.
@@ -28,7 +31,7 @@ public class IngestExecutorService implements KairosMetricReporter
 {
 	public static final String PERMIT_COUNT = "kairosdb.ingest_executor.thread_count";
 
-	private final EventBus m_eventBus;
+	private final EventBusWithFilters m_eventBus;
 	private final ExecutorService m_internalExecutor;
 	private final ThreadGroup m_threadGroup;
 	//Original idea behind this is that the number of threads could
@@ -45,7 +48,7 @@ public class IngestExecutorService implements KairosMetricReporter
 	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
 	@Inject
-	public IngestExecutorService(EventBus eventBus, @Named(PERMIT_COUNT) int permitCount)
+	public IngestExecutorService(EventBusWithFilters eventBus, @Named(PERMIT_COUNT) int permitCount)
 	{
 		m_eventBus = eventBus;
 		m_permitCount = permitCount;

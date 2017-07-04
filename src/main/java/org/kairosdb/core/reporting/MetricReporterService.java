@@ -16,7 +16,6 @@
 package org.kairosdb.core.reporting;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
@@ -24,6 +23,7 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.scheduler.KairosDBJob;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.Tags;
 import org.quartz.CronScheduleBuilder;
@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
@@ -48,7 +47,7 @@ public class MetricReporterService implements KairosDBJob
 	public static final String SCHEDULE_PROPERTY = "kairosdb.reporter.schedule";
 	public static final String REPORTER_TTL = "kairosdb.reporter.ttl";
 
-	private EventBus m_eventBus;
+	private EventBusWithFilters m_eventBus;
 	private KairosMetricReporterListProvider m_reporterProvider;
 	private final String m_hostname;
 	private final String m_schedule;
@@ -58,7 +57,7 @@ public class MetricReporterService implements KairosDBJob
 	private LongDataPointFactory m_dataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
-	public MetricReporterService(EventBus eventBus,
+	public MetricReporterService(EventBusWithFilters eventBus,
 			KairosMetricReporterListProvider reporterProvider,
 			@Named(SCHEDULE_PROPERTY) String schedule,
 			@Named(HOSTNAME) String hostname,

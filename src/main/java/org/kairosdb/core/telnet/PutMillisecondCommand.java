@@ -17,7 +17,6 @@
 package org.kairosdb.core.telnet;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.jboss.netty.channel.Channel;
@@ -27,6 +26,7 @@ import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.Tags;
 import org.kairosdb.util.Util;
@@ -41,14 +41,15 @@ import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporter
 {
-	private final EventBus m_eventBus;
+	private final EventBusWithFilters m_eventBus;
 	private AtomicInteger m_counter = new AtomicInteger();
 	private String m_hostName;
 	private LongDataPointFactory m_longFactory;
 	private DoubleDataPointFactory m_doubleFactory;
 
 	@Inject
-	public PutMillisecondCommand(EventBus eventBus, @Named("HOSTNAME") String hostname,
+    
+	public PutMillisecondCommand(EventBusWithFilters eventBus, @Named("HOSTNAME") String hostname,
 			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
 		checkNotNullOrEmpty(hostname);

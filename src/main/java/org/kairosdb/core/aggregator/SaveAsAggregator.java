@@ -1,18 +1,22 @@
 package org.kairosdb.core.aggregator;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.EventBus;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.plugin.Aggregator;
-import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.plugin.Aggregator;
+import org.kairosdb.plugin.GroupBy;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  Created by bhawkins on 8/28/15.
@@ -20,7 +24,7 @@ import java.util.*;
 @AggregatorName(name = "save_as", description = "Saves the results to a new metric.")
 public class SaveAsAggregator implements Aggregator, GroupByAware
 {
-	private final EventBus m_eventBus;
+	private final EventBusWithFilters m_eventBus;
 	private String m_metricName;
 	private Map<String, String> m_tags;
 	private int m_ttl = 0;
@@ -28,7 +32,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	private boolean m_addSavedFrom = true;
 
 	@Inject
-	public SaveAsAggregator(EventBus eventBus)
+	public SaveAsAggregator(EventBusWithFilters eventBus)
 	{
 		m_eventBus = eventBus;
 		m_tags = new HashMap<>();

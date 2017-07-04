@@ -15,7 +15,6 @@
  */
 package org.kairosdb.core.telnet;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelConfig;
@@ -33,12 +32,15 @@ import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.eventbus.EventBusConfiguration;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.ValidationException;
 
 import javax.annotation.Nullable;
 import java.net.SocketAddress;
 import java.util.Collections;
+import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -52,7 +54,7 @@ public class PutCommandTest
 	@Before
 	public void setup() throws DatastoreException
 	{
-		EventBus eventBus = new EventBus();
+		EventBusWithFilters eventBus = new EventBusWithFilters(new EventBusConfiguration(new Properties()));
 		m_datastore = new FakeDatastore();
 		eventBus.register(m_datastore);
 

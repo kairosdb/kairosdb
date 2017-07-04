@@ -16,7 +16,6 @@
 
 package org.kairosdb.core;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.net.InetAddresses;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -26,13 +25,45 @@ import com.google.inject.name.Names;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
-import org.kairosdb.core.aggregator.*;
-import org.kairosdb.core.datapoints.*;
+import org.kairosdb.core.aggregator.AggregatorFactory;
+import org.kairosdb.core.aggregator.AvgAggregator;
+import org.kairosdb.core.aggregator.CountAggregator;
+import org.kairosdb.core.aggregator.DataGapsMarkingAggregator;
+import org.kairosdb.core.aggregator.DiffAggregator;
+import org.kairosdb.core.aggregator.DivideAggregator;
+import org.kairosdb.core.aggregator.FilterAggregator;
+import org.kairosdb.core.aggregator.FirstAggregator;
+import org.kairosdb.core.aggregator.GuiceAggregatorFactory;
+import org.kairosdb.core.aggregator.LastAggregator;
+import org.kairosdb.core.aggregator.LeastSquaresAggregator;
+import org.kairosdb.core.aggregator.MaxAggregator;
+import org.kairosdb.core.aggregator.MinAggregator;
+import org.kairosdb.core.aggregator.PercentileAggregator;
+import org.kairosdb.core.aggregator.RateAggregator;
+import org.kairosdb.core.aggregator.SamplerAggregator;
+import org.kairosdb.core.aggregator.SaveAsAggregator;
+import org.kairosdb.core.aggregator.ScaleAggregator;
+import org.kairosdb.core.aggregator.SmaAggregator;
+import org.kairosdb.core.aggregator.StdAggregator;
+import org.kairosdb.core.aggregator.SumAggregator;
+import org.kairosdb.core.aggregator.TrimAggregator;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LegacyDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.NullDataPointFactory;
+import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.datastore.GuiceQueryPluginFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryPluginFactory;
 import org.kairosdb.core.datastore.QueryQueuingManager;
-import org.kairosdb.core.groupby.*;
+import org.kairosdb.core.groupby.BinGroupBy;
+import org.kairosdb.core.groupby.GroupByFactory;
+import org.kairosdb.core.groupby.GuiceGroupByFactory;
+import org.kairosdb.core.groupby.TagGroupBy;
+import org.kairosdb.core.groupby.TimeGroupBy;
+import org.kairosdb.core.groupby.ValueGroupBy;
 import org.kairosdb.core.http.rest.GuiceQueryPreProcessor;
 import org.kairosdb.core.http.rest.QueryPreProcessorContainer;
 import org.kairosdb.core.http.rest.json.QueryParser;
@@ -41,6 +72,8 @@ import org.kairosdb.core.queue.DataPointEventSerializer;
 import org.kairosdb.core.queue.QueueProcessor;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
+import org.kairosdb.eventbus.EventBusConfiguration;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.SimpleStatsReporter;
@@ -65,11 +98,12 @@ public class CoreModule extends AbstractModule
 	public static final String DATAPOINTS_FACTORY_LONG = "kairosdb.datapoints.factory.long";
 	public static final String DATAPOINTS_FACTORY_DOUBLE = "kairosdb.datapoints.factory.double";
 	private Properties m_props;
-	private final EventBus m_eventBus = new EventBus();
+	private final EventBusWithFilters m_eventBus;
 
 	public CoreModule(Properties props)
 	{
 		m_props = props;
+		m_eventBus = new EventBusWithFilters(new EventBusConfiguration(m_props));
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -77,7 +111,7 @@ public class CoreModule extends AbstractModule
 	{
 		String className = m_props.getProperty(property);
 
-		Class klass = null;
+		Class klass;
 		try
 		{
 			klass = getClass().getClassLoader().loadClass(className);
@@ -98,7 +132,7 @@ public class CoreModule extends AbstractModule
 		This bit of magic makes it so any object that is bound through guice just
 		needs to annotate a method with @Subscribe and they can get events.
 		 */
-		bind(EventBus.class).toInstance(m_eventBus);
+		bind(EventBusWithFilters.class).toInstance(m_eventBus);
 		//Need to register an exception handler
 		bindListener(Matchers.any(), new TypeListener()
 		{

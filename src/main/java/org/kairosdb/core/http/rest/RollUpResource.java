@@ -20,6 +20,7 @@ import javax.ws.rs.core.Response.Status;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.core.http.rest.MetricsResource.setHeaders;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 @Path("/api/v1/rollups")
@@ -213,15 +214,5 @@ public class RollUpResource
 		}
 
 		return null;
-	}
-
-	private ResponseBuilder setHeaders(ResponseBuilder responseBuilder)
-	{
-		responseBuilder.header("Access-Control-Allow-Origin", "*");
-		responseBuilder.header("Pragma", "no-cache");
-		responseBuilder.header("Cache-Control", "no-cache");
-		responseBuilder.header("Expires", 0);
-
-		return (responseBuilder);
 	}
 }

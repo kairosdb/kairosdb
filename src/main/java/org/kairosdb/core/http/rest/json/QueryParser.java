@@ -31,7 +31,8 @@ import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.datastore.*;
-import org.kairosdb.core.groupby.GroupBy;
+import org.kairosdb.plugin.Aggregator;
+import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
@@ -41,7 +42,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.validation.*;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.metadata.ConstraintDescriptor;
 import java.beans.BeanInfo;
@@ -148,22 +148,20 @@ public class QueryParser
 		}
 	}
 
-	public List<QueryMetric> parseQueryMetric(String json) throws QueryException, BeanValidationException
+	public Query parseQueryMetric(String json) throws QueryException, BeanValidationException
 	{
 		JsonParser parser = new JsonParser();
 		JsonObject obj = parser.parse(json).getAsJsonObject();
 		return parseQueryMetric(obj);
 	}
 
-	private List<QueryMetric> parseQueryMetric(JsonObject obj) throws QueryException, BeanValidationException
+	private Query parseQueryMetric(JsonObject obj) throws QueryException, BeanValidationException
 	{
 		return parseQueryMetric(obj, "");
 	}
 
-	private List<QueryMetric> parseQueryMetric(JsonObject obj, String contextPrefix) throws QueryException, BeanValidationException
+	private Query parseQueryMetric(JsonObject obj, String contextPrefix) throws QueryException, BeanValidationException
 	{
-		List<QueryMetric> ret = new ArrayList<>();
-
 		Query query;
 		try
 		{
@@ -173,6 +171,16 @@ public class QueryParser
 		catch (ContextualJsonSyntaxException e)
 		{
 			throw new BeanValidationException(new SimpleConstraintViolation(e.getContext(), e.getMessage()), "query");
+		}
+
+		//Parses plugins for the entire query
+		//Initial use was for post processing plugins
+		JsonElement queryPlugins = obj.get("plugins");
+		if (queryPlugins != null)
+		{
+			JsonArray pluginArray = queryPlugins.getAsJsonArray();
+			if (pluginArray.size() > 0)
+				parsePlugins("", query, pluginArray);
 		}
 
 		JsonArray metricsArray = obj.getAsJsonArray("metrics");
@@ -236,7 +244,7 @@ public class QueryParser
 
 				queryMetric.setTags(metric.getTags());
 
-				ret.add(queryMetric);
+				query.addQueryMetric(queryMetric);
 			}
 			catch (ContextualJsonSyntaxException e)
 			{
@@ -244,7 +252,7 @@ public class QueryParser
 			}
 		}
 
-		return (ret);
+		return (query);
 	}
 
 	public List<RollupTask> parseRollupTasks(String json) throws BeanValidationException, QueryException
@@ -290,7 +298,7 @@ public class QueryParser
 				validateObject(rollup, context);
 
 				JsonObject queryObject = rollupObject.getAsJsonObject("query");
-				List<QueryMetric> queries = parseQueryMetric(queryObject, context);
+				List<QueryMetric> queries = parseQueryMetric(queryObject, context).getQueryMetrics();
 
 				for (int k = 0; k < queries.size(); k++)
 				{
@@ -335,7 +343,7 @@ public class QueryParser
 		}
 	}
 
-	private void parsePlugins(String context, QueryMetric queryMetric, JsonArray plugins) throws BeanValidationException, QueryException
+	private void parsePlugins(String context, PluggableQuery queryMetric, JsonArray plugins) throws BeanValidationException, QueryException
 	{
 		for (int I = 0; I < plugins.size(); I++)
 		{
@@ -598,93 +606,6 @@ public class QueryParser
 			}
 		}
 
-	}
-
-	//===========================================================================
-	private static class Query
-	{
-		@SerializedName("start_absolute")
-		private Long m_startAbsolute;
-
-		@SerializedName("end_absolute")
-		private Long m_endAbsolute;
-
-		@Min(0)
-		@SerializedName("cache_time")
-		private int cache_time;
-
-		@Valid
-		@SerializedName("start_relative")
-		private RelativeTime start_relative;
-
-		@Valid
-		@SerializedName("end_relative")
-		private RelativeTime end_relative;
-
-		@Valid
-		@SerializedName("time_zone")
-		private DateTimeZone m_timeZone;// = DateTimeZone.UTC;;
-
-
-		public Long getStartAbsolute()
-		{
-			return m_startAbsolute;
-		}
-
-		public Long getEndAbsolute()
-		{
-			return m_endAbsolute;
-		}
-
-		public int getCacheTime()
-		{
-			return cache_time;
-		}
-
-		public RelativeTime getStartRelative()
-		{
-			return start_relative;
-		}
-
-		public RelativeTime getEndRelative()
-		{
-			return end_relative;
-		}
-
-		public DateTimeZone getTimeZone()
-		{
-			return m_timeZone;
-		}
-
-		public String getCacheString()
-		{
-			StringBuilder sb = new StringBuilder();
-			if (m_startAbsolute != null)
-				sb.append(m_startAbsolute).append(":");
-
-			if (start_relative != null)
-				sb.append(start_relative.toString()).append(":");
-
-			if (m_endAbsolute != null)
-				sb.append(m_endAbsolute).append(":");
-
-			if (end_relative != null)
-				sb.append(end_relative.toString()).append(":");
-
-			return (sb.toString());
-		}
-
-		@Override
-		public String toString()
-		{
-			return "Query{" +
-					"startAbsolute='" + m_startAbsolute + '\'' +
-					", endAbsolute='" + m_endAbsolute + '\'' +
-					", cache_time=" + cache_time +
-					", startRelative=" + start_relative +
-					", endRelative=" + end_relative +
-					'}';
-		}
 	}
 
 	//===========================================================================

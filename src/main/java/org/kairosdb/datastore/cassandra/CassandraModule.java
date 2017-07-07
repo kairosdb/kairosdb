@@ -17,10 +17,12 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Scope;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.ServiceKeyStore;
 
 import java.util.HashMap;
 import java.util.List;
@@ -63,15 +65,12 @@ public class CassandraModule extends AbstractModule
 	protected void configure()
 	{
 		bind(Datastore.class).to(CassandraDatastore.class).in(Scopes.SINGLETON);
+		bind(ServiceKeyStore.class).to(CassandraDatastore.class).in(Scopes.SINGLETON);
 		bind(CassandraDatastore.class).in(Scopes.SINGLETON);
-		bind(IncreaseMaxBufferSizesJob.class).in(Scopes.SINGLETON);
 		bind(CleanRowKeyCache.class).in(Scopes.SINGLETON);
-		bind(HectorConfiguration.class).in(Scopes.SINGLETON);
 		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);
-
-		bind(new TypeLiteral<List<RowKeyListener>>()
-		{
-		}).toProvider(RowKeyListenerProvider.class);
+		bind(CassandraClient.class).to(CassandraClientImpl.class);
+		bind(CassandraClientImpl.class).in(Scopes.SINGLETON);
 
 		bind(new TypeLiteral<Map<String, String>>(){}).annotatedWith(Names.named(CASSANDRA_AUTH_MAP))
 				.toInstance(m_authMap);

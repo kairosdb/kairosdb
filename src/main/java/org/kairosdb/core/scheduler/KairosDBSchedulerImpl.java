@@ -65,6 +65,7 @@ public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
 				Class bindingClass = key.getTypeLiteral().getRawType();
 				if (KairosDBJob.class.isAssignableFrom(bindingClass))
 				{
+					log.info("Starting job: "+bindingClass.getName());
 					KairosDBJob job = (KairosDBJob) guice.getInstance(bindingClass);
 					JobDetail jobDetail = newJob(job.getClass())
 							.withIdentity(job.getClass().getName()).build();

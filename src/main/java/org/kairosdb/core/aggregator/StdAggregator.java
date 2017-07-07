@@ -45,12 +45,34 @@ import java.util.Iterator;
 )
 public class StdAggregator extends RangeAggregator
 {
+	public enum Dev
+	{
+		POS_SD, NEG_SD, VALUE
+	};
+
 	private DoubleDataPointFactory m_dataPointFactory;
+	private Dev m_dev;
+	private int m_devCount = 1;
 
 	@Inject
 	public StdAggregator(DoubleDataPointFactory dataPointFactory)
 	{
 		m_dataPointFactory = dataPointFactory;
+	}
+
+	/**
+	 Sets which type of value to return.
+
+	 @param dev
+	 */
+	public void setReturnType(Dev dev)
+	{
+		m_dev = dev;
+	}
+
+	public void setDevCount(int count)
+	{
+		m_devCount = count;
 	}
 
 	@Override
@@ -90,7 +112,19 @@ public class StdAggregator extends RangeAggregator
 				stdDev = Math.sqrt((pwrSumAvg * count - count * average * average) / (count - 1));
 			}
 
-			return Collections.singletonList(m_dataPointFactory.createDataPoint(returnTime, Double.isNaN(stdDev) ? 0 : stdDev));
+			if (Double.isNaN(stdDev))
+				stdDev = 0;
+
+			double ret = 0;
+
+			if (m_dev == Dev.POS_SD)
+				ret = average + (stdDev * m_devCount);
+			else if (m_dev == Dev.NEG_SD)
+				ret = average - (stdDev * m_devCount);
+			else
+				ret = stdDev;
+
+			return Collections.singletonList(m_dataPointFactory.createDataPoint(returnTime, ret));
 		}
 	}
 

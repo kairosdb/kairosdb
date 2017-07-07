@@ -13,6 +13,8 @@ import java.util.Iterator;
 import java.sql.Timestamp;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Attributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.agileclick.genorm.runtime.*;
 
 

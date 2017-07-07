@@ -1,6 +1,6 @@
 package org.kairosdb.core.aggregator;
 
-import org.kairosdb.core.groupby.GroupBy;
+import org.kairosdb.plugin.GroupBy;
 
 import java.util.List;
 

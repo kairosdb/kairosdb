@@ -18,6 +18,7 @@ package org.kairosdb.core.groupby;
 import org.apache.bval.constraints.NotEmpty;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.GroupByName;
+import org.kairosdb.plugin.GroupBy;
 
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;

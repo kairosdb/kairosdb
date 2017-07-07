@@ -20,6 +20,7 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.plugin.Aggregator;
 
 
 @AggregatorName(

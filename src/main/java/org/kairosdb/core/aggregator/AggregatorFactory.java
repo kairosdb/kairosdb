@@ -17,6 +17,7 @@
 package org.kairosdb.core.aggregator;
 
 import com.google.common.collect.ImmutableList;
+import org.kairosdb.plugin.Aggregator;
 
 public interface AggregatorFactory
 {

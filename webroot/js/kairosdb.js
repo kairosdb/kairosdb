@@ -102,18 +102,9 @@ kairosdb.Metric = function (name) {
 		if (!this.aggregators)
 			this.aggregators = [];
 
-		var percentile = {};
-		percentile.name = "percentile";
+		var percentile = this.addRangeAggregator("percentile", value, unit, time_zone, align_start_time);
 		percentile.percentile = percent;
-		if (unit) {
-			percentile.sampling = {};
-			percentile.sampling.unit = unit;
-			percentile.sampling.value = value;
-			percentile.sampling.time_zone = time_zone;
-			percentile.align_start_time = align_start_time;
-		}
 
-		this.aggregators.push(percentile);
 		return this;
 	};
 
@@ -179,7 +170,7 @@ kairosdb.Metric = function (name) {
 		}
 
 		this.aggregators.push(aggregator);
-		return this;
+		return aggregator;
 	};
 
 	this.addScaleAggregator = function (scalingFactor) {
@@ -254,6 +245,7 @@ kairosdb.BinGroupBy = function (groupSize) {
  */
 kairosdb.MetricQuery = function (cacheTime) {
 	this.metrics = [];
+	this.plugins = [];
 	this.cache_time = 0;
 	if (cacheTime != undefined)
 		this.cache_time = cacheTime;
@@ -302,6 +294,16 @@ kairosdb.MetricQuery = function (cacheTime) {
 	 */
 	this.setTimeZone = function (timeZone) {
 		this.time_zone = timeZone;
+	}
+
+	/**
+
+	 */
+	this.setPostScript = function (postScript) {
+		var plugin = {};
+		plugin.name = 'kairos_script';
+		plugin.script = postScript;
+		this.plugins.push(plugin);
 	}
 
 	/**

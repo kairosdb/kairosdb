@@ -16,6 +16,8 @@
 
 package org.kairosdb.core.groupby;
 
+import org.kairosdb.plugin.GroupBy;
+
 public interface GroupByFactory
 {
 	GroupBy createGroupBy(String name);

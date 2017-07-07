@@ -15,7 +15,6 @@
  */
 package org.kairosdb.datastore.cassandra;
 
-import me.prettyprint.cassandra.serializers.AbstractSerializer;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.util.StringPool;
 
@@ -23,7 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.SortedMap;
 
-public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRowKey>
+public class DataPointsRowKeySerializer
 {
 	public static final Charset UTF8 = Charset.forName("UTF-8");
 
@@ -53,7 +52,6 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 			return (str);
 	}
 
-	@Override
 	public ByteBuffer toByteBuffer(DataPointsRowKey dataPointsRowKey)
 	{
 		ByteBuffer buffer = dataPointsRowKey.getSerializedBuffer();
@@ -210,7 +208,6 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 	}
 
 
-	@Override
 	public DataPointsRowKey fromByteBuffer(ByteBuffer byteBuffer)
 	{
 		int start = byteBuffer.position();

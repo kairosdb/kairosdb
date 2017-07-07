@@ -53,7 +53,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-absolute-dates-with-groupby.json"), Charsets.UTF_8);
 
-		List<QueryMetric> results = parser.parseQueryMetric(json);
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
 		assertThat(results.size(), equalTo(1));
 
@@ -70,7 +70,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-no-aggregators.json"), Charsets.UTF_8);
 
-		List<QueryMetric> results = parser.parseQueryMetric(json);
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
 		assertThat(results.size(), equalTo(1));
 
@@ -103,7 +103,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-no-tags.json"), Charsets.UTF_8);
 
-		List<QueryMetric> results = parser.parseQueryMetric(json);
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
 		assertThat(results.size(), equalTo(1));
 		QueryMetric queryMetric = results.get(0);
@@ -115,7 +115,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-one-tag.json"), Charsets.UTF_8);
 
-		List<QueryMetric> results = parser.parseQueryMetric(json);
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
 		assertThat(results.size(), equalTo(1));
 		QueryMetric queryMetric = results.get(0);
@@ -129,7 +129,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-two-tags.json"), Charsets.UTF_8);
 
-		List<QueryMetric> results = parser.parseQueryMetric(json);
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
 		assertThat(results.size(), equalTo(1));
 		QueryMetric queryMetric = results.get(0);
@@ -145,7 +145,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-exclude-tags.json"), Charsets.UTF_8);
 
-		List<QueryMetric> results = parser.parseQueryMetric(json);
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
 		assertThat(results.size(), equalTo(1));
 		QueryMetric queryMetric = results.get(0);

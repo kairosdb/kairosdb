@@ -2,6 +2,41 @@
 
 <definitions xmlns="http://www.cpmake.org">
 
+	<definition name="sun_javac" command="javac">
+
+		<mode>debug</mode>
+		<mode>release</mode>
+
+		<property name="compiler">Sun Java</property>
+
+		<option name="deprecation">-deprecation</option>
+		<option name="unchecked">-Xlint:unchecked</option>
+		<option name="fallthrough">-Xlint:fallthrough</option>
+		<option name="path" >-Xlint:path</option>
+		<option name="serial" >-Xlint:serial</option>
+		<option name="finally">-Xlint:finally</option>
+		<option name="lintall">-Xlint:all</option>
+		<option name="verbose">-verbose</option>
+
+		<option name="source" pattern="(.+)">-source $1</option>
+		<option name="target" pattern="(.+)">-target $1</option>
+
+		<option name="classpath"
+		        pattern="(.+)">-classpath $1</option>
+
+		<option name="class_dir" pattern="(.+)">-d $1</option>
+
+		<option name="sourcepath" pattern="(.+)">-sourcepath $1</option>
+
+		<option name="encoding" pattern="(.+)">-encoding $1</option>
+
+		<option mode="debug">-g</option>
+		<option mode="release">-g:none</option>
+
+		<option name="sourcefile" pattern="(.+)">$1</option>
+
+	</definition>
+
 	<definition name="genormous" command="java">
 		<!-- <command name="genorm">java</command>
 		<command name="genquery">java</command> -->
@@ -41,6 +76,18 @@
 		<option name="message" pattern="(.+)">\\"$1\\"</option>
 		<option name="title" pattern="(.+)">with title \\"$1\\"</option>
 		<option>"</option>
+	</definition>
+
+	<definition name="kairos" command="java">
+		<option name="debug">-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005</option>
+		<option name="profile" pattern="(.+)">$1</option>
+		<option>-Dio.netty.epollBugWorkaround=true</option>
+		<option name="classpath" pattern="(.+)">-cp $1</option>
+		<option>org.kairosdb.core.Main</option>
+		<option name="command" pattern="(.+)">-c $1</option>
+		<option name="export_metric" pattern="(.+)">-n $1</option>
+		<option name="import_export_file" pattern="(.+)">-f $1</option>
+		<option name="properties" pattern="(.+)">-p $1</option>
 	</definition>
 
 </definitions>

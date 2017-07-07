@@ -17,18 +17,17 @@ package org.kairosdb.core.datastore;
 
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.aggregator.Aggregator;
+import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.core.aggregator.LimitAggregator;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +55,6 @@ public class KairosDatastore
 
 	private final Datastore m_datastore;
 	private final QueryQueuingManager m_queuingManager;
-	private final List<DataPointListener> m_dataPointListeners;
 	private final KairosDataPointFactory m_dataPointFactory;
 
 	private String m_baseCacheDir;
@@ -66,12 +64,11 @@ public class KairosDatastore
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-			List<DataPointListener> dataPointListeners, KairosDataPointFactory dataPointFactory,
+			KairosDataPointFactory dataPointFactory,
 			@Named(KEEP_CACHE_FILES) boolean keepCacheFiles)
 			throws DatastoreException
 	{
 		m_datastore = checkNotNull(datastore);
-		m_dataPointListeners = checkNotNull(dataPointListeners);
 		m_queuingManager = checkNotNull(queuingManager);
 		m_dataPointFactory = dataPointFactory;
 
@@ -186,7 +183,7 @@ public class KairosDatastore
 		m_datastore.close();
 	}
 
-	public void putDataPoint(String metricName,
+	/*public void putDataPoint(String metricName,
 			ImmutableSortedMap<String, String> tags,
 			DataPoint dataPoint) throws DatastoreException
 	{
@@ -199,12 +196,7 @@ public class KairosDatastore
 	{
 		//Add to datastore first.
 		m_datastore.putDataPoint(metricName, tags, dataPoint, ttl);
-
-		for (DataPointListener dataPointListener : m_dataPointListeners)
-		{
-			dataPointListener.dataPoint(metricName, tags, dataPoint);
-		}
-	}
+	}*/
 
 
 	public Iterable<String> getMetricNames() throws DatastoreException
@@ -459,7 +451,7 @@ public class KairosDatastore
 		{
 			long queryStartTime = System.currentTimeMillis();
 			
-			CachedSearchResult cachedResults = null;
+			SearchResult searchResult = null;
 
 			List<DataPointRow> returnedRows = null;
 
@@ -467,28 +459,33 @@ public class KairosDatastore
 			{
 				String tempFile = m_cacheDir + m_cacheFilename;
 
+				/*searchResult = new MemorySearchResult(m_metric.getName());
+				m_datastore.queryDatabase(m_metric, searchResult);
+				returnedRows = searchResult.getRows();*/
+
 				if (m_metric.getCacheTime() > 0)
 				{
-					cachedResults = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
+					searchResult = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
 							tempFile, m_metric.getCacheTime(), m_dataPointFactory, m_keepCacheFiles);
-					if (cachedResults != null)
+					if (searchResult != null)
 					{
-						returnedRows = cachedResults.getRows();
+						returnedRows = searchResult.getRows();
 						logger.debug("Cache HIT!");
 					}
 				}
 
-				if (cachedResults == null)
+				if (searchResult == null)
 				{
 					logger.debug("Cache MISS!");
-					cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
+					searchResult = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
 							tempFile, m_dataPointFactory, m_keepCacheFiles);
-					m_datastore.queryDatabase(m_metric, cachedResults);
-					returnedRows = cachedResults.getRows();
+					m_datastore.queryDatabase(m_metric, searchResult);
+					returnedRows = searchResult.getRows();
 				}
 			}
 			catch (Exception e)
 			{
+				logger.error("Query Error", e);
 				throw new DatastoreException(e);
 			}
 

@@ -83,6 +83,16 @@
 		},
 		{
 			"name": "<metric_name>",
+			"order": "desc",
+			"aggregators":[
+				{
+					"name":"rate",
+					"unit": "milliseconds"
+				}
+			]
+		},
+		{
+			"name": "<metric_name>",
 			"aggregators":[
 				{
 					"name":"sum",

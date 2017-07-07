@@ -23,6 +23,7 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
+import org.kairosdb.plugin.Aggregator;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;

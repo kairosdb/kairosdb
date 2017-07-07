@@ -13,6 +13,5 @@ public class ListenerModule extends AbstractModule
 	{
 		bind(RemoteDatastore.class).in(Scopes.SINGLETON);
 		bind(RemoteSendJob.class).in(Scopes.SINGLETON);
-		bind(RemoteListener.class).in(Scopes.SINGLETON);
 	}
 }

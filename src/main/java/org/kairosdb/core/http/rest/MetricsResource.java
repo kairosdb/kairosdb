@@ -35,6 +35,8 @@ import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.datastore.QueryPlugin;
+import org.kairosdb.core.datastore.QueryPostProcessingPlugin;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
@@ -42,11 +44,16 @@ import org.kairosdb.core.formatter.JsonResponse;
 import org.kairosdb.core.http.rest.json.DataPointsParser;
 import org.kairosdb.core.http.rest.json.ErrorResponse;
 import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
+import org.kairosdb.core.http.rest.json.Query;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.util.MemoryMonitorException;
+import org.kairosdb.util.SimpleStats;
+import org.kairosdb.util.SimpleStatsReporter;
+import org.kairosdb.util.StatsMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,7 +85,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,6 +113,7 @@ public class MetricsResource implements KairosMetricReporter
 	public static final String QUERY_URL = "/datapoints/query";
 
 	private final KairosDatastore datastore;
+	private final EventBusWithFilters m_eventBus;
 	private final Map<String, DataFormatter> formatters = new HashMap<>();
 	private final QueryParser queryParser;
     private final AggregatorFactory aggregatorFactory;
@@ -118,6 +125,8 @@ public class MetricsResource implements KairosMetricReporter
 	private final AtomicInteger m_ingestedDataPoints = new AtomicInteger();
 	private final AtomicInteger m_ingestTime = new AtomicInteger();
 
+	private final StatsMap m_statsMap = new StatsMap();
+
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
 	@Inject
@@ -125,6 +134,20 @@ public class MetricsResource implements KairosMetricReporter
 
 	@Inject
 	private StringDataPointFactory m_stringDataPointFactory = new StringDataPointFactory();
+
+	@Inject
+	private QueryPreProcessorContainer m_queryPreProcessor = new QueryPreProcessorContainer()
+	{
+		@Override
+		public Query preProcess(Query query)
+		{
+			return query;
+		}
+	};
+
+	@Inject(optional=true)
+	@Named("kairosdb.queries.aggregate_stats")
+	private boolean m_aggregatedQueryMetrics = false;
 
 	@Inject(optional=true)
 	@Named("kairosdb.log.queries.enable")
@@ -143,12 +166,17 @@ public class MetricsResource implements KairosMetricReporter
 	private String hostName = "localhost";
 
 	@Inject
+	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
+
+	@Inject
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
-			KairosDataPointFactory dataPointFactory, AggregatorFactory aggregatorFactory)
+			KairosDataPointFactory dataPointFactory, AggregatorFactory aggregatorFactory,
+			EventBusWithFilters eventBus)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.queryParser = checkNotNull(queryParser);
-        this.aggregatorFactory = checkNotNull(aggregatorFactory);
+		this.aggregatorFactory = checkNotNull(aggregatorFactory);
+		m_eventBus = checkNotNull(eventBus);
 		m_kairosDataPointFactory = dataPointFactory;
 		formatters.put("json", new JsonFormatter());
 
@@ -290,7 +318,7 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		try
 		{
-			DataPointsParser parser = new DataPointsParser(datastore, new InputStreamReader(json, "UTF-8"),
+			DataPointsParser parser = new DataPointsParser(m_eventBus, new InputStreamReader(json, "UTF-8"),
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 
@@ -309,17 +337,7 @@ public class MetricsResource implements KairosMetricReporter
 				return builder.build();
 			}
 		}
-		catch (JsonIOException e)
-		{
-			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			return builder.addError(e.getMessage()).build();
-		}
-		catch (JsonSyntaxException e)
-		{
-			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			return builder.addError(e.getMessage()).build();
-		}
-		catch (MalformedJsonException e)
+		catch (JsonIOException | MalformedJsonException | JsonSyntaxException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
@@ -363,7 +381,7 @@ public class MetricsResource implements KairosMetricReporter
 
 			jsonResponse.begin();
 
-			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
+			List<QueryMetric> queries = queryParser.parseQueryMetric(json).getQueryMetrics();
 
 			for (QueryMetric query : queries)
 			{
@@ -392,12 +410,7 @@ public class MetricsResource implements KairosMetricReporter
 			setHeaders(responseBuilder);
 			return responseBuilder.build();
 		}
-		catch (JsonSyntaxException e)
-		{
-			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			return builder.addError(e.getMessage()).build();
-		}
-		catch (QueryException e)
+		catch (JsonSyntaxException | QueryException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
@@ -477,7 +490,11 @@ public class MetricsResource implements KairosMetricReporter
 
 			jsonResponse.begin();
 
-			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
+			Query mainQuery = queryParser.parseQueryMetric(json);
+
+			mainQuery = m_queryPreProcessor.preProcess(mainQuery);
+
+			List<QueryMetric> queries = mainQuery.getQueryMetrics();
 
 			int queryCount = 0;
 			for (QueryMetric query : queries)
@@ -521,9 +538,25 @@ public class MetricsResource implements KairosMetricReporter
 			ThreadReporter.addDataPoint(REQUEST_TIME, queryTime);
 
 
+			if (m_aggregatedQueryMetrics)
+			{
+				ThreadReporter.gatherData(m_statsMap);
+			}
+			else
+			{
+				ThreadReporter.submitData(m_longDataPointFactory,
+						m_stringDataPointFactory, m_eventBus);
+			}
 
-			ThreadReporter.submitData(m_longDataPointFactory,
-					m_stringDataPointFactory, datastore);
+			//System.out.println("About to process plugins");
+			List<QueryPlugin> plugins = mainQuery.getPlugins();
+			for (QueryPlugin plugin : plugins)
+			{
+				if (plugin instanceof QueryPostProcessingPlugin)
+				{
+					respFile = ((QueryPostProcessingPlugin)plugin).processQueryResults(respFile);
+				}
+			}
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new FileStreamingOutput(respFile));
@@ -531,12 +564,7 @@ public class MetricsResource implements KairosMetricReporter
 			setHeaders(responseBuilder);
 			return responseBuilder.build();
 		}
-		catch (JsonSyntaxException e)
-		{
-			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			return builder.addError(e.getMessage()).build();
-		}
-		catch (QueryException e)
+		catch (JsonSyntaxException | QueryException e )
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
@@ -594,7 +622,7 @@ public class MetricsResource implements KairosMetricReporter
 
 		try
 		{
-			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
+			List<QueryMetric> queries = queryParser.parseQueryMetric(json).getQueryMetrics();
 
 			for (QueryMetric query : queries)
 			{
@@ -603,12 +631,7 @@ public class MetricsResource implements KairosMetricReporter
 
 			return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
 		}
-		catch (JsonSyntaxException e)
-		{
-			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			return builder.addError(e.getMessage()).build();
-		}
-		catch (QueryException e)
+		catch (JsonSyntaxException | QueryException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
@@ -720,21 +743,32 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		int time = m_ingestTime.getAndSet(0);
 		int count = m_ingestedDataPoints.getAndSet(0);
-
-		if (count == 0)
-			return Collections.emptyList();
-
-		DataPointSet dpsCount = new DataPointSet(INGEST_COUNT);
-		DataPointSet dpsTime = new DataPointSet(INGEST_TIME);
-
-		dpsCount.addTag("host", hostName);
-		dpsTime.addTag("host", hostName);
-
-		dpsCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, count));
-		dpsTime.addDataPoint(m_longDataPointFactory.createDataPoint(now, time));
 		List<DataPointSet> ret = new ArrayList<>();
-		ret.add(dpsCount);
-		ret.add(dpsTime);
+
+		if (count != 0)
+		{
+			DataPointSet dpsCount = new DataPointSet(INGEST_COUNT);
+			DataPointSet dpsTime = new DataPointSet(INGEST_TIME);
+
+			dpsCount.addTag("host", hostName);
+			dpsTime.addTag("host", hostName);
+
+			dpsCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, count));
+			dpsTime.addDataPoint(m_longDataPointFactory.createDataPoint(now, time));
+
+			ret.add(dpsCount);
+			ret.add(dpsTime);
+		}
+
+		Map<String, SimpleStats> statsMap = m_statsMap.getStatsMap();
+
+		for (Map.Entry<String, SimpleStats> entry : statsMap.entrySet())
+		{
+			String metric = entry.getKey();
+			SimpleStats.Data stats = entry.getValue().getAndClear();
+
+			m_simpleStatsReporter.reportStats(stats, now, metric, ret);
+		}
 
 		return ret;
 	}

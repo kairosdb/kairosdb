@@ -15,22 +15,32 @@
  */
 package org.kairosdb.core.telnet;
 
-import com.google.common.collect.ImmutableSortedMap;
-import org.jboss.netty.channel.*;
+import com.google.common.eventbus.Subscribe;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelConfig;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.eventbus.EventBusConfiguration;
+import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.ValidationException;
 
+import javax.annotation.Nullable;
 import java.net.SocketAddress;
 import java.util.Collections;
+import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -38,30 +48,31 @@ import static org.junit.Assert.fail;
 
 public class PutCommandTest
 {
-	private PutCommand command;
-	private FakeDatastore datastore;
+	private PutCommand m_command;
+	private FakeDatastore m_datastore;
 
 	@Before
 	public void setup() throws DatastoreException
 	{
-		datastore = new FakeDatastore();
-		KairosDatastore kairosDatastore = new KairosDatastore(datastore, new QueryQueuingManager(1, "test"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
-		command = new PutCommand(kairosDatastore, "test", new LongDataPointFactoryImpl(),
+		EventBusWithFilters eventBus = new EventBusWithFilters(new EventBusConfiguration(new Properties()));
+		m_datastore = new FakeDatastore();
+		eventBus.register(m_datastore);
+
+		m_command = new PutCommand(eventBus, "test", new LongDataPointFactoryImpl(),
 				new DoubleDataPointFactoryImpl());
 	}
 
 	@Test
 	public void test() throws DatastoreException, ValidationException
 	{
-		command.execute(new FakeChannel(), new String[]{"telnet", "MetricName", "12345678999", "789", "foo=bar", "fum=barfum"});
+		m_command.execute(new FakeChannel(), new String[]{"telnet", "MetricName", "12345678999", "789", "foo=bar", "fum=barfum"});
 
-		assertThat(datastore.getSet().getName(), equalTo("MetricName"));
-		assertThat(datastore.getSet().getTags().size(), equalTo(2));
-		assertThat(datastore.getSet().getTags().get("foo"), equalTo("bar"));
-		assertThat(datastore.getSet().getTags().get("fum"), equalTo("barfum"));
-		assertThat(datastore.getSet().getDataPoints().get(0).getTimestamp(), equalTo(12345678999L));
-		assertThat(datastore.getSet().getDataPoints().get(0).getLongValue(), equalTo(789L));
+		assertThat(m_datastore.getSet().getName(), equalTo("MetricName"));
+		assertThat(m_datastore.getSet().getTags().size(), equalTo(2));
+		assertThat(m_datastore.getSet().getTags().get("foo"), equalTo("bar"));
+		assertThat(m_datastore.getSet().getTags().get("fum"), equalTo("barfum"));
+		assertThat(m_datastore.getSet().getDataPoints().get(0).getTimestamp(), equalTo(12345678999L));
+		assertThat(m_datastore.getSet().getDataPoints().get(0).getLongValue(), equalTo(789L));
 	}
 
 	@Test
@@ -69,7 +80,7 @@ public class PutCommandTest
 	{
 		try
 		{
-			command.execute(new FakeChannel(), new String[]{"telnet", "", "12345678999", "789", "foo=bar", "fum=barfum"});
+			m_command.execute(new FakeChannel(), new String[]{"telnet", "", "12345678999", "789", "foo=bar", "fum=barfum"});
 			fail("ValidationException expected");
 		}
 		catch (DatastoreException e)
@@ -85,7 +96,7 @@ public class PutCommandTest
 	@Test
 	public void test_metricName_characters_valid() throws DatastoreException, ValidationException
 	{
-		command.execute(new FakeChannel(), new String[]{"telnet", "你好", "12345678999", "789", "foo=bar", "fum=barfum"});
+		m_command.execute(new FakeChannel(), new String[]{"telnet", "你好", "12345678999", "789", "foo=bar", "fum=barfum"});
 	}
 
 	@Test
@@ -93,7 +104,7 @@ public class PutCommandTest
 	{
 		try
 		{
-			command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "=barfum"});
+			m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "=barfum"});
 			fail("ValidationException expected");
 		}
 		catch (DatastoreException e)
@@ -109,8 +120,7 @@ public class PutCommandTest
 	@Test
 	public void test_tagName_characters_validColonTagName() throws DatastoreException, ValidationException
 	{
-		command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum:fi=barfum"});
-
+		m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum:fi=barfum"});
 	}
 
 	@Test
@@ -118,7 +128,7 @@ public class PutCommandTest
 	{
 		try
 		{
-			command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum="});
+			m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum="});
 			fail("ValidationException expected");
 		}
 		catch (DatastoreException e)
@@ -134,7 +144,7 @@ public class PutCommandTest
 	@Test
 	public void test_tagValue_characters_validColonTagValue() throws DatastoreException, ValidationException
 	{
-		command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum=bar:fum"});
+		m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum=bar:fum"});
 	}
 
 	@Test
@@ -142,7 +152,7 @@ public class PutCommandTest
 	{
 		try
 		{
-			command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum-barfum"});
+			m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum-barfum"});
 			fail("ValidationException expected");
 		}
 		catch (DatastoreException e)
@@ -155,7 +165,7 @@ public class PutCommandTest
 		}
 	}
 
-	public class FakeChannel implements Channel
+	public static class FakeChannel implements Channel
 	{
 		@Override
 		public Integer getId()
@@ -319,13 +329,13 @@ public class PutCommandTest
 		}
 
 		@Override
-		public int compareTo(Channel o)
+		public int compareTo(@Nullable Channel o)
 		{
 			return 0;
 		}
 	}
 
-	private class FakeDatastore implements Datastore
+	private static class FakeDatastore implements Datastore
 	{
 		private DataPointSet set;
 
@@ -339,15 +349,13 @@ public class PutCommandTest
 		{
 		}
 
-		@Override
-		public void putDataPoint(String metricName,
-				ImmutableSortedMap<String, String> tags,
-				DataPoint dataPoint, int ttl) throws DatastoreException
+		@Subscribe
+		public void putDataPoint(DataPointEvent event) throws DatastoreException
 		{
 			if (set == null)
-				set = new DataPointSet(metricName, tags, Collections.<DataPoint>emptyList());
+				set = new DataPointSet(event.getMetricName(), event.getTags(), Collections.<DataPoint>emptyList());
 
-			set.addDataPoint(dataPoint);
+			set.addDataPoint(event.getDataPoint());
 		}
 
 		/*@Override

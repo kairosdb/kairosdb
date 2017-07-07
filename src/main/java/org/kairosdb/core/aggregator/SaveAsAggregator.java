@@ -6,11 +6,12 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
+import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.plugin.Aggregator;
+import org.kairosdb.plugin.GroupBy;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,7 +31,7 @@ import java.util.Set;
 )
 public class SaveAsAggregator implements Aggregator, GroupByAware
 {
-	private Datastore m_datastore;
+	private final EventBusWithFilters m_eventBus;
 	private String m_metricName;
 	private Map<String, String> m_tags;
 	private int m_ttl = 0;
@@ -38,18 +39,12 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	private boolean m_addSavedFrom = true;
 
 	@Inject
-	public SaveAsAggregator(Datastore datastore)
+	public SaveAsAggregator(EventBusWithFilters eventBus)
 	{
-		m_datastore = datastore;
-		m_tags = new HashMap<String, String>();
+		m_eventBus = eventBus;
+		m_tags = new HashMap<>();
 	}
 
-	public SaveAsAggregator(Datastore datastore, String metricName)
-	{
-		this(datastore);
-		m_metricName = metricName;
-		m_tags = new HashMap<String, String>();
-	}
 
 	public void setAddSavedFrom(boolean addSavedFrom)
 	{
@@ -121,7 +116,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 		public SaveAsDataPointAggregator(DataPointGroup innerDataPointGroup)
 		{
 			m_innerDataPointGroup = innerDataPointGroup;
-			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.<String, String>naturalOrder();
+			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.naturalOrder();
 			mapBuilder.putAll(m_tags);
 			if (m_addSavedFrom)
 				mapBuilder.put("saved_from", innerDataPointGroup.getName());
@@ -147,14 +142,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 		{
 			DataPoint next = m_innerDataPointGroup.next();
 
-			try
-			{
-				m_datastore.putDataPoint(m_metricName, m_groupTags, next, m_ttl);
-			}
-			catch (DatastoreException e)
-			{
-				throw new RuntimeException("Failure to save data to "+m_metricName, e);
-			}
+			m_eventBus.post(new DataPointEvent(m_metricName, m_groupTags, next, m_ttl));
 
 			return next;
 		}

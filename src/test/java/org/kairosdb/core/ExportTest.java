@@ -57,9 +57,9 @@ public class ExportTest
 
 		for (long i = 0; i < LOAD; i++)
 		{
-			os.println("put "+METRIC_NAME+" "+String.valueOf(i+start)+ " 42 host=A");
-			os.println("put "+METRIC_NAME+" "+String.valueOf(i+start)+ " 42 host=B");
-			os.println("put "+METRIC_NAME+" "+String.valueOf(i+start)+ " 42.5 host=C");
+			os.println("putm "+METRIC_NAME+" "+String.valueOf(i+start)+ " 42 host=A");
+			os.println("putm "+METRIC_NAME+" "+String.valueOf(i+start)+ " 42 host=B");
+			os.println("putm "+METRIC_NAME+" "+String.valueOf(i+start)+ " 42.5 host=C");
 		}
 
 		os.close();

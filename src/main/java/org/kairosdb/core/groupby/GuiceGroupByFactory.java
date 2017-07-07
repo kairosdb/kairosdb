@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import org.kairosdb.core.aggregator.annotation.GroupByName;
+import org.kairosdb.plugin.GroupBy;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -24,6 +24,7 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.plugin.Aggregator;
 
 import java.util.*;
 

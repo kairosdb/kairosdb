@@ -5,6 +5,7 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.AggregatorName;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.plugin.Aggregator;
 
 /**
  Created by bhawkins on 12/16/14.

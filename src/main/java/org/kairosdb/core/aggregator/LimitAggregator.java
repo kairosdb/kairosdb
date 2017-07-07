@@ -3,6 +3,7 @@ package org.kairosdb.core.aggregator;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
+import org.kairosdb.plugin.Aggregator;
 
 import java.util.List;
 import java.util.Set;

@@ -28,7 +28,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "1.1.4"
+version = "1.2.0"
 release = saw.getProperty("KAIROS_RELEASE_NUMBER", "1") //package release number
 summary = "KairosDB"
 description = """\
@@ -79,8 +79,8 @@ jc = jp.getCompileRule()
 ivyDefaultResolve = ivy.getResolveRule("default")
 jc.addDepend(ivyDefaultResolve)
 
-jc.getDefinition().set("target", "1.7")
-jc.getDefinition().set("source", "1.7")
+jc.getDefinition().set("target", "1.8")
+jc.getDefinition().set("source", "1.8")
 jc.getDefinition().set("encoding", "UTF8")
 jc.getDefinition().set("deprecation")
 jc.getDefinition().set("unchecked")
@@ -168,6 +168,7 @@ ivyTestResolve = ivy.getResolveRule("test")
 testCompileRule.addDepend(ivyTestResolve)
 testCompileRule.getDefinition().set("unchecked")
 testCompileRule.getDefinition().set("deprecation")
+//testCompileRule.getDefinition().set("verbose")
 
 new SimpleRule("compile-test").addDepend(testCompileRule)
 
@@ -177,7 +178,12 @@ junitClasspath.addPath("src/main/java")
 junitClasspath.addPath("src/test/resources")
 junitClasspath.addPath("src/main/resources")
 
-junit = new JUnitRule("junit-test").addSources(testSources)
+junitTest = new JUnitRule("junit-test").addSources(testSources)
+		.setClasspath(junitClasspath)
+		.addDepends(testCompileRule)
+		.addDepends(ivyTestResolve)
+
+junit = new JUnitRule("test").addSources(testSources)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
 		.addDepends(ivyTestResolve)
@@ -391,40 +397,50 @@ new SimpleRule("import").setDescription("Imports metrics." +
 
 def doRun(Rule rule)
 {
+	kairosDefinition = saw.getDefinition("kairos")
+
 	if (rule.getProperty("ACTION") == "export")
 	{
-		args = "-c export "
+		kairosDefinition.set("command", "export")
 		metricName = saw.getProperty("n", "")
 		if (metricName.length() > 0)
-			args += "-n " + metricName
+			kairosDefinition.set("export_metric", metricName)
 		filename = saw.getProperty("f", "")
 		if (filename.length() > 0)
-			args += " -f " + filename
+			kairosDefinition.set("import_export_file", filename)
 	}
 	else if (rule.getProperty("ACTION") == "import")
 	{
-		args = "-c import "
+		kairosDefinition.set("command", "import")
 		filename = saw.getProperty("f", "")
 		if (filename.length() > 0)
-			args += " -f " + filename
+			kairosDefinition.set("import_export_file", filename)
 	}
 	else
-		args = "-c run"
+		kairosDefinition.set("command", "run")
 
 	//Check if you have a custom kairosdb.properties file and load it.
 	customProps = new File("kairosdb.properties")
 	if (customProps.exists())
-		args += " -p kairosdb.properties"
+		kairosDefinition.set("properties", "kairosdb.properties")
 
-	debug = ""
 	if (rule.getProperty("DEBUG"))
-		debug = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+		kairosDefinition.set("debug")
+
+	/*
+	  This is for use with visual vm.  Set the startup agent command in
+	  tablesaw.properties and this will inject it into the startup command
+	 */
+	if (saw.getProperty("profile") != null)
+		kairosDefinition.set("profile", saw.getProperty("profile"))
 
 	//this is to load logback into classpath
 	runClasspath = jc.getClasspath()
 	runClasspath.addPaths(ivyDefaultResolve.getClasspath())
 	runClasspath.addPath("src/main/resources").addPath("src/main/java")
-	ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
+	kairosDefinition.set("classpath", runClasspath)
+	//ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
+	ret = saw.exec(kairosDefinition.getCommand())
 	println(ret);
 }
 
@@ -455,20 +471,25 @@ integrationClassPath = new Classpath(jp.getLibraryJars())
 //.addPaths(new RegExFileSet("lib/ivy/integration", ".*\\.jar").getFullFilePaths())
 		.addPath("src/integration-test/resources")
 
+ivyIntegrationRule = ivy.getResolveRule("integration")
+
 integrationBuildRule = new JavaCRule("build/integration")
 		.addSourceDir("src/integration-test/java")
 		.addClasspath(integrationClassPath)
-		.addDepend(ivy.getResolveRule("integration"))
+		.addDepend(ivyIntegrationRule)
 
 new SimpleRule("integration")
 		.setMakeAction("doIntegration")
 		.addDepend(integrationBuildRule)
+		.addDepend(ivyIntegrationRule)
 
 def doIntegration(Rule rule)
 {
+	integrationClassPath.addPaths(ivyIntegrationRule.getClasspath())
+	integrationClassPath.addPath("build/integration")
 	host = saw.getProperty("host", "127.0.0.1")
 	port = saw.getProperty("port", "8080")
-	saw.exec("java  -Dhost=${host} -Dport=${port} -cp ${integrationBuildRule.classpath} org.testng.TestNG src/integration-test/testng.xml")
+	saw.exec("java  -Dhost=${host} -Dport=${port} -cp ${integrationClassPath} org.testng.TestNG src/integration-test/testng.xml")
 }
 
 //------------------------------------------------------------------------------

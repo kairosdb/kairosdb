@@ -38,3 +38,27 @@ There is in essence only one Properties object in Kairos so, plugins can overwri
 For clarity lets look at an example of how things get loaded.  Say I create a new plugin called xplugin, my install places two files, xpluing.jar in /opt/kairosdb/lib and xplugin.properties in /opt/kairosdb/conf.
 
 When KairosDB starts it first loads kairosdb.properties and then scans the conf directory for other .properties files.  KairosDB sees xplugin.properties and tries to find the file on the classpath.  This lets me as a plugin developer create a xplugin.properties that placed within my xplugin.jar file and contains default settings.  After loading the properties file on the classpath KairosDB loads the file from the conf directory.
+
+-------------------------------
+Plugins with extra dependencies
+-------------------------------
+What do you do if you have a plugin that includes some client library that
+requires some old version of guava that conflicts with what is in Kairos?
+You can optionally specify a location to load your plugin from by specifying
+the kairosdb.service_folder.[your_plugin_name] property.  When you specify this
+property Kairos will use a new ClassLoader to load your jar and dependencies.
+
+	**Note:** The one downside of this is that you cannot use the method above where by
+	properties are loaded from your jar before the external properties file (chicken
+	and egg problem with the properties file).
+
+Lets say you have a plugin called foo.  You install a properties file that contains
+::
+  kairosdb.service.foo=com.foo.MyPluginModule
+  kairosdb.service_folder=lib/foo
+
+You can then place your jar and dependencies in the folder
+::
+  lib/foo/
+
+

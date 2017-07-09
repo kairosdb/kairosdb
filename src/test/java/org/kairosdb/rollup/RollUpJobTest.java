@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.TestDataPointFactory;
-import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.core.aggregator.DiffAggregator;
 import org.kairosdb.core.aggregator.DivideAggregator;
 import org.kairosdb.core.aggregator.MaxAggregator;
@@ -26,6 +25,7 @@ import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.testing.ListDataPointGroup;
 
 import java.io.IOException;
@@ -34,6 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -42,7 +43,7 @@ import static org.mockito.Mockito.mock;
 
 public class RollUpJobTest
 {
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SS",Locale.ENGLISH);
+	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SS", Locale.ENGLISH);
 
 	@Rule
 	public ExpectedException expectedException = ExpectedException.none();

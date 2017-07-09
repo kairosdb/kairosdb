@@ -37,11 +37,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public abstract class RangeAggregator implements Aggregator, TimezoneAware
 {
 	private long m_startTime = 0L;
+	private long m_queryStartTime = 0L;
+	private long m_queryEndTime = 0L;
 	private boolean m_started = false;
 	private boolean m_alignSampling;
 	private boolean m_exhaustive;
 	private DateTimeZone m_timeZone = DateTimeZone.UTC;
-	;
+	
 
 	@NotNull
 	@Valid
@@ -158,6 +160,19 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	public void setStartTime(long startTime)
 	{
 		m_startTime = startTime;
+		m_queryStartTime = startTime;
+	}
+
+	public void setEndTime(long endTime)
+	{
+		//This is to tell the exhaustive agg when to stop.
+		//If the end time is not specified in the query the end time is
+		//set to MAX_LONG which causes exhaustive agg to go on forever.
+		long now = System.currentTimeMillis();
+		if (endTime > now)
+			m_queryEndTime = now;
+		else
+			m_queryEndTime = endTime;
 	}
 
 	/**
@@ -350,12 +365,18 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 		public ExhaustiveRangeDataPointAggregator(DataPointGroup innerDataPointGroup, RangeSubAggregator subAggregator)
 		{
 			super(innerDataPointGroup, subAggregator);
-			m_nextExpectedRangeStartTime = m_startTime;
+			m_nextExpectedRangeStartTime = m_queryStartTime;
 		}
 
 		private void setNextStartTime(long timeStamp)
 		{
 			m_nextExpectedRangeStartTime = timeStamp;
+		}
+
+		@Override
+		public boolean hasNext()
+		{
+			return (super.hasNext() || m_nextExpectedRangeStartTime < m_queryEndTime);
 		}
 
 		@Override
@@ -366,11 +387,11 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 				//We calculate start and end ranges as the ranges may not be
 				//consecutive if data does not show up in each range.
 				long startTime = m_nextExpectedRangeStartTime;
-				if (!m_started)
+				/*if (!m_started)
 				{
 					m_started = true;
 					startTime = currentDataPoint.getTimestamp();
-				}
+				}*/
 				long startRange = getStartRange(startTime);
 				long endRange = getEndRange(startTime);
 
@@ -379,8 +400,11 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 				SubRangeIterator subIterator = new SubRangeIterator(
 						endRange);
 
-				long dataPointTime = currentDataPoint.getTimestamp();
-				if (m_alignStartTime || startRange < dataPointTime)
+				long dataPointTime = Long.MAX_VALUE;
+				if (currentDataPoint != null)
+					dataPointTime = currentDataPoint.getTimestamp();
+
+				if (m_alignStartTime || endRange <= dataPointTime)
 					dataPointTime = startRange;
 
 				m_dpIterator = m_subAggregator.getNextDataPoints(dataPointTime,

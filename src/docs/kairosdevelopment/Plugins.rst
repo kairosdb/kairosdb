@@ -26,8 +26,8 @@ Here is how KairosDB loads libraries and plugins:
   #. Properties in kairosdb.properties are loaded first from the classpath and then from the file.
   #. For every .properties file in the conf directory besides kairosdb.properties, the following happens:
 
-    #. Kairos attempts to load the file from the classpath.  (this lets you add default values to future releases of your plugin)
-    #. Kairos loads the conf properties file.
+     #. Kairos attempts to load the file from the classpath.  (this lets you add default values to future releases of your plugin)
+     #. Kairos loads the conf properties file.
 
   #. Kairos looks through all the loaded properties for ones starting with kairosdb.service.  These are expected to point to Guice modules.
   #. Load all discovered Guice modules.

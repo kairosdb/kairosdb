@@ -21,7 +21,6 @@ public class RollupTask
 	// todo regular expressions
 	// todo one time go back and redo option
 	// todo setup annotations for validation
-	// todo add tags
 
 	private final String id;
 	private final transient List<Rollup> rollups = new ArrayList<Rollup>();

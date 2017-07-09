@@ -1,6 +1,6 @@
 package org.kairosdb.rollup;
 
-import org.kairosdb.core.aggregator.Aggregator;
+import org.kairosdb.plugin.Aggregator;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -11,6 +11,7 @@ import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.formatter.FormatterException;
+import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.testing.ListDataPointGroup;
 
 import java.io.IOException;

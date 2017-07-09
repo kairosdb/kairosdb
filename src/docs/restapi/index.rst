@@ -16,6 +16,7 @@ Contents:
    ListMetricNames
    ListTagNames
    ListTagValues
+   Metadata
    QueryMetrics
    Aggregators
    QueryMetricTags

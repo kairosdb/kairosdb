@@ -20,6 +20,7 @@ import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.annotation.GroupByName;
 import org.kairosdb.core.formatter.FormatterException;
+import org.kairosdb.plugin.GroupBy;
 
 import java.io.StringWriter;
 import java.util.Map;

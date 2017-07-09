@@ -16,6 +16,7 @@
 package org.kairosdb.core.groupby;
 
 import org.kairosdb.core.aggregator.annotation.GroupByName;
+import org.kairosdb.plugin.GroupBy;
 
 import java.util.HashMap;
 import java.util.Map;

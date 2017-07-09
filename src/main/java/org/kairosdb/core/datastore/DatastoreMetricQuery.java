@@ -19,7 +19,7 @@ import com.google.common.collect.SetMultimap;
 
 import java.util.List;
 
-public interface DatastoreMetricQuery
+public interface DatastoreMetricQuery extends PluggableQuery
 {
 	String getName();
 
@@ -32,6 +32,4 @@ public interface DatastoreMetricQuery
 	int getLimit();
 
 	Order getOrder();
-
-	List<QueryPlugin> getPlugins();
 }

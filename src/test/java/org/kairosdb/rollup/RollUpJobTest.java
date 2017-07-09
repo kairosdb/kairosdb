@@ -1,24 +1,40 @@
 package org.kairosdb.rollup;
 
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.eventbus.Subscribe;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.TestDataPointFactory;
-import org.kairosdb.core.aggregator.*;
+import org.kairosdb.plugin.Aggregator;
+import org.kairosdb.core.aggregator.DiffAggregator;
+import org.kairosdb.core.aggregator.DivideAggregator;
+import org.kairosdb.core.aggregator.MaxAggregator;
+import org.kairosdb.core.aggregator.MinAggregator;
 import org.kairosdb.core.datapoints.DoubleDataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.Duration;
+import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.QueryQueuingManager;
+import org.kairosdb.core.datastore.Sampling;
+import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.testing.ListDataPointGroup;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -42,7 +58,7 @@ public class RollUpJobTest
 
 		testDataStore = new TestDatastore();
 		datastore = new KairosDatastore(testDataStore, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
+				new TestDataPointFactory(), false);
 	}
 
 	@Test
@@ -260,7 +276,7 @@ public class RollUpJobTest
 			dataPointGroups.add(dataPointGroup);
 		}
 
-		@Override
+		@Subscribe
 		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint, int ttl) throws DatastoreException
 		{
 			ListDataPointGroup dataPointGroup = new ListDataPointGroup(metricName);
@@ -361,6 +377,4 @@ public class RollUpJobTest
 			throw new UnsupportedOperationException();
 		}
 	}
-
-
 }

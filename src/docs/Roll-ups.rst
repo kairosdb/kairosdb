@@ -13,9 +13,9 @@ Installing
 ----------
 Roll-ups are installed with KairosDB but disabled by default. You enable roll-ups by uncommenting the following line from kairosdb.properties and restarting KairosDB:
 
-	::
+::
 
-		kairosdb.service.rollups=org.kairosdb.rollup.RollUpModule
+	kairosdb.service.rollups=org.kairosdb.rollup.RollUpModule
 
 -------
 Example
@@ -30,16 +30,16 @@ of daily values versus aggregating millisecond data.
 We measure, for example, the total number of a particular type of event that enters our system and track that over a 3 month period. The data is measured in milliseconds.
 The results of a query for 3 months and aggregated over a week are:
 
- ::
+::
 
-    Query Time: 24 seconds
-    Data Points Returned: 1,535,711
-    Data Points Plotted: 12
+	Query Time: 24 seconds
+	Data Points Returned: 1,535,711
+	Data Points Plotted: 12
 
 
 If however, we create a roll-up task that rolls up to daily values, the query is significantly faster:
 
- ::
+::
 
     Query Time: 417 milliseconds
     Data Points Returned: 2,045

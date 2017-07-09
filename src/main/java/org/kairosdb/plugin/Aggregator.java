@@ -13,22 +13,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.kairosdb.core.groupby;
+package org.kairosdb.plugin;
 
-import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.datastore.DataPointGroup;
 
-import java.util.Map;
+import java.util.List;
 
-public interface GroupBy
+public interface Aggregator
 {
-	int getGroupId(DataPoint dataPoint, Map<String, String> tags);
-
-	GroupByResult getGroupByResult(int id);
-
-	/**
-	 * Called when the object is instantiated with the query start date.
-	 *
-	 * @param startDate query start date
-	 */
-	void setStartDate(long startDate);
+	DataPointGroup aggregate(DataPointGroup dataPointGroup);
+	boolean canAggregate(String groupType);
+	String getAggregatedGroupType(String groupType);
 }

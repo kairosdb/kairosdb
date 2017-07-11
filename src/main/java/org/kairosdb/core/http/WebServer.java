@@ -184,17 +184,11 @@ public class WebServer implements KairosDBService
 				servletContextHandler.setContextPath("/");
 			}
 
-			servletContextHandler.addFilter(GuiceFilter.class, "/api/*", null);
-			servletContextHandler.addServlet(DefaultServlet.class, "/api/*");
-
-			ResourceHandler resourceHandler = new ResourceHandler();
-			resourceHandler.setDirectoriesListed(true);
-			resourceHandler.setWelcomeFiles(new String[]{"index.html"});
-			resourceHandler.setResourceBase(m_webRoot);
-			resourceHandler.setAliases(true);
+			servletContextHandler.addFilter(GuiceFilter.class, "/*", null);
+			servletContextHandler.addServlet(DefaultServlet.class, "/*");
 
 			HandlerList handlers = new HandlerList();
-			handlers.setHandlers(new Handler[]{servletContextHandler, resourceHandler, new DefaultHandler()});
+			handlers.setHandlers(new Handler[]{servletContextHandler});
 			m_server.setHandler(handlers);
 
 			m_server.start();
@@ -257,6 +251,5 @@ public class WebServer implements KairosDBService
 		csh.setLoginService(l);
 
 		return csh;
-
 	}
 }

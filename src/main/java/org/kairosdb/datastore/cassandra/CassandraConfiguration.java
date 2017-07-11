@@ -19,12 +19,7 @@ public class CassandraConfiguration
 	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
 
 	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
-	public static final String WRITE_BUFFER_JOB_QUEUE_SIZE = "kairosdb.datastore.cassandra.write_buffer_job_queue_size";
 	public static final String SIMULTANIOUS_QUERIES = "kairosdb.datastore.cassandra.simultaneous_cql_queries";
-
-	@Inject
-	@Named(WRITE_BUFFER_JOB_QUEUE_SIZE)
-	private int m_writeBufferJobQueueSize = 300;
 
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
@@ -108,8 +103,4 @@ public class CassandraConfiguration
 		return m_simultaneousQueries;
 	}
 
-	public int getWriteBufferJobQueueSize()
-	{
-		return m_writeBufferJobQueueSize;
-	}
 }

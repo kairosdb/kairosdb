@@ -16,6 +16,7 @@
 
 package org.kairosdb.core;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.net.InetAddresses;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -133,6 +134,7 @@ public class CoreModule extends AbstractModule
 		needs to annotate a method with @Subscribe and they can get events.
 		 */
 		bind(EventBusWithFilters.class).toInstance(m_eventBus);
+		bind(EventBus.class).toInstance(m_eventBus);
 		//Need to register an exception handler
 		bindListener(Matchers.any(), new TypeListener()
 		{

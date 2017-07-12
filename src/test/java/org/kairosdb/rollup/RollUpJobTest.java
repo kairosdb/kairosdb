@@ -31,10 +31,7 @@ import org.kairosdb.testing.ListDataPointGroup;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -42,7 +39,7 @@ import static org.mockito.Mockito.mock;
 
 public class RollUpJobTest
 {
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SS",Locale.ENGLISH);
+	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SS", Locale.ENGLISH);
 
 	@Rule
 	public ExpectedException expectedException = ExpectedException.none();

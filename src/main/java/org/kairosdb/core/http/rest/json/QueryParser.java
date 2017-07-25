@@ -429,11 +429,14 @@ public class QueryParser
 	{
 		if (request.getStartAbsolute() != null)
 		{
-			return request.getStartAbsolute();
+			long start = request.getStartAbsolute();
+			return start - (start % 60_000);
 		}
 		else if (request.getStartRelative() != null)
 		{
-			return request.getStartRelative().getTimeRelativeTo(System.currentTimeMillis());
+			long start = request.getStartRelative().getTimeRelativeTo(System.currentTimeMillis());
+			// align on one mintue boundaries too for relative queries. Caching takes start time into account.
+			return start - (start % 60_000);
 		}
 		else
 		{

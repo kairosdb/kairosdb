@@ -1,14 +1,27 @@
 package org.kairosdb.core.http.rest;
 
-import com.google.inject.*;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.kairosdb.core.*;
+import org.kairosdb.core.DataPointListener;
+import org.kairosdb.core.DataPointListenerProvider;
+import org.kairosdb.core.GuiceKairosDataPointFactory;
+import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.KairosQueryProcessingChain;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
-import org.kairosdb.core.datapoints.*;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LegacyDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryPluginFactory;
@@ -32,7 +45,7 @@ import java.util.Properties;
 
 import static org.kairosdb.core.http.rest.MetricsResourceTest.assertResponse;
 
-public class QueryProcessingChainRessourcesTest
+public class QueryProcessingChainResourceTest
 {
     private static final String QUERY_PROCESSING_STAGE_URL = "http://localhost:9001/api/v1/queryprocessing/stages/";
     private static final String QUERY_PROCESSING_CHAIN_URL = "http://localhost:9001/api/v1/queryprocessing/chain";

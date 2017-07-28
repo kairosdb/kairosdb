@@ -17,13 +17,13 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 
 import java.util.Collections;
 import java.util.Iterator;
 
-@AggregatorName(
+@QueryProcessor(
         name = "count",
 		description = "Counts the number of data points."
 )

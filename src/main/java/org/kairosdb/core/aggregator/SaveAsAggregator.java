@@ -3,8 +3,9 @@ package org.kairosdb.core.aggregator;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.exception.DatastoreException;
@@ -12,16 +13,12 @@ import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  Created by bhawkins on 8/28/15.
  */
-@AggregatorName(
+@QueryProcessor(
         name = "save_as",
 		description = "Saves the results to a new metric."
 )
@@ -34,10 +31,16 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	private boolean m_addSavedFrom = true;
 
 	@QueryProperty(
+			name = "metric_name",
 			label = "Save As",
 			description = "The name of the new metric.",
 			default_value = "<new name>",
-            validation = "!value && value.length > 0"
+            validations = {
+					@ValidationProperty(
+							expression = "!value && value.length > 0",
+							message = "The name can't be empty."
+					)
+			}
 	)
 	private String m_metricName;
 
@@ -126,7 +129,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 		public SaveAsDataPointAggregator(DataPointGroup innerDataPointGroup)
 		{
 			m_innerDataPointGroup = innerDataPointGroup;
-			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.<String, String>naturalOrder();
+			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.naturalOrder();
 			mapBuilder.putAll(m_tags);
 			if (m_addSavedFrom)
 				mapBuilder.put("saved_from", innerDataPointGroup.getName());

@@ -18,8 +18,9 @@ package org.kairosdb.core.groupby;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.GroupByName;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.formatter.FormatterException;
 
 import java.io.StringWriter;
@@ -31,13 +32,25 @@ import static com.google.common.base.Preconditions.checkArgument;
  Groups data points by bin values. Data points are a range of values specified by bins.
  Bins array needs to be in ascending order.
  */
-@GroupByName(name = "bin", description = "Groups data points by bins or buckets.")
+@QueryProcessor(
+		name = "bin",
+		description = "Groups data points by bins or buckets."
+)
 public class BinGroupBy implements GroupBy
 {
     @QueryProperty(
             label = "Bin Values",
             description = "List of bin values. For example, if the list of bins is 10, 20, 30, then values less than 10 are placed in the first group, values between 10-19 into the second group, and so forth.",
-            validation = "value.length > 0"
+            validations = {
+            		@ValidationProperty(
+            				expression = "value.length > 0",
+							message = "The list can't be empty."
+					),
+					@ValidationProperty(
+							expression = "value.every((n) => !isNaN(parseFloat(n)) && isFinite(n))",
+							message = "The list must contain only numbers."
+					)
+			}
     )
 	private double[] bins;
 

@@ -13,15 +13,25 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package org.kairosdb.core.groupby;
 
-import com.google.common.collect.ImmutableList;
-import org.kairosdb.core.aggregator.json.QueryMetadata;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import org.kairosdb.core.annotation.QueryProcessingStage;
+import org.kairosdb.core.processingstage.GenericQueryProcessingStageFactory;
 
-public interface GroupByFactory
+import java.lang.reflect.InvocationTargetException;
+
+@QueryProcessingStage(
+        name = "groupby",
+        label = "Group By"
+)
+public class GroupByFactory extends GenericQueryProcessingStageFactory<GroupBy>
 {
-	GroupBy createGroupBy(String name);
-
-    ImmutableList<QueryMetadata> getQueryMetadata();
+    @Inject
+    public GroupByFactory(Injector injector)
+            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    {
+        super(injector, GroupBy.class);
+    }
 }

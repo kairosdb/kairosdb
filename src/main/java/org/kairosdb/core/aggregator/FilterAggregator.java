@@ -17,12 +17,12 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.annotation.QueryProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 
 
-@AggregatorName(
+@QueryProcessor(
         name = "filter",
 		description = "Filters datapoints according to filter operation with a null data point."
 )
@@ -33,9 +33,7 @@ public class FilterAggregator implements Aggregator
 		LTE, LT, GTE, GT, EQUAL
 	}
 
-	;
-
-	public FilterAggregator()
+    public FilterAggregator()
 	{
 		m_threshold = 0.0;
 	}
@@ -47,6 +45,7 @@ public class FilterAggregator implements Aggregator
 	}
 
 	@QueryProperty(
+			name = "filter_op",
 			label = "Filter operation",
 			description = "The operation performed for each data point.",
 			type = "enum",

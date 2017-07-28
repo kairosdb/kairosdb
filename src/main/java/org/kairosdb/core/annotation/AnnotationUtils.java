@@ -2,7 +2,7 @@ package org.kairosdb.core.annotation;
 
 import com.google.common.base.Defaults;
 import org.apache.commons.lang3.ClassUtils;
-import org.kairosdb.core.aggregator.json.QueryPropertyMetadata;
+import org.kairosdb.core.processingstage.metadata.QueryPropertyMetadata;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

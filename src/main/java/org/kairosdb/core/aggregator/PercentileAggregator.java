@@ -18,8 +18,9 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.http.rest.validation.NonZero;
 import org.kairosdb.util.Reservoir;
@@ -33,7 +34,7 @@ import java.util.Iterator;
 
 import static java.lang.Math.floor;
 
-@AggregatorName(
+@QueryProcessor(
 		name = "percentile",
 		description = "Finds the percentile of the data range."
 )
@@ -65,8 +66,17 @@ public class PercentileAggregator extends RangeAggregator
 	@QueryProperty(
 			label = "Percentile",
 			description = "Data points returned will be in this percentile.",
-			default_value = "10",
-            validation =  "value > 0"
+			default_value = "0.1",
+            validations =  {
+					@ValidationProperty(
+							expression = "value > 0",
+							message = "Percentile must be greater than 0."
+					),
+					@ValidationProperty(
+							expression = "value < 1",
+							message = "Percentile must be smaller than 1."
+					)
+			}
 	)
 	private double percentile;
 

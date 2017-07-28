@@ -19,8 +19,9 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
@@ -31,7 +32,7 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
-@AggregatorName(
+@QueryProcessor(
         name = "div",
 		description = "Divides each data point by a divisor."
 )
@@ -41,10 +42,15 @@ public class DivideAggregator implements Aggregator
 
 	@NonZero
 	@QueryProperty(
-			label = "divisor",
+			label = "Divisor",
 			description = "The value each data point is divided by.",
             default_value = "1",
-            validation = "value > 0"
+            validations = {
+					@ValidationProperty(
+							expression = "value > 0",
+							message = "Divisor must be greater than 0."
+					)
+			}
 	)
 	private double m_divisor;
 

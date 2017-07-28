@@ -22,7 +22,7 @@ import tablesaw.rules.SimpleRule
 
 import javax.swing.*
 
-println("===============================================");
+println("===============================================")
 
 saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
@@ -79,8 +79,8 @@ jc = jp.getCompileRule()
 ivyDefaultResolve = ivy.getResolveRule("default")
 jc.addDepend(ivyDefaultResolve)
 
-jc.getDefinition().set("target", "1.7")
-jc.getDefinition().set("source", "1.7")
+jc.getDefinition().set("target", "1.8")
+jc.getDefinition().set("source", "1.8")
 jc.getDefinition().set("encoding", "UTF8")
 jc.getDefinition().set("deprecation")
 jc.getDefinition().set("unchecked")
@@ -138,7 +138,7 @@ manifest.putValue("Built-By", saw.getProperty("user.name"))
 buildDateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss z")
 manifest.putValue("Build-Date", buildDateFormat.format(new Date()))
 
-buildNumberFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
+buildNumberFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss")
 buildNumber = buildNumberFormat.format(new Date())
 manifest.putValue("Implementation-Title", "KairosDB")
 manifest.putValue("Implementation-Vendor", "KairosDB")
@@ -147,11 +147,11 @@ manifest.putValue("Implementation-Version", "${version}-${release}.${buildNumber
 //Add git revision information
 gitRevisionFile= ".gitrevision"
 new File(gitRevisionFile).text = ""
-ret = saw.exec(null, "git rev-parse HEAD", false, null, gitRevisionFile);
+ret = saw.exec(null, "git rev-parse HEAD", false, null, gitRevisionFile)
 revision = new File(gitRevisionFile).text.trim()
 new File(gitRevisionFile).delete()
 if (ret == 0)
-	manifest.putValue("Git-Revision", revision);
+	manifest.putValue("Git-Revision", revision)
 
 
 //------------------------------------------------------------------------------
@@ -292,7 +292,7 @@ def doRPM(Rule rule)
 			}
 
 	if ("on".equals(rule.getProperty("dependency")))
-		rpmBuilder.addDependencyMore("jre", "1.7")
+		rpmBuilder.addDependencyMore("jre", "1.8")
 
 	rpmBuilder.setPostInstallScript(new File("src/scripts/install/post_install.sh"))
 	rpmBuilder.setPreUninstallScript(new File("src/scripts/install/pre_uninstall.sh"))
@@ -425,7 +425,7 @@ def doRun(Rule rule)
 	runClasspath.addPaths(ivyDefaultResolve.getClasspath())
 	runClasspath.addPath("src/main/resources").addPath("src/main/java")
 	ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
-	println(ret);
+	println(ret)
 }
 
 
@@ -443,9 +443,9 @@ def doGenorm(Rule rule)
 
 	genormClasspath = new Classpath(resolve.getClasspath())
 	genormDefinition.set("classpath", genormClasspath.toString())
-	genormDefinition.set("source", "src/main/conf/tables.xml");
-	cmd = genormDefinition.getCommand();
-	saw.exec(cmd);
+	genormDefinition.set("source", "src/main/conf/tables.xml")
+	cmd = genormDefinition.getCommand()
+	saw.exec(cmd)
 }
 
 
@@ -542,7 +542,7 @@ saw.setDefaultTarget("jar")
 def printMessage(String title, String message) {
 	osName = saw.getProperty("os.name")
 
-	Definition notifyDef;
+	Definition notifyDef
 	if (osName.startsWith("Linux"))
 	{
 		notifyDef = saw.getDefinition("linux-notify")

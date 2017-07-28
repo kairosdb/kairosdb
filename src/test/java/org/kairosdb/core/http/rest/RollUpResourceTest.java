@@ -6,6 +6,7 @@ import com.google.common.io.Resources;
 import com.google.gson.GsonBuilder;
 import org.junit.Before;
 import org.junit.Test;
+import org.kairosdb.core.KairosQueryProcessingChain;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
@@ -50,8 +51,8 @@ public class RollUpResourceTest
 	{
 		mockStore = mock(RollUpTasksStore.class);
 		mockQueryParser = mock(QueryParser.class);
-		queryParser = new QueryParser(new TestAggregatorFactory(),
-				new TestGroupByFactory(), new TestQueryPluginFactory());
+		queryParser = new QueryParser(new KairosQueryProcessingChain(new TestAggregatorFactory(), new TestGroupByFactory()),
+				new TestQueryPluginFactory());
 		resource = new RollUpResource(mockQueryParser, mockStore);
 	}
 

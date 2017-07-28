@@ -3,14 +3,14 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-@AggregatorName(
+@QueryProcessor(
         name = "least_squares",
 		description = "Returns a best fit line through the datapoints using the least squares algorithm."
 )

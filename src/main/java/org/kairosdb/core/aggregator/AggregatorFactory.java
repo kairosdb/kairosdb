@@ -13,15 +13,25 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package org.kairosdb.core.aggregator;
 
-import com.google.common.collect.ImmutableList;
-import org.kairosdb.core.aggregator.json.QueryMetadata;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import org.kairosdb.core.annotation.QueryProcessingStage;
+import org.kairosdb.core.processingstage.GenericQueryProcessingStageFactory;
 
-public interface AggregatorFactory
+import java.lang.reflect.InvocationTargetException;
+
+@QueryProcessingStage(
+        name = "aggregators",
+        label = "Aggregator"
+)
+public class AggregatorFactory extends GenericQueryProcessingStageFactory<Aggregator>
 {
-	Aggregator createAggregator(String name);
-
-    ImmutableList<QueryMetadata> getQueryMetadata();
+    @Inject
+    public AggregatorFactory(Injector injector)
+            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    {
+        super(injector, Aggregator.class);
+    }
 }

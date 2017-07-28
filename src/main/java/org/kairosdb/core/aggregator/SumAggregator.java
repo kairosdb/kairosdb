@@ -17,7 +17,7 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.AggregatorName;
+import org.kairosdb.core.annotation.QueryProcessor;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,7 @@ import java.util.Iterator;
 /**
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
-@AggregatorName(
+@QueryProcessor(
         name = "sum",
 		description = "Adds data points together."
 )

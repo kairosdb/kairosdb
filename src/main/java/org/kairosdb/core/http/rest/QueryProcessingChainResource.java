@@ -20,13 +20,13 @@ import javax.ws.rs.core.Response;
 import static org.kairosdb.core.http.rest.MetricsResource.setHeaders;
 
 @Path("/api/v1/queryprocessing")
-public class QueryProcessingChainRessources
+public class QueryProcessingChainResource
 {
     private QueryProcessingChain queryProcessingChain;
     private Gson gson = new Gson();
 
     @Inject
-    public QueryProcessingChainRessources(QueryProcessingChain queryProcessingChain)
+    public QueryProcessingChainResource(QueryProcessingChain queryProcessingChain)
     {
         this.queryProcessingChain = queryProcessingChain;
     }

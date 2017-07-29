@@ -52,7 +52,7 @@ public class QueryProcessingChainResource
 
     @GET
     @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-    @Path("/chain")
+    @Path("/stages")
     public Response getQueryProcessingChain()
     {
         ImmutableList<QueryProcessingStageMetadata> processingChainMetadata = queryProcessingChain.getQueryProcessingChainMetadata();

@@ -19,8 +19,8 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.QueryProcessor;
-import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -32,7 +32,7 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
-@QueryProcessor(
+@FeatureComponent(
         name = "sma",
 		label = "SMA",
 		description = "Simple moving average."
@@ -42,7 +42,7 @@ public class SmaAggregator implements Aggregator
 	private DoubleDataPointFactory m_dataPointFactory;
 
 	//@NonZero
-	@QueryProperty(
+	@FeatureProperty(
 			label = "Size",
 			description = "The period of the moving average. This is the number of data point to use each time the average is calculated.",
 			default_value = "10",

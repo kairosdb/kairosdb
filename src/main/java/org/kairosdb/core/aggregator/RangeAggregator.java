@@ -20,8 +20,8 @@ import org.joda.time.DateTimeField;
 import org.joda.time.DateTimeZone;
 import org.joda.time.chrono.GregorianChronology;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.QueryCompoundProperty;
-import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.FeatureCompoundProperty;
+import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.TimeUnit;
 
@@ -43,7 +43,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
     private boolean m_exhaustive;
     private DateTimeZone m_timeZone = DateTimeZone.UTC;
 
-    @QueryProperty(
+    @FeatureProperty(
             name = "align_sampling",
             label = "Align sampling",
             description = "When set to true the time for the aggregated data point for each range will fall on the start"
@@ -56,14 +56,14 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 
     @NotNull
     @Valid
-    @QueryCompoundProperty(
+    @FeatureCompoundProperty(
             name = "sampling",
             label = "Sampling",
             order = {"Value", "Unit"}
     )
     protected Sampling m_sampling = new Sampling(1, TimeUnit.MILLISECONDS);
 
-    @QueryProperty(
+    @FeatureProperty(
             name = "align_start_time",
             label = "Align start time",
             description = "Setting this to true will cause the aggregation range to be aligned based on the sampling"

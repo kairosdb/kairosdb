@@ -18,8 +18,8 @@ package org.kairosdb.core.groupby;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.QueryProcessor;
-import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.formatter.FormatterException;
 
@@ -32,14 +32,14 @@ import static com.google.common.base.Preconditions.checkArgument;
 /**
  * Groups data points by value. Data points are a range of values specified by range size.
  */
-@QueryProcessor(
+@FeatureComponent(
         name = "value",
         description = "Groups data points by value."
 )
 public class ValueGroupBy implements GroupBy
 {
     @Min(1)
-    @QueryProperty(
+    @FeatureProperty(
             name = "range_size",
             label = "Target Size",
             description = "The range for each value. For example, if the range size is 10, then values between 0-9 are placed in the first group, values between 10-19 into the second group, and so forth.",

@@ -5,18 +5,18 @@ import com.google.common.collect.ImmutableList;
 import java.util.Comparator;
 import java.util.List;
 
-public class QueryProcessingStageMetadata
+public class FeatureProcessingMetadata
 {
     private final String name;
     private final String label;
-    private final ImmutableList<QueryProcessorMetadata> properties;
+    private final ImmutableList<FeatureProcessorMetadata> properties;
 
-    public QueryProcessingStageMetadata(String name, String label, List<QueryProcessorMetadata> properties)
+    public FeatureProcessingMetadata(String name, String label, List<FeatureProcessorMetadata> properties)
     {
         this.name = name;
         this.label = label;
 
-        properties.sort(Comparator.comparing(QueryProcessorMetadata::getLabel));
+        properties.sort(Comparator.comparing(FeatureProcessorMetadata::getLabel));
         this.properties = ImmutableList.copyOf(properties);
     }
 
@@ -24,5 +24,5 @@ public class QueryProcessingStageMetadata
 
     public String getLabel() { return label; }
 
-    public ImmutableList<QueryProcessorMetadata> getProperties() { return properties; }
+    public ImmutableList<FeatureProcessorMetadata> getProperties() { return properties; }
 }

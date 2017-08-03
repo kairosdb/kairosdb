@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface QueryProperty
+public @interface FeatureProperty
 {
     String name() default "";
 

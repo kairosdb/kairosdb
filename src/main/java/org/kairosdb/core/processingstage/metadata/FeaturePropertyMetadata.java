@@ -1,19 +1,19 @@
 package org.kairosdb.core.processingstage.metadata;
 
 import com.google.common.collect.ImmutableList;
-import org.kairosdb.core.annotation.QueryCompoundProperty;
-import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.FeatureCompoundProperty;
+import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
-public class QueryPropertyMetadata
+public class FeaturePropertyMetadata
 {
     private String name;
     private String label;
@@ -24,10 +24,10 @@ public class QueryPropertyMetadata
     private String defaultValue;
     private String autocomplete;
     private boolean multiline;
-    private ImmutableList<QueryValidationMetadata> validations;
-    private ImmutableList<QueryPropertyMetadata> properties;
+    private ImmutableList<FeatureValidationMetadata> validations;
+    private ImmutableList<FeaturePropertyMetadata> properties;
 
-    public QueryPropertyMetadata(String name, String type, String options, String defaultValue, QueryProperty property)
+    public FeaturePropertyMetadata(String name, String type, String options, String defaultValue, FeatureProperty property)
             throws ClassNotFoundException
     {
         this.name = isEmpty(property.name()) ? name : property.name();
@@ -44,13 +44,13 @@ public class QueryPropertyMetadata
         fixupName();
     }
 
-    public QueryPropertyMetadata(String name, QueryCompoundProperty property, List<QueryPropertyMetadata> properties)
+    public FeaturePropertyMetadata(String name, FeatureCompoundProperty property, List<FeaturePropertyMetadata> properties)
     {
         this.name = isEmpty(property.name()) ? name : property.name();
         this.label = checkNotNull(property.label(), "Label cannot be null");
         this.type = "Object";
 
-        Comparator<QueryPropertyMetadata> comparator = property.order().length > 0 ?
+        Comparator<FeaturePropertyMetadata> comparator = property.order().length > 0 ?
                 new ExplicitComparator(Arrays.asList(property.order())) :
                 new LabelComparator();
         properties.sort(comparator);
@@ -100,32 +100,32 @@ public class QueryPropertyMetadata
         return defaultValue;
     }
 
-    public ImmutableList<QueryValidationMetadata> getValidations() { return validations; }
+    public ImmutableList<FeatureValidationMetadata> getValidations() { return validations; }
 
-    public ImmutableList<QueryPropertyMetadata> getProperties()
+    public ImmutableList<FeaturePropertyMetadata> getProperties()
     {
         return properties;
     }
 
-    private ImmutableList<QueryValidationMetadata> extractValidators(QueryProperty property)
+    private ImmutableList<FeatureValidationMetadata> extractValidators(FeatureProperty property)
     {
-        LinkedList<QueryValidationMetadata> validations = new LinkedList<QueryValidationMetadata>();
+        LinkedList<FeatureValidationMetadata> validations = new LinkedList<FeatureValidationMetadata>();
 
         for (ValidationProperty validator : property.validations())
-            validations.addFirst(new QueryValidationMetadata(validator.expression(), validator.type(), validator.message()));
+            validations.addFirst(new FeatureValidationMetadata(validator.expression(), validator.type(), validator.message()));
         return ImmutableList.copyOf(validations);
     }
 
-    private class LabelComparator implements Comparator<QueryPropertyMetadata>
+    private class LabelComparator implements Comparator<FeaturePropertyMetadata>
     {
         @Override
-        public int compare(QueryPropertyMetadata o1, QueryPropertyMetadata o2)
+        public int compare(FeaturePropertyMetadata o1, FeaturePropertyMetadata o2)
         {
             return o1.getLabel().compareTo(o2.getLabel());
         }
     }
 
-    private class ExplicitComparator implements Comparator<QueryPropertyMetadata>
+    private class ExplicitComparator implements Comparator<FeaturePropertyMetadata>
     {
         private List<String> order;
 
@@ -134,7 +134,7 @@ public class QueryPropertyMetadata
             this.order = order;
         }
 
-        public int compare(QueryPropertyMetadata left, QueryPropertyMetadata right)
+        public int compare(FeaturePropertyMetadata left, FeaturePropertyMetadata right)
         {
             return Integer.compare(order.indexOf(left.getLabel()), order.indexOf(right.getLabel()));
         }

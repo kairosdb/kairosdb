@@ -17,8 +17,8 @@ package org.kairosdb.core.groupby;
 
 import org.apache.bval.constraints.NotEmpty;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.QueryProcessor;
-import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 
 import javax.validation.constraints.NotNull;
@@ -29,7 +29,7 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-@QueryProcessor(
+@FeatureComponent(
 		name = "tag",
 		description = "Groups data points by tag names."
 )
@@ -37,7 +37,7 @@ public class TagGroupBy implements GroupBy
 {
 	@NotNull
 	@NotEmpty()
-    @QueryProperty(
+    @FeatureProperty(
             label = "Tags",
             description = "A list of tags to group by.",
 			autocomplete = "tags",

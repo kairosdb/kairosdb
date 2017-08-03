@@ -2,7 +2,7 @@ package org.kairosdb.core.annotation;
 
 import com.google.common.base.Defaults;
 import org.apache.commons.lang3.ClassUtils;
-import org.kairosdb.core.processingstage.metadata.QueryPropertyMetadata;
+import org.kairosdb.core.processingstage.metadata.FeaturePropertyMetadata;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -17,15 +17,15 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
 public class AnnotationUtils
 {
     @SuppressWarnings("ConstantConditions")
-    public static List<QueryPropertyMetadata> getPropertyMetadata(Class clazz)
+    public static List<FeaturePropertyMetadata> getPropertyMetadata(Class clazz)
             throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, ClassNotFoundException
     {
         checkNotNull(clazz, "class cannot be null");
 
-        List<QueryPropertyMetadata> properties = new ArrayList<>();
+        List<FeaturePropertyMetadata> properties = new ArrayList<>();
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
-            if (field.getAnnotation(QueryProperty.class) != null) {
+            if (field.getAnnotation(FeatureProperty.class) != null) {
                 String type = getType(field);
                 String options = null;
                 if (field.getType().isEnum()) {
@@ -33,15 +33,15 @@ public class AnnotationUtils
                     type = "enum";
                 }
 
-                QueryProperty property = field.getAnnotation(QueryProperty.class);
-                properties.add(new QueryPropertyMetadata(field.getName(), type, options,
+                FeatureProperty property = field.getAnnotation(FeatureProperty.class);
+                properties.add(new FeaturePropertyMetadata(field.getName(), type, options,
                         isEmpty(property.default_value()) ? getDefaultValue(field) : property.default_value(),
                         property));
             }
 
-            QueryCompoundProperty annotation = field.getAnnotation(QueryCompoundProperty.class);
+            FeatureCompoundProperty annotation = field.getAnnotation(FeatureCompoundProperty.class);
             if (annotation != null) {
-                properties.add(new QueryPropertyMetadata(field.getName(), annotation, getPropertyMetadata(field.getType())));
+                properties.add(new FeaturePropertyMetadata(field.getName(), annotation, getPropertyMetadata(field.getType())));
             }
         }
 
@@ -50,10 +50,10 @@ public class AnnotationUtils
         }
 
         //noinspection Convert2Lambda
-        properties.sort(new Comparator<QueryPropertyMetadata>()
+        properties.sort(new Comparator<FeaturePropertyMetadata>()
         {
             @Override
-            public int compare(QueryPropertyMetadata o1, QueryPropertyMetadata o2)
+            public int compare(FeaturePropertyMetadata o1, FeaturePropertyMetadata o2)
             {
                 return o1.getLabel().compareTo(o2.getLabel());
             }

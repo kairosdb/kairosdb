@@ -32,7 +32,7 @@ import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.groupby.TagGroupByResult;
-import org.kairosdb.core.processingstage.QueryProcessingStageFactory;
+import org.kairosdb.core.processingstage.FeatureProcessingFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,7 +50,7 @@ import static org.junit.Assert.assertThat;
 
 public class KairosDatastoreTest
 {
-	private QueryProcessingStageFactory<Aggregator> aggFactory;
+	private FeatureProcessingFactory<Aggregator> aggFactory;
 
 	public KairosDatastoreTest() throws KairosDBException
 	{
@@ -74,7 +74,7 @@ public class KairosDatastoreTest
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
 				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
-		metric.addAggregator(aggFactory.createQueryProcessor("sum"));
+		metric.addAggregator(aggFactory.createFeatureProcessor("sum"));
 
 		DatastoreQuery dq = datastore.createQuery(metric);
 		List<DataPointGroup> results = dq.execute();

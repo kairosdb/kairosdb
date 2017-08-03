@@ -13,7 +13,7 @@ import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointListenerProvider;
 import org.kairosdb.core.GuiceKairosDataPointFactory;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.KairosQueryProcessingChain;
+import org.kairosdb.core.KairosFeatureProcessor;
 import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
@@ -32,8 +32,8 @@ import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
-import org.kairosdb.core.processingstage.QueryProcessingChain;
-import org.kairosdb.core.processingstage.QueryProcessingStageFactory;
+import org.kairosdb.core.processingstage.FeatureProcessingFactory;
+import org.kairosdb.core.processingstage.FeatureProcessor;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -45,10 +45,9 @@ import java.util.Properties;
 
 import static org.kairosdb.core.http.rest.MetricsResourceTest.assertResponse;
 
-public class QueryProcessingChainResourceTest
+public class FeaturesResourceTest
 {
-    private static final String QUERY_PROCESSING_STAGE_URL = "http://localhost:9001/api/v1/queryprocessing/stages/";
-    private static final String QUERY_PROCESSING_CHAIN_URL = "http://localhost:9001/api/v1/queryprocessing/chain";
+    private static final String FEATURE_PROCESSING_URL = "http://localhost:9001/api/v1/features/";
 
     private static MetricsResourceTest.TestDatastore datastore;
     private static QueryQueuingManager queuingManager;
@@ -75,9 +74,9 @@ public class QueryProcessingChainResourceTest
                 bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
                 bind(Datastore.class).toInstance(datastore);
                 bind(KairosDatastore.class).in(Singleton.class);
-                bind(QueryProcessingChain.class).to(KairosQueryProcessingChain.class).in(Singleton.class);
-                bind(new TypeLiteral<QueryProcessingStageFactory<Aggregator>>() {}).to(TestAggregatorFactory.class);
-                bind(new TypeLiteral<QueryProcessingStageFactory<GroupBy>>() {}).to(TestGroupByFactory.class);
+                bind(FeatureProcessor.class).to(KairosFeatureProcessor.class).in(Singleton.class);
+                bind(new TypeLiteral<FeatureProcessingFactory<Aggregator>>() {}).to(TestAggregatorFactory.class);
+                bind(new TypeLiteral<FeatureProcessingFactory<GroupBy>>() {}).to(TestGroupByFactory.class);
                 bind(QueryParser.class).in(Singleton.class);
                 bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
                 bind(QueryQueuingManager.class).toInstance(queuingManager);
@@ -131,21 +130,21 @@ public class QueryProcessingChainResourceTest
     @Test
     public void testGetAggregatorList() throws IOException
     {
-        JsonResponse response = client.get(QUERY_PROCESSING_STAGE_URL + "aggregators");
+        JsonResponse response = client.get(FEATURE_PROCESSING_URL + "aggregators");
         assertResponse(response, 200, "[]");
     }
 
     @Test
-    public void testGetInvalidQueryProcessorList() throws IOException
+    public void testGetInvalidFeature() throws IOException
     {
-        JsonResponse response = client.get(QUERY_PROCESSING_STAGE_URL + "intel");
-        assertResponse(response, 404, "{\"errors\":[\"Unknown processing stage family 'intel'\"]}");
+        JsonResponse response = client.get(FEATURE_PROCESSING_URL + "intel");
+        assertResponse(response, 404, "{\"errors\":[\"Unknown feature 'intel'\"]}");
     }
 
     @Test
-    public void getTestGetQueryProcessingChain() throws IOException
+    public void getTestGetFeatures() throws IOException
     {
-        JsonResponse response = client.get(QUERY_PROCESSING_CHAIN_URL);
+        JsonResponse response = client.get(FEATURE_PROCESSING_URL);
         assertResponse(response, 200, "[{\"name\":\"group_by\",\"label\":\"Test GroupBy\",\"properties\":[]},{\"name\":\"aggregators\",\"label\":\"Test Aggregator\",\"properties\":[]}]");
     }
 }

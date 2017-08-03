@@ -19,20 +19,20 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.QueryProcessor;
-import org.kairosdb.core.annotation.QueryCompoundProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureCompoundProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.util.Util;
 
-@QueryProcessor(
+@FeatureComponent(
         name = "rate",
 		description = "Computes the rate of change for the data points."
 )
 public class RateAggregator implements Aggregator, TimezoneAware
 {
-    @QueryCompoundProperty(
+    @FeatureCompoundProperty(
             label = "Sampling",
             order = {"Value", "Unit"}
     )

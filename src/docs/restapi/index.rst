@@ -13,9 +13,8 @@ Contents:
    AddDataPoints
    DeleteDataPoints
    DeleteMetric
+   Features
    Health
-   ListAggregators
-   ListGroupBys
    ListMetricNames
    ListTagNames
    ListTagValues

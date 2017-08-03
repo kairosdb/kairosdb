@@ -10,19 +10,19 @@ import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.annotatedAggregator.AAggregator;
 import org.kairosdb.core.groupby.GroupBy;
-import org.kairosdb.core.processingstage.metadata.QueryProcessingStageMetadata;
+import org.kairosdb.core.processingstage.metadata.FeatureProcessingMetadata;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
-import static org.kairosdb.core.processingstage.GenericQueryProcessingStageFactoryTest.assertQueryProcessors;
-import static org.kairosdb.core.processingstage.GenericQueryProcessingStageFactoryTest.factory_valid_metadata_generator;
+import static org.kairosdb.core.processingstage.GenericFeatureProcessorFactoryTest.assertQueryProcessors;
+import static org.kairosdb.core.processingstage.GenericFeatureProcessorFactoryTest.factory_valid_metadata_generator;
 
 public class GenericProcessingChainTest
 {
-    private static QueryProcessingChain processingChain;
+    private static FeatureProcessor processingChain;
 
     @BeforeClass
     public static void chain_generation_valid()
@@ -30,7 +30,7 @@ public class GenericProcessingChainTest
     {
         Injector injector = Guice.createInjector((Module) binder -> binder.bind(AAggregator.class));
 
-        GenericProcessingChainTest.processingChain = new TestKairosDBProcessingChain(new ArrayList<QueryProcessingStageFactory<?>>()
+        GenericProcessingChainTest.processingChain = new TestKairosDBProcessor(new ArrayList<FeatureProcessingFactory<?>>()
         {{
             add(new AggregatorFactory(injector));
         }});
@@ -40,41 +40,41 @@ public class GenericProcessingChainTest
     public void chain_generation_empty_list()
             throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException
     {
-        new TestKairosDBProcessingChain(new ArrayList<>());
+        new TestKairosDBProcessor(new ArrayList<>());
     }
 
     @Test(expected = NullPointerException.class)
     public void chain_generation_null_list()
     {
-        new TestKairosDBProcessingChain(null);
+        new TestKairosDBProcessor(null);
     }
 
     @Test
     public void chain_getter_factory_with_name()
     {
-        QueryProcessingStageFactory<?> factory = GenericProcessingChainTest.processingChain.getQueryProcessingStageFactory(Aggregator.class);
-        assertEquals("Invalid type of QueryProcessingStageFactory", AggregatorFactory.class, factory.getClass());
+        FeatureProcessingFactory<?> factory = GenericProcessingChainTest.processingChain.getFeatureProcessingFactory(Aggregator.class);
+        assertEquals("Invalid type of FeatureProcessingFactory", AggregatorFactory.class, factory.getClass());
     }
 
     @Test
     public void chain_getter_factory_with_name_failure()
     {
-        QueryProcessingStageFactory<?> factory = GenericProcessingChainTest.processingChain.getQueryProcessingStageFactory(GroupBy.class);
-        assertEquals("Invalid type of QueryProcessingStageFactory", null, factory);
+        FeatureProcessingFactory<?> factory = GenericProcessingChainTest.processingChain.getFeatureProcessingFactory(GroupBy.class);
+        assertEquals("Invalid type of FeatureProcessingFactory", null, factory);
     }
 
     @Test
     public void chain_getter_factory_with_class()
     {
-        QueryProcessingStageFactory<?> factory = GenericProcessingChainTest.processingChain.getQueryProcessingStageFactory("aggregators");
-        assertEquals("Invalid type of QueryProcessingStageFactory", AggregatorFactory.class, factory.getClass());
+        FeatureProcessingFactory<?> factory = GenericProcessingChainTest.processingChain.getFeatureProcessingFactory("aggregators");
+        assertEquals("Invalid type of FeatureProcessingFactory", AggregatorFactory.class, factory.getClass());
     }
 
     @Test
     public void chain_getter_factory_with_class_failure()
     {
-        QueryProcessingStageFactory<?> factory = GenericProcessingChainTest.processingChain.getQueryProcessingStageFactory("groupby");
-        assertEquals("Invalid type of QueryProcessingStageFactory", null, factory);
+        FeatureProcessingFactory<?> factory = GenericProcessingChainTest.processingChain.getFeatureProcessingFactory("groupby");
+        assertEquals("Invalid type of FeatureProcessingFactory", null, factory);
     }
 
     @Test
@@ -83,15 +83,15 @@ public class GenericProcessingChainTest
     {
         assertQueryProcessorFactories(
                 ImmutableList.copyOf(chain_valid_metadata_generator()),
-                this.processingChain.getQueryProcessingChainMetadata()
+                this.processingChain.getFeatureProcessingMetadata()
         );
     }
 
-    static QueryProcessingStageMetadata[] chain_valid_metadata_generator()
+    static FeatureProcessingMetadata[] chain_valid_metadata_generator()
             throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
     {
-        return new QueryProcessingStageMetadata[]{
-                new QueryProcessingStageMetadata(
+        return new FeatureProcessingMetadata[]{
+                new FeatureProcessingMetadata(
                         "aggregators",
                         "Aggregator",
                         Arrays.asList(factory_valid_metadata_generator())
@@ -99,16 +99,16 @@ public class GenericProcessingChainTest
         };
     }
 
-    static void assertQueryProcessorFactories(ImmutableList<QueryProcessingStageMetadata> expectedProcessingChain,
-                                              ImmutableList<QueryProcessingStageMetadata> actualProcessingChain)
+    static void assertQueryProcessorFactories(ImmutableList<FeatureProcessingMetadata> expectedProcessingChain,
+                                              ImmutableList<FeatureProcessingMetadata> actualProcessingChain)
     {
-        assertEquals("QueryProcessingStage metadata size don't match", expectedProcessingChain.size(), actualProcessingChain.size());
+        assertEquals("Feature metadata size don't match", expectedProcessingChain.size(), actualProcessingChain.size());
         for (int i = 0; i < actualProcessingChain.size(); i++)
         {
-            QueryProcessingStageMetadata expectedQueryProcessorStage = expectedProcessingChain.get(i);
-            QueryProcessingStageMetadata actualQueryProcessorStage = actualProcessingChain.get(i);
-            assertEquals("QueryProcessingStage metadata name don't match", expectedQueryProcessorStage.getName(), actualQueryProcessorStage.getName());
-            assertEquals("QueryProcessingStage metadata label don't match", expectedQueryProcessorStage.getLabel(), actualQueryProcessorStage.getLabel());
+            FeatureProcessingMetadata expectedQueryProcessorStage = expectedProcessingChain.get(i);
+            FeatureProcessingMetadata actualQueryProcessorStage = actualProcessingChain.get(i);
+            assertEquals("Feature metadata name don't match", expectedQueryProcessorStage.getName(), actualQueryProcessorStage.getName());
+            assertEquals("Feature metadata label don't match", expectedQueryProcessorStage.getLabel(), actualQueryProcessorStage.getLabel());
             assertQueryProcessors(expectedQueryProcessorStage.getProperties(), actualQueryProcessorStage.getProperties());
         }
     }

@@ -19,7 +19,18 @@ package org.kairosdb.core.http.rest.json;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
-import com.google.gson.*;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.TypeAdapterFactory;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
@@ -29,20 +40,34 @@ import com.google.inject.Inject;
 import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.joda.time.DateTimeZone;
-import org.kairosdb.core.aggregator.*;
-import org.kairosdb.core.annotation.QueryProcessingStage;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.aggregator.Aggregator;
+import org.kairosdb.core.aggregator.FilterAggregator;
+import org.kairosdb.core.aggregator.GroupByAware;
+import org.kairosdb.core.aggregator.RangeAggregator;
+import org.kairosdb.core.aggregator.SaveAsAggregator;
+import org.kairosdb.core.aggregator.TimezoneAware;
+import org.kairosdb.core.aggregator.TrimAggregator;
+import org.kairosdb.core.annotation.Feature;
+import org.kairosdb.core.datastore.Order;
+import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.datastore.QueryPlugin;
+import org.kairosdb.core.datastore.QueryPluginFactory;
+import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
-import org.kairosdb.core.processingstage.QueryProcessingChain;
-import org.kairosdb.core.processingstage.QueryProcessingStageFactory;
+import org.kairosdb.core.processingstage.FeatureProcessingFactory;
+import org.kairosdb.core.processingstage.FeatureProcessor;
 import org.kairosdb.rollup.Rollup;
 import org.kairosdb.rollup.RollupTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.validation.*;
+import javax.validation.ConstraintViolation;
+import javax.validation.Path;
+import javax.validation.Valid;
+import javax.validation.Validation;
+import javax.validation.Validator;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.metadata.ConstraintDescriptor;
@@ -53,7 +78,13 @@ import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 
 public class QueryParser
@@ -61,7 +92,7 @@ public class QueryParser
     protected static final Logger logger = LoggerFactory.getLogger(QueryParser.class);
     protected static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
 
-    protected QueryProcessingChain m_processingChain;
+    protected FeatureProcessor m_processingChain;
     protected QueryPluginFactory m_pluginFactory;
     protected final GsonBuilder m_gsonBuilder;
 
@@ -70,7 +101,7 @@ public class QueryParser
     private final Object m_descriptorMapLock = new Object();
 
     @Inject
-    public QueryParser(QueryProcessingChain processingChain, QueryPluginFactory pluginFactory)
+    public QueryParser(FeatureProcessor processingChain, QueryPluginFactory pluginFactory)
     {
         m_processingChain = processingChain;
         m_pluginFactory = pluginFactory;
@@ -250,16 +281,16 @@ public class QueryParser
 
                 JsonObject jsMetric = metricsArray.get(I).getAsJsonObject();
 
-                for (QueryProcessingStageFactory<?> factory : m_processingChain.getQueryProcessingStageFactories())
+                for (FeatureProcessingFactory<?> factory : m_processingChain.getFeatureProcessingFactories())
                 {
-                    String factoryName = factory.getClass().getAnnotation(QueryProcessingStage.class).name();
+                    String factoryName = factory.getClass().getAnnotation(Feature.class).name();
 
                     JsonElement queryProcessor = jsMetric.get(factoryName);
                     if (queryProcessor != null)
                     {
                         JsonArray queryProcessorArray = queryProcessor.getAsJsonArray();
                         parseQueryProcessor(context, factoryName,
-                                queryProcessorArray, factory.getQueryProcessorFamily(),
+                                queryProcessorArray, factory.getFeature(),
                                 queryMetric, query.getTimeZone());
                     }
                 }
@@ -339,7 +370,7 @@ public class QueryParser
 
             String qpContext = context + "." + queryProcessorFamilyName + "[" + J + "]";
             String qpName = name.getAsString();
-            Object queryProcessor = m_processingChain.getQueryProcessingStageFactory(queryProcessorFamilyType).createQueryProcessor(qpName);
+            Object queryProcessor = m_processingChain.getFeatureProcessingFactory(queryProcessorFamilyType).createFeatureProcessor(qpName);
 
             if (queryProcessor == null)
                 throw new BeanValidationException(new SimpleConstraintViolation(qpName, "invalid " + queryProcessorFamilyName + " name"), qpContext);
@@ -493,10 +524,10 @@ public class QueryParser
                     validateHasRangeAggregator(query, context);
 
                     // Add aggregators needed for rollups
-                    SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_processingChain.getQueryProcessingStageFactory(Aggregator.class).createQueryProcessor("save_as");
+                    SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_processingChain.getFeatureProcessingFactory(Aggregator.class).createFeatureProcessor("save_as");
                     saveAsAggregator.setMetricName(rollup.getSaveAs());
 
-                    TrimAggregator trimAggregator = (TrimAggregator) m_processingChain.getQueryProcessingStageFactory(Aggregator.class).createQueryProcessor("trim");
+                    TrimAggregator trimAggregator = (TrimAggregator) m_processingChain.getFeatureProcessingFactory(Aggregator.class).createFeatureProcessor("trim");
                     trimAggregator.setTrim(TrimAggregator.Trim.LAST);
 
                     query.addAggregator(saveAsAggregator);

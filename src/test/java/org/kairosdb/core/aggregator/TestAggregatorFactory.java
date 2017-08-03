@@ -17,21 +17,21 @@
 package org.kairosdb.core.aggregator;
 
 import com.google.common.collect.ImmutableList;
-import org.kairosdb.core.annotation.QueryProcessingStage;
-import org.kairosdb.core.annotation.QueryProcessor;
+import org.kairosdb.core.annotation.Feature;
+import org.kairosdb.core.annotation.FeatureComponent;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.exception.KairosDBException;
-import org.kairosdb.core.processingstage.QueryProcessingStageFactory;
-import org.kairosdb.core.processingstage.metadata.QueryProcessorMetadata;
+import org.kairosdb.core.processingstage.FeatureProcessingFactory;
+import org.kairosdb.core.processingstage.metadata.FeatureProcessorMetadata;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@QueryProcessingStage(
+@Feature(
         name = "aggregators",
         label = "Test Aggregator"
 )
-public class TestAggregatorFactory implements QueryProcessingStageFactory<Aggregator>
+public class TestAggregatorFactory implements FeatureProcessingFactory<Aggregator>
 {
     private Map<String, Aggregator> m_aggregators = new HashMap<String, Aggregator>();
 
@@ -52,22 +52,22 @@ public class TestAggregatorFactory implements QueryProcessingStageFactory<Aggreg
 
     private void addAggregator(Aggregator agg)
     {
-        String name = (agg.getClass().getAnnotation(QueryProcessor.class)).name();
+        String name = (agg.getClass().getAnnotation(FeatureComponent.class)).name();
         m_aggregators.put(name, agg);
     }
 
     @Override
-    public Aggregator createQueryProcessor(String name)
+    public Aggregator createFeatureProcessor(String name)
     {
         return (m_aggregators.get(name));
     }
 
     @Override
-    public Class<Aggregator> getQueryProcessorFamily()
+    public Class<Aggregator> getFeature()
     {
         return Aggregator.class;
     }
 
     @Override
-    public ImmutableList<QueryProcessorMetadata> getQueryProcessorMetadata() { return ImmutableList.copyOf(new QueryProcessorMetadata[]{});}
+    public ImmutableList<FeatureProcessorMetadata> getFeatureProcessorMetadata() { return ImmutableList.copyOf(new FeatureProcessorMetadata[]{});}
 }

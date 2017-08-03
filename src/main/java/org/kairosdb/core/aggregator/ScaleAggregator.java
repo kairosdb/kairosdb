@@ -19,8 +19,8 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.QueryProcessor;
-import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -31,13 +31,13 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-@QueryProcessor(
+@FeatureComponent(
         name = "scale",
 		description = "Scales each data point by a factor."
 )
 public class ScaleAggregator implements Aggregator
 {
-	@QueryProperty(
+	@FeatureProperty(
 			label = "Factor",
 			description = "The value to scale each data point by.",
             validations = {

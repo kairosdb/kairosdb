@@ -19,7 +19,10 @@ package org.kairosdb.core.groupby;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.*;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureCompoundProperty;
+import org.kairosdb.core.annotation.FeatureProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.formatter.FormatterException;
@@ -34,14 +37,14 @@ import java.util.TimeZone;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-@QueryProcessor(
+@FeatureComponent(
 		name = "time",
 		description = "Groups data points in time ranges."
 )
 public class TimeGroupBy implements GroupBy
 {
 	@NotNull
-    @QueryCompoundProperty(
+    @FeatureCompoundProperty(
     		name = "range_size",
             label = "Range Size",
             order = {"Value", "Unit"}
@@ -49,7 +52,7 @@ public class TimeGroupBy implements GroupBy
 	private Duration rangeSize;
 
 	@Min(1)
-    @QueryProperty(
+    @FeatureProperty(
     		name = "group_count",
             label = "Count",
             description = "The number of groups. This would typically be 7 to group by day of week.",

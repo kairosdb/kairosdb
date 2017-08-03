@@ -17,16 +17,16 @@ package org.kairosdb.core.groupby;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import org.kairosdb.core.annotation.QueryProcessingStage;
-import org.kairosdb.core.processingstage.GenericQueryProcessingStageFactory;
+import org.kairosdb.core.annotation.Feature;
+import org.kairosdb.core.processingstage.GenericFeatureProcessorFactory;
 
 import java.lang.reflect.InvocationTargetException;
 
-@QueryProcessingStage(
+@Feature(
         name = "groupby",
         label = "Group By"
 )
-public class GroupByFactory extends GenericQueryProcessingStageFactory<GroupBy>
+public class GroupByFactory extends GenericFeatureProcessorFactory<GroupBy>
 {
     @Inject
     public GroupByFactory(Injector injector)

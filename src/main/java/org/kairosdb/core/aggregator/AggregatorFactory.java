@@ -17,16 +17,16 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import org.kairosdb.core.annotation.QueryProcessingStage;
-import org.kairosdb.core.processingstage.GenericQueryProcessingStageFactory;
+import org.kairosdb.core.annotation.Feature;
+import org.kairosdb.core.processingstage.GenericFeatureProcessorFactory;
 
 import java.lang.reflect.InvocationTargetException;
 
-@QueryProcessingStage(
+@Feature(
         name = "aggregators",
         label = "Aggregator"
 )
-public class AggregatorFactory extends GenericQueryProcessingStageFactory<Aggregator>
+public class AggregatorFactory extends GenericFeatureProcessorFactory<Aggregator>
 {
     @Inject
     public AggregatorFactory(Injector injector)

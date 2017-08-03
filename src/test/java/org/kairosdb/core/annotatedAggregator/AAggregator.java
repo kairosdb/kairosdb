@@ -3,18 +3,18 @@ package org.kairosdb.core.annotatedAggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.aggregator.Sampling;
-import org.kairosdb.core.annotation.QueryCompoundProperty;
-import org.kairosdb.core.annotation.QueryProcessor;
-import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureCompoundProperty;
+import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 
-@QueryProcessor(
+@FeatureComponent(
         name = "A",
         description = "The A Aggregator"
 )
 public class AAggregator extends BAggregator
 {
-    @QueryProperty(
+    @FeatureProperty(
             name = "allAnnotation",
             label = "AllAnnotation",
             description = "This is allAnnotation",
@@ -30,37 +30,37 @@ public class AAggregator extends BAggregator
     )
     private int allAnnotation;
 
-    @QueryProperty(
+    @FeatureProperty(
             label = "MyDouble",
             description = "This is myDouble"
     )
     private double myDouble;
 
-    @QueryProperty(
+    @FeatureProperty(
             label = "MyLong",
             description = "This is myLong"
     )
     private long myLong;
 
-    @QueryProperty(
+    @FeatureProperty(
             label = "MyInt",
             description = "This is myInt"
     )
     private int myInt;
 
-   @QueryProperty(
+   @FeatureProperty(
             label = "MyBoolean",
             description = "This is myBoolean"
     )
     private boolean myBoolean;
 
-   @QueryProperty(
+   @FeatureProperty(
             label = "MyString",
             description = "This is myString"
     )
     private String myString;
 
-    @QueryCompoundProperty(
+    @FeatureCompoundProperty(
             label = "Sampling",
             order = {"Value", "Unit"}
     )

@@ -17,7 +17,7 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.QueryProcessor;
+import org.kairosdb.core.annotation.FeatureComponent;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.exception.KairosDBException;
 
@@ -27,7 +27,7 @@ import java.util.Iterator;
 /**
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
-@QueryProcessor(
+@FeatureComponent(
 		name = "avg",
 		label = "AVG",
 		description = "Averages the data points together."

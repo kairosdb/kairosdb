@@ -16,19 +16,19 @@
 package org.kairosdb.core.groupby;
 
 import com.google.common.collect.ImmutableList;
-import org.kairosdb.core.annotation.QueryProcessingStage;
-import org.kairosdb.core.annotation.QueryProcessor;
-import org.kairosdb.core.processingstage.QueryProcessingStageFactory;
-import org.kairosdb.core.processingstage.metadata.QueryProcessorMetadata;
+import org.kairosdb.core.annotation.Feature;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.processingstage.FeatureProcessingFactory;
+import org.kairosdb.core.processingstage.metadata.FeatureProcessorMetadata;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@QueryProcessingStage(
+@Feature(
         name = "group_by",
         label = "Test GroupBy"
 )
-public class TestGroupByFactory implements QueryProcessingStageFactory<GroupBy>
+public class TestGroupByFactory implements FeatureProcessingFactory<GroupBy>
 {
     private Map<String, GroupBy> groupBys = new HashMap<String, GroupBy>();
 
@@ -42,16 +42,16 @@ public class TestGroupByFactory implements QueryProcessingStageFactory<GroupBy>
 
     private void addGroupBy(GroupBy groupBy)
     {
-        String name = (groupBy.getClass().getAnnotation(QueryProcessor.class)).name();
+        String name = (groupBy.getClass().getAnnotation(FeatureComponent.class)).name();
         groupBys.put(name, groupBy);
     }
 
     @Override
-    public GroupBy createQueryProcessor(String name) { return groupBys.get(name); }
+    public GroupBy createFeatureProcessor(String name) { return groupBys.get(name); }
 
     @Override
-    public Class<GroupBy> getQueryProcessorFamily() { return GroupBy.class; }
+    public Class<GroupBy> getFeature() { return GroupBy.class; }
 
     @Override
-    public ImmutableList<QueryProcessorMetadata> getQueryProcessorMetadata() { return ImmutableList.copyOf(new QueryProcessorMetadata[]{});}
+    public ImmutableList<FeatureProcessorMetadata> getFeatureProcessorMetadata() { return ImmutableList.copyOf(new FeatureProcessorMetadata[]{});}
 }

@@ -6,16 +6,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Aggregators cannot be recursive meaning that QueryProperty cannot contain an QueryProperty.
+ * Aggregators cannot be recursive meaning that FeatureProperty cannot contain a FeatureProperty.
  * Thus this class exists to allow for properties within properties.
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface QueryCompoundProperty
+public @interface FeatureCompoundProperty
 {
     String name() default "";
 	String label();
 
-	QueryProperty[] properties() default {};
+	FeatureProperty[] properties() default {};
 	String[] order() default {};
 }

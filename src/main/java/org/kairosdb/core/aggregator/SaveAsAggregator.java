@@ -3,8 +3,8 @@ package org.kairosdb.core.aggregator;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.QueryProcessor;
-import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.Datastore;
@@ -13,12 +13,16 @@ import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  Created by bhawkins on 8/28/15.
  */
-@QueryProcessor(
+@FeatureComponent(
         name = "save_as",
 		description = "Saves the results to a new metric."
 )
@@ -30,7 +34,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	private Set<String> m_tagsToKeep = new HashSet<>();
 	private boolean m_addSavedFrom = true;
 
-	@QueryProperty(
+	@FeatureProperty(
 			name = "metric_name",
 			label = "Save As",
 			description = "The name of the new metric.",

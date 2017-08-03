@@ -17,12 +17,12 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.annotation.QueryProcessor;
-import org.kairosdb.core.annotation.QueryProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 
 
-@QueryProcessor(
+@FeatureComponent(
         name = "filter",
 		description = "Filters datapoints according to filter operation with a null data point."
 )
@@ -44,7 +44,7 @@ public class FilterAggregator implements Aggregator
 		m_threshold = threshold;
 	}
 
-	@QueryProperty(
+	@FeatureProperty(
 			name = "filter_op",
 			label = "Filter operation",
 			description = "The operation performed for each data point.",
@@ -54,7 +54,7 @@ public class FilterAggregator implements Aggregator
 	)
 	private FilterOperation m_filterop;
 
-	@QueryProperty(
+	@FeatureProperty(
 			label = "Threshold",
 			description = "The value the operation is performed on. If the operation is lt, then a null data point is returned if the data point is less than the threshold."
 	)

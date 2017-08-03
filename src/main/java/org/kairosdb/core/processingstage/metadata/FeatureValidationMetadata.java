@@ -1,12 +1,12 @@
 package org.kairosdb.core.processingstage.metadata;
 
-public class QueryValidationMetadata
+public class FeatureValidationMetadata
 {
     private String expression;
     private String type;
     private String message;
 
-    public QueryValidationMetadata(String expression, String type, String message)
+    public FeatureValidationMetadata(String expression, String type, String message)
     {
         this.expression = expression;
         this.type = type;

@@ -569,6 +569,24 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		}
 	}
 
+	private void deletePartialRow(DataPointsRowKey rowKey, int start, int end)
+	{
+		BoundStatement statement = new BoundStatement(m_schema.psDataPointsDelete);
+		statement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+		ByteBuffer b = ByteBuffer.allocate(4);
+		b.putInt(start);
+		b.rewind();
+		statement.setBytesUnsafe(1, b);
+
+		b = ByteBuffer.allocate(4);
+		b.putInt(end);
+		b.rewind();
+		statement.setBytesUnsafe(2, b);
+
+		statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+		m_session.executeAsync(statement);
+	}
+
 
 	@Override
 	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
@@ -576,7 +594,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		checkNotNull(deleteQuery);
 		boolean clearCache = false;
 
-		long now = System.currentTimeMillis();
 
 		boolean deleteAll = false;
 		if (deleteQuery.getStartTime() == Long.MIN_VALUE && deleteQuery.getEndTime() == Long.MAX_VALUE)
@@ -591,7 +608,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			long rowKeyTimestamp = rowKey.getTimestamp();
 			if (deleteQuery.getStartTime() <= rowKeyTimestamp && (deleteQuery.getEndTime() >= rowKeyTimestamp + ROW_WIDTH - 1))
 			{
-				//todo fix me
 				BoundStatement statement = new BoundStatement(m_schema.psDataPointsDeleteRow);
 				statement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
@@ -604,14 +620,18 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				m_session.executeAsync(statement);
 				clearCache = true;
 			}
+			else if (deleteQuery.getStartTime() <= rowKeyTimestamp)
+			{
+				//Delete first portion of row
+				deletePartialRow(rowKey, 0, getColumnName(rowKeyTimestamp, deleteQuery.getEndTime()));
+			}
 			else
 			{
-				partialRows.add(rowKey);
+				//Delete last portion of row
+				deletePartialRow(rowKey, getColumnName(rowKeyTimestamp, deleteQuery.getStartTime()),
+						getColumnName(rowKeyTimestamp, rowKeyTimestamp + ROW_WIDTH - 1));
 			}
 		}
-
-
-		cqlQueryWithRowKeys(deleteQuery, new DeletingCallback(deleteQuery.getName()), partialRows.iterator());
 
 		// If index is gone, delete metric name from Strings column family
 		if (deleteAll)
@@ -621,8 +641,13 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 			m_session.executeAsync(statement);
 
-			//todo fix me
-			//m_stringIndexWriteBuffer.deleteColumn(ROW_KEY_METRIC_NAMES, deleteQuery.getName(), now);
+			//Delete from string index
+			statement = new BoundStatement(m_schema.psStringIndexDelete);
+			statement.setBytesUnsafe(0, serializeString(ROW_KEY_METRIC_NAMES));
+			statement.setBytesUnsafe(1, serializeString(deleteQuery.getName()));
+			statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+			m_session.executeAsync(statement);
+
 			clearCache = true;
 			m_metricNameCache.clear();
 		}

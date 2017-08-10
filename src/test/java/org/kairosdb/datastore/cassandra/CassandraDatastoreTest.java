@@ -25,12 +25,15 @@ import org.kairosdb.core.*;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.core.queue.MemoryQueueProcessor;
 import org.kairosdb.datastore.DatastoreMetricQueryImpl;
 import org.kairosdb.datastore.DatastoreTestHelper;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.util.IngestExecutorService;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.Executors;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
@@ -179,8 +182,13 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		if (System.getenv("CASSANDRA_HOST") != null)
 			cassandraHost = System.getenv("CASSANDRA_HOST");
 
-		/*s_datastore = new CassandraDatastore("hostname", new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
-				1000, 50000, "kairosdb_test"), new HectorConfiguration(cassandraHost), dataPointFactory);*/
+		s_datastore = new CassandraDatastore("hostname",
+				new CassandraClientImpl("kairosdb_test", "localhost"),
+				new CassandraConfiguration("kairosdb_test"),
+				dataPointFactory,
+				new MemoryQueueProcessor(Executors.newSingleThreadExecutor(), 1000, 10000, 10),
+				s_eventBus,
+				new IngestExecutorService(s_eventBus, 1));
 
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
 				new QueryQueuingManager(1, "hostname"),

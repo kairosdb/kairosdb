@@ -13,17 +13,30 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package org.kairosdb.core.aggregator.annotation;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+package org.kairosdb.core.aggregator;
 
-@Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE})
-public @interface GroupByName
+
+import org.kairosdb.core.datastore.Duration;
+import org.kairosdb.core.datastore.TimeUnit;
+
+public class Sampling extends Duration
 {
-	String name();
-	String description();
-}
+	public Sampling()
+	{
+		super();
+	}
 
+	public Sampling(int value, TimeUnit unit)
+	{
+		super(value, unit);
+	}
+
+
+	@Override
+	public String toString()
+	{
+		return "Sampling{" +
+				"} " + super.toString();
+	}
+}

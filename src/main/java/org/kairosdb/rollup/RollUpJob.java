@@ -2,6 +2,7 @@ package org.kairosdb.rollup;
 
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.RangeAggregator;
+import org.kairosdb.core.aggregator.Sampling;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
@@ -11,7 +12,6 @@ import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.Order;
 import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.datastore.Sampling;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.http.rest.json.RelativeTime;
 import org.kairosdb.core.reporting.ThreadReporter;

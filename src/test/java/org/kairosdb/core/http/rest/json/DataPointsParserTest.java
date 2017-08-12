@@ -689,12 +689,12 @@ public class DataPointsParserTest
 				new Gson(), dataPointFactory);
 		ValidationErrors validationErrors = parser.parse();
 		System.out.println(parser.getDataPointCount());
-		System.out.println("No Validation");
+		System.out.println("No ValidationProperty.java");
 		System.out.println(parser.getIngestTime());
 
 		parser = new DataPointsParser(eventBus, reader, new Gson(), dataPointFactory);
 		validationErrors = parser.parse();
-		System.out.println("With Validation");
+		System.out.println("With ValidationProperty.java");
 		System.out.println(parser.getIngestTime());
 	}
 

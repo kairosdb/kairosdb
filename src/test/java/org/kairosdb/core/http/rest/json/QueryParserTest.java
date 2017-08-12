@@ -21,6 +21,7 @@ import com.google.common.io.Resources;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
+import org.kairosdb.core.KairosFeatureProcessor;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.QueryMetric;
@@ -35,7 +36,9 @@ import java.io.IOException;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.fail;
 
 public class QueryParserTest
@@ -45,7 +48,7 @@ public class QueryParserTest
 	@Before
 	public void setup() throws KairosDBException
 	{
-		parser = new QueryParser(new TestAggregatorFactory(), new TestGroupByFactory(), new TestQueryPluginFactory());
+		parser = new QueryParser(new KairosFeatureProcessor(new TestAggregatorFactory(), new TestGroupByFactory()), new TestQueryPluginFactory());
 	}
 
 	@Test
@@ -296,7 +299,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].aggregators[0].bogus invalid aggregator name");
+		assertBeanValidation(json, "query.metric[0].aggregators[0].bogus invalid aggregators name");
 	}
 
 	@Test

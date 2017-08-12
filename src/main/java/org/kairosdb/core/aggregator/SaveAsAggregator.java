@@ -3,8 +3,9 @@ package org.kairosdb.core.aggregator;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
@@ -22,21 +23,32 @@ import java.util.Set;
 /**
  Created by bhawkins on 8/28/15.
  */
-@AggregatorName(
+@FeatureComponent(
         name = "save_as",
-        description = "Saves the results to a new metric.",
-        properties = {
-                @AggregatorProperty(name = "metric_name", type = "string")
-        }
+		description = "Saves the results to a new metric."
 )
 public class SaveAsAggregator implements Aggregator, GroupByAware
 {
 	private final EventBusWithFilters m_eventBus;
-	private String m_metricName;
 	private Map<String, String> m_tags;
 	private int m_ttl = 0;
 	private Set<String> m_tagsToKeep = new HashSet<>();
 	private boolean m_addSavedFrom = true;
+
+	@FeatureProperty(
+			name = "metric_name",
+			label = "Save As",
+			description = "The name of the new metric.",
+			default_value = "<new name>",
+            validations = {
+					@ValidationProperty(
+							expression = "!value && value.length > 0",
+							message = "The name can't be empty."
+					)
+			}
+	)
+	private String m_metricName;
+
 
 	@Inject
 	public SaveAsAggregator(EventBusWithFilters eventBus)

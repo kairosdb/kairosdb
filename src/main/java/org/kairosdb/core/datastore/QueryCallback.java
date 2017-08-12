@@ -1,7 +1,6 @@
 package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.exception.DatastoreException;
 
 import java.io.IOException;
 import java.util.Map;

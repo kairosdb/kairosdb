@@ -1,5 +1,5 @@
 var ROLLUP_URL = "/api/v1/rollups/";
-var AGGREGATORS_URL = "/api/v1/aggregators";
+var AGGREGATORS_URL = "/api/v1/features/aggregators";
 var semaphore = false;
 var metricList = null;
 

@@ -9,13 +9,17 @@ import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.quartz.impl.JobDetailImpl;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.kairosdb.rollup.RollupTaskChangeListener.Action;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class RollUpManagerTest
 {
@@ -25,6 +29,7 @@ public class RollUpManagerTest
 	private RollUpTasksStore mockTaskStore;
 	private KairosDBScheduler mockScheduler;
 	private KairosDatastore mockDatastore;
+	private EventBusWithFilters mockEventBus;
 
 	@Before
 	public void setup() throws RollUpException
@@ -32,6 +37,8 @@ public class RollUpManagerTest
 		mockTaskStore = mock(RollUpTasksStore.class);
 		mockScheduler = mock(KairosDBScheduler.class);
 		mockDatastore = mock(KairosDatastore.class);
+		mockEventBus = mock(EventBusWithFilters.class);
+
 	}
 
 	@Test
@@ -40,7 +47,7 @@ public class RollUpManagerTest
 		expectedException.expect(NullPointerException.class);
 		expectedException.expectMessage("taskStore cannot be null");
 
-		new RollUpManager(null, mockScheduler, mockDatastore);
+		new RollUpManager(null, mockScheduler, mockDatastore, mockEventBus);
 	}
 
 	@Test
@@ -49,7 +56,16 @@ public class RollUpManagerTest
 		expectedException.expect(NullPointerException.class);
 		expectedException.expectMessage("dataStore cannot be null");
 
-		new RollUpManager(mockTaskStore, mockScheduler, null);
+		new RollUpManager(mockTaskStore, mockScheduler, null, mockEventBus);
+	}
+
+	@Test
+	public void testConstructor_eventBus_null_invalid() throws RollUpException
+	{
+		expectedException.expect(NullPointerException.class);
+		expectedException.expectMessage("eventBus cannot be null");
+
+		new RollUpManager(mockTaskStore, mockScheduler, mockDatastore, null);
 	}
 
 	@Test
@@ -62,18 +78,18 @@ public class RollUpManagerTest
 
 		when(mockTaskStore.read()).thenReturn(tasks);
 
-		RollUpManager manager = new RollUpManager(mockTaskStore, mockScheduler, mockDatastore);
+		RollUpManager manager = new RollUpManager(mockTaskStore, mockScheduler, mockDatastore, mockEventBus);
 
 		verify(mockTaskStore).addListener(manager);
-		verify(mockScheduler, times(1)).schedule(RollUpManager.createJobDetail(tasks.get(0), mockDatastore, "localhost"), RollUpManager.createTrigger(tasks.get(0)));
-		verify(mockScheduler, times(1)).schedule(RollUpManager.createJobDetail(tasks.get(1), mockDatastore, "localhost"), RollUpManager.createTrigger(tasks.get(1)));
-		verify(mockScheduler, times(1)).schedule(RollUpManager.createJobDetail(tasks.get(2), mockDatastore, "localhost"), RollUpManager.createTrigger(tasks.get(2)));
+		verify(mockScheduler, times(1)).schedule(RollUpManager.createJobDetail(tasks.get(0), mockDatastore, "localhost", mockEventBus), RollUpManager.createTrigger(tasks.get(0)));
+		verify(mockScheduler, times(1)).schedule(RollUpManager.createJobDetail(tasks.get(1), mockDatastore, "localhost", mockEventBus), RollUpManager.createTrigger(tasks.get(1)));
+		verify(mockScheduler, times(1)).schedule(RollUpManager.createJobDetail(tasks.get(2), mockDatastore, "localhost", mockEventBus), RollUpManager.createTrigger(tasks.get(2)));
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void testChange_nullTask_invalid() throws RollUpException
 	{
-		RollUpManager manager = new RollUpManager(mockTaskStore, mockScheduler, mockDatastore);
+		RollUpManager manager = new RollUpManager(mockTaskStore, mockScheduler, mockDatastore, mockEventBus);
 
 		manager.change(null, Action.CHANGED);
 	}
@@ -84,18 +100,18 @@ public class RollUpManagerTest
 		RollupTask added = createTask("task1");
 		RollupTask updated = createTask("task2");
 		RollupTask removed = createTask("task3");
-		RollUpManager manager = new RollUpManager(mockTaskStore, mockScheduler, mockDatastore);
+		RollUpManager manager = new RollUpManager(mockTaskStore, mockScheduler, mockDatastore, mockEventBus);
 
 		manager.change(added, Action.ADDED);
-		verify(mockScheduler, times(1)).schedule(RollUpManager.createJobDetail(added, mockDatastore, "localhost"), RollUpManager.createTrigger(added));
+		verify(mockScheduler, times(1)).schedule(RollUpManager.createJobDetail(added, mockDatastore, "localhost", mockEventBus), RollUpManager.createTrigger(added));
 
 		manager.change(updated, Action.CHANGED);
-		JobDetailImpl job = RollUpManager.createJobDetail(updated, mockDatastore, "localhost");
+		JobDetailImpl job = RollUpManager.createJobDetail(updated, mockDatastore, "localhost", mockEventBus);
 		verify(mockScheduler, times(1)).cancel(job.getKey());
-		verify(mockScheduler, times(1)).schedule(RollUpManager.createJobDetail(updated, mockDatastore, "localhost"), RollUpManager.createTrigger(updated));
+		verify(mockScheduler, times(1)).schedule(RollUpManager.createJobDetail(updated, mockDatastore, "localhost", mockEventBus), RollUpManager.createTrigger(updated));
 
 		manager.change(removed, Action.REMOVED);
-		job = RollUpManager.createJobDetail(removed, mockDatastore, "localhost");
+		job = RollUpManager.createJobDetail(removed, mockDatastore, "localhost", mockEventBus);
 		verify(mockScheduler, times(1)).cancel(job.getKey());
 	}
 

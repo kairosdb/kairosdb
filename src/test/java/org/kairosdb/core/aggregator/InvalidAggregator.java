@@ -1,6 +1,7 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.plugin.Aggregator;
 
 public class InvalidAggregator implements Aggregator
 {

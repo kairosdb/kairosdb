@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import org.kairosdb.core.annotation.Feature;
 import org.kairosdb.core.processingstage.GenericFeatureProcessorFactory;
+import org.kairosdb.plugin.GroupBy;
 
 import java.lang.reflect.InvocationTargetException;
 

@@ -19,7 +19,6 @@ import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.TestDataPointFactory;
-import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyLongDataPoint;
@@ -31,6 +30,7 @@ import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.groupby.TagGroupByResult;
 import org.kairosdb.core.processingstage.FeatureProcessingFactory;
+import org.kairosdb.plugin.Aggregator;
 
 import java.io.File;
 import java.io.IOException;

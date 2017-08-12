@@ -38,7 +38,12 @@ import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
 import org.kairosdb.core.formatter.JsonResponse;
-import org.kairosdb.core.http.rest.json.*;
+import org.kairosdb.core.http.rest.json.DataPointsParser;
+import org.kairosdb.core.http.rest.json.ErrorResponse;
+import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
+import org.kairosdb.core.http.rest.json.Query;
+import org.kairosdb.core.http.rest.json.QueryParser;
+import org.kairosdb.core.http.rest.json.ValidationErrors;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.eventbus.EventBusWithFilters;
@@ -50,13 +55,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import java.io.*;
-import java.util.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -145,6 +158,9 @@ public class MetricsResource implements KairosMetricReporter
     @Inject
     @Named("HOSTNAME")
     private String hostName = "localhost";
+
+    @Inject
+    private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
     @Inject
     public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
@@ -301,7 +317,7 @@ public class MetricsResource implements KairosMetricReporter
 				return builder.build();
 			}
 		}
-		catch (JsonIOException |MalformedJsonException | JsonSyntaxExceptione)
+		catch (JsonIOException |MalformedJsonException | JsonSyntaxException e)
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();

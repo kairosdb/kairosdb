@@ -6,11 +6,11 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.annotatedAggregator.AAggregator;
-import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.processingstage.metadata.FeatureProcessingMetadata;
+import org.kairosdb.plugin.Aggregator;
+import org.kairosdb.plugin.GroupBy;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;

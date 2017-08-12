@@ -40,14 +40,25 @@ import com.google.inject.Inject;
 import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.joda.time.DateTimeZone;
-import org.kairosdb.core.aggregator.*;
-import org.kairosdb.core.datastore.*;
-import org.kairosdb.core.groupby.GroupBy;
-import org.kairosdb.core.groupby.GroupByFactory;
+import org.kairosdb.core.aggregator.FilterAggregator;
+import org.kairosdb.core.aggregator.GroupByAware;
+import org.kairosdb.core.aggregator.RangeAggregator;
+import org.kairosdb.core.aggregator.SaveAsAggregator;
+import org.kairosdb.core.aggregator.TimezoneAware;
+import org.kairosdb.core.aggregator.TrimAggregator;
+import org.kairosdb.core.annotation.Feature;
+import org.kairosdb.core.datastore.Order;
+import org.kairosdb.core.datastore.PluggableQuery;
+import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.datastore.QueryPlugin;
+import org.kairosdb.core.datastore.QueryPluginFactory;
+import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.core.processingstage.FeatureProcessingFactory;
 import org.kairosdb.core.processingstage.FeatureProcessor;
+import org.kairosdb.plugin.Aggregator;
+import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.rollup.Rollup;
 import org.kairosdb.rollup.RollupTask;
 import org.slf4j.Logger;
@@ -55,7 +66,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Path;
-import javax.validation.Valid;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.constraints.NotNull;
@@ -191,24 +201,6 @@ public class QueryParser
         if (!violations.isEmpty())
         {
             throw new BeanValidationException(violations, context);
-        }
-    }
-
-    protected void validateHasRangeAggregator(QueryMetric query, String context) throws BeanValidationException
-    {
-        boolean hasRangeAggregator = false;
-        for (Aggregator aggregator : query.getAggregators())
-        {
-            if (aggregator instanceof RangeAggregator)
-            {
-                hasRangeAggregator = true;
-                break;
-            }
-        }
-
-        if (!hasRangeAggregator)
-        {
-            throw new BeanValidationException(new SimpleConstraintViolation("aggregator", "At least one aggregator must be a range aggregator"), context);
         }
     }
 
@@ -379,70 +371,6 @@ public class QueryParser
         }
     }
 
-    protected void deserializeProperties(String context, JsonObject jsonObject, String name, Object object) throws QueryException, BeanValidationException
-    {
-        Set<Map.Entry<String, JsonElement>> props = jsonObject.entrySet();
-        for (Map.Entry<String, JsonElement> prop : props)
-        {
-            String property = prop.getKey();
-            if (property.equals("name"))
-                continue;
-
-            PropertyDescriptor pd = null;
-            try
-            {
-                pd = getPropertyDescriptor(object.getClass(), property);
-            } catch (IntrospectionException e)
-            {
-                logger.error("Introspection error on " + object.getClass(), e);
-            }
-
-            if (pd == null)
-            {
-                String msg = "Property '" + property + "' was specified for object '" + name +
-                        "' but no matching setter was found on '" + object.getClass() + "'";
-
-                throw new QueryException(msg);
-            }
-
-            Class<?> propClass = pd.getPropertyType();
-
-            Object propValue;
-            try
-            {
-                propValue = m_gson.fromJson(prop.getValue(), propClass);
-                validateObject(propValue, context + "." + property);
-            } catch (ContextualJsonSyntaxException e)
-            {
-                throw new BeanValidationException(new SimpleConstraintViolation(e.getContext(), e.getMessage()), context);
-            } catch (NumberFormatException e)
-            {
-                throw new BeanValidationException(new SimpleConstraintViolation(property, e.getMessage()), context);
-            }
-
-            Method method = pd.getWriteMethod();
-            if (method == null)
-            {
-                String msg = "Property '" + property + "' was specified for object '" + name +
-                        "' but no matching setter was found on '" + object.getClass().getName() + "'";
-
-                throw new QueryException(msg);
-            }
-
-            try
-            {
-                method.invoke(object, propValue);
-            } catch (Exception e)
-            {
-                logger.error("Invocation error: ", e);
-                String msg = "Call to " + object.getClass().getName() + ":" + method.getName() +
-                        " failed with message: " + e.getMessage();
-
-                throw new QueryException(msg);
-            }
-        }
-    }
-
     protected void parsePlugins(String context, QueryMetric queryMetric, JsonArray plugins) throws BeanValidationException, QueryException
     {
         for (int I = 0; I < plugins.size(); I++)
@@ -582,171 +510,69 @@ public class QueryParser
 		}
 	}
 
-	private void parseAggregators(String context, QueryMetric queryMetric,
-			JsonArray aggregators, DateTimeZone timeZone) throws QueryException, BeanValidationException
-	{
-		for (int J = 0; J < aggregators.size(); J++)
-		{
-			JsonObject jsAggregator = aggregators.get(J).getAsJsonObject();
+    protected void deserializeProperties(String context, JsonObject jsonObject, String name, Object object) throws QueryException, BeanValidationException
+    {
+        Set<Map.Entry<String, JsonElement>> props = jsonObject.entrySet();
+        for (Map.Entry<String, JsonElement> prop : props)
+        {
+            String property = prop.getKey();
+            if (property.equals("name"))
+                continue;
 
-			JsonElement name = jsAggregator.get("name");
-			if (name == null || name.getAsString().isEmpty())
-				throw new BeanValidationException(new SimpleConstraintViolation("aggregators[" + J + "]", "must have a name"), context);
+            PropertyDescriptor pd = null;
+            try
+            {
+                pd = getPropertyDescriptor(object.getClass(), property);
+            } catch (IntrospectionException e)
+            {
+                logger.error("Introspection error on " + object.getClass(), e);
+            }
 
-			String aggContext = context + ".aggregators[" + J + "]";
-			String aggName = name.getAsString();
-			Aggregator aggregator = m_aggregatorFactory.createAggregator(aggName);
+            if (pd == null)
+            {
+                String msg = "Property '" + property + "' was specified for object '" + name +
+                        "' but no matching setter was found on '" + object.getClass() + "'";
 
-			if (aggregator == null)
-				throw new BeanValidationException(new SimpleConstraintViolation(aggName, "invalid aggregator name"), aggContext);
+                throw new QueryException(msg);
+            }
 
-			//If it is a range aggregator we will default the start time to
-			//the start of the query.
-			if (aggregator instanceof RangeAggregator)
-			{
-				RangeAggregator ra = (RangeAggregator) aggregator;
-				ra.setStartTime(queryMetric.getStartTime());
-				ra.setEndTime(queryMetric.getEndTime());
-			}
+            Class<?> propClass = pd.getPropertyType();
 
-			if (aggregator instanceof TimezoneAware)
-			{
-				TimezoneAware ta = (TimezoneAware) aggregator;
-				ta.setTimeZone(timeZone);
-			}
+            Object propValue;
+            try
+            {
+                propValue = m_gson.fromJson(prop.getValue(), propClass);
+                validateObject(propValue, context + "." + property);
+            } catch (ContextualJsonSyntaxException e)
+            {
+                throw new BeanValidationException(new SimpleConstraintViolation(e.getContext(), e.getMessage()), context);
+            } catch (NumberFormatException e)
+            {
+                throw new BeanValidationException(new SimpleConstraintViolation(property, e.getMessage()), context);
+            }
 
-			if (aggregator instanceof GroupByAware)
-			{
-				GroupByAware groupByAware = (GroupByAware) aggregator;
-				groupByAware.setGroupBys(queryMetric.getGroupBys());
-			}
+            Method method = pd.getWriteMethod();
+            if (method == null)
+            {
+                String msg = "Property '" + property + "' was specified for object '" + name +
+                        "' but no matching setter was found on '" + object.getClass().getName() + "'";
 
-			deserializeProperties(aggContext, jsAggregator, aggName, aggregator);
+                throw new QueryException(msg);
+            }
 
-			validateObject(aggregator, aggContext);
+            try
+            {
+                method.invoke(object, propValue);
+            } catch (Exception e)
+            {
+                logger.error("Invocation error: ", e);
+                String msg = "Call to " + object.getClass().getName() + ":" + method.getName() +
+                        " failed with message: " + e.getMessage();
 
-			queryMetric.addAggregator(aggregator);
-		}
-	}
-
-	private void parseGroupBy(String context, QueryMetric queryMetric, JsonArray groupBys) throws QueryException, BeanValidationException
-	{
-		for (int J = 0; J < groupBys.size(); J++)
-		{
-			String groupContext = "group_by[" + J + "]";
-			JsonObject jsGroupBy = groupBys.get(J).getAsJsonObject();
-
-			JsonElement nameElement = jsGroupBy.get("name");
-			if (nameElement == null || nameElement.getAsString().isEmpty())
-				throw new BeanValidationException(new SimpleConstraintViolation(groupContext, "must have a name"), context);
-
-			String name = nameElement.getAsString();
-
-			GroupBy groupBy = m_groupByFactory.createGroupBy(name);
-			if (groupBy == null)
-				throw new BeanValidationException(new SimpleConstraintViolation(groupContext + "." + name, "invalid group_by name"), context);
-
-			deserializeProperties(context + "." + groupContext, jsGroupBy, name, groupBy);
-			validateObject(groupBy, context + "." + groupContext);
-
-			groupBy.setStartDate(queryMetric.getStartTime());
-
-			queryMetric.addGroupBy(groupBy);
-		}
-	}
-
-	private void deserializeProperties(String context, JsonObject jsonObject, String name, Object object) throws QueryException, BeanValidationException
-	{
-		Set<Map.Entry<String, JsonElement>> props = jsonObject.entrySet();
-		for (Map.Entry<String, JsonElement> prop : props)
-		{
-			String property = prop.getKey();
-			if (property.equals("name"))
-				continue;
-
-			PropertyDescriptor pd = null;
-			try
-			{
-				pd = getPropertyDescriptor(object.getClass(), property);
-			}
-			catch (IntrospectionException e)
-			{
-				logger.error("Introspection error on " + object.getClass(), e);
-			}
-
-			if (pd == null)
-			{
-				String msg = "Property '" + property + "' was specified for object '" + name +
-						"' but no matching setter was found on '" + object.getClass() + "'";
-
-				throw new QueryException(msg);
-			}
-
-			Class<?> propClass = pd.getPropertyType();
-
-			Object propValue;
-			try
-			{
-				propValue = m_gson.fromJson(prop.getValue(), propClass);
-				validateObject(propValue, context + "." + property);
-			}
-			catch (ContextualJsonSyntaxException e)
-			{
-				throw new BeanValidationException(new SimpleConstraintViolation(e.getContext(), e.getMessage()), context);
-			}
-			catch (NumberFormatException e)
-			{
-				throw new BeanValidationException(new SimpleConstraintViolation(property, e.getMessage()), context);
-			}
-
-			Method method = pd.getWriteMethod();
-			if (method == null)
-			{
-				String msg = "Property '" + property + "' was specified for object '" + name +
-						"' but no matching setter was found on '" + object.getClass().getName() + "'";
-
-				throw new QueryException(msg);
-			}
-
-			try
-			{
-				method.invoke(object, propValue);
-			}
-			catch (Exception e)
-			{
-				logger.error("Invocation error: ", e);
-				String msg = "Call to " + object.getClass().getName() + ":" + method.getName() +
-						" failed with message: " + e.getMessage();
-
-				throw new QueryException(msg);
-			}
-		}
-	}
-
-	private long getStartTime(Query request, String context) throws BeanValidationException
-	{
-		if (request.getStartAbsolute() != null)
-		{
-			return request.getStartAbsolute();
-		}
-		else if (request.getStartRelative() != null)
-		{
-			return request.getStartRelative().getTimeRelativeTo(System.currentTimeMillis());
-		}
-		else
-		{
-			throw new BeanValidationException(new SimpleConstraintViolation("start_time", "relative or absolute time must be set"), context);
-		}
-	}
-
-	private long getEndTime(Query request)
-	{
-		if (request.getEndAbsolute() != null)
-			return request.getEndAbsolute();
-		else if (request.getEndRelative() != null)
-			return request.getEndRelative().getTimeRelativeTo(System.currentTimeMillis());
-		return -1;
-	}
+                throw new QueryException(msg);
+            }
+        }
+    }
 
 	//===========================================================================
 	private static class Metric

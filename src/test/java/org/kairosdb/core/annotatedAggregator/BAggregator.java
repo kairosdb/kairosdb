@@ -1,9 +1,9 @@
 package org.kairosdb.core.annotatedAggregator;
 
 
-import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.plugin.Aggregator;
 
 public class BAggregator implements Aggregator
 {

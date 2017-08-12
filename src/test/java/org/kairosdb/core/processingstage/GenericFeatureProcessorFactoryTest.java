@@ -8,7 +8,6 @@ import com.google.inject.Module;
 import org.apache.commons.lang3.ClassUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.InvalidAggregator;
 import org.kairosdb.core.annotatedAggregator.AAggregator;
@@ -16,6 +15,7 @@ import org.kairosdb.core.annotation.FeatureCompoundProperty;
 import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.processingstage.metadata.FeatureProcessorMetadata;
 import org.kairosdb.core.processingstage.metadata.FeaturePropertyMetadata;
+import org.kairosdb.plugin.Aggregator;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -25,7 +25,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.junit.Assert.assertEquals;
 import static org.kairosdb.core.aggregator.GuiceAggregatorFactoryTest.assertProperty;
 

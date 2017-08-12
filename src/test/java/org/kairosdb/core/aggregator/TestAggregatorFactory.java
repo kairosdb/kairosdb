@@ -23,6 +23,7 @@ import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.processingstage.FeatureProcessingFactory;
 import org.kairosdb.core.processingstage.metadata.FeatureProcessorMetadata;
+import org.kairosdb.plugin.Aggregator;
 
 import java.util.HashMap;
 import java.util.Map;

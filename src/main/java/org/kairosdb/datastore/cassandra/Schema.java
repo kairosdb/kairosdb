@@ -79,6 +79,12 @@ public class Schema
 	public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
 			"(key, column1, value) VALUES (?, ?, 0x00)";
 
+	public static final String STRING_INDEX_QUERY = "SELECT column1 FROM string_index " +
+			"WHERE key = ?";
+
+	public static final String STRING_INDEX_DELETE = "DELETE FROM string_index " +
+			"WHERE key = ? AND column1 = ?";
+
 	public static final String DATA_POINTS_QUERY = "SELECT column1, value FROM data_points WHERE key = ? AND " +
 			"column1 >= ? AND column1 < ? ORDER BY column1";
 
@@ -89,13 +95,12 @@ public class Schema
 	public static final String DATA_POINTS_QUERY_DESC_LIMIT = DATA_POINTS_QUERY_DESC+" LIMIT ?";
 
 	public static final String DATA_POINTS_DELETE = "DELETE FROM data_points " +
-			"WHERE key = ? AND column1 = ?";
+			"WHERE key = ? AND column1 >= ? AND column1 <= ?";
 
 	public static final String DATA_POINTS_DELETE_ROW = "DELETE FROM data_points " +
 			"WHERE key = ?";
 
-	public static final String STRING_INDEX_QUERY = "SELECT column1 FROM string_index " +
-			"WHERE key = ?";
+
 
 	//This is the old row key index query
 	public static final String ROW_KEY_INDEX_QUERY = "SELECT column1 FROM row_key_index " +
@@ -143,6 +148,7 @@ public class Schema
 	public final PreparedStatement psStringIndexInsert;
 	public final PreparedStatement psDataPointsQueryAsc;
 	public final PreparedStatement psStringIndexQuery;
+	public final PreparedStatement psStringIndexDelete;
 	public final PreparedStatement psRowKeyIndexQuery;
 	public final PreparedStatement psRowKeyQuery;
 	public final PreparedStatement psRowKeyTimeQuery;
@@ -164,6 +170,7 @@ public class Schema
 
 	private final Session m_session;
 
+
 	public Schema(CassandraClient cassandraClient)
 	{
 		setupSchema(cassandraClient);
@@ -175,11 +182,12 @@ public class Schema
 		psRowKeyTimeInsert = m_session.prepare(ROW_KEY_TIME_INSERT);
 		psRowKeyInsert = m_session.prepare(ROW_KEY_INSERT);
 		psStringIndexInsert = m_session.prepare(STRING_INDEX_INSERT);
+		psStringIndexQuery = m_session.prepare(STRING_INDEX_QUERY);
+		psStringIndexDelete = m_session.prepare(STRING_INDEX_DELETE);
 		psDataPointsQueryAsc = m_session.prepare(DATA_POINTS_QUERY_ASC);
 		psDataPointsQueryDesc = m_session.prepare(DATA_POINTS_QUERY_DESC);
 		psDataPointsQueryAscLimit = m_session.prepare(DATA_POINTS_QUERY_ASC_LIMIT);
 		psDataPointsQueryDescLimit = m_session.prepare(DATA_POINTS_QUERY_DESC_LIMIT);
-		psStringIndexQuery = m_session.prepare(STRING_INDEX_QUERY);
 		psRowKeyIndexQuery = m_session.prepare(ROW_KEY_INDEX_QUERY);
 		psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
 		psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);

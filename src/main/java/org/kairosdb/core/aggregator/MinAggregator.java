@@ -17,8 +17,7 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 
 import java.util.Collections;
@@ -27,18 +26,13 @@ import java.util.Iterator;
 /**
  * Converts all longs to double. This will cause a loss of precision for very large long values.
  */
-@AggregatorName(
+@FeatureComponent(
         name = "min",
-        description = "Returns the minimum value data point for the time range.",
-        properties = {
-                @AggregatorProperty(name = "sampling", type = "duration"),
-                @AggregatorProperty(name="align_start_time", type="boolean")
-        }
+		description = "Returns the minimum value data point for the time range."
 )
 public class MinAggregator extends RangeAggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;
-
 
 	@Inject
 	public MinAggregator(DoubleDataPointFactory dataPointFactory)

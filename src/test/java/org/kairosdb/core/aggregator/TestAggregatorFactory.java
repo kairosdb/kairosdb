@@ -17,48 +17,57 @@
 package org.kairosdb.core.aggregator;
 
 import com.google.common.collect.ImmutableList;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.annotation.Feature;
+import org.kairosdb.core.annotation.FeatureComponent;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.exception.KairosDBException;
-import org.kairosdb.plugin.Aggregator;
+import org.kairosdb.core.processingstage.FeatureProcessingFactory;
+import org.kairosdb.core.processingstage.metadata.FeatureProcessorMetadata;
 
 import java.util.HashMap;
 import java.util.Map;
 
-
-public class TestAggregatorFactory implements AggregatorFactory
+@Feature(
+        name = "aggregators",
+        label = "Test Aggregator"
+)
+public class TestAggregatorFactory implements FeatureProcessingFactory<Aggregator>
 {
-	private Map<String, Aggregator> m_aggregators = new HashMap<String, Aggregator>();
+    private Map<String, Aggregator> m_aggregators = new HashMap<String, Aggregator>();
 
-	public TestAggregatorFactory() throws KairosDBException
-	{
-		addAggregator(new SumAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new MinAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new MaxAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new AvgAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new StdAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new DivideAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new PercentileAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new FirstAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new LastAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new SaveAsAggregator(null));
-		addAggregator(new TrimAggregator());
-	}
+    public TestAggregatorFactory() throws KairosDBException
+    {
+        addAggregator(new SumAggregator(new DoubleDataPointFactoryImpl()));
+        addAggregator(new MinAggregator(new DoubleDataPointFactoryImpl()));
+        addAggregator(new MaxAggregator(new DoubleDataPointFactoryImpl()));
+        addAggregator(new AvgAggregator(new DoubleDataPointFactoryImpl()));
+        addAggregator(new StdAggregator(new DoubleDataPointFactoryImpl()));
+        addAggregator(new DivideAggregator(new DoubleDataPointFactoryImpl()));
+        addAggregator(new PercentileAggregator(new DoubleDataPointFactoryImpl()));
+        addAggregator(new FirstAggregator(new DoubleDataPointFactoryImpl()));
+        addAggregator(new LastAggregator(new DoubleDataPointFactoryImpl()));
+        addAggregator(new SaveAsAggregator(null));
+        addAggregator(new TrimAggregator());
+    }
 
-	private void addAggregator(Aggregator agg)
-	{
-		String name = (agg.getClass().getAnnotation(AggregatorName.class)).name();
-		m_aggregators.put(name, agg);
-	}
-
-	public Aggregator createAggregator(String name)
-	{
-		return (m_aggregators.get(name));
-	}
+    private void addAggregator(Aggregator agg)
+    {
+        String name = (agg.getClass().getAnnotation(FeatureComponent.class)).name();
+        m_aggregators.put(name, agg);
+    }
 
     @Override
-    public ImmutableList<AggregatorMetadata> getAggregatorMetadata()
+    public Aggregator createFeatureProcessor(String name)
     {
-        return null;
+        return (m_aggregators.get(name));
     }
+
+    @Override
+    public Class<Aggregator> getFeature()
+    {
+        return Aggregator.class;
+    }
+
+    @Override
+    public ImmutableList<FeatureProcessorMetadata> getFeatureProcessorMetadata() { return ImmutableList.copyOf(new FeatureProcessorMetadata[]{});}
 }

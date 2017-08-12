@@ -18,12 +18,58 @@ package org.kairosdb.core.http.rest;
 import ch.qos.logback.classic.Level;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
+import com.google.inject.name.Names;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointListener;
+import org.kairosdb.core.DataPointListenerProvider;
+import org.kairosdb.core.GuiceKairosDataPointFactory;
+import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.KairosFeatureProcessor;
+import org.kairosdb.core.aggregator.Aggregator;
+import org.kairosdb.core.aggregator.TestAggregatorFactory;
+import org.kairosdb.core.datapoints.DoubleDataPoint;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.LegacyDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPoint;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
+import org.kairosdb.core.datapoints.StringDataPointFactory;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.QueryPluginFactory;
+import org.kairosdb.core.datastore.QueryQueuingManager;
+import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.core.groupby.GroupBy;
+import org.kairosdb.core.groupby.TestGroupByFactory;
+import org.kairosdb.core.http.WebServer;
+import org.kairosdb.core.http.WebServletModule;
+import org.kairosdb.core.http.rest.json.QueryParser;
+import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
+import org.kairosdb.core.processingstage.FeatureProcessingFactory;
+import org.kairosdb.core.processingstage.FeatureProcessor;
+import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.util.LoggingUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -190,14 +236,14 @@ public class MetricsResourceTest extends ResourceBase
 		}
 	}
 
-	private void assertResponse(JsonResponse response, int responseCode, String expectedContent)
+	static void assertResponse(JsonResponse response, int responseCode, String expectedContent)
 	{
 		assertThat(response.getStatusCode(), equalTo(responseCode));
 		assertThat(response.getHeader("Content-Type"), startsWith("application/json"));
 		assertThat(response.getJson(), equalTo(expectedContent));
 	}
 
-	private void assertResponse(JsonResponse response, int responseCode)
+	static void assertResponse(JsonResponse response, int responseCode)
 	{
 		assertThat(response.getStatusCode(), equalTo(responseCode));
 		assertThat(response.getHeader("Content-Type"), startsWith("application/json"));

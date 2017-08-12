@@ -13,15 +13,26 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package org.kairosdb.core.aggregator;
 
-import com.google.common.collect.ImmutableList;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import org.kairosdb.core.annotation.Feature;
+import org.kairosdb.core.processingstage.GenericFeatureProcessorFactory;
 import org.kairosdb.plugin.Aggregator;
 
-public interface AggregatorFactory
-{
-	Aggregator createAggregator(String name);
+import java.lang.reflect.InvocationTargetException;
 
-    ImmutableList<AggregatorMetadata> getAggregatorMetadata();
+@Feature(
+        name = "aggregators",
+        label = "Aggregator"
+)
+public class AggregatorFactory extends GenericFeatureProcessorFactory<Aggregator>
+{
+    @Inject
+    public AggregatorFactory(Injector injector)
+            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    {
+        super(injector, Aggregator.class);
+    }
 }

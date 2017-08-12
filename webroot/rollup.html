@@ -212,16 +212,22 @@
                                ng-click="aggregator.edit=true" style="color:black">
                                 {{ toHumanReadableAggregator(aggregator) }}</a>
 
-                            <a href="#" class="btn-sm btn-circle" style="margin-left:1px; margin-right:1px;"
-                               ng-click="removeAggregator(task, $index)"
-                               ng-show="task.aggregators.length > 1 && !aggregator.edit && !model.complex">
-                                <span class="glyphicon glyphicon-remove text-danger"></span></a>
-
-                            <a href="#" class="btn-sm btn-circle text-right" style="margin-left:1px; margin-right:5px;"
+                        </td>
+                        <td style="width:20%; vertical-align:top; text-align:right; margin-left: 5px; margin-right: 5px">
+                            <a href="#" class="btn-sm btn-circle text-right"
+                               style="padding:0"
                                ng-click="addAggregator(task);scope.renderHtml();"
                                ng-if="$first"
                                ng-show="!aggregator.edit && !model.complex">
-                                <span class="glyphicon glyphicon-plus shift-1-up"></span></a>
+                                <span class="glyphicon glyphicon-plus shift-1-up"></span>
+                            </a>
+
+                            <a href="#" class="btn-sm btn-circle"
+                               style="padding:0"
+                               ng-click="removeAggregator(task, $index)"
+                               ng-show="task.aggregators.length > 1 && !aggregator.edit && !model.complex">
+                                <span class="glyphicon glyphicon-remove text-danger"></span>
+                            </a>
 						</td>
 					</tr>
 				</table>
@@ -237,7 +243,7 @@
 	</table>
 </div>
 
-  {{ tasks }}
+  <!--{{ tasks }}-->
 <script>
 	$(document).ready(function () {
 		$("[data-toggle=tooltip]").tooltip();

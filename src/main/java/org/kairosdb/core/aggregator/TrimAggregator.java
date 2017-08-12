@@ -1,8 +1,8 @@
 package org.kairosdb.core.aggregator;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.plugin.Aggregator;
 
@@ -14,21 +14,18 @@ import org.kairosdb.plugin.Aggregator;
 
  Created by bhawkins on 8/28/15.
  */
-@AggregatorName(
+@FeatureComponent(
         name = "trim",
-        description = "Trims off the first, last or both (first and last) data points from the results.",
-        properties = {
-                @AggregatorProperty(name = "trim", type = "enum", values={"first", "last", "both"})
-        }
+		description = "Trims off the first, last or both (first and last) data points from the results."
 )
 public class TrimAggregator implements Aggregator
 {
 	public enum Trim
 	{
 		FIRST, LAST, BOTH
-	};
+	}
 
-	public TrimAggregator()
+    public TrimAggregator()
 	{
 	}
 
@@ -37,6 +34,13 @@ public class TrimAggregator implements Aggregator
 		m_trim = trim;
 	}
 
+	@FeatureProperty(
+			name = "trim",
+			label = "Trim",
+			description = "Which data point to trim",
+			type = "enum",
+			default_value = "both"
+	)
 	private Trim m_trim;
 
 	@Override

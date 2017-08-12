@@ -25,26 +25,36 @@ import java.util.List;
 import java.util.Set;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
 
 import org.kairosdb.plugin.Aggregator;
 
-@AggregatorName(
+@FeatureComponent(
         name = "sma",
-        description = "Simple moving average.",
-        properties = {
-                @AggregatorProperty(name = "size", type = "integer")
-        }
+		label = "SMA",
+		description = "Simple moving average."
 )
 public class SmaAggregator implements Aggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;
 
 	//@NonZero
+	@FeatureProperty(
+			label = "Size",
+			description = "The period of the moving average. This is the number of data point to use each time the average is calculated.",
+			default_value = "10",
+            validations = {
+					@ValidationProperty(
+							expression = "value > 0",
+							message = "Size must be greater than 0."
+					)
+			}
+	)
 	private int m_size;
 
 	@Inject

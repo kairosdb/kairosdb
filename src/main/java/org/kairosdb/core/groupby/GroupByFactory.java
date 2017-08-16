@@ -24,7 +24,7 @@ import org.kairosdb.plugin.GroupBy;
 import java.lang.reflect.InvocationTargetException;
 
 @Feature(
-        name = "groupby",
+        name = "group_by",
         label = "Group By"
 )
 public class GroupByFactory extends GenericFeatureProcessorFactory<GroupBy>

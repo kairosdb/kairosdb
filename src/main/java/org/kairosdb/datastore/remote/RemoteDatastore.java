@@ -90,6 +90,9 @@ public class RemoteDatastore implements Datastore
 	@Named(METRIC_PREFIX_FILTER)
 	private String m_prefixFilter = null;
 
+	private String[] m_prefixFilterArr = null;
+
+
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
@@ -284,10 +287,28 @@ public class RemoteDatastore implements Datastore
 	@Subscribe
 	public void putDataPoint(DataPointEvent event) throws DatastoreException
 	{
-		if ((m_prefixFilter != null) && (!event.getMetricName().startsWith(m_prefixFilter)))
-			return;
+		String metricName = event.getMetricName();
 
-		DataPointKey key = new DataPointKey(event.getMetricName(), event.getTags(),
+		if (m_prefixFilter != null)
+		{
+			m_prefixFilter = m_prefixFilter.replaceAll("\\s+","");
+			m_prefixFilterArr = m_prefixFilter.split(",");
+
+			boolean prefixMatch = false;
+			for (String prefixFilter : m_prefixFilterArr)
+			{
+				if (metricName.startsWith(prefixFilter))
+				{
+					prefixMatch = true;
+					break;
+				}
+			}
+
+			if (!prefixMatch)
+				return;
+		}
+
+		DataPointKey key = new DataPointKey(metricName, event.getTags(),
 				event.getDataPoint().getApiDataType(), event.getTtl());
 
 		synchronized (m_mapLock)

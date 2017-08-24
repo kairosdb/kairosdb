@@ -182,6 +182,9 @@ module.factory('KairosDBDatasource', function ($q, $http) {
 			if (target.samplingAlignStartTime) {
 				query.aggregators[0].align_start_time = true;
 			}
+			if (target.samplingAlignEndTime) {
+				query.aggregators[0].align_end_time = true;
+			}
 		}
 		if (target.horizontalAggregators) {
 			_.each(target.horizontalAggregators, function (chosenAggregator) {

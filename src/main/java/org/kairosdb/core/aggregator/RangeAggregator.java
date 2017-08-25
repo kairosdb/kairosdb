@@ -344,13 +344,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
                 SubRangeIterator subIterator = new SubRangeIterator(
                         endRange);
 
-                long dataPointTime = currentDataPoint.getTimestamp();
-                if (m_alignStartTime)
-                    dataPointTime = startRange;
-                if (m_alignEndTime)
-                    dataPointTime = endRange;
-
-                m_dpIterator = m_subAggregator.getNextDataPoints(dataPointTime,
+                m_dpIterator = m_subAggregator.getNextDataPoints(getDataPointTime(),
                         subIterator).iterator();
             }
 
@@ -370,7 +364,13 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
          */
         private long getDataPointTime()
         {
-            return currentDataPoint.getTimestamp();
+        	long datapointTime = currentDataPoint.getTimestamp();
+        	if (m_alignStartTime) {
+        		datapointTime = getStartRange(datapointTime);
+        	} else if (m_alignEndTime) {
+        		datapointTime = getEndRange(datapointTime);
+        	}
+            return datapointTime;
         }
 
         /**
@@ -470,9 +470,6 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
                 if (m_alignStartTime || endRange <= dataPointTime)
                     dataPointTime = startRange;
 
-                if (m_alignEndTime || startRange >= dataPointTime)
-                    dataPointTime = endRange;
-
                 m_dpIterator = m_subAggregator.getNextDataPoints(dataPointTime,
                         subIterator).iterator();
             }
@@ -489,7 +486,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
     public interface RangeSubAggregator
     {
         /**
-         * Returns an aggregated data point from a ragne that is passed in
+         * Returns an aggregated data point from a range that is passed in
          * as dataPointRange.
          *
          * @param returnTime     Timestamp to use on return data point.  This is currently

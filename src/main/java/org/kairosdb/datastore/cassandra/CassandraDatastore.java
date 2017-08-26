@@ -412,6 +412,10 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		{
 			try
 			{
+				//CQL will give back results that are empty
+				if (result.isExhausted())
+					return;
+
 				m_callback.startDataPointSet(m_rowKey.getDataType(), m_rowKey.getTags());
 
 				DataPointFactory dataPointFactory = null;
@@ -605,31 +609,55 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		while (rowKeyIterator.hasNext())
 		{
 			DataPointsRowKey rowKey = rowKeyIterator.next();
+			//System.out.println("Deleting from row "+rowKey);
 			long rowKeyTimestamp = rowKey.getTimestamp();
 			if (deleteQuery.getStartTime() <= rowKeyTimestamp && (deleteQuery.getEndTime() >= rowKeyTimestamp + ROW_WIDTH - 1))
 			{
+				//System.out.println("Delete entire row");
 				BoundStatement statement = new BoundStatement(m_schema.psDataPointsDeleteRow);
 				statement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
-				m_session.executeAsync(statement);
+				m_session.execute(statement);
 
 				statement = new BoundStatement(m_schema.psRowKeyIndexDelete);
 				statement.setBytesUnsafe(0, serializeString(rowKey.getMetricName()));
 				statement.setBytesUnsafe(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
-				m_session.executeAsync(statement);
+				m_session.execute(statement);
+
+				statement = new BoundStatement(m_schema.psRowKeyDelete);
+				statement.setString(0, rowKey.getMetricName());
+				statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
+				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+				m_session.execute(statement);
+
+				statement = new BoundStatement(m_schema.psRowKeyTimeDelete);
+				statement.setString(0, rowKey.getMetricName());
+				statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
+				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+				m_session.execute(statement);
+
 				clearCache = true;
 			}
 			else if (deleteQuery.getStartTime() <= rowKeyTimestamp)
 			{
+				//System.out.println("Delete first of row");
 				//Delete first portion of row
 				deletePartialRow(rowKey, 0, getColumnName(rowKeyTimestamp, deleteQuery.getEndTime()));
 			}
-			else
+			else if (deleteQuery.getEndTime() >= rowKeyTimestamp + ROW_WIDTH -1)
 			{
+				//System.out.println("Delete last of row");
 				//Delete last portion of row
 				deletePartialRow(rowKey, getColumnName(rowKeyTimestamp, deleteQuery.getStartTime()),
 						getColumnName(rowKeyTimestamp, rowKeyTimestamp + ROW_WIDTH - 1));
+			}
+			else
+			{
+				//System.out.println("Delete within a row");
+				//Delete within a row
+				deletePartialRow(rowKey, getColumnName(rowKeyTimestamp, deleteQuery.getStartTime()),
+						getColumnName(rowKeyTimestamp, deleteQuery.getEndTime()));
 			}
 		}
 

@@ -5,8 +5,11 @@ language: java
 jdk:
   - oraclejdk8
 
+services:
+  - cassandra
+
 before_script:
   - export CLASSPATH=tools/tablesaw-1.2.4.jar
 
 script:
-  - java make clean junit-test
+  - java make clean test-all

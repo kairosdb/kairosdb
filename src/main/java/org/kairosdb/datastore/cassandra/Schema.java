@@ -123,6 +123,11 @@ public class Schema
 	public static final String ROW_KEY_TAG_QUERY_WITH_TYPE = "SELECT row_time, data_type, tags " +
 			"FROM row_keys WHERE metric = ? AND row_time = ? AND data_type IN %s"; //Use ValueSequence when setting this
 
+	public static final String ROW_KEY_TIME_DELETE = "DELETE FROM row_key_time_index " +
+			"WHERE metric = ? AND row_time = ?";
+
+	public static final String ROW_KEY_DELETE = "DELETE FROM row_keys WHERE metric = ? AND row_time = ?";
+
 	//Service index queries
 	public static final String SERVICE_INDEX_INSERT = "INSERT INTO service_index " +
 			"(service, service_key, key, value) VALUES (?, ?, ?, ?)";
@@ -167,8 +172,11 @@ public class Schema
 	public final PreparedStatement psServiceIndexListKeysPrefix;
 	public final PreparedStatement psServiceIndexListServiceKeys;
 	public final PreparedStatement psServiceIndexDeleteKey;
+	public final PreparedStatement psRowKeyTimeDelete;
+	public final PreparedStatement psRowKeyDelete;
 
 	private final Session m_session;
+
 
 
 	public Schema(CassandraClient cassandraClient)
@@ -191,6 +199,8 @@ public class Schema
 		psRowKeyIndexQuery = m_session.prepare(ROW_KEY_INDEX_QUERY);
 		psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
 		psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);
+		psRowKeyTimeDelete = m_session.prepare(ROW_KEY_TIME_DELETE);
+		psRowKeyDelete = m_session.prepare(ROW_KEY_DELETE);
 		psDataPointsDelete = m_session.prepare(DATA_POINTS_DELETE);
 		psDataPointsDeleteRow = m_session.prepare(DATA_POINTS_DELETE_ROW);
 		psRowKeyIndexDelete = m_session.prepare(ROW_KEY_INDEX_DELETE);

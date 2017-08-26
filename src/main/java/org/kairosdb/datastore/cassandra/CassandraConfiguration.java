@@ -4,6 +4,8 @@ import com.datastax.driver.core.ConsistencyLevel;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,7 +21,11 @@ public class CassandraConfiguration
 	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
 
 	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
+	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
 	public static final String SIMULTANIOUS_QUERIES = "kairosdb.datastore.cassandra.simultaneous_cql_queries";
+
+	public static final String AUTH_USER_NAME = "kairosdb.datastore.cassandra.auth.user_name";
+	public static final String AUTH_PASSWORD = "kairosdb.datastore.cassandra.auth.password";
 
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
@@ -53,6 +59,16 @@ public class CassandraConfiguration
 	@Named(KEYSPACE_PROPERTY)
 	private String m_keyspaceName;
 
+	private List<String> m_hostList;
+
+	@Inject(optional = true)
+	@Named(AUTH_USER_NAME)
+	private String m_authUserName;
+
+	@Inject(optional = true)
+	@Named(AUTH_PASSWORD)
+	private String m_authPassword;
+
 
 	public CassandraConfiguration()
 	{
@@ -61,6 +77,21 @@ public class CassandraConfiguration
 	public CassandraConfiguration(String keyspaceName)
 	{
 		m_keyspaceName = keyspaceName;
+	}
+
+	public List<String> getHostList()
+	{
+		return m_hostList;
+	}
+
+	@Inject
+	public void setHostList(@Named(HOST_LIST_PROPERTY) String hostList)
+	{
+		m_hostList = new ArrayList<>();
+		for (String node : hostList.split(","))
+		{
+			m_hostList.add(node.split(":")[0]);
+		}
 	}
 
 	public ConsistencyLevel getDataWriteLevel()
@@ -103,4 +134,13 @@ public class CassandraConfiguration
 		return m_simultaneousQueries;
 	}
 
+	public String getAuthUserName()
+	{
+		return m_authUserName;
+	}
+
+	public String getAuthPassword()
+	{
+		return m_authPassword;
+	}
 }

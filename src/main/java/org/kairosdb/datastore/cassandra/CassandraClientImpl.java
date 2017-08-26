@@ -24,10 +24,6 @@ import java.util.List;
  */
 public class CassandraClientImpl implements CassandraClient, KairosMetricReporter
 {
-	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
-	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
-
-
 	private final Cluster m_cluster;
 	private String m_keyspace;
 	private LoadBalancingPolicy m_loadBalancingPolicy;
@@ -42,10 +38,13 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	@Inject
 	private DoubleDataPointFactory m_doubleDataPointFactory = new DoubleDataPointFactoryImpl();
 
+	@Inject(optional=true)
+	private AuthProvider m_authProvider = null;
+
 	@Inject
-	public CassandraClientImpl(@Named(KEYSPACE_PROPERTY)String keyspace,
-			@Named(HOST_LIST_PROPERTY)String hostList)
+	public CassandraClientImpl(CassandraConfiguration configuration)
 	{
+		//Todo: make all these configurable
 		//Passing shuffleReplicas = false so we can properly batch data to
 		//instances.
 		m_loadBalancingPolicy = new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build(), false);
@@ -68,14 +67,24 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 					}
 				});
 
-
-		for (String node : hostList.split(","))
+		if (m_authProvider != null)
 		{
-			builder.addContactPoint(node.split(":")[0]);
+			builder.withAuthProvider(m_authProvider);
+		}
+		else if (configuration.getAuthUserName() != null && configuration.getAuthPassword() != null)
+		{
+			builder.withCredentials(configuration.getAuthUserName(),
+					configuration.getAuthPassword());
+		}
+
+
+		for (String node : configuration.getHostList())
+		{
+			builder.addContactPoint(node);
 		}
 
 		m_cluster = builder.build();
-		m_keyspace = keyspace;
+		m_keyspace = configuration.getKeyspaceName();
 	}
 
 	public LoadBalancingPolicy getLoadBalancingPolicy()

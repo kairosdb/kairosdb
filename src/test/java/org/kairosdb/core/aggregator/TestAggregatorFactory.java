@@ -42,7 +42,7 @@ import java.util.Properties;
 public class TestAggregatorFactory implements FeatureProcessingFactory<Aggregator>
 {
 	private Injector injector;
-	private Map<String, Class> aggregators = new HashMap<>();
+	private Map<String, Class<?>> aggregators = new HashMap<>();
 
 	public TestAggregatorFactory() throws KairosDBException
 	{
@@ -66,7 +66,10 @@ public class TestAggregatorFactory implements FeatureProcessingFactory<Aggregato
 				bind(DoubleDataPointFactory.class).to(DoubleDataPointFactoryImpl.class);
 				bind(EventBusWithFilters.class).toInstance(new EventBusWithFilters(new EventBusConfiguration(new Properties())));
 
-				aggregators.values().forEach(this::bind);
+				for (Class<?> aggregator : aggregators.values())
+				{
+					bind(aggregator);
+				}
 			}
 		});
 	}
@@ -80,7 +83,7 @@ public class TestAggregatorFactory implements FeatureProcessingFactory<Aggregato
 	@Override
 	public Aggregator createFeatureProcessor(String name)
 	{
-		Class aggregator = aggregators.get(name);
+		Class<?> aggregator = aggregators.get(name);
 		if (aggregator != null)
 				return (Aggregator) injector.getInstance(aggregator);
 		return null;

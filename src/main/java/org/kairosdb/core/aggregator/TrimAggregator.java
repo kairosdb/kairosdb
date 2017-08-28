@@ -1,5 +1,7 @@
 package org.kairosdb.core.aggregator;
 
+import com.google.common.base.MoreObjects;
+import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.annotation.FeatureComponent;
 import org.kairosdb.core.annotation.FeatureProperty;
@@ -25,7 +27,8 @@ public class TrimAggregator implements Aggregator
 		FIRST, LAST, BOTH
 	}
 
-    public TrimAggregator()
+	@Inject
+	public TrimAggregator()
 	{
 	}
 
@@ -53,7 +56,7 @@ public class TrimAggregator implements Aggregator
 	 Sets which data points to trim off. Values can be FIRST, LAST or BOTH.
 	 Setting to trim FIRST will trim off the oldest data point unless order is
 	 descending.
-	 @param trim
+	 @param trim trim
 	 */
 	public void setTrim(Trim trim)
 	{
@@ -64,6 +67,32 @@ public class TrimAggregator implements Aggregator
 	public boolean canAggregate(String groupType)
 	{
 		return true;
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		TrimAggregator that = (TrimAggregator) o;
+
+		return m_trim == that.m_trim;
+
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return m_trim != null ? m_trim.hashCode() : 0;
+	}
+
+	@Override
+	public String toString()
+	{
+		return MoreObjects.toStringHelper(this)
+				.add("m_trim", m_trim)
+				.toString();
 	}
 
 	@Override

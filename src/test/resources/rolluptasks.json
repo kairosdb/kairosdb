@@ -22,24 +22,20 @@
                 "host": [
                   "foo",
                   "bar"
-                ],
-                "customer": [
-                  "foobar"
                 ]
               },
+              "group_by": [
+                {
+                  "name": "tag",
+                  "tags": ["group1", "group2"]
+                }
+              ],
               "aggregators": [
                 {
                   "name": "sum",
                   "sampling": {
                     "value": 10,
                     "unit": "minutes"
-                  }
-                },
-                {
-                  "name": "avg",
-                  "sampling": {
-                    "value": 10,
-                    "unit": "hours"
                   }
                 }
               ]
@@ -72,23 +68,19 @@
                 "host": [
                   "foo",
                   "bar"
-                ],
-                "customer": [
-                  "foobar"
                 ]
               },
+              "group_by": [
+                {
+                  "name": "tag",
+                  "tags": ["group3", "group4"]
+                }
+              ],
               "aggregators": [
                 {
                   "name": "sum",
                   "sampling": {
-                    "value": 10,
-                    "unit": "minutes"
-                  }
-                },
-                {
-                  "name": "avg",
-                  "sampling": {
-                    "value": 10,
+                    "value": 24,
                     "unit": "hours"
                   }
                 }

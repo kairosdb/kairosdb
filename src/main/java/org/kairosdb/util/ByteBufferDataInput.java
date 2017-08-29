@@ -1,6 +1,7 @@
 package org.kairosdb.util;
 
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -115,6 +116,6 @@ public class ByteBufferDataInput implements DataInput
 	@Override
 	public String readUTF() throws IOException
 	{
-		return m_buffer.toString();
+		return DataInputStream.readUTF(this);
 	}
 }

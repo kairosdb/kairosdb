@@ -22,6 +22,7 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 import org.junit.Test;
 import org.kairosdb.core.datapoints.LongDataPoint;
+import org.kairosdb.core.datapoints.StringDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
@@ -163,6 +164,22 @@ public abstract class DatastoreTestHelper
 		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(0L, 3)));
 		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(2000000000L, 33)));
 
+		//Test string data
+		metricName = "string_data";
+		metricNames.add(metricName);
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("host", "A").build();
+
+		s_eventBus.post(new DataPointEvent(metricName, tags, new StringDataPoint(s_startTime, "Hello")));
+
+		//Test unicode string data
+		metricName = "string_data_unicode";
+		metricNames.add(metricName);
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("host", "A").build();
+
+		s_eventBus.post(new DataPointEvent(metricName, tags, new StringDataPoint(s_startTime, s_unicodeName)));
+
 
 		//Adding a metric with unicode and spaces
 		metricNames.add(s_unicodeNameWithSpace);
@@ -218,6 +235,70 @@ public abstract class DatastoreTestHelper
 	}*/
 
 	@Test
+	public void test_queryDatabase_stringData() throws DatastoreException
+	{
+
+		Map<String, String> tags = new TreeMap<>();
+		QueryMetric query = new QueryMetric(s_startTime, 0, "string_data");
+		query.setEndTime(s_startTime + 3000);
+
+		query.setTags(tags);
+
+		DatastoreQuery dq = s_datastore.createQuery(query);
+
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
+
+			assertThat(results.size(), equalTo(1));
+
+			DataPointGroup dpg = results.get(0);
+
+			assertThat(dpg.getName(), is("string_data"));
+
+			assertThat(dpg.hasNext(), is(true));
+			String actual = ((StringDataPoint)dpg.next()).getValue();
+			assertThat(actual, is("Hello"));
+		}
+		finally
+		{
+			dq.close();
+		}
+	}
+
+	@Test
+	public void test_queryDatabase_stringDataUnicode() throws DatastoreException
+	{
+
+		Map<String, String> tags = new TreeMap<>();
+		QueryMetric query = new QueryMetric(s_startTime, 0, "string_data_unicode");
+		query.setEndTime(s_startTime + 3000);
+
+		query.setTags(tags);
+
+		DatastoreQuery dq = s_datastore.createQuery(query);
+
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
+
+			assertThat(results.size(), equalTo(1));
+
+			DataPointGroup dpg = results.get(0);
+
+			assertThat(dpg.getName(), is("string_data_unicode"));
+
+			assertThat(dpg.hasNext(), is(true));
+			String actual = ((StringDataPoint)dpg.next()).getValue();
+			assertThat(actual, is(s_unicodeName));
+		}
+		finally
+		{
+			dq.close();
+		}
+	}
+
+	@Test
 	public void test_queryDatabase_noTags() throws DatastoreException
 	{
 
@@ -257,6 +338,7 @@ public abstract class DatastoreTestHelper
 			dq.close();
 		}
 	}
+
 
 	@Test
 	public void test_queryDatabase_withTags() throws DatastoreException

@@ -357,20 +357,20 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 
 				try
 				{
-					boolean startedDataPointSet = false;
-					while (resultSet.next())
+					if (resultSet.next())
 					{
-						if (!startedDataPointSet)
+						try (QueryCallback.DataPointWriter dataPointWriter =
+								     queryCallback.startDataPointSet(type, tagMap))
 						{
-							queryCallback.startDataPointSet(type, tagMap);
-							startedDataPointSet = true;
+							do
+							{
+								DataPoint record = resultSet.getRecord();
+
+								dataPointWriter.addDataPoint(m_dataPointFactory.createDataPoint(type,
+										record.getTimestamp().getTime(),
+										KDataInput.createInput(record.getValue())));
+							} while (resultSet.next());
 						}
-
-						DataPoint record = resultSet.getRecord();
-
-						queryCallback.addDataPoint(m_dataPointFactory.createDataPoint(type,
-								record.getTimestamp().getTime(),
-								KDataInput.createInput(record.getValue())));
 					}
 				}
 				finally
@@ -378,7 +378,6 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 					resultSet.close();
 				}
 			}
-			queryCallback.endDataPoints();
 		}
 		catch (IOException e)
 		{

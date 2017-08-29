@@ -14,8 +14,11 @@ import java.util.Map;
  */
 public interface QueryCallback
 {
-	public void addDataPoint(DataPoint datapoint) throws IOException;
-	
-	public void startDataPointSet(String dataType, Map<String, String> tags) throws IOException;
-	public void endDataPoints() throws IOException;
+	DataPointWriter startDataPointSet(String dataType, Map<String, String> tags) throws IOException;
+
+	interface DataPointWriter extends AutoCloseable
+	{
+		void addDataPoint(DataPoint datapoint) throws IOException;
+		void close() throws IOException;
+	}
 }

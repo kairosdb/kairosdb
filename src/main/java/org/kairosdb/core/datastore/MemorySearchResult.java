@@ -3,6 +3,7 @@ package org.kairosdb.core.datastore;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.util.SimpleStats;
 
+import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.util.*;
 
@@ -13,7 +14,7 @@ public class MemorySearchResult implements SearchResult
 {
 	private final String m_metricName;
 	private final List<DataPointRow> m_dataPointRows;
-	private MemoryDataPointRow m_currentRow;
+
 
 	public MemorySearchResult(String metricName)
 	{
@@ -27,25 +28,38 @@ public class MemorySearchResult implements SearchResult
 		return m_dataPointRows;
 	}
 
-	@Override
-	public void addDataPoint(DataPoint datapoint) throws IOException
-	{
-		m_currentRow.addDataPoint(datapoint);
-	}
 
 	@Override
-	public void startDataPointSet(String dataType, Map<String, String> tags) throws IOException
+	public DataPointWriter startDataPointSet(String dataType, Map<String, String> tags) throws IOException
 	{
-		m_currentRow = new MemoryDataPointRow(dataType, tags);
-		m_dataPointRows.add(m_currentRow);
+		MemoryDataPointRow currentRow = new MemoryDataPointRow(dataType, tags);
+		m_dataPointRows.add(currentRow);
+		return new MemoryDataPointWriter(currentRow);
 	}
 
-	@Override
-	public void endDataPoints() throws IOException
+
+	private class MemoryDataPointWriter implements DataPointWriter
 	{
-		if (m_currentRow != null)
+		private MemoryDataPointRow m_currentRow;
+
+		public MemoryDataPointWriter(MemoryDataPointRow currentRow)
+		{
+			m_currentRow = currentRow;
+		}
+
+		@Override
+		public void addDataPoint(DataPoint datapoint) throws IOException
+		{
+			m_currentRow.addDataPoint(datapoint);
+		}
+
+		@Override
+		public void close() throws IOException
+		{
 			m_currentRow.endRow();
+		}
 	}
+
 
 	private class MemoryDataPointRow implements DataPointRow
 	{

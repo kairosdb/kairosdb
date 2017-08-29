@@ -69,6 +69,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Main
 {
@@ -593,6 +594,7 @@ public class Main
 		private final Writer m_writer;
 		private JSONWriter m_jsonWriter;
 		private final String m_metric;
+		private final ReentrantReadWriteLock m_lock = new ReentrantReadWriteLock();
 
 		public ExportQueryCallback(String metricName, Writer out)
 		{
@@ -600,27 +602,10 @@ public class Main
 			m_writer = out;
 		}
 
-
 		@Override
-		public void addDataPoint(DataPoint datapoint) throws IOException
+		public DataPointWriter startDataPointSet(String type, Map<String, String> tags) throws IOException
 		{
-			try
-			{
-				m_jsonWriter.array().value(datapoint.getTimestamp());
-				datapoint.writeValueToJson(m_jsonWriter);
-				m_jsonWriter.value(datapoint.getApiDataType()).endArray();
-			}
-			catch (JSONException e)
-			{
-				throw new IOException(e);
-			}
-		}
-
-		@Override
-		public void startDataPointSet(String type, Map<String, String> tags) throws IOException
-		{
-			if (m_jsonWriter != null)
-				endDataPoints();
+			m_lock.writeLock().lock();
 
 			try
 			{
@@ -636,25 +621,49 @@ public class Main
 			{
 				throw new IOException(e);
 			}
+
+			return new ExportDataPointWriter();
 		}
 
-		@Override
-		public void endDataPoints() throws IOException
+		private class ExportDataPointWriter implements DataPointWriter
 		{
-			try
+
+			@Override
+			public void addDataPoint(DataPoint datapoint) throws IOException
 			{
-				if (m_jsonWriter != null)
+				try
 				{
-					m_jsonWriter.endArray().endObject();
-					m_writer.write("\n");
-					m_jsonWriter = null;
+					m_jsonWriter.array().value(datapoint.getTimestamp());
+					datapoint.writeValueToJson(m_jsonWriter);
+					m_jsonWriter.value(datapoint.getApiDataType()).endArray();
+				}
+				catch (JSONException e)
+				{
+					throw new IOException(e);
 				}
 			}
-			catch (JSONException e)
-			{
-				throw new IOException(e);
-			}
 
+			@Override
+			public void close() throws IOException
+			{
+				try
+				{
+					if (m_jsonWriter != null)
+					{
+						m_jsonWriter.endArray().endObject();
+						m_writer.write("\n");
+						m_jsonWriter = null;
+					}
+				}
+				catch (JSONException e)
+				{
+					throw new IOException(e);
+				}
+				finally
+				{
+					m_lock.writeLock().unlock();
+				}
+			}
 		}
 	}
 

@@ -366,25 +366,26 @@ public class KairosDatastoreTest
 
 			try
 			{
-				queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
-				queryCallback.addDataPoint(new LegacyLongDataPoint(1, 3));
-				queryCallback.addDataPoint(new LegacyLongDataPoint(1, 10));
-				queryCallback.addDataPoint(new LegacyLongDataPoint(1, 20));
-				queryCallback.addDataPoint(new LegacyLongDataPoint(2, 1));
-				queryCallback.addDataPoint(new LegacyLongDataPoint(2, 3));
-				queryCallback.addDataPoint(new LegacyLongDataPoint(2, 5));
-				queryCallback.addDataPoint(new LegacyLongDataPoint(3, 25));
+				QueryCallback.DataPointWriter dataPointWriter = queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 3));
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 10));
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 20));
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(2, 1));
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(2, 3));
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(2, 5));
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(3, 25));
+				dataPointWriter.close();
 
-				queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
-				queryCallback.addDataPoint(new LegacyLongDataPoint(1, 5));
-				queryCallback.addDataPoint(new LegacyLongDataPoint(1, 14));
-				queryCallback.addDataPoint(new LegacyLongDataPoint(1, 20));
-				queryCallback.addDataPoint(new LegacyLongDataPoint(2, 6));
-				queryCallback.addDataPoint(new LegacyLongDataPoint(2, 8));
-				queryCallback.addDataPoint(new LegacyLongDataPoint(2, 9));
-				queryCallback.addDataPoint(new LegacyLongDataPoint(3, 7));
+				dataPointWriter = queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 5));
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 14));
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 20));
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(2, 6));
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(2, 8));
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(2, 9));
+				dataPointWriter.addDataPoint(new LegacyLongDataPoint(3, 7));
 
-				queryCallback.endDataPoints();
+				dataPointWriter.close();
 			}
 			catch (IOException e)
 			{

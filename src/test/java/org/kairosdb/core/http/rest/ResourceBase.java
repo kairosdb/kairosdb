@@ -210,24 +210,25 @@ public abstract class ResourceBase
                 Map<String, String> tags = new TreeMap<>();
                 tags.put("server", "server1");
 
-                queryCallback.startDataPointSet(LongDataPointFactoryImpl.DST_LONG, tags);
-                queryCallback.addDataPoint(new LongDataPoint(1, 10));
-                queryCallback.addDataPoint(new LongDataPoint(1, 20));
-                queryCallback.addDataPoint(new LongDataPoint(2, 10));
-                queryCallback.addDataPoint(new LongDataPoint(2, 5));
-                queryCallback.addDataPoint(new LongDataPoint(3, 10));
+                QueryCallback.DataPointWriter dataPointWriter = queryCallback.startDataPointSet(LongDataPointFactoryImpl.DST_LONG, tags);
+                dataPointWriter.addDataPoint(new LongDataPoint(1, 10));
+                dataPointWriter.addDataPoint(new LongDataPoint(1, 20));
+                dataPointWriter.addDataPoint(new LongDataPoint(2, 10));
+                dataPointWriter.addDataPoint(new LongDataPoint(2, 5));
+                dataPointWriter.addDataPoint(new LongDataPoint(3, 10));
+                dataPointWriter.close();
 
                 tags = new TreeMap<>();
                 tags.put("server", "server2");
 
-                queryCallback.startDataPointSet(DoubleDataPointFactoryImpl.DST_DOUBLE, tags);
-                queryCallback.addDataPoint(new DoubleDataPoint(1, 10.1));
-                queryCallback.addDataPoint(new DoubleDataPoint(1, 20.1));
-                queryCallback.addDataPoint(new DoubleDataPoint(2, 10.1));
-                queryCallback.addDataPoint(new DoubleDataPoint(2, 5.1));
-                queryCallback.addDataPoint(new DoubleDataPoint(3, 10.1));
+                dataPointWriter = queryCallback.startDataPointSet(DoubleDataPointFactoryImpl.DST_DOUBLE, tags);
+                dataPointWriter.addDataPoint(new DoubleDataPoint(1, 10.1));
+                dataPointWriter.addDataPoint(new DoubleDataPoint(1, 20.1));
+                dataPointWriter.addDataPoint(new DoubleDataPoint(2, 10.1));
+                dataPointWriter.addDataPoint(new DoubleDataPoint(2, 5.1));
+                dataPointWriter.addDataPoint(new DoubleDataPoint(3, 10.1));
 
-                queryCallback.endDataPoints();
+                dataPointWriter.close();
             }
             catch (IOException e)
             {

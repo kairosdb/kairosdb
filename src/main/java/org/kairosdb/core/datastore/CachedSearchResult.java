@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class CachedSearchResult implements SearchResult
 {
@@ -52,6 +53,7 @@ public class CachedSearchResult implements SearchResult
 	private final StringPool m_stringPool;
 	private int m_maxReadBufferSize = 8192;  //Default value in BufferedInputStream
 	private boolean m_keepCacheFiles;
+	private final ReentrantReadWriteLock m_lock = new ReentrantReadWriteLock();
 
 
 	private static File getIndexFile(String baseFileName)
@@ -197,23 +199,7 @@ public class CachedSearchResult implements SearchResult
 		return (ret);
 	}
 
-	/**
-	 Call when finished adding datapoints to the cache file
-	 */
-	public void endDataPoints() throws IOException
-	{
-		if (m_randomAccessFile == null)
-			return;
 
-		//flushWriteBuffer();
-		m_dataOutputStream.flush();
-
-		long curPosition = m_dataOutputStream.getPosition();
-		if (m_dataPointSets.size() != 0)
-			m_dataPointSets.get(m_dataPointSets.size() -1).setEndPosition(curPosition);
-
-		calculateMaxReadBufferSize();
-	}
 
 	/**
 	 Closes the underling file handle
@@ -242,35 +228,6 @@ public class CachedSearchResult implements SearchResult
 			close();
 	}
 
-
-	/**
-	 A new set of datapoints to write to the file.  This causes the start position
-	 of the set to be saved.  All inserted datapoints after this call are
-	 expected to be in ascending time order and have the same tags.
-	 */
-	public void startDataPointSet(String type, Map<String, String> tags) throws IOException
-	{
-		//todo: need a lock around this, cql returns results overlapping.
-		if (m_randomAccessFile == null)
-			openCacheFile();
-
-		endDataPoints();
-
-		long curPosition = m_dataOutputStream.getPosition();
-		m_currentFilePositionMarker = new FilePositionMarker(curPosition, tags, type);
-		m_dataPointSets.add(m_currentFilePositionMarker);
-	}
-
-
-	@Override
-	public void addDataPoint(DataPoint datapoint) throws IOException
-	{
-		m_dataOutputStream.writeLong(datapoint.getTimestamp());
-		datapoint.writeValueToBuffer(m_dataOutputStream);
-
-		m_currentFilePositionMarker.incrementDataPointCount();
-	}
-
 	@Override
 	public List<DataPointRow> getRows()
 	{
@@ -285,6 +242,65 @@ public class CachedSearchResult implements SearchResult
 		}
 
 		return (ret);
+	}
+
+	/**
+	 A new set of datapoints to write to the file.  This causes the start position
+	 of the set to be saved.  All inserted datapoints after this call are
+	 expected to be in ascending time order and have the same tags.
+	 */
+	public DataPointWriter startDataPointSet(String type, Map<String, String> tags) throws IOException
+	{
+		m_lock.writeLock().lock();
+
+		if (m_randomAccessFile == null)
+			openCacheFile();
+
+		long curPosition = m_dataOutputStream.getPosition();
+		m_currentFilePositionMarker = new FilePositionMarker(curPosition, tags, type);
+		m_dataPointSets.add(m_currentFilePositionMarker);
+
+		return new CachedDatapointWriter();
+	}
+
+
+	private class CachedDatapointWriter implements DataPointWriter
+	{
+		@Override
+		public void addDataPoint(DataPoint datapoint) throws IOException
+		{
+			m_dataOutputStream.writeLong(datapoint.getTimestamp());
+			datapoint.writeValueToBuffer(m_dataOutputStream);
+
+			m_currentFilePositionMarker.incrementDataPointCount();
+		}
+
+		/**
+		 Call when finished adding datapoints to the cache file
+		 */
+		@Override
+		public void close() throws IOException
+		{
+			try
+			{
+				if (m_randomAccessFile == null)
+					return;
+
+				//flushWriteBuffer();
+				m_dataOutputStream.flush();
+
+				long curPosition = m_dataOutputStream.getPosition();
+				if (m_dataPointSets.size() != 0)
+					m_dataPointSets.get(m_dataPointSets.size() - 1).setEndPosition(curPosition);
+
+				calculateMaxReadBufferSize();
+			}
+			finally
+			{
+				m_lock.writeLock().unlock();
+			}
+		}
+
 	}
 
 	//===========================================================================

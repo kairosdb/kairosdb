@@ -327,18 +327,19 @@ public class RollUpJobTest
 					DataPoint dataPoint = getNext(dataPointGroup, query);
 					if (dataPoint != null)
 					{
-						queryCallback.startDataPointSet(dataPoint.getDataStoreDataType(), tags);
-						queryCallback.addDataPoint(dataPoint);
-
-						while (dataPointGroup.hasNext())
+						try (QueryCallback.DataPointWriter dataPointWriter = queryCallback.startDataPointSet(dataPoint.getDataStoreDataType(), tags))
 						{
-							DataPoint next = getNext(dataPointGroup, query);
-							if (next != null)
+							dataPointWriter.addDataPoint(dataPoint);
+
+							while (dataPointGroup.hasNext())
 							{
-								queryCallback.addDataPoint(next);
+								DataPoint next = getNext(dataPointGroup, query);
+								if (next != null)
+								{
+									dataPointWriter.addDataPoint(next);
+								}
 							}
 						}
-						queryCallback.endDataPoints();
 					}
 				}
 				catch (IOException e)

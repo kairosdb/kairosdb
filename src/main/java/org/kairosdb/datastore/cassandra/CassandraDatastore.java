@@ -398,7 +398,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	{
 		private final DataPointsRowKey m_rowKey;
 		private final QueryCallback m_callback;
-		private final Semaphore m_semaphore;
+		private final Semaphore m_semaphore;  //Used to notify caller when last query is done
 
 		public QueryListener(DataPointsRowKey rowKey, QueryCallback callback, Semaphore querySemaphor)
 		{
@@ -416,43 +416,45 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				if (result.isExhausted())
 					return;
 
-				m_callback.startDataPointSet(m_rowKey.getDataType(), m_rowKey.getTags());
-
-				DataPointFactory dataPointFactory = null;
-				dataPointFactory = m_kairosDataPointFactory.getFactoryForDataStoreType(m_rowKey.getDataType());
-
-				while (!result.isExhausted())
+				try (QueryCallback.DataPointWriter dataPointWriter = m_callback.startDataPointSet(m_rowKey.getDataType(), m_rowKey.getTags()))
 				{
-					Row row = result.one();
-					ByteBuffer bytes = row.getBytes(0);
 
-					int columnTime = bytes.getInt();
+					DataPointFactory dataPointFactory = null;
+					dataPointFactory = m_kairosDataPointFactory.getFactoryForDataStoreType(m_rowKey.getDataType());
 
-					ByteBuffer value = row.getBytes(1);
-					long timestamp = getColumnTimestamp(m_rowKey.getTimestamp(), columnTime);
-
-					//If type is legacy type it will point to the same object, no need for equals
-					if (m_rowKey.getDataType() == LegacyDataPointFactory.DATASTORE_TYPE)
+					while (!result.isExhausted())
 					{
-						if (isLongValue(columnTime))
+						Row row = result.one();
+						ByteBuffer bytes = row.getBytes(0);
+
+						int columnTime = bytes.getInt();
+
+						ByteBuffer value = row.getBytes(1);
+						long timestamp = getColumnTimestamp(m_rowKey.getTimestamp(), columnTime);
+
+						//If type is legacy type it will point to the same object, no need for equals
+						if (m_rowKey.getDataType() == LegacyDataPointFactory.DATASTORE_TYPE)
 						{
-							m_callback.addDataPoint(
-									new LegacyLongDataPoint(timestamp,
-											ValueSerializer.getLongFromByteBuffer(value)));
+							if (isLongValue(columnTime))
+							{
+								dataPointWriter.addDataPoint(
+										new LegacyLongDataPoint(timestamp,
+												ValueSerializer.getLongFromByteBuffer(value)));
+							}
+							else
+							{
+								dataPointWriter.addDataPoint(
+										new LegacyDoubleDataPoint(timestamp,
+												ValueSerializer.getDoubleFromByteBuffer(value)));
+							}
 						}
 						else
 						{
-							m_callback.addDataPoint(
-									new LegacyDoubleDataPoint(timestamp,
-											ValueSerializer.getDoubleFromByteBuffer(value)));
+							dataPointWriter.addDataPoint(
+									dataPointFactory.getDataPoint(timestamp, KDataInput.createInput(value)));
 						}
-					}
-					else
-					{
-						m_callback.addDataPoint(
-								dataPointFactory.getDataPoint(timestamp, KDataInput.createInput(value)));
-					}
 
+					}
 				}
 
 			}
@@ -490,6 +492,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		ExecutorService resultsExecutor = Executors.newSingleThreadExecutor();
 		//Controls the number of queries sent out at the same time.
 		Semaphore querySemaphor = new Semaphore(m_cassandraConfiguration.getSimultaneousQueries());
+
+		//Lock used to prvent
+		Object queryCallBackLock = new Object();
 
 		while (rowKeys.hasNext())
 		{
@@ -560,14 +565,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		try
 		{
 			querySemaphor.acquire(m_cassandraConfiguration.getSimultaneousQueries());
-			queryCallback.endDataPoints();
 			resultsExecutor.shutdown();
 		}
 		catch (InterruptedException e)
-		{
-			e.printStackTrace();
-		}
-		catch (IOException e)
 		{
 			e.printStackTrace();
 		}
@@ -956,67 +956,6 @@ outer:
 
 		@Override
 		public void remove()
-		{
-		}
-	}
-
-
-	private class DeletingCallback implements QueryCallback
-	{
-		private SortedMap<String, String> m_currentTags;
-		private DataPointsRowKey m_currentRow;
-		private final String m_metric;
-		private String m_currentType;
-
-		public DeletingCallback(String metric)
-		{
-			m_metric = metric;
-		}
-
-
-		@Override
-		public void addDataPoint(DataPoint datapoint) throws IOException
-		{
-			long time = datapoint.getTimestamp();
-
-			long rowTime = calculateRowTime(time);
-			if (m_currentRow == null)
-			{
-				m_currentRow = new DataPointsRowKey(m_metric, rowTime, m_currentType, m_currentTags);
-			}
-
-			int columnName;
-			//Handle old column name format.
-			//We get the type after it has been translated from "" to kairos_legacy
-			if (m_currentType.equals(LegacyDataPointFactory.DATASTORE_TYPE))
-			{
-				columnName = getColumnName(rowTime, time, datapoint.isLong());
-			}
-			else
-				columnName = getColumnName(rowTime, time);
-
-			//Todo: may want to send these off in batches
-			BoundStatement statement = new BoundStatement(m_schema.psDataPointsDelete);
-			statement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(m_currentRow));
-			ByteBuffer b = ByteBuffer.allocate(4);
-			b.putInt(columnName);
-			b.rewind();
-			statement.setBytesUnsafe(1, b);
-			statement.setConsistencyLevel(m_cassandraConfiguration.getDataWriteLevel());
-			m_session.executeAsync(statement);
-		}
-
-		@Override
-		public void startDataPointSet(String dataType, Map<String, String> tags) throws IOException
-		{
-			m_currentType = dataType;
-			m_currentTags = new TreeMap<String, String>(tags);
-			//This causes the row key to get clear with the first data point
-			m_currentRow = null;
-		}
-
-		@Override
-		public void endDataPoints()
 		{
 		}
 	}

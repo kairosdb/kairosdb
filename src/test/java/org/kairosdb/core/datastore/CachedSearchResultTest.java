@@ -50,35 +50,37 @@ public class CachedSearchResultTest
 		Map<String, String> tags = new HashMap<>();
 		tags.put("host", "A");
 		tags.put("client", "foo");
-		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
+		QueryCallback.DataPointWriter dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
 
-		csResult.addDataPoint(new LegacyLongDataPoint(now, 42));
-		csResult.addDataPoint(new LegacyDoubleDataPoint(now+1, 42.1));
-		csResult.addDataPoint(new LegacyLongDataPoint(now+2, 43));
-		csResult.addDataPoint(new LegacyDoubleDataPoint(now+3, 43.1));
+		dataPointWriter.addDataPoint(new LegacyLongDataPoint(now, 42));
+		dataPointWriter.addDataPoint(new LegacyDoubleDataPoint(now+1, 42.1));
+		dataPointWriter.addDataPoint(new LegacyLongDataPoint(now+2, 43));
+		dataPointWriter.addDataPoint(new LegacyDoubleDataPoint(now+3, 43.1));
+		dataPointWriter.close();
 
 
 		tags = new HashMap<>();
 		tags.put("host", "B");
 		tags.put("client", "foo");
-		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
+		dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
 
-		csResult.addDataPoint(new LegacyLongDataPoint(now, 1));
-		csResult.addDataPoint(new LegacyDoubleDataPoint(now+1, 1.1));
-		csResult.addDataPoint(new LegacyLongDataPoint(now+2, 2));
-		csResult.addDataPoint(new LegacyDoubleDataPoint(now+3, 2.1));
+		dataPointWriter.addDataPoint(new LegacyLongDataPoint(now, 1));
+		dataPointWriter.addDataPoint(new LegacyDoubleDataPoint(now+1, 1.1));
+		dataPointWriter.addDataPoint(new LegacyLongDataPoint(now+2, 2));
+		dataPointWriter.addDataPoint(new LegacyDoubleDataPoint(now+3, 2.1));
 
+		dataPointWriter.close();
 		tags = new HashMap<>();
 		tags.put("host", "A");
 		tags.put("client", "bar");
-		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
+		dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
 
-		csResult.addDataPoint(new LegacyLongDataPoint(now, 3));
-		csResult.addDataPoint(new LegacyDoubleDataPoint(now+1, 3.1));
-		csResult.addDataPoint(new LegacyLongDataPoint(now+2, 4));
-		csResult.addDataPoint(new LegacyDoubleDataPoint(now+3, 4.1));
+		dataPointWriter.addDataPoint(new LegacyLongDataPoint(now, 3));
+		dataPointWriter.addDataPoint(new LegacyDoubleDataPoint(now+1, 3.1));
+		dataPointWriter.addDataPoint(new LegacyLongDataPoint(now+2, 4));
+		dataPointWriter.addDataPoint(new LegacyDoubleDataPoint(now+3, 4.1));
 
-		csResult.endDataPoints();
+		dataPointWriter.close();
 
 		List<DataPointRow> rows = csResult.getRows();
 
@@ -123,15 +125,15 @@ public class CachedSearchResultTest
 				"metric2", tempFile, dataPointFactory, true);
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
-		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
+		QueryCallback.DataPointWriter dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
 
 		long now = System.currentTimeMillis();
 		for (int i = 0; i < numberOfDataPoints; i++)
 		{
-			csResult.addDataPoint(new LegacyLongDataPoint(now, 42));
+			dataPointWriter.addDataPoint(new LegacyLongDataPoint(now, 42));
 		}
 
-		csResult.endDataPoints();
+		dataPointWriter.close();
 
 		List<DataPointRow> rows = csResult.getRows();
 		DataPointRow taggedDataPoints = rows.iterator().next();
@@ -156,15 +158,15 @@ public class CachedSearchResultTest
 				"metric3", tempFile, dataPointFactory, true);
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
-		csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
+		QueryCallback.DataPointWriter dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
 
 		long now = System.currentTimeMillis();
 		for (int i = 0; i < numberOfDataPoints; i++)
 		{
-			csResult.addDataPoint(new LegacyDoubleDataPoint(now, 42.2));
+			dataPointWriter.addDataPoint(new LegacyDoubleDataPoint(now, 42.2));
 		}
 
-		csResult.endDataPoints();
+		dataPointWriter.close();
 
 		List<DataPointRow> rows = csResult.getRows();
 		DataPointRow taggedDataPoints = rows.iterator().next();

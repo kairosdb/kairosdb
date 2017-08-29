@@ -50,7 +50,7 @@ public class Schema
 	public static final String STRING_INDEX_TABLE = "" +
 			"CREATE TABLE IF NOT EXISTS string_index (\n" +
 			"  key blob,\n" +
-			"  column1 blob,\n" +
+			"  column1 text,\n" +
 			"  value blob,\n" +
 			"  PRIMARY KEY ((key), column1)\n" +
 			") WITH COMPACT STORAGE";

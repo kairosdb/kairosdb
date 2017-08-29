@@ -225,7 +225,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		while (!resultSet.isExhausted())
 		{
 			Row row = resultSet.one();
-			ret.add(UTF_8.decode(row.getBytes(0)).toString());
+			ret.add(row.getString(0));
 		}
 
 		return ret;

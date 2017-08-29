@@ -1,5 +1,6 @@
 package org.kairosdb.core.aggregator;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
@@ -14,11 +15,7 @@ import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  Created by bhawkins on 8/28/15.
@@ -118,6 +115,12 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 				m_tagsToKeep.addAll(tagGroupBy.getTagNames());
 			}
 		}
+	}
+
+	@VisibleForTesting
+	public Set<String> getTagsToKeep()
+	{
+		return m_tagsToKeep;
 	}
 
 	private class SaveAsDataPointAggregator implements DataPointGroup

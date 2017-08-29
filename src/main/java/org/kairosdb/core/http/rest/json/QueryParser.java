@@ -19,18 +19,7 @@ package org.kairosdb.core.http.rest.json;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
-import com.google.gson.TypeAdapter;
-import com.google.gson.TypeAdapterFactory;
+import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
@@ -40,19 +29,9 @@ import com.google.inject.Inject;
 import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.joda.time.DateTimeZone;
-import org.kairosdb.core.aggregator.FilterAggregator;
-import org.kairosdb.core.aggregator.GroupByAware;
-import org.kairosdb.core.aggregator.RangeAggregator;
-import org.kairosdb.core.aggregator.SaveAsAggregator;
-import org.kairosdb.core.aggregator.TimezoneAware;
-import org.kairosdb.core.aggregator.TrimAggregator;
+import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.annotation.Feature;
-import org.kairosdb.core.datastore.Order;
-import org.kairosdb.core.datastore.PluggableQuery;
-import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.datastore.QueryPlugin;
-import org.kairosdb.core.datastore.QueryPluginFactory;
-import org.kairosdb.core.datastore.TimeUnit;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.core.processingstage.FeatureProcessingFactory;
@@ -77,23 +56,16 @@ import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 public class QueryParser
 {
     protected static final Logger logger = LoggerFactory.getLogger(QueryParser.class);
-    protected static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
+    private static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
 
-    protected FeatureProcessor m_processingChain;
-    protected QueryPluginFactory m_pluginFactory;
-    protected final GsonBuilder m_gsonBuilder;
+    private FeatureProcessor m_processingChain;
+    private QueryPluginFactory m_pluginFactory;
 
     private Gson m_gson;
     private Map<Class, Map<String, PropertyDescriptor>> m_descriptorMap;
@@ -107,19 +79,19 @@ public class QueryParser
 
         m_descriptorMap = new HashMap<>();
 
-        m_gsonBuilder = new GsonBuilder();
-        m_gsonBuilder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
-        m_gsonBuilder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
-        m_gsonBuilder.registerTypeAdapter(TrimAggregator.Trim.class, new TrimDeserializer());
-        m_gsonBuilder.registerTypeAdapter(FilterAggregator.FilterOperation.class, new FilterOperationDeserializer());
-        m_gsonBuilder.registerTypeAdapter(DateTimeZone.class, new DateTimeZoneDeserializer());
-        m_gsonBuilder.registerTypeAdapter(Metric.class, new MetricDeserializer());
-        m_gsonBuilder.registerTypeAdapter(SetMultimap.class, new SetMultimapDeserializer());
-        m_gsonBuilder.registerTypeAdapter(RelativeTime.class, new RelativeTimeSerializer());
-        m_gsonBuilder.registerTypeAdapter(SetMultimap.class, new SetMultimapSerializer());
-        m_gsonBuilder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES);
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.registerTypeAdapterFactory(new LowercaseEnumTypeAdapterFactory());
+        gsonBuilder.registerTypeAdapter(TimeUnit.class, new TimeUnitDeserializer());
+        gsonBuilder.registerTypeAdapter(TrimAggregator.Trim.class, new TrimDeserializer());
+        gsonBuilder.registerTypeAdapter(FilterAggregator.FilterOperation.class, new FilterOperationDeserializer());
+        gsonBuilder.registerTypeAdapter(DateTimeZone.class, new DateTimeZoneDeserializer());
+        gsonBuilder.registerTypeAdapter(Metric.class, new MetricDeserializer());
+        gsonBuilder.registerTypeAdapter(SetMultimap.class, new SetMultimapDeserializer());
+        gsonBuilder.registerTypeAdapter(RelativeTime.class, new RelativeTimeSerializer());
+        gsonBuilder.registerTypeAdapter(SetMultimap.class, new SetMultimapSerializer());
+        gsonBuilder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES);
 
-        m_gson = m_gsonBuilder.create();
+        m_gson = gsonBuilder.create();
     }
 
     public Gson getGson()
@@ -127,7 +99,7 @@ public class QueryParser
         return m_gson;
     }
 
-    public static String getUnderscorePropertyName(String camelCaseName)
+    static String getUnderscorePropertyName(String camelCaseName)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -142,7 +114,7 @@ public class QueryParser
         return (sb.toString());
     }
 
-    protected PropertyDescriptor getPropertyDescriptor(Class objClass, String property) throws IntrospectionException
+    private PropertyDescriptor getPropertyDescriptor(Class objClass, String property) throws IntrospectionException
     {
         synchronized (m_descriptorMapLock)
         {
@@ -165,7 +137,7 @@ public class QueryParser
         }
     }
 
-    protected long getStartTime(Query request, String context) throws BeanValidationException
+    private long getStartTime(Query request, String context) throws BeanValidationException
     {
         if (request.getStartAbsolute() != null)
         {
@@ -179,7 +151,7 @@ public class QueryParser
         }
     }
 
-    protected long getEndTime(Query request)
+    private long getEndTime(Query request)
     {
         if (request.getEndAbsolute() != null)
             return request.getEndAbsolute();
@@ -189,12 +161,12 @@ public class QueryParser
     }
 
 
-    protected void validateObject(Object object) throws BeanValidationException
+    private void validateObject(Object object) throws BeanValidationException
     {
         validateObject(object, null);
     }
 
-    protected void validateObject(Object object, String context) throws BeanValidationException
+    private void validateObject(Object object, String context) throws BeanValidationException
     {
         // validate object using the bean validation framework
         Set<ConstraintViolation<Object>> violations = VALIDATOR.validate(object);
@@ -212,12 +184,12 @@ public class QueryParser
         return parseQueryMetric(obj);
     }
 
-	protected Query parseQueryMetric(JsonObject obj) throws QueryException, BeanValidationException
+	private Query parseQueryMetric(JsonObject obj) throws QueryException, BeanValidationException
 	{
 		return parseQueryMetric(obj, "");
 	}
 
-	protected Query parseQueryMetric(JsonObject obj, String contextPrefix) throws QueryException, BeanValidationException
+	private Query parseQueryMetric(JsonObject obj, String contextPrefix) throws QueryException, BeanValidationException
 	{
 		Query query;
 		try
@@ -308,7 +280,7 @@ public class QueryParser
         return (query);
     }
 
-    protected void parseSpecificQueryProcessor(Object queryProcessor, QueryMetric queryMetric, DateTimeZone timeZone)
+    private void parseSpecificQueryProcessor(Object queryProcessor, QueryMetric queryMetric, DateTimeZone timeZone)
     {
         if (queryProcessor instanceof RangeAggregator)
         {
@@ -336,7 +308,7 @@ public class QueryParser
         }
     }
 
-    protected void addQueryProcessorToMetric(Object queryProcessor, QueryMetric queryMetric)
+    private void addQueryProcessorToMetric(Object queryProcessor, QueryMetric queryMetric)
     {
         if (queryProcessor instanceof Aggregator)
             queryMetric.addAggregator((Aggregator) queryProcessor);
@@ -344,9 +316,9 @@ public class QueryParser
             queryMetric.addGroupBy((GroupBy) queryProcessor);
     }
 
-    protected void parseQueryProcessor(String context, String queryProcessorFamilyName,
-                                       JsonArray queryProcessors, Class<?> queryProcessorFamilyType,
-                                       QueryMetric queryMetric, DateTimeZone dateTimeZone)
+    private void parseQueryProcessor(String context, String queryProcessorFamilyName,
+          JsonArray queryProcessors, Class<?> queryProcessorFamilyType,
+          QueryMetric queryMetric, DateTimeZone dateTimeZone)
             throws BeanValidationException, QueryException
     {
         for (int J = 0; J < queryProcessors.size(); J++)
@@ -370,32 +342,6 @@ public class QueryParser
             addQueryProcessorToMetric(queryProcessor, queryMetric);
         }
     }
-
-    protected void parsePlugins(String context, QueryMetric queryMetric, JsonArray plugins) throws BeanValidationException, QueryException
-    {
-        for (int I = 0; I < plugins.size(); I++)
-        {
-            JsonObject pluginJson = plugins.get(I).getAsJsonObject();
-
-            JsonElement name = pluginJson.get("name");
-            if (name == null || name.getAsString().isEmpty())
-                throw new BeanValidationException(new SimpleConstraintViolation("plugins[" + I + "]", "must have a name"), context);
-
-            String pluginContext = context + ".plugins[" + I + "]";
-            String pluginName = name.getAsString();
-            QueryPlugin plugin = m_pluginFactory.createQueryPlugin(pluginName);
-
-            if (plugin == null)
-                throw new BeanValidationException(new SimpleConstraintViolation(pluginName, "invalid query plugin name"), pluginContext);
-
-            deserializeProperties(pluginContext, pluginJson, pluginName, plugin);
-
-            validateObject(plugin, pluginContext);
-
-            queryMetric.addPlugin(plugin);
-        }
-    }
-
 
     public List<RollupTask> parseRollupTasks(String json) throws BeanValidationException, QueryException
     {
@@ -422,7 +368,7 @@ public class QueryParser
         return task;
     }
 
-    public RollupTask parseRollupTask(JsonObject rollupTask, String context) throws BeanValidationException, QueryException
+    private RollupTask parseRollupTask(JsonObject rollupTask, String context) throws BeanValidationException, QueryException
     {
         RollupTask task = m_gson.fromJson(rollupTask.getAsJsonObject(), RollupTask.class);
 
@@ -451,6 +397,7 @@ public class QueryParser
                     // Add aggregators needed for rollups
                     SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_processingChain.getFeatureProcessingFactory(Aggregator.class).createFeatureProcessor("save_as");
                     saveAsAggregator.setMetricName(rollup.getSaveAs());
+                    saveAsAggregator.setGroupBys(query.getGroupBys());
 
                     TrimAggregator trimAggregator = (TrimAggregator) m_processingChain.getFeatureProcessingFactory(Aggregator.class).createFeatureProcessor("trim");
                     trimAggregator.setTrim(TrimAggregator.Trim.LAST);
@@ -510,7 +457,7 @@ public class QueryParser
 		}
 	}
 
-    protected void deserializeProperties(String context, JsonObject jsonObject, String name, Object object) throws QueryException, BeanValidationException
+    private void deserializeProperties(String context, JsonObject jsonObject, String name, Object object) throws QueryException, BeanValidationException
     {
         Set<Map.Entry<String, JsonElement>> props = jsonObject.entrySet();
         for (Map.Entry<String, JsonElement> prop : props)
@@ -619,7 +566,7 @@ public class QueryParser
             return exclude_tags;
         }
 
-        public String getCacheString()
+        String getCacheString()
         {
             StringBuilder sb = new StringBuilder();
 
@@ -724,7 +671,7 @@ public class QueryParser
 
     private static abstract class EnumDeserializer<TEnum extends Enum<TEnum>> implements JsonDeserializer<TEnum>
     {
-        public TEnum genericDeserializer(JsonElement json, Class<TEnum> type)
+        TEnum genericDeserializer(JsonElement json, Class<TEnum> type)
                 throws JsonParseException
         {
             String jsValue = json.getAsString();

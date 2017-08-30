@@ -27,6 +27,17 @@ public class CassandraConfiguration
 	public static final String AUTH_USER_NAME = "kairosdb.datastore.cassandra.auth.user_name";
 	public static final String AUTH_PASSWORD = "kairosdb.datastore.cassandra.auth.password";
 
+	public static final String LOCAL_CORE_CONNECTIONS = "kairosdb.datastore.cassandra.connections_per_host.local.core";
+	public static final String LOCAL_MAX_CONNECTIONS = "kairosdb.datastore.cassandra.connections_per_host.local.max";
+
+	public static final String REMOTE_CORE_CONNECTIONS = "kairosdb.datastore.cassandra.connections_per_host.remote.core";
+	public static final String REMOTE_MAX_CONNECTIONS = "kairosdb.datastore.cassandra.connections_per_host.remote.max";
+
+	public static final String LOCAL_MAX_REQ_PER_CONN = "kairosdb.datastore.cassandra.max_requests_per_connection.local";
+	public static final String REMOTE_MAX_REQ_PER_CONN = "kairosdb.datastore.cassandra.max_requests_per_connection.remote";
+
+	public static final String MAX_QUEUE_SIZE = "kairosdb.datastore.cassandra.max_queue_size";
+
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
 	private ConsistencyLevel m_dataWriteLevel = ConsistencyLevel.QUORUM;
@@ -69,6 +80,33 @@ public class CassandraConfiguration
 	@Named(AUTH_PASSWORD)
 	private String m_authPassword;
 
+	@Inject
+	@Named(LOCAL_CORE_CONNECTIONS)
+	private int m_localCoreConnections = 5;
+
+	@Inject
+	@Named(LOCAL_MAX_CONNECTIONS)
+	private int m_localMaxConnections = 100;
+
+	@Inject
+	@Named(REMOTE_CORE_CONNECTIONS)
+	private int m_remoteCoreConnections = 1;
+
+	@Inject
+	@Named(REMOTE_MAX_CONNECTIONS)
+	private int m_remoteMaxConnections = 10;
+
+	@Inject
+	@Named(LOCAL_MAX_REQ_PER_CONN)
+	private int m_localMaxReqPerConn = 128;
+
+	@Inject
+	@Named(REMOTE_MAX_REQ_PER_CONN)
+	private int m_remoteMaxReqPerConn = 128;
+
+	@Inject
+	@Named(MAX_QUEUE_SIZE)
+	private int m_maxQueueSize = 500;
 
 	public CassandraConfiguration()
 	{
@@ -142,5 +180,40 @@ public class CassandraConfiguration
 	public String getAuthPassword()
 	{
 		return m_authPassword;
+	}
+
+	public int getLocalCoreConnections()
+	{
+		return m_localCoreConnections;
+	}
+
+	public int getLocalMaxConnections()
+	{
+		return m_localMaxConnections;
+	}
+
+	public int getRemoteCoreConnections()
+	{
+		return m_remoteCoreConnections;
+	}
+
+	public int getRemoteMaxConnections()
+	{
+		return m_remoteMaxConnections;
+	}
+
+	public int getLocalMaxReqPerConn()
+	{
+		return m_localMaxReqPerConn;
+	}
+
+	public int getRemoteMaxReqPerConn()
+	{
+		return m_remoteMaxReqPerConn;
+	}
+
+	public int getMaxQueueSize()
+	{
+		return m_maxQueueSize;
 	}
 }

@@ -44,18 +44,20 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	@Inject
 	public CassandraClientImpl(CassandraConfiguration configuration)
 	{
-		//Todo: make all these configurable
 		//Passing shuffleReplicas = false so we can properly batch data to
 		//instances.
 		m_loadBalancingPolicy = new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build(), false);
 		final Cluster.Builder builder = new Cluster.Builder()
 				//.withProtocolVersion(ProtocolVersion.V3)
-				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL, 5, 100)
-					.setMaxRequestsPerConnection(HostDistance.LOCAL, 128)
-					.setMaxQueueSize(500))
+				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL,
+						configuration.getLocalCoreConnections(), configuration.getLocalMaxConnections())
+						.setConnectionsPerHost(HostDistance.REMOTE,
+						configuration.getRemoteCoreConnections(), configuration.getRemoteMaxConnections())
+					.setMaxRequestsPerConnection(HostDistance.LOCAL, configuration.getLocalMaxReqPerConn())
+					.setMaxRequestsPerConnection(HostDistance.REMOTE, configuration.getRemoteMaxReqPerConn())
+					.setMaxQueueSize(configuration.getMaxQueueSize()))
 				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 10 * 1000))
 				.withLoadBalancingPolicy(m_loadBalancingPolicy)
-				.withQueryOptions(new QueryOptions().setConsistencyLevel(ConsistencyLevel.QUORUM))
 				.withCompression(ProtocolOptions.Compression.LZ4)
 				.withoutJMXReporting()
 				.withTimestampGenerator(new TimestampGenerator()

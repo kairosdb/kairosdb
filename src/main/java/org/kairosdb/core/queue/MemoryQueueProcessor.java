@@ -53,10 +53,17 @@ public class MemoryQueueProcessor extends QueueProcessor implements KairosMetric
 	public void addReportedMetrics(ArrayList<DataPointSet> metrics, long now)
 	{
 		long readFromQueue = m_readFromQueueCount.getAndSet(0);
+		long arraySize = m_queue.size();
 
 		DataPointSet dps = new DataPointSet("kairosdb.queue.process_count");
 		dps.addTag("host", m_hostName);
 		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, readFromQueue));
+
+		metrics.add(dps);
+
+		dps = new DataPointSet("kairosdb.queue.memory_queue.size");
+		dps.addTag("host", m_hostName);
+		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, arraySize));
 
 		metrics.add(dps);
 	}

@@ -37,6 +37,7 @@ public class Schema
 			"  PRIMARY KEY ((metric), row_time)\n" +
 			")";
 
+	//todo Add static timeuuid to row keys
 	public static final String ROW_KEYS = "" +
 			"CREATE TABLE IF NOT EXISTS row_keys (\n" +
 			"  metric text,\n" +
@@ -55,6 +56,7 @@ public class Schema
 			"  PRIMARY KEY ((key), column1)\n" +
 			") WITH COMPACT STORAGE";
 
+	//todo add static timeuuid to service index
 	public static final String SERVICE_INDEX = "" +
 			"CREATE TABLE IF NOT EXISTS service_index (" +
 			" service text," +

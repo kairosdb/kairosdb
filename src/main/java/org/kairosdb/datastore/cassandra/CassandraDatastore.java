@@ -131,12 +131,7 @@ public class CassandraDatastore implements Datastore
 			m_cluster = HFactory.getOrCreateCluster("kairosdb-cluster",
 					hostConfig, m_cassandraConfiguration.getCassandraAuthentication());
 
-			KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
-
-			if (keyspaceDef == null)
-			{
-				createSchema(m_cassandraConfiguration.getReplicationFactor());
-			}
+			createIfNotExistsSchema(m_cassandraConfiguration.getReplicationFactor());
 
 			//set global consistency level
 			ConfigurableConsistencyLevel confConsLevel = new ConfigurableConsistencyLevel();
@@ -215,24 +210,41 @@ public class CassandraDatastore implements Datastore
 		}
 	}
 
-	private void createSchema(int replicationFactor)
+	private void createIfNotExistsSchema(int replicationFactor)
 	{
-		List<ColumnFamilyDefinition> cfDef = new ArrayList<ColumnFamilyDefinition>();
+		KeyspaceDefinition keyspaceDef = m_cluster.describeKeyspace(m_keyspaceName);
 
-		cfDef.add(HFactory.createColumnFamilyDefinition(
+		if ( keyspaceDef == null ) {
+			m_cluster.addKeyspace(HFactory.createKeyspaceDefinition(
+					m_keyspaceName, ThriftKsDef.DEF_STRATEGY_CLASS,
+					replicationFactor, createCfDefs()), true);
+
+		}
+		else if( keyspaceDef.getCfDefs() == null || keyspaceDef.getCfDefs().size()==0)
+		{
+			for( ColumnFamilyDefinition cfDef : createCfDefs())
+			{
+				m_cluster.addColumnFamily(cfDef, true);
+			}
+		}
+
+	}
+
+	private List<ColumnFamilyDefinition> createCfDefs()
+	{
+		List<ColumnFamilyDefinition> cfDefs = new ArrayList<ColumnFamilyDefinition>();
+
+		cfDefs.add(HFactory.createColumnFamilyDefinition(
 				m_keyspaceName, CF_DATA_POINTS, ComparatorType.BYTESTYPE));
 
-		cfDef.add(HFactory.createColumnFamilyDefinition(
+		cfDefs.add(HFactory.createColumnFamilyDefinition(
 				m_keyspaceName, CF_ROW_KEY_INDEX, ComparatorType.BYTESTYPE));
 
-		cfDef.add(HFactory.createColumnFamilyDefinition(
+		cfDefs.add(HFactory.createColumnFamilyDefinition(
 				m_keyspaceName, CF_STRING_INDEX, ComparatorType.UTF8TYPE));
 
-		KeyspaceDefinition newKeyspace = HFactory.createKeyspaceDefinition(
-				m_keyspaceName, ThriftKsDef.DEF_STRATEGY_CLASS,
-				replicationFactor, cfDef);
+		return cfDefs;
 
-		m_cluster.addKeyspace(newKeyspace, true);
 	}
 
 	public void increaseMaxBufferSizes()

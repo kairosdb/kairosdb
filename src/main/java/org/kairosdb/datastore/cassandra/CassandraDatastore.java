@@ -883,8 +883,41 @@ outer:
 				for (String tag : m_filterTags.keySet())
 				{
 					String value = keyTags.get(tag);
-					if (value == null || !m_filterTags.get(tag).contains(value))
-						continue outer; //Don't want this key
+
+					if (value == null) {
+						continue outer;
+					}
+
+					Set<String> matchers = m_filterTags.get(tag);
+
+					boolean matches = false;
+
+					for (String matcher : matchers) {
+
+						if (matcher.endsWith("*")) {
+
+							if (value.startsWith(matcher.substring(0, matcher.length() - 1))) {
+								matches = true;
+								break;
+							}
+
+						} else if (matcher.startsWith("*")) {
+
+							if (value.endsWith(matcher.substring(1))) {
+								matches = true;
+								break;
+							}
+
+						} else if (value.equals(matcher)) {
+							matches = true;
+							break;
+						}
+
+					}
+
+					if (!matches) {
+						continue outer;
+					}
 				}
 
 				next = rowKey;

@@ -1,0 +1,48 @@
+
+<div class="form-inline form-group category-section">
+    <div class="has-feedback form-group">
+        <label>Name</label>
+        <input
+        [(ngModel)]="tagName"
+        (ngModelChange)="tagNameChange.emit(tagName)"
+        [typeahead]="tagNames"
+        [typeaheadOptionsLimit]="10"
+        [typeaheadMinLength]="0"
+        (typeaheadOnSelect)="onTagNameUpdate();"
+        (blur)="onTagNameUpdate()"
+        placeholder="Enter tag name"
+        class="form-control ui-select-search">
+        <i class="glyphicon glyphicon-menu-down form-control-feedback"></i>
+    </div>
+    <div class="form-group">
+        <label>Value</label>
+        <div class="has-feedback ui-select-container ui-select-multiple dropdown form-control open">
+            <span class="ui-select-match">
+                <span *ngFor="let a of selectedTagValues">
+                    <span class="ui-select-match-item btn btn-default btn-secondary btn-xs"
+                    tabindex="-1"
+                    type="button"
+                    [ngClass]="{'btn-default': true}">
+                    <a class="close"
+                    style="margin-left: 5px; padding: 0;"
+                    (click)="removeSelectedTag(a)">&times;</a>
+                    <span>{{a}}</span>
+                </span>
+            </span>
+        </span>
+        <input
+        #tagvaluefield
+        [(ngModel)]="tagValue"
+        [typeahead]="unselectedTagValues"
+        [typeaheadOptionsLimit]="10"
+        [typeaheadMinLength]="0"
+        (typeaheadOnSelect)="addSelectedTag($event.value);tagvaluefield.value=''"
+        placeholder="Enter tag value"
+        class="form-control ui-select-search">
+        <i class="glyphicon glyphicon-menu-down form-control-feedback"></i>
+    </div>
+</div>
+<a class="close category-delete"
+(click)="delete.emit()">&times;
+</a>
+</div>

@@ -1,0 +1,52 @@
+table {
+    width: 100%;
+}
+.ps-state {
+    width: 32px;
+    margin-left: -1px;
+    padding-left: 1px;
+    padding-right: 1px;
+}
+.ps-select, .ps-arrow {
+    width: 150px;
+}
+.ps-arrow {
+    text-align: center;
+    padding: 5px
+}
+.ps-name-column {
+    width: 220px;
+}
+.ps-display-area {
+    vertical-align: top;
+}
+.ps-property-group {
+    padding-bottom: 15px;
+}
+.ps-info-box {
+    font-size: small;
+    text-align: center;
+}
+.ps-info-box .glyphicon {
+    padding-right: 5px;
+}
+
+.ps-info-icon {
+    width: 100%;
+    padding-bottom: 15px;
+    padding-top: 5px;
+    margin-top: -5px;
+    position: relative;
+    font-size: small;
+    color: #595555;
+}
+
+.ps-info-icon .glyphicon {
+    position: absolute;
+    right: 0px;
+
+}
+
+.no-display {
+    display: none;
+}

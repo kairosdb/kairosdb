@@ -1,0 +1,63 @@
+<table>
+<tr>
+	<td class="label-col">
+        <span >Name </span >
+    </td>
+    <td class="input-col">
+        <kairos-typeahead
+            #metricNameField
+            [value]="parsedMetricObject.name"
+            (valueChange)="generatedMetricObject.name=$event;metricObjectChange.emit(generatedMetricObject);"
+            [typeaheadSource]="metricNames"
+		    [typeaheadOptionsLimit]="100"
+            [typeaheadMinLength]="0"
+            (typeaheadOnSelect)="onMetricNameUpdate();"
+            (blur)="onMetricNameUpdate()"
+		    [placeholder]="'Enter metric name'"
+            class="ui-select-search">
+	    </kairos-typeahead>
+    </td>
+    <td>
+        <button type="button" class="btn btn-default" (click)="refreshMetricNames()" >
+            <i class="glyphicon glyphicon-refresh" [class.icon-refresh-animate]="refreshingMetricNames" > </i>
+        </button>
+    </td>
+</tr>
+</table>
+
+<!-- TAGS -->
+<div class="ps-section">
+<div class="category-header">
+    <h5 class="category-title">Tag filters</h5>
+    <button type="button" class="btn btn-default category-add" (click)="tagListComponent.addNew()"><i class="glyphicon glyphicon-plus"></i></button>
+    <div class="category-error alert alert-danger" *ngIf="duplicatedTagNames?.length>0">
+        <span class="glyphicon glyphicon-remove"></span>
+        Duplicated tag name <em>{{duplicatedTagNames?.join()}}</em>. <a (click)="tagListComponent.merge()">Click here to merge</a>
+    </div>
+</div>
+<div class="category-body">
+    <kairos-tag-list #tagListComponent
+        [parsedSelectedTagObject]="parsedMetricObject.tags"
+        (selectedTagObjectChange)="generatedMetricObject.tags=$event;metricObjectChange.emit(generatedMetricObject)"
+        [tagValuesForNames]="tagValuesForNames"
+        (error)="duplicatedTagNames=$event"
+        >
+    </kairos-tag-list>
+</div>
+</div>
+
+<!-- OTHER PROCESSING STAGES (PS) -->
+<div class="ps-section" *ngFor="let descriptor of descriptorList; let idx = index" >
+    <div class="category-header">
+        <h5 class="category-title">{{descriptor.label || descriptor.name}}</h5>
+        <button type="button" (click)="psListComponent.addNew()" class="btn btn-default category-add"><i class="glyphicon glyphicon-plus"></i></button>
+    </div>
+    <div class="category-body">
+        <kairos-ps-list #psListComponent class="category-body"
+            [psDescriptor]="descriptor"
+            [parsedPsObjectList]="parsedMetricObject[descriptor.name]"
+            [tagValuesForNames]="tagValuesForNames"
+            (psObjectListChange)="generatedMetricObject[descriptor.name]=$event;metricObjectChange.emit(generatedMetricObject)"
+        ></kairos-ps-list>
+    </div>
+</div>

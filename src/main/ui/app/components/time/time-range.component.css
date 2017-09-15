@@ -1,0 +1,35 @@
+
+  td {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  tr {
+    padding: 5px 5px;
+  }
+
+  .picker-col * {
+    display: inline-flex;
+  }
+
+  .timezone-col {
+    width: 190px;
+  }
+
+  .label-col {
+    width: 50px;
+  }
+
+  .select-col {
+    width: 170px;
+  }
+
+  span {
+    display: block;
+    text-align: left;
+  }
+
+  table {
+    width: 100%;
+  }
+ 

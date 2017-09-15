@@ -1,0 +1,52 @@
+.json-area {
+    resize:vertical;
+}
+
+.json-area[readonly] {
+    cursor:pointer;
+}
+
+div[accordion-heading] {
+    font-size: smaller;
+    font-weight: 600;
+    color: #606060;
+}
+
+.panel-header-icon {
+    cursor: pointer;
+    float: right;
+}
+
+.kairos-container {
+    margin: 5px 5px;
+    max-width: 1000px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 20px;
+}
+
+.query-results {
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.accordion-toggle {
+    cursor: pointer;
+}
+.accordion-heading-button {
+    width: 20px;
+    padding: 4px;
+    margin-left: 10px
+}
+.invisible{
+    visibility:hidden;    
+    padding-top: 0px;
+    padding-bottom: 0px;
+    height: 0px;
+}
+.collapsed {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    height: 0px;
+}

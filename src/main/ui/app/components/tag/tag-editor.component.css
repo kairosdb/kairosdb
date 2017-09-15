@@ -1,0 +1,118 @@
+/* TODO: Clean */
+.ui-select-toggle {
+    position: relative;
+}
+
+/* Fix Bootstrap dropdown position when inside a input-group */
+.input-group > .dropdown {
+    /* Instead of relative */
+    position: static;
+}
+
+.ui-select-match > .btn {
+    /* Instead of center because of .btn */
+    text-align: left !important;
+}
+
+.ui-select-match > .caret {
+    position: absolute;
+    top: 45%;
+    right: 15px;
+}
+
+.ui-disabled {
+    background-color: #eceeef;
+    border-radius: 4px;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    opacity: 0.6;
+    top: 0;
+    left: 0;
+    cursor: not-allowed;
+}
+
+.ui-select-choices {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    overflow-x: hidden;
+    margin-top: 0;
+}
+
+.ui-select-multiple .ui-select-choices {
+    margin-top: 1px;
+}
+.ui-select-choices-row>a {
+    display: block;
+    padding: 3px 20px;
+    clear: both;
+    font-weight: 400;
+    line-height: 1.42857143;
+    color: #333;
+    white-space: nowrap;
+}
+.ui-select-choices-row.active>a {
+    color: #fff;
+    text-decoration: none;
+    outline: 0;
+    background-color: #428bca;
+}
+
+.ui-select-multiple {
+    padding-bottom:2px;
+    padding-top:4px;
+    min-width: 200px;
+    max-width: 600px;
+    padding-right: 25px;
+    height: auto;
+}
+
+.ui-select-multiple input.ui-select-search {
+    background-color: transparent !important; /* To prevent double background when disabled */
+    border: none;
+    outline: none;
+    box-shadow: none;
+    height: 1.6666em;
+    padding: 0;
+    margin-bottom: 3px;
+
+}
+.ui-select-match .close {
+    font-size: 1.6em;
+    line-height: 0.75;
+}
+
+.ui-select-multiple .ui-select-match-item {
+    outline: 0;
+    margin: 0 3px 3px 0;
+}
+.ui-select-toggle > .caret {
+    position: absolute;
+    height: 10px;
+    top: 50%;
+    right: 10px;
+    margin-top: -2px;
+}
+
+.category-section {
+    border-radius: 4px;
+    border: 1px solid transparent;
+    border-color: #337ab7;
+    padding: 12px 6px;
+    margin: 3px 0px;
+}
+
+.category-delete {
+    padding: 6px;
+}
+
+button .glyphicon {
+    top: 0px;
+}
+
+label {
+    padding-left: 5px;
+    font-weight: 500;
+}

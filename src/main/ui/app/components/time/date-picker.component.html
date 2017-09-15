@@ -1,0 +1,5 @@
+<div class="input-group">
+    <span class="input-group-addon" id="date">Date</span>
+    <input aria-describedby="date" #dateField [(ngModel)]="dateModel" class="form-control" (focus)="showPopup()" (keyup)="onTextEdit(dateField.value)" />
+</div>
+<datepicker class="popup" *ngIf="showDatepicker" [(ngModel)]="dateObject" [showWeeks]="true" ></datepicker>

@@ -1,0 +1,9 @@
+
+<kairos-tag-editor *ngFor="let selectedTag of selectedTagArray; let idx = index"
+[tagValuesForNames]="tagValuesForNames"
+[(tagName)]="selectedTagArray[idx].name"
+(tagNameChange)="update()"
+[(selectedTagValues)]="selectedTagArray[idx].values"
+(selectedTagValuesChange)="update()"
+(delete)="delete(idx)"
+></kairos-tag-editor>

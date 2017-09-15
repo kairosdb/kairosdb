@@ -1,0 +1,18 @@
+
+<div class="panel panel-default" #group *ngFor="let metric of workingMetricList; let idx = index">
+    <div class="accordion-toggle panel-heading" (click)="onPanelToggle(idx)">
+        {{generatedMetricList[idx]?.name || 'New Metric'}}
+        <button tooltip="Delete this metric" type="button" (click)="deleteMetric(idx); $event.stopPropagation();" class="btn btn-default accordion-heading-button pull-right">
+            <i style="top: .5px" class="glyphicon glyphicon-remove"></i>
+        </button>
+        <button tooltip="Duplicate this metric" type="button" (click)="duplicateMetric(idx); $event.stopPropagation();" class="btn btn-default accordion-heading-button pull-right">
+            <i style="top: .5px" class="glyphicon glyphicon-duplicate"></i>
+        </button>
+    </div>
+    <div class="panel-body" [class.collapsed]="idx!==selectedMetricIndex">
+        <kairos-metric-editor
+        [parsedMetricObject]="metric"
+        (metricObjectChange)="onMetricEdit(idx,$event)"
+        ></kairos-metric-editor>
+    </div>
+</div>

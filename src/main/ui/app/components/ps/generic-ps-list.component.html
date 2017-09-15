@@ -1,0 +1,28 @@
+<table>
+    <td class="ps-name-column">
+        <div *ngFor="let psObject of generatedPsObjectList; let idx = index">
+            <div class="input-group agregator-name">
+                <select class="form-control ps-select" [(ngModel)]="workingPsObjectList[idx].name" (ngModelChange)="onPsNameChange(idx,$event)">
+                    <option *ngFor="let psDescription of psDescriptor?.properties;" [value]="psDescription?.name">
+                        {{psDescription?.label || psDescription?.name || 'Invalid'}}
+                    </option>
+                </select>
+                <button #currentSelectButton type="button" (click)="deletePs(idx)" class="btn btn-default form-control ps-state" aria-label="...">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </button>
+                <button #currentSelectButton type="button" (click)="currentSelectButton.blur();selectionChange(idx)" [class.active]="idx===selectedPsIndex" class="btn btn-default form-control ps-state" aria-label="...">
+                    <span class="glyphicon glyphicon-pencil"></span>
+                </button>
+            </div>
+            <div *ngIf="idx<generatedPsObjectList.length-1" class="glyphicon glyphicon-arrow-down ps-arrow"></div>
+        </div>
+    </td>
+    <td *ngFor="let psObject of workingPsObjectList; let idx = index" [class.no-display]="idx!==selectedPsIndex" class="ps-display-area">
+        <kairos-ps-editor
+        [psDescriptor]="psDescriptor"
+        [psObject]="psObject"
+        [tagValuesForNames]="tagValuesForNames"
+        (psObjectChange)="onPsEdit(idx,$event)"
+        ></kairos-ps-editor>
+    </td>
+</table>

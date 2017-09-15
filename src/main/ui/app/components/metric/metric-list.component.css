@@ -1,0 +1,28 @@
+
+.panel {
+    margin: 3px;
+}
+.panel-body {
+    overflow: hidden;
+    -webkit-transition: all .1s ease;
+    -moz-transition: all .1s ease;
+    transition: all .1s ease;
+}
+.accordion-toggle {
+    font-size: smaller;
+    font-weight: 600;
+    color: #606060;
+    cursor: pointer;
+}
+.accordion-heading-button {
+    font-size: smaller;
+    color: #606060;
+    width: 20px;
+    padding: 4px;
+    margin-left: 10px
+}
+.collapsed {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    height: 0px;
+}

@@ -1,0 +1,49 @@
+
+<div class="kairos-container">
+    <kairos-timerange
+    [startRelative]="parsedQuery.start_relative" (startRelativeChange)="assignOrDelete('start_relative',$event)"
+    [startAbsolute]="parsedQuery.start_absolute" (startAbsoluteChange)="assignOrDelete('start_absolute',$event)"
+    [endRelative]="parsedQuery.end_relative" (endRelativeChange)="assignOrDelete('end_relative',$event)"
+    [endAbsolute]="parsedQuery.end_absolute" (endAbsoluteChange)="assignOrDelete('end_absolute',$event)"
+    [timezone]="parsedQuery.time_zone" (timezoneChange)="assignOrDelete('time_zone',$event)"
+    >
+</kairos-timerange>
+<div class="panel panel-primary">
+    <div class="panel-heading"><h4 class="panel-title"> 
+        <span class="accordion-toggle" (click)="metricsEditorCollapsed=!metricsEditorCollapsed">
+          Metrics
+        </span>
+        <i (click)="metricsEditorCollapsed=false;kairosMetricList.addNew()" tooltip="Add new empty metric" style="font-size:small;" class="glyphicon glyphicon-plus panel-header-icon"></i>
+    </h4></div>
+    <div [class.invisible]="metricsEditorCollapsed">
+    <kairos-metric-list #kairosMetricList
+    [parsedMetricList]="parsedQuery.metrics"
+    (metricListChange)="assignOrDelete('metrics',$event)"
+    ></kairos-metric-list>
+    </div>
+</div>
+<div class="panel panel-primary">
+    <div class="panel-heading"><h4 class="panel-title">
+        <span class="accordion-toggle" (click)="jsonEditorCollapsed=!jsonEditorCollapsed">
+          Json Query
+        </span>
+        <i *ngIf="jsonEditorDisabled" (click)="jsonEditorDisabled=false;jsonEditorCollapsed=false;jsonarea.focus()" tooltip="Edit query json directly" class="glyphicon glyphicon-pencil panel-header-icon"></i>
+        </h4>
+    </div>
+    <textarea #jsonarea class="form-control json-area" [class.collapsed]="jsonEditorCollapsed" rows="10"
+    (blur)="parse(jsonarea.value); jsonEditorDisabled=true;"
+    (dblclick)="jsonEditorDisabled=false;"
+    [(ngModel)]="displayedQuery"
+    [readonly]="jsonEditorDisabled"
+    ></textarea>
+</div>
+<button type="button" class="btn btn-default" (click)="executeQuery()"> Graph </button>
+<button type="button" class="btn btn-default" (click)="executeQuery(exportToJson)"> Save as JSON </button>
+<button type="button" class="btn btn-default" (click)="executeQuery(exportToCsv)"> Save as CSV </button>
+<button type="button" class="btn btn-default" (click)="linkToGraph()"> Link to graph </button>
+
+</div>
+<div class="query-results">
+    <kairos-query-status *ngIf="statusModel" [model]="statusModel"></kairos-query-status>
+    <kairos-linechart *ngIf="queryResult" [queryResult]="queryResult"></kairos-linechart>
+</div>

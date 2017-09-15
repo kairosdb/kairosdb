@@ -1,0 +1,22 @@
+
+@keyframes slideDown {
+    0% {
+        transform:  translateY(-10px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+.form-control {
+    width: 150px;
+}
+.popup {
+    position: absolute;
+    background-color: #fff;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+    height: 251px;
+    z-index: 100;
+    animation: slideDown 0.1s ease-in-out;
+    animation-fill-mode: both;
+}

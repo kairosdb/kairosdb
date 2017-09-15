@@ -1,0 +1,28 @@
+<div class="well">
+    <div *ngIf="!showPsInfo" class="ps-info-icon text-uppercase">
+        {{currentPsDescription?.label || currentPsDescription?.name || 'Invalid'}} {{psDescriptor?.label || ''}}
+        <i *ngIf="currentPsDescription?.description" class="glyphicon glyphicon-info-sign" (click)="showPsInfo=true"></i>
+    </div>
+    <alert *ngIf="showPsInfo && currentPsDescription?.description" class="ps-info-box" [type]="'info'" dismissible="true" (onClose)="showPsInfo=false">
+        <b>General description: </b> {{currentPsDescription?.description}}
+    </alert>
+
+    <div *ngFor="let psProperty of currentPsProperties" class="ps-property-group">
+        <button #propButton type="button" class="btn btn-default ps-property-name"
+        (click)="onPropertyNameClick(propButton,psProperty)"
+        [class.custom-disabled]="!psProperty.optional"
+        [class.active]="psProperty.active">
+        {{psProperty.label || psProperty.name}}
+    </button>
+    <alert *ngIf="showPsInfo && psProperty.description" class="ps-info-box ps-property-input" [type]="'info'">
+        {{psProperty.description}}
+    </alert>
+    <div *ngIf="!showPsInfo && psProperty.active" class="ps-property-input">
+        <kairos-ps-field
+        [psProperty]="psProperty"
+        (change)="onPropertyInputChange(psProperty)"
+        [tagValuesForNames]="tagValuesForNames"
+        ></kairos-ps-field>
+    </div>
+</div>
+</div>

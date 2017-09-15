@@ -1,0 +1,100 @@
+
+.checkbox label:after,
+.radio label:after {
+    content: '';
+    display: table;
+    clear: both;
+}
+
+.checkbox .cr,
+.radio .cr {
+    position: relative;
+    display: inline-block;
+    border: 1px solid #a9a9a9;
+    border-radius: .25em;
+    width: 1.3em;
+    height: 1.3em;
+    float: left;
+    margin-right: .5em;
+}
+
+.radio .cr {
+    border-radius: 50%;
+}
+
+.checkbox .cr .cr-icon,
+.radio .cr .cr-icon {
+    position: absolute;
+    font-size: .8em;
+    line-height: 0;
+    top: 50%;
+    left: 20%;
+}
+
+.radio .cr .cr-icon {
+    margin-left: 0.04em;
+}
+
+.checkbox label input[type="checkbox"],
+.radio label input[type="radio"] {
+    display: none;
+}
+
+.checkbox label input[type="checkbox"] + .cr > .cr-icon,
+.radio label input[type="radio"] + .cr > .cr-icon {
+    opacity: 0;
+    transition: all .1s ease-in;
+}
+
+.checkbox label input[type="checkbox"]:checked + .cr > .cr-icon,
+.radio label input[type="radio"]:checked + .cr > .cr-icon {
+    opacity: 1;
+}
+
+.checkbox label input[type="checkbox"]:disabled + .cr,
+.radio label input[type="radio"]:disabled + .cr {
+    opacity: .5;
+}
+
+.ui-select-match > .btn {
+    /* Instead of center because of .btn */
+    text-align: left !important;
+}
+.ui-select-multiple .ui-select-match-item {
+    outline: 0;
+    margin: 0 3px 3px 0;
+}
+.ui-select-match > .caret {
+    position: absolute;
+    top: 45%;
+    right: 15px;
+}
+.ui-select-match .close {
+    font-size: 1.6em;
+    line-height: 0.75;
+}
+
+.well {
+    font-size: small;
+    color: #8f8f8f;
+    margin-top: 6px;
+    padding: 6px;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+.checkbox {
+    margin: 0px;
+}
+
+.checkbox label {
+    padding: 0px;
+}
+
+.fieldValidation {
+    font-size: x-small;
+    color: red;
+    margin-bottom: -5px;
+}

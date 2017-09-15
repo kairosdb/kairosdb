@@ -1,0 +1,22 @@
+<div class="input-group">
+    <span class="input-group-addon" id="time">Time</span>
+    <input #timeField aria-describedby="time" [ngModel]="timeModel" class="form-control" (focus)="showPopup()" (keyup)="onTextEdit(timeField.value)" (blur)="onBlur(timeField)"/>
+</div>
+<div class="popup" *ngIf="showTimepicker">
+    <label class="hourLabel">Hour:</label>
+    <input #hours class="hourInput"
+    (ngModelChange)="onSliderChange($event,'hour')"
+    type="range" min="0" max="23" [(ngModel)]="hour" />
+    <label class="minutesLabel">Min:</label>
+    <input #minutes class="minutesInput"
+    (ngModelChange)="onSliderChange($event,'minute')"
+    type="range" min="0" max="59" [(ngModel)]="minute"/>
+    <label class="secondsLabel">Sec:</label>
+    <input #seconds class="secondsInput"
+    (ngModelChange)="onSliderChange($event,'second')"
+    type="range" min="0" max="59" [(ngModel)]="second"/>
+    <label class="millisecondsLabel">Ms:</label>
+    <input #milliseconds class="millisecondsInput"
+    (ngModelChange)="onSliderChange($event,'millisecond')"
+    type="range" min="0" max="999" step="10" [(ngModel)]="millisecond"/>
+</div>

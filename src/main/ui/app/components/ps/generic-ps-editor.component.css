@@ -1,0 +1,51 @@
+
+.ps-property-group {
+    margin-bottom: 15px;
+    display: table;
+}
+
+.ps-property-input {
+    display: table-cell;
+    padding-left: 20px;
+    vertical-align:middle;
+    width: 100%;
+}
+
+.ps-property-name {
+    display: table-cell;
+    width: 150px;
+    overflow-y: hidden;
+    text-overflow: ellipsis;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+.custom-disabled {
+    pointer-events: none !important;
+}
+
+.ps-info-box {
+    font-size: small;
+}
+.ps-info-box .glyphicon {
+    padding-right: 5px;
+}
+
+.ps-info-icon {
+    width: 100%;
+    padding-bottom: 15px;
+    padding-top: 5px;
+    padding-right: 20px;
+    margin-top: -5px;
+    position: relative;
+    font-size: small;
+    color: #595555;
+}
+
+.ps-info-icon .glyphicon {
+    position: absolute;
+    right: 0px;
+    cursor: pointer;
+}

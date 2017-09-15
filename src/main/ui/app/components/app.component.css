@@ -1,0 +1,83 @@
+/*
+h1 {
+font-size: 1.2em;
+color: #999;
+margin-bottom: 0;
+}
+h2 {
+font-size: 2em;
+margin-top: 0;
+padding-top: 0;
+}
+nav a {
+padding: 5px 10px;
+text-decoration: none;
+margin-top: 10px;
+display: inline-block;
+background-color: #eee;
+border-radius: 4px;
+}
+nav a:visited, a:link {
+color: #607D8B;
+}
+nav a:hover {
+color: #039be5;
+background-color: #CFD8DC;
+}
+*/
+
+ul {
+    list-style-type: none;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
+    z-index: 10000;
+}
+
+li {
+    float: left;
+}
+
+li.title {
+    font-weight: bold;
+    display: block;
+    color: #aaa;
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 6px;
+    padding-left: 16px;
+    padding-right: 16px;
+    text-decoration: none;
+}
+
+li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+
+li a:hover {
+    background-color: #111;
+}
+
+li a.active {
+    background-color: #337ab7;
+}
+
+li a.active:hover {
+    background-color: #337ab7;
+}
+
+:host >>> select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: url(dropdown.ico) right / 20px no-repeat #fff;
+    padding-right: 20px;
+}

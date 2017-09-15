@@ -1,0 +1,61 @@
+<div class="panel panel-primary">
+    <div class="panel-heading">
+        <h4 class="panel-title">Time range</h4></div>
+
+    <div class="panel-body">
+        <table *ngIf="componentValid">
+            <tr>
+                <td class="label-col">
+					<span>Start</span >
+				</td>
+			    <td class="select-col">
+					<div class="btn-group">
+				        <label class="btn btn-default" [(ngModel)]="timeStartRadioModel" (ngModelChange)="onRadioClick('start')" btnRadio="Absolute">Absolute</label>
+						<label class="btn btn-default" [(ngModel)]="timeStartRadioModel" (ngModelChange)="onRadioClick('start')" btnRadio="Relative">Relative</label>
+					 </div>
+				 </td>
+
+				<td class="picker-col">
+					<kairos-datetimepicker *ngIf="timeStartRadioModel==='Absolute'" [timezone]="timezone" [(timestamp)]="startAbsolute" (timestampChange)="startAbsoluteChange.emit($event);"></kairos-datetimepicker>
+			        <kairos-relativepicker *ngIf="timeStartRadioModel==='Relative'" [(model)]="startRelative" (modelChange)="startRelativeChange.emit($event);"></kairos-relativepicker>
+				</td>
+				<td class="timezone-col" rowspan="2">
+					<kairos-typeahead #timezoneField
+					 [value]="timezone"
+					 [typeaheadSource]="items"
+			         [typeaheadOptionsLimit]="10"
+			         [typeaheadMinLength]="0"
+					 [placeholder]="'Browser time zone'"
+			         (typeaheadOnSelect)="timezone=timezoneField.value;timezoneChange.emit(timezone);"
+			         (blur)="onTimezoneBlur(timezoneField)">
+					</kairos-typeahead>
+				  </td>
+		  	</tr>
+
+			<tr>
+				<td class="label-col">
+					<span >Stop</span >
+				</td>
+			    <td class="select-col">
+					<div class="btn-group">
+				        <label class="btn btn-default" [(ngModel)]="timeEndRadioModel" (ngModelChange)="onRadioClick('end')" btnRadio="Absolute" uncheckable>Absolute</label>
+						<label class="btn btn-default" [(ngModel)]="timeEndRadioModel" (ngModelChange)="onRadioClick('end')" btnRadio="Relative" uncheckable>Relative</label>
+						<!--
+						<label class="btn btn-default" [(ngModel)]="timeEndRadioModel" btnRadio="Absolute" uncheckable>Absolute</label>
+						<label class="btn btn-default" [(ngModel)]="timeEndRadioModel" btnRadio="Relative" uncheckable>Relative</label>
+						-->
+					 </div>
+				 </td>
+
+				<td class="picker-col">
+					<kairos-datetimepicker *ngIf="timeEndRadioModel==='Absolute'" [timezone]="timezone" [(timestamp)]="endAbsolute" (timestampChange)="endAbsoluteChange.emit($event);"></kairos-datetimepicker>
+			        <kairos-relativepicker *ngIf="timeEndRadioModel==='Relative'" [(model)]="endRelative" (modelChange)="endRelativeChange.emit($event);"></kairos-relativepicker>
+				</td>
+			</tr>
+
+		</table>
+
+		<div *ngIf="!componentValid" class="alert alert-danger" role="alert">Invalid time range in Query Json. <a (click)="fixInvalid()">Click here to fix!</a></div>
+
+	</div>
+</div>

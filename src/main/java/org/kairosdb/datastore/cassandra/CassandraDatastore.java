@@ -575,6 +575,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 	private void deletePartialRow(DataPointsRowKey rowKey, int start, int end)
 	{
+		//todo revert back to using the DeletingCallback
 		BoundStatement statement = new BoundStatement(m_schema.psDataPointsDelete);
 		statement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 		ByteBuffer b = ByteBuffer.allocate(4);
@@ -959,4 +960,30 @@ outer:
 		{
 		}
 	}
+
+	private class DeletingCallback implements QueryCallback
+	{
+		@Override
+		public DataPointWriter startDataPointSet(String dataType, Map<String, String> tags) throws IOException
+		{
+			return null;
+		}
+
+		private class DeleteDatePointWriter implements DataPointWriter
+		{
+			@Override
+			public void addDataPoint(DataPoint datapoint) throws IOException
+			{
+
+			}
+
+			@Override
+			public void close() throws IOException
+			{
+
+			}
+		}
+	}
+
+
 }

@@ -25,11 +25,13 @@ import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.LocalConnector;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
-import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
+//import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.security.Constraint;
@@ -148,13 +150,15 @@ public class WebServer implements KairosDBService
 	{
 		try
 		{
-			if (m_port > 0)
-				m_server = new Server(new InetSocketAddress(m_address, m_port));
+			if (m_pool != null)
+				m_server = new Server(m_pool);
 			else
 				m_server = new Server();
 
-			if (m_pool != null)
-				m_server.setThreadPool(m_pool);
+
+			if (m_port > 0)
+				//use add connector instead
+				m_server = new Server(new InetSocketAddress(m_address, m_port));
 
 			//Set up SSL
 			if (m_keyStorePath != null && !m_keyStorePath.isEmpty())
@@ -171,6 +175,10 @@ public class WebServer implements KairosDBService
 				sslContextFactory.setKeyStorePassword(m_keyStorePassword);
 				SslSelectChannelConnector selectChannelConnector = new SslSelectChannelConnector(sslContextFactory);
 				selectChannelConnector.setPort(m_sslPort);
+
+				SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, null);
+
+
 				m_server.addConnector(selectChannelConnector);
 			}
 

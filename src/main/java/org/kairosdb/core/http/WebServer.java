@@ -24,14 +24,12 @@ import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
-import org.eclipse.jetty.server.Handler;
-import org.eclipse.jetty.server.LocalConnector;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 //import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.security.Constraint;
@@ -150,15 +148,14 @@ public class WebServer implements KairosDBService
 	{
 		try
 		{
-			if (m_pool != null)
-				m_server = new Server(m_pool);
-			else
-				m_server = new Server();
-
-
 			if (m_port > 0)
 				//use add connector instead
 				m_server = new Server(new InetSocketAddress(m_address, m_port));
+			else
+				m_server = new Server();
+
+//			if (m_pool != null)
+//				m_server.setThreadPool(m_pool);
 
 			//Set up SSL
 			if (m_keyStorePath != null && !m_keyStorePath.isEmpty())
@@ -173,13 +170,16 @@ public class WebServer implements KairosDBService
 					sslContextFactory.setIncludeProtocols(m_protocols);
 
 				sslContextFactory.setKeyStorePassword(m_keyStorePassword);
-				SslSelectChannelConnector selectChannelConnector = new SslSelectChannelConnector(sslContextFactory);
-				selectChannelConnector.setPort(m_sslPort);
 
-				SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, null);
+				HttpConfiguration https = new HttpConfiguration();
 
+				ServerConnector sslConnector = new ServerConnector(m_server,
+						new SslConnectionFactory(sslContextFactory, "http/1.1"),
+						new HttpConnectionFactory(https));
 
-				m_server.addConnector(selectChannelConnector);
+				sslConnector.setPort(m_sslPort);
+
+				m_server.addConnector(sslConnector);
 			}
 
 			ServletContextHandler servletContextHandler =
@@ -193,17 +193,17 @@ public class WebServer implements KairosDBService
 			}
 
 			servletContextHandler.addFilter(GuiceFilter.class, "/api/*", null);
-			servletContextHandler.addServlet(DefaultServlet.class, "/api/*");
 
 			ResourceHandler resourceHandler = new ResourceHandler();
 			resourceHandler.setDirectoriesListed(true);
 			resourceHandler.setWelcomeFiles(new String[]{"index.html"});
 			resourceHandler.setResourceBase(m_webRoot);
-			resourceHandler.setAliases(true);
 
-			HandlerList handlers = new HandlerList();
-			handlers.setHandlers(new Handler[]{servletContextHandler, resourceHandler, new DefaultHandler()});
-			m_server.setHandler(handlers);
+			servletContextHandler.insertHandler(new GzipHandler());
+
+			servletContextHandler.insertHandler(resourceHandler);
+
+			m_server.setHandler(servletContextHandler);
 
 			m_server.start();
 		}

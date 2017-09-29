@@ -21,7 +21,6 @@ import com.google.inject.Scopes;
 import com.google.inject.servlet.GuiceFilter;
 import com.sun.jersey.guice.JerseyServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
-import org.eclipse.jetty.servlets.GzipFilter;
 import org.kairosdb.core.http.rest.FeaturesResource;
 import org.kairosdb.core.http.rest.MetadataResource;
 import org.kairosdb.core.http.rest.MetricsResource;
@@ -55,8 +54,6 @@ public class WebServletModule extends JerseyServletModule
 				.put("mimeTypes", MediaType.APPLICATION_JSON)
 				.put("methods", "GET,POST")
 				.build();
-		bind(GzipFilter.class).in(Scopes.SINGLETON);
-		filter("/*").through(GzipFilter.class, params);
 
 		bind(LoggingFilter.class).in(Scopes.SINGLETON);
 		filter("/*").through(LoggingFilter.class);

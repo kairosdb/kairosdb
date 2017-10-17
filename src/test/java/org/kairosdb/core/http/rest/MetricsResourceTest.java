@@ -23,22 +23,27 @@ import com.google.inject.*;
 import com.google.inject.name.Names;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.kairosdb.core.*;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.core.exception.InvalidServerTypeException;
 import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
+import org.kairosdb.datastore.h2.orm.DeleteMetricsQuery;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.util.LoggingUtils;
+import org.omg.CORBA.DynAnyPackage.Invalid;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
@@ -57,11 +62,14 @@ public class MetricsResourceTest
 	private static final String METRIC_NAMES_URL = "http://localhost:9001/api/v1/metricnames";
 	private static final String TAG_NAMES_URL = "http://localhost:9001/api/v1/tagnames";
 	private static final String TAG_VALUES_URL = "http://localhost:9001/api/v1/tagvalues";
+	private static final String DELETE_DATAPOINTS_URL = "http://localhost:9001/api/v1/datapoints/delete";
+	private static final String DELETE_METRIC_URL = "http://localhost:9001/api/v1/metric/";
 
 	private static TestDatastore datastore;
 	private static QueryQueuingManager queuingManager;
 	private static Client client;
 	private static WebServer server;
+	private static MetricsResource resource;
 
 	@BeforeClass
 	public static void startup() throws Exception
@@ -91,6 +99,7 @@ public class MetricsResourceTest
 				bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
 				bindConstant().annotatedWith(Names.named("kairosdb.datastore.concurrentQueryThreads")).to(1);
 				bindConstant().annotatedWith(Names.named("kairosdb.query_cache.keep_cache_files")).to(false);
+				bindConstant().annotatedWith(Names.named("kairosdb.server.type")).to("ALL");
 				bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
 				bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
 
@@ -122,6 +131,7 @@ public class MetricsResourceTest
 
 			}
 		});
+		resource = injector.getInstance(MetricsResource.class);
 		server = injector.getInstance(WebServer.class);
 		server.start();
 
@@ -288,6 +298,141 @@ public class MetricsResourceTest
 			LoggingUtils.setLogLevel(previousLogLevel);
 		}
 	}
+
+	@Rule public ExpectedException thrown = ExpectedException.none();
+
+	@Test
+	public void test_checkServerTypeStaticIngestDisabled() throws InvalidServerTypeException
+	{
+		thrown.expect(InvalidServerTypeException.class);
+		thrown.expectMessage("[{\"Forbidden\": \"INGEST API methods are disabled on this KairosDB instance.\"}]");
+		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.QUERY, ServerType.DELETE), ServerType.INGEST, "/datapoints", "POST");
+	}
+
+	@Test
+	public void test_checkServerTypeStaticQueryDisabled() throws InvalidServerTypeException
+	{
+		thrown.expect(InvalidServerTypeException.class);
+		thrown.expectMessage("[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]");
+		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.INGEST, ServerType.DELETE), ServerType.QUERY, "/datapoints/query", "POST");
+	}
+
+	@Test
+	public void test_checkServerTypeStaticDeleteDisabled() throws InvalidServerTypeException
+	{
+		thrown.expect(InvalidServerTypeException.class);
+		thrown.expectMessage("[{\"Forbidden\": \"DELETE API methods are disabled on this KairosDB instance.\"}]");
+		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.INGEST, ServerType.QUERY), ServerType.DELETE, "/datapoints/delete", "POST");
+	}
+
+	@Test
+	public void test_checkServerTypeStaticIngestEnabled() throws InvalidServerTypeException
+	{
+		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.INGEST), ServerType.INGEST, "/datapoints", "POST");
+	}
+
+	@Test
+	public void test_checkServerTypeStaticQueryEnabled() throws InvalidServerTypeException
+	{
+		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.QUERY), ServerType.QUERY, "/datapoints/query", "POST");
+	}
+
+	@Test
+	public void test_checkServerTypeStaticDeleteEnabled() throws InvalidServerTypeException
+	{
+		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.DELETE), ServerType.DELETE, "/datapoints/delete", "POST");
+	}
+
+	@Test
+	public void testAddMetricIngestDisabled() throws IOException
+	{
+		resource.setServerType("QUERY");
+
+		String json = Resources.toString(Resources.getResource("single-metric-long.json"), Charsets.UTF_8);
+
+		JsonResponse response = client.post(json, ADD_METRIC_URL);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"INGEST API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+
+	}
+
+	@Test
+	public void testGetMetricQueryDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
+
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-relative-unit.json"), Charsets.UTF_8);
+
+		JsonResponse response = client.post(json, GET_METRIC_URL);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+	}
+
+	@Test
+	public void testMetricNamesQueryDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
+
+		JsonResponse response = client.get(METRIC_NAMES_URL);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+	}
+
+	@Test
+	public void testTagNamesQueryDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
+
+		JsonResponse response = client.get(TAG_NAMES_URL);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+	}
+
+	@Test
+	public void testTagValuesQueryDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
+
+		JsonResponse response = client.get(TAG_VALUES_URL);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+	}
+
+	@Test
+	public void testDeleteDatapointsDeleteDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
+
+		String json = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
+
+		JsonResponse response = client.post(json, DELETE_DATAPOINTS_URL);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"DELETE API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+	}
+
+//	@Test
+//	public void testDeleteMetricDeleteDisabled() throws IOException
+//	{
+//		resource.setServerType("INGEST");
+//
+//		String metricName = "Some.Metric.Name";
+//
+//		JsonResponse response = client.delete(DELETE_METRIC_URL + metricName);
+//
+//		assertResponse(response, 403, "[{\"Forbidden\": \"DELETE API methods are disabled on this KairosDB instance.\"}]\n");
+//	}
 
 	private void assertResponse(JsonResponse response, int responseCode, String expectedContent)
 	{

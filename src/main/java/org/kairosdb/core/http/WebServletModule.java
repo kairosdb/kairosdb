@@ -64,7 +64,5 @@ public class WebServletModule extends JerseyServletModule
 
 		//
 		bind(InvalidServerTypeExceptionMapper.class).in(Scopes.SINGLETON);
-
-
 	}
 }

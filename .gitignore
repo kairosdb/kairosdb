@@ -17,4 +17,3 @@ lib/ivy/test/*
 .DS_Store
 myivysettings.xml
 tablesaw.properties
-pom.xml

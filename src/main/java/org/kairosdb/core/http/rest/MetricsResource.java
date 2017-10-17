@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.http.rest;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -35,6 +36,7 @@ import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.exception.InvalidServerTypeException;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
@@ -93,21 +95,9 @@ enum NameType
 
 enum ServerType
 {
-	INGEST(1),
-	QUERY(2),
-	DELETE(4),
-	ALL(7);
-
-	private int _val;
-	ServerType(int val)
-	{
-		_val = val;
-	}
-
-	public int getValue()
-	{
-		return _val;
-	}
+	INGEST,
+	QUERY,
+	DELETE
 }
 
 @Path("/api/v1")
@@ -157,9 +147,26 @@ public class MetricsResource implements KairosMetricReporter
 	@Named("HOSTNAME")
 	private String hostName = "localhost";
 
+	//Used for setting which API methods are enabled
+	private EnumSet<ServerType> m_serverType = EnumSet.of(ServerType.INGEST, ServerType.QUERY, ServerType.DELETE);
+
 	@Inject
-	@Named("kairosdb.server.type")
-	private ServerType m_serverType = (ServerType) ServerType.ALL;
+	@VisibleForTesting
+	void setServerType(@Named("kairosdb.server.type") String serverType)
+	{
+		if (serverType.equals("ALL")) return;
+		String serverTypeString = serverType.replaceAll("\\s+","");
+		List<String> serverTypeList = Arrays.asList(serverTypeString.split(","));
+
+		m_serverType = EnumSet.noneOf(ServerType.class);
+
+		for (String stString : serverTypeList)
+		{
+			m_serverType.add(ServerType.valueOf(stString));
+		}
+
+		logger.info("KairosDB server type set to: " + m_serverType.toString());
+	}
 
 	@Inject
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
@@ -183,6 +190,27 @@ public class MetricsResource implements KairosMetricReporter
 		responseBuilder.header("Expires", 0);
 
 		return (responseBuilder);
+	}
+
+	private void checkServerType(ServerType methodServerType, String methodName, String requestType) throws InvalidServerTypeException
+	{
+		checkServerTypeStatic(m_serverType, methodServerType, methodName, requestType);
+	}
+
+	@VisibleForTesting
+	static void checkServerTypeStatic(EnumSet<ServerType> serverType, ServerType methodServerType, String methodName, String requestType) throws InvalidServerTypeException
+	{
+		logger.debug("checkServerType() - KairosDB ServerType set to " + serverType.toString());
+
+		if (!serverType.contains(methodServerType))
+		{
+			String logtext = "Disabled request type: " + methodServerType.name() + ", " + requestType + " request via URI \"" +  methodName + "\"";
+			logger.error(logtext);
+
+			String exceptionMessage = "[{\"Forbidden\": \"" + methodServerType.toString() + " API methods are disabled on this KairosDB instance.\"}]\n";
+
+			throw new InvalidServerTypeException(exceptionMessage);
+		}
 	}
 
 	@OPTIONS
@@ -211,13 +239,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/metricnames")
 	public Response corsPreflightMetricNames(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: QUERY, OPTIONS request at URI \"/metricnames\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Query API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
+		checkServerType(ServerType.QUERY, "/metricnames", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -225,14 +249,9 @@ public class MetricsResource implements KairosMetricReporter
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/metricnames")
-	public Response getMetricNames()
+	public Response getMetricNames() throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: QUERY, GET request at URI \"/metricnames\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Query API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
-
+		checkServerType(ServerType.QUERY, "/metricnames", "GET");
 		return executeNameQuery(NameType.METRIC_NAMES);
 	}
 
@@ -240,14 +259,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/tagnames")
 	public Response corsPreflightTagNames(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: QUERY, OPTIONS request at URI \"/tagnames\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Query API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
-
+		checkServerType(ServerType.QUERY, "/tagnames", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -255,13 +269,9 @@ public class MetricsResource implements KairosMetricReporter
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/tagnames")
-	public Response getTagNames()
+	public Response getTagNames() throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: QUERY, GET request at URI \"/tagnames\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Query API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
+		checkServerType(ServerType.QUERY, "/tagnames", "GET");
 		return executeNameQuery(NameType.TAG_KEYS);
 	}
 
@@ -270,13 +280,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/tagvalues")
 	public Response corsPreflightTagValues(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: QUERY, OPTIONS request at URI \"/tagvalues\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Query API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
+		checkServerType(ServerType.QUERY, "/tagvalues", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -284,26 +290,18 @@ public class MetricsResource implements KairosMetricReporter
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/tagvalues")
-	public Response getTagValues()
+	public Response getTagValues() throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: QUERY, GET request at URI \"/tagvalues\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Query API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
+		checkServerType(ServerType.QUERY, "/tagvalues", "GET");
 		return executeNameQuery(NameType.TAG_VALUES);
 	}
 
     @GET
     @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
     @Path("/aggregators")
-    public Response getAggregators()
+    public Response getAggregators() throws InvalidServerTypeException
     {
-		if (EnumSet.of(ServerType.INGEST, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: QUERY, GET request at URI \"/aggregators\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Query API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
+		checkServerType(ServerType.QUERY, "/aggregators", "GET");
     	ImmutableList<AggregatorMetadata> aggregatorMetadata = aggregatorFactory.getAggregatorMetadata();
         ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(gson.toJson(aggregatorMetadata));
         setHeaders(responseBuilder);
@@ -314,13 +312,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints")
 	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") String requestMethod) throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.QUERY, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: INGEST, OPTIONS request at URI \"/datapoints\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Ingest API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
+		checkServerType(ServerType.INGEST, "/datapoints", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -329,14 +323,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Consumes("application/gzip")
 	@Path("/datapoints")
-	public Response addGzip(InputStream gzip)
+	public Response addGzip(InputStream gzip) throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.QUERY, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: INGEST, POST request at URI \"/datapoints\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Ingest API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
-
+		checkServerType(ServerType.INGEST, "gzip /datapoints", "POST");
 		GZIPInputStream gzipInputStream;
 		try
 		{
@@ -353,14 +342,9 @@ public class MetricsResource implements KairosMetricReporter
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints")
-	public Response add(InputStream json)
+	public Response add(InputStream json) throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.QUERY, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: INGEST, POST request at URI \"/datapoints\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Ingest API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
-
+		checkServerType(ServerType.INGEST, "JSON /datapoints", "POST");
 		try
 		{
 			DataPointsParser parser = new DataPointsParser(datastore, new InputStreamReader(json, "UTF-8"),
@@ -413,14 +397,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/query/tags")
 	public Response corsPreflightQueryTags(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: QUERY, OPTIONS request at URI \"" + QUERY_URL + "/tags\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Query API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
-
+		checkServerType(ServerType.QUERY, "/datapoints/query/tags", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -428,13 +407,9 @@ public class MetricsResource implements KairosMetricReporter
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/query/tags")
-	public Response getMeta(String json)
+	public Response getMeta(String json) throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: QUERY, POST request at URI \"" + QUERY_URL + "/tags\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Query API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
+		checkServerType(ServerType.QUERY, "/datapoints/query/tags", "POST");
 		checkNotNull(json);
 		logger.debug(json);
 
@@ -518,13 +493,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path(QUERY_URL)
 	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: QUERY, OPTIONS request at URI \"" + QUERY_URL + "\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Query API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
+		checkServerType(ServerType.QUERY, QUERY_URL, "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -534,11 +505,7 @@ public class MetricsResource implements KairosMetricReporter
 	@Path(QUERY_URL)
 	public Response getQuery(@QueryParam("query") String json, @Context HttpServletRequest request) throws Exception
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: QUERY, GET request at URI \"" + QUERY_URL + "\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Query API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
+		checkServerType(ServerType.QUERY, QUERY_URL, "GET");
 		return runQuery(json, request.getRemoteAddr());
 	}
 
@@ -547,11 +514,7 @@ public class MetricsResource implements KairosMetricReporter
 	@Path(QUERY_URL)
 	public Response postQuery(String json, @Context HttpServletRequest request) throws Exception
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.DELETE).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: QUERY, POST request at URI \"" + QUERY_URL + "\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Query API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
+		checkServerType(ServerType.QUERY, QUERY_URL, "POST");
 		return runQuery(json, request.getRemoteAddr());
 	}
 
@@ -677,13 +640,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/delete")
 	public Response corsPreflightDelete(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.QUERY).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: DELETE, OPTIONS request at URI \"/datapoints/delete\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Delete API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
+		checkServerType(ServerType.DELETE, "/datapoints/delete", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -693,12 +652,7 @@ public class MetricsResource implements KairosMetricReporter
 	@Path("/datapoints/delete")
 	public Response delete(String json) throws Exception
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.QUERY).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: DELETE, POST request at URI \"/datapoints/delete\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Delete API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
-
+		checkServerType(ServerType.DELETE, "/datapoints/delete", "POST");
 		checkNotNull(json);
 		logger.debug(json);
 
@@ -766,13 +720,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/metric/{metricName}")
 	public Response corsPreflightMetricDelete(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") String requestMethod) throws InvalidServerTypeException
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.QUERY).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: Delete, OPTIONS request at URI \"/metric/{metricName}\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Delete API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
+		checkServerType(ServerType.DELETE, "/metric/{metricName}", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -782,12 +732,7 @@ public class MetricsResource implements KairosMetricReporter
 	@Path("/metric/{metricName}")
 	public Response metricDelete(@PathParam("metricName") String metricName) throws Exception
 	{
-		if (EnumSet.of(ServerType.INGEST, ServerType.QUERY).contains(m_serverType))
-		{
-			logger.info("Forbidden request type: Delete, DELETE request at URI \"/metric/{metricName}\"");
-			return setHeaders(Response.status(Response.Status.FORBIDDEN).entity("{\"Forbidden\": \"Delete API methods are not enabled on this KairosDB instance.\"}\n")).build();
-		}
-
+		checkServerType(ServerType.DELETE, "/metric/{metricName}", "DELETE");
 		try
 		{
 			QueryMetric query = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, metricName);

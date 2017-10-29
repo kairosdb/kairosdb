@@ -96,6 +96,7 @@ ivy.createPomRule("pom.xml", ivy.getResolveRule("default"), ivy.getResolveRule("
 		.addDepend("ivysettings.xml")
 		.setName("project-pom")
 		.setDescription("Use this target to generate a pom used for opening project in IDE")
+		.setJavaVersion("1.8")
 
 //------------------------------------------------------------------------------
 //==-- Maven POM Rule --==

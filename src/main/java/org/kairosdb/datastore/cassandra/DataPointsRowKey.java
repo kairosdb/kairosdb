@@ -45,7 +45,6 @@ public class DataPointsRowKey
 		m_timestamp = timestamp;
 		m_dataType = checkNotNull(datatype);
 		m_tags = tags;
-
 	}
 
 	public void addTag(String name, String value)

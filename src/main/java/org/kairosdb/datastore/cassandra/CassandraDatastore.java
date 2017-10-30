@@ -31,6 +31,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
 import org.kairosdb.util.KDataOutput;
 import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
@@ -81,10 +82,12 @@ public class CassandraDatastore implements Datastore {
 
     public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
 
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
     public static final String ROW_KEY_METRIC_NAMES = "metric_names";
+    private static final ByteBuffer METRIC_NAME_BYTE_BUFFER = ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8));
+
     public static final String ROW_KEY_TAG_NAMES = "tag_names";
     public static final String ROW_KEY_TAG_VALUES = "tag_values";
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
 
     private final CassandraClient m_cassandraClient;
     private final Session m_session;
@@ -98,7 +101,8 @@ public class CassandraDatastore implements Datastore {
     private final PreparedStatement m_psQueryRowKeySplitIndex;
     private final PreparedStatement m_psQueryDataPoints;
 
-    private final Cache<DataPointsRowKey, Boolean> m_rowKeyCache;
+    private final RowKeyCache rowKeyCache;
+//    private final Cache<DataPointsRowKey, Boolean> m_rowKeyCache;
 
     private final Cache<String, Boolean> m_metricNameCache;
 
@@ -108,7 +112,7 @@ public class CassandraDatastore implements Datastore {
 
     private final KairosDataPointFactory m_kairosDataPointFactory;
 
-    private final List<String> m_indexTagList;
+    private final Set<String> m_indexTagList;
 
     private CassandraConfiguration m_cassandraConfiguration;
 
@@ -122,9 +126,11 @@ public class CassandraDatastore implements Datastore {
     public CassandraDatastore(@Named("HOSTNAME") final String hostname,
                               CassandraClient cassandraClient,
                               CassandraConfiguration cassandraConfiguration,
-                              KairosDataPointFactory kairosDataPointFactory) throws DatastoreException {
+                              KairosDataPointFactory kairosDataPointFactory,
+                              RowKeyCache rowKeyCache) throws DatastoreException {
 
         m_cassandraConfiguration = cassandraConfiguration;
+        this.rowKeyCache = rowKeyCache;
 
         logger.warn("Setting tag index: {}", cassandraConfiguration.getIndexTagList());
         logger.warn("Setting metric name cache size: {}", cassandraConfiguration.getMetricNameCacheSize());
@@ -132,10 +138,11 @@ public class CassandraDatastore implements Datastore {
         logger.warn("Setting tag name cache size: {}", cassandraConfiguration.getTagNameCacheSize());
         logger.warn("Setting tag value cache size: {}", cassandraConfiguration.getTagValueCacheSize());
 
-        m_rowKeyCache = Caffeine.newBuilder()
-                .initialCapacity(cassandraConfiguration.getRowKeyCacheSize()/3 + 1)
-                .maximumSize(cassandraConfiguration.getRowKeyCacheSize())
-                .expireAfterWrite(24, TimeUnit.HOURS).build();
+//        m_rowKeyCache = Caffeine.newBuilder()
+//                .initialCapacity(cassandraConfiguration.getRowKeyCacheSize()/3 + 1)
+//                .maximumSize(cassandraConfiguration.getRowKeyCacheSize())
+//                .expireAfterWrite(24, TimeUnit.HOURS)
+//                .build();
 
         m_metricNameCache = Caffeine.newBuilder()
                 .initialCapacity(cassandraConfiguration.getMetricNameCacheSize()/3 + 1)
@@ -152,7 +159,11 @@ public class CassandraDatastore implements Datastore {
                 .maximumSize(cassandraConfiguration.getTagValueCacheSize())
                 .expireAfterWrite(24, TimeUnit.HOURS).build();
 
-        m_indexTagList = Arrays.asList(cassandraConfiguration.getIndexTagList().split(",")).stream().map(String::trim).collect(Collectors.toList());
+        m_indexTagList = Arrays.stream(cassandraConfiguration.getIndexTagList().split(","))
+                .map(String::trim)
+                .filter(Objects::nonNull)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
 
         m_cassandraClient = cassandraClient;
         m_kairosDataPointFactory = kairosDataPointFactory;
@@ -199,21 +210,9 @@ public class CassandraDatastore implements Datastore {
 
         if (null != setup) {
             setup.initSchema();
+        } else {
+            logger.info("Cassandra Setup not performed");
         }
-        else {
-            logger.info("Not Cassandra Setup being performced");
-        }
-
-        return;
-    }
-
-    public void increaseMaxBufferSizes() {
-        /*m_dataPointWriteBuffer.increaseMaxBufferSize();
-		m_rowKeyWriteBuffer.increaseMaxBufferSize();
-		m_stringIndexWriteBuffer.increaseMaxBufferSize();*/
-    }
-
-    public void cleanRowKeyCache() {
     }
 
     @Override
@@ -221,9 +220,6 @@ public class CassandraDatastore implements Datastore {
         m_session.close();
         m_cassandraClient.close();
     }
-
-    private final Integer LOCK_ROW_KEY = new Integer(1);
-    private final Boolean CACHE_BOOLEAN = new Boolean(true);
 
     private volatile int keyInsertCount = 0;
     private volatile long keyInsertTimer = System.currentTimeMillis();
@@ -250,46 +246,68 @@ public class CassandraDatastore implements Datastore {
             }
 
             final long rowTime = calculateRowTimeWrite(dataPoint.getTimestamp());
-            final DataPointsRowKey rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(), tags);
+            final DataPointsRowKey dataPointsRowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(), tags);
+            final ByteBuffer serializedKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(dataPointsRowKey);
             List<Map.Entry<String, Integer>> countsByMetricName = null;
 
             // Write out the row key if it is not cached
             boolean writeRowKey = false;
-            Boolean isCachedKey = m_rowKeyCache.getIfPresent(rowKey);
-            if (isCachedKey == null) {
-                synchronized (LOCK_ROW_KEY) {
-                    isCachedKey = m_rowKeyCache.getIfPresent(rowKey);
-                    if (null == isCachedKey) {
-                        // leave lock
-                        writeRowKey = true;
-                        m_rowKeyCache.put(rowKey, CACHE_BOOLEAN);
+            final boolean rowKeyKnown = rowKeyCache.isKnown(serializedKey);
+            if(!rowKeyKnown) {
+                writeRowKey = true;
+                rowKeyCache.put(serializedKey);
 
-                        int count = ++keyInsertCount;
-                        if(insertCountByMetric.containsKey(metricName)) {
-                            insertCountByMetric.put(metricName, insertCountByMetric.get(metricName) + 1);
-                        }
-                        else {
-                            insertCountByMetric.put(metricName, 1);
-                        }
+                int count = ++keyInsertCount;
+                if(insertCountByMetric.containsKey(metricName)) {
+                    insertCountByMetric.put(metricName, insertCountByMetric.get(metricName) + 1);
+                }
+                else {
+                    insertCountByMetric.put(metricName, 1);
+                }
 
-                        if ((writeTime - keyInsertTimer) > 30_000) {
-                            keyInsertTimer = writeTime;
-                            keyInsertCount = 0;
-                            countsByMetricName = new ArrayList<>();
-                            countsByMetricName.addAll(insertCountByMetric.entrySet());
-                            insertCountByMetric.clear();
-                            logger.warn("RowKeys inserted: count={}", count);
-                        }
-                    }
+                if ((writeTime - keyInsertTimer) > 30_000) {
+                    keyInsertTimer = writeTime;
+                    keyInsertCount = 0;
+                    countsByMetricName = new ArrayList<>(insertCountByMetric.entrySet());
+                    insertCountByMetric.clear();
+                    logger.warn("RowKeys inserted: count={}", count);
                 }
             }
+//            Boolean isCachedKey = m_rowKeyCache.getIfPresent(dataPointsRowKey);
+//            if (isCachedKey == null) {
+//                synchronized (LOCK_ROW_KEY) {
+//                    isCachedKey = m_rowKeyCache.getIfPresent(dataPointsRowKey);
+//                    if (null == isCachedKey) {
+//                        // leave lock
+//                        writeRowKey = true;
+//                        m_rowKeyCache.put(dataPointsRowKey, CACHE_BOOLEAN);
+//
+//                        int count = ++keyInsertCount;
+//                        if(insertCountByMetric.containsKey(metricName)) {
+//                            insertCountByMetric.put(metricName, insertCountByMetric.get(metricName) + 1);
+//                        }
+//                        else {
+//                            insertCountByMetric.put(metricName, 1);
+//                        }
+//
+//                        if ((writeTime - keyInsertTimer) > 30_000) {
+//                            keyInsertTimer = writeTime;
+//                            keyInsertCount = 0;
+//                            countsByMetricName = new ArrayList<>();
+//                            countsByMetricName.addAll(insertCountByMetric.entrySet());
+//                            insertCountByMetric.clear();
+//                            logger.warn("RowKeys inserted: count={}", count);
+//                        }
+//                    }
+//                }
+//            }
 
             if (writeRowKey) {
 
                 BoundStatement bs = new BoundStatement(m_psInsertRowKey);
                 bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
 
-                ByteBuffer serializedKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey);
+//                ByteBuffer serializedKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(dataPointsRowKey);
 
                 bs.setBytes(1, serializedKey);
                 bs.setInt(2, rowKeyTtl);
@@ -311,27 +329,27 @@ public class CassandraDatastore implements Datastore {
                     m_session.executeAsync(bs);
                 }
 
-                for (RowKeyListener rowKeyListener : m_rowKeyListeners) {
-                    rowKeyListener.addRowKey(metricName, rowKey, rowKeyTtl);
-                }
+//                for (RowKeyListener rowKeyListener : m_rowKeyListeners) {
+//                    rowKeyListener.addRowKey(metricName, dataPointsRowKey, rowKeyTtl);
+//                }
 
                 if (countsByMetricName != null) {
-                    Collections.sort(countsByMetricName, (x,y) -> y.getValue() - x.getValue());
-                    logger.warn("Keys inserted: {}", countsByMetricName.subList(0, Math.min(10, countsByMetricName.size())));
+                    countsByMetricName.sort((x, y) -> y.getValue() - x.getValue());
+                    logger.warn("Top10 Keys inserted: {}", countsByMetricName.subList(0, Math.min(10, countsByMetricName.size())));
                 }
             }
 
             //Write metric name if not in cache
             Boolean isCachedName  = m_metricNameCache.getIfPresent(metricName);
             if (isCachedName == null) {
-                m_metricNameCache.put(metricName, CACHE_BOOLEAN);
+                m_metricNameCache.put(metricName, Boolean.TRUE);
                 if (metricName.length() == 0) {
                     logger.warn(
                             "Attempted to add empty metric name to string index. Row looks like: " + dataPoint
                     );
                 }
                 BoundStatement bs = new BoundStatement(m_psInsertString);
-                bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
+                bs.setBytes(0, METRIC_NAME_BYTE_BUFFER);
                 bs.setString(1, metricName);
                 m_session.executeAsync(bs);
             }
@@ -340,7 +358,7 @@ public class CassandraDatastore implements Datastore {
             for (String tagName : tags.keySet()) {
                 Boolean isCachedTagName = m_tagNameCache.getIfPresent(tagName);
                 if (isCachedTagName == null) {
-                    m_tagNameCache.put(tagName, CACHE_BOOLEAN);
+                    m_tagNameCache.put(tagName, Boolean.TRUE);
                     if (tagName.length() == 0) {
                         logger.warn(
                                 "Attempted to add empty tagName to string cache for metric: " + metricName
@@ -355,8 +373,8 @@ public class CassandraDatastore implements Datastore {
                 String value = tags.get(tagName);
                 Boolean isCachedValue = m_tagValueCache.getIfPresent(value);
                 if (m_cassandraConfiguration.getTagValueCacheSize() > 0 && isCachedValue == null) {
-                    m_tagValueCache.put(value, CACHE_BOOLEAN);
-                    if (value.toString().length() == 0) {
+                    m_tagValueCache.put(value, Boolean.TRUE);
+                    if (value.length() == 0) {
                         logger.warn(
                                 "Attempted to add empty tagValue (tag name " + tagName + ") to string cache for metric: " + metricName
                         );
@@ -373,7 +391,7 @@ public class CassandraDatastore implements Datastore {
             dataPoint.writeValueToBuffer(kDataOutput);
 
             BoundStatement boundStatement = new BoundStatement(m_psInsertData);
-            boundStatement.setBytes(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+            boundStatement.setBytes(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(dataPointsRowKey));
             ByteBuffer b = ByteBuffer.allocate(4);
             b.putInt(columnTime);
             b.rewind();

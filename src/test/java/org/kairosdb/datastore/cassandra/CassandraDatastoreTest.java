@@ -27,8 +27,11 @@ import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreMetricQueryImpl;
 import org.kairosdb.datastore.DatastoreTestHelper;
+import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.*;
 
 import static junit.framework.Assert.assertFalse;
@@ -169,6 +172,24 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		putDataPoints(dpSet);
 	}
 
+	private static class NoOpRowKeyCache implements RowKeyCache {
+
+		@Override
+		public void put(@Nonnull final ByteBuffer rowKey) {
+			// NoOp
+		}
+
+		@Override
+		public void putAll(@Nonnull final Set<ByteBuffer> rowKeys) {
+			// NoOp
+		}
+
+		@Override
+		public boolean isKnown(@Nonnull final ByteBuffer rowKey) {
+			return false;
+		}
+	}
+
 	@BeforeClass
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
@@ -182,7 +203,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		CassandraConfiguration cassandraConfig = new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
 				1000, 50000, cassandraHost, "kairosdb_test");
 
-		s_datastore = new CassandraDatastore("localhost", new CassandraClientImpl(cassandraConfig), cassandraConfig, dataPointFactory);
+		s_datastore = new CassandraDatastore("localhost", new CassandraClientImpl(cassandraConfig), cassandraConfig,
+				dataPointFactory, new NoOpRowKeyCache());
 
 		System.out.println("Creating KairosDataStore");
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,

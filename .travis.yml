@@ -9,7 +9,7 @@ jdk:
 #  - cassandra
 
 before_script:
-  - export CLASSPATH=tools/tablesaw-1.2.4.jar
+  - export CLASSPATH=tools/tablesaw-1.2.6.jar
 
 script:
   - java make clean test-all

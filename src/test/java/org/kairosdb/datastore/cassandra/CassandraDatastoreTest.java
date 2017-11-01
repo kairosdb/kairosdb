@@ -180,11 +180,6 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		}
 
 		@Override
-		public void putAll(@Nonnull final Set<ByteBuffer> rowKeys) {
-			// NoOp
-		}
-
-		@Override
 		public boolean isKnown(@Nonnull final ByteBuffer rowKey) {
 			return false;
 		}

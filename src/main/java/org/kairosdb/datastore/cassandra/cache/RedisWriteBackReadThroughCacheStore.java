@@ -7,10 +7,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -27,20 +29,30 @@ public class RedisWriteBackReadThroughCacheStore implements GeneralByteBufferCac
     private final int defaultTtlInSeconds;
 
     @Inject
-    public RedisWriteBackReadThroughCacheStore(final RedisConfiguration redisConfiguration,
-                                               final RowKeyCacheConfiguration rowKeyCacheConfiguration) {
-        this.jedisPool = new JedisPool(redisConfiguration.getHostName(), redisConfiguration.getPort());
-        this.defaultTtlInSeconds = rowKeyCacheConfiguration.getDefaultTtlInSeconds();
+    public RedisWriteBackReadThroughCacheStore(final RedisConfiguration config) {
+        this.defaultTtlInSeconds = config.getTtlInSeconds();
+        this.jedisPool = createJedisPool(config);
+        this.executor = createExecutorService(config);
+    }
+
+    private JedisPool createJedisPool(final RedisConfiguration config) {
+        final URI uri = URI.create(String.format("%s:%d", config.getHostName(), config.getPort()));
+        final JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+        jedisPoolConfig.setMaxWaitMillis(config.getConnectionTimeoutInMillis() + config.getSocketTimeoutInMillis());
+        return new JedisPool(jedisPoolConfig, uri, config.getConnectionTimeoutInMillis(),
+                config.getSocketTimeoutInMillis());
+    }
+
+    private ExecutorService createExecutorService(final RedisConfiguration config) {
         final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-                redisConfiguration.getWriterThreads(),
-                redisConfiguration.getWriterThreads(),
-                redisConfiguration.getWorkerThreadIdleTimeoutSeconds(),
-                TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(),
+                config.getWriterThreads(),
+                config.getWriterThreads(),
+                config.getWorkerThreadIdleTimeoutSeconds(), TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(config.getMaxQueueSize()),
                 new ThreadFactoryBuilder().setNameFormat(RedisWriteBackReadThroughCacheStore.class.getSimpleName() +
                         "-writer-thread-%d").build());
         threadPoolExecutor.allowCoreThreadTimeOut(true);
-        this.executor = threadPoolExecutor;
+        return threadPoolExecutor;
     }
 
     @CheckForNull
@@ -49,7 +61,11 @@ public class RedisWriteBackReadThroughCacheStore implements GeneralByteBufferCac
         checkNotNull(key, "cache key can't be null");
         try (final Jedis jedis = jedisPool.getResource()) {
             final byte[] bytes = jedis.get(key.array());
-            return Boolean.valueOf(new String(bytes));
+            if(bytes != null) {
+                return Boolean.valueOf(new String(bytes));
+            } else {
+                return Boolean.FALSE;
+            }
         } catch (Exception e) {
             LOG.error("failed to load cache value for key {}", key, e);
             throw e;

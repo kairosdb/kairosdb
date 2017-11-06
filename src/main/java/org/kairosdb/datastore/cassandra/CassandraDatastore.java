@@ -424,7 +424,7 @@ public class CassandraDatastore implements Datastore {
     @Override
     public TagSet queryMetricTags(DatastoreMetricQuery query) {
         TagSetImpl tagSet = new TagSetImpl();
-        Collection<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query, 150);
+        Collection<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query, 1000);
 
         MemoryMonitor mm = new MemoryMonitor(20);
         for (DataPointsRowKey key : rowKeys) {

@@ -1,4 +1,4 @@
-package org.kairosdb.datastore.cassandra.cache;
+package org.kairosdb.datastore.cassandra.cache.persistence;
 
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.CacheWriter;

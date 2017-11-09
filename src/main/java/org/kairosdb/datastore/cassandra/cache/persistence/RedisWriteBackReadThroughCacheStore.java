@@ -1,8 +1,9 @@
-package org.kairosdb.datastore.cassandra.cache;
+package org.kairosdb.datastore.cassandra.cache.persistence;
 
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
+import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -12,6 +13,7 @@ import redis.clients.jedis.JedisPoolConfig;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.math.BigInteger;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
@@ -21,9 +23,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class RedisWriteBackReadThroughCacheStore implements GeneralByteBufferCacheStore {
+public class RedisWriteBackReadThroughCacheStore implements GeneralHashCacheStore {
     private final Logger LOG = LoggerFactory.getLogger(RedisWriteBackReadThroughCacheStore.class);
-
     private final JedisPool jedisPool;
     private final ExecutorService executor;
     private final int defaultTtlInSeconds;
@@ -36,7 +37,7 @@ public class RedisWriteBackReadThroughCacheStore implements GeneralByteBufferCac
     }
 
     private JedisPool createJedisPool(final RedisConfiguration config) {
-        final URI uri = URI.create(String.format("%s:%d", config.getHostName(), config.getPort()));
+        final URI uri = URI.create(String.format("redis://%s:%d", config.getHostName(), config.getPort()));
         final JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
         jedisPoolConfig.setMaxWaitMillis(config.getConnectionTimeoutInMillis() + config.getSocketTimeoutInMillis());
         return new JedisPool(jedisPoolConfig, uri, config.getConnectionTimeoutInMillis(),
@@ -57,15 +58,10 @@ public class RedisWriteBackReadThroughCacheStore implements GeneralByteBufferCac
 
     @CheckForNull
     @Override
-    public Boolean load(@Nonnull final ByteBuffer key) throws Exception {
+    public Object load(@Nonnull final BigInteger key) throws Exception {
         checkNotNull(key, "cache key can't be null");
         try (final Jedis jedis = jedisPool.getResource()) {
-            final byte[] bytes = jedis.get(key.array());
-            if(bytes != null) {
-                return Boolean.valueOf(new String(bytes));
-            } else {
-                return Boolean.FALSE;
-            }
+            return jedis.get(key.toString());
         } catch (Exception e) {
             LOG.error("failed to load cache value for key {}", key, e);
             throw e;
@@ -73,12 +69,12 @@ public class RedisWriteBackReadThroughCacheStore implements GeneralByteBufferCac
     }
 
     @Override
-    public void write(@Nonnull final ByteBuffer key, @Nonnull final Boolean value) {
+    public void write(@Nonnull final BigInteger key, @Nonnull final Object value) {
         checkNotNull(key, "cache key can't be null");
         checkNotNull(value, "cache value can't be null");
         executor.submit(() -> {
             try (final Jedis jedis = jedisPool.getResource()) {
-                jedis.setex(key.array(), defaultTtlInSeconds, value.toString().getBytes());
+                jedis.setex(key.toString(), defaultTtlInSeconds, value.toString());
             } catch (Exception e) {
                 LOG.error("failed to write back cache value for key {}", key, e);
             }
@@ -86,11 +82,11 @@ public class RedisWriteBackReadThroughCacheStore implements GeneralByteBufferCac
     }
 
     @Override
-    public void delete(@Nonnull final ByteBuffer key, @Nullable final Boolean value, @Nonnull final RemovalCause removalCause) {
+    public void delete(@Nonnull final BigInteger key, @Nullable final Object value, @Nonnull final RemovalCause removalCause) {
         checkNotNull(key, "cache key can't be null");
         executor.submit(() -> {
             try (final Jedis jedis = jedisPool.getResource()) {
-                jedis.del(key.array());
+                jedis.del(key.toString());
             } catch (Exception e) {
                 LOG.error("failed to delete cache key {}", key, e);
             }

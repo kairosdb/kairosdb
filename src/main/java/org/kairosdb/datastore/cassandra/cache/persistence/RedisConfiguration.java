@@ -1,4 +1,4 @@
-package org.kairosdb.datastore.cassandra.cache;
+package org.kairosdb.datastore.cassandra.cache.persistence;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;

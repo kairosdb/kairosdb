@@ -3,7 +3,7 @@ package org.kairosdb.datastore.cassandra.cache;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-public class RowKeyCacheConfiguration {
+public class RowKeyCacheConfiguration implements CacheConfiguration {
     private static final String PREFIX = "kairosdb.datastore.cassandra.cache.row_key";
     private static final String TTL_IN_SECONDS = PREFIX + ".ttl_in_seconds";
     private static final String SIZE = PREFIX + ".size";

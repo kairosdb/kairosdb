@@ -3,8 +3,8 @@ package org.kairosdb.datastore.cassandra.cache;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-public class MetricNameCacheConfiguration implements CacheConfiguration {
-    private static final String PREFIX = "kairosdb.datastore.cassandra.cache.metric_name.";
+public class TagValueCacheConfiguration implements CacheConfiguration {
+    private static final String PREFIX = "kairosdb.datastore.cassandra.cache.tag_name.";
     private static final String TTL_IN_SECONDS = PREFIX + "ttl_in_seconds";
     private static final String SIZE = PREFIX + "size";
 
@@ -14,7 +14,7 @@ public class MetricNameCacheConfiguration implements CacheConfiguration {
 
     @Inject(optional = true)
     @Named(SIZE)
-    private int maxSize = 16_000_000;
+    private int maxSize = 1_024;
 
     public int getTtlInSeconds() {
         return ttlInSeconds;

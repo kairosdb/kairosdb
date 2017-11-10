@@ -62,6 +62,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -218,7 +219,7 @@ public class CassandraDatastore implements Datastore {
     private volatile int keyInsertCount = 0;
     private volatile long keyInsertTimer = System.currentTimeMillis();
 
-    private final Map<String, Integer> insertCountByMetric = new HashMap<>();
+    private final Map<String, Integer> insertCountByMetric = new ConcurrentHashMap<>();
 
     @Override
     public void putDataPoint(String metricName,
@@ -245,10 +246,9 @@ public class CassandraDatastore implements Datastore {
             List<Map.Entry<String, Integer>> countsByMetricName = null;
 
             // Write out the row key if it is not cached
-            boolean writeRowKeyReverseLookups = false;
             final boolean rowKeyKnown = rowKeyCache.isKnown(serializedKey);
             if (!rowKeyKnown) {
-                writeRowKeyReverseLookups = true;
+                storeRowKeyReverseLookups(metricName, serializedKey, rowKeyTtl, tags);
                 rowKeyCache.put(serializedKey);
 
                 int count = ++keyInsertCount;
@@ -264,11 +264,9 @@ public class CassandraDatastore implements Datastore {
                     countsByMetricName = new ArrayList<>(insertCountByMetric.entrySet());
                     insertCountByMetric.clear();
                     logger.warn("RowKeys inserted: count={}", count);
+                    countsByMetricName.sort((x, y) -> y.getValue() - x.getValue());
+                    logger.warn("Top10 Keys inserted: {}", countsByMetricName.subList(0, Math.min(10, countsByMetricName.size())));
                 }
-            }
-
-            if (writeRowKeyReverseLookups) {
-                storeRowKeyReverseLookups(metricName, serializedKey, rowKeyTtl, tags, countsByMetricName);
             }
 
             //Write metric name if not in cache
@@ -276,8 +274,8 @@ public class CassandraDatastore implements Datastore {
                 if (metricName.length() == 0) {
                     logger.warn("Attempted to add empty metric name to string index. Row looks like: {}", dataPoint);
                 }
-                metricNameCache.put(metricName);
                 storeStringIndex(metricName, m_psInsertString, METRIC_NAME_BYTE_BUFFER);
+                metricNameCache.put(metricName);
             }
 
             //Check tag names and values to write them out
@@ -286,19 +284,19 @@ public class CassandraDatastore implements Datastore {
                     if (tagName.length() == 0) {
                         logger.warn("Attempted to add empty tagName to string cache for metric: {}", metricName);
                     }
-                    tagNameCache.put(tagName);
                     storeStringIndex(tagName, m_psInsertString, ROW_KEY_TAG_NAMES_BYTE_BUFFER);
+                    tagNameCache.put(tagName);
                 }
 
                 final String value = tags.get(tagName);
                 boolean isCachedValue = tagValueCache.isKnown(value);
                 if (m_cassandraConfiguration.getTagValueCacheSize() > 0 && !isCachedValue) {
-                    tagValueCache.put(value);
                     if (value.length() == 0) {
                         logger.warn("Attempted to add empty tagValue (tag name {}) to string cache for metric: {}",
                                 tagName, metricName);
                     }
                     storeStringIndex(value, m_psInsertString, ROW_KEY_TAG_VALUES_BYTE_BUFFER);
+                    tagValueCache.put(value);
                 }
             }
 
@@ -328,8 +326,8 @@ public class CassandraDatastore implements Datastore {
         m_session.executeAsync(bs);
     }
 
-    private void storeRowKeyReverseLookups(final String metricName, final ByteBuffer serializedKey, final int rowKeyTtl, final Map<String, String> tags,
-                                           final List<Map.Entry<String, Integer>> countsByMetricName) {
+    private void storeRowKeyReverseLookups(final String metricName, final ByteBuffer serializedKey, final int rowKeyTtl,
+                                           final Map<String, String> tags) {
         BoundStatement bs = new BoundStatement(m_psInsertRowKey);
         bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
         bs.setBytes(1, serializedKey);
@@ -350,11 +348,6 @@ public class CassandraDatastore implements Datastore {
             bs.setInt(4, rowKeyTtl);
 
             m_session.executeAsync(bs);
-        }
-
-        if (countsByMetricName != null) {
-            countsByMetricName.sort((x, y) -> y.getValue() - x.getValue());
-            logger.warn("Top10 Keys inserted: {}", countsByMetricName.subList(0, Math.min(10, countsByMetricName.size())));
         }
     }
 

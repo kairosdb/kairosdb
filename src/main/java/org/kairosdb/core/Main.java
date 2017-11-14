@@ -32,6 +32,7 @@ import org.apache.commons.io.FileUtils;
 import org.h2.util.StringUtils;
 import org.json.JSONException;
 import org.json.JSONWriter;
+import org.kairosdb.core.admin.MetricsModule;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryCallback;
@@ -177,6 +178,7 @@ public class Main
 		List<Module> moduleList = new ArrayList<Module>();
 		moduleList.add(new CoreModule(props));
 		moduleList.add(new CachingModule());
+		moduleList.add(new MetricsModule());
 
 		for (String propName : props.stringPropertyNames())
 		{

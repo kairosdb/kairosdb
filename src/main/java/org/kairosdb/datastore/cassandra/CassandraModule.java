@@ -65,7 +65,6 @@ public class CassandraModule extends AbstractModule
 	{
 		bind(Datastore.class).to(CassandraDatastore.class).in(SINGLETON);
 		bind(CassandraDatastore.class).in(SINGLETON);
-//		bind(HectorConfiguration.class).in(SINGLETON);
 		bind(CassandraConfiguration.class).in(SINGLETON);
 		bind(CassandraClient.class).to(CassandraClientImpl.class);
 

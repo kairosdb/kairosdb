@@ -14,7 +14,7 @@ public class MetricNameCacheConfiguration implements CacheConfiguration {
 
     @Inject(optional = true)
     @Named(SIZE)
-    private int maxSize = 16_000_000;
+    private int maxSize = 16_384;
 
     public int getTtlInSeconds() {
         return ttlInSeconds;

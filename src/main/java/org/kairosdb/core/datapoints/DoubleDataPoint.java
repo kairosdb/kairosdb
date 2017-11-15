@@ -106,7 +106,7 @@ public class DoubleDataPoint extends DataPointHelper
 	@Override
 	public String toString()
 	{
-		return "LongDataPoint{" +
+		return "DoubleDataPoint{" +
 				"m_timestamp=" + new DateTime(m_timestamp) +
 				" m_value=" + m_value +
 				'}';

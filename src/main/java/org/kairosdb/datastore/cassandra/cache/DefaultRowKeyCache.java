@@ -2,6 +2,7 @@ package org.kairosdb.datastore.cassandra.cache;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.kairosdb.core.admin.CacheMetricsProvider;
 import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
 
 import javax.annotation.Nonnull;
@@ -14,29 +15,30 @@ public class DefaultRowKeyCache extends AbstractByteBufferCache implements RowKe
 
     @Inject
     public DefaultRowKeyCache(@Named(ROW_KEY_CACHE) final GeneralHashCacheStore rowKeyCacheStore,
+                              final CacheMetricsProvider cacheMetricsProvider,
                               final RowKeyCacheConfiguration configuration) {
-        super(rowKeyCacheStore, configuration.getMaxSize(), configuration.getTtlInSeconds());
+        super(rowKeyCacheStore, cacheMetricsProvider, configuration.getMaxSize(), configuration.getTtlInSeconds(),
+                ROW_KEY_CACHE);
     }
 
     @Override
     public void put(@Nonnull final ByteBuffer rowKey) {
-        final ByteBuffer copy = rowKey.duplicate();
-        final ByteBuffer prefixed = ByteBuffer.allocate(KEY_PREFIX.length + rowKey.limit())
-                .put(KEY_PREFIX)
-                .put(copy);
+        final ByteBuffer prefixed = prefixedBufferCopy(rowKey);
         final BigInteger hash = doubleHash(prefixed);
-//        String metric = new String(copy.array());
-//        metric = metric.substring(0, Math.min(32, metric.indexOf(0x0)));
         this.outerLayerCache.put(hash, rowKey);
     }
 
     @Override
     public boolean isKnown(@Nonnull final ByteBuffer rowKey) {
-        final ByteBuffer copy = rowKey.duplicate();
-        final ByteBuffer prefixed = ByteBuffer.allocate(KEY_PREFIX.length + rowKey.limit())
-                .put(KEY_PREFIX)
-                .put(copy);
+        final ByteBuffer prefixed = prefixedBufferCopy(rowKey);
         final BigInteger hash = doubleHash(prefixed);
         return this.outerLayerCache.get(hash) != null;
+    }
+
+    private ByteBuffer prefixedBufferCopy(final @Nonnull ByteBuffer rowKey) {
+        final ByteBuffer copy = rowKey.duplicate();
+        return ByteBuffer.allocate(KEY_PREFIX.length + rowKey.limit())
+                .put(KEY_PREFIX)
+                .put(copy);
     }
 }

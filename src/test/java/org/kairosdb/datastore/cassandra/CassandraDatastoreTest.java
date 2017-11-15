@@ -169,7 +169,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper {
 
     @BeforeClass
     public static void setupDatastore() throws InterruptedException, DatastoreException {
-        String cassandraHost = "localhost:9042";
+        String cassandraHost = "localhost";
         if (System.getenv("CASSANDRA_HOST") != null) {
             cassandraHost = System.getenv("CASSANDRA_HOST");
         }
@@ -181,7 +181,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper {
 
         // TODO: test the caches being hit
         final StringKeyCache stringCache = mock(StringKeyCache.class);
-        s_datastore = new CassandraDatastore("localhost", new CassandraClientImpl(cassandraConfig), cassandraConfig,
+        s_datastore = new CassandraDatastore(new CassandraClientImpl(cassandraConfig), cassandraConfig,
                 dataPointFactory, mock(RowKeyCache.class), stringCache, stringCache, stringCache);
 
         System.out.println("Creating KairosDataStore");

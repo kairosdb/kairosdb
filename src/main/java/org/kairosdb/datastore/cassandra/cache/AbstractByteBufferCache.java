@@ -3,6 +3,7 @@ package org.kairosdb.datastore.cassandra.cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
+import org.kairosdb.core.admin.CacheMetricsProvider;
 import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
 
 import java.math.BigInteger;
@@ -15,19 +16,19 @@ import static net.openhft.hashing.LongHashFunction.xx;
 public abstract class AbstractByteBufferCache {
     private static final int MURMUR_SEED = 0xDEADBEEF;
     private static final int XX_SEED = 0xCAFEBABE;
-    private static final BigInteger MASK = BigInteger.valueOf(Long.MAX_VALUE);
 
     protected final LoadingCache<BigInteger, Object> outerLayerCache;
 
-    protected AbstractByteBufferCache(final GeneralHashCacheStore cacheStore,
-                                final int maxSize, final int ttlInSeconds) {
+    protected AbstractByteBufferCache(final GeneralHashCacheStore cacheStore, final CacheMetricsProvider cacheMetricsProvider,
+                                final int maxSize, final int ttlInSeconds, final String cacheId) {
         this.outerLayerCache = Caffeine.newBuilder()
                 .initialCapacity(maxSize / 3 + 1)
                 .maximumSize(maxSize)
-                .expireAfterWrite(ttlInSeconds, TimeUnit.HOURS)
+                .expireAfterWrite(ttlInSeconds, TimeUnit.SECONDS)
                 .recordStats()
                 .writer(cacheStore)
                 .build(cacheStore);
+        cacheMetricsProvider.registerCache(cacheId, this.outerLayerCache);
     }
 
     @VisibleForTesting

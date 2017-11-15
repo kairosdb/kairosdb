@@ -8,7 +8,7 @@ public class MetricReportingConfiguration {
 
     @Inject(optional=true)
     @Named(ENABLED)
-    private boolean enabled  = false;
+    private boolean enabled  = true;
 
     public boolean isEnabled() {
         return enabled;

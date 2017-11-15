@@ -20,8 +20,8 @@ import static com.google.common.base.CaseFormat.LOWER_HYPHEN;
 import static com.google.common.base.CaseFormat.UPPER_UNDERSCORE;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class DefaultMetricsProvider implements MetricsProvider {
-    private static final String CACHE_PREFIX = "cache";
+public class DefaultCacheMetricsProvider implements CacheMetricsProvider {
+    private static final String CACHE_PREFIX = "kairosdb.cache";
 
     enum CacheMetrics {
         REQUEST_COUNT,
@@ -43,9 +43,14 @@ public class DefaultMetricsProvider implements MetricsProvider {
     private final MetricRegistry metricRegistry;
 
     @Inject
-    public DefaultMetricsProvider(@Nonnull final MetricRegistry metricRegistry) {
+    public DefaultCacheMetricsProvider(@Nonnull final MetricRegistry metricRegistry) {
         checkNotNull(metricRegistry, "metricRegistry can't be null");
         this.metricRegistry = metricRegistry;
+    }
+
+    @Override
+    public Map<String, Metric> getAll() {
+        return ImmutableMap.copyOf(metricRegistry.getMetrics());
     }
 
     /**
@@ -58,7 +63,7 @@ public class DefaultMetricsProvider implements MetricsProvider {
     @Override
     public Map<String, Metric> getForPrefix(@Nullable final String prefix) {
         if (prefix == null || prefix.isEmpty()) {
-            return ImmutableMap.copyOf(metricRegistry.getMetrics());
+            return getAll();
         }
 
         final Map<String, Metric> filteredMetrics = metricRegistry.getMetrics().entrySet().stream()

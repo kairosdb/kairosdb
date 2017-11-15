@@ -1,6 +1,6 @@
 package org.kairosdb.datastore.cassandra.cache;
 
-import com.google.inject.Inject;
+import org.kairosdb.core.admin.CacheMetricsProvider;
 import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
 import org.slf4j.Logger;
 
@@ -15,9 +15,9 @@ public abstract class AbstractStringCache extends AbstractByteBufferCache implem
     private static final Logger LOG = getLogger(AbstractStringCache.class);
     private static Charset UTF8 = Charset.forName("UTF-8");
 
-    @Inject
-    protected AbstractStringCache(final GeneralHashCacheStore cacheStore, final CacheConfiguration config) {
-        super(cacheStore, config.getMaxSize(), config.getTtlInSeconds());
+    protected AbstractStringCache(final GeneralHashCacheStore cacheStore, final CacheMetricsProvider cacheMetricsProvider,
+                                  final CacheConfiguration config, final String cacheId) {
+        super(cacheStore, cacheMetricsProvider, config.getMaxSize(), config.getTtlInSeconds(), cacheId);
     }
 
     @Override

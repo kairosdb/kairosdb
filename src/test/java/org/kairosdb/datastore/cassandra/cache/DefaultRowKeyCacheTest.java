@@ -2,6 +2,7 @@ package org.kairosdb.datastore.cassandra.cache;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.kairosdb.core.admin.CacheMetricsProvider;
 import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
 
 import java.math.BigInteger;
@@ -19,6 +20,7 @@ public class DefaultRowKeyCacheTest {
 
     private RowKeyCacheConfiguration configuration;
     private GeneralHashCacheStore cacheStore;
+    private CacheMetricsProvider cacheMetricsProvider;
 
     @Before
     public void setUp() throws Exception {
@@ -26,11 +28,16 @@ public class DefaultRowKeyCacheTest {
         when(configuration.getMaxSize()).thenReturn(42);
         when(configuration.getTtlInSeconds()).thenReturn(42);
         cacheStore = mock(GeneralHashCacheStore.class);
+        cacheMetricsProvider = mock(CacheMetricsProvider.class);
+    }
+
+    private DefaultRowKeyCache createDefaultCache() {
+        return new DefaultRowKeyCache(cacheStore, cacheMetricsProvider, configuration);
     }
 
     @Test
     public void testPut() {
-        final DefaultRowKeyCache cache = new DefaultRowKeyCache(cacheStore, configuration);
+        final DefaultRowKeyCache cache = createDefaultCache();
         final ByteBuffer given = ByteBuffer.wrap(new byte[]{42, 69});
         cache.put(given);
         verify(cacheStore).write(any(BigInteger.class), any());
@@ -38,7 +45,7 @@ public class DefaultRowKeyCacheTest {
 
     @Test
     public void testGetHit() throws Exception {
-        final DefaultRowKeyCache cache = new DefaultRowKeyCache(cacheStore, configuration);
+        final DefaultRowKeyCache cache = createDefaultCache();
         final ByteBuffer given = ByteBuffer.wrap(new byte[]{42, 69});
         cache.put(given);
         assertTrue(cache.isKnown(given));
@@ -48,7 +55,7 @@ public class DefaultRowKeyCacheTest {
     @Test
     public void testGetHitReadThrough() throws Exception {
         when(cacheStore.load(any(BigInteger.class))).thenReturn(Boolean.TRUE);
-        final DefaultRowKeyCache cache = new DefaultRowKeyCache(cacheStore, configuration);
+        final DefaultRowKeyCache cache = createDefaultCache();
         final ByteBuffer given = ByteBuffer.wrap(new byte[]{42, 69});
         assertTrue(cache.isKnown(given));
         verify(cacheStore).load(any(BigInteger.class));
@@ -56,7 +63,7 @@ public class DefaultRowKeyCacheTest {
 
     @Test
     public void testGetMiss() throws Exception {
-        final DefaultRowKeyCache cache = new DefaultRowKeyCache(cacheStore, configuration);
+        final DefaultRowKeyCache cache = createDefaultCache();
         final ByteBuffer given = ByteBuffer.wrap(new byte[]{42, 69});
         assertFalse(cache.isKnown(given));
         verify(cacheStore).load(any(BigInteger.class));

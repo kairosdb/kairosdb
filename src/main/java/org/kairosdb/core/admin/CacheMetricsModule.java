@@ -5,12 +5,10 @@ import com.google.inject.AbstractModule;
 
 import javax.inject.Singleton;
 
-public class MetricsModule extends AbstractModule
-{
+public class CacheMetricsModule extends AbstractModule {
     @Override
-    protected void configure()
-    {
+    protected void configure() {
         bind(MetricRegistry.class).in(Singleton.class);
-        bind(MetricsProvider.class).to(DefaultMetricsProvider.class).in(Singleton.class);
+        bind(CacheMetricsProvider.class).to(DefaultCacheMetricsProvider.class).in(Singleton.class);
     }
 }

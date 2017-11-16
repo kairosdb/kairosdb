@@ -15,29 +15,14 @@
  */
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.MultimapBuilder;
-import com.google.common.collect.SetMultimap;
+import com.datastax.driver.core.*;
+import com.google.common.collect.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
-import org.kairosdb.core.datapoints.LongDataPointFactory;
-import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
-import org.kairosdb.core.datastore.QueryCallback;
-import org.kairosdb.core.datastore.QueryPlugin;
-import org.kairosdb.core.datastore.TagSet;
-import org.kairosdb.core.datastore.TagSetImpl;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
 import org.kairosdb.datastore.cassandra.cache.StringKeyCache;
@@ -50,19 +35,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -216,11 +189,6 @@ public class CassandraDatastore implements Datastore {
         m_cassandraClient.close();
     }
 
-    private volatile int keyInsertCount = 0;
-    private volatile long keyInsertTimer = System.currentTimeMillis();
-
-    private final Map<String, Integer> insertCountByMetric = new ConcurrentHashMap<>();
-
     @Override
     public void putDataPoint(String metricName,
                              ImmutableSortedMap<String, String> tags,
@@ -243,30 +211,12 @@ public class CassandraDatastore implements Datastore {
             final long rowTime = calculateRowTimeWrite(dataPoint.getTimestamp());
             final DataPointsRowKey dataPointsRowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(), tags);
             final ByteBuffer serializedKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(dataPointsRowKey);
-            List<Map.Entry<String, Integer>> countsByMetricName = null;
 
             // Write out the row key if it is not cached
             final boolean rowKeyKnown = rowKeyCache.isKnown(serializedKey);
             if (!rowKeyKnown) {
                 storeRowKeyReverseLookups(metricName, serializedKey, rowKeyTtl, tags);
                 rowKeyCache.put(serializedKey);
-
-                int count = ++keyInsertCount;
-                if (insertCountByMetric.containsKey(metricName)) {
-                    insertCountByMetric.put(metricName, insertCountByMetric.get(metricName) + 1);
-                } else {
-                    insertCountByMetric.put(metricName, 1);
-                }
-
-                if ((writeTime - keyInsertTimer) > 30_000) {
-                    keyInsertTimer = writeTime;
-                    keyInsertCount = 0;
-                    countsByMetricName = new ArrayList<>(insertCountByMetric.entrySet());
-                    insertCountByMetric.clear();
-                    logger.warn("RowKeys inserted: count={}", count);
-                    countsByMetricName.sort((x, y) -> y.getValue() - x.getValue());
-                    logger.warn("Top10 Keys inserted: {}", countsByMetricName.subList(0, Math.min(10, countsByMetricName.size())));
-                }
             }
 
             //Write metric name if not in cache

@@ -54,7 +54,7 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 	}
 
 	@Override
-	public ByteBuffer toByteBuffer(DataPointsRowKey dataPointsRowKey)
+	public ByteBuffer toByteBuffer(final DataPointsRowKey dataPointsRowKey)
 	{
 		ByteBuffer buffer = dataPointsRowKey.getSerializedBuffer();
 		if (buffer != null)
@@ -98,8 +98,6 @@ public class DataPointsRowKeySerializer extends AbstractSerializer<DataPointsRow
 			buffer.put(tagString);
 
 			buffer.flip();
-
-			dataPointsRowKey.setSerializedBuffer(buffer);
 			buffer = buffer.duplicate();
 		}
 

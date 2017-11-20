@@ -22,86 +22,98 @@ import java.util.TreeMap;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
-public class DataPointsRowKey {
-    private final String m_metricName;
-    private final long m_timestamp;
-    private final String m_dataType;
-    private final SortedMap<String, String> m_tags;
-    private boolean m_endSearchKey; //Only used for end slice operations.  Serialization
-    //adds a 0xFF after the timestamp to make sure we get all data for that timestamp.
+public class DataPointsRowKey
+{
+	private final String m_metricName;
+	private final long m_timestamp;
+	private final String m_dataType;
+	private final SortedMap<String, String> m_tags;
+	private boolean m_endSearchKey; //Only used for end slice operations.  Serialization
+		//adds a 0xFF after the timestamp to make sure we get all data for that timestamp.
 
-    private ByteBuffer m_serializedBuffer = null;
+	private ByteBuffer m_serializedBuffer;
 
-    public DataPointsRowKey(String metricName, long timestamp, String dataType) {
-        this(metricName, timestamp, dataType, new TreeMap<>());
-    }
+	public DataPointsRowKey(String metricName, long timestamp, String dataType)
+	{
+		this(metricName, timestamp, dataType, new TreeMap<>());
+	}
 
-    public DataPointsRowKey(String metricName, long timestamp, String datatype,
-                            SortedMap<String, String> tags) {
-        m_metricName = checkNotNullOrEmpty(metricName);
-        m_timestamp = timestamp;
-        m_dataType = checkNotNull(datatype);
-        m_tags = tags;
-    }
+	public DataPointsRowKey(String metricName, long timestamp, String datatype,
+			SortedMap<String, String> tags)
+	{
+		m_metricName = checkNotNullOrEmpty(metricName);
+		m_timestamp = timestamp;
+		m_dataType = checkNotNull(datatype);
+		m_tags = tags;
 
-    public void addTag(String name, String value) {
-        m_tags.put(name, value);
-    }
+	}
 
-    public String getMetricName() {
-        return m_metricName;
-    }
+	public void addTag(String name, String value)
+	{
+		m_tags.put(name, value);
+	}
 
-    public SortedMap<String, String> getTags() {
-        return m_tags;
-    }
+	public String getMetricName()
+	{
+		return m_metricName;
+	}
 
-    public long getTimestamp() {
-        return m_timestamp;
-    }
+	public SortedMap<String, String> getTags()
+	{
+		return m_tags;
+	}
 
-    public boolean isEndSearchKey() {
-        return m_endSearchKey;
-    }
+	public long getTimestamp()
+	{
+		return m_timestamp;
+	}
 
-    public void setEndSearchKey(boolean endSearchKey) {
-        m_endSearchKey = endSearchKey;
-    }
+	public boolean isEndSearchKey()
+	{
+		return m_endSearchKey;
+	}
 
-    /**
-     * If this returns "" (empty string)` then it is the old row key format and the data type
-     * is determined by the timestamp bit in the column.
-     *
-     * @return
-     */
-    public String getDataType() {
-        return m_dataType;
-    }
+	public void setEndSearchKey(boolean endSearchKey)
+	{
+		m_endSearchKey = endSearchKey;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+	/**
+	 If this returns "" (empty string)` then it is the old row key format and the data type
+	 is determined by the timestamp bit in the column.
+	 @return
+	 */
+	public String getDataType()
+	{
+		return m_dataType;
+	}
 
-        DataPointsRowKey that = (DataPointsRowKey) o;
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
 
-        if (m_timestamp != that.m_timestamp) return false;
-        if (m_dataType != null ? !m_dataType.equals(that.m_dataType) : that.m_dataType != null)
-            return false;
-        if (!m_metricName.equals(that.m_metricName)) return false;
-        if (!m_tags.equals(that.m_tags)) return false;
+		DataPointsRowKey that = (DataPointsRowKey) o;
 
-        return true;
-    }
+		if (m_timestamp != that.m_timestamp) return false;
+		if (m_dataType != null ? !m_dataType.equals(that.m_dataType) : that.m_dataType != null)
+			return false;
+		if (!m_metricName.equals(that.m_metricName)) return false;
+		if (!m_tags.equals(that.m_tags)) return false;
 
-    @Override
-    public int hashCode() {
-        int result = m_metricName.hashCode();
-        result = 31 * result + (int) (m_timestamp ^ (m_timestamp >>> 32));
-        result = 31 * result + (m_dataType != null ? m_dataType.hashCode() : 0);
-        result = 31 * result + m_tags.hashCode();
-        return result;
-    }
+		return true;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		int result = m_metricName.hashCode();
+		result = 31 * result + (int) (m_timestamp ^ (m_timestamp >>> 32));
+		result = 31 * result + (m_dataType != null ? m_dataType.hashCode() : 0);
+		result = 31 * result + m_tags.hashCode();
+		return result;
+	}
 
 	@Override
 	public String toString()

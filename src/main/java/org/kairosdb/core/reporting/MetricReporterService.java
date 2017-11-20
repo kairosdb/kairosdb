@@ -15,7 +15,6 @@
  */
 package org.kairosdb.core.reporting;
 
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
@@ -24,7 +23,6 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.scheduler.KairosDBJob;
-import org.kairosdb.util.Tags;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -32,98 +30,65 @@ import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 import static org.quartz.TriggerBuilder.newTrigger;
 
-public class MetricReporterService implements KairosDBJob
-{
-	public static final Logger logger = LoggerFactory.getLogger(MetricReporterService.class);
+public class MetricReporterService implements KairosDBJob {
+    public static final Logger logger = LoggerFactory.getLogger(MetricReporterService.class);
 
-	public static final String HOSTNAME = "HOSTNAME";
-	public static final String SCHEDULE_PROPERTY = "kairosdb.reporter.schedule";
+    public static final String HOSTNAME = "HOSTNAME";
+    public static final String SCHEDULE_PROPERTY = "kairosdb.reporter.schedule";
 
-	private KairosDatastore m_datastore;
-	private List<KairosMetricReporter> m_reporters;
-	private final String m_hostname;
-	private final String m_schedule;
+    private MetricReportingConfiguration config;
+    private KairosDatastore m_datastore;
+    private List<KairosMetricReporter> m_reporters;
+    private final String m_hostname;
+    private final String m_schedule;
 
-	@Inject
-	private LongDataPointFactory m_dataPointFactory = new LongDataPointFactoryImpl();
+    @Inject
+    public MetricReporterService(MetricReportingConfiguration config, KairosDatastore datastore,
+                                 List<KairosMetricReporter> reporters,
+                                 @Named(SCHEDULE_PROPERTY) String schedule,
+                                 @Named(HOSTNAME) String hostname) {
+        this.config = checkNotNull(config);
+        m_datastore = checkNotNull(datastore);
+        m_hostname = checkNotNullOrEmpty(hostname);
+        m_reporters = reporters;
+        m_schedule = schedule;
+    }
 
-	@Inject
-	public MetricReporterService(KairosDatastore datastore,
-			List<KairosMetricReporter> reporters,
-			@Named(SCHEDULE_PROPERTY) String schedule,
-			@Named(HOSTNAME) String hostname)
-	{
-		m_datastore = checkNotNull(datastore);
-		m_hostname = checkNotNullOrEmpty(hostname);
-		m_reporters = reporters;
-		m_schedule = schedule;
-	}
+    @Override
+    public Trigger getTrigger() {
+        return (newTrigger()
+                .withIdentity(this.getClass().getSimpleName())
+                .withSchedule(CronScheduleBuilder.cronSchedule(m_schedule)) //Schedule to run every minute
+                .build());
+    }
 
-
-	private int getThreadCount()
-	{
-		ThreadGroup tg = Thread.currentThread().getThreadGroup();
-		while (tg.getParent() != null)
-		{
-			tg = tg.getParent();
-		}
-
-		return tg.activeCount();
-	}
-
-	@Override
-	public Trigger getTrigger()
-	{
-		return (newTrigger()
-				.withIdentity(this.getClass().getSimpleName())
-				.withSchedule(CronScheduleBuilder.cronSchedule(m_schedule)) //Schedule to run every minute
-				.build());
-	}
-
-	@Override
-	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
-	{
-		logger.debug("Reporting metrics");
-		long timestamp = System.currentTimeMillis();
-		try
-		{
-			for (KairosMetricReporter reporter : m_reporters)
-			{
-				List<DataPointSet> dpList = reporter.getMetrics(timestamp);
-				for (DataPointSet dataPointSet : dpList)
-				{
-					for (DataPoint dataPoint : dataPointSet.getDataPoints())
-					{
-						m_datastore.putDataPoint(dataPointSet.getName(),
-								dataPointSet.getTags(), dataPoint);
-					}
-				}
-			}
-
-
-			Runtime runtime = Runtime.getRuntime();
-			ImmutableSortedMap<String, String> tags = Tags.create()
-					.put("host", m_hostname).build();
-			m_datastore.putDataPoint("kairosdb.jvm.free_memory",
-					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.freeMemory()));
-			m_datastore.putDataPoint("kairosdb.jvm.total_memory",
-					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.totalMemory()));
-			m_datastore.putDataPoint("kairosdb.jvm.max_memory",
-					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.maxMemory()));
-			m_datastore.putDataPoint("kairosdb.jvm.thread_count",
-					tags, m_dataPointFactory.createDataPoint(timestamp, getThreadCount()));
-		}
-		catch (Throwable e)
-		{
-			// prevent the thread from dying
-			logger.error("Reporter service error", e);
-		}
-	}
+    @Override
+    public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
+        if(config.isEnabled()) {
+            logger.debug("Reporting metrics");
+            long timestamp = System.currentTimeMillis();
+            try {
+                for (KairosMetricReporter reporter : m_reporters) {
+                    List<DataPointSet> dpList = reporter.getMetrics(timestamp);
+                    for (DataPointSet dataPointSet : dpList) {
+                        for (DataPoint dataPoint : dataPointSet.getDataPoints()) {
+                            logger.debug("Storing internal metric {} = {}", dataPointSet.getName(), dataPoint);
+                            m_datastore.putDataPoint(dataPointSet.getName(), dataPointSet.getTags(), dataPoint);
+                        }
+                    }
+                }
+            } catch (Throwable e) {
+                // prevent the thread from dying
+                logger.error("Reporter service error", e);
+            }
+        } else {
+            logger.debug("Metric reporting is disabled");
+        }
+    }
 }

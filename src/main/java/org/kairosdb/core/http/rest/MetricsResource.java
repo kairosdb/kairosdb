@@ -37,6 +37,7 @@ import org.kairosdb.core.formatter.JsonResponse;
 import org.kairosdb.core.http.rest.json.*;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.datastore.cassandra.MaxRowKeysForQueryExceededException;
 import org.kairosdb.util.MemoryMonitorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -449,6 +450,11 @@ public class MetricsResource implements KairosMetricReporter
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addErrors(e.getErrorMessages()).build();
+		}
+		catch (MaxRowKeysForQueryExceededException e) {
+			logger.error("Query failed with too many rows", e);
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addError(e.getMessage()).build();
 		}
 		catch (MemoryMonitorException e)
 		{

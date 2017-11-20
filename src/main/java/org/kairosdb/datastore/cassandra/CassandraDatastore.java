@@ -16,16 +16,21 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.*;
-import com.google.common.collect.*;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
-import org.kairosdb.datastore.cassandra.cache.StringKeyCache;
+import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.util.KDataOutput;
 import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
@@ -36,14 +41,12 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.datastore.cassandra.cache.DefaultMetricNameCache.METRIC_NAME_CACHE;
-import static org.kairosdb.datastore.cassandra.cache.DefaultTagNameCache.TAG_NAME_CACHE;
-import static org.kairosdb.datastore.cassandra.cache.DefaultTagValueCache.TAG_VALUE_CACHE;
 
 public class CassandraDatastore implements Datastore {
     public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
@@ -76,14 +79,12 @@ public class CassandraDatastore implements Datastore {
     public final long m_rowWidthRead;
     public final long m_rowWidthWrite;
 
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
-    public static final String ROW_KEY_METRIC_NAMES = "metric_names";
-    private static final ByteBuffer METRIC_NAME_BYTE_BUFFER = ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8));
+    public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
 
+    public static final String ROW_KEY_METRIC_NAMES = "metric_names";
     public static final String ROW_KEY_TAG_NAMES = "tag_names";
-    private static final ByteBuffer ROW_KEY_TAG_NAMES_BYTE_BUFFER = ByteBuffer.wrap(ROW_KEY_TAG_NAMES.getBytes(UTF_8));
     public static final String ROW_KEY_TAG_VALUES = "tag_values";
-    private static final ByteBuffer ROW_KEY_TAG_VALUES_BYTE_BUFFER = ByteBuffer.wrap(ROW_KEY_TAG_VALUES.getBytes(UTF_8));
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
 
     private final CassandraClient m_cassandraClient;
     private final Session m_session;
@@ -97,29 +98,33 @@ public class CassandraDatastore implements Datastore {
     private final PreparedStatement m_psQueryRowKeySplitIndex;
     private final PreparedStatement m_psQueryDataPoints;
 
-    private final RowKeyCache rowKeyCache;
-    private final StringKeyCache metricNameCache;
-    private final StringKeyCache tagNameCache;
-    private final StringKeyCache tagValueCache;
+    private final Cache<DataPointsRowKey, Boolean> m_rowKeyCache;
+
+    private final Cache<String, Boolean> m_metricNameCache;
+
+    private final Cache<String, Boolean> m_tagNameCache;
+
+    private final Cache<String, Boolean> m_tagValueCache;
 
     private final KairosDataPointFactory m_kairosDataPointFactory;
 
-    private final Set<String> m_indexTagList;
+    private final List<String> m_indexTagList;
 
     private CassandraConfiguration m_cassandraConfiguration;
 
     @Inject
-    public CassandraDatastore(CassandraClient cassandraClient, CassandraConfiguration cassandraConfiguration,
-                              KairosDataPointFactory kairosDataPointFactory, RowKeyCache rowKeyCache,
-                              @Named(METRIC_NAME_CACHE) StringKeyCache metricNameCache,
-                              @Named(TAG_NAME_CACHE) StringKeyCache tagNameCache,
-                              @Named(TAG_VALUE_CACHE) StringKeyCache tagValueCache
-    ) throws DatastoreException {
+    private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
+
+    @Inject
+    private List<RowKeyListener> m_rowKeyListeners = Collections.EMPTY_LIST;
+
+    @Inject
+    public CassandraDatastore(@Named("HOSTNAME") final String hostname,
+                              CassandraClient cassandraClient,
+                              CassandraConfiguration cassandraConfiguration,
+                              KairosDataPointFactory kairosDataPointFactory) throws DatastoreException {
+
         m_cassandraConfiguration = cassandraConfiguration;
-        this.rowKeyCache = rowKeyCache;
-        this.metricNameCache = metricNameCache;
-        this.tagNameCache = tagNameCache;
-        this.tagValueCache = tagValueCache;
 
         logger.warn("Setting tag index: {}", cassandraConfiguration.getIndexTagList());
         logger.warn("Setting metric name cache size: {}", cassandraConfiguration.getMetricNameCacheSize());
@@ -127,11 +132,27 @@ public class CassandraDatastore implements Datastore {
         logger.warn("Setting tag name cache size: {}", cassandraConfiguration.getTagNameCacheSize());
         logger.warn("Setting tag value cache size: {}", cassandraConfiguration.getTagValueCacheSize());
 
-        m_indexTagList = Arrays.stream(cassandraConfiguration.getIndexTagList().split(","))
-                .map(String::trim)
-                .filter(Objects::nonNull)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toSet());
+        m_rowKeyCache = Caffeine.newBuilder()
+                .initialCapacity(cassandraConfiguration.getRowKeyCacheSize()/3 + 1)
+                .maximumSize(cassandraConfiguration.getRowKeyCacheSize())
+                .expireAfterWrite(24, TimeUnit.HOURS).build();
+
+        m_metricNameCache = Caffeine.newBuilder()
+                .initialCapacity(cassandraConfiguration.getMetricNameCacheSize()/3 + 1)
+                .maximumSize(cassandraConfiguration.getMetricNameCacheSize())
+                .expireAfterWrite(24, TimeUnit.HOURS).build();
+
+        m_tagNameCache = Caffeine.newBuilder()
+                .initialCapacity(cassandraConfiguration.getTagNameCacheSize()/3 + 1)
+                .maximumSize(cassandraConfiguration.getTagNameCacheSize())
+                .expireAfterWrite(24, TimeUnit.HOURS).build();
+
+        m_tagValueCache = Caffeine.newBuilder()
+                .initialCapacity(cassandraConfiguration.getTagValueCacheSize()/3 + 1)
+                .maximumSize(cassandraConfiguration.getTagValueCacheSize())
+                .expireAfterWrite(24, TimeUnit.HOURS).build();
+
+        m_indexTagList = Arrays.asList(cassandraConfiguration.getIndexTagList().split(",")).stream().map(String::trim).collect(Collectors.toList());
 
         m_cassandraClient = cassandraClient;
         m_kairosDataPointFactory = kairosDataPointFactory;
@@ -178,9 +199,21 @@ public class CassandraDatastore implements Datastore {
 
         if (null != setup) {
             setup.initSchema();
-        } else {
-            logger.info("Cassandra Setup not performed");
         }
+        else {
+            logger.info("Not Cassandra Setup being performced");
+        }
+
+        return;
+    }
+
+    public void increaseMaxBufferSizes() {
+        /*m_dataPointWriteBuffer.increaseMaxBufferSize();
+		m_rowKeyWriteBuffer.increaseMaxBufferSize();
+		m_stringIndexWriteBuffer.increaseMaxBufferSize();*/
+    }
+
+    public void cleanRowKeyCache() {
     }
 
     @Override
@@ -188,6 +221,14 @@ public class CassandraDatastore implements Datastore {
         m_session.close();
         m_cassandraClient.close();
     }
+
+    private final Integer LOCK_ROW_KEY = new Integer(1);
+    private final Boolean CACHE_BOOLEAN = new Boolean(true);
+
+    private volatile int keyInsertCount = 0;
+    private volatile long keyInsertTimer = System.currentTimeMillis();
+
+    private final Map<String, Integer> insertCountByMetric = new HashMap<>();
 
     @Override
     public void putDataPoint(String metricName,
@@ -209,44 +250,121 @@ public class CassandraDatastore implements Datastore {
             }
 
             final long rowTime = calculateRowTimeWrite(dataPoint.getTimestamp());
-            final DataPointsRowKey dataPointsRowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(), tags);
-            final ByteBuffer serializedKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(dataPointsRowKey);
+            final DataPointsRowKey rowKey = new DataPointsRowKey(metricName, rowTime, dataPoint.getDataStoreDataType(), tags);
+            List<Map.Entry<String, Integer>> countsByMetricName = null;
 
             // Write out the row key if it is not cached
-            final boolean rowKeyKnown = rowKeyCache.isKnown(serializedKey);
-            if (!rowKeyKnown) {
-                storeRowKeyReverseLookups(metricName, serializedKey, rowKeyTtl, tags);
-                rowKeyCache.put(serializedKey);
+            boolean writeRowKey = false;
+            Boolean isCachedKey = m_rowKeyCache.getIfPresent(rowKey);
+            if (isCachedKey == null) {
+                synchronized (LOCK_ROW_KEY) {
+                    isCachedKey = m_rowKeyCache.getIfPresent(rowKey);
+                    if (null == isCachedKey) {
+                        // leave lock
+                        writeRowKey = true;
+                        m_rowKeyCache.put(rowKey, CACHE_BOOLEAN);
+
+                        int count = ++keyInsertCount;
+                        if(insertCountByMetric.containsKey(metricName)) {
+                            insertCountByMetric.put(metricName, insertCountByMetric.get(metricName) + 1);
+                        }
+                        else {
+                            insertCountByMetric.put(metricName, 1);
+                        }
+
+                        if ((writeTime - keyInsertTimer) > 30_000) {
+                            keyInsertTimer = writeTime;
+                            keyInsertCount = 0;
+                            countsByMetricName = new ArrayList<>();
+                            countsByMetricName.addAll(insertCountByMetric.entrySet());
+                            insertCountByMetric.clear();
+                            logger.warn("RowKeys inserted: count={}", count);
+                        }
+                    }
+                }
+            }
+
+            if (writeRowKey) {
+
+                BoundStatement bs = new BoundStatement(m_psInsertRowKey);
+                bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
+
+                ByteBuffer serializedKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey);
+
+                bs.setBytes(1, serializedKey);
+                bs.setInt(2, rowKeyTtl);
+                m_session.executeAsync(bs);
+
+                for (String split : m_indexTagList) {
+                    String v = tags.get(split);
+                    if (null == v || "".equals(v)) {
+                        continue;
+                    }
+
+                    bs = new BoundStatement(m_psInsertRowKeySplit);
+                    bs.setString(0, metricName);
+                    bs.setString(1, split);
+                    bs.setString(2, v);
+                    bs.setBytes(3, serializedKey);
+                    bs.setInt(4, rowKeyTtl);
+
+                    m_session.executeAsync(bs);
+                }
+
+                for (RowKeyListener rowKeyListener : m_rowKeyListeners) {
+                    rowKeyListener.addRowKey(metricName, rowKey, rowKeyTtl);
+                }
+
+                if (countsByMetricName != null) {
+                    Collections.sort(countsByMetricName, (x,y) -> y.getValue() - x.getValue());
+                    logger.warn("Keys inserted: {}", countsByMetricName.subList(0, Math.min(10, countsByMetricName.size())));
+                }
             }
 
             //Write metric name if not in cache
-            if (!metricNameCache.isKnown(metricName)) {
+            Boolean isCachedName  = m_metricNameCache.getIfPresent(metricName);
+            if (isCachedName == null) {
+                m_metricNameCache.put(metricName, CACHE_BOOLEAN);
                 if (metricName.length() == 0) {
-                    logger.warn("Attempted to add empty metric name to string index. Row looks like: {}", dataPoint);
+                    logger.warn(
+                            "Attempted to add empty metric name to string index. Row looks like: " + dataPoint
+                    );
                 }
-                storeStringIndex(metricName, m_psInsertString, METRIC_NAME_BYTE_BUFFER);
-                metricNameCache.put(metricName);
+                BoundStatement bs = new BoundStatement(m_psInsertString);
+                bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
+                bs.setString(1, metricName);
+                m_session.executeAsync(bs);
             }
 
             //Check tag names and values to write them out
-            for (final String tagName : tags.keySet()) {
-                if (!tagNameCache.isKnown(tagName)) {
+            for (String tagName : tags.keySet()) {
+                Boolean isCachedTagName = m_tagNameCache.getIfPresent(tagName);
+                if (isCachedTagName == null) {
+                    m_tagNameCache.put(tagName, CACHE_BOOLEAN);
                     if (tagName.length() == 0) {
-                        logger.warn("Attempted to add empty tagName to string cache for metric: {}", metricName);
+                        logger.warn(
+                                "Attempted to add empty tagName to string cache for metric: " + metricName
+                        );
                     }
-                    storeStringIndex(tagName, m_psInsertString, ROW_KEY_TAG_NAMES_BYTE_BUFFER);
-                    tagNameCache.put(tagName);
+                    BoundStatement bs = new BoundStatement(m_psInsertString);
+                    bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_NAMES.getBytes(UTF_8)));
+                    bs.setString(1, tagName);
+                    m_session.executeAsync(bs);
                 }
 
-                final String value = tags.get(tagName);
-                boolean isCachedValue = tagValueCache.isKnown(value);
-                if (m_cassandraConfiguration.getTagValueCacheSize() > 0 && !isCachedValue) {
-                    if (value.length() == 0) {
-                        logger.warn("Attempted to add empty tagValue (tag name {}) to string cache for metric: {}",
-                                tagName, metricName);
+                String value = tags.get(tagName);
+                Boolean isCachedValue = m_tagValueCache.getIfPresent(value);
+                if (m_cassandraConfiguration.getTagValueCacheSize() > 0 && isCachedValue == null) {
+                    m_tagValueCache.put(value, CACHE_BOOLEAN);
+                    if (value.toString().length() == 0) {
+                        logger.warn(
+                                "Attempted to add empty tagValue (tag name " + tagName + ") to string cache for metric: " + metricName
+                        );
                     }
-                    storeStringIndex(value, m_psInsertString, ROW_KEY_TAG_VALUES_BYTE_BUFFER);
-                    tagValueCache.put(value);
+                    BoundStatement bs = new BoundStatement(m_psInsertString);
+                    bs.setBytes(0, ByteBuffer.wrap(ROW_KEY_TAG_VALUES.getBytes(UTF_8)));
+                    bs.setString(1, value);
+                    m_session.executeAsync(bs);
                 }
             }
 
@@ -255,7 +373,7 @@ public class CassandraDatastore implements Datastore {
             dataPoint.writeValueToBuffer(kDataOutput);
 
             BoundStatement boundStatement = new BoundStatement(m_psInsertData);
-            boundStatement.setBytes(0, serializedKey);
+            boundStatement.setBytes(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
             ByteBuffer b = ByteBuffer.allocate(4);
             b.putInt(columnTime);
             b.rewind();
@@ -266,38 +384,6 @@ public class CassandraDatastore implements Datastore {
         } catch (Exception e) {
             logger.error("Failed to put data point for metric={} tags={} ttl={}", metricName, tags, ttl);
             throw new DatastoreException(e);
-        }
-    }
-
-    private void storeStringIndex(String value, PreparedStatement m_psInsertString, ByteBuffer key) {
-        BoundStatement bs = new BoundStatement(m_psInsertString);
-        bs.setBytes(0, key);
-        bs.setString(1, value);
-        m_session.executeAsync(bs);
-    }
-
-    private void storeRowKeyReverseLookups(final String metricName, final ByteBuffer serializedKey, final int rowKeyTtl,
-                                           final Map<String, String> tags) {
-        BoundStatement bs = new BoundStatement(m_psInsertRowKey);
-        bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
-        bs.setBytes(1, serializedKey);
-        bs.setInt(2, rowKeyTtl);
-        m_session.executeAsync(bs);
-
-        for (String split : m_indexTagList) {
-            String v = tags.get(split);
-            if (null == v || "".equals(v)) {
-                continue;
-            }
-
-            bs = new BoundStatement(m_psInsertRowKeySplit);
-            bs.setString(0, metricName);
-            bs.setString(1, split);
-            bs.setString(2, v);
-            bs.setBytes(3, serializedKey);
-            bs.setInt(4, rowKeyTtl);
-
-            m_session.executeAsync(bs);
         }
     }
 
@@ -373,7 +459,7 @@ public class CassandraDatastore implements Datastore {
         rowKeys = sorted;
 
         if (rowKeys.size() < 64) {
-            for (DataPointsRowKey k : rowKeys) {
+            for(DataPointsRowKey k : rowKeys) {
                 // logger.info("<64: delta={}", k.getTimestamp() - currentTimeTier);
                 currentTimeTier = k.getTimestamp();
             }
@@ -411,7 +497,7 @@ public class CassandraDatastore implements Datastore {
                     queryKeys,
                     query.getStartTime(), query.getEndTime(), m_rowWidthRead, queryCallback, query.getLimit(), query.getOrder()));
         }
-
+        
         //Changing the check rate
         mm.setCheckRate(1);
         try {
@@ -431,6 +517,8 @@ public class CassandraDatastore implements Datastore {
     @Override
     public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException {
         checkNotNull(deleteQuery);
+
+        long now = System.currentTimeMillis();
 
         boolean deleteAll = false;
         if (deleteQuery.getStartTime() == Long.MIN_VALUE && deleteQuery.getEndTime() == Long.MAX_VALUE)
@@ -545,7 +633,7 @@ public class CassandraDatastore implements Datastore {
         int ret = (int) (timestamp - rowTime);
 
 		/*
-            The timestamp is shifted to support legacy datapoints that
+			The timestamp is shifted to support legacy datapoints that
 			used the extra bit to determine if the value was long or double
 		 */
         return (ret << 1);
@@ -563,7 +651,7 @@ public class CassandraDatastore implements Datastore {
 
     /**
      * Convert a GLOB style pattern ("*" for any number of any char, "?" for exactly one char) to a regex pattern.
-     * <p>
+     *
      * Code borrowed from Spring's AntPathMatcher.java (Apache 2 license)
      */
     public static Pattern convertGlobToPattern(String pattern) {
@@ -647,11 +735,11 @@ public class CassandraDatastore implements Datastore {
         String useSplitField = null;
         Set<String> useSplit = new HashSet<>();
 
-        for (String split : m_indexTagList) {
+        for(String split : m_indexTagList) {
             if (filterTags.containsKey(split)) {
                 Set<String> vs = filterTags.get(split);
-                if (((vs.size() < useSplit.size() && useSplit.size() > 0) || (vs.size() > 0 && useSplit.size() == 0))
-                        && vs.stream().noneMatch(x -> x.contains("*") || x.contains("?"))) {
+                if(((vs.size() < useSplit.size() && useSplit.size() > 0) || (vs.size() > 0 && useSplit.size() == 0))
+                        && vs.stream().noneMatch(x->x.contains("*") || x.contains("?"))) {
                     useSplit = vs;
                     useSplitField = split;
                 }
@@ -668,7 +756,8 @@ public class CassandraDatastore implements Datastore {
             bs.setString(0, metricName);
             bs.setString(1, useSplitField);
             bs.setList(2, Arrays.asList(useSplit.toArray()));
-        } else {
+        }
+        else {
             bs = m_psQueryRowKeyIndex.bind();
 
             ByteBuffer bMetricName;

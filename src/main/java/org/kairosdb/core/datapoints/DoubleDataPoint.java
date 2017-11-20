@@ -1,7 +1,6 @@
 package org.kairosdb.core.datapoints;
 
 
-import org.joda.time.DateTime;
 import org.json.JSONException;
 import org.json.JSONWriter;
 
@@ -101,14 +100,5 @@ public class DoubleDataPoint extends DataPointHelper
 	{
 		long temp = Double.doubleToLongBits(m_value);
 		return (int) (temp ^ (temp >>> 32));
-	}
-
-	@Override
-	public String toString()
-	{
-		return "DoubleDataPoint{" +
-				"m_timestamp=" + new DateTime(m_timestamp) +
-				" m_value=" + m_value +
-				'}';
 	}
 }

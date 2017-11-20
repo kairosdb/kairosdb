@@ -17,6 +17,7 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import org.kairosdb.core.datastore.Datastore;
@@ -25,8 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import static com.google.inject.Scopes.SINGLETON;
 
 public class CassandraModule extends AbstractModule
 {
@@ -63,9 +62,12 @@ public class CassandraModule extends AbstractModule
 	@Override
 	protected void configure()
 	{
-		bind(Datastore.class).to(CassandraDatastore.class).in(SINGLETON);
-		bind(CassandraDatastore.class).in(SINGLETON);
-		bind(CassandraConfiguration.class).in(SINGLETON);
+		bind(Datastore.class).to(CassandraDatastore.class).in(Scopes.SINGLETON);
+		bind(CassandraDatastore.class).in(Scopes.SINGLETON);
+		bind(IncreaseMaxBufferSizesJob.class).in(Scopes.SINGLETON);
+		bind(CleanRowKeyCache.class).in(Scopes.SINGLETON);
+		bind(HectorConfiguration.class).in(Scopes.SINGLETON);
+		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);
 		bind(CassandraClient.class).to(CassandraClientImpl.class);
 
 		bind(new TypeLiteral<List<RowKeyListener>>(){}).toProvider(RowKeyListenerProvider.class);

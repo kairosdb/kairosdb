@@ -25,11 +25,11 @@ public class ElastiCacheWriteBackReadThroughCacheStore implements GeneralHashCac
     public ElastiCacheWriteBackReadThroughCacheStore(final ElastiCacheConfiguration config) throws IOException {
         this.defaultTtlInSeconds = config.getTtlInSeconds();
         this.executor = createExecutorService(config);
-        
+
         this.client = new AWSElasticCacheClient(new InetSocketAddress(config.getHostName(), config.getPort()));
         this.client.setConnectTimeout(config.getConnectionTimeoutInMillis());
         this.client.setOpTimeout(config.getOperationTimeoutInMillis());
-        this.client.setConnectionPoolSize(config.getConnectionPoolSize());
+        this.client.setConnectionPoolSize(config.getWriterThreads());
     }
 
     private ExecutorService createExecutorService(final ElastiCacheConfiguration config) {

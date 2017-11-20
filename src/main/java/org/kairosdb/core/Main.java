@@ -22,12 +22,17 @@ import ch.qos.logback.core.spi.FilterReply;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.google.gson.Gson;
-import com.google.inject.*;
+import com.google.inject.Binding;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.Module;
 import com.google.inject.util.Modules;
 import org.apache.commons.io.FileUtils;
 import org.h2.util.StringUtils;
 import org.json.JSONException;
 import org.json.JSONWriter;
+import org.kairosdb.core.admin.CacheMetricsModule;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryCallback;
@@ -36,16 +41,34 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.http.rest.json.DataPointsParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
+import org.kairosdb.datastore.cassandra.cache.CachingModule;
 import org.kairosdb.util.PluginClassLoader;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
 
 public class Main
 {
@@ -154,6 +177,8 @@ public class Main
 
 		List<Module> moduleList = new ArrayList<Module>();
 		moduleList.add(new CoreModule(props));
+		moduleList.add(new CachingModule());
+		moduleList.add(new CacheMetricsModule());
 
 		for (String propName : props.stringPropertyNames())
 		{
@@ -438,7 +463,7 @@ public class Main
 	}
 
 	/**
-	 * Simple technique to prevent the main thread from existing until we are done
+	 * Simple technique to prevent the main thread from exiting until we are done
 	 */
 	private static void waitForShutdown()
 	{

@@ -80,7 +80,7 @@ public abstract class CassandraSetup {
         try(Session session = client.getKeyspaceSession()) {
             logger.info("Checking and or creating column families ...");
             if(!tableExists(session, "data_points")) {
-                logger.info("Creating table 'data_pints' ...");
+                logger.info("Creating table 'data_points' ...");
                 session.execute(DATA_POINTS_TABLE);
             }
 

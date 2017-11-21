@@ -6,6 +6,7 @@ import org.kairosdb.core.admin.CacheMetricsProvider;
 import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
 
 import java.math.BigInteger;
+import java.util.concurrent.Executor;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -54,7 +55,7 @@ public class AbstractStringCacheTest {
 
 
     private AbstractStringCache createDefaultCache() {
-        return new AbstractStringCache(cacheStore, cacheMetricsProvider, configuration, "testCache") {
+        return new AbstractStringCache(cacheStore, cacheMetricsProvider, configuration, "testCache", mock(Executor.class)) {
         };
     }
 

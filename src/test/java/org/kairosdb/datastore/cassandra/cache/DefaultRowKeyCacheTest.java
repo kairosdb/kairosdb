@@ -7,6 +7,8 @@ import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -32,7 +34,7 @@ public class DefaultRowKeyCacheTest {
     }
 
     private DefaultRowKeyCache createDefaultCache() {
-        return new DefaultRowKeyCache(cacheStore, cacheMetricsProvider, configuration);
+        return new DefaultRowKeyCache(cacheStore, cacheMetricsProvider, configuration, mock(Executor.class));
     }
 
     @Test
@@ -53,19 +55,11 @@ public class DefaultRowKeyCacheTest {
     }
 
     @Test
-    public void testGetHitReadThrough() throws Exception {
-        when(cacheStore.load(any(BigInteger.class))).thenReturn(Boolean.TRUE);
+    public void testGetMissAsyncRefresh() throws Exception {
         final DefaultRowKeyCache cache = createDefaultCache();
         final ByteBuffer given = ByteBuffer.wrap(new byte[]{42, 69});
-        assertTrue(cache.isKnown(given));
-        verify(cacheStore).load(any(BigInteger.class));
-    }
-
-    @Test
-    public void testGetMiss() throws Exception {
-        final DefaultRowKeyCache cache = createDefaultCache();
-        final ByteBuffer given = ByteBuffer.wrap(new byte[]{42, 69});
+        when(cacheStore.asyncLoad(any(BigInteger.class), any())).thenReturn(mock(CompletableFuture.class));
         assertFalse(cache.isKnown(given));
-        verify(cacheStore).load(any(BigInteger.class));
+        verify(cacheStore).asyncLoad(any(BigInteger.class), any());
     }
 }

@@ -8,6 +8,7 @@ import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.concurrent.Executor;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -16,8 +17,9 @@ public abstract class AbstractStringCache extends AbstractByteBufferCache implem
     private static Charset UTF8 = Charset.forName("UTF-8");
 
     protected AbstractStringCache(final GeneralHashCacheStore cacheStore, final CacheMetricsProvider cacheMetricsProvider,
-                                  final CacheConfiguration config, final String cacheId) {
-        super(cacheStore, cacheMetricsProvider, config.getMaxSize(), config.getTtlInSeconds(), cacheId);
+                                  final CacheConfiguration config, final String cacheId,
+                                  final Executor executor) {
+        super(cacheStore, cacheMetricsProvider, config.getMaxSize(), config.getTtlInSeconds(), cacheId, executor);
     }
 
     @Override
@@ -34,12 +36,6 @@ public abstract class AbstractStringCache extends AbstractByteBufferCache implem
     @Override
     public boolean isKnown(@Nonnull String key) {
         final ByteBuffer metric = ByteBuffer.wrap(key.getBytes(UTF8));
-        final BigInteger hash = doubleHash(metric);
-        try {
-            return this.outerLayerCache.get(hash) != null;
-        } catch (Exception e) {
-            LOG.error("failed to read cached entry with key {} ({})", key, hash);
-        }
-        return false;
+        return super.isKnown(metric);
     }
 }

@@ -13,12 +13,16 @@ import static org.kairosdb.datastore.cassandra.cache.DefaultTagValueCache.TAG_VA
 public class CachingModule extends AbstractModule {
     @Override
     protected void configure() {
+        bind(CacheExecutorConfiguration.class).in(SINGLETON);
+        bind(ExecutorConfigurer.class).in(SINGLETON);
+
         bind(ElastiCacheConfiguration.class).in(SINGLETON);
 
         bind(RowKeyCacheConfiguration.class).in(SINGLETON);
         bind(GeneralHashCacheStore.class).annotatedWith(named(ROW_KEY_CACHE))
                 .to(ElastiCacheWriteBackReadThroughCacheStore.class).in(SINGLETON);
         bind(RowKeyCache.class).to(DefaultRowKeyCache.class).in(SINGLETON);
+
 
         bindStringCache(METRIC_NAME_CACHE, MetricNameCacheConfiguration.class, DefaultMetricNameCache.class);
         bindStringCache(TAG_NAME_CACHE, TagNameCacheConfiguration.class, DefaultTagNameCache.class);

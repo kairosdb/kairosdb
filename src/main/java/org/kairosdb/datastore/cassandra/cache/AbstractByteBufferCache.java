@@ -6,8 +6,10 @@ import com.google.common.annotations.VisibleForTesting;
 import org.kairosdb.core.admin.CacheMetricsProvider;
 import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
 
+import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.hash.Hashing.murmur3_128;
@@ -20,11 +22,13 @@ public abstract class AbstractByteBufferCache {
     protected final LoadingCache<BigInteger, Object> outerLayerCache;
 
     protected AbstractByteBufferCache(final GeneralHashCacheStore cacheStore, final CacheMetricsProvider cacheMetricsProvider,
-                                final int maxSize, final int ttlInSeconds, final String cacheId) {
+                                      final int maxSize, final int ttlInSeconds, final String cacheId,
+                                      final Executor executor) {
         this.outerLayerCache = Caffeine.newBuilder()
                 .initialCapacity(maxSize / 3 + 1)
                 .maximumSize(maxSize)
                 .expireAfterWrite(ttlInSeconds, TimeUnit.SECONDS)
+                .executor(executor)
                 .recordStats()
                 .writer(cacheStore)
                 .build(cacheStore);
@@ -40,5 +44,15 @@ public abstract class AbstractByteBufferCache {
                 .putLong(xxHash);
         doubleHash.flip();
         return new BigInteger(doubleHash.array());
+    }
+
+    @VisibleForTesting
+    boolean isKnown(@Nonnull ByteBuffer payload) {
+        final BigInteger hash = doubleHash(payload);
+        final Object ifPresent = this.outerLayerCache.getIfPresent(hash);
+        if (ifPresent == null) {
+            this.outerLayerCache.refresh(hash);
+        }
+        return ifPresent != null;
     }
 }

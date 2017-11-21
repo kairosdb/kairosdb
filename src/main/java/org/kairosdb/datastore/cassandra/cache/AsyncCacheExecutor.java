@@ -1,24 +1,22 @@
 package org.kairosdb.datastore.cassandra.cache;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.Inject;
 import org.kairosdb.datastore.cassandra.cache.persistence.RedisWriteBackReadThroughCacheStore;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
-public class ExecutorConfigurer implements Executor {
+public class AsyncCacheExecutor implements Executor {
     public static final String CACHE_EXECUTOR = "cacheExecutor";
 
     private Executor executor;
 
-    public ExecutorConfigurer(final CacheExecutorConfiguration configuration) {
+    @Inject
+    public AsyncCacheExecutor(final AsyncCacheExecutorConfiguration configuration) {
         this.executor = createExecutorService(configuration);
     }
 
-    private ExecutorService createExecutorService(final CacheExecutorConfiguration config) {
+    private ExecutorService createExecutorService(final AsyncCacheExecutorConfiguration config) {
         final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
                 config.getWriterThreads(),
                 config.getWriterThreads(),

@@ -7,7 +7,7 @@ import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
 
 import java.util.concurrent.Executor;
 
-import static org.kairosdb.datastore.cassandra.cache.ExecutorConfigurer.CACHE_EXECUTOR;
+import static org.kairosdb.datastore.cassandra.cache.AsyncCacheExecutor.CACHE_EXECUTOR;
 
 public class DefaultMetricNameCache extends AbstractStringCache {
     public static final String METRIC_NAME_CACHE = "metricNameCache";

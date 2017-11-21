@@ -7,6 +7,8 @@ import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
 
 import java.util.concurrent.Executor;
 
+import static org.kairosdb.datastore.cassandra.cache.AsyncCacheExecutor.CACHE_EXECUTOR;
+
 public class DefaultTagValueCache extends AbstractStringCache {
     public static final String TAG_VALUE_CACHE = "tagValueCache";
 
@@ -14,7 +16,7 @@ public class DefaultTagValueCache extends AbstractStringCache {
     public DefaultTagValueCache(@Named(TAG_VALUE_CACHE) final GeneralHashCacheStore cacheStore,
                                 final CacheMetricsProvider cacheMetricsProvider,
                                 final TagValueCacheConfiguration config,
-                                final Executor executor) {
+                                @Named(CACHE_EXECUTOR) final Executor executor) {
         super(cacheStore, cacheMetricsProvider, config, TAG_VALUE_CACHE, executor);
     }
 }

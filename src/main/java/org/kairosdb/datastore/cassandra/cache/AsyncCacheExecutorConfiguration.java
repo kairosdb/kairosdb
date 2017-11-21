@@ -3,7 +3,7 @@ package org.kairosdb.datastore.cassandra.cache;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-public class CacheExecutorConfiguration {
+public class AsyncCacheExecutorConfiguration {
     private static final String PREFIX = "kairosdb.datastore.cassandra.cache.executor.";
 
     private static final String WRITER_THREADS = PREFIX + "writer_threads";

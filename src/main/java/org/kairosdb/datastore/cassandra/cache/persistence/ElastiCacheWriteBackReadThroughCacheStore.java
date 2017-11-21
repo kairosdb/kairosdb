@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import net.rubyeye.xmemcached.aws.AWSElasticCacheClient;
+import net.rubyeye.xmemcached.aws.AWSElasticCacheClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,11 +26,14 @@ public class ElastiCacheWriteBackReadThroughCacheStore implements GeneralHashCac
     public ElastiCacheWriteBackReadThroughCacheStore(final ElastiCacheConfiguration config) throws IOException {
         this.defaultTtlInSeconds = config.getTtlInSeconds();
         this.executor = createExecutorService(config);
+        this.client = createElasticacheClient(config);
+    }
 
-        this.client = new AWSElasticCacheClient(new InetSocketAddress(config.getHostName(), config.getPort()));
-        this.client.setConnectTimeout(config.getConnectionTimeoutInMillis());
-        this.client.setOpTimeout(config.getOperationTimeoutInMillis());
-        this.client.setConnectionPoolSize(config.getWriterThreads());
+    private AWSElasticCacheClient createElasticacheClient(final ElastiCacheConfiguration config) throws IOException {
+        AWSElasticCacheClientBuilder builder = new AWSElasticCacheClientBuilder(new InetSocketAddress(config.getHostName(), config.getPort()));
+        builder.setConnectionPoolSize(config.getConnectionPoolSize());
+        builder.setOpTimeout(config.getOperationTimeoutInMillis());
+        return builder.build();
     }
 
     private ExecutorService createExecutorService(final ElastiCacheConfiguration config) {

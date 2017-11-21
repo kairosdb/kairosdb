@@ -14,6 +14,7 @@ public class ElastiCacheConfiguration {
     private static final String TTL_IN_SECONDS = PREFIX + "ttl_in_seconds";
     private static final String MAX_QUEUE_SIZE = PREFIX + "max_queue_size";
     private static final String OPERATION_TIMEOUT_IN_MILLIS = PREFIX + "operation_timeout_in_millis";
+    private static final String CONNECTION_POOL_SIZE = PREFIX + "connection_pool_size";
 
 
     @Inject(optional = true)
@@ -39,6 +40,10 @@ public class ElastiCacheConfiguration {
     @Inject(optional = true)
     @Named(WRITER_THREAD_IDLE_TIMEOUT_SECONDS)
     private int workerThreadIdleTimeoutSeconds = 300;
+
+    @Inject(optional = true)
+    @Named(CONNECTION_POOL_SIZE)
+    private int connectionPoolSize = 20;
 
     @Inject(optional = true)
     @Named(TTL_IN_SECONDS)
@@ -78,5 +83,9 @@ public class ElastiCacheConfiguration {
 
     public int getMaxQueueSize() {
         return maxQueueSize;
+    }
+
+    public int getConnectionPoolSize() {
+        return connectionPoolSize;
     }
 }

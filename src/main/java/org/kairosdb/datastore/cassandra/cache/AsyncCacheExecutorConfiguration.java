@@ -12,7 +12,7 @@ public class AsyncCacheExecutorConfiguration {
 
     @Inject(optional = true)
     @Named(WRITER_THREADS)
-    private int writerThreads = 60;
+    private int writerThreads = 150;
 
     @Inject(optional = true)
     @Named(WRITER_THREAD_IDLE_TIMEOUT_SECONDS)
@@ -20,7 +20,7 @@ public class AsyncCacheExecutorConfiguration {
 
     @Inject(optional=true)
     @Named(MAX_QUEUE_SIZE)
-    private int maxQueueSize = 80_000;
+    private int maxQueueSize = 250_000;
 
     public int getWriterThreads() {
         return writerThreads;

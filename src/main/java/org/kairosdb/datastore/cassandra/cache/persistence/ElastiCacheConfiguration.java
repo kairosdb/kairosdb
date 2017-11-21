@@ -35,7 +35,7 @@ public class ElastiCacheConfiguration {
 
     @Inject(optional = true)
     @Named(WRITER_THREADS)
-    private int writerThreads = 20;
+    private int writerThreads = 80;
 
     @Inject(optional = true)
     @Named(WRITER_THREAD_IDLE_TIMEOUT_SECONDS)
@@ -51,7 +51,7 @@ public class ElastiCacheConfiguration {
 
     @Inject(optional = true)
     @Named(MAX_QUEUE_SIZE)
-    private int maxQueueSize = 20_000;
+    private int maxQueueSize = 200_000;
 
     public String getHostName() {
         return hostName;

@@ -5,6 +5,8 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import org.kairosdb.core.admin.CacheMetricsProvider;
 import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -16,6 +18,7 @@ import static com.google.common.hash.Hashing.murmur3_128;
 import static net.openhft.hashing.LongHashFunction.xx;
 
 public abstract class AbstractByteBufferCache {
+    private final Logger LOG = LoggerFactory.getLogger(AbstractByteBufferCache.class);
     private static final int MURMUR_SEED = 0xDEADBEEF;
     private static final int XX_SEED = 0xCAFEBABE;
 
@@ -51,7 +54,11 @@ public abstract class AbstractByteBufferCache {
         final BigInteger hash = doubleHash(payload);
         final Object ifPresent = this.outerLayerCache.getIfPresent(hash);
         if (ifPresent == null) {
-            this.outerLayerCache.refresh(hash);
+            try {
+                this.outerLayerCache.refresh(hash);
+            } catch (Throwable e) {
+                LOG.error("could not refresh the cache: {}", e.getMessage(), e);
+            }
         }
         return ifPresent != null;
     }

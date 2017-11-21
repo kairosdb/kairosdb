@@ -18,6 +18,7 @@ import static com.google.common.hash.Hashing.murmur3_128;
 import static net.openhft.hashing.LongHashFunction.xx;
 
 public abstract class AbstractByteBufferCache {
+    public static final String DUMMY_PAYLOAD = "t";
     private final Logger LOG = LoggerFactory.getLogger(AbstractByteBufferCache.class);
     private static final int MURMUR_SEED = 0xDEADBEEF;
     private static final int XX_SEED = 0xCAFEBABE;
@@ -57,7 +58,7 @@ public abstract class AbstractByteBufferCache {
             try {
                 this.outerLayerCache.refresh(hash);
             } catch (Throwable e) {
-                LOG.error("could not refresh the cache: {}", e.getMessage(), e);
+                LOG.error("could not refresh the cache: {}", e.getMessage());
             }
         }
         return ifPresent != null;

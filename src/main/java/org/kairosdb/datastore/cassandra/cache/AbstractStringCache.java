@@ -27,7 +27,7 @@ public abstract class AbstractStringCache extends AbstractByteBufferCache implem
         final ByteBuffer metric = ByteBuffer.wrap(key.getBytes(UTF8));
         final BigInteger hash = doubleHash(metric);
         try {
-            this.outerLayerCache.put(hash, key);
+            this.outerLayerCache.put(hash, DUMMY_PAYLOAD);
         } catch (Exception e) {
             LOG.error("failed to write cached entry with key {} ({})", key, hash);
         }

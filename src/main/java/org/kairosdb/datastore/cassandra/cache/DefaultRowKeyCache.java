@@ -29,7 +29,7 @@ public class DefaultRowKeyCache extends AbstractByteBufferCache implements RowKe
     public void put(@Nonnull final ByteBuffer rowKey) {
         final ByteBuffer prefixed = prefixedBufferCopy(rowKey);
         final BigInteger hash = doubleHash(prefixed);
-        this.outerLayerCache.put(hash, rowKey);
+        this.outerLayerCache.put(hash, DUMMY_PAYLOAD);
     }
 
     @Override

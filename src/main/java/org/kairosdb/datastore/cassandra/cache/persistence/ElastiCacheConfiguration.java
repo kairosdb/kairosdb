@@ -47,7 +47,7 @@ public class ElastiCacheConfiguration {
 
     @Inject(optional = true)
     @Named(TTL_IN_SECONDS)
-    private int ttlInSeconds = 691_200; // 8 days default
+    private int ttlInSeconds = 259_200; // 3 days default
 
     @Inject(optional = true)
     @Named(MAX_QUEUE_SIZE)

@@ -1,29 +1,17 @@
 package org.kairosdb.datastore.cassandra.cache;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.admin.CacheMetricsProvider;
 import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
-import org.kairosdb.datastore.cassandra.cache.persistence.RedisWriteBackReadThroughCacheStore;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class DefaultRowKeyCacheTest {
 
@@ -41,7 +29,7 @@ public class DefaultRowKeyCacheTest {
     }
 
     private DefaultRowKeyCache createDefaultCache() {
-        return new DefaultRowKeyCache(cacheStore, cacheMetricsProvider, configuration, mock(Executor.class));
+        return new DefaultRowKeyCache(cacheStore, cacheMetricsProvider, configuration);
     }
 
     @Test
@@ -62,11 +50,19 @@ public class DefaultRowKeyCacheTest {
     }
 
     @Test
-    public void testGetMissAsyncRefresh() throws Exception {
+    public void testGetHitReadThrough() throws Exception {
+        when(cacheStore.load(any(BigInteger.class))).thenReturn(Boolean.TRUE);
         final DefaultRowKeyCache cache = createDefaultCache();
         final ByteBuffer given = ByteBuffer.wrap(new byte[]{42, 69});
-        when(cacheStore.asyncLoad(any(BigInteger.class), any())).thenReturn(mock(CompletableFuture.class));
+        assertTrue(cache.isKnown(given));
+        verify(cacheStore).load(any(BigInteger.class));
+    }
+
+    @Test
+    public void testGetMiss() throws Exception {
+        final DefaultRowKeyCache cache = createDefaultCache();
+        final ByteBuffer given = ByteBuffer.wrap(new byte[]{42, 69});
         assertFalse(cache.isKnown(given));
-        verify(cacheStore).asyncLoad(any(BigInteger.class), any());
+        verify(cacheStore).load(any(BigInteger.class));
     }
 }

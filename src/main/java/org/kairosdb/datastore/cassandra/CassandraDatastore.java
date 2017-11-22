@@ -108,10 +108,6 @@ public class CassandraDatastore implements Datastore {
         this.rowKeyCache = rowKeyCache;
 
         logger.warn("Setting tag index: {}", cassandraConfiguration.getIndexTagList());
-        logger.warn("Setting metric name cache size: {}", cassandraConfiguration.getMetricNameCacheSize());
-        logger.warn("Setting row key cache size: {}", cassandraConfiguration.getRowKeyCacheSize());
-        logger.warn("Setting tag name cache size: {}", cassandraConfiguration.getTagNameCacheSize());
-        logger.warn("Setting tag value cache size: {}", cassandraConfiguration.getTagValueCacheSize());
 
         m_indexTagList = Arrays.stream(cassandraConfiguration.getIndexTagList().split(","))
                 .map(String::trim)

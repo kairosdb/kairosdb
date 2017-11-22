@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.hash.Hashing.murmur3_128;
@@ -26,13 +25,13 @@ public abstract class AbstractByteBufferCache {
     protected final LoadingCache<BigInteger, Object> outerLayerCache;
 
     protected AbstractByteBufferCache(final GeneralHashCacheStore cacheStore, final CacheMetricsProvider cacheMetricsProvider,
-                                      final int maxSize, final int ttlInSeconds, final String cacheId,
-                                      final Executor executor) {
+                                      final int maxSize, final int ttlInSeconds, final String cacheId) {
+        LOG.warn("Initialising cache '{}' with TTL '{}' and max size '{}'", cacheId, ttlInSeconds, maxSize);
+
         this.outerLayerCache = Caffeine.newBuilder()
                 .initialCapacity(maxSize / 3 + 1)
                 .maximumSize(maxSize)
                 .expireAfterWrite(ttlInSeconds, TimeUnit.SECONDS)
-                .executor(executor)
                 .recordStats()
                 .writer(cacheStore)
                 .build(cacheStore);

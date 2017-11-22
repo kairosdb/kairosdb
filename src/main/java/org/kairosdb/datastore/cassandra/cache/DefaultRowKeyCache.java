@@ -8,9 +8,6 @@ import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Executor;
-
-import static org.kairosdb.datastore.cassandra.cache.AsyncCacheExecutor.CACHE_EXECUTOR;
 
 public class DefaultRowKeyCache extends AbstractByteBufferCache implements RowKeyCache {
     public static final String ROW_KEY_CACHE = "rowKeyCache";
@@ -19,10 +16,9 @@ public class DefaultRowKeyCache extends AbstractByteBufferCache implements RowKe
     @Inject
     public DefaultRowKeyCache(@Named(ROW_KEY_CACHE) final GeneralHashCacheStore rowKeyCacheStore,
                               final CacheMetricsProvider cacheMetricsProvider,
-                              final RowKeyCacheConfiguration configuration,
-                              @Named(CACHE_EXECUTOR) final Executor executor) {
+                              final RowKeyCacheConfiguration configuration) {
         super(rowKeyCacheStore, cacheMetricsProvider, configuration.getMaxSize(), configuration.getTtlInSeconds(),
-                ROW_KEY_CACHE, executor);
+                ROW_KEY_CACHE);
     }
 
     @Override

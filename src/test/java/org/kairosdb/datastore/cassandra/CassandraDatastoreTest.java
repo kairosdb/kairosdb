@@ -18,9 +18,7 @@ package org.kairosdb.datastore.cassandra;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import org.hamcrest.CoreMatchers;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.kairosdb.core.*;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.*;
@@ -175,8 +173,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper {
 
         System.out.println("Starting Cassandra Connection: " + cassandraHost);
 
-        CassandraConfiguration cassandraConfig = new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
-                1000, 50000, cassandraHost, "kairosdb_test");
+        CassandraConfiguration cassandraConfig = new CassandraConfiguration(1, cassandraHost, "kairosdb_test");
 
         s_datastore = new CassandraDatastore(new CassandraClientImpl(cassandraConfig), cassandraConfig,
                 dataPointFactory, mock(RowKeyCache.class));

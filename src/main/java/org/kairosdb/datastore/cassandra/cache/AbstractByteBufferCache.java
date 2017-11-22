@@ -8,7 +8,6 @@ import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
@@ -49,17 +48,4 @@ public abstract class AbstractByteBufferCache {
         return new BigInteger(doubleHash.array());
     }
 
-    @VisibleForTesting
-    boolean isKnown(@Nonnull ByteBuffer payload) {
-        final BigInteger hash = doubleHash(payload);
-        final Object ifPresent = this.outerLayerCache.getIfPresent(hash);
-        if (ifPresent == null) {
-            try {
-                this.outerLayerCache.refresh(hash);
-            } catch (Throwable e) {
-                LOG.error("could not refresh the cache: {}", e.getMessage());
-            }
-        }
-        return ifPresent != null;
-    }
 }

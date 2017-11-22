@@ -20,7 +20,7 @@ public class AsyncCacheExecutorConfiguration {
 
     @Inject(optional=true)
     @Named(MAX_QUEUE_SIZE)
-    private int maxQueueSize = 250_000;
+    private int maxQueueSize = 750_000;
 
     public int getWriterThreads() {
         return writerThreads;

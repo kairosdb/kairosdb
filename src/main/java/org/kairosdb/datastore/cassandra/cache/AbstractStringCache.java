@@ -29,7 +29,7 @@ public abstract class AbstractStringCache extends AbstractByteBufferCache implem
         try {
             this.outerLayerCache.put(hash, DUMMY_PAYLOAD);
         } catch (Exception e) {
-            LOG.error("failed to write cached entry with key {} ({})", key, hash);
+            LOG.error("failed to write cached entry with key {} ({}): {}", key, hash, e.getMessage());
         }
     }
 

@@ -35,7 +35,8 @@ public class DefaultRowKeyCache extends AbstractByteBufferCache implements RowKe
     @Override
     public boolean isKnown(@Nonnull final ByteBuffer rowKey) {
         final ByteBuffer prefixed = prefixedBufferCopy(rowKey);
-        return super.isKnown(prefixed);
+        final BigInteger hash = doubleHash(prefixed);
+        return this.outerLayerCache.get(hash) != null;
     }
 
     private ByteBuffer prefixedBufferCopy(final @Nonnull ByteBuffer rowKey) {

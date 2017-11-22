@@ -14,7 +14,7 @@
                 </encoder>
         </appender>
 
-        <root level="ERROR">
+        <root level="WARN">
                 <appender-ref ref="stdout"/>
         </root>
 </configuration>

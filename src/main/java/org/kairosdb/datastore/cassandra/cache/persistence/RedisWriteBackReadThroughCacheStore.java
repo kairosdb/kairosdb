@@ -75,12 +75,5 @@ public class RedisWriteBackReadThroughCacheStore implements GeneralHashCacheStor
     @Override
     public void delete(@Nonnull final BigInteger key, @Nullable final Object value, @Nonnull final RemovalCause removalCause) {
         checkNotNull(key, "cache key can't be null");
-        executor.submit(() -> {
-            try (final Jedis jedis = jedisPool.getResource()) {
-                jedis.del(key.toString());
-            } catch (Exception e) {
-                LOG.error("failed to delete cache key {}: {}", key, e.getMessage());
-            }
-        });
     }
 }

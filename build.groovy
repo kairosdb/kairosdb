@@ -97,6 +97,7 @@ ivy.createPomRule("pom.xml", ivy.getResolveRule("default"), ivy.getResolveRule("
 		.setName("project-pom")
 		.setDescription("Use this target to generate a pom used for opening project in IDE")
 		.setJavaVersion("1.8")
+		//.alwaysRun()
 
 //------------------------------------------------------------------------------
 //==-- Maven POM Rule --==
@@ -513,6 +514,42 @@ def doDocs(Rule rule)
 }
 
 
+//---------------------------------------------------------------------------
+//Build Docker container
+dockerBuild = new SimpleRule("docker-build").setDescription("Build a Docker image, can specify docker registry with -D DOCKER_REGISTRY=<registry>")
+		.addDepend(tarRule)
+		.setMakeAction("doDockerBuild")
+
+def doDockerBuild(Rule rule)
+{
+	def tag = getDockerTag()
+	command = "docker build -t ${tag} --build-arg VERSION=${version}-${release} ."
+	saw.exec(command)
+}
+
+def getDockerTag()
+{
+	def registry = saw.getProperty("DOCKER_REGISTRY", "");
+
+	if ( registry != "" ) {
+		registry += "/"
+	}
+
+	return registry + "${programName}:${version}-${release}"
+}
+
+//------------------------------------------------------------------------------
+// Push container
+new SimpleRule("docker-push").setDescription("Push a Docker image to registry, can specify docker registry with -D DOCKER_REGISTRY=<registry>")
+		.addDepend(dockerBuild)
+		.setMakeAction("doDockerPush")
+
+def doDockerPush(Rule rule)
+{
+	def tag = getDockerTag()
+	command = "docker push ${tag}"
+	saw.exec(command)
+}
 
 //------------------------------------------------------------------------------
 //==-- Maven Artifacts --==

@@ -2,12 +2,17 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.exceptions.InvalidQueryException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  Created by bhawkins on 4/29/17.
  */
 public class Schema
 {
+	public static final Logger logger = LoggerFactory.getLogger(Schema.class);
+
 	public static final String CREATE_KEYSPACE = "" +
 			"CREATE KEYSPACE IF NOT EXISTS %s" +
 			"  WITH REPLICATION = {'class': 'SimpleStrategy'," +
@@ -19,7 +24,19 @@ public class Schema
 			"  column1 blob,\n" +
 			"  value blob,\n" +
 			"  PRIMARY KEY ((key), column1)\n" +
-			") WITH COMPACT STORAGE";
+			")";
+
+	//This is effectively what the above table is
+	/*public static final String DATA_POINTS_TABLE = "" +
+			"CREATE TABLE IF NOT EXISTS data_points (\n" +
+			"  metric text, " +
+			"  row_time timestamp, " +
+			"  data_type text, " +
+			"  tags frozen<map<text, text>>, " +
+			"  offset int, "+
+			"  value blob, " +
+			"  PRIMARY KEY ((metric, row_time, data_type, tags), offset)" +
+			")";*/
 
 	public static final String ROW_KEY_INDEX_TABLE = "" +
 			"CREATE TABLE IF NOT EXISTS row_key_index (\n" +
@@ -27,7 +44,7 @@ public class Schema
 			"  column1 blob,\n" +
 			"  value blob,\n" +
 			"  PRIMARY KEY ((key), column1)\n" +
-			") WITH COMPACT STORAGE";
+			")";
 
 	public static final String ROW_KEY_TIME_INDEX = "" +
 			"CREATE TABLE IF NOT EXISTS row_key_time_index (\n" +
@@ -37,13 +54,13 @@ public class Schema
 			"  PRIMARY KEY ((metric), row_time)\n" +
 			")";
 
-	//todo Add static timeuuid to row keys
 	public static final String ROW_KEYS = "" +
 			"CREATE TABLE IF NOT EXISTS row_keys (\n" +
 			"  metric text,\n" +
 			"  row_time timestamp,\n" +
 			"  data_type text,\n" +
 			"  tags frozen<map<text, text>>,\n" +
+			"  mtime timeuuid static,\n" +
 			"  value text,\n" +
 			"  PRIMARY KEY ((metric, row_time), data_type, tags)\n" +
 			")";
@@ -54,16 +71,16 @@ public class Schema
 			"  column1 text,\n" +
 			"  value blob,\n" +
 			"  PRIMARY KEY ((key), column1)\n" +
-			") WITH COMPACT STORAGE";
+			")";
 
-	//todo add static timeuuid to service index
 	public static final String SERVICE_INDEX = "" +
 			"CREATE TABLE IF NOT EXISTS service_index (" +
 			" service text," +
 			" service_key text," +
 			" key text," +
+			" mtime timeuuid static, "+
 			" value text," +
-			" PRIMARY KEY ((service), service_key, key)" +
+			" PRIMARY KEY ((service, service_key), key)" +
 			")";
 
 
@@ -76,7 +93,7 @@ public class Schema
 			"(metric, row_time) VALUES (?, ?) USING TTL ? AND TIMESTAMP ?";
 
 	public static final String ROW_KEY_INSERT = "INSERT INTO row_keys " +
-			"(metric, row_time, data_type, tags) VALUES (?, ?, ?, ?) USING TTL ?"; // AND TIMESTAMP ?";
+			"(metric, row_time, data_type, tags, mtime) VALUES (?, ?, ?, ?, now()) USING TTL ?"; // AND TIMESTAMP ?";
 
 	public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
 			"(key, column1, value) VALUES (?, ?, 0x00)";
@@ -96,8 +113,11 @@ public class Schema
 	public static final String DATA_POINTS_QUERY_ASC_LIMIT = DATA_POINTS_QUERY_ASC+" LIMIT ?";
 	public static final String DATA_POINTS_QUERY_DESC_LIMIT = DATA_POINTS_QUERY_DESC+" LIMIT ?";
 
-	public static final String DATA_POINTS_DELETE = "DELETE FROM data_points " +
+	public static final String DATA_POINTS_DELETE_RANGE = "DELETE FROM data_points " +
 			"WHERE key = ? AND column1 >= ? AND column1 <= ?";
+
+	public static final String DATA_POINTS_DELETE = "DELETE FROM data_points " +
+			"WHERE key = ? AND column1 = ?";
 
 	public static final String DATA_POINTS_DELETE_ROW = "DELETE FROM data_points " +
 			"WHERE key = ?";
@@ -132,20 +152,20 @@ public class Schema
 
 	//Service index queries
 	public static final String SERVICE_INDEX_INSERT = "INSERT INTO service_index " +
-			"(service, service_key, key, value) VALUES (?, ?, ?, ?)";
+			"(service, service_key, key, value, mtime) VALUES (?, ?, ?, ?, now())";
 
 	public static final String SERVICE_INDEX_GET = "SELECT value, WRITETIME(value) " +
 			"FROM service_index WHERE service = ? AND service_key = ? AND key = ?";
 
 	public static final String SERVICE_INDEX_LIST_KEYS = "SELECT key " +
-			"FROM service_index WHERE service = ? AND service_key = ? ORDER BY service_key, key ASC";
+			"FROM service_index WHERE service = ? AND service_key = ? ORDER BY key ASC";
 
 	public static final String SERVICE_INDEX_LIST_KEYS_PREFIX = "SELECT key " +
 			"FROM service_index WHERE service = ? AND service_key = ? AND " +
 			"key >= ? AND key < ?";
 
 	public static final String SERVICE_INDEX_LIST_SERVICE_KEYS = "SELECT service_key " +
-			"FROM service_index WHERE service = ?";
+			"FROM service_index WHERE service = ? ALLOW FILTERING";
 
 	public static final String SERVICE_INDEX_DELETE_KEY = "DELETE FROM service_index " +
 			"WHERE service = ? AND service_key = ? AND key = ?";
@@ -160,7 +180,7 @@ public class Schema
 	public final PreparedStatement psRowKeyQuery;
 	public final PreparedStatement psRowKeyTimeQuery;
 	public final PreparedStatement psDataPointsDeleteRow;
-	public final PreparedStatement psDataPointsDelete;
+	public PreparedStatement psDataPointsDeleteRange;
 	public final PreparedStatement psRowKeyIndexDelete;
 	public final PreparedStatement psRowKeyIndexDeleteRow;
 	public final PreparedStatement psDataPointsQueryDesc;
@@ -172,13 +192,13 @@ public class Schema
 	public final PreparedStatement psServiceIndexGet;
 	public final PreparedStatement psServiceIndexListKeys;
 	public final PreparedStatement psServiceIndexListKeysPrefix;
-	public final PreparedStatement psServiceIndexListServiceKeys;
+	public PreparedStatement psServiceIndexListServiceKeys;
 	public final PreparedStatement psServiceIndexDeleteKey;
 	public final PreparedStatement psRowKeyTimeDelete;
 	public final PreparedStatement psRowKeyDelete;
+	public final PreparedStatement psDataPointsDelete;
 
 	private final Session m_session;
-
 
 
 	public Schema(CassandraClient cassandraClient)
@@ -202,18 +222,44 @@ public class Schema
 		psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
 		psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);
 		psRowKeyTimeDelete = m_session.prepare(ROW_KEY_TIME_DELETE);
-		psRowKeyDelete = m_session.prepare(ROW_KEY_DELETE);
+
+		try
+		{
+			psDataPointsDeleteRange = m_session.prepare(DATA_POINTS_DELETE_RANGE);
+		}
+		catch (Exception e)
+		{
+			//Nothing to do, we run old format delete if psDataPointsDeleteRange is null
+			logger.warn("Unable to perform efficient range deletes, consider upgrading to a newer version of Cassandra");
+		}
+
+
 		psDataPointsDelete = m_session.prepare(DATA_POINTS_DELETE);
-		psDataPointsDeleteRow = m_session.prepare(DATA_POINTS_DELETE_ROW);
 		psRowKeyIndexDelete = m_session.prepare(ROW_KEY_INDEX_DELETE);
+
+		//These three queries currently dont work with YugaByte
+		psDataPointsDeleteRow = m_session.prepare(DATA_POINTS_DELETE_ROW);
 		psRowKeyIndexDeleteRow = m_session.prepare(ROW_KEY_INDEX_DELETE_ROW);
+		psRowKeyDelete = m_session.prepare(ROW_KEY_DELETE);
+		/*psDataPointsDeleteRow = null;
+		psRowKeyIndexDeleteRow = null;
+		psRowKeyDelete = null;*/
 
 		psServiceIndexInsert = m_session.prepare(SERVICE_INDEX_INSERT);
 		psServiceIndexGet = m_session.prepare(SERVICE_INDEX_GET);
 		psServiceIndexListKeys = m_session.prepare(SERVICE_INDEX_LIST_KEYS);
 		psServiceIndexListKeysPrefix = m_session.prepare(SERVICE_INDEX_LIST_KEYS_PREFIX);
-		psServiceIndexListServiceKeys = m_session.prepare(SERVICE_INDEX_LIST_SERVICE_KEYS);
+		try
+		{
+			psServiceIndexListServiceKeys = m_session.prepare(SERVICE_INDEX_LIST_SERVICE_KEYS);
+		}
+		catch (Exception e)
+		{
+			logger.warn("Unable to perform service key list query, consider upgrading to newer version of Cassandra");
+		}
 		psServiceIndexDeleteKey = m_session.prepare(SERVICE_INDEX_DELETE_KEY);
+
+
 	}
 
 	public Session getSession()

@@ -5,6 +5,7 @@ import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.util.KDataOutput;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -33,6 +34,7 @@ public class CQLBatch
 	private BatchStatement dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 	private BatchStatement rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 
+	@Inject
 	public CQLBatch(
 			ConsistencyLevel consistencyLevel, Session session,
 			Schema schema, BatchStats batchStats,
@@ -85,23 +87,8 @@ public class CQLBatch
 		metricNamesBatch.add(bs);
 	}
 
-	public void addDataPoint(DataPointsRowKey rowKey, int columnTime, DataPoint dataPoint, int ttl) throws IOException
+	private void addBoundStatement(BoundStatement boundStatement)
 	{
-		KDataOutput kDataOutput = new KDataOutput();
-		dataPoint.writeValueToBuffer(kDataOutput);
-
-		BoundStatement boundStatement = new BoundStatement(m_schema.psDataPointsInsert);
-		boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
-		ByteBuffer b = ByteBuffer.allocate(4);
-		b.putInt(columnTime);
-		b.rewind();
-		boundStatement.setBytesUnsafe(1, b);
-		boundStatement.setBytesUnsafe(2, ByteBuffer.wrap(kDataOutput.getBytes()));
-		boundStatement.setInt(3, ttl);
-		boundStatement.setLong(4, m_now);
-		boundStatement.setConsistencyLevel(m_consistencyLevel);
-		boundStatement.setIdempotent(true);
-
 		Iterator<Host> hosts = m_loadBalancingPolicy.newQueryPlan("kairosdb", boundStatement);
 		if (hosts.hasNext())
 		{
@@ -119,6 +106,41 @@ public class CQLBatch
 		{
 			dataPointBatch.add(boundStatement);
 		}
+	}
+
+	public void deleteDataPoint(DataPointsRowKey rowKey, int columnTime) throws IOException
+	{
+		BoundStatement boundStatement = new BoundStatement(m_schema.psDataPointsDelete);
+		boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+		ByteBuffer b = ByteBuffer.allocate(4);
+		b.putInt(columnTime);
+		b.rewind();
+		boundStatement.setBytesUnsafe(1, b);
+
+		boundStatement.setConsistencyLevel(m_consistencyLevel);
+		boundStatement.setIdempotent(true);
+
+		addBoundStatement(boundStatement);
+	}
+
+	public void addDataPoint(DataPointsRowKey rowKey, int columnTime, DataPoint dataPoint, int ttl) throws IOException
+	{
+		KDataOutput kDataOutput = new KDataOutput();
+		dataPoint.writeValueToBuffer(kDataOutput);
+
+		BoundStatement boundStatement = new BoundStatement(m_schema.psDataPointsInsert);
+		boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+		ByteBuffer b = ByteBuffer.allocate(4);
+		b.putInt(columnTime);
+		b.rewind();
+		boundStatement.setBytesUnsafe(1, b);
+		boundStatement.setBytesUnsafe(2, ByteBuffer.wrap(kDataOutput.getBytes()));
+		boundStatement.setInt(3, ttl);
+		boundStatement.setLong(4, m_now);
+		boundStatement.setConsistencyLevel(m_consistencyLevel);
+		boundStatement.setIdempotent(true);
+
+		addBoundStatement(boundStatement);
 	}
 
 	public void submitBatch()

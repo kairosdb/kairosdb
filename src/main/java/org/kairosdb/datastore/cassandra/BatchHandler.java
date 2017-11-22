@@ -1,11 +1,9 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.datastax.driver.core.exceptions.UnavailableException;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.inject.assistedinject.Assisted;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.queue.EventCompletionCallBack;
@@ -16,6 +14,7 @@ import org.kairosdb.events.RowKeyEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
@@ -41,31 +40,28 @@ public class BatchHandler implements Callable<Boolean>
 	private final DataCache<String> m_metricNameCache;
 	private final EventBusWithFilters m_eventBus;
 	private final boolean m_fullBatch;
-	private final ConsistencyLevel m_consistencyLevel;
-	private final Session m_session;
-	private final Schema m_schema;
-	private final BatchStats m_batchStats;
-	private final LoadBalancingPolicy m_loadBalancingPolicy;
+	private final CassandraModule.CQLBatchFactory m_cqlBatchFactory;
 
-	public BatchHandler(List<DataPointEvent> events, EventCompletionCallBack callBack,
-			int defaultTtl, ConsistencyLevel consistencyLevel, DataCache<DataPointsRowKey>
-			rowKeyCache, DataCache<String> metricNameCache, EventBusWithFilters eventBus,
-			Session session, Schema schema,
-			boolean fullBatch, BatchStats batchStats, LoadBalancingPolicy loadBalancingPolicy)
+	@Inject
+	public BatchHandler(
+			@Assisted List<DataPointEvent> events,
+			@Assisted EventCompletionCallBack callBack,
+			@Assisted boolean fullBatch,
+			CassandraConfiguration configuration,
+			DataCache<DataPointsRowKey> rowKeyCache,
+			DataCache<String> metricNameCache,
+			EventBusWithFilters eventBus,
+			CassandraModule.CQLBatchFactory cqlBatchFactory)
 	{
-		m_consistencyLevel = consistencyLevel;
-		m_session = session;
-		m_schema = schema;
-		m_batchStats = batchStats;
-		m_loadBalancingPolicy = loadBalancingPolicy;
-
 		m_events = events;
 		m_callBack = callBack;
-		m_defaultTtl = defaultTtl;
+		m_defaultTtl = configuration.getDatapointTtl();
 		m_rowKeyCache = rowKeyCache;
 		m_metricNameCache = metricNameCache;
 		m_eventBus = eventBus;
 		m_fullBatch = fullBatch;
+
+		m_cqlBatchFactory = cqlBatchFactory;
 	}
 
 	public boolean isFullBatch()
@@ -156,8 +152,10 @@ public class BatchHandler implements Callable<Boolean>
 
 				while (events.hasNext())
 				{
-					CQLBatch batch = new CQLBatch(m_consistencyLevel, m_session, m_schema,
-							m_batchStats, m_loadBalancingPolicy);
+					CQLBatch batch = m_cqlBatchFactory.create();
+
+					/*CQLBatch batch = new CQLBatch(m_consistencyLevel, m_session, m_schema,
+							m_batchStats, m_loadBalancingPolicy);*/
 
 					loadBatch(limit, batch, events);
 

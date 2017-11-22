@@ -61,13 +61,7 @@ import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -603,7 +597,7 @@ public class Main
 		}
 
 		@Override
-		public DataPointWriter startDataPointSet(String type, Map<String, String> tags) throws IOException
+		public DataPointWriter startDataPointSet(String type, SortedMap<String, String> tags) throws IOException
 		{
 			m_lock.writeLock().lock();
 

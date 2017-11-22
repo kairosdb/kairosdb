@@ -30,7 +30,7 @@ public class MemorySearchResult implements SearchResult
 
 
 	@Override
-	public DataPointWriter startDataPointSet(String dataType, Map<String, String> tags) throws IOException
+	public DataPointWriter startDataPointSet(String dataType, SortedMap<String, String> tags) throws IOException
 	{
 		MemoryDataPointRow currentRow = new MemoryDataPointRow(dataType, tags);
 		m_dataPointRows.add(currentRow);

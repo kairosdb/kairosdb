@@ -15,6 +15,8 @@ import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +26,8 @@ import java.util.List;
  */
 public class CassandraClientImpl implements CassandraClient, KairosMetricReporter
 {
+	public static final Logger logger = LoggerFactory.getLogger(CassandraClientImpl.class);
+
 	private final Cluster m_cluster;
 	private String m_keyspace;
 	private LoadBalancingPolicy m_loadBalancingPolicy;
@@ -82,6 +86,7 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 
 		for (String node : configuration.getHostList())
 		{
+			logger.info("Connecting to "+node);
 			builder.addContactPoint(node);
 		}
 

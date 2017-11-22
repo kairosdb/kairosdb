@@ -249,7 +249,8 @@ public class CachedSearchResult implements SearchResult
 	 of the set to be saved.  All inserted datapoints after this call are
 	 expected to be in ascending time order and have the same tags.
 	 */
-	public DataPointWriter startDataPointSet(String type, Map<String, String> tags) throws IOException
+	@Override
+	public DataPointWriter startDataPointSet(String type, SortedMap<String, String> tags) throws IOException
 	{
 		m_lock.writeLock().lock();
 

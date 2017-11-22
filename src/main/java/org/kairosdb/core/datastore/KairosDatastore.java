@@ -506,10 +506,10 @@ public class KairosDatastore
 				m_dataPointCount += returnedRow.getDataPointCount();
 			}
 
-            m_rowCount = returnedRows.size();
+			m_rowCount = returnedRows.size();
 
-            ThreadReporter.addDataPoint(QUERY_SAMPLE_SIZE, m_dataPointCount);
-            ThreadReporter.addDataPoint(QUERY_ROW_COUNT, m_rowCount);
+			ThreadReporter.addDataPoint(QUERY_SAMPLE_SIZE, m_dataPointCount);
+			ThreadReporter.addDataPoint(QUERY_ROW_COUNT, m_rowCount);
 
 			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
 					returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());

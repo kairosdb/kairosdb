@@ -309,10 +309,10 @@ function buildKairosDBQuery() {
 		}
 	}
 
-	var postScript = $("#post_script").val();
+	/*var postScript = $("#post_script").val();
 	if (postScript != '') {
 		query.setPostScript(postScript);
-	}
+	}*/
 
 	var time_zone = $(".timeZone").val();
 	if (time_zone != '')

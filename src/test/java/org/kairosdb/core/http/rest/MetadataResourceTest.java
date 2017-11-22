@@ -1,9 +1,13 @@
 package org.kairosdb.core.http.rest;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.testing.JsonResponse;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -31,6 +35,9 @@ public class MetadataResourceTest extends ResourceBase
 		datastore.setValue(SERVICE, SERVICE_KEY1, "foobar", "fi");
 		datastore.setValue(SERVICE, SERVICE_KEY1, "tee", "too");
 		datastore.setValue(SERVICE, SERVICE_KEY2, "foo", "bar");
+		LoggerContext context = (LoggerContext)LoggerFactory.getILoggerFactory();
+		Logger logger = context.getLogger(MetadataResource.class);
+		logger.setLevel(Level.OFF);
 	}
 
 	@Test(expected = NullPointerException.class)

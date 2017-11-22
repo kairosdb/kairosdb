@@ -331,7 +331,7 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 
 				//Collect the tags in the results
 				MetricTag.ResultSet tags = MetricTag.factory.getByMetric(metricId);
-				Map<String, String> tagMap = new TreeMap<>();
+				SortedMap<String, String> tagMap = new TreeMap<>();
 
 				while (tags.next())
 				{

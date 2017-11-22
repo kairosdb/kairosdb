@@ -3,23 +3,14 @@ package org.kairosdb.datastore.cassandra.cache.persistence;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
-import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.*;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import javax.annotation.*;
 import java.math.BigInteger;
 import java.net.URI;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -63,7 +54,7 @@ public class RedisWriteBackReadThroughCacheStore implements GeneralHashCacheStor
         try (final Jedis jedis = jedisPool.getResource()) {
             return jedis.get(key.toString());
         } catch (Exception e) {
-            LOG.error("failed to load cache value for key {}", key, e);
+            LOG.error("failed to load cache value for key {}: {}", key, e.getMessage());
             return null;
         }
     }
@@ -76,7 +67,7 @@ public class RedisWriteBackReadThroughCacheStore implements GeneralHashCacheStor
             try (final Jedis jedis = jedisPool.getResource()) {
                 jedis.setex(key.toString(), defaultTtlInSeconds, value.toString());
             } catch (Exception e) {
-                LOG.error("failed to write back cache value for key {}", key, e);
+                LOG.error("failed to write back cache value for key {}: {}", key, e.getMessage());
             }
         });
     }
@@ -84,12 +75,5 @@ public class RedisWriteBackReadThroughCacheStore implements GeneralHashCacheStor
     @Override
     public void delete(@Nonnull final BigInteger key, @Nullable final Object value, @Nonnull final RemovalCause removalCause) {
         checkNotNull(key, "cache key can't be null");
-        executor.submit(() -> {
-            try (final Jedis jedis = jedisPool.getResource()) {
-                jedis.del(key.toString());
-            } catch (Exception e) {
-                LOG.error("failed to delete cache key {}", key, e);
-            }
-        });
     }
 }

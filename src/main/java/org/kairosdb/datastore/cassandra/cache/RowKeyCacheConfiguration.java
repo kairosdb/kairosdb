@@ -10,7 +10,7 @@ public class RowKeyCacheConfiguration implements CacheConfiguration {
 
     @Inject(optional = true)
     @Named(TTL_IN_SECONDS)
-    private int ttlInSeconds = 86_400; // defaults to 1 day
+    private int ttlInSeconds = 259_200; // defaults to 3 days
 
     @Inject(optional = true)
     @Named(SIZE)

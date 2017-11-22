@@ -55,7 +55,7 @@ public class ElastiCacheWriteBackReadThroughCacheStore implements GeneralHashCac
         try {
             return client.get(key.toString());
         } catch (Exception e) {
-            LOG.error("failed to load cache value for key {}", key, e);
+            LOG.warn("failed to load cache value for key {}: {}", key, e.getMessage());
             return null;
         }
     }
@@ -68,7 +68,7 @@ public class ElastiCacheWriteBackReadThroughCacheStore implements GeneralHashCac
             try {
                 client.set(key.toString(), defaultTtlInSeconds, value.toString());
             } catch (Exception e) {
-                LOG.error("failed to write back cache value for key {}", key, e);
+                LOG.warn("failed to write back cache value for key {}: {}", key, e.getMessage());
             }
         });
     }
@@ -76,12 +76,5 @@ public class ElastiCacheWriteBackReadThroughCacheStore implements GeneralHashCac
     @Override
     public void delete(@Nonnull final BigInteger key, @Nullable final Object value, @Nonnull final RemovalCause removalCause) {
         checkNotNull(key, "cache key can't be null");
-        executor.submit(() -> {
-            try {
-                client.delete(key.toString());
-            } catch (Exception e) {
-                LOG.error("failed to delete cache key {}", key, e);
-            }
-        });
     }
 }

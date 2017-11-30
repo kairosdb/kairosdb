@@ -31,11 +31,7 @@ import org.kairosdb.testing.ListDataPointGroup;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -318,7 +314,7 @@ public class RollUpJobTest
 				{
 					dataPointGroup.sort(query.getOrder());
 
-					Map<String, String> tags = new HashMap<String, String>();
+					SortedMap<String, String> tags = new TreeMap<String, String>();
 					for (String tagName : dataPointGroup.getTagNames())
 					{
 						tags.put(tagName, dataPointGroup.getTagValues(tagName).iterator().next());

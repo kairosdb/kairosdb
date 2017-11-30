@@ -49,13 +49,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 public abstract class ResourceBase
 {
@@ -205,7 +199,7 @@ public abstract class ResourceBase
 
             try
             {
-                Map<String, String> tags = new TreeMap<>();
+                SortedMap<String, String> tags = new TreeMap<>();
                 tags.put("server", "server1");
 
                 QueryCallback.DataPointWriter dataPointWriter = queryCallback.startDataPointSet(LongDataPointFactoryImpl.DST_LONG, tags);

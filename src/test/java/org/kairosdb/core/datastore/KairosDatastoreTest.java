@@ -366,7 +366,7 @@ public class KairosDatastoreTest
 
 			try
 			{
-				QueryCallback.DataPointWriter dataPointWriter = queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
+				QueryCallback.DataPointWriter dataPointWriter = queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptySortedMap());
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 3));
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 10));
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 20));
@@ -376,7 +376,7 @@ public class KairosDatastoreTest
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(3, 25));
 				dataPointWriter.close();
 
-				dataPointWriter = queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
+				dataPointWriter = queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptySortedMap());
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 5));
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 14));
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 20));

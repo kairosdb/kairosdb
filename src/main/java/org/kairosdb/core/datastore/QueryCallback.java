@@ -4,6 +4,7 @@ import org.kairosdb.core.DataPoint;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.SortedMap;
 
 /**
  Created with IntelliJ IDEA.
@@ -14,7 +15,7 @@ import java.util.Map;
  */
 public interface QueryCallback
 {
-	DataPointWriter startDataPointSet(String dataType, Map<String, String> tags) throws IOException;
+	DataPointWriter startDataPointSet(String dataType, SortedMap<String, String> tags) throws IOException;
 
 	interface DataPointWriter extends AutoCloseable
 	{

@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  Created with IntelliJ IDEA.
@@ -49,7 +48,7 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 
 
 	@Inject
-	public GuiceKairosDataPointFactory(Injector injector, Properties props)
+	public GuiceKairosDataPointFactory(Injector injector, KairosConfig props)
 	{
 		Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
 
@@ -71,9 +70,8 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 			}
 		}
 
-		for (Object prop : props.keySet())
+		for (String key : props.keySet())
 		{
-			String key = (String)prop;
 			if (key.startsWith(DATAPOINTS_FACTORY_PROP_PREFIX))
 			{
 				String className = props.getProperty(key);

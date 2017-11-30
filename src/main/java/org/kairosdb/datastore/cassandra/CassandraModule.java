@@ -21,13 +21,13 @@ import com.google.inject.Scope;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
+import org.kairosdb.core.KairosConfig;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.ServiceKeyStore;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 public class CassandraModule extends AbstractModule
 {
@@ -39,22 +39,20 @@ public class CassandraModule extends AbstractModule
 	private Map<String, String> m_authMap = new HashMap<String, String>();
 	private Map<String, Object> m_hectorMap = new HashMap<String, Object>();
 
-	public CassandraModule(Properties props)
+	public CassandraModule(KairosConfig props)
 	{
-		for (Object key : props.keySet())
+		for (String key : props.keySet())
 		{
-			String strKey = (String)key;
-
-			if (strKey.startsWith(AUTH_PREFIX))
+			if (key.startsWith(AUTH_PREFIX))
 			{
-				String consumerKey = strKey.substring(AUTH_PREFIX.length());
-				String consumerToken = (String)props.get(key);
+				String consumerKey = key.substring(AUTH_PREFIX.length());
+				String consumerToken = props.get(key);
 
 				m_authMap.put(consumerKey, consumerToken);
 			}
-			else if (strKey.startsWith(HECTOR_PREFIX))
+			else if (key.startsWith(HECTOR_PREFIX))
 			{
-				String configKey = strKey.substring(HECTOR_PREFIX.length());
+				String configKey = key.substring(HECTOR_PREFIX.length());
 				m_hectorMap.put(configKey, props.get(key));
 			}
 		}

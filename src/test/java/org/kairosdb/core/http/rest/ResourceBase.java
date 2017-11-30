@@ -13,9 +13,7 @@ import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.kairosdb.core.GuiceKairosDataPointFactory;
-import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.KairosFeatureProcessor;
+import org.kairosdb.core.*;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datapoints.DoubleDataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
@@ -56,13 +54,12 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 
 public abstract class ResourceBase
 {
-    private static final EventBusWithFilters eventBus = new EventBusWithFilters(new EventBusConfiguration(new Properties()));
+    private static final EventBusWithFilters eventBus = new EventBusWithFilters(new EventBusConfiguration(new KairosConfigImpl()));
     private static WebServer server;
 
     static QueryQueuingManager queuingManager;
@@ -79,7 +76,7 @@ public abstract class ResourceBase
         datastore = new TestDatastore();
         queuingManager = new QueryQueuingManager(3, "localhost");
 
-        Injector injector = Guice.createInjector(new WebServletModule(new Properties()), new AbstractModule()
+        Injector injector = Guice.createInjector(new WebServletModule(new KairosConfigImpl()), new AbstractModule()
         {
             @Override
             protected void configure()
@@ -117,11 +114,12 @@ public abstract class ResourceBase
                 bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
                 bind(SimpleStatsReporter.class);
 
-                Properties props = new Properties();
-                InputStream is = getClass().getClassLoader().getResourceAsStream("kairosdb.properties");
+                KairosConfig props = new KairosConfigImpl();
+                String configFileName = "kairosdb.properties";
+                InputStream is = getClass().getClassLoader().getResourceAsStream(configFileName);
                 try
                 {
-                    props.load(is);
+                    props.load(is, KairosConfig.ConfigFormat.fromFileName(configFileName));
                     is.close();
                 }
                 catch (IOException e)
@@ -130,7 +128,7 @@ public abstract class ResourceBase
                 }
 
                 //Names.bindProperties(binder(), props);
-                bind(Properties.class).toInstance(props);
+                bind(KairosConfig.class).toInstance(props);
 
                 bind(DoubleDataPointFactory.class)
                         .to(DoubleDataPointFactoryImpl.class).in(Singleton.class);

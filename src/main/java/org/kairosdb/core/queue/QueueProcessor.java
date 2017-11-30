@@ -22,7 +22,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(QueueProcessor.class);
 
-	public static final String QUEUE_PROCESSOR_CLASS = "kairosdb.queue_processor";
+	public static final String QUEUE_PROCESSOR_CLASS = "kairosdb.queue_processor.class";
 	public static final String QUEUE_PROCESSOR = "queue_processor";
 	public static final String BATCH_SIZE = "kairosdb.queue_processor.batch_size";
 	public static final String MEMORY_QUEUE_SIZE = "kairosdb.queue_processor.memory_queue_size";

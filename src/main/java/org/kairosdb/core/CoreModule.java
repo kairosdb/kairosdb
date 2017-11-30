@@ -86,7 +86,6 @@ import se.ugli.bigqueue.BigArray;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.MissingResourceException;
-import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -100,19 +99,19 @@ public class CoreModule extends AbstractModule
 
 	public static final String DATAPOINTS_FACTORY_LONG = "kairosdb.datapoints.factory.long";
 	public static final String DATAPOINTS_FACTORY_DOUBLE = "kairosdb.datapoints.factory.double";
-	private Properties m_props;
+	private KairosConfig m_config;
 	private final EventBusWithFilters m_eventBus;
 
-	public CoreModule(Properties props)
+	public CoreModule(KairosConfig config)
 	{
-		m_props = props;
-		m_eventBus = new EventBusWithFilters(new EventBusConfiguration(m_props));
+		m_config = config;
+		m_eventBus = new EventBusWithFilters(new EventBusConfiguration(m_config));
 	}
 
 	@SuppressWarnings("rawtypes")
 	private Class getClassForProperty(String property)
 	{
-		String className = m_props.getProperty(property);
+		String className = m_config.getProperty(property);
 
 		Class klass;
 		try
@@ -195,10 +194,10 @@ public class CoreModule extends AbstractModule
 		bind(TagGroupBy.class);
 		bind(BinGroupBy.class);
 
-		Names.bindProperties(binder(), m_props);
-		bind(Properties.class).toInstance(m_props);
+		Names.bindProperties(binder(), m_config);
+		bind(KairosConfig.class).toInstance(m_config);
 
-		String hostname = m_props.getProperty("kairosdb.hostname");
+		String hostname = m_config.getProperty("kairosdb.hostname");
 		bindConstant().annotatedWith(Names.named("HOSTNAME")).to(hostname != null ? hostname: Util.getHostName());
 
 		//bind queue processor impl
@@ -230,7 +229,7 @@ public class CoreModule extends AbstractModule
 
 		bind(IngestExecutorService.class);
 
-		String hostIp = m_props.getProperty("kairosdb.host_ip");
+		String hostIp = m_config.getProperty("kairosdb.host_ip");
 		bindConstant().annotatedWith(Names.named("HOST_IP")).to(hostIp != null ? hostIp: InetAddresses.toAddrString(Util.findPublicIp()));
 
 		bind(QueryPreProcessorContainer.class).to(GuiceQueryPreProcessor.class).in(Singleton.class);

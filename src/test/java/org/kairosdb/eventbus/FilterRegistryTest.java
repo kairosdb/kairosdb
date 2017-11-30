@@ -5,10 +5,10 @@ import com.google.common.collect.Iterators;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.junit.Before;
 import org.junit.Test;
+import org.kairosdb.core.KairosConfigImpl;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.fail;
@@ -24,7 +24,7 @@ public class FilterRegistryTest {
     @Before
     public void setup()
     {
-        registry = new FilterRegistry(new EventBusWithFilters(new EventBusConfiguration(new Properties())));
+        registry = new FilterRegistry(new EventBusWithFilters(new EventBusConfiguration(new KairosConfigImpl())));
     }
 
     @Test

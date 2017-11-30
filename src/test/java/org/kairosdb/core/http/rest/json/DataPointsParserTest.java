@@ -22,10 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.junit.Before;
 import org.junit.Test;
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.TestDataPointFactory;
+import org.kairosdb.core.*;
 import org.kairosdb.core.datapoints.StringDataPoint;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
@@ -45,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 import java.util.zip.GZIPInputStream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -62,7 +58,7 @@ public class DataPointsParserTest
 	@Before
     public void setup()
     {
-        eventBus = new EventBusWithFilters(new EventBusConfiguration(new Properties()));
+        eventBus = new EventBusWithFilters(new EventBusConfiguration(new KairosConfigImpl()));
     }
 
 	@Test

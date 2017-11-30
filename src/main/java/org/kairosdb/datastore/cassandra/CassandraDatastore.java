@@ -20,14 +20,12 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.SetMultimap;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -35,15 +33,7 @@ import org.kairosdb.core.datapoints.DataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDoubleDataPoint;
 import org.kairosdb.core.datapoints.LegacyLongDataPoint;
-import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
-import org.kairosdb.core.datastore.Order;
-import org.kairosdb.core.datastore.QueryCallback;
-import org.kairosdb.core.datastore.QueryPlugin;
-import org.kairosdb.core.datastore.ServiceKeyStore;
-import org.kairosdb.core.datastore.TagSet;
-import org.kairosdb.core.datastore.TagSetImpl;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.core.queue.ProcessorHandler;
@@ -52,25 +42,16 @@ import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.DataPointEvent;
-import org.kairosdb.util.IngestExecutorService;
-import org.kairosdb.util.KDataInput;
-import org.kairosdb.util.MemoryMonitor;
-import org.kairosdb.util.SimpleStatsReporter;
+import org.kairosdb.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import javax.inject.Named;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -111,9 +92,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 	private final Schema m_schema;
 	private Session m_session;
-	private LoadBalancingPolicy m_loadBalancingPolicy;
 
-
+	@Inject
 	private final BatchStats m_batchStats = new BatchStats();
 
 	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
@@ -122,21 +102,31 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 	private final QueueProcessor m_queueProcessor;
 	private final IngestExecutorService m_congestionExecutor;
+	private final CassandraModule.BatchHandlerFactory m_batchHandlerFactory;
+	private final CassandraModule.DeleteBatchHandlerFactory m_deleteBatchHandlerFactory;
 
 	private CassandraConfiguration m_cassandraConfiguration;
 
 	@Inject
 	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
+	@Inject
+	@Named("kairosdb.queue_processor.batch_size")
+	private int m_batchSize;  //Used for batching delete requests
+
 
 	@Inject
-	public CassandraDatastore(@Named("HOSTNAME") final String hostname,
+	public CassandraDatastore(
 			CassandraClient cassandraClient,
 			CassandraConfiguration cassandraConfiguration,
+			Schema schema,
+			Session session,
 			KairosDataPointFactory kairosDataPointFactory,
 			QueueProcessor queueProcessor,
 			EventBusWithFilters eventBus,
-			IngestExecutorService congestionExecutor) throws DatastoreException
+			IngestExecutorService congestionExecutor,
+			CassandraModule.BatchHandlerFactory batchHandlerFactory,
+			CassandraModule.DeleteBatchHandlerFactory deleteBatchHandlerFactory) throws DatastoreException
 	{
 		m_cassandraClient = cassandraClient;
 		//m_astyanaxClient = astyanaxClient;
@@ -145,10 +135,11 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_congestionExecutor = congestionExecutor;
 		m_eventBus = eventBus;
 
-		m_schema = new Schema(m_cassandraClient);
-		m_session = m_schema.getSession();
+		m_batchHandlerFactory = batchHandlerFactory;
+		m_deleteBatchHandlerFactory = deleteBatchHandlerFactory;
 
-		m_loadBalancingPolicy = m_cassandraClient.getLoadBalancingPolicy();
+		m_schema = schema;
+		m_session = session;
 
 		m_cassandraConfiguration = cassandraConfiguration;
 
@@ -202,11 +193,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	{
 		BatchHandler batchHandler;
 
-		batchHandler = new BatchHandler(events, eventCompletionCallBack,
-				m_cassandraConfiguration.getDatapointTtl(),
-				m_cassandraConfiguration.getDataWriteLevel(),
-				m_rowKeyCache, m_metricNameCache, m_eventBus, m_session,
-				m_schema, fullBatch, m_batchStats, m_loadBalancingPolicy);
+		batchHandler = m_batchHandlerFactory.create(events, eventCompletionCallBack, fullBatch);
 
 		m_congestionExecutor.submit(batchHandler);
 	}
@@ -304,6 +291,11 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			throws DatastoreException
 	{
 		List<String> ret = new ArrayList<>();
+
+		if (m_schema.psServiceIndexListServiceKeys == null)
+		{
+			throw new DatastoreException("List Service Keys is not available on this version of Cassandra.");
+		}
 
 		BoundStatement statement = new BoundStatement(m_schema.psServiceIndexListServiceKeys);
 		statement.setString(0, service);
@@ -573,22 +565,33 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		}
 	}
 
-	private void deletePartialRow(DataPointsRowKey rowKey, int start, int end)
+	private void deletePartialRow(DataPointsRowKey rowKey, long start, long end)
 	{
-		BoundStatement statement = new BoundStatement(m_schema.psDataPointsDelete);
-		statement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
-		ByteBuffer b = ByteBuffer.allocate(4);
-		b.putInt(start);
-		b.rewind();
-		statement.setBytesUnsafe(1, b);
+		if (m_schema.psDataPointsDeleteRange != null)
+		{
+			BoundStatement statement = new BoundStatement(m_schema.psDataPointsDeleteRange);
+			statement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+			ByteBuffer b = ByteBuffer.allocate(4);
+			b.putInt(getColumnName(rowKey.getTimestamp(), start));
+			b.rewind();
+			statement.setBytesUnsafe(1, b);
 
-		b = ByteBuffer.allocate(4);
-		b.putInt(end);
-		b.rewind();
-		statement.setBytesUnsafe(2, b);
+			b = ByteBuffer.allocate(4);
+			b.putInt(getColumnName(rowKey.getTimestamp(), end));
+			b.rewind();
+			statement.setBytesUnsafe(2, b);
 
-		statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
-		m_session.executeAsync(statement);
+			statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+			m_session.executeAsync(statement);
+		}
+		else
+		{
+			DatastoreMetricQuery deleteQuery = new QueryMetric(start, end, 0,
+					rowKey.getMetricName());
+
+			cqlQueryWithRowKeys(deleteQuery, new DeletingCallback(deleteQuery.getName()),
+					Collections.singletonList(rowKey).iterator());
+		}
 	}
 
 
@@ -643,21 +646,26 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			{
 				//System.out.println("Delete first of row");
 				//Delete first portion of row
-				deletePartialRow(rowKey, 0, getColumnName(rowKeyTimestamp, deleteQuery.getEndTime()));
+				//deletePartialRow(rowKey, 0, getColumnName(rowKeyTimestamp, deleteQuery.getEndTime()));
+				deletePartialRow(rowKey, rowKeyTimestamp, deleteQuery.getEndTime());
 			}
 			else if (deleteQuery.getEndTime() >= rowKeyTimestamp + ROW_WIDTH -1)
 			{
 				//System.out.println("Delete last of row");
 				//Delete last portion of row
-				deletePartialRow(rowKey, getColumnName(rowKeyTimestamp, deleteQuery.getStartTime()),
-						getColumnName(rowKeyTimestamp, rowKeyTimestamp + ROW_WIDTH - 1));
+				//deletePartialRow(rowKey, getColumnName(rowKeyTimestamp, deleteQuery.getStartTime()),
+				//		getColumnName(rowKeyTimestamp, rowKeyTimestamp + ROW_WIDTH - 1));
+				deletePartialRow(rowKey, deleteQuery.getStartTime(),
+						rowKeyTimestamp + ROW_WIDTH - 1);
 			}
 			else
 			{
 				//System.out.println("Delete within a row");
 				//Delete within a row
-				deletePartialRow(rowKey, getColumnName(rowKeyTimestamp, deleteQuery.getStartTime()),
-						getColumnName(rowKeyTimestamp, deleteQuery.getEndTime()));
+				/*deletePartialRow(rowKey, getColumnName(rowKeyTimestamp, deleteQuery.getStartTime()),
+						getColumnName(rowKeyTimestamp, deleteQuery.getEndTime()));*/
+				deletePartialRow(rowKey, deleteQuery.getStartTime(),
+						deleteQuery.getEndTime());
 			}
 		}
 
@@ -959,4 +967,74 @@ outer:
 		{
 		}
 	}
+
+	private class DeletingCallback implements QueryCallback
+	{
+		private String m_metricName;
+
+		public DeletingCallback(String metricName)
+		{
+			m_metricName = metricName;
+		}
+
+
+		@Override
+		public DataPointWriter startDataPointSet(String dataType, SortedMap<String, String> tags) throws IOException
+		{
+			return new DeleteDatePointWriter(dataType, tags);
+		}
+
+		private class DeleteDatePointWriter implements DataPointWriter
+		{
+			private String m_dataType;
+			private SortedMap<String, String> m_tags;
+			private List<DataPoint> m_dataPoints;
+
+			public DeleteDatePointWriter(String dataType, SortedMap<String, String> tags)
+			{
+				m_dataType = dataType;
+				m_tags = tags;
+				m_dataPoints = new ArrayList<>();
+
+			}
+
+			@Override
+			public void addDataPoint(DataPoint datapoint) throws IOException
+			{
+				m_dataPoints.add(datapoint);
+
+				if (m_dataPoints.size() > m_batchSize)
+				{
+					List<DataPoint> dataPoints = m_dataPoints;
+					m_dataPoints = new ArrayList<DataPoint>();
+
+					DeleteBatchHandler deleteBatchHandler = m_deleteBatchHandlerFactory.create(
+							m_metricName, m_tags, dataPoints, s_dontCareCallBack);
+
+					m_congestionExecutor.submit(deleteBatchHandler);
+				}
+			}
+
+			@Override
+			public void close() throws IOException
+			{
+				if (m_dataPoints.size() != 0)
+				{
+					DeleteBatchHandler deleteBatchHandler = m_deleteBatchHandlerFactory.create(
+							m_metricName, m_tags, m_dataPoints, s_dontCareCallBack);
+
+					m_congestionExecutor.submit(deleteBatchHandler);
+				}
+			}
+		}
+	}
+
+	private static final IDontCareCallBack s_dontCareCallBack = new IDontCareCallBack();
+
+	private static class IDontCareCallBack implements EventCompletionCallBack
+	{
+		@Override
+		public void complete() {} //Dont care
+	}
+
 }

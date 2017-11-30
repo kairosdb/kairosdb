@@ -25,10 +25,7 @@ import org.kairosdb.core.datapoints.LegacyDoubleDataPoint;
 import org.kairosdb.core.datapoints.LegacyLongDataPoint;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -47,7 +44,7 @@ public class CachedSearchResultTest
 
 		long now = System.currentTimeMillis();
 
-		Map<String, String> tags = new HashMap<>();
+		SortedMap<String, String> tags = new TreeMap<>();
 		tags.put("host", "A");
 		tags.put("client", "foo");
 		QueryCallback.DataPointWriter dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
@@ -59,7 +56,7 @@ public class CachedSearchResultTest
 		dataPointWriter.close();
 
 
-		tags = new HashMap<>();
+		tags = new TreeMap<>();
 		tags.put("host", "B");
 		tags.put("client", "foo");
 		dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
@@ -70,7 +67,7 @@ public class CachedSearchResultTest
 		dataPointWriter.addDataPoint(new LegacyDoubleDataPoint(now+3, 2.1));
 
 		dataPointWriter.close();
-		tags = new HashMap<>();
+		tags = new TreeMap<>();
 		tags.put("host", "A");
 		tags.put("client", "bar");
 		dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, tags);
@@ -125,7 +122,7 @@ public class CachedSearchResultTest
 				"metric2", tempFile, dataPointFactory, true);
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
-		QueryCallback.DataPointWriter dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
+		QueryCallback.DataPointWriter dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptySortedMap());
 
 		long now = System.currentTimeMillis();
 		for (int i = 0; i < numberOfDataPoints; i++)
@@ -158,7 +155,7 @@ public class CachedSearchResultTest
 				"metric3", tempFile, dataPointFactory, true);
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
-		QueryCallback.DataPointWriter dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptyMap());
+		QueryCallback.DataPointWriter dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptySortedMap());
 
 		long now = System.currentTimeMillis();
 		for (int i = 0; i < numberOfDataPoints; i++)

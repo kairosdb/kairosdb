@@ -299,12 +299,12 @@ kairosdb.MetricQuery = function (cacheTime) {
 	/**
 
 	 */
-	this.setPostScript = function (postScript) {
+	/*this.setPostScript = function (postScript) {
 		var plugin = {};
 		plugin.name = 'kairos_script';
 		plugin.script = postScript;
 		this.plugins.push(plugin);
-	}
+	}*/
 
 	/**
 	 Used to add a kairos.Metric object to the MetricQuery

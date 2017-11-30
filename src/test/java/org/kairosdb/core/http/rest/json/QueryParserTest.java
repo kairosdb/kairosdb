@@ -22,6 +22,7 @@ import com.google.common.io.Resources;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
+import org.kairosdb.core.KairosConfigImpl;
 import org.kairosdb.core.KairosFeatureProcessor;
 import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
@@ -34,14 +35,13 @@ import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.eventbus.EventBusConfiguration;
-import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.rollup.Rollup;
 import org.kairosdb.rollup.RollupTask;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Properties;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -50,13 +50,13 @@ import static org.junit.Assert.fail;
 public class QueryParserTest
 {
 	private QueryParser parser;
-	private FilterEventBus eventBus;
+	private EventBusWithFilters eventBus;
 
 	@Before
 	public void setup() throws KairosDBException
 	{
 		parser = new QueryParser(new KairosFeatureProcessor(new TestAggregatorFactory(), new TestGroupByFactory()), new TestQueryPluginFactory());
-		eventBus = new FilterEventBus(new EventBusConfiguration(new Properties()));
+		eventBus = new EventBusWithFilters(new EventBusConfiguration(new KairosConfigImpl()));
 	}
 
 	@Test

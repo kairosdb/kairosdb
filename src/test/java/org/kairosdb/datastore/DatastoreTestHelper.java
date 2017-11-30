@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 import org.junit.Test;
+import org.kairosdb.core.KairosConfigImpl;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.StringDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -30,15 +31,13 @@ import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.eventbus.EventBusConfiguration;
-import org.kairosdb.eventbus.FilterEventBus;
-import org.kairosdb.eventbus.Publisher;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.DataPointEvent;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -51,7 +50,7 @@ import static org.junit.Assert.assertFalse;
 public abstract class DatastoreTestHelper
 {
 	protected static KairosDatastore s_datastore;
-	protected static FilterEventBus s_eventBus = new FilterEventBus(new EventBusConfiguration(new Properties()));
+	protected static EventBusWithFilters s_eventBus = new EventBusWithFilters(new EventBusConfiguration(new KairosConfigImpl()));
 	protected static final List<String> metricNames = new ArrayList<>();
 	private static long s_startTime;
 	private static String s_unicodeNameWithSpace = "你好 means hello";
@@ -97,13 +96,11 @@ public abstract class DatastoreTestHelper
 				.put("month", "April")
 				.build();
 
-		Publisher<DataPointEvent> publisher = s_eventBus.createPublisher(DataPointEvent.class);
-
 		s_startTime = System.currentTimeMillis();
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 1)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 1000, 2)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 2000, 3)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 3000, 4)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 1)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 1000, 2)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 2000, 3)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 3000, 4)));
 
 
 		tags = ImmutableSortedMap.<String, String>naturalOrder()
@@ -112,10 +109,10 @@ public abstract class DatastoreTestHelper
 				.put("month", "April")
 				.build();
 
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 5)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 1000, 6)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 2000, 7)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 3000, 8)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 5)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 1000, 6)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 2000, 7)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 3000, 8)));
 
 
 		tags = ImmutableSortedMap.<String, String>naturalOrder()
@@ -124,10 +121,10 @@ public abstract class DatastoreTestHelper
 				.put("month", "April")
 				.build();
 
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 9)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 1000, 10)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 2000, 11)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 3000, 12)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 9)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 1000, 10)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 2000, 11)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 3000, 12)));
 
 
 		metricNames.add("metric2");
@@ -138,10 +135,10 @@ public abstract class DatastoreTestHelper
 				.put("month", "April")
 				.build();
 
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 13)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 1000, 14)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 2000, 15)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 3000, 16)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 13)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 1000, 14)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 2000, 15)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime + 3000, 16)));
 
 
 		metricNames.add("duplicates");
@@ -150,9 +147,9 @@ public abstract class DatastoreTestHelper
 				.put("host", "A")
 				.build();
 
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 4)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 4)));
 
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 42)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 42)));
 
 
 		//Testing pre 1970 data points with negative values
@@ -161,11 +158,11 @@ public abstract class DatastoreTestHelper
 		tags = ImmutableSortedMap.<String, String>naturalOrder()
 				.put("host", "A").build();
 
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(-2000000000L, 80)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(-1000000000L, 40)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(-100L, 20)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(0L, 3)));
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(2000000000L, 33)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(-2000000000L, 80)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(-1000000000L, 40)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(-100L, 20)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(0L, 3)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(2000000000L, 33)));
 
 		//Test string data
 		metricName = "string_data";
@@ -173,7 +170,7 @@ public abstract class DatastoreTestHelper
 		tags = ImmutableSortedMap.<String, String>naturalOrder()
 				.put("host", "A").build();
 
-		publisher.post(new DataPointEvent(metricName, tags, new StringDataPoint(s_startTime, "Hello")));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new StringDataPoint(s_startTime, "Hello")));
 
 		//Test unicode string data
 		metricName = "string_data_unicode";
@@ -181,7 +178,7 @@ public abstract class DatastoreTestHelper
 		tags = ImmutableSortedMap.<String, String>naturalOrder()
 				.put("host", "A").build();
 
-		publisher.post(new DataPointEvent(metricName, tags, new StringDataPoint(s_startTime, s_unicodeName)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new StringDataPoint(s_startTime, s_unicodeName)));
 
 
 		//Adding a metric with unicode and spaces
@@ -191,7 +188,7 @@ public abstract class DatastoreTestHelper
 				.put("host", s_unicodeName)
 				.put("space", "space is cool").build();
 
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 42)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 42)));
 
 
 		//Data that will be deleted in test
@@ -200,28 +197,18 @@ public abstract class DatastoreTestHelper
 		tags = ImmutableSortedMap.<String, String>naturalOrder()
 				.put("ghost", "tag").build();
 
-		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 50)));
+		s_eventBus.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 50)));
 	}
 
 	@Test
 	public void test_getMetricNames() throws DatastoreException
 	{
-		List<String> metrics = listFromIterable(s_datastore.getMetricNames(null));
+		List<String> metrics = listFromIterable(s_datastore.getMetricNames());
 
 		assertThat(metrics, hasItem("metric1"));
 		assertThat(metrics, hasItem("metric2"));
 		assertThat(metrics, hasItem("duplicates"));
 		assertThat(metrics, hasItem("old_data"));
-	}
-
-	@Test
-	public void test_getMetricNames_with_prefix() throws DatastoreException
-	{
-		List<String> metrics = listFromIterable(s_datastore.getMetricNames("m"));
-
-		assertThat(metrics, hasItem("metric1"));
-		assertThat(metrics, hasItem("metric2"));
-		assertThat(metrics.size(), equalTo(2));
 	}
 
 	//names and values not being stored

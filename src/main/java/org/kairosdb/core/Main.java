@@ -40,10 +40,7 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.http.rest.json.DataPointsParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
-import org.kairosdb.eventbus.FilterEventBus;
-import org.kairosdb.eventbus.Publisher;
-import org.kairosdb.events.DataPointEvent;
-import org.kairosdb.events.ShutdownEvent;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.util.PluginClassLoader;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -64,15 +61,11 @@ import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -84,8 +77,6 @@ public class Main
 	public static final Charset UTF_8 = Charset.forName("UTF-8");
 	public static final String SERVICE_PREFIX = "kairosdb.service.";
 	public static final String SERVICE_FOLDER_PREFIX = "kairosdb.service_folder.";
-	public static final String KAIROSDB_SERVER_GUID = "kairosdb.server.guid";
-	private static final String GUID_PROPERTIES_FILENAME = "kairosdb_guid.properties";
 
 	private final static CountDownLatch s_shutdownObject = new CountDownLatch(1);
 
@@ -94,7 +85,7 @@ public class Main
 	private Injector m_injector;
 	private List<KairosDBService> m_services = new ArrayList<KairosDBService>();
 
-	private void loadPlugins(Properties props, final File propertiesFile) throws IOException
+	private void loadPlugins(KairosConfig config, final File propertiesFile) throws IOException
 	{
 		File propDir = propertiesFile.getParentFile();
 		if (propDir == null)
@@ -105,7 +96,13 @@ public class Main
 			@Override
 			public boolean accept(File dir, String name)
 			{
-				return (name.endsWith(".properties") && !name.equals(propertiesFile.getName()));
+				try
+				{
+					KairosConfig.ConfigFormat format = KairosConfig.ConfigFormat.fromFileName(name);
+					return (config.isSupportedFormat(format)) && !name.equals(propertiesFile.getName());
+				}
+				catch (IllegalArgumentException ignored) {}
+				return false;
 			}
 		});
 		if (pluginProps == null)
@@ -124,7 +121,7 @@ public class Main
 			{
 				try
 				{
-					props.load(propStream);
+					config.load(propStream, KairosConfig.ConfigFormat.fromFileName(prop));
 				}
 				finally
 				{
@@ -133,10 +130,7 @@ public class Main
 			}
 
 			//Load the file in
-			try(FileInputStream fis = new FileInputStream(new File(propDir, prop)))
-			{
-				props.load(fis);
-			}
+			config.load(new File(propDir, prop));
 		}
 	}
 
@@ -168,73 +162,49 @@ public class Main
 	 * allow overwriting any existing property via correctly named environment variable
 	 * e.g. kairosdb.datastore.cassandra.host_list via KAIROSDB_DATASTORE_CASSANDRA_HOST_LIST
 	 */
-	protected void applyEnvironmentVariables(Properties props) {
+	protected void applyEnvironmentVariables(KairosConfig config) {
 		Map<String, String> env = System.getenv();
-		for (String propName : props.stringPropertyNames()) {
+		for (String propName : config.stringPropertyNames()) {
 			String envVarName = toEnvVarName(propName);
 			if (env.containsKey(envVarName)) {
-				props.setProperty(propName, env.get(envVarName));
+				config.setProperty(propName, env.get(envVarName));
 			}
 		}
 	}
 
 	public Main(File propertiesFile) throws IOException
 	{
-		Properties props = new Properties();
-		InputStream is = getClass().getClassLoader().getResourceAsStream("kairosdb.properties");
-		try
+		KairosConfig config = new KairosConfigImpl();
+		String defaultConfig = "kairosdb.properties";
+		try (InputStream is = getClass().getClassLoader().getResourceAsStream(defaultConfig))
 		{
-			props.load(is);
-		}
-		finally
-		{
-			is.close();
+			config.load(is, KairosConfig.ConfigFormat.fromFileName(defaultConfig));
 		}
 
 		if (propertiesFile != null)
 		{
-			try(FileInputStream fis = new FileInputStream(propertiesFile))
-			{
-				props.load(fis);
-			}
-
-			loadPlugins(props, propertiesFile);
+			config.load(propertiesFile);
+			loadPlugins(config, propertiesFile);
 		}
 
-		for (String name : System.getProperties().stringPropertyNames())
-		{
-			props.setProperty(name, System.getProperty(name));
-		}
-
-		applyEnvironmentVariables(props);
-
-		// Create guid for this server
-		if (!props.containsKey(KAIROSDB_SERVER_GUID)) {
-			String guid = UUID.randomUUID().toString();
-			props.put(KAIROSDB_SERVER_GUID, guid);
-
-			if (propertiesFile != null) {
-				Path path = Paths.get(propertiesFile.getAbsoluteFile().getParent(), GUID_PROPERTIES_FILENAME);
-				java.nio.file.Files.write(path, (KAIROSDB_SERVER_GUID + "=" + guid).getBytes(Charset.forName("UTF-8")));
-			}
-		}
+		applyEnvironmentVariables(config);
 
 		List<Module> moduleList = new ArrayList<Module>();
-		moduleList.add(new CoreModule(props));
+		moduleList.add(new CoreModule(config));
 
-		for (String propName : props.stringPropertyNames())
+		for (String propName : config.stringPropertyNames())
 		{
 			if (propName.startsWith(SERVICE_PREFIX))
 			{
 				Class<?> aClass;
 				try
 				{
-					if ("".equals(props.getProperty(propName)) || "<disabled>".equals(props.getProperty(propName)))
+					if ("".equals(config.getProperty(propName)) || "<disabled>".equals(config.getProperty(propName)))
 						continue;
 
 					String serviceName = propName.substring(SERVICE_PREFIX.length());
 
-					String pluginFolder = props.getProperty(SERVICE_FOLDER_PREFIX + serviceName);
+					String pluginFolder = config.getProperty(SERVICE_FOLDER_PREFIX + serviceName);
 
 					ClassLoader pluginLoader = this.getClass().getClassLoader();
 
@@ -248,14 +218,14 @@ public class Main
 						pluginLoader = new PluginClassLoader(getJarsInPath(pluginFolder), pluginLoader);
 					}
 
-					aClass = pluginLoader.loadClass(props.getProperty(propName));
+					aClass = pluginLoader.loadClass(config.getProperty(propName));
 					if (Module.class.isAssignableFrom(aClass))
 					{
 						Constructor<?> constructor = null;
 
 						try
 						{
-							constructor = aClass.getConstructor(Properties.class);
+							constructor = aClass.getConstructor(KairosConfig.class);
 						}
 						catch (NoSuchMethodException ignore)
 						{
@@ -267,7 +237,7 @@ public class Main
 						 */
 						Module mod;
 						if (constructor != null)
-							mod = (Module) constructor.newInstance(props);
+							mod = (Module) constructor.newInstance(config);
 						else
 							mod = (Module) aClass.newInstance();
 
@@ -344,7 +314,6 @@ public class Main
 				main.runExport(ps, arguments.exportMetricNames);
 				ps.flush();
 				ps.close();
-				System.out.println("Export finished");
 			}
 			else
 			{
@@ -354,7 +323,6 @@ public class Main
 			}
 
 			main.stopServices();
-			System.out.println("All done");
 		}
 		else if (arguments.operationCommand.equals("import"))
 		{
@@ -368,11 +336,8 @@ public class Main
 			{
 				main.runImport(System.in);
 			}
-			System.out.println("Import finished");
-			Thread.sleep(10000);
 
 			main.stopServices();
-			System.out.println("All done");
 		}
 		else if (arguments.operationCommand.equals("run") || arguments.operationCommand.equals("start"))
 		{
@@ -465,7 +430,7 @@ public class Main
 			if (metricNames != null && metricNames.size() > 0)
 				metrics = metricNames;
 			else
-				metrics = ds.getMetricNames(null);
+				metrics = ds.getMetricNames();
 
 			for (String metric : metrics)
 			{
@@ -491,8 +456,7 @@ public class Main
 	public void runImport(InputStream in) throws IOException, DatastoreException
 	{
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
-		FilterEventBus eventBus = m_injector.getInstance(FilterEventBus.class);
-		Publisher<DataPointEvent> publisher = eventBus.createPublisher(DataPointEvent.class);
+		EventBusWithFilters eventBus = m_injector.getInstance(EventBusWithFilters.class);
 		KairosDataPointFactory dpFactory = m_injector.getInstance(KairosDataPointFactory.class);
 
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8));
@@ -501,7 +465,7 @@ public class Main
 		String line;
 		while ((line = reader.readLine()) != null)
 		{
-			DataPointsParser dataPointsParser = new DataPointsParser(publisher, new StringReader(line),
+			DataPointsParser dataPointsParser = new DataPointsParser(eventBus, new StringReader(line),
 					gson, dpFactory);
 
 			ValidationErrors validationErrors = dataPointsParser.parse();
@@ -571,9 +535,6 @@ public class Main
 		//Stop the datastore
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
 		ds.close();
-
-		FilterEventBus eventBus = m_injector.getInstance(FilterEventBus.class);
-		eventBus.createPublisher(ShutdownEvent.class).post(new ShutdownEvent());
 	}
 
 	private static class RecoveryFile
@@ -636,7 +597,7 @@ public class Main
 		}
 
 		@Override
-		public DataPointWriter startDataPointSet(String type, SortedMap<String, String> tags) throws IOException
+		public DataPointWriter startDataPointSet(String type, Map<String, String> tags) throws IOException
 		{
 			m_lock.writeLock().lock();
 

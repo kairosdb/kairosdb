@@ -16,8 +16,8 @@
 
 package org.kairosdb.core;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.net.InetAddresses;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
@@ -74,7 +74,7 @@ import org.kairosdb.core.queue.QueueProcessor;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
 import org.kairosdb.eventbus.EventBusConfiguration;
-import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.util.IngestExecutorService;
@@ -86,14 +86,11 @@ import se.ugli.bigqueue.BigArray;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.MissingResourceException;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR;
 import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR_CLASS;
-
 
 public class CoreModule extends AbstractModule
 {
@@ -102,20 +99,19 @@ public class CoreModule extends AbstractModule
 
 	public static final String DATAPOINTS_FACTORY_LONG = "kairosdb.datapoints.factory.long";
 	public static final String DATAPOINTS_FACTORY_DOUBLE = "kairosdb.datapoints.factory.double";
+	private KairosConfig m_config;
+	private final EventBusWithFilters m_eventBus;
 
-	private Properties m_props;
-	private final FilterEventBus m_eventBus;
-
-	public CoreModule(Properties props)
+	public CoreModule(KairosConfig config)
 	{
-		m_props = props;
-		m_eventBus = new FilterEventBus(new EventBusConfiguration(m_props));
+		m_config = config;
+		m_eventBus = new EventBusWithFilters(new EventBusConfiguration(m_config));
 	}
 
 	@SuppressWarnings("rawtypes")
 	private Class getClassForProperty(String property)
 	{
-		String className = m_props.getProperty(property);
+		String className = m_config.getProperty(property);
 
 		Class klass;
 		try
@@ -138,8 +134,8 @@ public class CoreModule extends AbstractModule
 		This bit of magic makes it so any object that is bound through guice just
 		needs to annotate a method with @Subscribe and they can get events.
 		 */
-		bind(FilterEventBus.class).toInstance(m_eventBus);
-		//bind(EventBus.class).toInstance(m_eventBus);
+		bind(EventBusWithFilters.class).toInstance(m_eventBus);
+		bind(EventBus.class).toInstance(m_eventBus);
 		//Need to register an exception handler
 		bindListener(Matchers.any(), new TypeListener()
 		{
@@ -198,10 +194,10 @@ public class CoreModule extends AbstractModule
 		bind(TagGroupBy.class);
 		bind(BinGroupBy.class);
 
-		Names.bindProperties(binder(), m_props);
-		bind(Properties.class).toInstance(m_props);
+		Names.bindProperties(binder(), m_config);
+		bind(KairosConfig.class).toInstance(m_config);
 
-		String hostname = m_props.getProperty("kairosdb.hostname");
+		String hostname = m_config.getProperty("kairosdb.hostname");
 		bindConstant().annotatedWith(Names.named("HOSTNAME")).to(hostname != null ? hostname: Util.getHostName());
 
 		//bind queue processor impl
@@ -225,15 +221,15 @@ public class CoreModule extends AbstractModule
 
 		bind(StringDataPointFactory.class).in(Singleton.class);
 
+		bind(StringDataPointFactory.class).in(Singleton.class);
+
 		bind(NullDataPointFactory.class).in(Singleton.class);
 
 		bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class).in(Singleton.class);
 
 		bind(IngestExecutorService.class);
 
-		bind(HostManager.class).in(Singleton.class);
-
-		String hostIp = m_props.getProperty("kairosdb.host_ip");
+		String hostIp = m_config.getProperty("kairosdb.host_ip");
 		bindConstant().annotatedWith(Names.named("HOST_IP")).to(hostIp != null ? hostIp: InetAddresses.toAddrString(Util.findPublicIp()));
 
 		bind(QueryPreProcessorContainer.class).to(GuiceQueryPreProcessor.class).in(Singleton.class);
@@ -248,18 +244,8 @@ public class CoreModule extends AbstractModule
 	}
 
 	@Provides @Named(QUEUE_PROCESSOR) @Singleton
-	public ExecutorService getQueueExecutor()
+	public Executor getQueueExecutor()
 	{
-		return Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("QueueProcessor-%s").build());
-	}
-
-	@Provides
-	@Singleton
-	@Named(HostManager.HOST_MANAGER_SERVICE_EXECUTOR)
-	public ScheduledExecutorService getExecutorService()
-	{
-		return Executors.newSingleThreadScheduledExecutor(
-				new ThreadFactoryBuilder().setNameFormat("HostManagerService-%s").build());
-
+		return Executors.newSingleThreadExecutor();
 	}
 }

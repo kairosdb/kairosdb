@@ -13,9 +13,7 @@ import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.kairosdb.core.GuiceKairosDataPointFactory;
-import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.KairosFeatureProcessor;
+import org.kairosdb.core.*;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datapoints.DoubleDataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
@@ -32,7 +30,6 @@ import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.QueryPluginFactory;
 import org.kairosdb.core.datastore.QueryQueuingManager;
 import org.kairosdb.core.datastore.ServiceKeyStore;
-import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
@@ -43,7 +40,7 @@ import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
 import org.kairosdb.core.processingstage.FeatureProcessingFactory;
 import org.kairosdb.core.processingstage.FeatureProcessor;
 import org.kairosdb.eventbus.EventBusConfiguration;
-import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.testing.Client;
@@ -54,24 +51,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 public abstract class ResourceBase
 {
-    private static final FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new Properties()));
+    private static final EventBusWithFilters eventBus = new EventBusWithFilters(new EventBusConfiguration(new KairosConfigImpl()));
     private static WebServer server;
 
     static QueryQueuingManager queuingManager;
     static Client client;
     static TestDatastore datastore;
-    static MetricsResource resource;
 
     @BeforeClass
     public static void startup() throws Exception
@@ -83,12 +76,12 @@ public abstract class ResourceBase
         datastore = new TestDatastore();
         queuingManager = new QueryQueuingManager(3, "localhost");
 
-        Injector injector = Guice.createInjector(new WebServletModule(new Properties()), new AbstractModule()
+        Injector injector = Guice.createInjector(new WebServletModule(new KairosConfigImpl()), new AbstractModule()
         {
             @Override
             protected void configure()
             {
-                bind(FilterEventBus.class).toInstance(eventBus);
+                bind(EventBusWithFilters.class).toInstance(eventBus);
                 //Need to register an exception handler
                 bindListener(Matchers.any(), new TypeListener()
                 {
@@ -120,13 +113,13 @@ public abstract class ResourceBase
                 bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
                 bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
                 bind(SimpleStatsReporter.class);
-                bind(String.class).annotatedWith(Names.named("kairosdb.server.type")).toInstance("ALL");
 
-                Properties props = new Properties();
-                InputStream is = getClass().getClassLoader().getResourceAsStream("kairosdb.properties");
+                KairosConfig props = new KairosConfigImpl();
+                String configFileName = "kairosdb.properties";
+                InputStream is = getClass().getClassLoader().getResourceAsStream(configFileName);
                 try
                 {
-                    props.load(is);
+                    props.load(is, KairosConfig.ConfigFormat.fromFileName(configFileName));
                     is.close();
                 }
                 catch (IOException e)
@@ -135,7 +128,7 @@ public abstract class ResourceBase
                 }
 
                 //Names.bindProperties(binder(), props);
-                bind(Properties.class).toInstance(props);
+                bind(KairosConfig.class).toInstance(props);
 
                 bind(DoubleDataPointFactory.class)
                         .to(DoubleDataPointFactoryImpl.class).in(Singleton.class);
@@ -156,7 +149,6 @@ public abstract class ResourceBase
         server.start();
 
         client = new Client();
-        resource = injector.getInstance(MetricsResource.class);
     }
 
     @AfterClass
@@ -188,7 +180,7 @@ public abstract class ResourceBase
         }
 
         @Override
-        public Iterable<String> getMetricNames(String prefix)
+        public Iterable<String> getMetricNames()
         {
             return Arrays.asList("cpu", "memory", "disk", "network");
         }
@@ -213,7 +205,7 @@ public abstract class ResourceBase
 
             try
             {
-                SortedMap<String, String> tags = new TreeMap<>();
+                Map<String, String> tags = new TreeMap<>();
                 tags.put("server", "server1");
 
                 QueryCallback.DataPointWriter dataPointWriter = queryCallback.startDataPointSet(LongDataPointFactoryImpl.DST_LONG, tags);
@@ -262,11 +254,11 @@ public abstract class ResourceBase
         }
 
         @Override
-        public ServiceKeyValue getValue(String service, String serviceKey, String key) throws DatastoreException
+        public String getValue(String service, String serviceKey, String key) throws DatastoreException
         {
             if (m_toThrow != null)
                 throw m_toThrow;
-            return new ServiceKeyValue(metadata.get(service + "/" + serviceKey + "/" + key), new Date());
+            return metadata.get(service + "/" + serviceKey + "/" + key);
         }
 
         @Override
@@ -326,13 +318,6 @@ public abstract class ResourceBase
                 throw m_toThrow;
 
             metadata.remove(service + "/" + serviceKey + "/" + key);
-        }
-
-        @Override
-        public Date getServiceKeyLastModifiedTime(String service, String serviceKey)
-                throws DatastoreException
-        {
-            return null;
         }
     }
 }

@@ -4,10 +4,10 @@ package org.kairosdb.eventbus;
 import com.google.common.eventbus.AllowConcurrentEvents;
 import org.junit.Before;
 import org.junit.Test;
+import org.kairosdb.core.KairosConfigImpl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Properties;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -21,13 +21,13 @@ public class FilterSubscriberTest {
 
     private static final String FIXTURE_ARGUMENT = "fixture argument";
 
-    private FilterEventBus bus;
+    private EventBusWithFilters bus;
     private boolean methodCalled;
     private Object methodArgument;
 
     @Before
     public void setUp() throws Exception {
-        bus = new FilterEventBus(new EventBusConfiguration(new Properties()));
+        bus = new EventBusWithFilters(new EventBusConfiguration(new KairosConfigImpl()));
         methodCalled = false;
         methodArgument = null;
     }
@@ -44,7 +44,7 @@ public class FilterSubscriberTest {
         FilterSubscriber.create(bus, this, getTestSubscriberMethod("recordingMethod"), 101);
     }
 
-    /*@Test
+    @Test
     public void testCreate() {
         FilterSubscriber s1 = FilterSubscriber.create(bus, this, getTestSubscriberMethod("recordingMethod"), 10);
         assertThat(s1, instanceOf(FilterSubscriber.SynchronizedFilterSubscriber.class));
@@ -52,7 +52,7 @@ public class FilterSubscriberTest {
         // a thread-safe method should not create a synchronized subscriber
         FilterSubscriber s2 = FilterSubscriber.create(bus, this, getTestSubscriberMethod("threadSafeMethod"), 10);
         assertThat(s2, not(instanceOf(FilterSubscriber.SynchronizedFilterSubscriber.class)));
-    }*/
+    }
 
     @Test
     public void testInvokeSubscriberMethod_basicMethodCall() throws Throwable {
@@ -88,7 +88,7 @@ public class FilterSubscriberTest {
         FilterSubscriber subscriber = FilterSubscriber.create(bus, this, method, 10);
 
         try {
-            subscriber.dispatchEvent(FIXTURE_ARGUMENT);
+            subscriber.invokeSubscriberMethod(FIXTURE_ARGUMENT);
             fail("Subscribers whose methods throw Errors must rethrow them");
         } catch (JudgmentError expected) {
         }
@@ -124,7 +124,7 @@ public class FilterSubscriberTest {
      * @param arg argument to record.
      */
     @SuppressWarnings("unused")
-    @Subscribe
+    @Filter
     public Object recordingMethod(Object arg) {
         assertFalse(methodCalled);
         methodCalled = true;
@@ -133,7 +133,7 @@ public class FilterSubscriberTest {
     }
 
     @SuppressWarnings("unused")
-    @Subscribe
+    @Filter
     public void exceptionThrowingMethod(Object arg) throws Exception {
         throw new IntentionalException();
     }
@@ -147,13 +147,13 @@ public class FilterSubscriberTest {
     }
 
     @SuppressWarnings("unused")
-    @Subscribe
+    @Filter
     public void errorThrowingMethod(Object arg) {
         throw new JudgmentError();
     }
 
     @SuppressWarnings("unused")
-    @Subscribe
+    @Filter
     @AllowConcurrentEvents
     public void threadSafeMethod(Object arg) {
     }

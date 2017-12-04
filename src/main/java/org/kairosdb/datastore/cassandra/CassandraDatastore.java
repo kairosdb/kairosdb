@@ -18,12 +18,14 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.*;
 import com.google.common.collect.*;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
+import org.kairosdb.datastore.cassandra.cache.StringKeyCache;
 import org.kairosdb.util.KDataOutput;
 import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
@@ -39,6 +41,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.datastore.cassandra.cache.DefaultMetricNameCache.METRIC_NAME_CACHE;
+import static org.kairosdb.datastore.cassandra.cache.DefaultTagNameCache.TAG_NAME_CACHE;
+import static org.kairosdb.datastore.cassandra.cache.DefaultTagValueCache.TAG_VALUE_CACHE;
 
 public class CassandraDatastore implements Datastore {
     public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
@@ -93,6 +98,9 @@ public class CassandraDatastore implements Datastore {
     private final PreparedStatement m_psQueryDataPoints;
 
     private final RowKeyCache rowKeyCache;
+    private final StringKeyCache metricNameCache;
+    private final StringKeyCache tagNameCache;
+    private final StringKeyCache tagValueCache;
 
     private final KairosDataPointFactory m_kairosDataPointFactory;
 
@@ -102,12 +110,22 @@ public class CassandraDatastore implements Datastore {
 
     @Inject
     public CassandraDatastore(CassandraClient cassandraClient, CassandraConfiguration cassandraConfiguration,
-                              KairosDataPointFactory kairosDataPointFactory, RowKeyCache rowKeyCache
+                              KairosDataPointFactory kairosDataPointFactory, RowKeyCache rowKeyCache,
+                              @Named(METRIC_NAME_CACHE) StringKeyCache metricNameCache,
+                              @Named(TAG_NAME_CACHE) StringKeyCache tagNameCache,
+                              @Named(TAG_VALUE_CACHE) StringKeyCache tagValueCache
     ) throws DatastoreException {
         m_cassandraConfiguration = cassandraConfiguration;
         this.rowKeyCache = rowKeyCache;
+        this.metricNameCache = metricNameCache;
+        this.tagNameCache = tagNameCache;
+        this.tagValueCache = tagValueCache;
 
         logger.warn("Setting tag index: {}", cassandraConfiguration.getIndexTagList());
+        logger.warn("Setting metric name cache size: {}", cassandraConfiguration.getMetricNameCacheSize());
+        logger.warn("Setting row key cache size: {}", cassandraConfiguration.getRowKeyCacheSize());
+        logger.warn("Setting tag name cache size: {}", cassandraConfiguration.getTagNameCacheSize());
+        logger.warn("Setting tag value cache size: {}", cassandraConfiguration.getTagValueCacheSize());
 
         m_indexTagList = Arrays.stream(cassandraConfiguration.getIndexTagList().split(","))
                 .map(String::trim)
@@ -199,26 +217,36 @@ public class CassandraDatastore implements Datastore {
             if (!rowKeyKnown) {
                 storeRowKeyReverseLookups(metricName, serializedKey, rowKeyTtl, tags);
                 rowKeyCache.put(serializedKey);
+            }
 
-                //Write metric name if not in cache
+            //Write metric name if not in cache
+            if (!metricNameCache.isKnown(metricName)) {
                 if (metricName.length() == 0) {
                     logger.warn("Attempted to add empty metric name to string index. Row looks like: {}", dataPoint);
                 }
                 storeStringIndex(metricName, m_psInsertString, METRIC_NAME_BYTE_BUFFER);
+                metricNameCache.put(metricName);
+            }
 
-                //Check tag names and values to write them out
-                for (final String tagName : tags.keySet()) {
+            //Check tag names and values to write them out
+            for (final String tagName : tags.keySet()) {
+                if (!tagNameCache.isKnown(tagName)) {
                     if (tagName.length() == 0) {
                         logger.warn("Attempted to add empty tagName to string cache for metric: {}", metricName);
                     }
                     storeStringIndex(tagName, m_psInsertString, ROW_KEY_TAG_NAMES_BYTE_BUFFER);
+                    tagNameCache.put(tagName);
+                }
 
-                    final String value = tags.get(tagName);
+                final String value = tags.get(tagName);
+                boolean isCachedValue = tagValueCache.isKnown(value);
+                if (m_cassandraConfiguration.getTagValueCacheSize() > 0 && !isCachedValue) {
                     if (value.length() == 0) {
                         logger.warn("Attempted to add empty tagValue (tag name {}) to string cache for metric: {}",
                                 tagName, metricName);
                     }
                     storeStringIndex(value, m_psInsertString, ROW_KEY_TAG_VALUES_BYTE_BUFFER);
+                    tagValueCache.put(value);
                 }
             }
 

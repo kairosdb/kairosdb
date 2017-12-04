@@ -29,7 +29,7 @@ public class CacheMetricsReporterTest {
             }
         });
 
-        CacheMetricsReporter reporter = new CacheMetricsReporter(cacheMetricsProvider, "localhost");
+        CacheMetricsReporter reporter = new CacheMetricsReporter(cacheMetricsProvider);
 
         List<DataPointSet> points = reporter.getMetrics(0);
         assertEquals(2, points.size());

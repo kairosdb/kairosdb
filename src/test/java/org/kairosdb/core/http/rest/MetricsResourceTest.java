@@ -18,12 +18,16 @@ package org.kairosdb.core.http.rest;
 import ch.qos.logback.classic.Level;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.core.exception.InvalidServerTypeException;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.util.LoggingUtils;
 
 import java.io.IOException;
+import java.util.EnumSet;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -37,6 +41,8 @@ public class MetricsResourceTest extends ResourceBase
 	private static final String METRIC_NAMES_URL = "http://localhost:9001/api/v1/metricnames";
 	private static final String TAG_NAMES_URL = "http://localhost:9001/api/v1/tagnames";
 	private static final String TAG_VALUES_URL = "http://localhost:9001/api/v1/tagvalues";
+	private static final String DELETE_DATAPOINTS_URL = "http://localhost:9001/api/v1/datapoints/delete";
+	private static final String DELETE_METRIC_URL = "http://localhost:9001/api/v1/metric/";
 
     @Test
 	public void testAddEmptyBody() throws Exception
@@ -190,7 +196,143 @@ public class MetricsResourceTest extends ResourceBase
 		}
 	}
 
-	static void assertResponse(JsonResponse response, int responseCode, String expectedContent)
+	@Rule
+	public ExpectedException thrown = ExpectedException.none();
+
+	@Test
+	public void test_checkServerTypeStaticIngestDisabled() throws InvalidServerTypeException
+	{
+		thrown.expect(InvalidServerTypeException.class);
+		thrown.expectMessage("[{\"Forbidden\": \"INGEST API methods are disabled on this KairosDB instance.\"}]");
+		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.QUERY, ServerType.DELETE), ServerType.INGEST, "/datapoints", "POST");
+	}
+
+	@Test
+	public void test_checkServerTypeStaticQueryDisabled() throws InvalidServerTypeException
+	{
+		thrown.expect(InvalidServerTypeException.class);
+		thrown.expectMessage("[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]");
+		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.INGEST, ServerType.DELETE), ServerType.QUERY, "/datapoints/query", "POST");
+	}
+
+	@Test
+	public void test_checkServerTypeStaticDeleteDisabled() throws InvalidServerTypeException
+	{
+		thrown.expect(InvalidServerTypeException.class);
+		thrown.expectMessage("[{\"Forbidden\": \"DELETE API methods are disabled on this KairosDB instance.\"}]");
+		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.INGEST, ServerType.QUERY), ServerType.DELETE, "/datapoints/delete", "POST");
+	}
+
+	@Test
+	public void test_checkServerTypeStaticIngestEnabled() throws InvalidServerTypeException
+	{
+		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.INGEST), ServerType.INGEST, "/datapoints", "POST");
+	}
+
+	@Test
+	public void test_checkServerTypeStaticQueryEnabled() throws InvalidServerTypeException
+	{
+		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.QUERY), ServerType.QUERY, "/datapoints/query", "POST");
+	}
+
+	@Test
+	public void test_checkServerTypeStaticDeleteEnabled() throws InvalidServerTypeException
+	{
+		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.DELETE), ServerType.DELETE, "/datapoints/delete", "POST");
+	}
+
+	@Test
+	public void testAddMetricIngestDisabled() throws IOException
+	{
+		resource.setServerType("QUERY");
+
+		String json = Resources.toString(Resources.getResource("single-metric-long.json"), Charsets.UTF_8);
+
+		JsonResponse response = client.post(json, ADD_METRIC_URL);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"INGEST API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+
+	}
+
+	@Test
+	public void testGetMetricQueryDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
+
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-relative-unit.json"), Charsets.UTF_8);
+
+		JsonResponse response = client.post(json, GET_METRIC_URL);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+	}
+
+	@Test
+	public void testMetricNamesQueryDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
+
+		JsonResponse response = client.get(METRIC_NAMES_URL);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+	}
+
+	@Test
+	public void testTagNamesQueryDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
+
+		JsonResponse response = client.get(TAG_NAMES_URL);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+	}
+
+	@Test
+	public void testTagValuesQueryDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
+
+		JsonResponse response = client.get(TAG_VALUES_URL);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+	}
+
+	@Test
+	public void testDeleteDatapointsDeleteDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
+
+		String json = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
+
+		JsonResponse response = client.post(json, DELETE_DATAPOINTS_URL);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"DELETE API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+	}
+
+	@Test
+	public void testDeleteMetricDeleteDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
+
+		String metricName = "Some.Metric.Name";
+
+		JsonResponse response = client.delete(DELETE_METRIC_URL + metricName);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"DELETE API methods are disabled on this KairosDB instance.\"}]\n");
+	}
+
+	private static void assertResponse(JsonResponse response, int responseCode, String expectedContent)
 	{
 		assertThat(response.getStatusCode(), equalTo(responseCode));
 		assertThat(response.getHeader("Content-Type"), startsWith("application/json"));

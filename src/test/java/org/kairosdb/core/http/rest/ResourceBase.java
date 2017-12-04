@@ -61,6 +61,7 @@ public abstract class ResourceBase
     static QueryQueuingManager queuingManager;
     static Client client;
     static TestDatastore datastore;
+    static MetricsResource resource;
 
     @BeforeClass
     public static void startup() throws Exception
@@ -144,6 +145,7 @@ public abstract class ResourceBase
         server.start();
 
         client = new Client();
+        resource = injector.getInstance(MetricsResource.class);
     }
 
     @AfterClass

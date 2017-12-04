@@ -17,18 +17,21 @@ package org.kairosdb.core.datastore;
 
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.LimitAggregator;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.groupby.*;
+import org.kairosdb.core.groupby.GroupByResult;
+import org.kairosdb.core.groupby.Grouper;
+import org.kairosdb.core.groupby.TagGroupBy;
+import org.kairosdb.core.groupby.TagGroupByResult;
+import org.kairosdb.core.groupby.TypeGroupByResult;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.plugin.Aggregator;
+import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +42,14 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -56,7 +66,6 @@ public class KairosDatastore
 
 	private final Datastore m_datastore;
 	private final QueryQueuingManager m_queuingManager;
-	private final List<DataPointListener> m_dataPointListeners;
 	private final KairosDataPointFactory m_dataPointFactory;
 
 	private String m_baseCacheDir;
@@ -66,12 +75,11 @@ public class KairosDatastore
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-			List<DataPointListener> dataPointListeners, KairosDataPointFactory dataPointFactory,
+			KairosDataPointFactory dataPointFactory,
 			@Named(KEEP_CACHE_FILES) boolean keepCacheFiles)
 			throws DatastoreException
 	{
 		m_datastore = checkNotNull(datastore);
-		m_dataPointListeners = checkNotNull(dataPointListeners);
 		m_queuingManager = checkNotNull(queuingManager);
 		m_dataPointFactory = dataPointFactory;
 
@@ -99,7 +107,7 @@ public class KairosDatastore
 		newCacheDirectory();
 		File cacheDirectory = new File(m_cacheDir);
 		cacheDirectory.mkdirs();
-		checkState(cacheDirectory.exists(), "Cache directory not created");
+		checkState(cacheDirectory.exists(), "Unable to create Cache directory '" + m_cacheDir + "'");
 	}
 
 	/**
@@ -186,7 +194,7 @@ public class KairosDatastore
 		m_datastore.close();
 	}
 
-	public void putDataPoint(String metricName,
+	/*public void putDataPoint(String metricName,
 			ImmutableSortedMap<String, String> tags,
 			DataPoint dataPoint) throws DatastoreException
 	{
@@ -199,12 +207,7 @@ public class KairosDatastore
 	{
 		//Add to datastore first.
 		m_datastore.putDataPoint(metricName, tags, dataPoint, ttl);
-
-		for (DataPointListener dataPointListener : m_dataPointListeners)
-		{
-			dataPointListener.dataPoint(metricName, tags, dataPoint);
-		}
-	}
+	}*/
 
 
 	public Iterable<String> getMetricNames() throws DatastoreException
@@ -459,7 +462,7 @@ public class KairosDatastore
 		{
 			long queryStartTime = System.currentTimeMillis();
 			
-			CachedSearchResult cachedResults = null;
+			SearchResult searchResult = null;
 
 			List<DataPointRow> returnedRows = null;
 
@@ -467,28 +470,33 @@ public class KairosDatastore
 			{
 				String tempFile = m_cacheDir + m_cacheFilename;
 
+				/*searchResult = new MemorySearchResult(m_metric.getName());
+				m_datastore.queryDatabase(m_metric, searchResult);
+				returnedRows = searchResult.getRows();*/
+
 				if (m_metric.getCacheTime() > 0)
 				{
-					cachedResults = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
+					searchResult = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
 							tempFile, m_metric.getCacheTime(), m_dataPointFactory, m_keepCacheFiles);
-					if (cachedResults != null)
+					if (searchResult != null)
 					{
-						returnedRows = cachedResults.getRows();
+						returnedRows = searchResult.getRows();
 						logger.debug("Cache HIT!");
 					}
 				}
 
-				if (cachedResults == null)
+				if (searchResult == null)
 				{
 					logger.debug("Cache MISS!");
-					cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
+					searchResult = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
 							tempFile, m_dataPointFactory, m_keepCacheFiles);
-					m_datastore.queryDatabase(m_metric, cachedResults);
-					returnedRows = cachedResults.getRows();
+					m_datastore.queryDatabase(m_metric, searchResult);
+					returnedRows = searchResult.getRows();
 				}
 			}
 			catch (Exception e)
 			{
+				logger.error("Query Error", e);
 				throw new DatastoreException(e);
 			}
 
@@ -498,10 +506,10 @@ public class KairosDatastore
 				m_dataPointCount += returnedRow.getDataPointCount();
 			}
 
-            m_rowCount = returnedRows.size();
+			m_rowCount = returnedRows.size();
 
-            ThreadReporter.addDataPoint(QUERY_SAMPLE_SIZE, m_dataPointCount);
-            ThreadReporter.addDataPoint(QUERY_ROW_COUNT, m_rowCount);
+			ThreadReporter.addDataPoint(QUERY_SAMPLE_SIZE, m_dataPointCount);
+			ThreadReporter.addDataPoint(QUERY_ROW_COUNT, m_rowCount);
 
 			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
 					returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());

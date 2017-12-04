@@ -13,10 +13,26 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package org.kairosdb.core.groupby;
 
-public interface GroupByFactory
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import org.kairosdb.core.annotation.Feature;
+import org.kairosdb.core.processingstage.GenericFeatureProcessorFactory;
+import org.kairosdb.plugin.GroupBy;
+
+import java.lang.reflect.InvocationTargetException;
+
+@Feature(
+        name = "group_by",
+        label = "Group By"
+)
+public class GroupByFactory extends GenericFeatureProcessorFactory<GroupBy>
 {
-	GroupBy createGroupBy(String name);
+    @Inject
+    public GroupByFactory(Injector injector)
+            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    {
+        super(injector, GroupBy.class);
+    }
 }

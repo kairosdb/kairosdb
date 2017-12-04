@@ -22,14 +22,14 @@ import tablesaw.rules.SimpleRule
 
 import javax.swing.*
 
-println("===============================================");
+println("===============================================")
 
 saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "1.1.3"
-release = saw.getProperty("KAIROS_RELEASE_NUMBER", "1") //package release number
+version = "1.2.0"
+release = saw.getProperty("KAIROS_RELEASE_NUMBER", "0.3beta") //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -57,6 +57,9 @@ new DirectoryRule("build")
 rpmDirRule = new DirectoryRule(rpmDir)
 rpmNoDepDirRule = new DirectoryRule(rpmNoDepDir)
 
+//Having a rule for the queue folder will ensure it gets removed durring a clean
+new DirectoryRule("queue")
+
 //------------------------------------------------------------------------------
 //Setup java rules
 ivy = new IvyAddon()
@@ -79,8 +82,8 @@ jc = jp.getCompileRule()
 ivyDefaultResolve = ivy.getResolveRule("default")
 jc.addDepend(ivyDefaultResolve)
 
-jc.getDefinition().set("target", "1.7")
-jc.getDefinition().set("source", "1.7")
+jc.getDefinition().set("target", "1.8")
+jc.getDefinition().set("source", "1.8")
 jc.getDefinition().set("encoding", "UTF8")
 jc.getDefinition().set("deprecation")
 jc.getDefinition().set("unchecked")
@@ -96,6 +99,8 @@ ivy.createPomRule("pom.xml", ivy.getResolveRule("default"), ivy.getResolveRule("
 		.addDepend("ivysettings.xml")
 		.setName("project-pom")
 		.setDescription("Use this target to generate a pom used for opening project in IDE")
+		.setJavaVersion("1.8")
+		//.alwaysRun()
 
 //------------------------------------------------------------------------------
 //==-- Maven POM Rule --==
@@ -138,7 +143,7 @@ manifest.putValue("Built-By", saw.getProperty("user.name"))
 buildDateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss z")
 manifest.putValue("Build-Date", buildDateFormat.format(new Date()))
 
-buildNumberFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss");
+buildNumberFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss")
 buildNumber = buildNumberFormat.format(new Date())
 manifest.putValue("Implementation-Title", "KairosDB")
 manifest.putValue("Implementation-Vendor", "KairosDB")
@@ -147,11 +152,11 @@ manifest.putValue("Implementation-Version", "${version}-${release}.${buildNumber
 //Add git revision information
 gitRevisionFile= ".gitrevision"
 new File(gitRevisionFile).text = ""
-ret = saw.exec(null, "git rev-parse HEAD", false, null, gitRevisionFile);
+ret = saw.exec(null, "git rev-parse HEAD", false, null, gitRevisionFile)
 revision = new File(gitRevisionFile).text.trim()
 new File(gitRevisionFile).delete()
 if (ret == 0)
-	manifest.putValue("Git-Revision", revision);
+	manifest.putValue("Git-Revision", revision)
 
 
 //------------------------------------------------------------------------------
@@ -168,6 +173,7 @@ ivyTestResolve = ivy.getResolveRule("test")
 testCompileRule.addDepend(ivyTestResolve)
 testCompileRule.getDefinition().set("unchecked")
 testCompileRule.getDefinition().set("deprecation")
+//testCompileRule.getDefinition().set("verbose")
 
 new SimpleRule("compile-test").addDepend(testCompileRule)
 
@@ -177,7 +183,7 @@ junitClasspath.addPath("src/main/java")
 junitClasspath.addPath("src/test/resources")
 junitClasspath.addPath("src/main/resources")
 
-junit = new JUnitRule("junit-test").addSources(testSources)
+junit = new JUnitRule("test").addSources(testSources)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
 		.addDepends(ivyTestResolve)
@@ -186,7 +192,7 @@ if (saw.getProperty("jacoco", "false").equals("true"))
 	junit.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
 
 testSourcesAll = new RegExFileSet("src/test/java", ".*Test\\.java").recurse().getFilePaths()
-junitAll = new JUnitRule("junit-test-all").setDescription("Run unit tests including Cassandra tests")
+junitAll = new JUnitRule("test-all").setDescription("Run unit tests including Cassandra tests - requires Cassandra running on localhost")
 		.addSources(testSourcesAll)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
@@ -292,7 +298,7 @@ def doRPM(Rule rule)
 			}
 
 	if ("on".equals(rule.getProperty("dependency")))
-		rpmBuilder.addDependencyMore("jre", "1.7")
+		rpmBuilder.addDependencyMore("jre", "1.8")
 
 	rpmBuilder.setPostInstallScript(new File("src/scripts/install/post_install.sh"))
 	rpmBuilder.setPreUninstallScript(new File("src/scripts/install/pre_uninstall.sh"))
@@ -391,41 +397,51 @@ new SimpleRule("import").setDescription("Imports metrics." +
 
 def doRun(Rule rule)
 {
+	kairosDefinition = saw.getDefinition("kairos")
+
 	if (rule.getProperty("ACTION") == "export")
 	{
-		args = "-c export "
+		kairosDefinition.set("command", "export")
 		metricName = saw.getProperty("n", "")
 		if (metricName.length() > 0)
-			args += "-n " + metricName
+			kairosDefinition.set("export_metric", metricName)
 		filename = saw.getProperty("f", "")
 		if (filename.length() > 0)
-			args += " -f " + filename
+			kairosDefinition.set("import_export_file", filename)
 	}
 	else if (rule.getProperty("ACTION") == "import")
 	{
-		args = "-c import "
+		kairosDefinition.set("command", "import")
 		filename = saw.getProperty("f", "")
 		if (filename.length() > 0)
-			args += " -f " + filename
+			kairosDefinition.set("import_export_file", filename)
 	}
 	else
-		args = "-c run"
+		kairosDefinition.set("command", "run")
 
 	//Check if you have a custom kairosdb.properties file and load it.
 	customProps = new File("kairosdb.properties")
 	if (customProps.exists())
-		args += " -p kairosdb.properties"
+		kairosDefinition.set("properties", "kairosdb.properties")
 
-	debug = ""
 	if (rule.getProperty("DEBUG"))
-		debug = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+		kairosDefinition.set("debug")
+
+	/*
+	  This is for use with visual vm.  Set the startup agent command in
+	  tablesaw.properties and this will inject it into the startup command
+	 */
+	if (saw.getProperty("profile") != null)
+		kairosDefinition.set("profile", saw.getProperty("profile"))
 
 	//this is to load logback into classpath
 	runClasspath = jc.getClasspath()
 	runClasspath.addPaths(ivyDefaultResolve.getClasspath())
 	runClasspath.addPath("src/main/resources").addPath("src/main/java")
-	ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
-	println(ret);
+	kairosDefinition.set("classpath", runClasspath)
+	//ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
+	ret = saw.exec(kairosDefinition.getCommand())
+	println(ret)
 }
 
 
@@ -443,9 +459,9 @@ def doGenorm(Rule rule)
 
 	genormClasspath = new Classpath(resolve.getClasspath())
 	genormDefinition.set("classpath", genormClasspath.toString())
-	genormDefinition.set("source", "src/main/conf/tables.xml");
-	cmd = genormDefinition.getCommand();
-	saw.exec(cmd);
+	genormDefinition.set("source", "src/main/conf/tables.xml")
+	cmd = genormDefinition.getCommand()
+	saw.exec(cmd)
 }
 
 
@@ -455,20 +471,25 @@ integrationClassPath = new Classpath(jp.getLibraryJars())
 //.addPaths(new RegExFileSet("lib/ivy/integration", ".*\\.jar").getFullFilePaths())
 		.addPath("src/integration-test/resources")
 
+ivyIntegrationRule = ivy.getResolveRule("integration")
+
 integrationBuildRule = new JavaCRule("build/integration")
 		.addSourceDir("src/integration-test/java")
 		.addClasspath(integrationClassPath)
-		.addDepend(ivy.getResolveRule("integration"))
+		.addDepend(ivyIntegrationRule)
 
 new SimpleRule("integration")
 		.setMakeAction("doIntegration")
 		.addDepend(integrationBuildRule)
+		.addDepend(ivyIntegrationRule)
 
 def doIntegration(Rule rule)
 {
+	integrationClassPath.addPaths(ivyIntegrationRule.getClasspath())
+	integrationClassPath.addPath("build/integration")
 	host = saw.getProperty("host", "127.0.0.1")
 	port = saw.getProperty("port", "8080")
-	saw.exec("java  -Dhost=${host} -Dport=${port} -cp ${integrationBuildRule.classpath} org.testng.TestNG src/integration-test/testng.xml")
+	saw.exec("java  -Dhost=${host} -Dport=${port} -cp ${integrationClassPath} org.testng.TestNG src/integration-test/testng.xml")
 }
 
 //------------------------------------------------------------------------------
@@ -496,6 +517,42 @@ def doDocs(Rule rule)
 }
 
 
+//---------------------------------------------------------------------------
+//Build Docker container
+dockerBuild = new SimpleRule("docker-build").setDescription("Build a Docker image, can specify docker registry with -D DOCKER_REGISTRY=<registry>")
+		.addDepend(tarRule)
+		.setMakeAction("doDockerBuild")
+
+def doDockerBuild(Rule rule)
+{
+	def tag = getDockerTag()
+	command = "docker build -t ${tag} --build-arg VERSION=${version}-${release} ."
+	saw.exec(command)
+}
+
+def getDockerTag()
+{
+	def registry = saw.getProperty("DOCKER_REGISTRY", "");
+
+	if ( registry != "" ) {
+		registry += "/"
+	}
+
+	return registry + "${programName}:${version}-${release}"
+}
+
+//------------------------------------------------------------------------------
+// Push container
+new SimpleRule("docker-push").setDescription("Push a Docker image to registry, can specify docker registry with -D DOCKER_REGISTRY=<registry>")
+		.addDepend(dockerBuild)
+		.setMakeAction("doDockerPush")
+
+def doDockerPush(Rule rule)
+{
+	def tag = getDockerTag()
+	command = "docker push ${tag}"
+	saw.exec(command)
+}
 
 //------------------------------------------------------------------------------
 //==-- Maven Artifacts --==
@@ -542,7 +599,7 @@ saw.setDefaultTarget("jar")
 def printMessage(String title, String message) {
 	osName = saw.getProperty("os.name")
 
-	Definition notifyDef;
+	Definition notifyDef
 	if (osName.startsWith("Linux"))
 	{
 		notifyDef = saw.getDefinition("linux-notify")

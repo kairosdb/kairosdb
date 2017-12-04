@@ -1,5 +1,5 @@
 var ROLLUP_URL = "/api/v1/rollups/";
-var AGGREGATORS_URL = "/api/v1/aggregators";
+var AGGREGATORS_URL = "/api/v1/features/aggregators";
 var semaphore = false;
 var metricList = null;
 
@@ -52,36 +52,35 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 
     $scope.init = function ()
     {
-        $http.get(ROLLUP_URL)
-                .success(function (response)
-                {
-                    if (response) {
-                        _.each(response, function (rollupTask)
+        $http.get(AGGREGATORS_URL)
+            .success(function (descriptorResponse)
+            {
+                $scope.aggregatorDescriptor = descriptorResponse;
+                $http.get(ROLLUP_URL)
+                        .success(function (response)
                         {
-                            $http.get(AGGREGATORS_URL)
-                                    .success(function (descriptorResponse)
-                                    {
-                                        $scope.aggregatorDescriptor = descriptorResponse;
+                            if (response) {
+                                _.each(response, function (rollupTask)
+                                {
+                                    // convert to a simpler model
+                                    var task = $scope.toSimpleTask(rollupTask);
+                                    $scope.tasks.push(task);
+                                    $scope.checkForIncompleteTask(task)
 
-                                        // convert to a simpler model
-                                        var task = $scope.toSimpleTask(rollupTask);
-                                        $scope.tasks.push(task);
-                                        $scope.checkForIncompleteTask(task)
-                                    })
-                                    .error(function (data, status, headers, config)
-                                    {
-                                        $scope.alert("Could not read aggregator metadata from server.", status, data);
-                                    });
+                                });
 
+                                $scope.tasks = orderByFilter($scope.tasks, "name");
+                            }
+                        })
+                        .error(function (data, status, headers, config)
+                        {
+                            $scope.alert("Could not read list of roll-ups from server.", status, data);
                         });
-
-                        $scope.tasks = orderByFilter($scope.tasks, "name");
-                    }
-                })
-                .error(function (data, status, headers, config)
-                {
-                    $scope.alert("Could not read list of roll-ups from server.", status, data);
-                });
+            })
+            .error(function (data, status, headers, config)
+            {
+                $scope.alert("Could not read aggregator metadata from server.", status, data);
+            });
     };
 
     $scope.init();
@@ -219,7 +218,10 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
                 }
             }
         }
-         return result.substring(0, result.length - 1); // Remove trailing comma
+        if (result.endsWith(",")){
+            result = result.substring(0, result.length - 1); // Remove trailing comma
+        }
+         return result;
     };
 
 	$scope.toHumanReadableTimeUnit = function (timeUnit) {
@@ -233,12 +235,12 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 
 	$scope.addTask = function () {
 		var task = {
-			name: $scope.DEFAULT_TASK_NAME,
-			metric_name: $scope.DEFAULT_METRIC_NAME,
-			save_as: $scope.DEFAULT_SAVE_AS,
-			executionType: $scope.DEFAULT_EXECUTE,
-			aggregators: [$scope.DEFAULT_AGGREGATOR],
-			group_by_type: $scope.DEFAULT_GROUP_BY_TYPE
+			name: angular.copy($scope.DEFAULT_TASK_NAME),
+			metric_name: angular.copy($scope.DEFAULT_METRIC_NAME),
+			save_as: angular.copy($scope.DEFAULT_SAVE_AS),
+			executionType: angular.copy($scope.DEFAULT_EXECUTE),
+			aggregators: [angular.copy($scope.DEFAULT_AGGREGATOR)],
+			group_by_type: angular.copy($scope.DEFAULT_GROUP_BY_TYPE)
 		};
 		task.incomplete = true;
 

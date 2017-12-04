@@ -31,7 +31,7 @@ public class GuiceQueryPluginFactory implements QueryPluginFactory
 			{
 				PluginName ann = (PluginName) bindingClass.getAnnotation(PluginName.class);
 				if (ann == null)
-					throw new IllegalStateException("Aggregator class " + bindingClass.getName() +
+					throw new IllegalStateException("QueryPlugin class " + bindingClass.getName() +
 							" does not have required annotation " + PluginName.class.getName());
 
 				m_plugins.put(ann.name(), (Class<QueryPlugin>)bindingClass);

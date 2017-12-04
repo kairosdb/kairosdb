@@ -3,6 +3,7 @@ package org.kairosdb.core.health;
 import com.codahale.metrics.health.HealthCheck;
 import com.google.inject.Inject;
 import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -10,10 +11,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class DatastoreQueryHealthCheck extends HealthCheck implements HealthStatus
 {
 	static final String NAME = "Datastore-Query";
-	private final Datastore datastore;
+	private final KairosDatastore datastore;
 
 	@Inject
-	public DatastoreQueryHealthCheck(Datastore datastore)
+	public DatastoreQueryHealthCheck(KairosDatastore datastore)
 	{
 		this.datastore = checkNotNull(datastore);
 	}

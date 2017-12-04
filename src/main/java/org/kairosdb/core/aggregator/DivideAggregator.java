@@ -19,30 +19,40 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.http.rest.validation.NonZero;
+import org.kairosdb.plugin.Aggregator;
 
 import java.util.List;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
-@AggregatorName(
+@FeatureComponent(
         name = "div",
-        description = "Divides each data point by a divisor.",
-        properties = {
-                @AggregatorProperty(name = "divisor", type = "double"),
-        }
+		description = "Divides each data point by a divisor."
 )
 public class DivideAggregator implements Aggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;
 
 	@NonZero
+	@FeatureProperty(
+			label = "Divisor",
+			description = "The value each data point is divided by.",
+            default_value = "1",
+            validations = {
+					@ValidationProperty(
+							expression = "value > 0",
+							message = "Divisor must be greater than 0."
+					)
+			}
+	)
 	private double m_divisor;
 
 	@Inject
@@ -79,7 +89,7 @@ public class DivideAggregator implements Aggregator
 	{
 		private DataPointGroup m_innerDataPointGroup;
 
-		public DivideDataPointGroup(DataPointGroup innerDataPointGroup)
+		DivideDataPointGroup(DataPointGroup innerDataPointGroup)
 		{
 			m_innerDataPointGroup = innerDataPointGroup;
 		}

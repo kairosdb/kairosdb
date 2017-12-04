@@ -19,26 +19,24 @@
             "limit": 10000,
             "tags": {
               "host": [
-                "foo",
-                "bar"
+                "foo"
               ],
               "customer": [
                 "foobar"
               ]
             },
+            "group_by": [
+              {
+                "name": "tag",
+                "tags": ["group1", "group2"]
+              }
+            ],
             "aggregators": [
               {
                 "name": "sum",
                 "sampling": {
                   "value": 10,
                   "unit": "minutes"
-                }
-              },
-              {
-                "name": "avg",
-                "sampling": {
-                  "value": 10,
-                  "unit": "hours"
                 }
               }
             ]

@@ -19,26 +19,35 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
+import org.kairosdb.plugin.Aggregator;
 
 import java.util.List;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-@AggregatorName(
+@FeatureComponent(
         name = "scale",
-        description = "Scales each data point by a factor.",
-        properties = {
-                @AggregatorProperty(name = "factor", type = "double")
-        }
+		description = "Scales each data point by a factor."
 )
 public class ScaleAggregator implements Aggregator
 {
+	@FeatureProperty(
+			label = "Factor",
+			description = "The value to scale each data point by.",
+            validations = {
+					@ValidationProperty(
+							expression = "value > 0",
+							message = "Factor must be greater than 0."
+					)
+			}
+	)
 	private double m_factor;
 	private DoubleDataPointFactory m_dataPointFactory;
 

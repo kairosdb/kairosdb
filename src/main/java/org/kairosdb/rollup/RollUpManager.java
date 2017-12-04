@@ -8,6 +8,7 @@ import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
+import org.kairosdb.eventbus.FilterEventBus;
 import org.quartz.DateBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
@@ -31,6 +32,7 @@ public class RollUpManager implements KairosDBService, RollupTaskChangeListener
 
 	private final KairosDBScheduler scheduler;
 	private final KairosDatastore dataStore;
+	private final FilterEventBus eventBus;
 
 	@Inject
 	@Named("HOSTNAME")
@@ -38,11 +40,12 @@ public class RollUpManager implements KairosDBService, RollupTaskChangeListener
 
 	@Inject
 	public RollUpManager(RollUpTasksStore taskStore,
-			KairosDBScheduler scheduler, KairosDatastore dataStore) throws RollUpException
+			KairosDBScheduler scheduler, KairosDatastore dataStore, FilterEventBus eventBus) throws RollUpException
 	{
 		checkNotNull(taskStore, "taskStore cannot be null");
 		this.scheduler = checkNotNull(scheduler, "scheduler cannot be null");
 		this.dataStore = checkNotNull(dataStore, "dataStore cannot be null");
+		this.eventBus = checkNotNull(eventBus, "eventBus cannot be null");
 
 		// Load saved tasks
 		List<RollupTask> tasks = taskStore.read();
@@ -78,7 +81,7 @@ public class RollUpManager implements KairosDBService, RollupTaskChangeListener
 		{
 			logger.info("Scheduling rollup " + task.getName());
 			Trigger trigger = createTrigger(task);
-			JobDetailImpl jobDetail = createJobDetail(task, dataStore, hostName);
+			JobDetailImpl jobDetail = createJobDetail(task, dataStore, hostName, eventBus);
 			scheduler.schedule(jobDetail, trigger);
 			logger.info("Roll-up task " + jobDetail.getFullName() + " scheduled. Next execution time " + trigger.getNextFireTime());
 		}
@@ -103,7 +106,7 @@ public class RollUpManager implements KairosDBService, RollupTaskChangeListener
 		try
 		{
 			logger.info("Updating schedule for rollup " + task.getName());
-			JobDetailImpl jobDetail = createJobDetail(task, dataStore, hostName);
+			JobDetailImpl jobDetail = createJobDetail(task, dataStore, hostName, eventBus);
 			Trigger trigger = createTrigger(task);
 			scheduler.schedule(jobDetail, trigger);
 			logger.info("Roll-up task " + jobDetail.getFullName() + " scheduled. Next execution time " + trigger.getNextFireTime());
@@ -133,7 +136,7 @@ public class RollUpManager implements KairosDBService, RollupTaskChangeListener
 		return new JobKey(task.getId() + "-" + task.getName(), RollUpJob.class.getSimpleName());
 	}
 
-	static JobDetailImpl createJobDetail(RollupTask task, KairosDatastore dataStore, String hostName)
+	static JobDetailImpl createJobDetail(RollupTask task, KairosDatastore dataStore, String hostName, FilterEventBus eventBus)
 	{
 		JobDetailImpl jobDetail = new JobDetailImpl();
 		jobDetail.setJobClass(RollUpJob.class);
@@ -143,6 +146,7 @@ public class RollUpManager implements KairosDBService, RollupTaskChangeListener
 		map.put("task", task);
 		map.put("datastore", dataStore);
 		map.put("hostName", hostName);
+		map.put("eventBus", eventBus);
 		jobDetail.setJobDataMap(map);
 		return jobDetail;
 	}

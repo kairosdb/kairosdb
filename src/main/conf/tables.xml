@@ -1,4 +1,4 @@
-<!DOCTYPE tables SYSTEM "http://genormous.googlecode.com/svn/trunk/genormous/doc/tables_1_4.dtd">
+<!DOCTYPE tables SYSTEM "https://raw.githubusercontent.com/brianhks/genormous/master/doc/tables_1_4.dtd">
 
 <tables>
 	<configuration>
@@ -29,6 +29,44 @@
 		</col>
 		<col name="name" type="string"/>
 		<col name="type" type="string"/>
+	</table>
+
+	<table name="service_index">
+		<property key="hsqldb_tableType" value="CACHED"/>
+		<col name="service" type="string" primary_key="true"/>
+		<col name="service_key" type="string" primary_key="true"/>
+		<col name="key" type="string" primary_key="true"/>
+		<col name="value" type="string"/>
+
+		<table_query name="keys" result_type="multi">
+			<input>
+				<param name="service" type="string" test="foo"/>
+				<param name="service_key" type="string" test="foo"/>
+			</input>
+			<sql>
+				from service_index this
+				where
+				this."service" = ?
+				and this."service_key" = ?
+				order by this."key" asc
+			</sql>
+		</table_query>
+
+		<table_query name="keys_like" result_type="multi">
+			<input>
+				<param name="service" type="string" test="foo"/>
+				<param name="service_key" type="string" test="foo"/>
+				<param name="key_prefix" type="string" test="key%"/>
+			</input>
+			<sql>
+				from service_index this
+				where
+				this."service" = ?
+				AND this."service_key" = ?
+				AND this."key" LIKE ?
+				ORDER BY this."key" asc
+			</sql>
+		</table_query>
 	</table>
 
 	<table name="tag">

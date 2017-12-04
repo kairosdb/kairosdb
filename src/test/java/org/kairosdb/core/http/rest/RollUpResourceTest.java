@@ -6,6 +6,7 @@ import com.google.common.io.Resources;
 import com.google.gson.GsonBuilder;
 import org.junit.Before;
 import org.junit.Test;
+import org.kairosdb.core.KairosFeatureProcessor;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
@@ -25,14 +26,23 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static javax.ws.rs.core.Response.Status.*;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.NO_CONTENT;
+import static javax.ws.rs.core.Response.Status.OK;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.core.IsNot.not;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyCollection;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class RollUpResourceTest
 {
@@ -50,8 +60,8 @@ public class RollUpResourceTest
 	{
 		mockStore = mock(RollUpTasksStore.class);
 		mockQueryParser = mock(QueryParser.class);
-		queryParser = new QueryParser(new TestAggregatorFactory(),
-				new TestGroupByFactory(), new TestQueryPluginFactory());
+		queryParser = new QueryParser(new KairosFeatureProcessor(new TestAggregatorFactory(), new TestGroupByFactory()),
+				new TestQueryPluginFactory());
 		resource = new RollUpResource(mockQueryParser, mockStore);
 	}
 

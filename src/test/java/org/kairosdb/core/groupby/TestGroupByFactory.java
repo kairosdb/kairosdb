@@ -15,32 +15,44 @@
  */
 package org.kairosdb.core.groupby;
 
-import org.kairosdb.core.aggregator.annotation.GroupByName;
+import com.google.common.collect.ImmutableList;
+import org.kairosdb.core.annotation.Feature;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.processingstage.FeatureProcessingFactory;
+import org.kairosdb.core.processingstage.metadata.FeatureProcessorMetadata;
+import org.kairosdb.plugin.GroupBy;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class TestGroupByFactory implements GroupByFactory
+@Feature(
+        name = "group_by",
+        label = "Test GroupBy"
+)
+public class TestGroupByFactory implements FeatureProcessingFactory<GroupBy>
 {
-	private Map<String, GroupBy> groupBys = new HashMap<String, GroupBy>();
+    private Map<String, GroupBy> groupBys = new HashMap<String, GroupBy>();
 
-	public TestGroupByFactory()
-	{
-		addGroupBy(new SimpleTimeGroupBy());
-		addGroupBy(new ValueGroupBy());
-		addGroupBy(new TagGroupBy());
-		addGroupBy(new TimeGroupBy());
-	}
+    public TestGroupByFactory()
+    {
+        addGroupBy(new SimpleTimeGroupBy());
+        addGroupBy(new ValueGroupBy());
+        addGroupBy(new TagGroupBy());
+        addGroupBy(new TimeGroupBy());
+    }
 
-	private void addGroupBy(GroupBy groupBy)
-	{
-		String name = (groupBy.getClass().getAnnotation(GroupByName.class)).name();
-		groupBys.put(name, groupBy);
-	}
+    private void addGroupBy(GroupBy groupBy)
+    {
+        String name = (groupBy.getClass().getAnnotation(FeatureComponent.class)).name();
+        groupBys.put(name, groupBy);
+    }
 
-	@Override
-	public GroupBy createGroupBy(String name)
-	{
-		return groupBys.get(name);
-	}
+    @Override
+    public GroupBy createFeatureProcessor(String name) { return groupBys.get(name); }
+
+    @Override
+    public Class<GroupBy> getFeature() { return GroupBy.class; }
+
+    @Override
+    public ImmutableList<FeatureProcessorMetadata> getFeatureProcessorMetadata() { return ImmutableList.copyOf(new FeatureProcessorMetadata[]{});}
 }

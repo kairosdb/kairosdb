@@ -17,47 +17,88 @@
 package org.kairosdb.core.aggregator;
 
 import com.google.common.collect.ImmutableList;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import org.kairosdb.core.annotation.Feature;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.core.processingstage.FeatureProcessingFactory;
+import org.kairosdb.core.processingstage.metadata.FeatureProcessorMetadata;
+import org.kairosdb.eventbus.EventBusConfiguration;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.plugin.Aggregator;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
-
-public class TestAggregatorFactory implements AggregatorFactory
+@Feature(
+		name = "aggregators",
+		label = "Test Aggregator"
+)
+public class TestAggregatorFactory implements FeatureProcessingFactory<Aggregator>
 {
-	private Map<String, Aggregator> m_aggregators = new HashMap<String, Aggregator>();
+	private Injector injector;
+	private Map<String, Class<?>> aggregators = new HashMap<>();
 
 	public TestAggregatorFactory() throws KairosDBException
 	{
-		addAggregator(new SumAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new MinAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new MaxAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new AvgAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new StdAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new DivideAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new PercentileAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new FirstAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new LastAggregator(new DoubleDataPointFactoryImpl()));
-		addAggregator(new SaveAsAggregator(null));
-		addAggregator(new TrimAggregator());
+		addAggregator(SumAggregator.class);
+		addAggregator(MinAggregator.class);
+		addAggregator(MaxAggregator.class);
+		addAggregator(AvgAggregator.class);
+		addAggregator(StdAggregator.class);
+		addAggregator(PercentileAggregator.class);
+		addAggregator(DivideAggregator.class);
+		addAggregator(FirstAggregator.class);
+		addAggregator(LastAggregator.class);
+		addAggregator(SaveAsAggregator.class);
+		addAggregator(TrimAggregator.class);
+
+		injector = Guice.createInjector(new AbstractModule()
+		{
+			@Override
+			protected void configure()
+			{
+				bind(DoubleDataPointFactory.class).to(DoubleDataPointFactoryImpl.class);
+				bind(FilterEventBus.class).toInstance(new FilterEventBus(new EventBusConfiguration(new Properties())));
+
+				for (Class<?> aggregator : aggregators.values())
+				{
+					bind(aggregator);
+				}
+			}
+		});
 	}
 
-	private void addAggregator(Aggregator agg)
+	@SuppressWarnings("unchecked")
+	private void addAggregator(Class agg)
 	{
-		String name = (agg.getClass().getAnnotation(AggregatorName.class)).name();
-		m_aggregators.put(name, agg);
+		String name = ((FeatureComponent)(agg.getAnnotation(FeatureComponent.class))).name();
+		aggregators.put(name, agg);
 	}
 
-	public Aggregator createAggregator(String name)
+	@Override
+	public Aggregator createFeatureProcessor(String name)
 	{
-		return (m_aggregators.get(name));
+		Class<?> aggregator = aggregators.get(name);
+		if (aggregator != null)
+				return (Aggregator) injector.getInstance(aggregator);
+		return null;
 	}
 
-    @Override
-    public ImmutableList<AggregatorMetadata> getAggregatorMetadata()
-    {
-        return null;
-    }
+	@Override
+	public Class<Aggregator> getFeature()
+	{
+		return Aggregator.class;
+	}
+
+	@Override
+	public ImmutableList<FeatureProcessorMetadata> getFeatureProcessorMetadata()
+	{
+		return ImmutableList.copyOf(new FeatureProcessorMetadata[]{});
+	}
 }

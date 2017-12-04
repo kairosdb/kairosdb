@@ -31,3 +31,12 @@ CREATE CACHED TABLE metric_tag (
 		REFERENCES tag ("name", "value") 
 	);
 
+CREATE CACHED TABLE service_index (
+  "service" VARCHAR  NOT NULL,
+  "service_key" VARCHAR  NOT NULL,
+  "key" VARCHAR  NOT NULL,
+  "value" VARCHAR  NULL,
+  PRIMARY KEY ("service", "service_key", "key")
+  );
+
+

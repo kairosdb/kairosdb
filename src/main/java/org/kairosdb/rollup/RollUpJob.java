@@ -1,16 +1,25 @@
 package org.kairosdb.rollup;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.RangeAggregator;
+import org.kairosdb.core.aggregator.Sampling;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.core.datastore.DatastoreQuery;
+import org.kairosdb.core.datastore.Duration;
+import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.Order;
+import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.http.rest.json.RelativeTime;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
+import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.plugin.Aggregator;
 import org.quartz.InterruptableJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -47,11 +56,15 @@ public class RollUpJob implements InterruptableJob
 		{
 			JobDataMap dataMap = jobExecutionContext.getMergedJobDataMap();
 			RollupTask task = (RollupTask) dataMap.get("task");
+			FilterEventBus eventBus = (FilterEventBus) dataMap.get("eventBus");
 			KairosDatastore datastore = (KairosDatastore) dataMap.get("datastore");
 			String hostName = (String) dataMap.get("hostName");
 			checkState(task != null, "Task was null");
+			checkState(eventBus != null, "EventBus was null");
 			checkState(datastore != null, "Datastore was null");
 			checkState(hostName != null, "hostname was null");
+
+			Publisher<DataPointEvent> publisher = eventBus.createPublisher(DataPointEvent.class);
 
 			for (Rollup rollup : task.getRollups())
 			{
@@ -106,7 +119,7 @@ public class RollUpJob implements InterruptableJob
 							ThreadReporter.addTag("rollup-task", task.getName());
 							ThreadReporter.addTag("status", success ? "success" : "failure");
 							ThreadReporter.addDataPoint(ROLLUP_TIME, System.currentTimeMillis() - ThreadReporter.getReportTime());
-							ThreadReporter.submitData(longDataPointFactory, stringDataPointFactory, datastore);
+							ThreadReporter.submitData(longDataPointFactory, stringDataPointFactory, publisher);
 						}
 						catch (DatastoreException e)
 						{

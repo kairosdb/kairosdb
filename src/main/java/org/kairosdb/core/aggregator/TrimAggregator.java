@@ -1,9 +1,12 @@
 package org.kairosdb.core.aggregator;
 
+import com.google.common.base.MoreObjects;
+import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.plugin.Aggregator;
 
 /**
  Trims off the first, last or both (first and last) data points.  When aggregating
@@ -13,20 +16,18 @@ import org.kairosdb.core.datastore.DataPointGroup;
 
  Created by bhawkins on 8/28/15.
  */
-@AggregatorName(
+@FeatureComponent(
         name = "trim",
-        description = "Trims off the first, last or both (first and last) data points from the results.",
-        properties = {
-                @AggregatorProperty(name = "trim", type = "enum", values={"first", "last", "both"})
-        }
+		description = "Trims off the first, last or both (first and last) data points from the results."
 )
 public class TrimAggregator implements Aggregator
 {
 	public enum Trim
 	{
 		FIRST, LAST, BOTH
-	};
+	}
 
+	@Inject
 	public TrimAggregator()
 	{
 	}
@@ -36,6 +37,13 @@ public class TrimAggregator implements Aggregator
 		m_trim = trim;
 	}
 
+	@FeatureProperty(
+			name = "trim",
+			label = "Trim",
+			description = "Which data point to trim",
+			type = "enum",
+			default_value = "both"
+	)
 	private Trim m_trim;
 
 	@Override
@@ -48,7 +56,7 @@ public class TrimAggregator implements Aggregator
 	 Sets which data points to trim off. Values can be FIRST, LAST or BOTH.
 	 Setting to trim FIRST will trim off the oldest data point unless order is
 	 descending.
-	 @param trim
+	 @param trim trim
 	 */
 	public void setTrim(Trim trim)
 	{
@@ -59,6 +67,32 @@ public class TrimAggregator implements Aggregator
 	public boolean canAggregate(String groupType)
 	{
 		return true;
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		TrimAggregator that = (TrimAggregator) o;
+
+		return m_trim == that.m_trim;
+
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return m_trim != null ? m_trim.hashCode() : 0;
+	}
+
+	@Override
+	public String toString()
+	{
+		return MoreObjects.toStringHelper(this)
+				.add("m_trim", m_trim)
+				.toString();
 	}
 
 	@Override

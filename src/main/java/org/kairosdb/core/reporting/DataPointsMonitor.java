@@ -6,13 +6,14 @@
 
 package org.kairosdb.core.reporting;
 
+import org.kairosdb.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
+import org.kairosdb.events.DataPointEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class DataPointsMonitor implements DataPointListener, KairosMetricReporter
+public class DataPointsMonitor implements KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(DataPointsMonitor.class);
 	public static final String METRIC_NAME = "kairosdb.metric_counters";
@@ -88,9 +89,11 @@ public class DataPointsMonitor implements DataPointListener, KairosMetricReporte
 		return (ret);
 	}
 
-	@Override
-	public void dataPoint(String metricName, SortedMap<String, String> tags, DataPoint dataPoint)
+	@Subscribe
+	public void dataPoint(DataPointEvent event)
 	{
+		String metricName = event.getMetricName();
+
 		if (metricName.startsWith("kairosdb"))
 			return; //Skip our own metrics.
 

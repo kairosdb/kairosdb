@@ -3,28 +3,16 @@ package org.kairosdb.core.aggregator;
 import com.google.inject.Inject;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/**
- Created with IntelliJ IDEA.
- User: bhawkins
- Date: 5/29/13
- Time: 3:10 PM
- To change this template use File | Settings | File Templates.
- */
-@AggregatorName(
+@FeatureComponent(
         name = "least_squares",
-        description = "Returns a best fit line through the datapoints using the least squares algorithm.",
-        properties = {
-                @AggregatorProperty(name = "sampling", type = "duration"),
-                @AggregatorProperty(name="align_start_time", type="boolean")
-        }
+		description = "Returns a best fit line through the datapoints using the least squares algorithm."
 )
 public class LeastSquaresAggregator extends RangeAggregator
 {
@@ -56,7 +44,7 @@ public class LeastSquaresAggregator extends RangeAggregator
 
 	private class LeastSquaresDataPointAggregator implements RangeSubAggregator
 	{
-		public LeastSquaresDataPointAggregator()
+		LeastSquaresDataPointAggregator()
 		{
 		}
 

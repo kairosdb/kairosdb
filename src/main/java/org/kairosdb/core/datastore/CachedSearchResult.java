@@ -28,8 +28,9 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class CachedSearchResult implements QueryCallback
+public class CachedSearchResult implements SearchResult
 {
 	public static final Logger logger = LoggerFactory.getLogger(CachedSearchResult.class);
 
@@ -52,6 +53,7 @@ public class CachedSearchResult implements QueryCallback
 	private final StringPool m_stringPool;
 	private int m_maxReadBufferSize = 8192;  //Default value in BufferedInputStream
 	private boolean m_keepCacheFiles;
+	private final ReentrantReadWriteLock m_lock = new ReentrantReadWriteLock();
 
 
 	private static File getIndexFile(String baseFileName)
@@ -197,23 +199,7 @@ public class CachedSearchResult implements QueryCallback
 		return (ret);
 	}
 
-	/**
-	 Call when finished adding datapoints to the cache file
-	 */
-	public void endDataPoints() throws IOException
-	{
-		if (m_randomAccessFile == null)
-			return;
 
-		//flushWriteBuffer();
-		m_dataOutputStream.flush();
-
-		long curPosition = m_dataOutputStream.getPosition();
-		if (m_dataPointSets.size() != 0)
-			m_dataPointSets.get(m_dataPointSets.size() -1).setEndPosition(curPosition);
-
-		calculateMaxReadBufferSize();
-	}
 
 	/**
 	 Closes the underling file handle
@@ -242,34 +228,7 @@ public class CachedSearchResult implements QueryCallback
 			close();
 	}
 
-
-	/**
-	 A new set of datapoints to write to the file.  This causes the start position
-	 of the set to be saved.  All inserted datapoints after this call are
-	 expected to be in ascending time order and have the same tags.
-	 */
-	public void startDataPointSet(String type, Map<String, String> tags) throws IOException
-	{
-		if (m_randomAccessFile == null)
-			openCacheFile();
-
-		endDataPoints();
-
-		long curPosition = m_dataOutputStream.getPosition();
-		m_currentFilePositionMarker = new FilePositionMarker(curPosition, tags, type);
-		m_dataPointSets.add(m_currentFilePositionMarker);
-	}
-
-
 	@Override
-	public void addDataPoint(DataPoint datapoint) throws IOException
-	{
-		m_dataOutputStream.writeLong(datapoint.getTimestamp());
-		datapoint.writeValueToBuffer(m_dataOutputStream);
-
-		m_currentFilePositionMarker.incrementDataPointCount();
-	}
-
 	public List<DataPointRow> getRows()
 	{
 		List<DataPointRow> ret = new ArrayList<DataPointRow>();
@@ -283,6 +242,66 @@ public class CachedSearchResult implements QueryCallback
 		}
 
 		return (ret);
+	}
+
+	/**
+	 A new set of datapoints to write to the file.  This causes the start position
+	 of the set to be saved.  All inserted datapoints after this call are
+	 expected to be in ascending time order and have the same tags.
+	 */
+	@Override
+	public DataPointWriter startDataPointSet(String type, SortedMap<String, String> tags) throws IOException
+	{
+		m_lock.writeLock().lock();
+
+		if (m_randomAccessFile == null)
+			openCacheFile();
+
+		long curPosition = m_dataOutputStream.getPosition();
+		m_currentFilePositionMarker = new FilePositionMarker(curPosition, tags, type);
+		m_dataPointSets.add(m_currentFilePositionMarker);
+
+		return new CachedDatapointWriter();
+	}
+
+
+	private class CachedDatapointWriter implements DataPointWriter
+	{
+		@Override
+		public void addDataPoint(DataPoint datapoint) throws IOException
+		{
+			m_dataOutputStream.writeLong(datapoint.getTimestamp());
+			datapoint.writeValueToBuffer(m_dataOutputStream);
+
+			m_currentFilePositionMarker.incrementDataPointCount();
+		}
+
+		/**
+		 Call when finished adding datapoints to the cache file
+		 */
+		@Override
+		public void close() throws IOException
+		{
+			try
+			{
+				if (m_randomAccessFile == null)
+					return;
+
+				//flushWriteBuffer();
+				m_dataOutputStream.flush();
+
+				long curPosition = m_dataOutputStream.getPosition();
+				if (m_dataPointSets.size() != 0)
+					m_dataPointSets.get(m_dataPointSets.size() - 1).setEndPosition(curPosition);
+
+				calculateMaxReadBufferSize();
+			}
+			finally
+			{
+				m_lock.writeLock().unlock();
+			}
+		}
+
 	}
 
 	//===========================================================================

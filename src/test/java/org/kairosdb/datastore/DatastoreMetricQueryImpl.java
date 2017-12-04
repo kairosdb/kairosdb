@@ -86,4 +86,10 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 		return Collections.emptyList();
 	}
 
+	@Override
+	public void addPlugin(QueryPlugin plugin)
+	{
+
+	}
+
 }

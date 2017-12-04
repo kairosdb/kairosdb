@@ -76,7 +76,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	{
 		for (DataPoint dataPoint : dps.getDataPoints())
 		{
-			s_eventBus.post(new DataPointEvent(dps.getName(), dps.getTags(), dataPoint, 0));
+			s_eventBus.createPublisher(DataPointEvent.class).post(new DataPointEvent(dps.getName(), dps.getTags(), dataPoint, 0));
 		}
 	}
 
@@ -244,7 +244,6 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@BeforeClass
 	public static void setupDatastore() throws InterruptedException, DatastoreException
 	{
-		System.out.println("Starting Cassandra Connection");
 		String cassandraHost = "localhost";
 		if (System.getenv("CASSANDRA_HOST") != null)
 			cassandraHost = System.getenv("CASSANDRA_HOST");
@@ -275,14 +274,13 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				session,
 				dataPointFactory,
 				new MemoryQueueProcessor(Executors.newSingleThreadExecutor(), 1000, 10000, 10),
-				s_eventBus,
 				new IngestExecutorService(s_eventBus, 1),
 				new CassandraModule.BatchHandlerFactory()
 				{
 					@Override
 					public BatchHandler create(List<DataPointEvent> events, EventCompletionCallBack callBack, boolean fullBatch)
 					{
-						return new BatchHandler(events, callBack, fullBatch,
+						return new BatchHandler(events, callBack,
 								configuration, rowKeyCache, metricNameCache,
 								s_eventBus, cqlBatchFactory);
 					}
@@ -698,7 +696,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		set.addDataPoint(new LongDataPoint(5, 6L));
 		putDataPoints(set);
 
-		s_eventBus.post(new DataPointEvent("ttlMetric", set.getTags(),
+		s_eventBus.createPublisher(DataPointEvent.class).post(new DataPointEvent("ttlMetric", set.getTags(),
 				new LongDataPoint(50, 7L), 1));
 
 		Thread.sleep(2000);

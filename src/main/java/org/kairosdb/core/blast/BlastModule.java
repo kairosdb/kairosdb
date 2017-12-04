@@ -15,6 +15,7 @@ public class BlastModule extends AbstractModule
 	@Override
 	protected void configure()
 	{
+		System.out.println("LOADING BLAST!!!!");
 		logger.info("Configuring module BlastModule");
 
 		bind(BlastServer.class).in(Singleton.class);

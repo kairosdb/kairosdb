@@ -42,7 +42,7 @@ import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
 import org.kairosdb.core.processingstage.FeatureProcessingFactory;
 import org.kairosdb.core.processingstage.FeatureProcessor;
 import org.kairosdb.eventbus.EventBusConfiguration;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.testing.Client;
@@ -55,7 +55,7 @@ import java.util.*;
 
 public abstract class ResourceBase
 {
-    private static final EventBusWithFilters eventBus = new EventBusWithFilters(new EventBusConfiguration(new Properties()));
+    private static final FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new Properties()));
     private static WebServer server;
 
     static QueryQueuingManager queuingManager;
@@ -77,7 +77,7 @@ public abstract class ResourceBase
             @Override
             protected void configure()
             {
-                bind(EventBusWithFilters.class).toInstance(eventBus);
+                bind(FilterEventBus.class).toInstance(eventBus);
                 //Need to register an exception handler
                 bindListener(Matchers.any(), new TypeListener()
                 {

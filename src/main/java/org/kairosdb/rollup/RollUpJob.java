@@ -16,7 +16,9 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.http.rest.json.RelativeTime;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.plugin.Aggregator;
 import org.quartz.InterruptableJob;
 import org.quartz.JobDataMap;
@@ -54,13 +56,15 @@ public class RollUpJob implements InterruptableJob
 		{
 			JobDataMap dataMap = jobExecutionContext.getMergedJobDataMap();
 			RollupTask task = (RollupTask) dataMap.get("task");
-			EventBusWithFilters eventBus = (EventBusWithFilters) dataMap.get("eventBus");
+			FilterEventBus eventBus = (FilterEventBus) dataMap.get("eventBus");
 			KairosDatastore datastore = (KairosDatastore) dataMap.get("datastore");
 			String hostName = (String) dataMap.get("hostName");
 			checkState(task != null, "Task was null");
 			checkState(eventBus != null, "EventBus was null");
 			checkState(datastore != null, "Datastore was null");
 			checkState(hostName != null, "hostname was null");
+
+			Publisher<DataPointEvent> publisher = eventBus.createPublisher(DataPointEvent.class);
 
 			for (Rollup rollup : task.getRollups())
 			{
@@ -115,7 +119,7 @@ public class RollUpJob implements InterruptableJob
 							ThreadReporter.addTag("rollup-task", task.getName());
 							ThreadReporter.addTag("status", success ? "success" : "failure");
 							ThreadReporter.addDataPoint(ROLLUP_TIME, System.currentTimeMillis() - ThreadReporter.getReportTime());
-							ThreadReporter.submitData(longDataPointFactory, stringDataPointFactory, eventBus);
+							ThreadReporter.submitData(longDataPointFactory, stringDataPointFactory, publisher);
 						}
 						catch (DatastoreException e)
 						{

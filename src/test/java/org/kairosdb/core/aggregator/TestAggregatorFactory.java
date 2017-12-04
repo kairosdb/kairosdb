@@ -28,7 +28,7 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.processingstage.FeatureProcessingFactory;
 import org.kairosdb.core.processingstage.metadata.FeatureProcessorMetadata;
 import org.kairosdb.eventbus.EventBusConfiguration;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.plugin.Aggregator;
 
 import java.util.HashMap;
@@ -64,7 +64,7 @@ public class TestAggregatorFactory implements FeatureProcessingFactory<Aggregato
 			protected void configure()
 			{
 				bind(DoubleDataPointFactory.class).to(DoubleDataPointFactoryImpl.class);
-				bind(EventBusWithFilters.class).toInstance(new EventBusWithFilters(new EventBusConfiguration(new Properties())));
+				bind(FilterEventBus.class).toInstance(new FilterEventBus(new EventBusConfiguration(new Properties())));
 
 				for (Class<?> aggregator : aggregators.values())
 				{

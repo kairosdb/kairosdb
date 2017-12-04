@@ -21,7 +21,7 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.SetMultimap;
-import com.google.common.eventbus.Subscribe;
+import org.kairosdb.eventbus.Subscribe;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -40,7 +40,6 @@ import org.kairosdb.core.queue.ProcessorHandler;
 import org.kairosdb.core.queue.QueueProcessor;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
-import org.kairosdb.eventbus.EventBusWithFilters;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.*;
 import org.slf4j.Logger;
@@ -82,8 +81,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	private static final Charset UTF_8 = Charset.forName("UTF-8");
 
 	//private final Cluster m_cluster;
-	private final EventBusWithFilters m_eventBus;
-
 
 	//new properties
 	private final CassandraClient m_cassandraClient;
@@ -123,7 +120,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			Session session,
 			KairosDataPointFactory kairosDataPointFactory,
 			QueueProcessor queueProcessor,
-			EventBusWithFilters eventBus,
 			IngestExecutorService congestionExecutor,
 			CassandraModule.BatchHandlerFactory batchHandlerFactory,
 			CassandraModule.DeleteBatchHandlerFactory deleteBatchHandlerFactory) throws DatastoreException
@@ -133,7 +129,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_kairosDataPointFactory = kairosDataPointFactory;
 		m_queueProcessor = queueProcessor;
 		m_congestionExecutor = congestionExecutor;
-		m_eventBus = eventBus;
 
 		m_batchHandlerFactory = batchHandlerFactory;
 		m_deleteBatchHandlerFactory = deleteBatchHandlerFactory;
@@ -174,8 +169,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	@Override
 	public void close() throws InterruptedException
 	{
-		m_eventBus.unregister(this);
-
 		m_queueProcessor.shutdown();
 		m_session.close();
 		m_cassandraClient.close();
@@ -184,6 +177,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	@Subscribe
 	public void putDataPoint(DataPointEvent dataPointEvent) throws DatastoreException
 	{
+		//Todo make sure when shutting down this throws an exception
 		m_queueProcessor.put(dataPointEvent);
 	}
 
@@ -484,9 +478,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		ExecutorService resultsExecutor = Executors.newSingleThreadExecutor();
 		//Controls the number of queries sent out at the same time.
 		Semaphore querySemaphor = new Semaphore(m_cassandraConfiguration.getSimultaneousQueries());
-
-		//Lock used to prvent
-		Object queryCallBackLock = new Object();
 
 		while (rowKeys.hasNext())
 		{

@@ -26,7 +26,9 @@ import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.Tags;
 
 import java.io.IOException;
@@ -37,6 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.kairosdb.util.DataPointEventUtil.verifyEvent;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  Created with IntelliJ IDEA.
@@ -48,15 +51,21 @@ public class TelnetServerTest
 {
 	private static final int TELNET_PORT = 4244;
 	private static final int MAX_COMMAND_LENGTH = 1024;
-	private EventBusWithFilters m_eventBus;
+	private FilterEventBus m_eventBus;
+	private Publisher<DataPointEvent> m_publisher;
 	private TelnetServer m_server;
 	private TelnetClient m_client;
 	private TestCommandProvider commandProvider;
 
+	@SuppressWarnings("unchecked")
 	@Before
 	public void setupDatastore() throws KairosDBException, IOException
 	{
-		m_eventBus = mock(EventBusWithFilters.class);
+		m_eventBus = mock(FilterEventBus.class);
+		m_publisher = mock(Publisher.class);
+
+		when(m_eventBus.createPublisher(DataPointEvent.class)).thenReturn(m_publisher);
+
 		commandProvider = new TestCommandProvider();
 		commandProvider.putCommand("put", new PutCommand(m_eventBus, "localhost",
 				new LongDataPointFactoryImpl(), new DoubleDataPointFactoryImpl()));
@@ -120,7 +129,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verifyEvent(m_eventBus, "test.metric", tags, dp, 0);
+		verifyEvent(m_publisher, "test.metric", tags, dp, 0);
 	}
 
 	@Test
@@ -135,7 +144,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verifyEvent(m_eventBus, "test.metric", tags, dp, 0);
+		verifyEvent(m_publisher, "test.metric", tags, dp, 0);
 	}
 
 	@Test
@@ -150,7 +159,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verifyEvent(m_eventBus, "test.metric", tags, dp, 0);
+		verifyEvent(m_publisher, "test.metric", tags, dp, 0);
 	}
 
 	@Test
@@ -165,7 +174,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verifyEvent(m_eventBus, "test.metric", tags, dp, 0);
+		verifyEvent(m_publisher, "test.metric", tags, dp, 0);
 	}
 
 	@Test
@@ -180,7 +189,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verifyEvent(m_eventBus, "test.metric", tags, dp, 30);
+		verifyEvent(m_publisher, "test.metric", tags, dp, 30);
 	}
 
 	@Test
@@ -191,7 +200,7 @@ public class TelnetServerTest
 		String tagValue = createLongString(2048);
 		m_client.sendText("put " + metricName + " " + now + " 123 host=test_host foo=bar customer=" + tagValue);
 
-		verifyZeroInteractions(m_eventBus);
+		verifyZeroInteractions(m_publisher);
 	}
 
 	@Test
@@ -217,7 +226,7 @@ public class TelnetServerTest
 				.build();
 		DataPoint dp = new LongDataPoint(now * 1000, 123);
 
-		verifyEvent(m_eventBus, metricName, tags, dp, 0);
+		verifyEvent(m_publisher, metricName, tags, dp, 0);
 	}
 
 	private String createLongString(int length)

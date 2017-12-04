@@ -10,7 +10,8 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.reporting.KairosMetricReporter;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.datastore.cassandra.BatchHandler;
+import org.kairosdb.eventbus.FilterEventBus;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -31,7 +32,7 @@ public class IngestExecutorService implements KairosMetricReporter
 {
 	public static final String PERMIT_COUNT = "kairosdb.ingest_executor.thread_count";
 
-	private final EventBusWithFilters m_eventBus;
+	private final FilterEventBus m_eventBus;
 	private final ExecutorService m_internalExecutor;
 	private final ThreadGroup m_threadGroup;
 	//Original idea behind this is that the number of threads could
@@ -39,7 +40,7 @@ public class IngestExecutorService implements KairosMetricReporter
 	private final CongestionSemaphore m_semaphore;
 	private final SimpleStats m_ingestTimeStats = new SimpleStats();
 	private int m_permitCount = 10;
-	private final Retryer<Boolean> m_retryer;
+	private final Retryer<Integer> m_retryer;
 
 	@Inject
 	private DoubleDataPointFactory m_dataPointFactory = new DoubleDataPointFactoryImpl();
@@ -48,7 +49,7 @@ public class IngestExecutorService implements KairosMetricReporter
 	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
 	@Inject
-	public IngestExecutorService(EventBusWithFilters eventBus, @Named(PERMIT_COUNT) int permitCount)
+	public IngestExecutorService(FilterEventBus eventBus, @Named(PERMIT_COUNT) int permitCount)
 	{
 		m_eventBus = eventBus;
 		m_permitCount = permitCount;
@@ -66,7 +67,7 @@ public class IngestExecutorService implements KairosMetricReporter
 			}
 		});
 
-		m_retryer = RetryerBuilder.<Boolean>newBuilder()
+		m_retryer = RetryerBuilder.<Integer>newBuilder()
 				.retryIfExceptionOfType(NoHostAvailableException.class)
 				.retryIfExceptionOfType(UnavailableException.class)
 				.withWaitStrategy(WaitStrategies.fibonacciWait(1, TimeUnit.MINUTES))
@@ -92,7 +93,7 @@ public class IngestExecutorService implements KairosMetricReporter
 	 Calls to submit will block until a permit is available to process the request
 	 @param callable
 	 */
-	public void submit(Callable<Boolean> callable)
+	public void submit(Callable<Integer> callable)
 	{
 		try
 		{
@@ -122,11 +123,11 @@ public class IngestExecutorService implements KairosMetricReporter
 	}
 
 
-	private class IngestFutureTask extends FutureTask<Boolean>
+	private class IngestFutureTask extends FutureTask<Integer>
 	{
 		private final Stopwatch m_stopwatch;
 
-		public IngestFutureTask(Callable<Boolean> callable)
+		public IngestFutureTask(Callable<Integer> callable)
 		{
 			super(callable);
 			m_stopwatch = Stopwatch.createUnstarted();
@@ -151,14 +152,14 @@ public class IngestExecutorService implements KairosMetricReporter
 		}
 
 		@Override
-		public void set(Boolean full)
+		public void set(Integer retries)
 		{
 			//Todo Calculate time to run and adjust number of threads
 			/*if (full)
 			{
 			}*/
 
-			super.set(full);
+			super.set(retries);
 		}
 	}
 

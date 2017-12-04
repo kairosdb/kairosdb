@@ -29,7 +29,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
 version = "1.2.0"
-release = saw.getProperty("KAIROS_RELEASE_NUMBER", "0.2beta") //package release number
+release = saw.getProperty("KAIROS_RELEASE_NUMBER", "0.3beta") //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -56,6 +56,9 @@ rpmNoDepDir = "build/rpm-nodep"
 new DirectoryRule("build")
 rpmDirRule = new DirectoryRule(rpmDir)
 rpmNoDepDirRule = new DirectoryRule(rpmNoDepDir)
+
+//Having a rule for the queue folder will ensure it gets removed durring a clean
+new DirectoryRule("queue")
 
 //------------------------------------------------------------------------------
 //Setup java rules

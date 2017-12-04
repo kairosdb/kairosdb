@@ -1,16 +1,14 @@
 package org.kairosdb.util;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.EventBus;
-import org.h2.store.Data;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -20,7 +18,8 @@ import static org.mockito.Mockito.verify;
  */
 public class DataPointEventUtil
 {
-	private static DataPointEvent verifyPost(EventBus eventBus)
+	@SuppressWarnings("unchecked")
+	private static DataPointEvent verifyPost(Publisher<DataPointEvent> eventBus)
 	{
 		ArgumentCaptor<DataPointEvent> event = ArgumentCaptor.forClass(DataPointEvent.class);
 		verify(eventBus, timeout(5000).times(1)).post(event.capture());
@@ -29,7 +28,7 @@ public class DataPointEventUtil
 		return event.getValue();
 	}
 
-	public static void verifyEvent(EventBus eventBus, String metricName,
+	public static void verifyEvent(Publisher<DataPointEvent> eventBus, String metricName,
 			ImmutableSortedMap<String, String> tags, DataPoint dataPoint, int ttl)
 	{
 		DataPointEvent event = verifyPost(eventBus);
@@ -39,7 +38,7 @@ public class DataPointEventUtil
 		assertThat(event.getTtl(), equalTo(ttl));
 	}
 
-	public static void verifyEvent(EventBus eventBus, String metricName,
+	public static void verifyEvent(Publisher<DataPointEvent> eventBus, String metricName,
 			ImmutableSortedMap<String, String> tags, DataPoint dataPoint)
 	{
 		DataPointEvent event = verifyPost(eventBus);
@@ -48,7 +47,7 @@ public class DataPointEventUtil
 		assertThat(event.getDataPoint(), equalTo(dataPoint));
 	}
 
-	public static void verifyEvent(EventBus eventBus,
+	public static void verifyEvent(Publisher<DataPointEvent> eventBus,
 			final String metricName,
 			final DataPoint dataPoint,
 			final int ttl)
@@ -59,7 +58,7 @@ public class DataPointEventUtil
 		assertThat(event.getTtl(), equalTo(ttl));
 	}
 
-	public static void verifyEvent(EventBus eventBus, String metricName,
+	public static void verifyEvent(Publisher<DataPointEvent> eventBus, String metricName,
 			DataPoint dataPoint)
 	{
 		DataPointEvent event = verifyPost(eventBus);

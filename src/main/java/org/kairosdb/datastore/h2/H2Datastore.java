@@ -17,7 +17,7 @@
 package org.kairosdb.datastore.h2;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.Subscribe;
+import org.kairosdb.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mchange.v2.c3p0.DataSources;
@@ -48,7 +48,8 @@ import org.kairosdb.datastore.h2.orm.ServiceIndex_base;
 import org.kairosdb.datastore.h2.orm.Tag;
 import org.kairosdb.datastore.h2.orm.TagNamesQuery;
 import org.kairosdb.datastore.h2.orm.TagValuesQuery;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.events.RowKeyEvent;
 import org.kairosdb.util.KDataInput;
@@ -67,7 +68,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -79,15 +79,15 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 
 	private Connection m_holdConnection;  //Connection that holds the database open
 	private final KairosDataPointFactory m_dataPointFactory;
-	private final EventBusWithFilters m_eventBus;
+	private final Publisher<RowKeyEvent> m_rowKeyPublisher;
 
 	@Inject
 	public H2Datastore(@Named(DATABASE_PATH_PROPERTY) String dbPath, 
 			KairosDataPointFactory dataPointFactory,
-			EventBusWithFilters eventBus) throws DatastoreException
+			FilterEventBus eventBus) throws DatastoreException
 	{
 		m_dataPointFactory = dataPointFactory;
-		m_eventBus = eventBus;
+		m_rowKeyPublisher = eventBus.createPublisher(RowKeyEvent.class);
 		boolean createDB = false;
 
 		File dataDir = new File(dbPath);
@@ -197,7 +197,7 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 				GenOrmDataSource.flush();
 				DataPointsRowKey dataPointsRowKey = new DataPointsRowKey(metricName,
 						0, dataPoint.getDataStoreDataType(), tags);
-				m_eventBus.post(new RowKeyEvent(metricName, dataPointsRowKey, 0));
+				m_rowKeyPublisher.post(new RowKeyEvent(metricName, dataPointsRowKey, 0));
 
 			}
 

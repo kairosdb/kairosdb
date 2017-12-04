@@ -22,14 +22,14 @@ import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.util.Util;
 import org.kairosdb.util.ValidationException;
 
 public class PutCommand extends PutMillisecondCommand
 {
 	@Inject
-	public PutCommand(EventBusWithFilters eventBus, @Named("HOSTNAME") String hostname,
+	public PutCommand(FilterEventBus eventBus, @Named("HOSTNAME") String hostname,
 			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
 		super(eventBus, hostname, longFactory, doubleFactory);

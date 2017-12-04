@@ -8,7 +8,7 @@ import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
 import org.quartz.DateBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
@@ -32,7 +32,7 @@ public class RollUpManager implements KairosDBService, RollupTaskChangeListener
 
 	private final KairosDBScheduler scheduler;
 	private final KairosDatastore dataStore;
-	private final EventBusWithFilters eventBus;
+	private final FilterEventBus eventBus;
 
 	@Inject
 	@Named("HOSTNAME")
@@ -40,7 +40,7 @@ public class RollUpManager implements KairosDBService, RollupTaskChangeListener
 
 	@Inject
 	public RollUpManager(RollUpTasksStore taskStore,
-			KairosDBScheduler scheduler, KairosDatastore dataStore, EventBusWithFilters eventBus) throws RollUpException
+			KairosDBScheduler scheduler, KairosDatastore dataStore, FilterEventBus eventBus) throws RollUpException
 	{
 		checkNotNull(taskStore, "taskStore cannot be null");
 		this.scheduler = checkNotNull(scheduler, "scheduler cannot be null");
@@ -136,7 +136,7 @@ public class RollUpManager implements KairosDBService, RollupTaskChangeListener
 		return new JobKey(task.getId() + "-" + task.getName(), RollUpJob.class.getSimpleName());
 	}
 
-	static JobDetailImpl createJobDetail(RollupTask task, KairosDatastore dataStore, String hostName, EventBusWithFilters eventBus)
+	static JobDetailImpl createJobDetail(RollupTask task, KairosDatastore dataStore, String hostName, FilterEventBus eventBus)
 	{
 		JobDetailImpl jobDetail = new JobDetailImpl();
 		jobDetail.setJobClass(RollUpJob.class);

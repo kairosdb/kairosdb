@@ -15,7 +15,6 @@
 package org.kairosdb.eventbus;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import javax.annotation.Nullable;
@@ -27,145 +26,159 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * A subscriber method on a filter object. Uses an executor that executes in the same thread.
- *
- * <p>Two subscribers are equivalent when they refer to the same method on the same object (not
- * class). This property is used to ensure that no subscriber method is registered more than once.
- *
+ A subscriber method on a filter object. Uses an executor that executes in the same thread.
+ <p>
+ <p>Two subscribers are equivalent when they refer to the same method on the same object (not
+ class). This property is used to ensure that no subscriber method is registered more than once.
  */
-class FilterSubscriber
+class FilterSubscriber implements Comparable<FilterSubscriber>
 {
-    /**
-     * Creates a {@code FilterSubscriber} for {@code method} on {@code listener}.
-     */
-    static FilterSubscriber create(EventBusWithFilters bus, Object listener, Method method, int priority)
-    {
-        return isDeclaredThreadSafe(method)
-                ? new FilterSubscriber(bus, listener, method, priority)
-                : new SynchronizedFilterSubscriber(bus, listener, method, priority);
-    }
+	/**
+	 Creates a {@code FilterSubscriber} for {@code method} on {@code listener}.
+	 */
+	static FilterSubscriber create(FilterEventBus bus, Object listener, Method method, int priority)
+	{
+		return method.getReturnType().getName().equals("void")
+				? new NonFilterSubscriber(bus, listener, method, priority)
+				: new FilterSubscriber(bus, listener, method, priority);
+	}
 
-    /**
-     * The event bus this subscriber belongs to.
-     */
-    private EventBusWithFilters bus;
+	/**
+	 The event bus this subscriber belongs to.
+	 */
+	private FilterEventBus bus;
 
-    /**
-     * The object with the subscriber method.
-     */
-    @VisibleForTesting
-    final Object target;
+	/**
+	 The object with the subscriber method.
+	 */
+	@VisibleForTesting
+	final Object target;
 
-    /**
-     * FilterSubscriber method.
-     */
-    private final Method method;
+	/**
+	 FilterSubscriber method.
+	 */
+	protected final Method method;
 
-    private final int priority;
+	private final int priority;
 
-    /**
-     * Executor to use for dispatching events to this subscriber.
-     */
-    private final Executor executor = MoreExecutors.directExecutor();
+	/**
+	 Executor to use for dispatching events to this subscriber.
+	 */
+	private final Executor executor = MoreExecutors.directExecutor();
 
-    private FilterSubscriber(EventBusWithFilters bus, Object target, Method method, int priority)
-    {
-        this.bus = bus;
-        this.target = checkNotNull(target);
-        this.method = method;
-        this.priority = priority;
-        method.setAccessible(true);
-        checkArgument(priority >=0 && priority <=100, "Priority must be between 0 and 100 inclusive");
-    }
+	private FilterSubscriber(FilterEventBus bus, Object target, Method method, int priority)
+	{
+		this.bus = bus;
+		this.target = checkNotNull(target);
+		this.method = method;
+		this.priority = priority;
+		method.setAccessible(true);
+		checkArgument(priority >= 0 && priority <= 100, "Priority must be between 0 and 100 inclusive");
+	}
 
-    public int getPriority()
-    {
-        return priority;
-    }
+	public int getPriority()
+	{
+		return priority;
+	}
 
-    final Object dispatchEvent(final Object event)
-    {
-        try {
-            return invokeSubscriberMethod(event);
-        }
-        catch (InvocationTargetException e) {
-            bus.handleSubscriberException(e.getCause(), context(event));
-            return null;
-        }
-    }
+	final Object dispatchEvent(final Object event)
+	{
+		try
+		{
+			return invokeSubscriberMethod(event);
+		}
+		catch (IllegalArgumentException e)
+		{
+			throw new Error("Method rejected target/argument: " + event, e);
+		}
+		catch (IllegalAccessException e)
+		{
+			throw new Error("Method became inaccessible: " + event, e);
+		}
+		catch (InvocationTargetException e)
+		{
+			if (e.getCause() instanceof Error)
+			{
+				throw (Error) e.getCause();
+			}
 
-    /**
-     * Invokes the subscriber method. This method can be overridden to make the invocation
-     * synchronized.
-     */
-    @VisibleForTesting
-    Object invokeSubscriberMethod(Object event)
-            throws InvocationTargetException
-    {
-        try {
-            return method.invoke(target, checkNotNull(event));
-        }
-        catch (IllegalArgumentException e) {
-            throw new Error("Method rejected target/argument: " + event, e);
-        }
-        catch (IllegalAccessException e) {
-            throw new Error("Method became inaccessible: " + event, e);
-        }
-        catch (InvocationTargetException e) {
-            if (e.getCause() instanceof Error) {
-                throw (Error) e.getCause();
-            }
-            throw e;
-        }
-    }
+			bus.handleSubscriberException(e.getCause(), context(event));
+			return null;
+		}
+		/*catch (InvocationTargetException e)
+		{
+			bus.handleSubscriberException(e.getCause(), context(event));
+			return null;
+		}*/
+	}
 
-    /**
-     * Gets the context for the given event.
-     */
-    private SubscriberExceptionContext context(Object event)
-    {
-        return new SubscriberExceptionContext(bus, event, target, method);
-    }
+	/**
+	 Invokes the subscriber method. This method can be overridden to make the invocation
+	 synchronized.
+	 */
+	@VisibleForTesting
+	Object invokeSubscriberMethod(Object event) throws InvocationTargetException, IllegalAccessException
+	{
+		return method.invoke(target, checkNotNull(event));
+	}
 
-    @Override
-    public final int hashCode()
-    {
-        return (31 + method.hashCode()) * 31 + System.identityHashCode(target);
-    }
+	/**
+	 Gets the context for the given event.
+	 */
+	private SubscriberExceptionContext context(Object event)
+	{
+		return new SubscriberExceptionContext(bus, event, target, method);
+	}
 
-    @Override
-    public final boolean equals(@Nullable Object obj)
-    {
-        if (obj instanceof FilterSubscriber) {
-            FilterSubscriber that = (FilterSubscriber) obj;
-            // Use == so that different equal instances will still receive events.
-            // We only guard against the case that the same object is registered
-            // multiple times
-            return target == that.target && method.equals(that.method);
-        }
-        return false;
-    }
+	@Override
+	public final int hashCode()
+	{
+		return (31 + method.hashCode()) * 31 + System.identityHashCode(target);
+	}
 
-    /**
-     * Checks whether {@code method} is thread-safe, as indicated by the presence of the
-     * {@link AllowConcurrentEvents} annotation.
-     */
-    private static boolean isDeclaredThreadSafe(Method method)
-    {
-        return method.getAnnotation(AllowConcurrentEvents.class) != null;
-    }
+	@Override
+	public final boolean equals(@Nullable Object obj)
+	{
+		if (obj instanceof FilterSubscriber)
+		{
+			FilterSubscriber that = (FilterSubscriber) obj;
+			// Use == so that different equal instances will still receive events.
+			// We only guard against the case that the same object is registered
+			// multiple times
+			return target == that.target && method.equals(that.method);
+		}
+		return false;
+	}
 
-    /**
-     * FilterSubscriber that synchronizes invocations of a method to ensure that only one thread may enter
-     * the method at a time.
-     */
-    @VisibleForTesting
-    static final class SynchronizedFilterSubscriber extends FilterSubscriber
-    {
+	@Override
+	public int compareTo(FilterSubscriber o)
+	{
+		if (priority < o.priority)
+			return -1;
+		else if (priority > o.priority)
+			return 1;
+		else
+		{
+			String thisName = System.identityHashCode(target) + method.getName();
+			String thatName = System.identityHashCode(o.target) + o.method.getName();
 
-        private SynchronizedFilterSubscriber(EventBusWithFilters bus, Object target, Method method, int priority)
-        {
-            super(bus, target, method, priority);
-        }
-    }
+			return thisName.compareTo(thatName);
+		}
+	}
+
+	private static class NonFilterSubscriber extends FilterSubscriber
+	{
+		private NonFilterSubscriber(FilterEventBus bus, Object target, Method method, int priority)
+		{
+			super(bus, target, method, priority);
+		}
+
+		@Override
+		Object invokeSubscriberMethod(Object event) throws InvocationTargetException, IllegalAccessException
+		{
+			method.invoke(target, checkNotNull(event));
+			return event;
+		}
+	}
+
 }

@@ -34,7 +34,7 @@ import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.eventbus.EventBusConfiguration;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.rollup.Rollup;
 import org.kairosdb.rollup.RollupTask;
@@ -50,13 +50,13 @@ import static org.junit.Assert.fail;
 public class QueryParserTest
 {
 	private QueryParser parser;
-	private EventBusWithFilters eventBus;
+	private FilterEventBus eventBus;
 
 	@Before
 	public void setup() throws KairosDBException
 	{
 		parser = new QueryParser(new KairosFeatureProcessor(new TestAggregatorFactory(), new TestGroupByFactory()), new TestQueryPluginFactory());
-		eventBus = new EventBusWithFilters(new EventBusConfiguration(new Properties()));
+		eventBus = new FilterEventBus(new EventBusConfiguration(new Properties()));
 	}
 
 	@Test

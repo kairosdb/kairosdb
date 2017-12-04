@@ -1,7 +1,8 @@
 package org.kairosdb.core.queue;
 
-import com.google.common.eventbus.Subscribe;
+import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.events.BatchReductionEvent;
 import org.kairosdb.events.DataPointEvent;
@@ -70,7 +71,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	}
 
 
-	public abstract void put(DataPointEvent dataPointEvent);
+	public abstract void put(DataPointEvent dataPointEvent) throws DatastoreException;
 
 	/**
 	 @return Returns a Pair containing the latest index
@@ -153,6 +154,9 @@ public abstract class QueueProcessor implements KairosMetricReporter
 					{
 						Thread.sleep(500);
 					}
+
+					if (getAvailableDataPointEvents() == 0)
+						continue;
 
 					List<DataPointEvent> results = get(m_batchSize);
 					//getCompletionCallBack must be called after get()

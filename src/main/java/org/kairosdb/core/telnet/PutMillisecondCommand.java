@@ -26,7 +26,8 @@ import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.Tags;
 import org.kairosdb.util.Util;
@@ -41,22 +42,23 @@ import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporter
 {
-	private final EventBusWithFilters m_eventBus;
 	private AtomicInteger m_counter = new AtomicInteger();
 	private String m_hostName;
 	private LongDataPointFactory m_longFactory;
 	private DoubleDataPointFactory m_doubleFactory;
+	private final Publisher<DataPointEvent> m_publisher;
 
 	@Inject
     
-	public PutMillisecondCommand(EventBusWithFilters eventBus, @Named("HOSTNAME") String hostname,
+	public PutMillisecondCommand(FilterEventBus eventBus, @Named("HOSTNAME") String hostname,
 			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
 		checkNotNullOrEmpty(hostname);
 		m_hostName = hostname;
-		m_eventBus = eventBus;
 		m_longFactory = longFactory;
 		m_doubleFactory = doubleFactory;
+
+		m_publisher = eventBus.createPublisher(DataPointEvent.class);
 	}
 
 	@Override
@@ -117,7 +119,7 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 			tags.put("add", "tag");
 
 		m_counter.incrementAndGet();
-		m_eventBus.post(new DataPointEvent(metricName, tags.build(), dp, ttl));
+		m_publisher.post(new DataPointEvent(metricName, tags.build(), dp, ttl));
 	}
 
 	private void validateTag(int tagCount, String[] tag) throws ValidationException

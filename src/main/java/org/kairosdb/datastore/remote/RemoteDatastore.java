@@ -19,7 +19,7 @@ package org.kairosdb.datastore.remote;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Multimap;
-import com.google.common.eventbus.Subscribe;
+import org.kairosdb.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.http.client.methods.CloseableHttpResponse;

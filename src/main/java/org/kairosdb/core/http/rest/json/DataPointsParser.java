@@ -17,7 +17,6 @@
 package org.kairosdb.core.http.rest.json;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.EventBus;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
@@ -26,6 +25,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.Util;
 import org.kairosdb.util.ValidationException;
@@ -40,13 +40,13 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Originally used Jackson to parse, but this approach failed for a very large JSON because
- * everything was in memory and we would run out of memory. This parser adds metrics as it walks
- * through the stream.
+ Originally used Jackson to parse, but this approach failed for a very large JSON because
+ everything was in memory and we would run out of memory. This parser adds metrics as it walks
+ through the stream.
  */
 public class DataPointsParser
 {
-	private final EventBus m_eventBus;
+	private final Publisher<DataPointEvent> m_publisher;
 	private final Reader inputStream;
 	private final Gson gson;
 	private final KairosDataPointFactory dataPointFactory;
@@ -64,10 +64,10 @@ public class DataPointsParser
 	private int dataPointCount;
 	private int ingestTime;
 
-	public DataPointsParser(EventBus eventBus, Reader stream, Gson gson,
-	                        KairosDataPointFactory dataPointFactory)
+	public DataPointsParser(Publisher<DataPointEvent> publisher, Reader stream, Gson gson,
+			KairosDataPointFactory dataPointFactory)
 	{
-		m_eventBus = checkNotNull(eventBus);
+		m_publisher = publisher;
 		this.inputStream = checkNotNull(stream);
 		this.gson = gson;
 		this.dataPointFactory = dataPointFactory;
@@ -116,7 +116,7 @@ public class DataPointsParser
 			validationErrors.addErrorMessage("Invalid json. No content due to end of input.");
 		}
 
-		ingestTime = (int)(System.currentTimeMillis() - start);
+		ingestTime = (int) (System.currentTimeMillis() - start);
 
 		return validationErrors;
 	}
@@ -228,7 +228,8 @@ public class DataPointsParser
 
 	private String findType(JsonElement value) throws ValidationException
 	{
-		if (!value.isJsonPrimitive()){
+		if (!value.isJsonPrimitive())
+		{
 			throw new ValidationException("value is an invalid type");
 		}
 
@@ -300,26 +301,32 @@ public class DataPointsParser
 			{
 				String type = metric.getType();
 
-				if (type == null) {
-                    try {
-                        type = findType(metric.getValue());
-                    }
-                    catch (ValidationException e) {
-                        validationErrors.addErrorMessage(context + " " + e.getMessage());
-                    }
-                }
+				if (type == null)
+				{
+					try
+					{
+						type = findType(metric.getValue());
+					}
+					catch (ValidationException e)
+					{
+						validationErrors.addErrorMessage(context + " " + e.getMessage());
+					}
+				}
 
-                if (type != null) {
-                    if (dataPointFactory.isRegisteredType(type)) {
-	                    m_eventBus.post(new DataPointEvent(metric.getName(), tags, dataPointFactory.createDataPoint(
-			                    type, metric.getTimestamp(), metric.getValue()), metric.getTtl()));
-                        dataPointCount++;
-                    }
-                    else {
-                        validationErrors.addErrorMessage("Unregistered data point type '" + type + "'");
-                    }
-                }
-            }
+				if (type != null)
+				{
+					if (dataPointFactory.isRegisteredType(type))
+					{
+						m_publisher.post(new DataPointEvent(metric.getName(), tags, dataPointFactory.createDataPoint(
+								type, metric.getTimestamp(), metric.getValue()), metric.getTtl()));
+						dataPointCount++;
+					}
+					else
+					{
+						validationErrors.addErrorMessage("Unregistered data point type '" + type + "'");
+					}
+				}
+			}
 
 			if (metric.getDatapoints() != null && metric.getDatapoints().length > 0)
 			{
@@ -330,7 +337,7 @@ public class DataPointsParser
 					dataPointContext.setCount(contextCount);
 					if (dataPoint.length < 1)
 					{
-						validationErrors.addErrorMessage(dataPointContext.setAttribute("timestamp") +" cannot be null or empty.");
+						validationErrors.addErrorMessage(dataPointContext.setAttribute("timestamp") + " cannot be null or empty.");
 						continue;
 					}
 					else if (dataPoint.length < 2)
@@ -354,25 +361,28 @@ public class DataPointsParser
 						if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
 							continue;
 
-						if (type == null) {
-                            try {
-                                type = findType(dataPoint[1]);
-                            }
-                            catch (ValidationException e) {
-                                validationErrors.addErrorMessage(context + " " + e.getMessage());
-                                continue;
-                            }
-                        }
+						if (type == null)
+						{
+							try
+							{
+								type = findType(dataPoint[1]);
+							}
+							catch (ValidationException e)
+							{
+								validationErrors.addErrorMessage(context + " " + e.getMessage());
+								continue;
+							}
+						}
 
 						if (!dataPointFactory.isRegisteredType(type))
 						{
-							validationErrors.addErrorMessage("Unregistered data point type '"+type+"'");
+							validationErrors.addErrorMessage("Unregistered data point type '" + type + "'");
 							continue;
 						}
 
-						m_eventBus.post(new DataPointEvent(metric.getName(), tags,
+						m_publisher.post(new DataPointEvent(metric.getName(), tags,
 								dataPointFactory.createDataPoint(type, timestamp, dataPoint[1]), metric.getTtl()));
-						dataPointCount ++;
+						dataPointCount++;
 					}
 					contextCount++;
 				}
@@ -430,7 +440,10 @@ public class DataPointsParser
 			return !skip_validate;
 		}
 
-		public String getType() { return type; }
+		public String getType()
+		{
+			return type;
+		}
 
 		public int getTtl()
 		{

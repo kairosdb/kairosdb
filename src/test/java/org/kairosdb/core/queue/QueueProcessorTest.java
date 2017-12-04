@@ -8,6 +8,7 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
+import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.events.DataPointEvent;
 import org.mockito.Matchers;
 import se.ugli.bigqueue.BigArray;
@@ -78,7 +79,7 @@ public class QueueProcessorTest
 
 
 	@Test
-	public void test_eventIsPulledFromMemoryQueue()
+	public void test_eventIsPulledFromMemoryQueue() throws DatastoreException
 	{
 		BigArray bigArray = mock(BigArray.class);
 
@@ -107,7 +108,7 @@ public class QueueProcessorTest
 	}
 
 	@Test
-	public void test_eventIsPulledFromMemoryQueueThenBigArray()
+	public void test_eventIsPulledFromMemoryQueueThenBigArray() throws DatastoreException
 	{
 		BigArray bigArray = mock(BigArray.class);
 
@@ -140,7 +141,7 @@ public class QueueProcessorTest
 	}
 
 	@Test
-	public void test_checkPointIsCalled()
+	public void test_checkPointIsCalled() throws DatastoreException
 	{
 		final EventBus eventBus = mock(EventBus.class);
 		BigArray bigArray = mock(BigArray.class);

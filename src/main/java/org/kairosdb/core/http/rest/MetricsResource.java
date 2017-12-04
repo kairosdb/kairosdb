@@ -46,7 +46,9 @@ import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.MemoryMonitorException;
 import org.kairosdb.util.SimpleStats;
 import org.kairosdb.util.SimpleStatsReporter;
@@ -110,7 +112,7 @@ public class MetricsResource implements KairosMetricReporter
 	public static final String QUERY_URL = "/datapoints/query";
 
 	private final KairosDatastore datastore;
-	private final EventBusWithFilters m_eventBus;
+	private final Publisher<DataPointEvent> m_publisher;
 	private final Map<String, DataFormatter> formatters = new HashMap<>();
 	private final QueryParser queryParser;
 
@@ -165,12 +167,12 @@ public class MetricsResource implements KairosMetricReporter
 
 	@Inject
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
-			KairosDataPointFactory dataPointFactory, EventBusWithFilters eventBus)
+			KairosDataPointFactory dataPointFactory, FilterEventBus eventBus)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.queryParser = checkNotNull(queryParser);
 		m_kairosDataPointFactory = dataPointFactory;
-		m_eventBus = checkNotNull(eventBus);
+		m_publisher = checkNotNull(eventBus).createPublisher(DataPointEvent.class);
 		formatters.put("json", new JsonFormatter());
 
 		GsonBuilder builder = new GsonBuilder();
@@ -300,7 +302,7 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		try
 		{
-			DataPointsParser parser = new DataPointsParser(m_eventBus, new InputStreamReader(json, "UTF-8"),
+			DataPointsParser parser = new DataPointsParser(m_publisher, new InputStreamReader(json, "UTF-8"),
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 
@@ -527,7 +529,7 @@ public class MetricsResource implements KairosMetricReporter
 			else
 			{
 				ThreadReporter.submitData(m_longDataPointFactory,
-						m_stringDataPointFactory, m_eventBus);
+						m_stringDataPointFactory, m_publisher);
 			}
 
 			//System.out.println("About to process plugins");

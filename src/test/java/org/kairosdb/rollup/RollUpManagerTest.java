@@ -9,7 +9,7 @@ import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
 import org.quartz.impl.JobDetailImpl;
 
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ public class RollUpManagerTest
 	private RollUpTasksStore mockTaskStore;
 	private KairosDBScheduler mockScheduler;
 	private KairosDatastore mockDatastore;
-	private EventBusWithFilters mockEventBus;
+	private FilterEventBus mockEventBus;
 
 	@Before
 	public void setup() throws RollUpException
@@ -37,7 +37,7 @@ public class RollUpManagerTest
 		mockTaskStore = mock(RollUpTasksStore.class);
 		mockScheduler = mock(KairosDBScheduler.class);
 		mockDatastore = mock(KairosDatastore.class);
-		mockEventBus = mock(EventBusWithFilters.class);
+		mockEventBus = mock(FilterEventBus.class);
 
 	}
 

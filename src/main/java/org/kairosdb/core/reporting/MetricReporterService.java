@@ -23,7 +23,8 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.scheduler.KairosDBJob;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.Tags;
 import org.quartz.CronScheduleBuilder;
@@ -47,7 +48,7 @@ public class MetricReporterService implements KairosDBJob
 	public static final String SCHEDULE_PROPERTY = "kairosdb.reporter.schedule";
 	public static final String REPORTER_TTL = "kairosdb.reporter.ttl";
 
-	private EventBusWithFilters m_eventBus;
+	private Publisher<DataPointEvent> m_publisher;
 	private KairosMetricReporterListProvider m_reporterProvider;
 	private final String m_hostname;
 	private final String m_schedule;
@@ -57,17 +58,18 @@ public class MetricReporterService implements KairosDBJob
 	private LongDataPointFactory m_dataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
-	public MetricReporterService(EventBusWithFilters eventBus,
+	public MetricReporterService(FilterEventBus eventBus,
 			KairosMetricReporterListProvider reporterProvider,
 			@Named(SCHEDULE_PROPERTY) String schedule,
 			@Named(HOSTNAME) String hostname,
 			@Named(REPORTER_TTL) int ttl)
 	{
-		m_eventBus = checkNotNull(eventBus);
 		m_hostname = checkNotNullOrEmpty(hostname);
 		m_reporterProvider = reporterProvider;
 		m_schedule = schedule;
 		m_ttl = ttl;
+
+		m_publisher = eventBus.createPublisher(DataPointEvent.class);
 	}
 
 	private int getThreadCount()
@@ -109,7 +111,7 @@ public class MetricReporterService implements KairosDBJob
 				{
 					for (DataPoint dataPoint : dataPointSet.getDataPoints())
 					{
-						m_eventBus.post(new DataPointEvent(dataPointSet.getName(),
+						m_publisher.post(new DataPointEvent(dataPointSet.getName(),
 								dataPointSet.getTags(), dataPoint, m_ttl));
 					}
 				}
@@ -119,13 +121,13 @@ public class MetricReporterService implements KairosDBJob
 			Runtime runtime = Runtime.getRuntime();
 			ImmutableSortedMap<String, String> tags = Tags.create()
 					.put("host", m_hostname).build();
-			m_eventBus.post(new DataPointEvent("kairosdb.jvm.free_memory",
+			m_publisher.post(new DataPointEvent("kairosdb.jvm.free_memory",
 					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.freeMemory()), m_ttl));
-			m_eventBus.post(new DataPointEvent("kairosdb.jvm.total_memory",
+			m_publisher.post(new DataPointEvent("kairosdb.jvm.total_memory",
 					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.totalMemory()), m_ttl));
-			m_eventBus.post(new DataPointEvent("kairosdb.jvm.max_memory",
+			m_publisher.post(new DataPointEvent("kairosdb.jvm.max_memory",
 					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.maxMemory()), m_ttl));
-			m_eventBus.post(new DataPointEvent("kairosdb.jvm.thread_count",
+			m_publisher.post(new DataPointEvent("kairosdb.jvm.thread_count",
 					tags, m_dataPointFactory.createDataPoint(timestamp, getThreadCount()), m_ttl));
 		}
 		catch (Throwable e)

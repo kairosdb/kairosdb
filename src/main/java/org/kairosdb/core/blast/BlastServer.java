@@ -3,7 +3,6 @@ package org.kairosdb.core.blast;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.EventBus;
 import org.apache.commons.lang3.RandomUtils;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
@@ -12,6 +11,8 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,7 @@ public class BlastServer implements KairosDBService, Runnable, KairosMetricRepor
 	public static final String METRIC_NAME = "kairosdb.blast.metric_name";
 	public static final String TTL = "kairosdb.blast.ttl";
 	private Thread m_serverThread;
-	private final EventBus m_evenBus;
+	private final Publisher<DataPointEvent> m_publisher;
 	private final LongDataPointFactory m_longDataPointFactory;
 	private boolean m_keepRunning = true;
 	private final int m_ttl;
@@ -51,14 +52,14 @@ public class BlastServer implements KairosDBService, Runnable, KairosMetricRepor
 	private LongDataPointFactory m_dataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
-	public BlastServer(EventBus evenBus,
+	public BlastServer(FilterEventBus evenBus,
 			LongDataPointFactory longDataPointFactory,
 			@Named(NUMBER_OF_ROWS) int numberOfRows,
 			@Named(DURATION_SECONDS) long durration,
 			@Named(METRIC_NAME) String metricName,
 			@Named(TTL) int ttl)
 	{
-		m_evenBus = evenBus;
+		m_publisher = evenBus.createPublisher(DataPointEvent.class);
 		m_longDataPointFactory = longDataPointFactory;
 		m_ttl = ttl;
 		m_numberOfRows = numberOfRows;
@@ -95,7 +96,7 @@ public class BlastServer implements KairosDBService, Runnable, KairosMetricRepor
 					String.valueOf(row), "host", "blast_server");
 
 			DataPointEvent dataPointEvent = new DataPointEvent(m_metricName, tags, dataPoint, m_ttl);
-			m_evenBus.post(dataPointEvent);
+			m_publisher.post(dataPointEvent);
 			m_counter ++;
 
 			if ((m_counter % 100000 == 0) && (timer.elapsed(TimeUnit.SECONDS) > m_durration))

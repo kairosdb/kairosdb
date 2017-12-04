@@ -1,24 +1,16 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.datastax.driver.core.exceptions.UnavailableException;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.queue.EventCompletionCallBack;
-import org.kairosdb.eventbus.EventBusWithFilters;
-import org.kairosdb.events.BatchReductionEvent;
-import org.kairosdb.events.DataPointEvent;
-import org.omg.IOP.TAG_ALTERNATE_IIOP_ADDRESS;
+import org.kairosdb.util.RetryCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Named;
 import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
@@ -32,7 +24,7 @@ import static org.kairosdb.datastore.cassandra.CassandraDatastore.getColumnName;
 /**
  Created by bhawkins on 1/11/17.
  */
-public class DeleteBatchHandler implements Callable<Boolean>
+public class DeleteBatchHandler extends RetryCallable
 {
 	public static final Logger logger = LoggerFactory.getLogger(BatchHandler.class);
 	public static final Logger failedLogger = LoggerFactory.getLogger("failed_logger");
@@ -81,7 +73,7 @@ public class DeleteBatchHandler implements Callable<Boolean>
 
 
 	@Override
-	public Boolean call() throws Exception
+	public void retryCall() throws Exception
 	{
 		int divisor = 1;
 		boolean retry = false;
@@ -158,7 +150,5 @@ public class DeleteBatchHandler implements Callable<Boolean>
 		} while (retry);
 
 		m_callBack.complete();
-
-		return true;
 	}
 }

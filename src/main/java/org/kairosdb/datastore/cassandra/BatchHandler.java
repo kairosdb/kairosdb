@@ -7,10 +7,12 @@ import com.google.inject.assistedinject.Assisted;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.queue.EventCompletionCallBack;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.BatchReductionEvent;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.events.RowKeyEvent;
+import org.kairosdb.util.RetryCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +30,7 @@ import static org.kairosdb.datastore.cassandra.CassandraDatastore.getColumnName;
 /**
  Created by bhawkins on 1/11/17.
  */
-public class BatchHandler implements Callable<Boolean>
+public class BatchHandler extends RetryCallable
 {
 	public static final Logger logger = LoggerFactory.getLogger(BatchHandler.class);
 	public static final Logger failedLogger = LoggerFactory.getLogger("failed_logger");
@@ -38,19 +40,18 @@ public class BatchHandler implements Callable<Boolean>
 	private final int m_defaultTtl;
 	private final DataCache<DataPointsRowKey> m_rowKeyCache;
 	private final DataCache<String> m_metricNameCache;
-	private final EventBusWithFilters m_eventBus;
-	private final boolean m_fullBatch;
 	private final CassandraModule.CQLBatchFactory m_cqlBatchFactory;
+	private final Publisher<RowKeyEvent> m_rowKeyPublisher;
+	private final Publisher<BatchReductionEvent> m_batchReductionPublisher;
 
 	@Inject
 	public BatchHandler(
 			@Assisted List<DataPointEvent> events,
 			@Assisted EventCompletionCallBack callBack,
-			@Assisted boolean fullBatch,
 			CassandraConfiguration configuration,
 			DataCache<DataPointsRowKey> rowKeyCache,
 			DataCache<String> metricNameCache,
-			EventBusWithFilters eventBus,
+			FilterEventBus eventBus,
 			CassandraModule.CQLBatchFactory cqlBatchFactory)
 	{
 		m_events = events;
@@ -58,16 +59,13 @@ public class BatchHandler implements Callable<Boolean>
 		m_defaultTtl = configuration.getDatapointTtl();
 		m_rowKeyCache = rowKeyCache;
 		m_metricNameCache = metricNameCache;
-		m_eventBus = eventBus;
-		m_fullBatch = fullBatch;
 
 		m_cqlBatchFactory = cqlBatchFactory;
+
+		m_rowKeyPublisher = eventBus.createPublisher(RowKeyEvent.class);
+		m_batchReductionPublisher = eventBus.createPublisher(BatchReductionEvent.class);
 	}
 
-	public boolean isFullBatch()
-	{
-		return m_fullBatch;
-	}
 
 	private void loadBatch(int limit, CQLBatch batch, Iterator<DataPointEvent> events) throws Exception
 	{
@@ -107,7 +105,7 @@ public class BatchHandler implements Callable<Boolean>
 			{
 				batch.addRowKey(metricName, rowKey, rowKeyTtl);
 
-				m_eventBus.post(new RowKeyEvent(metricName, rowKey, rowKeyTtl));
+				m_rowKeyPublisher.post(new RowKeyEvent(metricName, rowKey, rowKeyTtl));
 			}
 			else
 				rowKey = cachedKey;
@@ -132,9 +130,8 @@ public class BatchHandler implements Callable<Boolean>
 		}
 	}
 
-
 	@Override
-	public Boolean call() throws Exception
+	public void retryCall() throws Exception
 	{
 		int divisor = 1;
 		boolean retry = false;
@@ -227,11 +224,9 @@ public class BatchHandler implements Callable<Boolean>
 
 		if (limit < m_events.size())
 		{
-			m_eventBus.post(new BatchReductionEvent(limit));
+			m_batchReductionPublisher.post(new BatchReductionEvent(limit));
 		}
 
 		m_callBack.complete();
-
-		return m_fullBatch;
 	}
 }

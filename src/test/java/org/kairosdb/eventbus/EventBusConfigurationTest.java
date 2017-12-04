@@ -31,7 +31,7 @@ public class EventBusConfigurationTest
         assertThat(config.getFilterPriority("com.bar.Filter2"), equalTo(20));
         assertThat(config.getFilterPriority("com.fi.Filter3"), equalTo(30));
         assertThat(config.getFilterPriority("org.apache.Filter4"), equalTo(40));
-        assertThat(config.getFilterPriority("com.foo.Bogus"), equalTo(FilterRegistry.DEFAULT_PRIORITY));
+        assertThat(config.getFilterPriority("com.foo.Bogus"), equalTo(PipelineRegistry.DEFAULT_PRIORITY));
     }
 
     @Test
@@ -42,7 +42,7 @@ public class EventBusConfigurationTest
 
         EventBusConfiguration config = new EventBusConfiguration(properties);
 
-        assertThat(config.getFilterPriority("com.foo.Filter1"), equalTo(FilterRegistry.DEFAULT_PRIORITY));
+        assertThat(config.getFilterPriority("com.foo.Filter1"), equalTo(PipelineRegistry.DEFAULT_PRIORITY));
     }
 
 }

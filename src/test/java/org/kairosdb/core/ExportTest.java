@@ -64,7 +64,7 @@ public class ExportTest
 	{
 		Socket sock = new Socket("localhost", port);
 
-		long start = System.currentTimeMillis() - (LOAD * 100);
+		long start = System.currentTimeMillis() - (LOAD);
 		PrintWriter os = new PrintWriter(sock.getOutputStream());
 
 		for (long i = 0; i < LOAD; i++)
@@ -76,7 +76,7 @@ public class ExportTest
 
 		os.close();
 		sock.close();
-		Thread.sleep(10000);
+		Thread.sleep(2000);
 	}
 
 	@BeforeClass
@@ -86,22 +86,27 @@ public class ExportTest
 		if (!props.exists())
 			props = null;
 
+		//Ensure the memory queue processor is used
+		System.setProperty("kairosdb.queue_processor", "org.kairosdb.core.queue.MemoryQueueProcessor");
 		s_main = new Main(props);
 		s_main.startServices();
 		s_injector = s_main.getInjector();
 
+		//make sure it is cleared out
+		deleteData();
 		//Load data to be exported
 		int port = s_injector.getInstance(Key.get(Integer.class, Names.named("kairosdb.telnetserver.port")));
 		loadData(port);
+
 	}
 
 	private static void deleteData() throws DatastoreException, InterruptedException
 	{
 		KairosDatastore ds = s_injector.getInstance(KairosDatastore.class);
 
-		QueryMetric metric = new QueryMetric(0, Long.MAX_VALUE, 0, METRIC_NAME);
+		QueryMetric metric = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, METRIC_NAME);
 		ds.delete(metric);
-		Thread.sleep(3000);
+		Thread.sleep(2000);
 	}
 
 	@AfterClass

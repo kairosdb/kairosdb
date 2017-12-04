@@ -1,7 +1,7 @@
 package org.kairosdb.rollup;
 
 import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.eventbus.Subscribe;
+import org.kairosdb.eventbus.Subscribe;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

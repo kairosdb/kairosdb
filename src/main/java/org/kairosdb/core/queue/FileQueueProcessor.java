@@ -6,6 +6,7 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
+import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.events.DataPointEvent;
 import org.slf4j.Logger;
@@ -39,6 +40,7 @@ public class FileQueueProcessor extends QueueProcessor
 	private CompletionCallBack m_lastCallback = new CompletionCallBack();
 	private final int m_secondsTillCheckpoint;
 	private ImmutableSortedMap<String, String> m_reportTags = ImmutableSortedMap.of();
+	private volatile boolean m_shuttingDown;
 
 	private long m_nextIndex = -1L;
 
@@ -63,6 +65,7 @@ public class FileQueueProcessor extends QueueProcessor
 		m_eventSerializer = eventSerializer;
 		m_nextIndex = m_bigArray.getTailIndex();
 		m_secondsTillCheckpoint = secondsTillCheckpoint;
+		m_shuttingDown = false;
 	}
 
 	@Inject
@@ -76,6 +79,8 @@ public class FileQueueProcessor extends QueueProcessor
 	public void shutdown()
 	{
 		//todo: would like to drain the queue before shutting down.
+		m_shuttingDown = true;
+
 		m_bigArray.flush();
 		m_bigArray.close();
 
@@ -128,8 +133,13 @@ public class FileQueueProcessor extends QueueProcessor
 	}
 
 
-	public void put(DataPointEvent dataPointEvent)
+	public void put(DataPointEvent dataPointEvent) throws DatastoreException
 	{
+		if (m_shuttingDown)
+		{
+			throw new DatastoreException("File Queue shutting down");
+		}
+
 		byte[] eventBytes = m_eventSerializer.serializeEvent(dataPointEvent);
 
 		synchronized (m_lock)

@@ -10,7 +10,8 @@ import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
@@ -26,7 +27,7 @@ import java.util.*;
 )
 public class SaveAsAggregator implements Aggregator, GroupByAware
 {
-	private final EventBusWithFilters m_eventBus;
+	private final Publisher<DataPointEvent> m_publisher;
 	private Map<String, String> m_tags;
 	private int m_ttl = 0;
 	private Set<String> m_tagsToKeep = new HashSet<>();
@@ -48,9 +49,9 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 
 
 	@Inject
-	public SaveAsAggregator(EventBusWithFilters eventBus)
+	public SaveAsAggregator(FilterEventBus eventBus)
 	{
-		m_eventBus = eventBus;
+		m_publisher = eventBus.createPublisher(DataPointEvent.class);
 		m_tags = new HashMap<>();
 	}
 
@@ -157,7 +158,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 		{
 			DataPoint next = m_innerDataPointGroup.next();
 
-			m_eventBus.post(new DataPointEvent(m_metricName, m_groupTags, next, m_ttl));
+			m_publisher.post(new DataPointEvent(m_metricName, m_groupTags, next, m_ttl));
 
 			return next;
 		}

@@ -28,7 +28,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class SubscriberExceptionContext
 {
-  private final EventBus eventBus;
+  private final FilterEventBus eventBus;
   private final Object event;
   private final Object subscriber;
   private final Method subscriberMethod;
@@ -40,7 +40,7 @@ public class SubscriberExceptionContext
    * @param subscriber The source subscriber context.
    * @param subscriberMethod the subscribed method.
    */
-  SubscriberExceptionContext(EventBus eventBus, Object event, Object subscriber,
+  SubscriberExceptionContext(FilterEventBus eventBus, Object event, Object subscriber,
       Method subscriberMethod) {
     this.eventBus = checkNotNull(eventBus);
     this.event = checkNotNull(event);
@@ -52,7 +52,7 @@ public class SubscriberExceptionContext
    * @return The {@link EventBus} that handled the event and the subscriber.
    *     Useful for broadcasting a a new event based on the error.
    */
-  public EventBus getEventBus() {
+  public FilterEventBus getEventBus() {
     return eventBus;
   }
 

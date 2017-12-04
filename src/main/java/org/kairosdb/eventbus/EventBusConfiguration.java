@@ -49,6 +49,6 @@ public class EventBusConfiguration
 
     public int getFilterPriority(String filterClassName)
     {
-        return priorities.getOrDefault(filterClassName, FilterRegistry.DEFAULT_PRIORITY);
+        return priorities.getOrDefault(filterClassName, PipelineRegistry.DEFAULT_PRIORITY);
     }
 }

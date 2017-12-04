@@ -40,7 +40,9 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.http.rest.json.DataPointsParser;
 import org.kairosdb.core.http.rest.json.ValidationErrors;
-import org.kairosdb.eventbus.EventBusWithFilters;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.PluginClassLoader;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -185,6 +187,11 @@ public class Main
 			}
 
 			loadPlugins(props, propertiesFile);
+		}
+
+		for (String name : System.getProperties().stringPropertyNames())
+		{
+			props.setProperty(name, System.getProperty(name));
 		}
 
 		applyEnvironmentVariables(props);
@@ -456,7 +463,8 @@ public class Main
 	public void runImport(InputStream in) throws IOException, DatastoreException
 	{
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
-		EventBusWithFilters eventBus = m_injector.getInstance(EventBusWithFilters.class);
+		FilterEventBus eventBus = m_injector.getInstance(FilterEventBus.class);
+		Publisher<DataPointEvent> publisher = eventBus.createPublisher(DataPointEvent.class);
 		KairosDataPointFactory dpFactory = m_injector.getInstance(KairosDataPointFactory.class);
 
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8));
@@ -465,7 +473,7 @@ public class Main
 		String line;
 		while ((line = reader.readLine()) != null)
 		{
-			DataPointsParser dataPointsParser = new DataPointsParser(eventBus, new StringReader(line),
+			DataPointsParser dataPointsParser = new DataPointsParser(publisher, new StringReader(line),
 					gson, dpFactory);
 
 			ValidationErrors validationErrors = dataPointsParser.parse();

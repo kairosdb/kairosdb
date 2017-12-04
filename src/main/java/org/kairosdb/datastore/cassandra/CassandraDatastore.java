@@ -122,11 +122,6 @@ public class CassandraDatastore implements Datastore {
         this.tagValueCache = tagValueCache;
 
         logger.warn("Setting tag index: {}", cassandraConfiguration.getIndexTagList());
-        logger.warn("Setting metric name cache size: {}", cassandraConfiguration.getMetricNameCacheSize());
-        logger.warn("Setting row key cache size: {}", cassandraConfiguration.getRowKeyCacheSize());
-        logger.warn("Setting tag name cache size: {}", cassandraConfiguration.getTagNameCacheSize());
-        logger.warn("Setting tag value cache size: {}", cassandraConfiguration.getTagValueCacheSize());
-
         m_indexTagList = Arrays.stream(cassandraConfiguration.getIndexTagList().split(","))
                 .map(String::trim)
                 .filter(Objects::nonNull)
@@ -217,36 +212,36 @@ public class CassandraDatastore implements Datastore {
             if (!rowKeyKnown) {
                 storeRowKeyReverseLookups(metricName, serializedKey, rowKeyTtl, tags);
                 rowKeyCache.put(serializedKey);
-            }
 
-            //Write metric name if not in cache
-            if (!metricNameCache.isKnown(metricName)) {
-                if (metricName.length() == 0) {
-                    logger.warn("Attempted to add empty metric name to string index. Row looks like: {}", dataPoint);
-                }
-                storeStringIndex(metricName, m_psInsertString, METRIC_NAME_BYTE_BUFFER);
-                metricNameCache.put(metricName);
-            }
-
-            //Check tag names and values to write them out
-            for (final String tagName : tags.keySet()) {
-                if (!tagNameCache.isKnown(tagName)) {
-                    if (tagName.length() == 0) {
-                        logger.warn("Attempted to add empty tagName to string cache for metric: {}", metricName);
+                //Write metric name if not in cache
+                if (!metricNameCache.isKnown(metricName)) {
+                    if (metricName.length() == 0) {
+                        logger.warn("Attempted to add empty metric name to string index. Row looks like: {}", dataPoint);
                     }
-                    storeStringIndex(tagName, m_psInsertString, ROW_KEY_TAG_NAMES_BYTE_BUFFER);
-                    tagNameCache.put(tagName);
+                    storeStringIndex(metricName, m_psInsertString, METRIC_NAME_BYTE_BUFFER);
+                    metricNameCache.put(metricName);
                 }
 
-                final String value = tags.get(tagName);
-                boolean isCachedValue = tagValueCache.isKnown(value);
-                if (m_cassandraConfiguration.getTagValueCacheSize() > 0 && !isCachedValue) {
-                    if (value.length() == 0) {
-                        logger.warn("Attempted to add empty tagValue (tag name {}) to string cache for metric: {}",
-                                tagName, metricName);
+                //Check tag names and values to write them out
+                for (final String tagName : tags.keySet()) {
+                    if (!tagNameCache.isKnown(tagName)) {
+                        if (tagName.length() == 0) {
+                            logger.warn("Attempted to add empty tagName to string cache for metric: {}", metricName);
+                        }
+                        storeStringIndex(tagName, m_psInsertString, ROW_KEY_TAG_NAMES_BYTE_BUFFER);
+                        tagNameCache.put(tagName);
                     }
-                    storeStringIndex(value, m_psInsertString, ROW_KEY_TAG_VALUES_BYTE_BUFFER);
-                    tagValueCache.put(value);
+
+                    final String value = tags.get(tagName);
+                    boolean isCachedValue = tagValueCache.isKnown(value);
+                    if (m_cassandraConfiguration.getTagValueCacheSize() > 0 && !isCachedValue) {
+                        if (value.length() == 0) {
+                            logger.warn("Attempted to add empty tagValue (tag name {}) to string cache for metric: {}",
+                                    tagName, metricName);
+                        }
+                        storeStringIndex(value, m_psInsertString, ROW_KEY_TAG_VALUES_BYTE_BUFFER);
+                        tagValueCache.put(value);
+                    }
                 }
             }
 

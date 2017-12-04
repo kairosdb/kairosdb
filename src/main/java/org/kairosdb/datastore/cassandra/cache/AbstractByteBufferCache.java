@@ -34,6 +34,7 @@ public abstract class AbstractByteBufferCache {
                 .recordStats()
                 .build();
         cacheMetricsProvider.registerCache(cacheId, this.internalCache);
+        LOG.warn("Settings for cache {}: size={}, TTL={}", cacheId, maxSize, ttlInSeconds);
     }
 
     @VisibleForTesting

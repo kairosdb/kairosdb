@@ -64,7 +64,7 @@ public class RedisWriteBackReadThroughCacheStore implements GeneralHashCacheStor
             return jedis.get(key.toString());
         } catch (Exception e) {
             LOG.error("failed to load cache value for key {}", key, e);
-            return null;
+            throw e;
         }
     }
 

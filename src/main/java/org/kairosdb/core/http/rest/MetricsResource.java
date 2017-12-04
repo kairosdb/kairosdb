@@ -16,6 +16,9 @@
 
 package org.kairosdb.core.http.rest;
 
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
@@ -32,6 +35,7 @@ import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.exception.InvalidServerTypeException;
 import org.kairosdb.core.datastore.QueryPlugin;
 import org.kairosdb.core.datastore.QueryPostProcessingPlugin;
 import org.kairosdb.core.formatter.DataFormatter;
@@ -83,10 +87,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
@@ -98,6 +99,13 @@ enum NameType
 	METRIC_NAMES,
 	TAG_KEYS,
 	TAG_VALUES
+}
+
+enum ServerType
+{
+	INGEST,
+	QUERY,
+	DELETE
 }
 
 @Path("/api/v1")
@@ -162,6 +170,27 @@ public class MetricsResource implements KairosMetricReporter
 	@Named("HOSTNAME")
 	private String hostName = "localhost";
 
+	//Used for setting which API methods are enabled
+	private EnumSet<ServerType> m_serverType = EnumSet.of(ServerType.INGEST, ServerType.QUERY, ServerType.DELETE);
+
+	@Inject
+	@VisibleForTesting
+	void setServerType(@Named("kairosdb.server.type") String serverType)
+	{
+		if (serverType.equals("ALL")) return;
+		String serverTypeString = serverType.replaceAll("\\s+","");
+		List<String> serverTypeList = Arrays.asList(serverTypeString.split(","));
+
+		m_serverType = EnumSet.noneOf(ServerType.class);
+
+		for (String stString : serverTypeList)
+		{
+			m_serverType.add(ServerType.valueOf(stString));
+		}
+
+		logger.info("KairosDB server type set to: " + m_serverType.toString());
+	}
+
 	@Inject
 	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
@@ -189,6 +218,27 @@ public class MetricsResource implements KairosMetricReporter
 		return (responseBuilder);
 	}
 
+	private void checkServerType(ServerType methodServerType, String methodName, String requestType) throws InvalidServerTypeException
+	{
+		checkServerTypeStatic(m_serverType, methodServerType, methodName, requestType);
+	}
+
+	@VisibleForTesting
+	static void checkServerTypeStatic(EnumSet<ServerType> serverType, ServerType methodServerType, String methodName, String requestType) throws InvalidServerTypeException
+	{
+		logger.debug("checkServerType() - KairosDB ServerType set to " + serverType.toString());
+
+		if (!serverType.contains(methodServerType))
+		{
+			String logtext = "Disabled request type: " + methodServerType.name() + ", " + requestType + " request via URI \"" +  methodName + "\"";
+			logger.error(logtext);
+
+			String exceptionMessage = "[{\"Forbidden\": \"" + methodServerType.toString() + " API methods are disabled on this KairosDB instance.\"}]\n";
+
+			throw new InvalidServerTypeException(exceptionMessage);
+		}
+	}
+
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/version")
@@ -206,7 +256,7 @@ public class MetricsResource implements KairosMetricReporter
 	{
 		Package thisPackage = getClass().getPackage();
 		String versionString = thisPackage.getImplementationTitle() + " " + thisPackage.getImplementationVersion();
-		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \"" + versionString + "\"}");
+		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \"" + versionString + "\"}\n");
 		setHeaders(responseBuilder);
 		return responseBuilder.build();
 	}
@@ -215,8 +265,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/metricnames")
 	public Response corsPreflightMetricNames(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.QUERY, "/metricnames", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -224,8 +275,9 @@ public class MetricsResource implements KairosMetricReporter
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/metricnames")
-	public Response getMetricNames()
+	public Response getMetricNames() throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.QUERY, "/metricnames", "GET");
 		return executeNameQuery(NameType.METRIC_NAMES);
 	}
 
@@ -233,8 +285,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/tagnames")
 	public Response corsPreflightTagNames(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.QUERY, "/tagnames", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -242,8 +295,9 @@ public class MetricsResource implements KairosMetricReporter
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/tagnames")
-	public Response getTagNames()
+	public Response getTagNames() throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.QUERY, "/tagnames", "GET");
 		return executeNameQuery(NameType.TAG_KEYS);
 	}
 
@@ -252,8 +306,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/tagvalues")
 	public Response corsPreflightTagValues(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.QUERY, "/tagvalues", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -261,17 +316,33 @@ public class MetricsResource implements KairosMetricReporter
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/tagvalues")
-	public Response getTagValues()
+	public Response getTagValues() throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.QUERY, "/tagvalues", "GET");
 		return executeNameQuery(NameType.TAG_VALUES);
 	}
+
+/* // Commented this out as this method was not included in the updated develop branch sync'd from kairosdb main fork.
+    @GET
+    @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+    @Path("/aggregators")
+    public Response getAggregators() throws InvalidServerTypeException
+    {
+		checkServerType(ServerType.QUERY, "/aggregators", "GET");
+    	ImmutableList<AggregatorMetadata> aggregatorMetadata = aggregatorFactory.getAggregatorMetadata();
+        ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(gson.toJson(aggregatorMetadata));
+        setHeaders(responseBuilder);
+        return responseBuilder.build();
+    }
+*/
 
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints")
 	public Response corsPreflightDataPoints(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") String requestMethod) throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.INGEST, "/datapoints", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -280,8 +351,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Consumes("application/gzip")
 	@Path("/datapoints")
-	public Response addGzip(InputStream gzip)
+	public Response addGzip(InputStream gzip) throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.INGEST, "gzip /datapoints", "POST");
 		GZIPInputStream gzipInputStream;
 		try
 		{
@@ -298,8 +370,9 @@ public class MetricsResource implements KairosMetricReporter
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints")
-	public Response add(InputStream json)
+	public Response add(InputStream json) throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.INGEST, "JSON /datapoints", "POST");
 		try
 		{
 			DataPointsParser parser = new DataPointsParser(m_publisher, new InputStreamReader(json, "UTF-8"),
@@ -343,8 +416,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/query/tags")
 	public Response corsPreflightQueryTags(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.QUERY, "/datapoints/query/tags", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -352,8 +426,9 @@ public class MetricsResource implements KairosMetricReporter
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/query/tags")
-	public Response getMeta(String json)
+	public Response getMeta(String json) throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.QUERY, "/datapoints/query/tags", "POST");
 		checkNotNull(json);
 		logger.debug(json);
 
@@ -433,8 +508,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path(QUERY_URL)
 	public Response corsPreflightQuery(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.QUERY, QUERY_URL, "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -444,6 +520,7 @@ public class MetricsResource implements KairosMetricReporter
 	@Path(QUERY_URL)
 	public Response getQuery(@QueryParam("query") String json, @Context HttpServletRequest request) throws Exception
 	{
+		checkServerType(ServerType.QUERY, QUERY_URL, "GET");
 		return runQuery(json, request.getRemoteAddr());
 	}
 
@@ -452,6 +529,7 @@ public class MetricsResource implements KairosMetricReporter
 	@Path(QUERY_URL)
 	public Response postQuery(String json, @Context HttpServletRequest request) throws Exception
 	{
+		checkServerType(ServerType.QUERY, QUERY_URL, "POST");
 		return runQuery(json, request.getRemoteAddr());
 	}
 
@@ -591,8 +669,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/delete")
 	public Response corsPreflightDelete(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.DELETE, "/datapoints/delete", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -602,6 +681,7 @@ public class MetricsResource implements KairosMetricReporter
 	@Path("/datapoints/delete")
 	public Response delete(String json) throws Exception
 	{
+		checkServerType(ServerType.DELETE, "/datapoints/delete", "POST");
 		checkNotNull(json);
 		logger.debug(json);
 
@@ -665,8 +745,9 @@ public class MetricsResource implements KairosMetricReporter
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/metric/{metricName}")
 	public Response corsPreflightMetricDelete(@HeaderParam("Access-Control-Request-Headers") String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") String requestMethod)
+			@HeaderParam("Access-Control-Request-Method") String requestMethod) throws InvalidServerTypeException
 	{
+		checkServerType(ServerType.DELETE, "/metric/{metricName}", "OPTIONS");
 		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
 		return (responseBuilder.build());
 	}
@@ -676,6 +757,7 @@ public class MetricsResource implements KairosMetricReporter
 	@Path("/metric/{metricName}")
 	public Response metricDelete(@PathParam("metricName") String metricName) throws Exception
 	{
+		checkServerType(ServerType.DELETE, "/metric/{metricName}", "DELETE");
 		try
 		{
 			QueryMetric query = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, metricName);

@@ -4,7 +4,6 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.admin.CacheMetricsProvider;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.core.reporting.MetricReporterService.HOSTNAME;
 
 public class CacheMetricsReporter implements KairosMetricReporter {
     private final CacheMetricsProvider cacheMetricsProvider;
@@ -27,14 +25,10 @@ public class CacheMetricsReporter implements KairosMetricReporter {
     @Inject
     private DoubleDataPointFactory doubleDataPointFactory = new DoubleDataPointFactoryImpl();
 
-    private String hostname;
-
     @Inject
-    public CacheMetricsReporter(final CacheMetricsProvider cacheMetricsProvider, @Named(HOSTNAME) final String hostname) {
+    public CacheMetricsReporter(final CacheMetricsProvider cacheMetricsProvider) {
         checkNotNull(cacheMetricsProvider, "cacheMetricsProvider can't be null");
-        checkNotNull(hostname, "hostname can't be null");
         this.cacheMetricsProvider = cacheMetricsProvider;
-        this.hostname = hostname;
     }
 
     @Override
@@ -62,7 +56,6 @@ public class CacheMetricsReporter implements KairosMetricReporter {
             dataPoint = longDataPointFactory.createDataPoint(timestamp, value.longValue());
         }
         dataPointSet.addDataPoint(dataPoint);
-        dataPointSet.addTag("entity", hostname);
         return dataPointSet;
     }
 

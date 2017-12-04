@@ -18,13 +18,16 @@ package org.kairosdb.datastore.cassandra;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import org.hamcrest.CoreMatchers;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.kairosdb.core.*;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreMetricQueryImpl;
 import org.kairosdb.datastore.DatastoreTestHelper;
+import org.kairosdb.datastore.cassandra.cache.StringKeyCache;
 import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
 
 import java.io.IOException;
@@ -173,10 +176,13 @@ public class CassandraDatastoreTest extends DatastoreTestHelper {
 
         System.out.println("Starting Cassandra Connection: " + cassandraHost);
 
-        CassandraConfiguration cassandraConfig = new CassandraConfiguration(1, cassandraHost, "kairosdb_test");
+        CassandraConfiguration cassandraConfig = new CassandraConfiguration(1, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE, MAX_ROW_READ_SIZE,
+                1000, 50000, cassandraHost, "kairosdb_test");
 
+        // TODO: test the caches being hit
+        final StringKeyCache stringCache = mock(StringKeyCache.class);
         s_datastore = new CassandraDatastore(new CassandraClientImpl(cassandraConfig), cassandraConfig,
-                dataPointFactory, mock(RowKeyCache.class));
+                dataPointFactory, mock(RowKeyCache.class), stringCache, stringCache, stringCache);
 
         System.out.println("Creating KairosDataStore");
         DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,

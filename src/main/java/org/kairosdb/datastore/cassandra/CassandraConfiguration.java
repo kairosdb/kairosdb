@@ -1,15 +1,17 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.ConsistencyLevel;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+
+import com.datastax.driver.core.ConsistencyLevel;
 
 import java.util.Map;
 
 /**
  Created by bhawkins on 10/13/14.
  */
-public class CassandraConfiguration {
+public class CassandraConfiguration
+{
 
 	public static enum ADDRESS_TRANSLATOR_TYPE {
 		NONE,
@@ -24,6 +26,12 @@ public class CassandraConfiguration {
 	public static final String WRITE_CONSISTENCY_LEVEL_DATAPOINT = "kairosdb.datastore.cassandra.write_consistency_level_datapoint";
 
 	public static final String DATAPOINT_TTL = "kairosdb.datastore.cassandra.datapoint_ttl";
+
+	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
+	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
+	public static final String TAG_NAME_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.tag_name_cache_size";
+	public static final String TAG_VALUE_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.tag_value_cache_size";
+	public static final String METRIC_NAME_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.metric_name_cache_size";
 
 	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
 	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
@@ -40,7 +48,7 @@ public class CassandraConfiguration {
 
 	public static final String CASSANDRA_INDEX_TAG_LIST = "kairosdb.datastore.cassandra.index_tag_list";
 
-	@Inject(optional = true)
+	@Inject(optional=true)
 	@Named(CASSANDRA_INDEX_TAG_LIST)
 	private String m_IndexTagList = "key,application_id,stack_name";
 
@@ -48,19 +56,19 @@ public class CassandraConfiguration {
 		return m_IndexTagList;
 	}
 
-	@Inject(optional = true)
+	@Inject(optional=true)
 	@Named(CASSANDRA_MAX_ROW_KEYS_FOR_QUERY)
 	private int m_maxRowKeysForQuery = 10000;
 
-	@Inject(optional = true)
+	@Inject(optional=true)
 	@Named(CASSANDRA_MAX_ROWS_FOR_KEY_QUERY)
 	private int m_maxRowsForKeysQuery = 300000;
 
-	@Inject(optional = true)
+	@Inject(optional=true)
 	@Named(CASSANDRA_WRITE_ROWWIDTH)
 	private long m_rowWidthWrite = 1L * 3 * 24 * 60 * 60 * 1000; // 3 day row width for write
 
-	@Inject(optional = true)
+	@Inject(optional=true)
 	@Named(CASSANDRA_READ_ROWWIDTH)
 	private long m_rowWidthRead = 1814400000L; // 3 weeks for reading - backwards compatible
 
@@ -76,13 +84,33 @@ public class CassandraConfiguration {
 	@Named(READ_CONSISTENCY_LEVEL)
 	private ConsistencyLevel m_dataReadLevel = ConsistencyLevel.LOCAL_ONE;
 
-	@Inject(optional = true)
+	@Inject(optional=true)
 	@Named(DATAPOINT_TTL)
 	private int m_datapointTtl = 0; //Zero ttl means data lives forever.
 
 	@Inject
 	@Named(HOST_LIST_PROPERTY)
 	private String m_hostList = "localhost";
+
+	@Inject(optional=true)
+	@Named(STRING_CACHE_SIZE_PROPERTY)
+	private int m_stringCacheSize = 1024;
+
+	@Inject(optional=true)
+	@Named(ROW_KEY_CACHE_SIZE_PROPERTY)
+	private int m_rowKeyCacheSize = 1024;
+
+	@Inject(optional=true)
+	@Named(TAG_NAME_CACHE_SIZE_PROPERTY)
+	private int m_tagNameCacheSize = 1024;
+
+	@Inject(optional=true)
+	@Named(TAG_VALUE_CACHE_SIZE_PROPERTY)
+	private int m_tagValueCacheSize = 1024;
+
+	@Inject(optional=true)
+	@Named(METRIC_NAME_CACHE_SIZE_PROPERTY)
+	private int m_metricNameCacheSize = 1024;
 
 	@Inject
 	@Named(CassandraModule.CASSANDRA_AUTH_MAP)
@@ -92,62 +120,86 @@ public class CassandraConfiguration {
 	@Named(REPLICATION_FACTOR_PROPERTY)
 	private int m_replicationFactor;
 
-	@Inject(optional = true)
+	@Inject(optional=true)
 	@Named(KEYSPACE_PROPERTY)
 	private String m_keyspaceName = "kairosdb";
 
-	@Inject(optional = true)
+	@Inject(optional=true)
 	@Named(CASSANDRA_USER)
 	private String m_user = null;
 
-	@Inject(optional = true)
+	@Inject(optional=true)
 	@Named(CASSANDRA_PASSWORD)
 	private String m_password = null;
 
-	@Inject(optional = true)
+	@Inject(optional=true)
 	@Named(CASSANDRA_ADDRESS_TRANSLATOR)
 	private ADDRESS_TRANSLATOR_TYPE m_addressTranslator = ADDRESS_TRANSLATOR_TYPE.NONE;
 
-	@Inject(optional = true)
+	@Inject(optional=true)
 	@Named(CASSANDRA_PORT)
 	private int m_port = 9042;
 
-	public CassandraConfiguration() {
+	public CassandraConfiguration()
+	{
 	}
 
 	public CassandraConfiguration(int replicationFactor,
-								  String hostList,
-								  String keyspaceName) {
+			int singleRowReadSize,
+			int multiRowSize,
+			int multiRowReadSize,
+			int writeDelay,
+			int maxWriteSize,
+			String hostList,
+			String keyspaceName)
+	{
 		m_replicationFactor = replicationFactor;
 		m_hostList = hostList;
 		m_keyspaceName = keyspaceName;
 	}
 
-	public ConsistencyLevel getDataWriteLevelMeta() {
+	public ConsistencyLevel getDataWriteLevelMeta()
+	{
 		return m_dataWriteLevelMeta;
 	}
 
-	public ConsistencyLevel getDataWriteLevelDataPoint() {
+	public ConsistencyLevel getDataWriteLevelDataPoint()
+	{
 		return m_dataWriteLevelDataPoint;
 	}
 
-	public ConsistencyLevel getDataReadLevel() {
+	public ConsistencyLevel getDataReadLevel()
+	{
 		return m_dataReadLevel;
 	}
 
-	public int getDatapointTtl() {
+	public int getDatapointTtl()
+	{
 		return m_datapointTtl;
 	}
 
-	public Map<String, String> getCassandraAuthentication() {
+	public int getRowKeyCacheSize()
+	{
+		return m_rowKeyCacheSize;
+	}
+
+	public int getStringCacheSize()
+	{
+		return m_stringCacheSize;
+	}
+
+	public Map<String, String> getCassandraAuthentication()
+	{
 		return m_cassandraAuthentication;
 	}
 
-	public int getReplicationFactor() {
+	public int getReplicationFactor()
+	{
 		return m_replicationFactor;
 	}
 
-	public String getKeyspaceName() {
+	public String getKeyspaceName()
+	{
 		return m_keyspaceName;
 	}
 
@@ -189,5 +241,17 @@ public class CassandraConfiguration {
 
 	public int getMaxRowsForKeysQuery() {
 		return m_maxRowsForKeysQuery;
+	}
+
+	public int getTagNameCacheSize() {
+		return m_tagNameCacheSize;
+	}
+
+	public int getTagValueCacheSize() {
+		return m_tagValueCacheSize;
+	}
+
+	public int getMetricNameCacheSize() {
+		return m_metricNameCacheSize;
 	}
 }

@@ -5,8 +5,6 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import org.kairosdb.core.admin.CacheMetricsProvider;
 import org.kairosdb.datastore.cassandra.cache.persistence.GeneralHashCacheStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -16,17 +14,13 @@ import static com.google.common.hash.Hashing.murmur3_128;
 import static net.openhft.hashing.LongHashFunction.xx;
 
 public abstract class AbstractByteBufferCache {
-    public static final String DUMMY_PAYLOAD = "t";
-    private final Logger LOG = LoggerFactory.getLogger(AbstractByteBufferCache.class);
     private static final int MURMUR_SEED = 0xDEADBEEF;
     private static final int XX_SEED = 0xCAFEBABE;
 
     protected final LoadingCache<BigInteger, Object> outerLayerCache;
 
     protected AbstractByteBufferCache(final GeneralHashCacheStore cacheStore, final CacheMetricsProvider cacheMetricsProvider,
-                                      final int maxSize, final int ttlInSeconds, final String cacheId) {
-        LOG.warn("Initialising cache '{}' with TTL '{}' and max size '{}'", cacheId, ttlInSeconds, maxSize);
-
+                                final int maxSize, final int ttlInSeconds, final String cacheId) {
         this.outerLayerCache = Caffeine.newBuilder()
                 .initialCapacity(maxSize / 3 + 1)
                 .maximumSize(maxSize)
@@ -47,5 +41,4 @@ public abstract class AbstractByteBufferCache {
         doubleHash.flip();
         return new BigInteger(doubleHash.array());
     }
-
 }

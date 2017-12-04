@@ -60,6 +60,9 @@ public class WebServletModule extends JerseyServletModule
 		bind(GzipFilter.class).in(Scopes.SINGLETON);
 		filter("/*").through(GzipFilter.class, params);
 
+		bind(LoggingFilter.class).in(Scopes.SINGLETON);
+		filter("/*").through(LoggingFilter.class);
+
 		// hook Jackson into Jersey as the POJO <-> JSON mapper
 		bind(JacksonJsonProvider.class).in(Scopes.SINGLETON);
 		serve("/*").with(GuiceContainer.class);

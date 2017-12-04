@@ -1,55 +1,60 @@
 package org.kairosdb.core.aggregator;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
+import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.plugin.Aggregator;
+import org.kairosdb.plugin.GroupBy;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  Created by bhawkins on 8/28/15.
  */
-@AggregatorName(
+@FeatureComponent(
         name = "save_as",
-        description = "Saves the results to a new metric.",
-        properties = {
-                @AggregatorProperty(name = "metric_name", type = "string")
-        }
+		description = "Saves the results to a new metric."
 )
 public class SaveAsAggregator implements Aggregator, GroupByAware
 {
-	private Datastore m_datastore;
-	private String m_metricName;
+	private final Publisher<DataPointEvent> m_publisher;
 	private Map<String, String> m_tags;
 	private int m_ttl = 0;
 	private Set<String> m_tagsToKeep = new HashSet<>();
 	private boolean m_addSavedFrom = true;
 
+	@FeatureProperty(
+			name = "metric_name",
+			label = "Save As",
+			description = "The name of the new metric.",
+			default_value = "<new name>",
+            validations = {
+					@ValidationProperty(
+							expression = "!value && value.length > 0",
+							message = "The name can't be empty."
+					)
+			}
+	)
+	private String m_metricName;
+
+
 	@Inject
-	public SaveAsAggregator(Datastore datastore)
+	public SaveAsAggregator(FilterEventBus eventBus)
 	{
-		m_datastore = datastore;
-		m_tags = new HashMap<String, String>();
+		m_publisher = eventBus.createPublisher(DataPointEvent.class);
+		m_tags = new HashMap<>();
 	}
 
-	public SaveAsAggregator(Datastore datastore, String metricName)
-	{
-		this(datastore);
-		m_metricName = metricName;
-		m_tags = new HashMap<String, String>();
-	}
 
 	public void setAddSavedFrom(boolean addSavedFrom)
 	{
@@ -113,6 +118,12 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 		}
 	}
 
+	@VisibleForTesting
+	public Set<String> getTagsToKeep()
+	{
+		return m_tagsToKeep;
+	}
+
 	private class SaveAsDataPointAggregator implements DataPointGroup
 	{
 		private DataPointGroup m_innerDataPointGroup;
@@ -121,7 +132,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 		public SaveAsDataPointAggregator(DataPointGroup innerDataPointGroup)
 		{
 			m_innerDataPointGroup = innerDataPointGroup;
-			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.<String, String>naturalOrder();
+			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.naturalOrder();
 			mapBuilder.putAll(m_tags);
 			if (m_addSavedFrom)
 				mapBuilder.put("saved_from", innerDataPointGroup.getName());
@@ -147,14 +158,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 		{
 			DataPoint next = m_innerDataPointGroup.next();
 
-			try
-			{
-				m_datastore.putDataPoint(m_metricName, m_groupTags, next, m_ttl);
-			}
-			catch (DatastoreException e)
-			{
-				throw new RuntimeException("Failure to save data to "+m_metricName, e);
-			}
+			m_publisher.post(new DataPointEvent(m_metricName, m_groupTags, next, m_ttl));
 
 			return next;
 		}

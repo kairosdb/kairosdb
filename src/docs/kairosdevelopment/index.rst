@@ -9,9 +9,4 @@ Contents:
    Plugins
    CustomData
    IntelliJSetup
-
-
-
-
-
-
+   Aggregators_and_GroupBys

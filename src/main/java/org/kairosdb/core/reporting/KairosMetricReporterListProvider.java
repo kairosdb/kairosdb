@@ -7,35 +7,34 @@
 package org.kairosdb.core.reporting;
 
 import com.google.inject.*;
+import com.google.inject.spi.InjectionListener;
+import com.google.inject.spi.TypeEncounter;
+import com.google.inject.spi.TypeListener;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class KairosMetricReporterListProvider implements Provider<List<KairosMetricReporter>>
+public class KairosMetricReporterListProvider implements TypeListener
 {
-	private List<KairosMetricReporter> m_reporters = new ArrayList<KairosMetricReporter>();
+	private Set<KairosMetricReporter> m_reporters = new HashSet<KairosMetricReporter>();
 
-	@Inject
-	public KairosMetricReporterListProvider(Injector injector)
+	public Set<KairosMetricReporter> get()
 	{
-		Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
-
-		for (Key<?> key : bindings.keySet())
-		{
-			Class<?> bindingClass = key.getTypeLiteral().getRawType();
-			if (KairosMetricReporter.class.isAssignableFrom(bindingClass))
-			{
-				KairosMetricReporter reporter = (KairosMetricReporter)injector.getInstance(bindingClass);
-				m_reporters.add(reporter);
-			}
-		}
+		return (Collections.unmodifiableSet(m_reporters));
 	}
 
 	@Override
-	public List<KairosMetricReporter> get()
+	public <I> void hear(TypeLiteral<I> type, TypeEncounter<I> encounter)
 	{
-		return (Collections.unmodifiableList(m_reporters));
+		encounter.register(new InjectionListener<I>()
+		{
+			@Override
+			public void afterInjection(I injectee)
+			{
+				if (KairosMetricReporter.class.isAssignableFrom(injectee.getClass()))
+				{
+					m_reporters.add((KairosMetricReporter)injectee);
+				}
+			}
+		});
 	}
 }

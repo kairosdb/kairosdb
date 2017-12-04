@@ -290,7 +290,7 @@ input.ui-button {
 }
 
 /* workarounds */
-/* reset extra padding in Firefox, see h5bp.com/l */
+/* clear extra padding in Firefox, see h5bp.com/l */
 input.ui-button::-moz-focus-inner,
 button.ui-button::-moz-focus-inner {
 	border: 0;

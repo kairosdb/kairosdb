@@ -19,10 +19,14 @@ package org.kairosdb.core.groupby;
 import org.json.JSONException;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.GroupByName;
+import org.kairosdb.core.annotation.FeatureComponent;
+import org.kairosdb.core.annotation.FeatureCompoundProperty;
+import org.kairosdb.core.annotation.FeatureProperty;
+import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.formatter.FormatterException;
+import org.kairosdb.plugin.GroupBy;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -34,13 +38,32 @@ import java.util.TimeZone;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-@GroupByName(name = "time", description = "Groups data points in time ranges.")
+@FeatureComponent(
+		name = "time",
+		description = "Groups data points in time ranges."
+)
 public class TimeGroupBy implements GroupBy
 {
 	@NotNull
+    @FeatureCompoundProperty(
+    		name = "range_size",
+            label = "Range Size",
+            order = {"Value", "Unit"}
+    )
 	private Duration rangeSize;
 
 	@Min(1)
+    @FeatureProperty(
+    		name = "group_count",
+            label = "Count",
+            description = "The number of groups. This would typically be 7 to group by day of week.",
+            validations = {
+            		@ValidationProperty(
+            				expression = "value > 0",
+							message = "Count must be greater than 0."
+					)
+			}
+    )
 	private int groupCount;
 
 	private long startDate;

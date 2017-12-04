@@ -19,6 +19,7 @@ package org.kairosdb.datastore.remote;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Multimap;
+import org.kairosdb.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -38,10 +39,18 @@ import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.events.DataPointEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.SortedMap;
 import java.util.zip.GZIPOutputStream;
 
@@ -152,7 +161,7 @@ public class RemoteDatastore implements Datastore
 				{
 					for (DataPointKey dataPointKey : flushMap.keySet())
 					{
-						//We have to reset the writer every time or it gets confused
+						//We have to clear the writer every time or it gets confused
 						//because we are only writing partial json each time.
 						JSONWriter writer = new JSONWriter(m_dataWriter);
 
@@ -178,7 +187,7 @@ public class RemoteDatastore implements Datastore
 						writer.key("datapoints").array();
 						for (DataPoint dataPoint : flushMap.get(dataPointKey))
 						{
-							m_dataPointCounter ++;
+							m_dataPointCounter++;
 							writer.array();
 							writer.value(dataPoint.getTimestamp());
 							dataPoint.writeValueToJson(writer);
@@ -212,16 +221,16 @@ public class RemoteDatastore implements Datastore
 	{
 		try
 		{
-			HttpGet get = new HttpGet(m_remoteUrl+"/api/v1/version");
+			HttpGet get = new HttpGet(m_remoteUrl + "/api/v1/version");
 
-			try(CloseableHttpResponse response = m_client.execute(get))
+			try (CloseableHttpResponse response = m_client.execute(get))
 			{
 				ByteArrayOutputStream bout = new ByteArrayOutputStream();
 				response.getEntity().writeTo(bout);
-	
+
 				JSONObject respJson = new JSONObject(bout.toString("UTF-8"));
-	
-				logger.info("Connecting to remote Kairos version: "+ respJson.getString("version"));
+
+				logger.info("Connecting to remote Kairos version: " + respJson.getString("version"));
 			}
 		}
 		catch (IOException e)
@@ -236,7 +245,7 @@ public class RemoteDatastore implements Datastore
 
 	private void openDataFile() throws IOException
 	{
-		m_dataFileName = m_dataDirectory+"/"+System.currentTimeMillis();
+		m_dataFileName = m_dataDirectory + "/" + System.currentTimeMillis();
 
 		m_dataWriter = new BufferedWriter(new FileWriter(m_dataFileName));
 		m_dataWriter.write("[\n");
@@ -272,37 +281,38 @@ public class RemoteDatastore implements Datastore
 		}
 	}
 
-	@Override
-	public void putDataPoint(String metricName,
-			ImmutableSortedMap<String, String> tags,
-			DataPoint dataPoint, int ttl) throws DatastoreException
+	@Subscribe
+	public void putDataPoint(DataPointEvent event) throws DatastoreException
 	{
-		DataPointKey key = new DataPointKey(metricName, tags, dataPoint.getApiDataType(), ttl);
-		if ((m_prefixFilter != null) && (!metricName.startsWith(m_prefixFilter)))
+		if ((m_prefixFilter != null) && (!event.getMetricName().startsWith(m_prefixFilter)))
 			return;
+
+		DataPointKey key = new DataPointKey(event.getMetricName(), event.getTags(),
+				event.getDataPoint().getApiDataType(), event.getTtl());
 
 		synchronized (m_mapLock)
 		{
-			m_dataPointMultimap.put(key, dataPoint);
+			m_dataPointMultimap.put(key, event.getDataPoint());
 		}
 	}
 
 	/**
 	 Sends a single zip file
+
 	 @param zipFile Name of the zip file in the data directory.
 	 @throws IOException
 	 */
 	private void sendZipfile(String zipFile) throws IOException
 	{
 		logger.debug("Sending {}", zipFile);
-		HttpPost post = new HttpPost(m_remoteUrl+"/api/v1/datapoints");
+		HttpPost post = new HttpPost(m_remoteUrl + "/api/v1/datapoints");
 
 		File zipFileObj = new File(m_dataDirectory, zipFile);
 		FileInputStream zipStream = new FileInputStream(zipFileObj);
 		post.setHeader("Content-Type", "application/gzip");
-		
+
 		post.setEntity(new InputStreamEntity(zipStream, zipFileObj.length()));
-		try(CloseableHttpResponse response = m_client.execute(post))
+		try (CloseableHttpResponse response = m_client.execute(post))
 		{
 
 			zipStream.close();
@@ -315,7 +325,7 @@ public class RemoteDatastore implements Datastore
 				ByteArrayOutputStream body = new ByteArrayOutputStream();
 				response.getEntity().writeTo(body);
 				logger.error("Unable to send file " + zipFile + ": " + response.getStatusLine() +
-						" - "+ body.toString("UTF-8"));
+						" - " + body.toString("UTF-8"));
 			}
 		}
 	}
@@ -328,14 +338,14 @@ public class RemoteDatastore implements Datastore
 		File dataDirectory = new File(m_dataDirectory);
 
 		String[] zipFiles = dataDirectory.list(new FilenameFilter()
-				{
-					@Override
-					public boolean accept(File dir, String name)
-					{
-						return (name.endsWith(".gz"));
-					}
-				});
-		if(zipFiles == null)
+		{
+			@Override
+			public boolean accept(File dir, String name)
+			{
+				return (name.endsWith(".gz"));
+			}
+		});
+		if (zipFiles == null)
 			return;
 
 		for (String zipFile : zipFiles)
@@ -346,7 +356,7 @@ public class RemoteDatastore implements Datastore
 			}
 			catch (IOException e)
 			{
-				logger.error("Unable to send data file "+zipFile);
+				logger.error("Unable to send data file " + zipFile);
 				throw (e);
 			}
 		}
@@ -355,12 +365,13 @@ public class RemoteDatastore implements Datastore
 
 	/**
 	 Compresses the given file and removes the uncompressed file
+
 	 @param file
 	 @return Size of the zip file
 	 */
 	private long zipFile(String file) throws IOException
 	{
-		String zipFile = file+".gz";
+		String zipFile = file + ".gz";
 
 		FileInputStream is = new FileInputStream(file);
 		GZIPOutputStream gout = new GZIPOutputStream(new FileOutputStream(zipFile));
@@ -408,10 +419,10 @@ public class RemoteDatastore implements Datastore
 
 			try
 			{
-				putDataPoint(FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, fileSize), 0);
-				putDataPoint(WRITE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, m_dataPointCounter), 0);
-				putDataPoint(ZIP_FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, zipSize), 0);
-				putDataPoint(TIME_TO_SEND_METRIC, tags, m_longDataPointFactory.createDataPoint(now, timeToSend), 0);
+				putDataPoint(new DataPointEvent(FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, fileSize), 0));
+				putDataPoint(new DataPointEvent(WRITE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, m_dataPointCounter), 0));
+				putDataPoint(new DataPointEvent(ZIP_FILE_SIZE_METRIC, tags, m_longDataPointFactory.createDataPoint(now, zipSize), 0));
+				putDataPoint(new DataPointEvent(TIME_TO_SEND_METRIC, tags, m_longDataPointFactory.createDataPoint(now, timeToSend), 0));
 			}
 			catch (DatastoreException e)
 			{
@@ -454,6 +465,6 @@ public class RemoteDatastore implements Datastore
 	@Override
 	public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
 	{
-		return null;  //To change body of implemented methods use File | Settings | File Templates.
+		throw new DatastoreException("Method not implemented.");
 	}
 }

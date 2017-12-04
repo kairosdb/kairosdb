@@ -1,8 +1,11 @@
 package org.kairosdb.datastore.cassandra;
 
+import com.datastax.driver.core.ConsistencyLevel;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,18 +21,22 @@ public class CassandraConfiguration
 	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
 
 	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
-	public static final String REPLICATION_FACTOR_PROPERTY = "kairosdb.datastore.cassandra.replication_factor";
-	public static final String WRITE_DELAY_PROPERTY = "kairosdb.datastore.cassandra.write_delay";
+	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
+	public static final String SIMULTANIOUS_QUERIES = "kairosdb.datastore.cassandra.simultaneous_cql_queries";
 
-	public static final String WRITE_BUFFER_SIZE = "kairosdb.datastore.cassandra.write_buffer_max_size";
-	public static final String SINGLE_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.single_row_read_size";
-	public static final String MULTI_ROW_READ_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_read_size";
-	public static final String MULTI_ROW_SIZE_PROPERTY = "kairosdb.datastore.cassandra.multi_row_size";
-	public static final String WRITE_BUFFER_JOB_QUEUE_SIZE = "kairosdb.datastore.cassandra.write_buffer_job_queue_size";
+	public static final String AUTH_USER_NAME = "kairosdb.datastore.cassandra.auth.user_name";
+	public static final String AUTH_PASSWORD = "kairosdb.datastore.cassandra.auth.password";
 
-	@Inject
-	@Named(WRITE_BUFFER_JOB_QUEUE_SIZE)
-	private int m_writeBufferJobQueueSize = 300;
+	public static final String LOCAL_CORE_CONNECTIONS = "kairosdb.datastore.cassandra.connections_per_host.local.core";
+	public static final String LOCAL_MAX_CONNECTIONS = "kairosdb.datastore.cassandra.connections_per_host.local.max";
+
+	public static final String REMOTE_CORE_CONNECTIONS = "kairosdb.datastore.cassandra.connections_per_host.remote.core";
+	public static final String REMOTE_MAX_CONNECTIONS = "kairosdb.datastore.cassandra.connections_per_host.remote.max";
+
+	public static final String LOCAL_MAX_REQ_PER_CONN = "kairosdb.datastore.cassandra.max_requests_per_connection.local";
+	public static final String REMOTE_MAX_REQ_PER_CONN = "kairosdb.datastore.cassandra.max_requests_per_connection.remote";
+
+	public static final String MAX_QUEUE_SIZE = "kairosdb.datastore.cassandra.max_queue_size";
 
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
@@ -56,53 +63,73 @@ public class CassandraConfiguration
 	private Map<String, String> m_cassandraAuthentication;
 
 	@Inject
-	@Named(REPLICATION_FACTOR_PROPERTY)
-	private int m_replicationFactor;
-
-	@Inject
-	@Named(SINGLE_ROW_READ_SIZE_PROPERTY)
-	private int m_singleRowReadSize;
-
-	@Inject
-	@Named(MULTI_ROW_SIZE_PROPERTY)
-	private int m_multiRowSize;
-
-	@Inject
-	@Named(MULTI_ROW_READ_SIZE_PROPERTY)
-	private int m_multiRowReadSize;
-
-	@Inject
-	@Named(WRITE_DELAY_PROPERTY)
-	private int m_writeDelay;
-
-	@Inject
-	@Named(WRITE_BUFFER_SIZE)
-	private int m_maxWriteSize;
+	@Named(SIMULTANIOUS_QUERIES)
+	private int m_simultaneousQueries = 100;
 
 	@Inject
 	@Named(KEYSPACE_PROPERTY)
 	private String m_keyspaceName;
 
+	private List<String> m_hostList;
+
+	@Inject(optional = true)
+	@Named(AUTH_USER_NAME)
+	private String m_authUserName;
+
+	@Inject(optional = true)
+	@Named(AUTH_PASSWORD)
+	private String m_authPassword;
+
+	@Inject
+	@Named(LOCAL_CORE_CONNECTIONS)
+	private int m_localCoreConnections = 5;
+
+	@Inject
+	@Named(LOCAL_MAX_CONNECTIONS)
+	private int m_localMaxConnections = 100;
+
+	@Inject
+	@Named(REMOTE_CORE_CONNECTIONS)
+	private int m_remoteCoreConnections = 1;
+
+	@Inject
+	@Named(REMOTE_MAX_CONNECTIONS)
+	private int m_remoteMaxConnections = 10;
+
+	@Inject
+	@Named(LOCAL_MAX_REQ_PER_CONN)
+	private int m_localMaxReqPerConn = 128;
+
+	@Inject
+	@Named(REMOTE_MAX_REQ_PER_CONN)
+	private int m_remoteMaxReqPerConn = 128;
+
+	@Inject
+	@Named(MAX_QUEUE_SIZE)
+	private int m_maxQueueSize = 500;
 
 	public CassandraConfiguration()
 	{
 	}
 
-	public CassandraConfiguration(int replicationFactor,
-			int singleRowReadSize,
-			int multiRowSize,
-			int multiRowReadSize,
-			int writeDelay,
-			int maxWriteSize,
-			String keyspaceName)
+	public CassandraConfiguration(String keyspaceName)
 	{
-		m_replicationFactor = replicationFactor;
-		m_singleRowReadSize = singleRowReadSize;
-		m_multiRowSize = multiRowSize;
-		m_multiRowReadSize = multiRowReadSize;
-		m_writeDelay = writeDelay;
-		m_maxWriteSize = maxWriteSize;
 		m_keyspaceName = keyspaceName;
+	}
+
+	public List<String> getHostList()
+	{
+		return m_hostList;
+	}
+
+	@Inject
+	public void setHostList(@Named(HOST_LIST_PROPERTY) String hostList)
+	{
+		m_hostList = new ArrayList<>();
+		for (String node : hostList.split(","))
+		{
+			m_hostList.add(node.split(":")[0]);
+		}
 	}
 
 	public ConsistencyLevel getDataWriteLevel()
@@ -135,43 +162,58 @@ public class CassandraConfiguration
 		return m_cassandraAuthentication;
 	}
 
-	public int getReplicationFactor()
-	{
-		return m_replicationFactor;
-	}
-
-	public int getSingleRowReadSize()
-	{
-		return m_singleRowReadSize;
-	}
-
-	public int getMultiRowSize()
-	{
-		return m_multiRowSize;
-	}
-
-	public int getMultiRowReadSize()
-	{
-		return m_multiRowReadSize;
-	}
-
-	public int getWriteDelay()
-	{
-		return m_writeDelay;
-	}
-
-	public int getMaxWriteSize()
-	{
-		return m_maxWriteSize;
-	}
-
 	public String getKeyspaceName()
 	{
 		return m_keyspaceName;
 	}
 
-	public int getWriteBufferJobQueueSize()
+	public int getSimultaneousQueries()
 	{
-		return m_writeBufferJobQueueSize;
+		return m_simultaneousQueries;
+	}
+
+	public String getAuthUserName()
+	{
+		return m_authUserName;
+	}
+
+	public String getAuthPassword()
+	{
+		return m_authPassword;
+	}
+
+	public int getLocalCoreConnections()
+	{
+		return m_localCoreConnections;
+	}
+
+	public int getLocalMaxConnections()
+	{
+		return m_localMaxConnections;
+	}
+
+	public int getRemoteCoreConnections()
+	{
+		return m_remoteCoreConnections;
+	}
+
+	public int getRemoteMaxConnections()
+	{
+		return m_remoteMaxConnections;
+	}
+
+	public int getLocalMaxReqPerConn()
+	{
+		return m_localMaxReqPerConn;
+	}
+
+	public int getRemoteMaxReqPerConn()
+	{
+		return m_remoteMaxReqPerConn;
+	}
+
+	public int getMaxQueueSize()
+	{
+		return m_maxQueueSize;
 	}
 }

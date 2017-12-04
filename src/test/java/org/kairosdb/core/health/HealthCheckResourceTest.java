@@ -4,6 +4,7 @@ import com.codahale.metrics.health.HealthCheck;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 
 import javax.ws.rs.core.Response;
@@ -19,12 +20,12 @@ import static org.mockito.Mockito.when;
 public class HealthCheckResourceTest
 {
 	private HealthCheckResource resourceService;
-	private Datastore datastore;
+	private KairosDatastore datastore;
 
 	@Before
 	public void setup() throws DatastoreException
 	{
-		datastore = mock(Datastore.class);
+		datastore = mock(KairosDatastore.class);
 		when(datastore.getMetricNames()).thenReturn(Collections.<String>emptyList());
 
 		HealthCheckService healthCheckService = new TestHealthCheckService();

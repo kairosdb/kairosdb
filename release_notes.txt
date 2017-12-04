@@ -1,0 +1,5 @@
+Removed get tag names and get tag values api
+Adding new key index that is written using CQL
+Converted queries to use CQL
+Added file backed queue option for ingested data
+Added kairosdb.queries.aggregate_stats=false to aggregate query stats instead of reporting with each call

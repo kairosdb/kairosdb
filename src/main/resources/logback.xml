@@ -29,14 +29,43 @@
 			</timeBasedFileNamingAndTriggeringPolicy>
 
 			<!-- Whenever startup, will run the rollover -->
-			<cleanHistoryOnStart>true</cleanHistoryOnStart>
+			<!--<cleanHistoryOnStart>true</cleanHistoryOnStart>-->
 		</rollingPolicy>
 		<encoder>
 			<pattern>%d{MM-dd|HH:mm:ss.SSS} [%thread] %-5level [%file:%line] - %msg%n</pattern>
 		</encoder>
 	</appender>
 
-	<logger name="com.mchange.v2.c3p0" level="WARN"/>
+	<appender name="failed_data" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>log/failed.log</file>
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>TRACE</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- daily rollover -->
+			<fileNamePattern>log/failed.%d.%i.log.gz</fileNamePattern>
+
+			<!-- keep 30 days' worth of history -->
+			<maxHistory>30</maxHistory>
+
+			<!-- or whenever the file size reaches 100MB -->
+			<timeBasedFileNamingAndTriggeringPolicy
+					class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>100MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%d{MM-dd|HH:mm:ss.SSS} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="failed_logger" level="TRACE" additivity="true">
+		<appender-ref ref="failed_data"/>
+	</logger>
+
+	<logger name="org.kairosdb.datastore.h2.orm" level="WARN"/>
 
 	<!--<logger name="org.hbase.async.RegionClient" level="DEBUG"/>-->
 

@@ -17,22 +17,31 @@
 package org.kairosdb.core.http.rest.json;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
-import org.kairosdb.core.aggregator.TestAggregatorFactory;
+import org.kairosdb.core.KairosFeatureProcessor;
+import org.kairosdb.core.aggregator.*;
+import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
+import org.kairosdb.eventbus.EventBusConfiguration;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.plugin.Aggregator;
+import org.kairosdb.rollup.Rollup;
 import org.kairosdb.rollup.RollupTask;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Properties;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -41,11 +50,13 @@ import static org.junit.Assert.fail;
 public class QueryParserTest
 {
 	private QueryParser parser;
+	private FilterEventBus eventBus;
 
 	@Before
 	public void setup() throws KairosDBException
 	{
-		parser = new QueryParser(new TestAggregatorFactory(), new TestGroupByFactory(), new TestQueryPluginFactory());
+		parser = new QueryParser(new KairosFeatureProcessor(new TestAggregatorFactory(), new TestGroupByFactory()), new TestQueryPluginFactory());
+		eventBus = new FilterEventBus(new EventBusConfiguration(new Properties()));
 	}
 
 	@Test
@@ -53,7 +64,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-absolute-dates-with-groupby.json"), Charsets.UTF_8);
 
-		List<QueryMetric> results = parser.parseQueryMetric(json);
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
 		assertThat(results.size(), equalTo(1));
 
@@ -70,7 +81,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-no-aggregators.json"), Charsets.UTF_8);
 
-		List<QueryMetric> results = parser.parseQueryMetric(json);
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
 		assertThat(results.size(), equalTo(1));
 
@@ -103,7 +114,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-no-tags.json"), Charsets.UTF_8);
 
-		List<QueryMetric> results = parser.parseQueryMetric(json);
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
 		assertThat(results.size(), equalTo(1));
 		QueryMetric queryMetric = results.get(0);
@@ -115,7 +126,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-one-tag.json"), Charsets.UTF_8);
 
-		List<QueryMetric> results = parser.parseQueryMetric(json);
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
 		assertThat(results.size(), equalTo(1));
 		QueryMetric queryMetric = results.get(0);
@@ -129,7 +140,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-two-tags.json"), Charsets.UTF_8);
 
-		List<QueryMetric> results = parser.parseQueryMetric(json);
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
 		assertThat(results.size(), equalTo(1));
 		QueryMetric queryMetric = results.get(0);
@@ -145,7 +156,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("query-metric-exclude-tags.json"), Charsets.UTF_8);
 
-		List<QueryMetric> results = parser.parseQueryMetric(json);
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
 		assertThat(results.size(), equalTo(1));
 		QueryMetric queryMetric = results.get(0);
@@ -296,7 +307,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].aggregators[0].bogus invalid aggregator name");
+		assertBeanValidation(json, "query.metric[0].aggregators[0].bogus invalid aggregators name");
 	}
 
 	@Test
@@ -506,9 +517,18 @@ public class QueryParserTest
 		assertThat(task.getName(), equalTo("Rollup1"));
 		assertThat(task.getExecutionInterval(), equalTo(new Duration(1, TimeUnit.HOURS)));
 		assertThat(task.getRollups().size(), equalTo(1));
-		assertThat(task.getRollups().get(0).getSaveAs(), equalTo("kairosdb.http.query_time_rollup"));
-		assertThat(task.getRollups().get(0).getQueryMetrics().size(), equalTo(1));
-		assertThat(task.getRollups().get(0).getQueryMetrics().get(0).getName(), equalTo("kairosdb.http.query_time"));
+
+		assertRollup(
+				task.getRollups().get(0),
+				1,
+				"kairosdb.http.query_time",
+				"kairosdb.http.query_time_rollup",
+				createTrimAggregator(TrimAggregator.Trim.LAST),
+				createSaveAsAggregator(
+						"kairosdb.http.query_time_rollup",
+						ImmutableList.of("group1", "group2")),
+				createSumAggregator(new Sampling(10, TimeUnit.MINUTES))
+		);
 	}
 
 	@Test
@@ -520,19 +540,39 @@ public class QueryParserTest
 
 		assertThat(tasks.size(), equalTo(2));
 
-		assertThat(tasks.get(0).getName(), equalTo("Rollup1"));
-		assertThat(tasks.get(0).getExecutionInterval(), equalTo(new Duration(1, TimeUnit.HOURS)));
-		assertThat(tasks.get(0).getRollups().size(), equalTo(1));
-		assertThat(tasks.get(0).getRollups().get(0).getSaveAs(), equalTo("kairosdb.http.query_time_rollup"));
-		assertThat(tasks.get(0).getRollups().get(0).getQueryMetrics().size(), equalTo(1));
-		assertThat(tasks.get(0).getRollups().get(0).getQueryMetrics().get(0).getName(), equalTo("kairosdb.http.query_time"));
+		RollupTask rollupTask1 = tasks.get(0);
+		assertThat(rollupTask1.getName(), equalTo("Rollup1"));
+		assertThat(rollupTask1.getExecutionInterval(), equalTo(new Duration(1, TimeUnit.HOURS)));
+		assertThat(rollupTask1.getRollups().size(), equalTo(1));
 
-		assertThat(tasks.get(1).getName(), equalTo("Rollup2"));
-		assertThat(tasks.get(1).getExecutionInterval(), equalTo(new Duration(1, TimeUnit.MINUTES)));
-		assertThat(tasks.get(1).getRollups().size(), equalTo(1));
-		assertThat(tasks.get(1).getRollups().get(0).getSaveAs(), equalTo("kairosdb.http.foo_rollup"));
-		assertThat(tasks.get(1).getRollups().get(0).getQueryMetrics().size(), equalTo(1));
-		assertThat(tasks.get(1).getRollups().get(0).getQueryMetrics().get(0).getName(), equalTo("kairosdb.http.foo"));
+		RollupTask rollupTask2 = tasks.get(1);
+		assertThat(rollupTask2.getName(), equalTo("Rollup2"));
+		assertThat(rollupTask2.getExecutionInterval(), equalTo(new Duration(1, TimeUnit.MINUTES)));
+		assertThat(rollupTask2.getRollups().size(), equalTo(1));
+
+		assertRollup(
+				rollupTask1.getRollups().get(0),
+				1,
+				"kairosdb.http.query_time",
+				"kairosdb.http.query_time_rollup",
+				createTrimAggregator(TrimAggregator.Trim.LAST),
+				createSaveAsAggregator(
+						"kairosdb.http.query_time_rollup",
+						ImmutableList.of("group1", "group2")),
+				createSumAggregator(new Sampling(10, TimeUnit.MINUTES))
+		);
+
+		assertRollup(
+				rollupTask2.getRollups().get(0),
+				1,
+				"kairosdb.http.foo",
+				"kairosdb.http.foo_rollup",
+				createTrimAggregator(TrimAggregator.Trim.LAST),
+				createSaveAsAggregator(
+						"kairosdb.http.foo_rollup",
+						ImmutableList.of("group3", "group4")),
+				createSumAggregator(new Sampling(24, TimeUnit.HOURS))
+		);
 	}
 
 	private void assertRollupBeanValidation(String json, String expectedMessage)
@@ -569,5 +609,105 @@ public class QueryParserTest
 			assertThat(e.getErrorMessages().size(), equalTo(1));
 			assertThat(e.getErrorMessages().get(0), equalTo(expectedMessage));
 		}
+	}
+
+	private void assertRollup(Rollup rollup, int queryCount, String metricName, String saveAsName, Aggregator... aggregators)
+	{
+		assertThat(rollup.getSaveAs(), equalTo(saveAsName));
+		assertThat(rollup.getQueryMetrics().size(), equalTo(queryCount));
+
+		QueryMetric query = rollup.getQueryMetrics().get(0);
+		assertThat(query.getName(), equalTo(metricName));
+
+		for (Aggregator aggregator : aggregators)
+		{
+			if (aggregator instanceof SaveAsAggregator)
+			{
+				assertHasSaveAsAggregator(query.getAggregators(), (SaveAsAggregator) aggregator);
+			}
+			else if (aggregator instanceof SumAggregator)
+			{
+				assertHasSumAggregator(query.getAggregators(), (SumAggregator) aggregator);
+			}
+			else
+			{
+				assertThat(query.getAggregators(), hasItem(aggregator));
+			}
+		}
+	}
+
+	/**
+	 Don't love this approach but equals/hashcode for Aggregators is problematic.
+	 */
+	private void assertHasSaveAsAggregator(List<Aggregator> aggregators, SaveAsAggregator expected)
+	{
+		int saveAsAggregatorCount = 0;
+		for (Aggregator aggregator : aggregators)
+		{
+			if (aggregator instanceof SaveAsAggregator)
+			{
+				saveAsAggregatorCount++;
+				SaveAsAggregator actual = (SaveAsAggregator) aggregator;
+				assertThat("SaveAsAggregator metric names do not match", actual.getMetricName(), equalTo(expected.getMetricName()));
+				assertThat("SaveAsAggregator groupBys do not match", actual.getTagsToKeep(), equalTo(expected.getTagsToKeep()));
+			}
+		}
+
+		if (saveAsAggregatorCount < 1)
+		{
+			fail("SaveAsAggregator was not found in the list of aggregators");
+		}
+		else if (saveAsAggregatorCount > 1)
+		{
+			fail("More than one SaveAsAggregator was found in the list of aggregators");
+		}
+	}
+
+	/**
+	 Don't love this approach but equals/hashcode for Aggregators is problematic.
+	 */
+	private void assertHasSumAggregator(List<Aggregator> aggregators, SumAggregator expected)
+	{
+		int aggregatorCount = 0;
+		for (Aggregator aggregator : aggregators)
+		{
+			if (aggregator instanceof SumAggregator)
+			{
+				aggregatorCount++;
+				SumAggregator actual = (SumAggregator) aggregator;
+				assertThat("SumAggregator metric names do not match", actual.getSampling(), equalTo(expected.getSampling()));
+			}
+		}
+
+		if (aggregatorCount < 1)
+		{
+			fail("SumAggregator was not found in the list of aggregators");
+		}
+		else if (aggregatorCount > 1)
+		{
+			fail("More than one SumAggregator was found in the list of aggregators");
+		}
+	}
+
+	private SaveAsAggregator createSaveAsAggregator(String metricName, List<String> groupBys)
+	{
+		SaveAsAggregator aggregator = new SaveAsAggregator(eventBus);
+		aggregator.setMetricName(metricName);
+		aggregator.setGroupBys(ImmutableList.of(new TagGroupBy(groupBys)));
+
+		return aggregator;
+	}
+
+	private TrimAggregator createTrimAggregator(TrimAggregator.Trim trim)
+	{
+		return new TrimAggregator(trim);
+	}
+
+	private SumAggregator createSumAggregator(Sampling sampling)
+	{
+		SumAggregator aggregator = new SumAggregator(new DoubleDataPointFactoryImpl());
+		aggregator.setSampling(sampling);
+
+		return aggregator;
 	}
 }

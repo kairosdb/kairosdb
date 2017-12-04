@@ -17,45 +17,24 @@ package org.kairosdb.core.http.rest;
 
 import ch.qos.logback.classic.Level;
 import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.io.Resources;
-import com.google.inject.*;
-import com.google.inject.name.Names;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.kairosdb.core.*;
-import org.kairosdb.core.aggregator.AggregatorFactory;
-import org.kairosdb.core.aggregator.TestAggregatorFactory;
-import org.kairosdb.core.datapoints.*;
-import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.InvalidServerTypeException;
-import org.kairosdb.core.groupby.GroupByFactory;
-import org.kairosdb.core.groupby.TestGroupByFactory;
-import org.kairosdb.core.http.WebServer;
-import org.kairosdb.core.http.WebServletModule;
-import org.kairosdb.core.http.rest.json.QueryParser;
-import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
-import org.kairosdb.datastore.h2.orm.DeleteMetricsQuery;
-import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.util.LoggingUtils;
-import org.omg.CORBA.DynAnyPackage.Invalid;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
+import java.util.EnumSet;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-public class MetricsResourceTest
+public class MetricsResourceTest extends ResourceBase
 {
 	private static final String ADD_METRIC_URL = "http://localhost:9001/api/v1/datapoints";
 	private static final String GET_METRIC_URL = "http://localhost:9001/api/v1/datapoints/query";
@@ -65,89 +44,7 @@ public class MetricsResourceTest
 	private static final String DELETE_DATAPOINTS_URL = "http://localhost:9001/api/v1/datapoints/delete";
 	private static final String DELETE_METRIC_URL = "http://localhost:9001/api/v1/metric/";
 
-	private static TestDatastore datastore;
-	private static QueryQueuingManager queuingManager;
-	private static Client client;
-	private static WebServer server;
-	private static MetricsResource resource;
-
-	@BeforeClass
-	public static void startup() throws Exception
-	{
-		//This sends jersey java util logging to logback
-		SLF4JBridgeHandler.removeHandlersForRootLogger();
-		SLF4JBridgeHandler.install();
-
-		datastore = new TestDatastore();
-		queuingManager = new QueryQueuingManager(3, "localhost");
-
-		Injector injector = Guice.createInjector(new WebServletModule(new Properties()), new AbstractModule()
-		{
-			@Override
-			protected void configure()
-			{
-				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_ADDRESS_PROPERTY)).toInstance("0.0.0.0");
-				bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9001);
-				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
-				bind(Datastore.class).toInstance(datastore);
-				bind(KairosDatastore.class).in(Singleton.class);
-				bind(AggregatorFactory.class).to(TestAggregatorFactory.class);
-				bind(GroupByFactory.class).to(TestGroupByFactory.class);
-				bind(QueryParser.class).in(Singleton.class);
-				bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
-				bind(QueryQueuingManager.class).toInstance(queuingManager);
-				bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
-				bindConstant().annotatedWith(Names.named("kairosdb.datastore.concurrentQueryThreads")).to(1);
-				bindConstant().annotatedWith(Names.named("kairosdb.query_cache.keep_cache_files")).to(false);
-				bindConstant().annotatedWith(Names.named("kairosdb.server.type")).to("ALL");
-				bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
-				bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
-
-				Properties props = new Properties();
-				InputStream is = getClass().getClassLoader().getResourceAsStream("kairosdb.properties");
-				try
-				{
-					props.load(is);
-					is.close();
-				}
-				catch (IOException e)
-				{
-					e.printStackTrace();
-				}
-
-				//Names.bindProperties(binder(), props);
-				bind(Properties.class).toInstance(props);
-
-				bind(DoubleDataPointFactory.class)
-						.to(DoubleDataPointFactoryImpl.class).in(Singleton.class);
-				bind(DoubleDataPointFactoryImpl.class).in(Singleton.class);
-
-				bind(LongDataPointFactory.class)
-						.to(LongDataPointFactoryImpl.class).in(Singleton.class);
-				bind(LongDataPointFactoryImpl.class).in(Singleton.class);
-
-				bind(LegacyDataPointFactory.class).in(Singleton.class);
-				bind(StringDataPointFactory.class).in(Singleton.class);
-
-			}
-		});
-		resource = injector.getInstance(MetricsResource.class);
-		server = injector.getInstance(WebServer.class);
-		server.start();
-
-		client = new Client();
-	}
-
-	@AfterClass
-	public static void tearDown() throws Exception
-	{
-		if (server != null)
-		{
-			server.stop();
-		}
-	}
-
-	@Test
+    @Test
 	public void testAddEmptyBody() throws Exception
 	{
 		JsonResponse response = client.post("", ADD_METRIC_URL);
@@ -281,13 +178,13 @@ public class MetricsResourceTest
 
 		try
 		{
-			datastore.throwQueryException(new DatastoreException("bogus"));
+			datastore.throwException(new DatastoreException("bogus"));
 
 			String json = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
 
 			JsonResponse response = client.post(json, GET_METRIC_URL);
 
-			datastore.throwQueryException(null);
+			datastore.throwException(null);
 
 			assertThat(response.getStatusCode(), equalTo(500));
 			assertThat(response.getJson(), equalTo("{\"errors\":[\"org.kairosdb.core.exception.DatastoreException: bogus\"]}"));
@@ -299,7 +196,8 @@ public class MetricsResourceTest
 		}
 	}
 
-	@Rule public ExpectedException thrown = ExpectedException.none();
+	@Rule
+	public ExpectedException thrown = ExpectedException.none();
 
 	@Test
 	public void test_checkServerTypeStaticIngestDisabled() throws InvalidServerTypeException
@@ -422,121 +320,29 @@ public class MetricsResourceTest
 		resource.setServerType("INGEST,QUERY,DELETE");
 	}
 
-//	@Test
-//	public void testDeleteMetricDeleteDisabled() throws IOException
-//	{
-//		resource.setServerType("INGEST");
-//
-//		String metricName = "Some.Metric.Name";
-//
-//		JsonResponse response = client.delete(DELETE_METRIC_URL + metricName);
-//
-//		assertResponse(response, 403, "[{\"Forbidden\": \"DELETE API methods are disabled on this KairosDB instance.\"}]\n");
-//	}
+	@Test
+	public void testDeleteMetricDeleteDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
 
-	private void assertResponse(JsonResponse response, int responseCode, String expectedContent)
+		String metricName = "Some.Metric.Name";
+
+		JsonResponse response = client.delete(DELETE_METRIC_URL + metricName);
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"DELETE API methods are disabled on this KairosDB instance.\"}]\n");
+	}
+
+	private static void assertResponse(JsonResponse response, int responseCode, String expectedContent)
 	{
 		assertThat(response.getStatusCode(), equalTo(responseCode));
 		assertThat(response.getHeader("Content-Type"), startsWith("application/json"));
 		assertThat(response.getJson(), equalTo(expectedContent));
 	}
 
-	private void assertResponse(JsonResponse response, int responseCode)
+	static void assertResponse(JsonResponse response, int responseCode)
 	{
 		assertThat(response.getStatusCode(), equalTo(responseCode));
 		assertThat(response.getHeader("Content-Type"), startsWith("application/json"));
 		assertThat(response.getStatusString(), equalTo("No Content"));
 	}
-
-	public static class TestDatastore implements Datastore
-	{
-		private DatastoreException m_toThrow = null;
-
-		protected TestDatastore() throws DatastoreException
-		{
-		}
-
-		public void throwQueryException(DatastoreException toThrow)
-		{
-			m_toThrow = toThrow;
-		}
-
-		@Override
-		public void close() throws InterruptedException
-		{
-		}
-
-		@Override
-		public void putDataPoint(String metricName,
-				ImmutableSortedMap<String, String> tags,
-				DataPoint dataPoint, int ttl) throws DatastoreException
-		{
-		}
-
-		@Override
-		public Iterable<String> getMetricNames()
-		{
-			return Arrays.asList("cpu", "memory", "disk", "network");
-		}
-
-		@Override
-		public Iterable<String> getTagNames()
-		{
-			return Arrays.asList("server1", "server2", "server3");
-		}
-
-		@Override
-		public Iterable<String> getTagValues()
-		{
-			return Arrays.asList("larry", "moe", "curly");
-		}
-
-		@Override
-		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
-		{
-			if (m_toThrow != null)
-				throw m_toThrow;
-
-			try
-			{
-				Map<String, String> tags = new TreeMap<String, String>();
-				tags.put("server", "server1");
-
-				queryCallback.startDataPointSet(LongDataPointFactoryImpl.DST_LONG, tags);
-				queryCallback.addDataPoint(new LongDataPoint(1, 10));
-				queryCallback.addDataPoint(new LongDataPoint(1, 20));
-				queryCallback.addDataPoint(new LongDataPoint(2, 10));
-				queryCallback.addDataPoint(new LongDataPoint(2, 5));
-				queryCallback.addDataPoint(new LongDataPoint(3, 10));
-
-				tags = new TreeMap<String, String>();
-				tags.put("server", "server2");
-
-				queryCallback.startDataPointSet(DoubleDataPointFactoryImpl.DST_DOUBLE, tags);
-				queryCallback.addDataPoint(new DoubleDataPoint(1, 10.1));
-				queryCallback.addDataPoint(new DoubleDataPoint(1, 20.1));
-				queryCallback.addDataPoint(new DoubleDataPoint(2, 10.1));
-				queryCallback.addDataPoint(new DoubleDataPoint(2, 5.1));
-				queryCallback.addDataPoint(new DoubleDataPoint(3, 10.1));
-
-				queryCallback.endDataPoints();
-			}
-			catch (IOException e)
-			{
-				throw new DatastoreException(e);
-			}
-		}
-
-		@Override
-		public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
-		{
-		}
-
-		@Override
-		public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
-		{
-			return null;
-		}
-	}
-
 }

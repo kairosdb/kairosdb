@@ -16,20 +16,15 @@ package org.kairosdb.core.aggregator;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
-import org.kairosdb.core.aggregator.annotation.AggregatorProperty;
+import org.kairosdb.core.annotation.FeatureComponent;
 import org.kairosdb.core.datapoints.NullDataPoint;
 
 import java.util.Collections;
 import java.util.Iterator;
 
-@AggregatorName(
+@FeatureComponent(
         name = "gaps",
-        description = "Marks gaps in data according to sampling rate with a null data point.",
-        properties = {
-                @AggregatorProperty(name = "sampling", type = "duration"),
-                @AggregatorProperty(name="align_start_time", type="boolean")
-        }
+		description = "Marks gaps in data according to sampling rate with a null data point."
 )
 public class DataGapsMarkingAggregator extends RangeAggregator
 {
@@ -69,7 +64,7 @@ public class DataGapsMarkingAggregator extends RangeAggregator
 				return ImmutableList.copyOf(dataPointRange);
 			}
 
-			return Collections.singletonList((DataPoint) new NullDataPoint(returnTime));
+			return Collections.singletonList(new NullDataPoint(returnTime));
 		}
 	}
 }

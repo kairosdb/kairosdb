@@ -85,6 +85,24 @@ Create 'kairosdb.iml' at the root of your kairos project and copy the following 
 
 IntelliJ will see this as a new module and you can remove all the others it created during the initial import.
 
+------------------------
+Alternative Approach - 1
+------------------------
+Install IvyIdea Plugin and restart
+
+::
+
+  git clone https://github.com/kairosdb/kairosdb.git
+  cd kairosdb
+  export CLASSPATH=tools/tablesaw-1.2.4.jar
+  java make project-pom >> Will generate pom.xml
+
+
+Now open IntelliJ and it should detect it as a Maven, should start resolving the dependencies.
+
+Note: You might have to add some jars to the class path ( Alt + Enter) would give the the most appropriate libs.
+
+
 --------------
 Running Kairos
 --------------

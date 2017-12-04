@@ -1,18 +1,31 @@
 package org.kairosdb.rollup;
 
 import com.google.common.collect.ImmutableSortedMap;
+import org.kairosdb.eventbus.Subscribe;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.TestDataPointFactory;
-import org.kairosdb.core.aggregator.*;
+import org.kairosdb.core.aggregator.DiffAggregator;
+import org.kairosdb.core.aggregator.DivideAggregator;
+import org.kairosdb.core.aggregator.MaxAggregator;
+import org.kairosdb.core.aggregator.MinAggregator;
+import org.kairosdb.core.aggregator.Sampling;
 import org.kairosdb.core.datapoints.DoubleDataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.Duration;
+import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.QueryQueuingManager;
+import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.testing.ListDataPointGroup;
 
 import java.io.IOException;
@@ -26,7 +39,7 @@ import static org.mockito.Mockito.mock;
 
 public class RollUpJobTest
 {
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SS",Locale.ENGLISH);
+	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SS", Locale.ENGLISH);
 
 	@Rule
 	public ExpectedException expectedException = ExpectedException.none();
@@ -42,7 +55,7 @@ public class RollUpJobTest
 
 		testDataStore = new TestDatastore();
 		datastore = new KairosDatastore(testDataStore, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), false);
+				new TestDataPointFactory(), false);
 	}
 
 	@Test
@@ -260,7 +273,7 @@ public class RollUpJobTest
 			dataPointGroups.add(dataPointGroup);
 		}
 
-		@Override
+		@Subscribe
 		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint, int ttl) throws DatastoreException
 		{
 			ListDataPointGroup dataPointGroup = new ListDataPointGroup(metricName);
@@ -301,7 +314,7 @@ public class RollUpJobTest
 				{
 					dataPointGroup.sort(query.getOrder());
 
-					Map<String, String> tags = new HashMap<String, String>();
+					SortedMap<String, String> tags = new TreeMap<String, String>();
 					for (String tagName : dataPointGroup.getTagNames())
 					{
 						tags.put(tagName, dataPointGroup.getTagValues(tagName).iterator().next());
@@ -310,18 +323,19 @@ public class RollUpJobTest
 					DataPoint dataPoint = getNext(dataPointGroup, query);
 					if (dataPoint != null)
 					{
-						queryCallback.startDataPointSet(dataPoint.getDataStoreDataType(), tags);
-						queryCallback.addDataPoint(dataPoint);
-
-						while (dataPointGroup.hasNext())
+						try (QueryCallback.DataPointWriter dataPointWriter = queryCallback.startDataPointSet(dataPoint.getDataStoreDataType(), tags))
 						{
-							DataPoint next = getNext(dataPointGroup, query);
-							if (next != null)
+							dataPointWriter.addDataPoint(dataPoint);
+
+							while (dataPointGroup.hasNext())
 							{
-								queryCallback.addDataPoint(next);
+								DataPoint next = getNext(dataPointGroup, query);
+								if (next != null)
+								{
+									dataPointWriter.addDataPoint(next);
+								}
 							}
 						}
-						queryCallback.endDataPoints();
 					}
 				}
 				catch (IOException e)
@@ -361,6 +375,4 @@ public class RollUpJobTest
 			throw new UnsupportedOperationException();
 		}
 	}
-
-
 }

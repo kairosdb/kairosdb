@@ -1,10 +1,10 @@
 package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.exception.DatastoreException;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.SortedMap;
 
 /**
  Created with IntelliJ IDEA.
@@ -15,8 +15,11 @@ import java.util.Map;
  */
 public interface QueryCallback
 {
-	public void addDataPoint(DataPoint datapoint) throws IOException;
-	
-	public void startDataPointSet(String dataType, Map<String, String> tags) throws IOException;
-	public void endDataPoints() throws IOException;
+	DataPointWriter startDataPointSet(String dataType, SortedMap<String, String> tags) throws IOException;
+
+	interface DataPointWriter extends AutoCloseable
+	{
+		void addDataPoint(DataPoint datapoint) throws IOException;
+		void close() throws IOException;
+	}
 }

@@ -9,15 +9,17 @@ Contents:
    :maxdepth: 1 
 
    Overview
+   Aggregators
    AddDataPoints
    DeleteDataPoints
    DeleteMetric
+   Features
    Health
    ListMetricNames
    ListTagNames
    ListTagValues
+   Metadata
    QueryMetrics
-   Aggregators
    QueryMetricTags
    Roll-ups
    Version

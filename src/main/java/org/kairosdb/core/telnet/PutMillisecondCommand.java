@@ -24,9 +24,11 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
-import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
+import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.Tags;
 import org.kairosdb.util.Util;
 import org.kairosdb.util.ValidationException;
@@ -40,21 +42,23 @@ import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporter
 {
-	private KairosDatastore m_datastore;
 	private AtomicInteger m_counter = new AtomicInteger();
 	private String m_hostName;
 	private LongDataPointFactory m_longFactory;
 	private DoubleDataPointFactory m_doubleFactory;
+	private final Publisher<DataPointEvent> m_publisher;
 
 	@Inject
-	public PutMillisecondCommand(KairosDatastore datastore, @Named("HOSTNAME") String hostname,
+    
+	public PutMillisecondCommand(FilterEventBus eventBus, @Named("HOSTNAME") String hostname,
 			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
 		checkNotNullOrEmpty(hostname);
 		m_hostName = hostname;
-		m_datastore = datastore;
 		m_longFactory = longFactory;
 		m_doubleFactory = doubleFactory;
+
+		m_publisher = eventBus.createPublisher(DataPointEvent.class);
 	}
 
 	@Override
@@ -115,7 +119,7 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 			tags.put("add", "tag");
 
 		m_counter.incrementAndGet();
-		m_datastore.putDataPoint(metricName, tags.build(), dp, ttl);
+		m_publisher.post(new DataPointEvent(metricName, tags.build(), dp, ttl));
 	}
 
 	private void validateTag(int tagCount, String[] tag) throws ValidationException
@@ -139,7 +143,7 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 	{
 		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
 		dps.addTag("host", m_hostName);
-		dps.addTag("method", "putm");
+		dps.addTag("method", getCommand());
 		dps.addDataPoint(m_longFactory.createDataPoint(now, m_counter.getAndSet(0)));
 
 		return (Collections.singletonList(dps));

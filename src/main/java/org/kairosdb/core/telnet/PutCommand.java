@@ -21,18 +21,18 @@ import com.google.inject.name.Named;
 import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
-import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.util.Util;
 import org.kairosdb.util.ValidationException;
 
 public class PutCommand extends PutMillisecondCommand
 {
 	@Inject
-	public PutCommand(KairosDatastore datastore, @Named("HOSTNAME") String hostname,
+	public PutCommand(FilterEventBus eventBus, @Named("HOSTNAME") String hostname,
 			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
-		super(datastore, hostname, longFactory, doubleFactory);
+		super(eventBus, hostname, longFactory, doubleFactory);
 	}
 
 	@Override

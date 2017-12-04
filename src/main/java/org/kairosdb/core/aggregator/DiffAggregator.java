@@ -2,14 +2,18 @@ package org.kairosdb.core.aggregator;
 
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.aggregator.annotation.AggregatorName;
+import org.kairosdb.core.annotation.FeatureComponent;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.plugin.Aggregator;
 
 /**
  Created by bhawkins on 12/16/14.
  */
-@AggregatorName(name = "diff", description = "Computes the difference between successive data points.")
+@FeatureComponent(
+		name = "diff",
+		description = "Computes the difference between successive data points."
+)
 public class DiffAggregator implements Aggregator
 {
 	private DoubleDataPointFactory m_dataPointFactory;
@@ -41,7 +45,7 @@ public class DiffAggregator implements Aggregator
 	private class DiffDataPointGroup extends AggregatedDataPointGroupWrapper
 	{
 
-		public DiffDataPointGroup(DataPointGroup innerDataPointGroup)
+		DiffDataPointGroup(DataPointGroup innerDataPointGroup)
 		{
 			super(innerDataPointGroup);
 		}

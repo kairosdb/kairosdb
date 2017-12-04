@@ -9,6 +9,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -20,14 +21,17 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 
+import javax.net.ssl.SSLContext;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.*;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-
-import javax.net.ssl.SSLContext;
 
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -91,6 +95,17 @@ public class Client
 		HttpClientContext context = setCredentials(url);
 
 		HttpGet get = new HttpGet(url);
+		try(CloseableHttpResponse response = client.execute(get, context))
+		{
+			return new JsonResponse(response);
+		}
+	}
+
+	public JsonResponse delete(String url) throws IOException
+	{
+		HttpClientContext context = setCredentials(url);
+
+		HttpDelete get = new HttpDelete(url);
 		try(CloseableHttpResponse response = client.execute(get, context))
 		{
 			return new JsonResponse(response);

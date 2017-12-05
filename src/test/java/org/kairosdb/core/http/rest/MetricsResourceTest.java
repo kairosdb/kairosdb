@@ -332,7 +332,7 @@ public class MetricsResourceTest extends ResourceBase
 		assertResponse(response, 403, "[{\"Forbidden\": \"DELETE API methods are disabled on this KairosDB instance.\"}]\n");
 	}
 
-	private static void assertResponse(JsonResponse response, int responseCode, String expectedContent)
+	static void assertResponse(JsonResponse response, int responseCode, String expectedContent)
 	{
 		assertThat(response.getStatusCode(), equalTo(responseCode));
 		assertThat(response.getHeader("Content-Type"), startsWith("application/json"));

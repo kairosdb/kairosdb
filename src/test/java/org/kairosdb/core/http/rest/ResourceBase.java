@@ -110,6 +110,7 @@ public abstract class ResourceBase
                 bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
                 bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
                 bind(SimpleStatsReporter.class);
+                bind(String.class).annotatedWith(Names.named("kairosdb.server.type")).toInstance("ALL");
 
                 Properties props = new Properties();
                 InputStream is = getClass().getClassLoader().getResourceAsStream("kairosdb.properties");

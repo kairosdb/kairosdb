@@ -103,10 +103,13 @@ public class RemoteDatastore implements Datastore
 		m_dataDirectory = dataDir;
 		m_remoteUrl = remoteUrl;
 		m_client = HttpClients.createDefault();
+
+		logger.info("kairosdb.datastore.remote.prefix_filter:" + m_prefixFilter);
 		if (m_prefixFilter != null)
 		{
 			m_prefixFilter = m_prefixFilter.replaceAll("\\s+","");
 			m_prefixFilterArray = m_prefixFilter.split(",");
+			logger.info("Forwarding these prefixes to remote KairosDB:" + m_prefixFilterArray);
 		}
 
 		createNewMap();

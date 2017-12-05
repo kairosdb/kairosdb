@@ -476,7 +476,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 		ExecutorService resultsExecutor = Executors.newSingleThreadExecutor();
 		//Controls the number of queries sent out at the same time.
-		Semaphore querySemaphor = new Semaphore(m_cassandraConfiguration.getSimultaneousQueries());
+		Semaphore querySemaphore = new Semaphore(m_cassandraConfiguration.getSimultaneousQueries());
 
 		while (rowKeys.hasNext())
 		{
@@ -530,7 +530,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 			try
 			{
-				querySemaphor.acquire();
+				querySemaphore.acquire();
 			}
 			catch (InterruptedException e)
 			{
@@ -538,7 +538,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			}
 			ResultSetFuture resultSetFuture = m_session.executeAsync(boundStatement);
 
-			Futures.addCallback(resultSetFuture, new QueryListener(rowKey, queryCallback, querySemaphor), resultsExecutor);
+			Futures.addCallback(resultSetFuture, new QueryListener(rowKey, queryCallback, querySemaphore), resultsExecutor);
 		}
 
 		ThreadReporter.addDataPoint(KEY_QUERY_TIME, System.currentTimeMillis() - timerStart);
@@ -546,7 +546,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 		try
 		{
-			querySemaphor.acquire(m_cassandraConfiguration.getSimultaneousQueries());
+			querySemaphore.acquire(m_cassandraConfiguration.getSimultaneousQueries());
 			resultsExecutor.shutdown();
 		}
 		catch (InterruptedException e)

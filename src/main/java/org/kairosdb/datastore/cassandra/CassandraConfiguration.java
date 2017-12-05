@@ -128,7 +128,7 @@ public class CassandraConfiguration
 		m_hostList = new ArrayList<>();
 		for (String node : hostList.split(","))
 		{
-			m_hostList.add(node.split(":")[0]);
+			m_hostList.add(node.split(":")[0].trim());
 		}
 	}
 

@@ -106,7 +106,7 @@ public class ExportTest
 
 		QueryMetric metric = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, METRIC_NAME);
 		ds.delete(metric);
-		Thread.sleep(2000);
+		Thread.sleep(500);
 	}
 
 	@AfterClass
@@ -150,7 +150,7 @@ public class ExportTest
 		s_main.runImport(export);
 
 		export.close();
-		Thread.sleep(3000);
+		Thread.sleep(2000);
 
 		verifyDataPoints();
 	}

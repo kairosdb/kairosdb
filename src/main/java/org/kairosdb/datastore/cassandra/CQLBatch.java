@@ -53,12 +53,12 @@ public class CQLBatch
 		ByteBuffer bb = ByteBuffer.allocate(8);
 		bb.putLong(0, rowKey.getTimestamp());
 
-		BoundStatement bs = m_schema.psRowKeyTimeInsert.bind()
+		Statement bs = m_schema.psRowKeyTimeInsert.bind()
 				.setString(0, metricName)
 				.setTimestamp(1, new Date(rowKey.getTimestamp()))
 				//.setBytesUnsafe(1, bb) //Setting timestamp in a more optimal way
 				.setInt(2, rowKeyTtl)
-				.setLong(3, m_now);
+				.setIdempotent(true);
 
 		bs.setConsistencyLevel(m_consistencyLevel);
 
@@ -70,8 +70,8 @@ public class CQLBatch
 				//.setBytesUnsafe(1, bb)  //Setting timestamp in a more optimal way
 				.setString(2, rowKey.getDataType())
 				.setMap(3, rowKey.getTags())
-				.setInt(4, rowKeyTtl);
-				//.setLong(5, m_now);
+				.setInt(4, rowKeyTtl)
+				.setIdempotent(true);
 
 		bs.setConsistencyLevel(m_consistencyLevel);
 

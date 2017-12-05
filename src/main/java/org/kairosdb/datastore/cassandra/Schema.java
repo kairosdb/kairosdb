@@ -49,20 +49,22 @@ public class Schema
 	public static final String ROW_KEY_TIME_INDEX = "" +
 			"CREATE TABLE IF NOT EXISTS row_key_time_index (\n" +
 			"  metric text,\n" +
+			"  table_name text,\n" +
 			"  row_time timestamp,\n" +
 			"  value text,\n" +
-			"  PRIMARY KEY ((metric), row_time)\n" +
+			"  PRIMARY KEY ((metric), table_name, row_time)\n" +
 			")";
 
 	public static final String ROW_KEYS = "" +
 			"CREATE TABLE IF NOT EXISTS row_keys (\n" +
 			"  metric text,\n" +
+			"  table_name text, \n" +
 			"  row_time timestamp,\n" +
 			"  data_type text,\n" +
 			"  tags frozen<map<text, text>>,\n" +
 			"  mtime timeuuid static,\n" +
 			"  value text,\n" +
-			"  PRIMARY KEY ((metric, row_time), data_type, tags)\n" +
+			"  PRIMARY KEY ((metric, table_name, row_time), data_type, tags)\n" +
 			")";
 
 	public static final String STRING_INDEX_TABLE = "" +
@@ -90,10 +92,10 @@ public class Schema
 			"(key, column1, value) VALUES (?, ?, ?) USING TTL ? AND TIMESTAMP ?";
 
 	public static final String ROW_KEY_TIME_INSERT = "INSERT INTO row_key_time_index " +
-			"(metric, row_time) VALUES (?, ?) USING TTL ? AND TIMESTAMP ?";
+			"(metric, table_name, row_time) VALUES (?, 'data_points', ?) USING TTL ?";
 
 	public static final String ROW_KEY_INSERT = "INSERT INTO row_keys " +
-			"(metric, row_time, data_type, tags, mtime) VALUES (?, ?, ?, ?, now()) USING TTL ?"; // AND TIMESTAMP ?";
+			"(metric, table_name, row_time, data_type, tags, mtime) VALUES (?, 'data_points', ?, ?, ?, now()) USING TTL ?"; // AND TIMESTAMP ?";
 
 	public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
 			"(key, column1, value) VALUES (?, ?, 0x00)";
@@ -136,19 +138,19 @@ public class Schema
 
 	//New Row key queries
 	public static final String ROW_KEY_TIME_QUERY = "SELECT row_time " +
-			"FROM row_key_time_index WHERE metric = ? AND " +
+			"FROM row_key_time_index WHERE metric = ? AND table_name = 'data_points' AND " +
 			"row_time >= ? AND row_time <= ?";
 
 	public static final String ROW_KEY_QUERY = "SELECT row_time, data_type, tags " +
-			"FROM row_keys WHERE metric = ? AND row_time = ?";
+			"FROM row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ?";
 
 	public static final String ROW_KEY_TAG_QUERY_WITH_TYPE = "SELECT row_time, data_type, tags " +
-			"FROM row_keys WHERE metric = ? AND row_time = ? AND data_type IN %s"; //Use ValueSequence when setting this
+			"FROM row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ? AND data_type IN %s"; //Use ValueSequence when setting this
 
 	public static final String ROW_KEY_TIME_DELETE = "DELETE FROM row_key_time_index " +
-			"WHERE metric = ? AND row_time = ?";
+			"WHERE metric = ? AND table_name = 'data_points' AND row_time = ?";
 
-	public static final String ROW_KEY_DELETE = "DELETE FROM row_keys WHERE metric = ? AND row_time = ?";
+	public static final String ROW_KEY_DELETE = "DELETE FROM row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ?";
 
 	//Service index queries
 	public static final String SERVICE_INDEX_INSERT = "INSERT INTO service_index " +

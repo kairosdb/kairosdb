@@ -93,7 +93,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	@Inject
 	private final BatchStats m_batchStats = new BatchStats();
 
+	@Inject
 	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
+	@Inject
 	private DataCache<String> m_metricNameCache = new DataCache<String>(1024);
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
@@ -137,9 +139,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_session = session;
 
 		m_cassandraConfiguration = cassandraConfiguration;
-
-		m_rowKeyCache = new DataCache<DataPointsRowKey>(m_cassandraConfiguration.getRowKeyCacheSize());
-		m_metricNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
 
 		//This needs to be done last as it tells the processor we are ready for data
 		m_queueProcessor.setProcessorHandler(this);
@@ -613,6 +612,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 				m_session.execute(statement);
 
+				//Delete from old row keys
 				statement = new BoundStatement(m_schema.psRowKeyIndexDelete);
 				statement.setBytesUnsafe(0, serializeString(rowKey.getMetricName()));
 				statement.setBytesUnsafe(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));

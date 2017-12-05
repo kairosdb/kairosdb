@@ -11,9 +11,6 @@ public class HealthCheckModule extends AbstractModule
 	protected void configure()
 	{
 		bind(HealthCheckService.class).to(HealthCheckServiceImpl.class).in(Singleton.class);
-		bind(ThreadDeadlockHealthStatus.class).in(Singleton.class);
-		bind(DatastoreQueryHealthCheck.class).in(Singleton.class);
-
 		// Bind REST resource
 		bind(HealthCheckResource.class).in(Scopes.SINGLETON);
 	}

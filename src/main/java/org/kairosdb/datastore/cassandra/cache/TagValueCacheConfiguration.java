@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 public class TagValueCacheConfiguration implements CacheConfiguration {
-    private static final String PREFIX = "kairosdb.datastore.cassandra.cache.tag_name.";
+    private static final String PREFIX = "kairosdb.datastore.cassandra.cache.tag_value.";
     private static final String TTL_IN_SECONDS = PREFIX + "ttl_in_seconds";
     private static final String SIZE = PREFIX + "size";
 

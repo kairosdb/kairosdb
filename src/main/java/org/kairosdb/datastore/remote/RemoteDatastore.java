@@ -19,7 +19,6 @@ package org.kairosdb.datastore.remote;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Multimap;
-import org.h2.util.StringUtils;
 import org.kairosdb.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -56,6 +55,8 @@ import java.util.Arrays;
 import java.util.SortedMap;
 import java.util.zip.GZIPOutputStream;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 
 public class RemoteDatastore implements Datastore
 {
@@ -79,7 +80,7 @@ public class RemoteDatastore implements Datastore
 	private int m_dataPointCounter;
 
 	private volatile Multimap<DataPointKey, DataPoint> m_dataPointMultimap;
-	private Object m_mapLock = new Object();  //Lock for the above map
+	private final Object m_mapLock = new Object();  //Lock for the above map
 
 	private CloseableHttpClient m_client;
 	private boolean m_running;
@@ -88,29 +89,29 @@ public class RemoteDatastore implements Datastore
 	@Named("HOSTNAME")
 	private String m_hostName = "localhost";
 
-	private String m_prefixFilter = null;
-
-	private String[] m_prefixFilterArray;
+	private String[] m_prefixFilterArray = new String[0];
 
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
+	@Inject(optional = true)
+	public void setPrefixFilter(@Named(METRIC_PREFIX_FILTER) String prefixFilter)
+	{
+		if (!isNullOrEmpty(prefixFilter))
+		{
+			m_prefixFilterArray = prefixFilter.replaceAll("\\s+","").split(",");
+			logger.info("List of metric prefixes to forward to remote KairosDB: " + Arrays.toString(m_prefixFilterArray));
+		}
+	}
+
 
 	@Inject
 	public RemoteDatastore(@Named(DATA_DIR_PROP) String dataDir,
-			@Named(REMOTE_URL_PROP) String remoteUrl,
-			@Named(METRIC_PREFIX_FILTER) String prefixFilter) throws IOException, DatastoreException
+			@Named(REMOTE_URL_PROP) String remoteUrl) throws IOException, DatastoreException
 	{
 		m_dataDirectory = dataDir;
 		m_remoteUrl = remoteUrl;
 		m_client = HttpClients.createDefault();
-
-		if (!StringUtils.isNullOrEmpty(prefixFilter))
-		{
-			m_prefixFilter = prefixFilter.replaceAll("\\s+","");
-			m_prefixFilterArray = m_prefixFilter.split(",");
-			logger.info("List of metric prefixes to forward to remote KairosDB: " + Arrays.toString(m_prefixFilterArray));
-		}
 
 		createNewMap();
 
@@ -121,23 +122,18 @@ public class RemoteDatastore implements Datastore
 		openDataFile();
 		m_running = true;
 
-		Thread flushThread = new Thread(new Runnable()
-		{
-			@Override
-			public void run()
+		Thread flushThread = new Thread(() -> {
+			while (m_running)
 			{
-				while (m_running)
+				try
 				{
-					try
-					{
-						flushMap();
+					flushMap();
 
-						Thread.sleep(2000);
-					}
-					catch (Exception e)
-					{
-						logger.error("Error flushing map", e);
-					}
+					Thread.sleep(2000);
+				}
+				catch (Exception e)
+				{
+					logger.error("Error flushing map", e);
 				}
 			}
 		});
@@ -153,7 +149,7 @@ public class RemoteDatastore implements Datastore
 		{
 			ret = m_dataPointMultimap;
 
-			m_dataPointMultimap = ArrayListMultimap.<DataPointKey, DataPoint>create();
+			m_dataPointMultimap = ArrayListMultimap.create();
 		}
 
 		return ret;
@@ -296,7 +292,7 @@ public class RemoteDatastore implements Datastore
 	{
 		String metricName = event.getMetricName();
 
-		if (!StringUtils.isNullOrEmpty(m_prefixFilter))
+		if (m_prefixFilterArray.length != 0)
 		{
 			boolean prefixMatch = false;
 			for (String prefixFilter : m_prefixFilterArray)

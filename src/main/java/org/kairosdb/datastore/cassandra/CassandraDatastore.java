@@ -15,11 +15,8 @@
  */
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
+import com.datastax.driver.core.*;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.SetMultimap;
 import org.kairosdb.eventbus.Subscribe;
 import com.google.common.util.concurrent.FutureCallback;
@@ -57,6 +54,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.datastore.cassandra.CassandraConfiguration.KEYSPACE_PROPERTY;
 
 public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMetricReporter,
 		ServiceKeyStore
@@ -112,6 +110,10 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	@Inject
 	@Named("kairosdb.queue_processor.batch_size")
 	private int m_batchSize;  //Used for batching delete requests
+
+	@Inject
+	@Named(KEYSPACE_PROPERTY)
+	private String m_keyspace = "kairosdb";
 
 
 	@Inject
@@ -528,6 +530,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 			boundStatement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 
+			//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, boundStatement));
+
 			try
 			{
 				querySemaphore.acquire();
@@ -828,6 +832,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				futures.add(future);
 			}
 
+			//System.out.println();
 			//New index query index is broken up by time tier
 			List<Long> queryKeyList = createQueryKeyList(metricName, startTime, endTime);
 			for (Long keyTime : queryKeyList)
@@ -836,6 +841,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				statement.setString(0, metricName);
 				statement.setTimestamp(1, new Date(keyTime));
 				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+
+				//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
 
 				ResultSetFuture future = m_session.executeAsync(statement);
 				futures.add(future);
@@ -903,6 +910,8 @@ outer:
 			statement.setTimestamp(1, new Date(calculateRowTime(startTime)));
 			statement.setTimestamp(2, new Date(endTime));
 			statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+
+			//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
 
 			ResultSet rows = m_session.execute(statement);
 
@@ -1018,6 +1027,17 @@ outer:
 				}
 			}
 		}
+	}
+
+	private void printHosts(Iterator<Host> hostIterator)
+	{
+		StringBuilder sb = new StringBuilder();
+
+		while (hostIterator.hasNext())
+		{
+			sb.append(hostIterator.next().toString()).append(" ");
+		}
+		System.out.println(sb.toString());
 	}
 
 	private static final IDontCareCallBack s_dontCareCallBack = new IDontCareCallBack();

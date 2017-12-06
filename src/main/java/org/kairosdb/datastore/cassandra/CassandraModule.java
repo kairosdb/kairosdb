@@ -28,6 +28,7 @@ import org.kairosdb.core.datastore.ServiceKeyStore;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.events.DataPointEvent;
 
+import javax.inject.Named;
 import java.util.*;
 
 public class CassandraModule extends AbstractModule
@@ -86,6 +87,13 @@ public class CassandraModule extends AbstractModule
 		install(new FactoryModuleBuilder().build(DeleteBatchHandlerFactory.class));
 
 		install(new FactoryModuleBuilder().build(CQLBatchFactory.class));
+	}
+
+	@Provides
+	@Named("keyspace")
+	String getKeyspace(CassandraConfiguration configuration)
+	{
+		return configuration.getKeyspaceName();
 	}
 
 	@Provides

@@ -6,11 +6,13 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.util.KDataOutput;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
 
+import static org.kairosdb.datastore.cassandra.CassandraConfiguration.KEYSPACE_PROPERTY;
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.*;
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER;
 
@@ -33,6 +35,10 @@ public class CQLBatch
 	private BatchStatement metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 	private BatchStatement dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 	private BatchStatement rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+
+	@Inject
+	@Named(KEYSPACE_PROPERTY)
+	private String m_keyspace = "kairosdb";
 
 	@Inject
 	public CQLBatch(
@@ -89,7 +95,7 @@ public class CQLBatch
 
 	private void addBoundStatement(BoundStatement boundStatement)
 	{
-		Iterator<Host> hosts = m_loadBalancingPolicy.newQueryPlan("kairosdb", boundStatement);
+		Iterator<Host> hosts = m_loadBalancingPolicy.newQueryPlan(m_keyspace, boundStatement);
 		if (hosts.hasNext())
 		{
 			Host hostKey = hosts.next();

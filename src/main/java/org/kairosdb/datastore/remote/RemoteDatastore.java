@@ -19,6 +19,7 @@ package org.kairosdb.datastore.remote;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Multimap;
+import org.h2.util.StringUtils;
 import org.kairosdb.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -51,6 +52,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.SortedMap;
 import java.util.zip.GZIPOutputStream;
 
@@ -86,9 +88,9 @@ public class RemoteDatastore implements Datastore
 	@Named("HOSTNAME")
 	private String m_hostName = "localhost";
 
-	@Inject(optional = true)
-	@Named(METRIC_PREFIX_FILTER)
 	private String m_prefixFilter = null;
+
+	private String[] m_prefixFilterArray;
 
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
@@ -96,11 +98,19 @@ public class RemoteDatastore implements Datastore
 
 	@Inject
 	public RemoteDatastore(@Named(DATA_DIR_PROP) String dataDir,
-			@Named(REMOTE_URL_PROP) String remoteUrl) throws IOException, DatastoreException
+			@Named(REMOTE_URL_PROP) String remoteUrl,
+			@Named(METRIC_PREFIX_FILTER) String prefixFilter) throws IOException, DatastoreException
 	{
 		m_dataDirectory = dataDir;
 		m_remoteUrl = remoteUrl;
 		m_client = HttpClients.createDefault();
+
+		if (!StringUtils.isNullOrEmpty(prefixFilter))
+		{
+			m_prefixFilter = prefixFilter.replaceAll("\\s+","");
+			m_prefixFilterArray = m_prefixFilter.split(",");
+			logger.info("List of metric prefixes to forward to remote KairosDB: " + Arrays.toString(m_prefixFilterArray));
+		}
 
 		createNewMap();
 
@@ -284,10 +294,25 @@ public class RemoteDatastore implements Datastore
 	@Subscribe
 	public void putDataPoint(DataPointEvent event) throws DatastoreException
 	{
-		if ((m_prefixFilter != null) && (!event.getMetricName().startsWith(m_prefixFilter)))
-			return;
+		String metricName = event.getMetricName();
 
-		DataPointKey key = new DataPointKey(event.getMetricName(), event.getTags(),
+		if (!StringUtils.isNullOrEmpty(m_prefixFilter))
+		{
+			boolean prefixMatch = false;
+			for (String prefixFilter : m_prefixFilterArray)
+			{
+				if (metricName.startsWith(prefixFilter))
+				{
+					prefixMatch = true;
+					break;
+				}
+			}
+
+			if (!prefixMatch)
+				return;
+		}
+
+		DataPointKey key = new DataPointKey(metricName, event.getTags(),
 				event.getDataPoint().getApiDataType(), event.getTtl());
 
 		synchronized (m_mapLock)

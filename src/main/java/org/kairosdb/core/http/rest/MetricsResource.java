@@ -173,7 +173,7 @@ public class MetricsResource implements KairosMetricReporter
 	//Used for setting which API methods are enabled
 	private EnumSet<ServerType> m_serverType = EnumSet.of(ServerType.INGEST, ServerType.QUERY, ServerType.DELETE);
 
-	@Inject
+	@Inject(optional = true)
 	@VisibleForTesting
 	void setServerType(@Named("kairosdb.server.type") String serverType)
 	{
@@ -322,19 +322,6 @@ public class MetricsResource implements KairosMetricReporter
 		return executeNameQuery(NameType.TAG_VALUES);
 	}
 
-/* // Commented this out as this method was not included in the updated develop branch sync'd from kairosdb main fork.
-    @GET
-    @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-    @Path("/aggregators")
-    public Response getAggregators() throws InvalidServerTypeException
-    {
-		checkServerType(ServerType.QUERY, "/aggregators", "GET");
-    	ImmutableList<AggregatorMetadata> aggregatorMetadata = aggregatorFactory.getAggregatorMetadata();
-        ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(gson.toJson(aggregatorMetadata));
-        setHeaders(responseBuilder);
-        return responseBuilder.build();
-    }
-*/
 
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")

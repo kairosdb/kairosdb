@@ -16,6 +16,7 @@
 
 package org.kairosdb.core;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.net.InetAddresses;
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
@@ -70,6 +71,7 @@ public class CoreModule extends AbstractModule
 	@Override
 	protected void configure()
 	{
+		bind(MetricRegistry.class).in(Singleton.class);
 		bind(QueryQueuingManager.class).in(Singleton.class);
 		bind(KairosDatastore.class).in(Singleton.class);
 		bind(AggregatorFactory.class).to(GuiceAggregatorFactory.class).in(Singleton.class);

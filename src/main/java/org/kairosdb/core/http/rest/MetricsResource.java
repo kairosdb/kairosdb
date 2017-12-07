@@ -35,6 +35,7 @@ import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
 import org.kairosdb.core.formatter.JsonResponse;
 import org.kairosdb.core.http.rest.json.*;
+import org.kairosdb.core.http.rest.metrics.QueryMeasurementProvider;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.datastore.cassandra.MaxRowKeysForQueryExceededException;
@@ -93,12 +94,16 @@ public class MetricsResource implements KairosMetricReporter
 	@Named("HOSTNAME")
 	private String hostName = "localhost";
 
+
+	private QueryMeasurementProvider queryMeasurementProvider;
+
 	@Inject
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
-			KairosDataPointFactory dataPointFactory)
+			KairosDataPointFactory dataPointFactory, QueryMeasurementProvider queryMeasurementProvider)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.queryParser = checkNotNull(queryParser);
+		this.queryMeasurementProvider = checkNotNull(queryMeasurementProvider);
 		m_kairosDataPointFactory = dataPointFactory;
 		formatters.put("json", new JsonFormatter());
 
@@ -411,10 +416,11 @@ public class MetricsResource implements KairosMetricReporter
 			for (QueryMetric query : queries)
 			{
 				queryCount++;
+				queryMeasurementProvider.measureSpan(query);
+				queryMeasurementProvider.measureDistance(query);
 
 				DatastoreQuery dq = datastore.createQuery(query);
 				long startQuery = System.currentTimeMillis();
-
 				try
 				{
 					List<DataPointGroup> results = dq.execute();

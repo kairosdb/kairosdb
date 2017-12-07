@@ -20,7 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.core.reporting.MetricReporterService.HOSTNAME;
 
 public class CacheMetricsReporter implements KairosMetricReporter {
-    private final CacheMetricsProvider cacheMetricsProvider;
+    private final CacheMetricsProvider metricsProvider;
 
     @Inject
     private LongDataPointFactory longDataPointFactory = new LongDataPointFactoryImpl();
@@ -30,17 +30,17 @@ public class CacheMetricsReporter implements KairosMetricReporter {
     private String hostname;
 
     @Inject
-    public CacheMetricsReporter(final CacheMetricsProvider cacheMetricsProvider, @Named(HOSTNAME) final String hostname) {
-        checkNotNull(cacheMetricsProvider, "cacheMetricsProvider can't be null");
+    public CacheMetricsReporter(final CacheMetricsProvider metricsProvider, @Named(HOSTNAME) final String hostname) {
+        checkNotNull(metricsProvider, "metricsProvider can't be null");
         checkNotNull(hostname, "hostname can't be null");
-        this.cacheMetricsProvider = cacheMetricsProvider;
+        this.metricsProvider = metricsProvider;
         this.hostname = hostname;
     }
 
     @Override
     public List<DataPointSet> getMetrics(final long now) {
         final ImmutableList.Builder<DataPointSet> builder = ImmutableList.builder();
-        final Map<String, Metric> metrics = cacheMetricsProvider.getAll();
+        final Map<String, Metric> metrics = metricsProvider.getAll();
         for (final Map.Entry<String, Metric> metric: metrics.entrySet()) {
             if(metric.getValue() instanceof Gauge) {
                 final Gauge gauge = (Gauge)metric.getValue();

@@ -70,7 +70,7 @@ public class MetricReporterService implements KairosDBJob {
 
     @Override
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
-        if(config.isEnabled()) {
+        if (config.isEnabled()) {
             logger.debug("Reporting metrics");
             long timestamp = System.currentTimeMillis();
             try {
@@ -78,7 +78,8 @@ public class MetricReporterService implements KairosDBJob {
                     List<DataPointSet> dpList = reporter.getMetrics(timestamp);
                     for (DataPointSet dataPointSet : dpList) {
                         for (DataPoint dataPoint : dataPointSet.getDataPoints()) {
-                            logger.debug("Storing internal metric {} = {}", dataPointSet.getName(), dataPoint);
+                            logger.debug("Storing internal metric {} {} = {}", dataPointSet.getName(),
+                                    dataPointSet.getTags(), dataPoint);
                             m_datastore.putDataPoint(dataPointSet.getName(), dataPointSet.getTags(), dataPoint);
                         }
                     }

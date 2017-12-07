@@ -30,6 +30,7 @@ public class MetricReportingModule extends ServletModule {
 
         bind(RuntimeReporter.class).in(Scopes.SINGLETON);
         bind(CacheMetricsReporter.class).in(Scopes.SINGLETON);
+        bind(QueryMeasurementsReporter.class).in(Scopes.SINGLETON);
 
         bind(new TypeLiteral<List<KairosMetricReporter>>() {
         }).toProvider(KairosMetricReporterListProvider.class);

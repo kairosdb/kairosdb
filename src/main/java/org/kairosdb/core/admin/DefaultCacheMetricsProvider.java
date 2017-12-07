@@ -21,7 +21,7 @@ import static com.google.common.base.CaseFormat.UPPER_UNDERSCORE;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DefaultCacheMetricsProvider implements CacheMetricsProvider {
-    private static final String CACHE_PREFIX = "kairosdb.cache";
+    public static final String CACHE_PREFIX = "kairosdb.cache";
 
     enum CacheMetrics {
         REQUEST_COUNT,
@@ -50,24 +50,21 @@ public class DefaultCacheMetricsProvider implements CacheMetricsProvider {
 
     @Override
     public Map<String, Metric> getAll() {
-        return ImmutableMap.copyOf(metricRegistry.getMetrics());
+        final Map<String, Metric> cacheMetrics = metricRegistry.getMetrics().entrySet().stream()
+                .filter(e -> e.getKey() != null && e.getKey().startsWith(CACHE_PREFIX))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        return ImmutableMap.copyOf(cacheMetrics);
     }
 
-    /**
-     * Filters the metrics from the metrics registry using the provided prefix. When the prefix is null, or empty,
-     * an immediate copy of the metrics registry is returned.
-     *
-     * @param prefix a string that should match, case sensitive, with the keys from the metrics registry
-     * @return An immutable copy of the metrics that start with the given prefix
-     */
     @Override
     public Map<String, Metric> getForPrefix(@Nullable final String prefix) {
         if (prefix == null || prefix.isEmpty()) {
             return getAll();
         }
 
-        final Map<String, Metric> filteredMetrics = metricRegistry.getMetrics().entrySet().stream()
-                .filter(e -> e.getKey() != null && e.getKey().startsWith(prefix))
+        final Map<String, Metric> filteredMetrics = getAll().entrySet().stream()
+                .filter(e -> e.getKey() != null && e.getKey().startsWith(CACHE_PREFIX + "." + prefix))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return ImmutableMap.copyOf(filteredMetrics);

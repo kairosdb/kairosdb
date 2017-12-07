@@ -64,6 +64,13 @@ Changing the read_repair_chance:  This value tells cassandra how often to perfor
 	> update column family row_key_index with read_repair_chance = 0.1;
 	> update column family string_index with read_repair_chance = 0.1;
 
+Note: If you are using the newer ``cqlsh`` command, you will need to use the alter syntax
+::
+       > use kairosdb;
+       > ALTER TABLE data_points WITH read_repair_chance = 0.1;
+       > ALTER TABLE row_key_index WITH read_repair_chance = 0.1;
+       > ALTER TABLE string_index WITH read_repair_chance = 0.1;
+
 """""""""""""""""""""
 Configuration Options
 """""""""""""""""""""

@@ -22,15 +22,36 @@ fi
 
 # Start the service KairosDB
 start() {
+        if [ -f $KAIROS_PID_FILE ]; then
+          echo 'Service already running'
+          echo
+          return 1
+        fi
         printf "%-50s" "Starting KairosDB server: "
         $KAIROS_SCRIPT_PATH start
         echo
 }
 
+status() {
+        if [ -f $KAIROS_PID_FILE ]; then
+          echo 'Service KairosDB is up and running!'
+          echo
+          return 1
+        fi
+        echo "Service KairosDB not running." 
+        echo
+}
+
 # Stop the service KairosDB
 stop() {
+        if [ ! -f "$KAIROS_PID_FILE" ]; then
+          echo 'Service not running'
+          echo
+          return 1
+        fi
         printf "%-50s" "Stopping KairosDB server: "
         $KAIROS_SCRIPT_PATH stop
+        rm -f "$KAIROS_PID_FILE"
         echo
 }
 
@@ -43,7 +64,7 @@ case "$1" in
         stop
         ;;
   status)
-        status kairosdb
+        status
         ;;
   restart|reload|condrestart)
         stop

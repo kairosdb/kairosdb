@@ -1,23 +1,10 @@
 package org.kairosdb.core.admin;
 
-import com.codahale.metrics.Metric;
 import com.github.benmanes.caffeine.cache.Cache;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Map;
 
-public interface CacheMetricsProvider {
-    /**
-     * Returns the entire Map of Metrics.
-     */
-    Map<String, Metric> getAll();
-
-    /**
-     * Returns a Map of Metrics where the keys start with the given prefix.
-     */
-    Map<String, Metric> getForPrefix(@Nullable final String prefix);
-
+public interface CacheMetricsProvider extends InternalMetricsProvider {
     /**
      * Registers a a new cache in the metrics registry.
      *

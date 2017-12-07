@@ -53,6 +53,10 @@ public class QueryMeasurementsReporter implements KairosMetricReporter {
                 builder.add(createDataPointSet(metricName, "mean", now, snapshot.getMean()));
                 builder.add(createDataPointSet(metricName, "median", now, snapshot.getMedian()));
                 builder.add(createDataPointSet(metricName, "p75", now, snapshot.get75thPercentile()));
+                builder.add(createDataPointSet(metricName, "p80", now, snapshot.getValue(0.8)));
+                builder.add(createDataPointSet(metricName, "p85", now, snapshot.getValue(0.85)));
+                builder.add(createDataPointSet(metricName, "p90", now, snapshot.getValue(0.9)));
+                builder.add(createDataPointSet(metricName, "p95", now, snapshot.getValue(0.95)));
                 builder.add(createDataPointSet(metricName, "p98", now, snapshot.get98thPercentile()));
                 builder.add(createDataPointSet(metricName, "p99", now, snapshot.get99thPercentile()));
             }

@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.KairosConfigImpl;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.Datastore;
@@ -40,7 +41,6 @@ import org.kairosdb.util.ValidationException;
 import javax.annotation.Nullable;
 import java.net.SocketAddress;
 import java.util.Collections;
-import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -54,7 +54,7 @@ public class PutCommandTest
 	@Before
 	public void setup() throws DatastoreException
 	{
-		FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new Properties()));
+		FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfigImpl()));
 		m_datastore = new FakeDatastore();
 		eventBus.register(m_datastore);
 

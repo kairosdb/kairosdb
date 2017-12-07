@@ -1,6 +1,7 @@
 package org.kairosdb.eventbus;
 
 import com.google.common.collect.ImmutableSet;
+import org.kairosdb.core.KairosConfigImpl;
 import org.kairosdb.eventbus.Subscribe;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,7 +24,7 @@ public class PipelineRegistryTest
 	@Before
 	public void setup()
 	{
-		registry = new PipelineRegistry(new FilterEventBus(new EventBusConfiguration(new Properties())));
+		registry = new PipelineRegistry(new FilterEventBus(new EventBusConfiguration(new KairosConfigImpl())));
 	}
 
 	@Test

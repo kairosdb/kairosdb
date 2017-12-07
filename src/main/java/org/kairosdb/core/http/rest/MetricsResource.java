@@ -871,10 +871,8 @@ public class MetricsResource implements KairosMetricReporter
 		@Override
 		public void write(OutputStream output) throws IOException, WebApplicationException
 		{
-			try
+			try (InputStream reader = new FileInputStream(m_responseFile))
 			{
-				InputStream reader = new FileInputStream(m_responseFile);
-
 				byte[] buffer = new byte[1024];
 				int size;
 
@@ -883,7 +881,6 @@ public class MetricsResource implements KairosMetricReporter
 					output.write(buffer, 0, size);
 				}
 
-				reader.close();
 				output.flush();
 			}
 			finally

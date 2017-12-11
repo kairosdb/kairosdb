@@ -15,6 +15,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  Created by bhawkins on 10/12/16.
@@ -31,6 +32,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 
 
 	private final DeliveryThread m_deliveryThread;
+	private final ExecutorService m_executor;
 	private int m_batchSize;
 	private final int m_initialBatchSize;
 	private final int m_minimumBatchSize;
@@ -42,13 +44,15 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
 
-	public QueueProcessor(Executor executor, int batchSize, int minimumBatchSize)
+	public QueueProcessor(ExecutorService executor, int batchSize, int minimumBatchSize)
 	{
 		m_deliveryThread = new DeliveryThread();
 		m_initialBatchSize = m_batchSize = batchSize;
 		m_minimumBatchSize = minimumBatchSize;
 
 		executor.execute(m_deliveryThread);
+		m_executor = executor;
+		logger.info("Starting QueueProcessor "+this.getClass().getName());
 	}
 
 	@Subscribe
@@ -68,6 +72,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	public void shutdown()
 	{
 		m_deliveryThread.shutdown();
+		m_executor.shutdown();
 	}
 
 
@@ -105,6 +110,10 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	{
 		private boolean m_running = true;
 		private boolean m_runOnce = false;
+
+		public DeliveryThread()
+		{
+		}
 
 		public void shutdown()
 		{

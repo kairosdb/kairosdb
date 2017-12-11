@@ -470,11 +470,11 @@ public class KairosDatastore
 			{
 				String tempFile = m_cacheDir + m_cacheFilename;
 
-				/*searchResult = new MemorySearchResult(m_metric.getName());
+				searchResult = new MemorySearchResult(m_metric.getName());
 				m_datastore.queryDatabase(m_metric, searchResult);
-				returnedRows = searchResult.getRows();*/
+				returnedRows = searchResult.getRows();
 
-				if (m_metric.getCacheTime() > 0)
+				/*if (m_metric.getCacheTime() > 0)
 				{
 					searchResult = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
 							tempFile, m_metric.getCacheTime(), m_dataPointFactory, m_keepCacheFiles);
@@ -492,7 +492,7 @@ public class KairosDatastore
 							tempFile, m_dataPointFactory, m_keepCacheFiles);
 					m_datastore.queryDatabase(m_metric, searchResult);
 					returnedRows = searchResult.getRows();
-				}
+				}*/
 			}
 			catch (Exception e)
 			{

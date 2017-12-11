@@ -87,6 +87,7 @@ import javax.inject.Singleton;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR;
@@ -242,7 +243,7 @@ public class CoreModule extends AbstractModule
 	}
 
 	@Provides @Named(QUEUE_PROCESSOR) @Singleton
-	public Executor getQueueExecutor()
+	public ExecutorService getQueueExecutor()
 	{
 		return Executors.newSingleThreadExecutor();
 	}

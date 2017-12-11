@@ -18,6 +18,7 @@ import javax.inject.Named;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -53,7 +54,7 @@ public class FileQueueProcessor extends QueueProcessor
 	public FileQueueProcessor(
 			DataPointEventSerializer eventSerializer,
 			BigArray bigArray,
-			@Named(QUEUE_PROCESSOR) Executor executor,
+			@Named(QUEUE_PROCESSOR) ExecutorService executor,
 			@Named(BATCH_SIZE) int batchSize,
 			@Named(MEMORY_QUEUE_SIZE) int memoryQueueSize,
 			@Named(SECONDS_TILL_CHECKPOINT) int secondsTillCheckpoint,

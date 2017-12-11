@@ -1,6 +1,7 @@
 package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.SimpleStats;
 
 import javax.xml.crypto.Data;
@@ -14,12 +15,14 @@ public class MemorySearchResult implements SearchResult
 {
 	private final String m_metricName;
 	private final List<DataPointRow> m_dataPointRows;
+	private final MemoryMonitor m_memoryMonitor;
 
 
 	public MemorySearchResult(String metricName)
 	{
 		m_metricName = metricName;
-		m_dataPointRows = new ArrayList<>();
+		m_dataPointRows = Collections.synchronizedList(new ArrayList<>());
+		m_memoryMonitor = new MemoryMonitor(1000);
 	}
 
 	@Override
@@ -51,6 +54,7 @@ public class MemorySearchResult implements SearchResult
 		public void addDataPoint(DataPoint datapoint) throws IOException
 		{
 			m_currentRow.addDataPoint(datapoint);
+			m_memoryMonitor.checkMemoryAndThrowException();
 		}
 
 		@Override

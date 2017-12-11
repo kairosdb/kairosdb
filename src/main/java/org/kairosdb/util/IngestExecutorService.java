@@ -12,6 +12,8 @@ import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.datastore.cassandra.BatchHandler;
 import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Subscribe;
+import org.kairosdb.events.ShutdownEvent;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -63,6 +65,7 @@ public class IngestExecutorService implements KairosMetricReporter
 			public Thread newThread(Runnable r)
 			{
 				Thread t = new Thread(m_threadGroup, r,"Ingest worker-"+m_count++);
+				//t.setDaemon(true);
 				return t;
 			}
 		});
@@ -81,9 +84,15 @@ public class IngestExecutorService implements KairosMetricReporter
 		m_semaphore.release();
 	}*/
 
+	@Subscribe
+	public void shutdown(ShutdownEvent event)
+	{
+		shutdown();
+	}
+
 	public void shutdown()
 	{
-
+		m_internalExecutor.shutdown();
 	}
 
 

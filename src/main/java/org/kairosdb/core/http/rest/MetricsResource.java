@@ -524,6 +524,7 @@ public class MetricsResource implements KairosMetricReporter
 	public Response runQuery(String json, String remoteAddr) throws Exception
 	{
 		logger.debug(json);
+		boolean queryFailed = false;
 
 		ThreadReporter.setReportTime(System.currentTimeMillis());
 		ThreadReporter.addTag("host", hostName);
@@ -572,8 +573,71 @@ public class MetricsResource implements KairosMetricReporter
 			writer.flush();
 			writer.close();
 
+
+			//System.out.println("About to process plugins");
+			List<QueryPlugin> plugins = mainQuery.getPlugins();
+			for (QueryPlugin plugin : plugins)
+			{
+				if (plugin instanceof QueryPostProcessingPlugin)
+				{
+					respFile = ((QueryPostProcessingPlugin) plugin).processQueryResults(respFile);
+				}
+			}
+
+			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
+					new FileStreamingOutput(respFile));
+
+			setHeaders(responseBuilder);
+			return responseBuilder.build();
+		}
+		catch (JsonSyntaxException | QueryException e)
+		{
+			queryFailed = true;
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addError(e.getMessage()).build();
+		}
+		catch (BeanValidationException e)
+		{
+			queryFailed = true;
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addErrors(e.getErrorMessages()).build();
+		}
+		catch (MemoryMonitorException e)
+		{
+			queryFailed = true;
+			logger.error("Query failed.", e);
+			Thread.sleep(1000);
+			System.gc();
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+		catch (IOException e)
+		{
+			queryFailed = true;
+			logger.error("Failed to open temp folder " + datastore.getCacheDir(), e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+		catch (Exception e)
+		{
+			queryFailed = true;
+			logger.error("Query failed.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+		catch (OutOfMemoryError e)
+		{
+			queryFailed = true;
+			logger.error("Out of memory error.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+
+		}
+		finally
+		{
 			ThreadReporter.clearTags();
 			ThreadReporter.addTag("host", hostName);
+
+			if (queryFailed)
+				ThreadReporter.addTag("status", "failed");
+			else
+				ThreadReporter.addTag("status", "success");
 
 			//write metrics for query logging
 			long queryTime = System.currentTimeMillis() - ThreadReporter.getReportTime();
@@ -597,57 +661,6 @@ public class MetricsResource implements KairosMetricReporter
 						m_stringDataPointFactory, m_publisher);
 			}
 
-			//System.out.println("About to process plugins");
-			List<QueryPlugin> plugins = mainQuery.getPlugins();
-			for (QueryPlugin plugin : plugins)
-			{
-				if (plugin instanceof QueryPostProcessingPlugin)
-				{
-					respFile = ((QueryPostProcessingPlugin) plugin).processQueryResults(respFile);
-				}
-			}
-
-			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
-					new FileStreamingOutput(respFile));
-
-			setHeaders(responseBuilder);
-			return responseBuilder.build();
-		}
-		catch (JsonSyntaxException | QueryException e)
-		{
-			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			return builder.addError(e.getMessage()).build();
-		}
-		catch (BeanValidationException e)
-		{
-			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			return builder.addErrors(e.getErrorMessages()).build();
-		}
-		catch (MemoryMonitorException e)
-		{
-			logger.error("Query failed.", e);
-			Thread.sleep(1000);
-			System.gc();
-			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
-		}
-		catch (IOException e)
-		{
-			logger.error("Failed to open temp folder " + datastore.getCacheDir(), e);
-			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
-		}
-		catch (Exception e)
-		{
-			logger.error("Query failed.", e);
-			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
-		}
-		catch (OutOfMemoryError e)
-		{
-			logger.error("Out of memory error.", e);
-			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
-
-		}
-		finally
-		{
 			ThreadReporter.clear();
 		}
 	}

@@ -41,6 +41,7 @@ public class CachedSearchResult implements SearchResult
 
 	private final String m_metricName;
 	private final List<FilePositionMarker> m_dataPointSets;
+	private final MemoryMonitor m_memoryMonitor;
 	private FilePositionMarker m_currentFilePositionMarker;
 	private final File m_dataFile;
 	private RandomAccessFile m_randomAccessFile;
@@ -81,6 +82,7 @@ public class CachedSearchResult implements SearchResult
 		m_dataPointFactory = datatPointFactory;
 		m_stringPool = new StringPool();
 		m_keepCacheFiles = keepCacheFiles;
+		m_memoryMonitor = new MemoryMonitor(1000);
 	}
 
 	private void openCacheFile() throws FileNotFoundException
@@ -252,28 +254,28 @@ public class CachedSearchResult implements SearchResult
 	@Override
 	public DataPointWriter startDataPointSet(String type, SortedMap<String, String> tags) throws IOException
 	{
-		m_lock.writeLock().lock();
-
-		if (m_randomAccessFile == null)
-			openCacheFile();
-
-		long curPosition = m_dataOutputStream.getPosition();
-		m_currentFilePositionMarker = new FilePositionMarker(curPosition, tags, type);
-		m_dataPointSets.add(m_currentFilePositionMarker);
-
-		return new CachedDatapointWriter();
+		return new CachedDatapointWriter(type, tags);
 	}
 
 
 	private class CachedDatapointWriter implements DataPointWriter
 	{
+		private final String m_dataType;
+		private final Map<String, String> m_tags;
+		private final List<DataPoint> m_dataPoints;
+
+		public CachedDatapointWriter(String type, Map<String, String> tags)
+		{
+			m_dataType = type;
+			m_tags = tags;
+			m_dataPoints = new ArrayList<>();
+		}
+
 		@Override
 		public void addDataPoint(DataPoint datapoint) throws IOException
 		{
-			m_dataOutputStream.writeLong(datapoint.getTimestamp());
-			datapoint.writeValueToBuffer(m_dataOutputStream);
-
-			m_currentFilePositionMarker.incrementDataPointCount();
+			m_dataPoints.add(datapoint);
+			m_memoryMonitor.checkMemoryAndThrowException();
 		}
 
 		/**
@@ -284,13 +286,29 @@ public class CachedSearchResult implements SearchResult
 		{
 			try
 			{
+				m_lock.writeLock().lock();
+
 				if (m_randomAccessFile == null)
-					return;
+					openCacheFile();
+
+				long curPosition = m_dataOutputStream.getPosition();
+				m_currentFilePositionMarker = new FilePositionMarker(curPosition, m_tags, m_dataType);
+				m_dataPointSets.add(m_currentFilePositionMarker);
+
+
+				for (DataPoint dataPoint : m_dataPoints)
+				{
+					m_dataOutputStream.writeLong(dataPoint.getTimestamp());
+					dataPoint.writeValueToBuffer(m_dataOutputStream);
+
+					m_currentFilePositionMarker.incrementDataPointCount();
+				}
+
 
 				//flushWriteBuffer();
 				m_dataOutputStream.flush();
 
-				long curPosition = m_dataOutputStream.getPosition();
+				curPosition = m_dataOutputStream.getPosition();
 				if (m_dataPointSets.size() != 0)
 					m_dataPointSets.get(m_dataPointSets.size() - 1).setEndPosition(curPosition);
 

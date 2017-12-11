@@ -28,6 +28,7 @@ public class CassandraConfiguration
 
 	public static final String AUTH_USER_NAME = "kairosdb.datastore.cassandra.auth.user_name";
 	public static final String AUTH_PASSWORD = "kairosdb.datastore.cassandra.auth.password";
+	public static final String USE_SSL = "kairosdb.datastore.cassandra.use_ssl";
 
 	public static final String LOCAL_CORE_CONNECTIONS = "kairosdb.datastore.cassandra.connections_per_host.local.core";
 	public static final String LOCAL_MAX_CONNECTIONS = "kairosdb.datastore.cassandra.connections_per_host.local.max";
@@ -89,6 +90,10 @@ public class CassandraConfiguration
 	@Inject(optional = true)
 	@Named(AUTH_PASSWORD)
 	private String m_authPassword;
+
+	@Inject
+	@Named(USE_SSL)
+	private boolean m_useSsl;
 
 	@Inject
 	@Named(LOCAL_CORE_CONNECTIONS)
@@ -235,5 +240,10 @@ public class CassandraConfiguration
 	public int getQueryLimit()
 	{
 		return m_queryLimit;
+	}
+
+	public boolean isUseSsl()
+	{
+		return m_useSsl;
 	}
 }

@@ -90,6 +90,9 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 			builder.addContactPoint(node);
 		}
 
+		if (configuration.isUseSsl())
+			builder.withSSL();
+
 		m_cluster = builder.build();
 		m_keyspace = configuration.getKeyspaceName();
 	}

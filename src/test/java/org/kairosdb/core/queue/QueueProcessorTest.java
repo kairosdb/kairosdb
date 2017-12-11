@@ -41,7 +41,7 @@ public class QueueProcessorTest
 		@Override
 		public void shutdown()
 		{
-			
+
 		}
 
 		@Override

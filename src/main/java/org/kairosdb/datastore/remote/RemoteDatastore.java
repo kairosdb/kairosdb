@@ -40,6 +40,7 @@ import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.events.ShutdownEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,6 +138,8 @@ public class RemoteDatastore implements Datastore
 				}
 			}
 		});
+
+		flushThread.setName("Remote flush");
 
 		flushThread.start();
 
@@ -284,6 +287,19 @@ public class RemoteDatastore implements Datastore
 		catch (IOException e)
 		{
 			logger.error("Unable to send data files while closing down", e);
+		}
+	}
+
+	@Subscribe
+	public void shutdown(ShutdownEvent shutdownEvent)
+	{
+		try
+		{
+			close();
+		}
+		catch (InterruptedException | DatastoreException e)
+		{
+			logger.error("Remote shutdown failure", e);
 		}
 	}
 

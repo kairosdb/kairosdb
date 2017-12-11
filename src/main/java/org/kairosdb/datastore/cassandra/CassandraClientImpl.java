@@ -64,7 +64,7 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 				.withLoadBalancingPolicy(m_loadBalancingPolicy)
 				.withCompression(ProtocolOptions.Compression.LZ4)
 				.withoutJMXReporting()
-				.withTimestampGenerator(new TimestampGenerator()
+				.withTimestampGenerator(new TimestampGenerator() //todo need to remove this and put it only on the datapoints call
 				{
 					@Override
 					public long next()

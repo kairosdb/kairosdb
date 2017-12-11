@@ -23,6 +23,8 @@ public class CassandraConfiguration
 	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
 	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
 	public static final String SIMULTANIOUS_QUERIES = "kairosdb.datastore.cassandra.simultaneous_cql_queries";
+	public static final String QUERY_LIMIT = "kairosdb.datastore.cassandra.query_limit";
+	public static final String QUERY_READER_THREADS = "kairosdb.datastore.cassandra.query_reader_threads";
 
 	public static final String AUTH_USER_NAME = "kairosdb.datastore.cassandra.auth.user_name";
 	public static final String AUTH_PASSWORD = "kairosdb.datastore.cassandra.auth.password";
@@ -64,7 +66,15 @@ public class CassandraConfiguration
 
 	@Inject
 	@Named(SIMULTANIOUS_QUERIES)
-	private int m_simultaneousQueries = 100;
+	private int m_simultaneousQueries = 20;
+
+	@Inject
+	@Named(QUERY_READER_THREADS)
+	private int m_queryReaderThreads = 6;
+
+	@Inject(optional = true)
+	@Named(QUERY_LIMIT)
+	private int m_queryLimit = 0;
 
 	@Inject
 	@Named(KEYSPACE_PROPERTY)
@@ -215,5 +225,15 @@ public class CassandraConfiguration
 	public int getMaxQueueSize()
 	{
 		return m_maxQueueSize;
+	}
+
+	public int getQueryReaderThreads()
+	{
+		return m_queryReaderThreads;
+	}
+
+	public int getQueryLimit()
+	{
+		return m_queryLimit;
 	}
 }

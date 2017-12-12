@@ -1,8 +1,8 @@
 package org.kairosdb.eventbus;
 
 import org.junit.Test;
-
-import java.util.Properties;
+import org.kairosdb.core.KairosConfig;
+import org.kairosdb.core.KairosConfigImpl;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -19,7 +19,7 @@ public class EventBusConfigurationTest
     @Test
     public void test()
     {
-        Properties properties = new Properties();
+        KairosConfig properties = new KairosConfigImpl();
         properties.put("kairosdb.eventbus.filter.priority.com.foo.Filter1", "10");
         properties.put("kairosdb.eventbus.filter.priority.com.bar.Filter2", "20");
         properties.put("kairosdb.eventbus.filter.priority.com.fi.Filter3", "30");
@@ -37,7 +37,7 @@ public class EventBusConfigurationTest
     @Test
     public void test_invalid_priority()
     {
-        Properties properties = new Properties();
+        KairosConfig properties = new KairosConfigImpl();
         properties.put("kairosdb.eventbus.filter.priority.com.foo.Filter1", "10.5");
 
         EventBusConfiguration config = new EventBusConfiguration(properties);

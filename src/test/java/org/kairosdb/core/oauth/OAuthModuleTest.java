@@ -17,8 +17,8 @@
 package org.kairosdb.core.oauth;
 
 import org.junit.Test;
-
-import java.util.Properties;
+import org.kairosdb.core.KairosConfig;
+import org.kairosdb.core.KairosConfigImpl;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -28,7 +28,7 @@ public class OAuthModuleTest
 	@Test
 	public void testReadingProperties()
 	{
-		Properties props = new Properties();
+		KairosConfig props = new KairosConfigImpl();
 
 		props.put("kairosdb.oauth.consumer.cust1", "ABC123");
 		props.put("kairosdb.oauth.consumerNot.cust1", "XYZ");

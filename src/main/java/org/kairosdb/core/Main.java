@@ -83,7 +83,7 @@ public class Main
 	private Injector m_injector;
 	private List<KairosDBService> m_services = new ArrayList<KairosDBService>();
 
-	private void loadPlugins(Properties props, final File propertiesFile) throws IOException
+	private void loadPlugins(KairosConfig config, final File propertiesFile) throws IOException
 	{
 		File propDir = propertiesFile.getParentFile();
 		if (propDir == null)
@@ -94,7 +94,13 @@ public class Main
 			@Override
 			public boolean accept(File dir, String name)
 			{
-				return (name.endsWith(".properties") && !name.equals(propertiesFile.getName()));
+				try
+				{
+					KairosConfig.ConfigFormat format = KairosConfig.ConfigFormat.fromFileName(name);
+					return (config.isSupportedFormat(format)) && !name.equals(propertiesFile.getName());
+				}
+				catch (IllegalArgumentException ignored) {}
+				return false;
 			}
 		});
 		if (pluginProps == null)
@@ -113,7 +119,7 @@ public class Main
 			{
 				try
 				{
-					props.load(propStream);
+					config.load(propStream, KairosConfig.ConfigFormat.fromFileName(prop));
 				}
 				finally
 				{
@@ -122,10 +128,7 @@ public class Main
 			}
 
 			//Load the file in
-			try(FileInputStream fis = new FileInputStream(new File(propDir, prop)))
-			{
-				props.load(fis);
-			}
+			config.load(new File(propDir, prop));
 		}
 	}
 
@@ -157,62 +160,54 @@ public class Main
 	 * allow overwriting any existing property via correctly named environment variable
 	 * e.g. kairosdb.datastore.cassandra.host_list via KAIROSDB_DATASTORE_CASSANDRA_HOST_LIST
 	 */
-	protected void applyEnvironmentVariables(Properties props) {
+	protected void applyEnvironmentVariables(KairosConfig config) {
 		Map<String, String> env = System.getenv();
-		for (String propName : props.stringPropertyNames()) {
+		for (String propName : config.stringPropertyNames()) {
 			String envVarName = toEnvVarName(propName);
 			if (env.containsKey(envVarName)) {
-				props.setProperty(propName, env.get(envVarName));
+				config.setProperty(propName, env.get(envVarName));
 			}
 		}
 	}
 
 	public Main(File propertiesFile) throws IOException
 	{
-		Properties props = new Properties();
-		InputStream is = getClass().getClassLoader().getResourceAsStream("kairosdb.properties");
-		try
+		KairosConfig config = new KairosConfigImpl();
+		String defaultConfig = "kairosdb.properties";
+		try (InputStream is = getClass().getClassLoader().getResourceAsStream(defaultConfig))
 		{
-			props.load(is);
-		}
-		finally
-		{
-			is.close();
+			config.load(is, KairosConfig.ConfigFormat.fromFileName(defaultConfig));
 		}
 
 		if (propertiesFile != null)
 		{
-			try(FileInputStream fis = new FileInputStream(propertiesFile))
-			{
-				props.load(fis);
-			}
-
-			loadPlugins(props, propertiesFile);
+			config.load(propertiesFile);
+			loadPlugins(config, propertiesFile);
 		}
 
 		for (String name : System.getProperties().stringPropertyNames())
 		{
-			props.setProperty(name, System.getProperty(name));
+			config.setProperty(name, System.getProperty(name));
 		}
 
-		applyEnvironmentVariables(props);
+		applyEnvironmentVariables(config);
 
 		List<Module> moduleList = new ArrayList<Module>();
-		moduleList.add(new CoreModule(props));
+		moduleList.add(new CoreModule(config));
 
-		for (String propName : props.stringPropertyNames())
+		for (String propName : config.stringPropertyNames())
 		{
 			if (propName.startsWith(SERVICE_PREFIX))
 			{
 				Class<?> aClass;
 				try
 				{
-					if ("".equals(props.getProperty(propName)) || "<disabled>".equals(props.getProperty(propName)))
+					if ("".equals(config.getProperty(propName)) || "<disabled>".equals(config.getProperty(propName)))
 						continue;
 
 					String serviceName = propName.substring(SERVICE_PREFIX.length());
 
-					String pluginFolder = props.getProperty(SERVICE_FOLDER_PREFIX + serviceName);
+					String pluginFolder = config.getProperty(SERVICE_FOLDER_PREFIX + serviceName);
 
 					ClassLoader pluginLoader = this.getClass().getClassLoader();
 
@@ -226,14 +221,14 @@ public class Main
 						pluginLoader = new PluginClassLoader(getJarsInPath(pluginFolder), pluginLoader);
 					}
 
-					aClass = pluginLoader.loadClass(props.getProperty(propName));
+					aClass = pluginLoader.loadClass(config.getProperty(propName));
 					if (Module.class.isAssignableFrom(aClass))
 					{
 						Constructor<?> constructor = null;
 
 						try
 						{
-							constructor = aClass.getConstructor(Properties.class);
+							constructor = aClass.getConstructor(KairosConfig.class);
 						}
 						catch (NoSuchMethodException ignore)
 						{
@@ -245,7 +240,7 @@ public class Main
 						 */
 						Module mod;
 						if (constructor != null)
-							mod = (Module) constructor.newInstance(props);
+							mod = (Module) constructor.newInstance(config);
 						else
 							mod = (Module) aClass.newInstance();
 

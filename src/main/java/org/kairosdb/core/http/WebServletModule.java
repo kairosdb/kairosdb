@@ -23,16 +23,16 @@ import com.sun.jersey.guice.JerseyServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import org.eclipse.jetty.servlets.GzipFilter;
 import org.kairosdb.core.http.exceptionmapper.InvalidServerTypeExceptionMapper;
+import org.kairosdb.core.KairosConfig;
 import org.kairosdb.core.http.rest.FeaturesResource;
 import org.kairosdb.core.http.rest.MetadataResource;
 import org.kairosdb.core.http.rest.MetricsResource;
 
 import javax.ws.rs.core.MediaType;
-import java.util.Properties;
 
 public class WebServletModule extends JerseyServletModule
 {
-	public WebServletModule(Properties props)
+	public WebServletModule(KairosConfig props)
 	{
 	}
 

@@ -18,16 +18,15 @@ package org.kairosdb.core.telnet;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
+import org.kairosdb.core.KairosConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Properties;
 
 public class TelnetServerModule extends AbstractModule
 {
 	public static final Logger logger = LoggerFactory.getLogger(TelnetServerModule.class);
 
-	public TelnetServerModule(Properties props)
+	public TelnetServerModule(KairosConfig props)
 	{
 
 	}

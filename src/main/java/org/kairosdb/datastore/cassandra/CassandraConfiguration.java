@@ -7,6 +7,7 @@ import com.google.inject.name.Named;
 import com.typesafe.config.Config;
 import org.kairosdb.core.KairosConfig;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -74,26 +75,41 @@ public class CassandraConfiguration
 
 
 	private final ClusterConfiguration m_writeCluster;
+	private final ClusterConfiguration m_metaCluster;
 
 	private final List<ClusterConfiguration> m_readClusters;
 
 
 	@Inject
-	public CassandraConfiguration(KairosConfig config)
+	public CassandraConfiguration(KairosConfig kairosConfig)
 	{
-		Config writeConfig = config.getConfig().getConfig("kairosdb.datastore.cassandra.write_cluster");
+		Config config = kairosConfig.getConfig();
+		Config writeConfig = config.getConfig("kairosdb.datastore.cassandra.write_cluster");
 
 		m_writeCluster = new ClusterConfiguration(writeConfig);
 
-		List<? extends Config> clientList = config.getConfig().getConfigList("kairosdb.datastore.cassandra.read_clusters");
-
-		ImmutableList.Builder<ClusterConfiguration> readClusterBuilder = new ImmutableList.Builder<>();
-		for (Config client : clientList)
+		if (config.hasPath("kairosdb.datastore.cassandra.meta_cluster"))
 		{
-			readClusterBuilder.add(new ClusterConfiguration(client));
+			m_metaCluster = new ClusterConfiguration(config.getConfig("kairosdb.datastore.cassandra.meta_cluster"));
 		}
+		else
+			m_metaCluster = m_writeCluster;
 
-		m_readClusters = readClusterBuilder.build();
+		if (config.hasPath("kairosdb.datastore.cassandra.read_clusters"))
+		{
+			System.out.println("LOADING READ CLUSTERS");
+			List<? extends Config> clientList = config.getConfigList("kairosdb.datastore.cassandra.read_clusters");
+
+			ImmutableList.Builder<ClusterConfiguration> readClusterBuilder = new ImmutableList.Builder<>();
+			for (Config client : clientList)
+			{
+				readClusterBuilder.add(new ClusterConfiguration(client));
+			}
+
+			m_readClusters = readClusterBuilder.build();
+		}
+		else
+			m_readClusters = ImmutableList.of();
 	}
 
 
@@ -130,6 +146,11 @@ public class CassandraConfiguration
 	public ClusterConfiguration getWriteCluster()
 	{
 		return m_writeCluster;
+	}
+
+	public ClusterConfiguration getMetaCluster()
+	{
+		return m_metaCluster;
 	}
 
 	public List<ClusterConfiguration> getReadClusters()

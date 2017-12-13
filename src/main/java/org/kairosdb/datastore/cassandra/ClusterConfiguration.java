@@ -46,6 +46,8 @@ public class ClusterConfiguration
 
 		m_hostList = config.getStringList("cql_host_list");
 
+		System.out.println("Hosts: "+m_hostList);
+
 		if (config.hasPath("auth.username"))
 			m_authUser = config.getString("auth.username");
 

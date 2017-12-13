@@ -92,9 +92,19 @@ public class CassandraModule extends AbstractModule
 
 	@Provides
 	@Singleton
+	@Named("write_cluster")
 	ClusterConnection getWriteCluster(CassandraConfiguration configuration)
 	{
 		CassandraClient client = new CassandraClientImpl(configuration.getWriteCluster());
+		return new ClusterConnection(client);
+	}
+
+	@Provides
+	@Singleton
+	@Named("meta_cluster")
+	ClusterConnection getMetaCluster(CassandraConfiguration configuration)
+	{
+		CassandraClient client = new CassandraClientImpl(configuration.getMetaCluster());
 		return new ClusterConnection(client);
 	}
 
@@ -106,7 +116,7 @@ public class CassandraModule extends AbstractModule
 
 		for (ClusterConfiguration clusterConfiguration : configuration.getReadClusters())
 		{
-			CassandraClient client = new CassandraClientImpl(configuration.getWriteCluster());
+			CassandraClient client = new CassandraClientImpl(clusterConfiguration);
 			clusters.add(new ClusterConnection(client));
 		}
 
@@ -115,7 +125,7 @@ public class CassandraModule extends AbstractModule
 
 	@Provides
 	@Singleton
-	LoadBalancingPolicy getLoadBalancingPolicy(ClusterConnection connection)
+	LoadBalancingPolicy getLoadBalancingPolicy(@Named("write_cluster")ClusterConnection connection)
 	{
 		return connection.getLoadBalancingPolicy();
 	}
@@ -127,12 +137,12 @@ public class CassandraModule extends AbstractModule
 		return configuration.getWriteCluster().getWriteConsistencyLevel();
 	}
 
-	@Provides
+	/*@Provides
 	@Singleton
 	Session getCassandraSession(ClusterConnection clusterConnection)
 	{
 		return clusterConnection.getSession();
-	}
+	}*/
 
 
 	@Provides

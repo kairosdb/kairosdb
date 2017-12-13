@@ -39,7 +39,8 @@ public class CQLBatch
 	@Inject
 	public CQLBatch(
 			ConsistencyLevel consistencyLevel,
-			ClusterConnection clusterConnection, BatchStats batchStats,
+			@Named("write_cluster")ClusterConnection clusterConnection,
+			BatchStats batchStats,
 			LoadBalancingPolicy loadBalancingPolicy)
 	{
 		m_consistencyLevel = consistencyLevel;

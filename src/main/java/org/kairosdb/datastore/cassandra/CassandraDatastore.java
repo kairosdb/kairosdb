@@ -16,7 +16,6 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.*;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.SetMultimap;
 import org.kairosdb.eventbus.Subscribe;
 import com.google.common.util.concurrent.FutureCallback;
@@ -76,15 +75,10 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	public static final String ROW_KEY_TAG_VALUES = "tag_values";
 	private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-	//private final Cluster m_cluster;
 
-	//new properties
-	private final CassandraClient m_cassandraClient;
-	//private final AstyanaxClient m_astyanaxClient;
-
-
-	private final Schema m_schema;
-	private Session m_session;
+	private final ClusterConnection m_writeClusterWrong;
+	private final ClusterConnection m_serviceCluster;
+	private final List<ClusterConnection> m_readClusters;
 
 	@Inject
 	private final BatchStats m_batchStats = new BatchStats();
@@ -109,24 +103,18 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	@Named("kairosdb.queue_processor.batch_size")
 	private int m_batchSize;  //Used for batching delete requests
 
-	@Inject
-	@Named(KEYSPACE_PROPERTY)
-	private String m_keyspace = "kairosdb";
-
 
 	@Inject
 	public CassandraDatastore(
-			CassandraClient cassandraClient,
 			CassandraConfiguration cassandraConfiguration,
-			Schema schema,
-			Session session,
+			ClusterConnection writeCluster,
+			List<ClusterConnection> readClusters,
 			KairosDataPointFactory kairosDataPointFactory,
 			QueueProcessor queueProcessor,
 			IngestExecutorService congestionExecutor,
 			CassandraModule.BatchHandlerFactory batchHandlerFactory,
 			CassandraModule.DeleteBatchHandlerFactory deleteBatchHandlerFactory) throws DatastoreException
 	{
-		m_cassandraClient = cassandraClient;
 		//m_astyanaxClient = astyanaxClient;
 		m_kairosDataPointFactory = kairosDataPointFactory;
 		m_queueProcessor = queueProcessor;
@@ -135,8 +123,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_batchHandlerFactory = batchHandlerFactory;
 		m_deleteBatchHandlerFactory = deleteBatchHandlerFactory;
 
-		m_schema = schema;
-		m_session = session;
+		m_writeCluster = writeCluster;
+		m_serviceCluster = m_writeCluster;
+		m_readClusters = readClusters;
 
 		m_cassandraConfiguration = cassandraConfiguration;
 
@@ -169,8 +158,11 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	public void close() throws InterruptedException
 	{
 		m_queueProcessor.shutdown();
-		m_session.close();
-		m_cassandraClient.close();
+		m_writeCluster.close();
+		for (ClusterConnection readCluster : m_readClusters)
+		{
+			readCluster.close();
+		}
 	}
 
 	@Subscribe
@@ -191,14 +183,46 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_congestionExecutor.submit(batchHandler);
 	}
 
-
-	private Iterable<String> queryStringIndex(final String key)
+	private interface ClusterCallback
 	{
-		BoundStatement boundStatement = new BoundStatement(m_schema.psStringIndexQuery);
-		boundStatement.setBytesUnsafe(0, serializeString(key));
-		boundStatement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+		public ResultSetFuture query(ClusterConnection connection);
+	}
 
-		ResultSet resultSet = m_session.execute(boundStatement);
+	private Iterator<ResultSet> queryClusters(ClusterCallback cb) throws DatastoreException
+	{
+		List<ResultSetFuture> futures = new ArrayList<>();
+
+		ResultSetFuture resultSetFuture = cb.query(m_writeCluster);
+		futures.add(resultSetFuture);
+
+		for (ClusterConnection readCluster : m_readClusters)
+		{
+			ResultSetFuture future = cb.query(readCluster);
+			futures.add(future);
+		}
+
+		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);
+
+		try
+		{
+			return listListenableFuture.get().iterator();
+		}
+		catch (Exception e)
+		{
+			throw new DatastoreException("CQL Query failure", e);
+		}
+	}
+
+
+	private Iterable<String> queryStringIndex(final String key) throws DatastoreException
+	{
+		Iterator<ResultSet> resultSetIterator = queryClusters((cluster) -> {
+			BoundStatement boundStatement = new BoundStatement(cluster.psStringIndexQuery);
+			boundStatement.setBytesUnsafe(0, serializeString(key));
+			boundStatement.setConsistencyLevel(cluster.getReadConsistencyLevel());
+
+			return cluster.executeAsync(boundStatement);
+		});
 
 		List<String> ret = new ArrayList<String>();
 
@@ -212,19 +236,19 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	}
 
 	@Override
-	public Iterable<String> getMetricNames()
+	public Iterable<String> getMetricNames() throws DatastoreException
 	{
 		return queryStringIndex(ROW_KEY_METRIC_NAMES);
 	}
 
 	@Override
-	public Iterable<String> getTagNames()
+	public Iterable<String> getTagNames() throws DatastoreException
 	{
 		return queryStringIndex(ROW_KEY_TAG_NAMES);
 	}
 
 	@Override
-	public Iterable<String> getTagValues()
+	public Iterable<String> getTagValues() throws DatastoreException
 	{
 		return queryStringIndex(ROW_KEY_TAG_VALUES);
 	}
@@ -252,24 +276,26 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	@Override
 	public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
 	{
-		BoundStatement statement = new BoundStatement(m_schema.psServiceIndexInsert);
+		BoundStatement statement = new BoundStatement(m_serviceCluster.psServiceIndexInsert);
 		statement.setString(0, service);
 		statement.setString(1, serviceKey);
 		statement.setString(2, key);
 		statement.setString(3, value);
+		statement.setConsistencyLevel(m_serviceCluster.getWriteConsistencyLevel());
 
-		m_session.execute(statement);
+		m_serviceCluster.execute(statement);
 	}
 
 	@Override
 	public String getValue(String service, String serviceKey, String key) throws DatastoreException
 	{
-		BoundStatement statement = new BoundStatement(m_schema.psServiceIndexGet);
+		BoundStatement statement = new BoundStatement(m_serviceCluster.psServiceIndexGet);
 		statement.setString(0, service);
 		statement.setString(1, serviceKey);
 		statement.setString(2, key);
+		statement.setConsistencyLevel(m_serviceCluster.getReadConsistencyLevel());
 
-		ResultSet resultSet = m_session.execute(statement);
+		ResultSet resultSet = m_serviceCluster.execute(statement);
 		Row row = resultSet.one();
 
 		String value = null;
@@ -285,15 +311,16 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	{
 		List<String> ret = new ArrayList<>();
 
-		if (m_schema.psServiceIndexListServiceKeys == null)
+		if (m_serviceCluster.psServiceIndexListServiceKeys == null)
 		{
 			throw new DatastoreException("List Service Keys is not available on this version of Cassandra.");
 		}
 
-		BoundStatement statement = new BoundStatement(m_schema.psServiceIndexListServiceKeys);
+		BoundStatement statement = new BoundStatement(m_serviceCluster.psServiceIndexListServiceKeys);
 		statement.setString(0, service);
+		statement.setConsistencyLevel(m_serviceCluster.getReadConsistencyLevel());
 
-		ResultSet resultSet = m_session.execute(statement);
+		ResultSet resultSet = m_serviceCluster.execute(statement);
 		while (!resultSet.isExhausted())
 		{
 			ret.add(resultSet.one().getString(0));
@@ -307,11 +334,12 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	{
 		List<String> ret = new ArrayList<>();
 
-		BoundStatement statement = new BoundStatement(m_schema.psServiceIndexListKeys);
+		BoundStatement statement = new BoundStatement(m_serviceCluster.psServiceIndexListKeys);
 		statement.setString(0, service);
 		statement.setString(1, serviceKey);
+		statement.setConsistencyLevel(m_serviceCluster.getReadConsistencyLevel());
 
-		ResultSet resultSet = m_session.execute(statement);
+		ResultSet resultSet = m_serviceCluster.execute(statement);
 		while (!resultSet.isExhausted())
 		{
 			ret.add(resultSet.one().getString(0));
@@ -328,13 +356,14 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 		List<String> ret = new ArrayList<>();
 
-		BoundStatement statement = new BoundStatement(m_schema.psServiceIndexListKeysPrefix);
+		BoundStatement statement = new BoundStatement(m_serviceCluster.psServiceIndexListKeysPrefix);
 		statement.setString(0, service);
 		statement.setString(1, serviceKey);
 		statement.setString(2, begin);
 		statement.setString(3, end);
+		statement.setConsistencyLevel(m_serviceCluster.getReadConsistencyLevel());
 
-		ResultSet resultSet = m_session.execute(statement);
+		ResultSet resultSet = m_serviceCluster.execute(statement);
 		while (!resultSet.isExhausted())
 		{
 			ret.add(resultSet.one().getString(0));
@@ -347,12 +376,13 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	public void deleteKey(String service, String serviceKey, String key)
 			throws DatastoreException
 	{
-		BoundStatement statement = new BoundStatement(m_schema.psServiceIndexDeleteKey);
+		BoundStatement statement = new BoundStatement(m_serviceCluster.psServiceIndexDeleteKey);
 		statement.setString(0, service);
 		statement.setString(1, serviceKey);
 		statement.setString(2, key);
+		statement.setConsistencyLevel(m_serviceCluster.getWriteConsistencyLevel());
 
-		m_session.execute(statement);
+		m_serviceCluster.execute(statement);
 	}
 
     @Override
@@ -521,16 +551,16 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			if (useLimit)
 			{
 				if (query.getOrder() == Order.ASC)
-					boundStatement = new BoundStatement(m_schema.psDataPointsQueryAscLimit);
+					boundStatement = new BoundStatement(m_writeCluster.psDataPointsQueryAscLimit);
 				else
-					boundStatement = new BoundStatement(m_schema.psDataPointsQueryDescLimit);
+					boundStatement = new BoundStatement(m_writeCluster.psDataPointsQueryDescLimit);
 			}
 			else
 			{
 				if (query.getOrder() == Order.ASC)
-					boundStatement = new BoundStatement(m_schema.psDataPointsQueryAsc);
+					boundStatement = new BoundStatement(m_writeCluster.psDataPointsQueryAsc);
 				else
-					boundStatement = new BoundStatement(m_schema.psDataPointsQueryDesc);
+					boundStatement = new BoundStatement(m_writeCluster.psDataPointsQueryDesc);
 			}
 
 			boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
@@ -540,7 +570,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			if (useLimit)
 				boundStatement.setInt(3, query.getLimit());
 
-			boundStatement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+			boundStatement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
 
 			try
 			{
@@ -553,7 +583,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 			if (queryMonitor.keepRunning())
 			{
-				ResultSetFuture resultSetFuture = m_session.executeAsync(boundStatement);
+				ResultSetFuture resultSetFuture = m_writeCluster.executeAsync(boundStatement);
 				queryResults.add(resultSetFuture);
 
 				Futures.addCallback(resultSetFuture, new QueryListener(rowKey, queryCallback, querySemaphore, queryMonitor), resultsExecutor);
@@ -590,9 +620,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 	private void deletePartialRow(DataPointsRowKey rowKey, long start, long end) throws DatastoreException
 	{
-		if (m_schema.psDataPointsDeleteRange != null)
+		if (m_writeCluster.psDataPointsDeleteRange != null)
 		{
-			BoundStatement statement = new BoundStatement(m_schema.psDataPointsDeleteRange);
+			BoundStatement statement = new BoundStatement(m_writeCluster.psDataPointsDeleteRange);
 			statement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 			ByteBuffer b = ByteBuffer.allocate(4);
 			b.putInt(getColumnName(rowKey.getTimestamp(), start));
@@ -604,8 +634,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			b.rewind();
 			statement.setBytesUnsafe(2, b);
 
-			statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
-			m_session.executeAsync(statement);
+			statement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
+			m_writeCluster.executeAsync(statement);
 		}
 		else
 		{
@@ -640,29 +670,29 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			if (deleteQuery.getStartTime() <= rowKeyTimestamp && (deleteQuery.getEndTime() >= rowKeyTimestamp + ROW_WIDTH - 1))
 			{
 				//System.out.println("Delete entire row");
-				BoundStatement statement = new BoundStatement(m_schema.psDataPointsDeleteRow);
+				BoundStatement statement = new BoundStatement(m_writeCluster.psDataPointsDeleteRow);
 				statement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
-				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
-				m_session.execute(statement);
+				statement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
+				m_writeCluster.execute(statement);
 
 				//Delete from old row keys
-				statement = new BoundStatement(m_schema.psRowKeyIndexDelete);
+				statement = new BoundStatement(m_writeCluster.psRowKeyIndexDelete);
 				statement.setBytesUnsafe(0, serializeString(rowKey.getMetricName()));
 				statement.setBytesUnsafe(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
-				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
-				m_session.execute(statement);
+				statement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
+				m_writeCluster.execute(statement);
 
-				statement = new BoundStatement(m_schema.psRowKeyDelete);
+				statement = new BoundStatement(m_writeCluster.psRowKeyDelete);
 				statement.setString(0, rowKey.getMetricName());
 				statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
-				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
-				m_session.execute(statement);
+				statement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
+				m_writeCluster.execute(statement);
 
-				statement = new BoundStatement(m_schema.psRowKeyTimeDelete);
+				statement = new BoundStatement(m_writeCluster.psRowKeyTimeDelete);
 				statement.setString(0, rowKey.getMetricName());
 				statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
-				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
-				m_session.execute(statement);
+				statement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
+				m_writeCluster.execute(statement);
 
 				clearCache = true;
 			}
@@ -696,17 +726,17 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		// If index is gone, delete metric name from Strings column family
 		if (deleteAll)
 		{
-			BoundStatement statement = new BoundStatement(m_schema.psRowKeyIndexDeleteRow);
+			BoundStatement statement = new BoundStatement(m_writeCluster.psRowKeyIndexDeleteRow);
 			statement.setBytesUnsafe(0, serializeString(deleteQuery.getName()));
-			statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
-			m_session.executeAsync(statement);
+			statement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
+			m_writeCluster.executeAsync(statement);
 
 			//Delete from string index
-			statement = new BoundStatement(m_schema.psStringIndexDelete);
+			statement = new BoundStatement(m_writeCluster.psStringIndexDelete);
 			statement.setBytesUnsafe(0, serializeString(ROW_KEY_METRIC_NAMES));
 			statement.setBytesUnsafe(1, serializeString(deleteQuery.getName()));
-			statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
-			m_session.executeAsync(statement);
+			statement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
+			m_writeCluster.executeAsync(statement);
 
 			clearCache = true;
 			m_metricNameCache.clear();
@@ -756,7 +786,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			//todo use Iterable.concat to query multiple metrics at the same time.
 			//each filtered iterator will be combined into one and returned.
 			//one issue is that the queries are done in the constructor
-			//would like to do them lazily but would have to through an exception through
+			//would like to do them lazily but would have to throw an exception through
 			//hasNext call, ick
 			ret = new CQLFilteredRowKeyIterator(query.getName(), query.getStartTime(),
 					query.getEndTime(), query.getTags());
@@ -835,31 +865,31 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			//Legacy key index - index is all in one row
 			if ((startTime < 0) && (endTime >= 0))
 			{
-				BoundStatement negStatement = new BoundStatement(m_schema.psRowKeyIndexQuery);
+				BoundStatement negStatement = new BoundStatement(m_writeCluster.psRowKeyIndexQuery);
 				negStatement.setBytesUnsafe(0, serializeString(metricName));
 				setStartEndKeys(negStatement, metricName, startTime, -1L);
-				negStatement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+				negStatement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
 
-				ResultSetFuture future = m_session.executeAsync(negStatement);
+				ResultSetFuture future = m_writeCluster.executeAsync(negStatement);
 				futures.add(future);
 
 
-				BoundStatement posStatement = new BoundStatement(m_schema.psRowKeyIndexQuery);
+				BoundStatement posStatement = new BoundStatement(m_writeCluster.psRowKeyIndexQuery);
 				posStatement.setBytesUnsafe(0, serializeString(metricName));
 				setStartEndKeys(posStatement, metricName, 0L, endTime);
-				posStatement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+				posStatement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
 
-				future = m_session.executeAsync(posStatement);
+				future = m_writeCluster.executeAsync(posStatement);
 				futures.add(future);
 			}
 			else
 			{
-				BoundStatement statement = new BoundStatement(m_schema.psRowKeyIndexQuery);
+				BoundStatement statement = new BoundStatement(m_writeCluster.psRowKeyIndexQuery);
 				statement.setBytesUnsafe(0, serializeString(metricName));
 				setStartEndKeys(statement, metricName, startTime, endTime);
-				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+				statement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
 
-				ResultSetFuture future = m_session.executeAsync(statement);
+				ResultSetFuture future = m_writeCluster.executeAsync(statement);
 				futures.add(future);
 			}
 
@@ -868,14 +898,14 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			List<Long> queryKeyList = createQueryKeyList(metricName, startTime, endTime);
 			for (Long keyTime : queryKeyList)
 			{
-				BoundStatement statement = new BoundStatement(m_schema.psRowKeyQuery);
+				BoundStatement statement = new BoundStatement(m_writeCluster.psRowKeyQuery);
 				statement.setString(0, metricName);
 				statement.setTimestamp(1, new Date(keyTime));
-				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+				statement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
 
 				//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
 
-				ResultSetFuture future = m_session.executeAsync(statement);
+				ResultSetFuture future = m_writeCluster.executeAsync(statement);
 				futures.add(future);
 			}
 
@@ -939,15 +969,15 @@ outer:
 		{
 			List<Long> ret = new ArrayList<>();
 
-			BoundStatement statement = new BoundStatement(m_schema.psRowKeyTimeQuery);
+			BoundStatement statement = new BoundStatement(m_writeCluster.psRowKeyTimeQuery);
 			statement.setString(0, metricName);
 			statement.setTimestamp(1, new Date(calculateRowTime(startTime)));
 			statement.setTimestamp(2, new Date(endTime));
-			statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+			statement.setConsistencyLevel(m_writeCluster.getReadConsistencyLevel());
 
 			//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
 
-			ResultSet rows = m_session.execute(statement);
+			ResultSet rows = m_writeCluster.execute(statement);
 
 			while (!rows.isExhausted())
 			{

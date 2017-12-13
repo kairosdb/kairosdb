@@ -19,6 +19,7 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.*;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
@@ -64,8 +65,8 @@ public class CassandraModule extends AbstractModule
 		bind(CassandraDatastore.class).in(Scopes.SINGLETON);
 		bind(CleanRowKeyCache.class).in(Scopes.SINGLETON);
 		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);
-		bind(CassandraClient.class).to(CassandraClientImpl.class);
-		bind(CassandraClientImpl.class).in(Scopes.SINGLETON);
+		//bind(CassandraClient.class).to(CassandraClientImpl.class);
+		//bind(CassandraClientImpl.class).in(Scopes.SINGLETON);
 		bind(BatchStats.class).in(Scopes.SINGLETON);
 
 		bind(new TypeLiteral<Map<String, String>>(){}).annotatedWith(Names.named(CASSANDRA_AUTH_MAP))
@@ -82,39 +83,55 @@ public class CassandraModule extends AbstractModule
 		install(new FactoryModuleBuilder().build(CQLBatchFactory.class));
 	}
 
-	@Provides
+	/*@Provides
 	@Named("keyspace")
 	String getKeyspace(CassandraConfiguration configuration)
 	{
 		return configuration.getKeyspaceName();
+	}*/
+
+	@Provides
+	@Singleton
+	ClusterConnection getWriteCluster(CassandraConfiguration configuration)
+	{
+		CassandraClient client = new CassandraClientImpl(configuration.getWriteCluster());
+		return new ClusterConnection(client);
 	}
 
 	@Provides
 	@Singleton
-	Schema getCassandraSchema(CassandraClient cassandraClient)
+	List<ClusterConnection> getReadClusters(CassandraConfiguration configuration)
 	{
-		return new Schema(cassandraClient);
+		ImmutableList.Builder<ClusterConnection> clusters = new ImmutableList.Builder<>();
+
+		for (ClusterConfiguration clusterConfiguration : configuration.getReadClusters())
+		{
+			CassandraClient client = new CassandraClientImpl(configuration.getWriteCluster());
+			clusters.add(new ClusterConnection(client));
+		}
+
+		return clusters.build();
 	}
 
 	@Provides
 	@Singleton
-	LoadBalancingPolicy getLoadBalancingPolicy(CassandraClient cassandraClient)
+	LoadBalancingPolicy getLoadBalancingPolicy(ClusterConnection connection)
 	{
-		return cassandraClient.getLoadBalancingPolicy();
+		return connection.getLoadBalancingPolicy();
 	}
 
 	@Provides
 	@Singleton
 	ConsistencyLevel getWriteConsistencyLevel(CassandraConfiguration configuration)
 	{
-		return configuration.getDataWriteLevel();
+		return configuration.getWriteCluster().getWriteConsistencyLevel();
 	}
 
 	@Provides
 	@Singleton
-	Session getCassandraSession(Schema schema)
+	Session getCassandraSession(ClusterConnection clusterConnection)
 	{
-		return schema.getSession();
+		return clusterConnection.getSession();
 	}
 
 

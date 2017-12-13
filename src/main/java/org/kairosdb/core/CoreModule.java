@@ -17,14 +17,15 @@
 package org.kairosdb.core;
 
 import com.google.common.net.InetAddresses;
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.TypeLiteral;
+import com.google.inject.*;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.name.Names;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigValue;
+import com.typesafe.config.ConfigValueType;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.AvgAggregator;
 import org.kairosdb.core.aggregator.CountAggregator;
@@ -84,7 +85,9 @@ import se.ugli.bigqueue.BigArray;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.util.Enumeration;
 import java.util.MissingResourceException;
+import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -124,6 +127,45 @@ public class CoreModule extends AbstractModule
 		}
 
 		return (klass);
+	}
+
+	public void bindConfiguration(Binder binder)
+	{
+		binder = binder.skipSources(Names.class);
+
+		Config config = m_config.getConfig();
+		for (String propertyName : m_config)
+		{
+			ConfigValue value = config.getValue(propertyName);
+
+			ConfigValueType configValueType = value.valueType();
+
+			try
+			{
+				//type binding didn't work well for numbers, guice will not convert double to int
+				/*switch (configValueType)
+				{
+					case STRING:
+						binder.bindConstant().annotatedWith(Names.named(propertyName)).to((String) value.unwrapped());
+						break;
+					case BOOLEAN:
+						binder.bindConstant().annotatedWith(Names.named(propertyName)).to((Boolean) value.unwrapped());
+						break;
+					case NUMBER:
+						Number number = (Number) value.unwrapped();
+						binder.bindConstant().annotatedWith(Names.named(propertyName)).to(number.doubleValue());
+				}*/
+
+				//binder.bind(Key.get(String.class, Names.named(propertyName))).toInstance(value);
+
+				bindConstant().annotatedWith(Names.named(propertyName)).to(value.unwrapped().toString());
+			}
+			catch (Exception e)
+			{
+				System.out.println("Failed to bind property "+propertyName);
+				e.printStackTrace();
+			}
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -194,7 +236,8 @@ public class CoreModule extends AbstractModule
 		bind(TagGroupBy.class);
 		bind(BinGroupBy.class);
 
-		Names.bindProperties(binder(), m_config);
+		//Names.bindProperties(binder(), m_config);
+		bindConfiguration(binder());
 		bind(KairosConfig.class).toInstance(m_config);
 
 		String hostname = m_config.getProperty("kairosdb.hostname");

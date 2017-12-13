@@ -60,7 +60,7 @@ public class DataPointsParserTest
 	@Before
 	public void setup()
 	{
-		eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfigImpl()));
+		eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfig()));
 		publisher = eventBus.createPublisher(DataPointEvent.class);
 	}
 

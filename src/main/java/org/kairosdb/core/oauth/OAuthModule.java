@@ -31,12 +31,12 @@ public class OAuthModule extends ServletModule
 	{
 		m_tokenStore = new ConsumerTokenStore();
 
-		for (String key : props.keySet())
+		for (String key : props)
 		{
 			if (key.startsWith(CONSUMER_PREFIX))
 			{
 				String consumerKey = key.substring(CONSUMER_PREFIX.length());
-				String consumerToken = props.get(key);
+				String consumerToken = props.getProperty(key);
 
 				m_tokenStore.addToken(consumerKey, consumerToken);
 			}

@@ -160,20 +160,26 @@ public class Main
 	 * allow overwriting any existing property via correctly named environment variable
 	 * e.g. kairosdb.datastore.cassandra.host_list via KAIROSDB_DATASTORE_CASSANDRA_HOST_LIST
 	 */
-	protected void applyEnvironmentVariables(KairosConfig config) {
+	protected void applyEnvironmentVariables(KairosConfig config)
+	{
 		Map<String, String> env = System.getenv();
-		for (String propName : config.stringPropertyNames()) {
+		Map<String, String> props = new HashMap<>();
+		for (String propName : config)
+		{
 			String envVarName = toEnvVarName(propName);
-			if (env.containsKey(envVarName)) {
-				config.setProperty(propName, env.get(envVarName));
+			if (env.containsKey(envVarName))
+			{
+				props.put(propName, env.get(envVarName));
 			}
 		}
+
+		config.load(props);
 	}
 
 	public Main(File propertiesFile) throws IOException
 	{
-		KairosConfig config = new KairosConfigImpl();
-		String defaultConfig = "kairosdb.properties";
+		KairosConfig config = new KairosConfig();
+		String defaultConfig = "kairosdb.conf";
 		try (InputStream is = getClass().getClassLoader().getResourceAsStream(defaultConfig))
 		{
 			config.load(is, KairosConfig.ConfigFormat.fromFileName(defaultConfig));
@@ -185,17 +191,21 @@ public class Main
 			loadPlugins(config, propertiesFile);
 		}
 
-		for (String name : System.getProperties().stringPropertyNames())
-		{
-			config.setProperty(name, System.getProperty(name));
-		}
+		config.loadSystemProperties();
 
 		applyEnvironmentVariables(config);
+
+		config.resolve();
+
+		/*for (String s : config)
+		{
+			System.out.println(s);
+		}*/
 
 		List<Module> moduleList = new ArrayList<Module>();
 		moduleList.add(new CoreModule(config));
 
-		for (String propName : config.stringPropertyNames())
+		for (String propName : config)
 		{
 			if (propName.startsWith(SERVICE_PREFIX))
 			{
@@ -260,7 +270,9 @@ public class Main
 			}
 		}
 
+		System.out.println("here");
 		m_injector = Guice.createInjector(moduleList);
+		System.out.println("done");
 	}
 
 
@@ -306,90 +318,97 @@ public class Main
 		if (!StringUtils.isNullOrEmpty(arguments.propertiesFile))
 			propertiesFile = new File(arguments.propertiesFile);
 
-		final Main main = new Main(propertiesFile);
-
-		if (arguments.operationCommand.equals("export"))
+		try
 		{
-			if (!StringUtils.isNullOrEmpty(arguments.exportFile))
-			{
-				Writer ps = new OutputStreamWriter(new FileOutputStream(arguments.exportFile,
-						arguments.appendToExportFile), "UTF-8");
-				main.runExport(ps, arguments.exportMetricNames);
-				ps.flush();
-				ps.close();
-				System.out.println("Export finished");
-			}
-			else
-			{
-				OutputStreamWriter writer = new OutputStreamWriter(System.out, "UTF-8");
-				main.runExport(writer, arguments.exportMetricNames);
-				writer.flush();
-			}
+			final Main main = new Main(propertiesFile);
 
-			main.stopServices();
-			System.out.println("All done");
-		}
-		else if (arguments.operationCommand.equals("import"))
-		{
-			if (!StringUtils.isNullOrEmpty(arguments.exportFile))
+			if (arguments.operationCommand.equals("export"))
 			{
-				FileInputStream fin = new FileInputStream(arguments.exportFile);
-				main.runImport(fin);
-				fin.close();
-			}
-			else
-			{
-				main.runImport(System.in);
-			}
-			System.out.println("Import finished");
-			Thread.sleep(10000);
-
-			main.stopServices();
-			System.out.println("All done");
-		}
-		else if (arguments.operationCommand.equals("run") || arguments.operationCommand.equals("start"))
-		{
-			try
-			{
-				Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
+				if (!StringUtils.isNullOrEmpty(arguments.exportFile))
 				{
-					public void run()
+					Writer ps = new OutputStreamWriter(new FileOutputStream(arguments.exportFile,
+							arguments.appendToExportFile), "UTF-8");
+					main.runExport(ps, arguments.exportMetricNames);
+					ps.flush();
+					ps.close();
+					System.out.println("Export finished");
+				}
+				else
+				{
+					OutputStreamWriter writer = new OutputStreamWriter(System.out, "UTF-8");
+					main.runExport(writer, arguments.exportMetricNames);
+					writer.flush();
+				}
+
+				main.stopServices();
+				System.out.println("All done");
+			}
+			else if (arguments.operationCommand.equals("import"))
+			{
+				if (!StringUtils.isNullOrEmpty(arguments.exportFile))
+				{
+					FileInputStream fin = new FileInputStream(arguments.exportFile);
+					main.runImport(fin);
+					fin.close();
+				}
+				else
+				{
+					main.runImport(System.in);
+				}
+				System.out.println("Import finished");
+				Thread.sleep(10000);
+
+				main.stopServices();
+				System.out.println("All done");
+			}
+			else if (arguments.operationCommand.equals("run") || arguments.operationCommand.equals("start"))
+			{
+				try
+				{
+					Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
 					{
-						try
+						public void run()
 						{
-							main.stopServices();
+							try
+							{
+								main.stopServices();
 
-							s_shutdownObject.countDown();
+								s_shutdownObject.countDown();
+							}
+							catch (Exception e)
+							{
+								logger.error("Shutdown exception:", e);
+							}
 						}
-						catch (Exception e)
-						{
-							logger.error("Shutdown exception:", e);
-						}
-					}
-				}));
+					}));
 
-				main.startServices();
+					main.startServices();
 
-				logger.info("------------------------------------------");
-				logger.info("     KairosDB service started");
-				logger.info("------------------------------------------");
+					logger.info("------------------------------------------");
+					logger.info("     KairosDB service started");
+					logger.info("------------------------------------------");
 
-				//main.runMissTest();
-				waitForShutdown();
+					//main.runMissTest();
+					waitForShutdown();
+				}
+				catch (Exception e)
+				{
+					logger.error("Failed starting up services", e);
+					//main.stopServices();
+					System.exit(0);
+				}
+				finally
+				{
+					logger.info("--------------------------------------");
+					logger.info("     KairosDB service is now down!");
+					logger.info("--------------------------------------");
+				}
+
 			}
-			catch (Exception e)
-			{
-				logger.error("Failed starting up services", e);
-				//main.stopServices();
-				System.exit(0);
-			}
-			finally
-			{
-				logger.info("--------------------------------------");
-				logger.info("     KairosDB service is now down!");
-				logger.info("--------------------------------------");
-			}
-
+		}
+		catch (Exception e)
+		{
+			logger.error("Failed to startup", e);
 		}
 	}
 

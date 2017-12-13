@@ -420,9 +420,12 @@ def doRun(Rule rule)
 		kairosDefinition.set("command", "run")
 
 	//Check if you have a custom kairosdb.properties file and load it.
-	customProps = new File("kairosdb.conf")
-	if (customProps.exists())
+	customConf = new File("kairosdb.conf")
+	customProps = new File("kairosdb.properties")
+	if (customConf.exists())
 		kairosDefinition.set("properties", "kairosdb.conf")
+	else if (customProps.exists())
+		kairosDefinition.set("properties", "kairosdb.properties")
 
 	if (rule.getProperty("DEBUG"))
 		kairosDefinition.set("debug")

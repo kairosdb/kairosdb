@@ -40,23 +40,17 @@ public class CassandraModule extends AbstractModule
 	public static final String HECTOR_PREFIX = "kairosdb.datastore.cassandra.hector.";
 
 	private Map<String, String> m_authMap = new HashMap<String, String>();
-	private Map<String, Object> m_hectorMap = new HashMap<String, Object>();
 
 	public CassandraModule(KairosConfig props)
 	{
-		for (String key : props.keySet())
+		for (String key : props)
 		{
 			if (key.startsWith(AUTH_PREFIX))
 			{
 				String consumerKey = key.substring(AUTH_PREFIX.length());
-				String consumerToken = props.get(key);
+				String consumerToken = props.getProperty(key);
 
 				m_authMap.put(consumerKey, consumerToken);
-			}
-			else if (key.startsWith(HECTOR_PREFIX))
-			{
-				String configKey = key.substring(HECTOR_PREFIX.length());
-				m_hectorMap.put(configKey, props.get(key));
 			}
 		}
 	}

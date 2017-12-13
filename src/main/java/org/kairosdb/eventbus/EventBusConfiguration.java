@@ -31,7 +31,7 @@ public class EventBusConfiguration
     {
         checkNotNull(config, "properties cannot be null");
 
-        for (String property : config.keySet()) {
+        for (String property : config) {
             if (property.startsWith(KAIROSDB_EVENTBUS_FILTER_PRIORITY_PREFIX))
             {
                 String className = property.substring(property.indexOf(KAIROSDB_EVENTBUS_FILTER_PRIORITY_PREFIX) + PREFIX_LENGTH);

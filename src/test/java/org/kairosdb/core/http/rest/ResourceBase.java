@@ -53,7 +53,7 @@ import java.util.*;
 
 public abstract class ResourceBase
 {
-    private static final FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfigImpl()));
+    private static final FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfig()));
     private static WebServer server;
 
     static QueryQueuingManager queuingManager;
@@ -71,7 +71,7 @@ public abstract class ResourceBase
         datastore = new TestDatastore();
         queuingManager = new QueryQueuingManager(3, "localhost");
 
-        Injector injector = Guice.createInjector(new WebServletModule(new KairosConfigImpl()), new AbstractModule()
+        Injector injector = Guice.createInjector(new WebServletModule(new KairosConfig()), new AbstractModule()
         {
             @Override
             protected void configure()
@@ -110,7 +110,7 @@ public abstract class ResourceBase
                 bind(SimpleStatsReporter.class);
                 bind(String.class).annotatedWith(Names.named("kairosdb.server.type")).toInstance("ALL");
 
-                KairosConfig props = new KairosConfigImpl();
+                KairosConfig props = new KairosConfig();
                 String configFileName = "kairosdb.properties";
                 InputStream is = getClass().getClassLoader().getResourceAsStream(configFileName);
                 try

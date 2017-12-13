@@ -25,7 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.KairosConfigImpl;
+import org.kairosdb.core.KairosConfig;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.Datastore;
@@ -54,7 +54,7 @@ public class PutCommandTest
 	@Before
 	public void setup() throws DatastoreException
 	{
-		FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfigImpl()));
+		FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfig()));
 		m_datastore = new FakeDatastore();
 		eventBus.register(m_datastore);
 

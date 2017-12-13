@@ -22,7 +22,7 @@ import com.google.common.io.Resources;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
-import org.kairosdb.core.KairosConfigImpl;
+import org.kairosdb.core.KairosConfig;
 import org.kairosdb.core.KairosFeatureProcessor;
 import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
@@ -56,7 +56,7 @@ public class QueryParserTest
 	public void setup() throws KairosDBException
 	{
 		parser = new QueryParser(new KairosFeatureProcessor(new TestAggregatorFactory(), new TestGroupByFactory()), new TestQueryPluginFactory());
-		eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfigImpl()));
+		eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfig()));
 	}
 
 	@Test

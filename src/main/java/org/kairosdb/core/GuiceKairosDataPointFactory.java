@@ -70,7 +70,7 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 			}
 		}
 
-		for (String key : props.keySet())
+		for (String key : props)
 		{
 			if (key.startsWith(DATAPOINTS_FACTORY_PROP_PREFIX))
 			{

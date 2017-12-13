@@ -3,6 +3,10 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigList;
+import com.typesafe.config.ConfigValue;
+import org.kairosdb.core.KairosConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -123,8 +127,16 @@ public class CassandraConfiguration
 	@Named(MAX_QUEUE_SIZE)
 	private int m_maxQueueSize = 500;
 
-	public CassandraConfiguration()
+	@Inject
+	public CassandraConfiguration(KairosConfig config)
 	{
+		config.getConfig().getConfig("kairosdb.datastore.cassandra.write_cluster");
+
+		/*List<? extends Config> clientList = config.getConfig().getConfigList("kairosdb.datastore.cassandra.read_clusters");
+
+		for (Config client : clientList)
+		{
+		}*/
 	}
 
 	public CassandraConfiguration(String keyspaceName)

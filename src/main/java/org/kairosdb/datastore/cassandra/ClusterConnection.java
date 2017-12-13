@@ -1,17 +1,16 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.InvalidQueryException;
+import com.datastax.driver.core.*;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  Created by bhawkins on 4/29/17.
  */
-public class Schema
+public class ClusterConnection
 {
-	public static final Logger logger = LoggerFactory.getLogger(Schema.class);
+	public static final Logger logger = LoggerFactory.getLogger(ClusterConnection.class);
 
 	public static final String CREATE_KEYSPACE = "" +
 			"CREATE KEYSPACE IF NOT EXISTS %s" +
@@ -201,13 +200,16 @@ public class Schema
 	public final PreparedStatement psDataPointsDelete;
 
 	private final Session m_session;
+	private final CassandraClient m_cassandraClient;
 
 
-	public Schema(CassandraClient cassandraClient)
+	public ClusterConnection(CassandraClient cassandraClient)
 	{
 		setupSchema(cassandraClient);
 
 		m_session = cassandraClient.getKeyspaceSession();
+
+		m_cassandraClient = cassandraClient;
 
 		psDataPointsInsert = m_session.prepare(DATA_POINTS_INSERT);
 		//m_psInsertRowKey      = m_session.prepare(ROW_KEY_INDEX_INSERT);
@@ -264,9 +266,45 @@ public class Schema
 
 	}
 
+	public void close()
+	{
+		m_session.close();
+		m_cassandraClient.close();
+	}
+
 	public Session getSession()
 	{
 		return m_session;
+	}
+
+	public LoadBalancingPolicy getLoadBalancingPolicy()
+	{
+		return m_cassandraClient.getLoadBalancingPolicy();
+	}
+
+	public ResultSet execute(Statement statement)
+	{
+		return m_session.execute(statement);
+	}
+
+	public ResultSetFuture executeAsync(Statement statement)
+	{
+		return m_session.executeAsync(statement);
+	}
+
+	public ConsistencyLevel getReadConsistencyLevel()
+	{
+		return m_cassandraClient.getClusterConfiguration().getReadConsistencyLevel();
+	}
+
+	public ConsistencyLevel getWriteConsistencyLevel()
+	{
+		return m_cassandraClient.getClusterConfiguration().getWriteConsistencyLevel();
+	}
+
+	public String getKeyspace()
+	{
+		return m_cassandraClient.getKeyspace();
 	}
 
 	private void setupSchema(CassandraClient cassandraClient)

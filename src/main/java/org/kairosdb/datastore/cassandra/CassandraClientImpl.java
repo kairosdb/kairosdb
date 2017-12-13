@@ -45,20 +45,26 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	@Inject(optional=true)
 	private AuthProvider m_authProvider = null;
 
+	private final String m_clusterName;
+
+	private final ClusterConfiguration m_clusterConfiguration;
+
 	@Inject
-	public CassandraClientImpl(CassandraConfiguration configuration)
+	public CassandraClientImpl(ClusterConfiguration configuration)
 	{
+		m_clusterConfiguration = configuration;
+		m_clusterName = configuration.getClusterName();
 		//Passing shuffleReplicas = false so we can properly batch data to
 		//instances.
 		m_loadBalancingPolicy = new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build(), false);
 		final Cluster.Builder builder = new Cluster.Builder()
 				//.withProtocolVersion(ProtocolVersion.V3)
 				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL,
-						configuration.getLocalCoreConnections(), configuration.getLocalMaxConnections())
+						configuration.getConnectionsLocalCore(), configuration.getConnectionsLocalMax())
 						.setConnectionsPerHost(HostDistance.REMOTE,
-						configuration.getRemoteCoreConnections(), configuration.getRemoteMaxConnections())
-					.setMaxRequestsPerConnection(HostDistance.LOCAL, configuration.getLocalMaxReqPerConn())
-					.setMaxRequestsPerConnection(HostDistance.REMOTE, configuration.getRemoteMaxReqPerConn())
+						configuration.getConnectionsRemoteCore(), configuration.getConnectionsRemoteMax())
+					.setMaxRequestsPerConnection(HostDistance.LOCAL, configuration.getRequestsPerConnectionLocal())
+					.setMaxRequestsPerConnection(HostDistance.REMOTE, configuration.getRequestsPerConnectionRemote())
 					.setMaxQueueSize(configuration.getMaxQueueSize()))
 				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 10 * 1000))
 				.withLoadBalancingPolicy(m_loadBalancingPolicy)
@@ -77,9 +83,9 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		{
 			builder.withAuthProvider(m_authProvider);
 		}
-		else if (configuration.getAuthUserName() != null && configuration.getAuthPassword() != null)
+		else if (configuration.getAuthUser() != null && configuration.getAuthPassword() != null)
 		{
-			builder.withCredentials(configuration.getAuthUserName(),
+			builder.withCredentials(configuration.getAuthUser(),
 					configuration.getAuthPassword());
 		}
 
@@ -94,12 +100,17 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 			builder.withSSL();
 
 		m_cluster = builder.build();
-		m_keyspace = configuration.getKeyspaceName();
+		m_keyspace = configuration.getKeyspace();
 	}
 
 	public LoadBalancingPolicy getLoadBalancingPolicy()
 	{
 		return m_loadBalancingPolicy;
+	}
+
+	public ClusterConfiguration getClusterConfiguration()
+	{
+		return m_clusterConfiguration;
 	}
 
 	@Override
@@ -132,6 +143,7 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	{
 		DataPointSet dps = new DataPointSet(new StringBuilder(metricPrefix).append(".").append(metricSuffix).toString());
 		dps.addTag("host", m_hostName);
+		dps.addTag("cluster", m_clusterName);
 		dps.addDataPoint(m_longDataPointFactory.createDataPoint(now, value));
 
 		return dps;
@@ -142,6 +154,7 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	{
 		DataPointSet dps = new DataPointSet(new StringBuilder(metricPrefix).append(".").append(metricSuffix).toString());
 		dps.addTag("host", m_hostName);
+		dps.addTag("cluster", m_clusterName);
 		dps.addDataPoint(m_doubleDataPointFactory.createDataPoint(now, value));
 
 		return dps;

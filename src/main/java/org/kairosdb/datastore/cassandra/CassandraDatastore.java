@@ -16,7 +16,8 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.*;
-import com.google.common.collect.SetMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterators;
 import org.kairosdb.eventbus.Subscribe;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -78,6 +79,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	private final ClusterConnection m_writeCluster;
 	private final ClusterConnection m_metaCluster;
 	private final List<ClusterConnection> m_readClusters;
+	private final Map<String, ClusterConnection> m_clusterMap;
 
 	@Inject
 	private final BatchStats m_batchStats = new BatchStats();
@@ -127,13 +129,23 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_metaCluster = metaCluster;
 		m_readClusters = readClusters;
 
+		ImmutableMap.Builder<String, ClusterConnection> builder = ImmutableMap.builder();
+		builder.put(m_writeCluster.getClusterName(), m_writeCluster);
+
+		for (ClusterConnection readCluster : readClusters)
+		{
+			builder.put(readCluster.getClusterName(), readCluster);
+		}
+
+		m_clusterMap = builder.build();
+
 		m_cassandraConfiguration = cassandraConfiguration;
 
 		//This needs to be done last as it tells the processor we are ready for data
 		m_queueProcessor.setProcessorHandler(this);
 	}
 
-	private static ByteBuffer serializeString(String str)
+	public static ByteBuffer serializeString(String str)
 	{
 		return ByteBuffer.wrap(str.getBytes(UTF_8));
 	}
@@ -553,7 +565,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		while (rowKeys.hasNext())
 		{
 			rowCount ++;
-			int sessionNum = 1; //rowCount % 2;
 			DataPointsRowKey rowKey = rowKeys.next();
 			long tierRowTime = rowKey.getTimestamp();
 			int startTime;
@@ -576,6 +587,32 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			endBuffer.putInt(endTime);
 			endBuffer.rewind();
 
+			ClusterConnection cluster = m_clusterMap.get(rowKey.getClusterName());
+
+			BoundStatement boundStatement;
+			if (useLimit)
+			{
+				if (query.getOrder() == Order.ASC)
+					boundStatement = new BoundStatement(cluster.psDataPointsQueryAscLimit);
+				else
+					boundStatement = new BoundStatement(cluster.psDataPointsQueryDescLimit);
+			}
+			else
+			{
+				if (query.getOrder() == Order.ASC)
+					boundStatement = new BoundStatement(cluster.psDataPointsQueryAsc);
+				else
+					boundStatement = new BoundStatement(cluster.psDataPointsQueryDesc);
+			}
+
+			boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
+			boundStatement.setBytesUnsafe(1, startBuffer);
+			boundStatement.setBytesUnsafe(2, endBuffer);
+
+			if (useLimit)
+				boundStatement.setInt(3, query.getLimit());
+
+			boundStatement.setConsistencyLevel(cluster.getReadConsistencyLevel());
 
 			try
 			{
@@ -588,43 +625,11 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 			if (queryMonitor.keepRunning())
 			{
-				List<ResultSetFuture> resultSetFutures = queryClusters((cluster) ->
-						{
-							BoundStatement boundStatement;
-							if (useLimit)
-							{
-								if (query.getOrder() == Order.ASC)
-									boundStatement = new BoundStatement(cluster.psDataPointsQueryAscLimit);
-								else
-									boundStatement = new BoundStatement(cluster.psDataPointsQueryDescLimit);
-							}
-							else
-							{
-								if (query.getOrder() == Order.ASC)
-									boundStatement = new BoundStatement(cluster.psDataPointsQueryAsc);
-								else
-									boundStatement = new BoundStatement(cluster.psDataPointsQueryDesc);
-							}
+				ResultSetFuture resultSetFuture = cluster.executeAsync(boundStatement);
 
-							boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
-							boundStatement.setBytesUnsafe(1, startBuffer);
-							boundStatement.setBytesUnsafe(2, endBuffer);
+				queryResults.add(resultSetFuture);
 
-							if (useLimit)
-								boundStatement.setInt(3, query.getLimit());
-
-							boundStatement.setConsistencyLevel(cluster.getReadConsistencyLevel());
-
-							return cluster.executeAsync(boundStatement);
-						});
-
-				for (ResultSetFuture resultSetFuture : resultSetFutures)
-				{
-					queryResults.add(resultSetFuture);
-
-					Futures.addCallback(resultSetFuture, new QueryListener(rowKey, queryCallback, querySemaphore, queryMonitor), resultsExecutor);
-				}
-
+				Futures.addCallback(resultSetFuture, new QueryListener(rowKey, queryCallback, querySemaphore, queryMonitor), resultsExecutor);
 			}
 			else
 			{
@@ -839,8 +844,14 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			//one issue is that the queries are done in the constructor
 			//would like to do them lazily but would have to throw an exception through
 			//hasNext call, ick
-			ret = new CQLFilteredRowKeyIterator(query.getName(), query.getStartTime(),
+			ret = new CQLFilteredRowKeyIterator(m_writeCluster, query.getName(), query.getStartTime(),
 					query.getEndTime(), query.getTags());
+
+			for (ClusterConnection cluster : m_readClusters)
+			{
+				ret = Iterators.concat(ret, new CQLFilteredRowKeyIterator(cluster, query.getName(), query.getStartTime(),
+						query.getEndTime(), query.getTags()));
+			}
 		}
 
 
@@ -894,211 +905,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		return ((columnName & 0x1) == LONG_FLAG);
 	}
 
-
-	private class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
-	{
-		private final SetMultimap<String, String> m_filterTags;
-		private DataPointsRowKey m_nextKey;
-		private final Iterator<ResultSet> m_resultSets;
-		private ResultSet m_currentResultSet;
-		private final String m_metricName;
-		private int m_rawRowKeyCount = 0;
-
-
-		public CQLFilteredRowKeyIterator(String metricName, long startTime, long endTime,
-				SetMultimap<String, String> filterTags) throws DatastoreException
-		{
-			m_filterTags = filterTags;
-			m_metricName = metricName;
-			List<ResultSetFuture> futures = new ArrayList<>();
-			long timerStart = System.currentTimeMillis();
-
-			//Legacy key index - index is all in one row
-			if ((startTime < 0) && (endTime >= 0))
-			{
-				futures.addAll(queryClusters((cluster) ->
-				{
-					BoundStatement negStatement = new BoundStatement(cluster.psRowKeyIndexQuery);
-					negStatement.setBytesUnsafe(0, serializeString(metricName));
-					setStartEndKeys(negStatement, metricName, startTime, -1L);
-					negStatement.setConsistencyLevel(cluster.getReadConsistencyLevel());
-
-					return cluster.executeAsync(negStatement);
-				}));
-
-				futures.addAll(queryClusters((cluster) ->
-				{
-					BoundStatement posStatement = new BoundStatement(cluster.psRowKeyIndexQuery);
-					posStatement.setBytesUnsafe(0, serializeString(metricName));
-					setStartEndKeys(posStatement, metricName, 0L, endTime);
-					posStatement.setConsistencyLevel(cluster.getReadConsistencyLevel());
-
-					return cluster.executeAsync(posStatement);
-				}));
-
-			}
-			else
-			{
-				futures.addAll(queryClusters((cluster) ->
-				{
-					BoundStatement statement = new BoundStatement(cluster.psRowKeyIndexQuery);
-					statement.setBytesUnsafe(0, serializeString(metricName));
-					setStartEndKeys(statement, metricName, startTime, endTime);
-					statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
-
-					return cluster.executeAsync(statement);
-				}));
-			}
-
-			//System.out.println();
-			//New index query index is broken up by time tier
-			futures.addAll(queryClustersList((cluster) ->
-					{
-						List<ResultSetFuture> ret = new ArrayList<>();
-						List<Long> queryKeyList = createQueryKeyList(cluster, metricName, startTime, endTime);
-						for (Long keyTime : queryKeyList)
-						{
-
-							BoundStatement statement = new BoundStatement(cluster.psRowKeyQuery);
-							statement.setString(0, metricName);
-							statement.setTimestamp(1, new Date(keyTime));
-							statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
-
-							//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
-
-							ret.add(cluster.executeAsync(statement));
-						}
-
-						return ret;
-					}));
-
-			ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);
-
-			try
-			{
-				m_resultSets = listListenableFuture.get().iterator();
-				if (m_resultSets.hasNext())
-					m_currentResultSet = m_resultSets.next();
-
-				ThreadReporter.addDataPoint(KEY_QUERY_TIME, System.currentTimeMillis() - timerStart);
-			}
-			catch (InterruptedException e)
-			{
-				throw new DatastoreException("Index query interrupted", e);
-			}
-			catch (ExecutionException e)
-			{
-				throw new DatastoreException("Failed to read key index", e);
-			}
-		}
-
-		private DataPointsRowKey nextKeyFromIterator(ResultSet iterator)
-		{
-			DataPointsRowKey next = null;
-			boolean newIndex = false;
-			if (iterator.getColumnDefinitions().contains("row_time"))
-				newIndex = true;
-
-outer:
-			while (!iterator.isExhausted())
-			{
-				DataPointsRowKey rowKey;
-				Row record = iterator.one();
-				m_rawRowKeyCount ++;
-
-				if (newIndex)
-					rowKey = new DataPointsRowKey(m_metricName, record.getTimestamp(0).getTime(),
-							record.getString(1), new TreeMap<String, String>(record.getMap(2, String.class, String.class)));
-				else
-					rowKey = DATA_POINTS_ROW_KEY_SERIALIZER.fromByteBuffer(record.getBytes(0));
-
-				Map<String, String> keyTags = rowKey.getTags();
-				for (String tag : m_filterTags.keySet())
-				{
-					String value = keyTags.get(tag);
-					if (value == null || !m_filterTags.get(tag).contains(value))
-						continue outer; //Don't want this key
-				}
-
-				next = rowKey;
-				break;
-			}
-
-			return (next);
-		}
-
-		private List<Long> createQueryKeyList(ClusterConnection cluster, String metricName,
-				long startTime, long endTime)
-		{
-			List<Long> ret = new ArrayList<>();
-
-			BoundStatement statement = new BoundStatement(cluster.psRowKeyTimeQuery);
-			statement.setString(0, metricName);
-			statement.setTimestamp(1, new Date(calculateRowTime(startTime)));
-			statement.setTimestamp(2, new Date(endTime));
-			statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
-
-			//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
-
-			ResultSet rows = cluster.execute(statement);
-
-			while (!rows.isExhausted())
-			{
-				ret.add(rows.one().getTimestamp(0).getTime());
-			}
-
-			return ret;
-		}
-
-		private void setStartEndKeys(
-				BoundStatement boundStatement,
-				String metricName, long startTime, long endTime)
-		{
-			DataPointsRowKey startKey = new DataPointsRowKey(metricName,
-					calculateRowTime(startTime), "");
-
-			DataPointsRowKey endKey = new DataPointsRowKey(metricName,
-					calculateRowTime(endTime), "");
-			endKey.setEndSearchKey(true);
-
-			boundStatement.setBytesUnsafe(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(startKey));
-			boundStatement.setBytesUnsafe(2, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(endKey));
-		}
-
-		@Override
-		public boolean hasNext()
-		{
-			m_nextKey = null;
-			while (m_currentResultSet != null && (!m_currentResultSet.isExhausted() || m_resultSets.hasNext()))
-			{
-				m_nextKey = nextKeyFromIterator(m_currentResultSet);
-
-				if (m_nextKey != null)
-					break;
-
-				if (m_resultSets.hasNext())
-					m_currentResultSet = m_resultSets.next();
-			}
-
-			if (m_nextKey == null)
-			{
-				ThreadReporter.addDataPoint(RAW_ROW_KEY_COUNT, m_rawRowKeyCount);
-			}
-
-			return (m_nextKey != null);
-		}
-
-		@Override
-		public DataPointsRowKey next()
-		{
-			return m_nextKey;
-		}
-
-		@Override
-		public void remove()
-		{
-		}
-	}
 
 	private class DeletingCallback implements QueryCallback
 	{

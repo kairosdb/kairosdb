@@ -17,7 +17,6 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Session;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.*;
@@ -29,12 +28,16 @@ import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.ServiceKeyStore;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.events.DataPointEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
 import java.util.*;
 
 public class CassandraModule extends AbstractModule
 {
+	private static final Logger logger = LoggerFactory.getLogger(CassandraModule.class);
+
 	public static final String CASSANDRA_AUTH_MAP = "cassandra.auth.map";
 	public static final String CASSANDRA_HECTOR_MAP = "cassandra.hector.map";
 	public static final String AUTH_PREFIX = "kairosdb.datastore.cassandra.auth.";
@@ -95,17 +98,36 @@ public class CassandraModule extends AbstractModule
 	@Named("write_cluster")
 	ClusterConnection getWriteCluster(CassandraConfiguration configuration)
 	{
-		CassandraClient client = new CassandraClientImpl(configuration.getWriteCluster());
-		return new ClusterConnection(client);
+		try
+		{
+			CassandraClient client = new CassandraClientImpl(configuration.getWriteCluster());
+			return new ClusterConnection(client);
+		}
+		catch (Exception e)
+		{
+			logger.error("Error building write cluster", e);
+			throw new RuntimeException("Error building write cluster");
+		}
+
+
 	}
 
 	@Provides
 	@Singleton
 	@Named("meta_cluster")
 	ClusterConnection getMetaCluster(CassandraConfiguration configuration)
+			throws Exception
 	{
-		CassandraClient client = new CassandraClientImpl(configuration.getMetaCluster());
-		return new ClusterConnection(client);
+		try
+		{
+			CassandraClient client = new CassandraClientImpl(configuration.getMetaCluster());
+			return new ClusterConnection(client);
+		}
+		catch (Exception e)
+		{
+			logger.error("Error building meta cluster", e);
+			throw new RuntimeException("Error building meta cluster");
+		}
 	}
 
 	@Provides
@@ -114,10 +136,18 @@ public class CassandraModule extends AbstractModule
 	{
 		ImmutableList.Builder<ClusterConnection> clusters = new ImmutableList.Builder<>();
 
-		for (ClusterConfiguration clusterConfiguration : configuration.getReadClusters())
+		try
 		{
-			CassandraClient client = new CassandraClientImpl(clusterConfiguration);
-			clusters.add(new ClusterConnection(client));
+			for (ClusterConfiguration clusterConfiguration : configuration.getReadClusters())
+			{
+				CassandraClient client = new CassandraClientImpl(clusterConfiguration);
+				clusters.add(new ClusterConnection(client));
+			}
+		}
+		catch (Exception e)
+		{
+			logger.error("Error building read cluster", e);
+			throw new RuntimeException("Error building read cluster");
 		}
 
 		return clusters.build();

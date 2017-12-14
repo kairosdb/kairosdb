@@ -195,7 +195,7 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 				}
 
 				GenOrmDataSource.flush();
-				DataPointsRowKey dataPointsRowKey = new DataPointsRowKey(metricName,
+				DataPointsRowKey dataPointsRowKey = new DataPointsRowKey(metricName, "",
 						0, dataPoint.getDataStoreDataType(), tags);
 				m_rowKeyPublisher.post(new RowKeyEvent(metricName, dataPointsRowKey, 0));
 

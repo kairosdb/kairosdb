@@ -25,6 +25,7 @@ import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 public class DataPointsRowKey
 {
 	private final String m_metricName;
+	private final String m_clusterName;
 	private final long m_timestamp;
 	private final String m_dataType;
 	private final SortedMap<String, String> m_tags;
@@ -33,15 +34,16 @@ public class DataPointsRowKey
 
 	private ByteBuffer m_serializedBuffer;
 
-	public DataPointsRowKey(String metricName, long timestamp, String dataType)
+	public DataPointsRowKey(String metricName, String clusterName, long timestamp, String dataType)
 	{
-		this(metricName, timestamp, dataType, new TreeMap<String, String>());
+		this(metricName, clusterName, timestamp, dataType, new TreeMap<String, String>());
 	}
 
-	public DataPointsRowKey(String metricName, long timestamp, String datatype,
+	public DataPointsRowKey(String metricName, String clusterName, long timestamp, String datatype,
 			SortedMap<String, String> tags)
 	{
 		m_metricName = checkNotNullOrEmpty(metricName);
+		m_clusterName = checkNotNullOrEmpty(clusterName);
 		m_timestamp = timestamp;
 		m_dataType = checkNotNull(datatype);
 		m_tags = tags;
@@ -56,6 +58,11 @@ public class DataPointsRowKey
 	public String getMetricName()
 	{
 		return m_metricName;
+	}
+
+	public String getClusterName()
+	{
+		return m_clusterName;
 	}
 
 	public SortedMap<String, String> getTags()
@@ -120,6 +127,7 @@ public class DataPointsRowKey
 	{
 		return "DataPointsRowKey{" +
 				"m_metricName='" + m_metricName + '\'' +
+				", m_clusterName='" + m_clusterName+ '\'' +
 				", m_timestamp=" + m_timestamp +
 				", m_dataType='" + m_dataType + '\'' +
 				", m_tags=" + m_tags +

@@ -61,7 +61,7 @@ public class DeleteBatchHandler extends RetryCallable
 
 			long rowTime = calculateRowTime(dataPoint.getTimestamp());
 
-			DataPointsRowKey rowKey = new DataPointsRowKey(m_metricName, rowTime, dataPoint.getDataStoreDataType(),
+			DataPointsRowKey rowKey = new DataPointsRowKey(m_metricName, "", rowTime, dataPoint.getDataStoreDataType(),
 					m_tags);
 
 

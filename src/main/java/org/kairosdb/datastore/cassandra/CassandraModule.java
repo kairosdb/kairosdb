@@ -27,12 +27,16 @@ import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.ServiceKeyStore;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.events.DataPointEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
 import java.util.*;
 
 public class CassandraModule extends AbstractModule
 {
+	public static final Logger logger = LoggerFactory.getLogger(CassandraModule.class);
+
 	public static final String CASSANDRA_AUTH_MAP = "cassandra.auth.map";
 	public static final String CASSANDRA_HECTOR_MAP = "cassandra.hector.map";
 	public static final String AUTH_PREFIX = "kairosdb.datastore.cassandra.auth.";
@@ -100,7 +104,15 @@ public class CassandraModule extends AbstractModule
 	@Singleton
 	Schema getCassandraSchema(CassandraClient cassandraClient)
 	{
-		return new Schema(cassandraClient);
+		try
+		{
+			return new Schema(cassandraClient);
+		}
+		catch (Exception e)
+		{
+			logger.error("Unable to setup cassandra connection to cluster", e);
+			throw new RuntimeException("Unable to setup cassandra connection to cluster");
+		}
 	}
 
 	@Provides

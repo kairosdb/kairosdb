@@ -75,7 +75,7 @@ public class CassandraModule extends AbstractModule
 		bind(CassandraDatastore.class).in(Scopes.SINGLETON);
 		bind(CleanRowKeyCache.class).in(Scopes.SINGLETON);
 		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);
-		bind(CassandraClient.class).to(CassandraClientImpl.class);
+		//bind(CassandraClient.class).to(CassandraClientImpl.class);
 		bind(CassandraClientImpl.class).in(Scopes.SINGLETON);
 		bind(BatchStats.class).in(Scopes.SINGLETON);
 
@@ -102,6 +102,21 @@ public class CassandraModule extends AbstractModule
 
 	@Provides
 	@Singleton
+	CassandraClient getCassandraClient(CassandraConfiguration configuration)
+	{
+		try
+		{
+			return new CassandraClientImpl(configuration);
+		}
+		catch (Exception e)
+		{
+			logger.error("Unable to setup cassandra connection to cluster", e);
+			throw new RuntimeException("Unable to setup cassandra connection to cluster");
+		}
+	}
+
+	@Provides
+	@Singleton
 	Schema getCassandraSchema(CassandraClient cassandraClient)
 	{
 		try
@@ -110,8 +125,8 @@ public class CassandraModule extends AbstractModule
 		}
 		catch (Exception e)
 		{
-			logger.error("Unable to setup cassandra connection to cluster", e);
-			throw new RuntimeException("Unable to setup cassandra connection to cluster");
+			logger.error("Unable to setup cassandra schema", e);
+			throw new RuntimeException("Unable to setup cassandra schema");
 		}
 	}
 

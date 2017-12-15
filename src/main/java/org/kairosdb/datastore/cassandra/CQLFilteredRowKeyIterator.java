@@ -4,6 +4,7 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -12,16 +13,19 @@ import org.kairosdb.core.reporting.ThreadReporter;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 
 class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 {
 	private final SetMultimap<String, String> m_filterTags;
+	private final Set<String> m_filterTagNames;
 	private DataPointsRowKey m_nextKey;
 	private final Iterator<ResultSet> m_resultSets;
 	private ResultSet m_currentResultSet;
 	private final String m_metricName;
 	private final String m_clusterName;
 	private int m_rawRowKeyCount = 0;
+	private Map<String, Pattern> m_patternFilter;
 
 
 	public CQLFilteredRowKeyIterator(ClusterConnection cluster,
@@ -30,7 +34,30 @@ class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 			long endTime,
 			SetMultimap<String, String> filterTags) throws DatastoreException
 	{
-		m_filterTags = filterTags;
+		String regexPrefix = "regex:";
+		m_filterTags = HashMultimap.create();
+		m_filterTagNames = new HashSet<>();
+		m_patternFilter = new HashMap<>();
+
+		for (Map.Entry<String, String> entry : filterTags.entries())
+		{
+			if (regexPrefix != null && entry.getValue().startsWith(regexPrefix))
+			{
+				String regex = entry.getValue().substring(regexPrefix.length());
+
+				Pattern pattern = Pattern.compile(regex);
+
+				m_patternFilter.put(entry.getKey(), pattern);
+			}
+			else
+			{
+				m_filterTags.put(entry.getKey(), entry.getValue());
+			}
+
+			m_filterTagNames.add(entry.getKey());
+		}
+
+
 		m_metricName = metricName;
 		m_clusterName = cluster.getClusterName();
 		List<ResultSetFuture> futures = new ArrayList<>();
@@ -106,6 +133,17 @@ class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 		}
 	}
 
+	private boolean matchRegexFilter(String tag, String value)
+	{
+		if (m_patternFilter.containsKey(tag))
+		{
+			Pattern pattern = m_patternFilter.get(tag);
+
+			return pattern.matcher(value).matches();
+		}
+		return false;
+	}
+
 	private DataPointsRowKey nextKeyFromIterator(ResultSet iterator)
 	{
 		DataPointsRowKey next = null;
@@ -127,10 +165,11 @@ outer:
 				rowKey = CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER.fromByteBuffer(record.getBytes(0), m_clusterName);
 
 			Map<String, String> keyTags = rowKey.getTags();
-			for (String tag : m_filterTags.keySet())
+			for (String tag : m_filterTagNames)
 			{
 				String value = keyTags.get(tag);
-				if (value == null || !m_filterTags.get(tag).contains(value))
+				if (value == null || !(m_filterTags.get(tag).contains(value) || 
+						matchRegexFilter(tag, value)))
 					continue outer; //Don't want this key
 			}
 

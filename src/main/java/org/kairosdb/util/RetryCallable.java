@@ -2,8 +2,12 @@ package org.kairosdb.util;
 
 import java.util.concurrent.Callable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class RetryCallable implements Callable<Integer>
 {
+	public static final Logger logger = LoggerFactory.getLogger(RetryCallable.class);
 	private int m_retries = -1;
 
 	@Override
@@ -12,7 +16,7 @@ public abstract class RetryCallable implements Callable<Integer>
 		m_retries ++;
 
 		if (m_retries > 0)
-			System.out.println("Retrying batch");
+			logger.info("Retrying batch");
 
 		retryCall();
 

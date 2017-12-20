@@ -16,6 +16,9 @@ public class CassandraConfiguration
 	public static final String READ_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.read_consistency_level";
 	public static final String WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.write_consistency_level";
 	public static final String DATAPOINT_TTL = "kairosdb.datastore.cassandra.datapoint_ttl";
+	
+	public static final String ALIGN_DATAPOINT_TTL_WITH_TIMESTAMP = "kairosdb.datastore.cassandra.align_datapoint_ttl_with_timestamp";
+	public static final String FORCE_DEFAULT_DATAPOINT_TTL = "kairosdb.datastore.cassandra.force_default_datapoint_ttl";
 
 	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
 	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
@@ -52,6 +55,14 @@ public class CassandraConfiguration
 	@Inject(optional = true)
 	@Named(DATAPOINT_TTL)
 	private int m_datapointTtl = 0; //Zero ttl means data lives forever.
+
+	@Inject(optional = true)
+	@Named(ALIGN_DATAPOINT_TTL_WITH_TIMESTAMP)
+	private boolean m_alignDatapointTtlWithTimestamp = false;
+	
+	@Inject(optional = true)
+	@Named(FORCE_DEFAULT_DATAPOINT_TTL)
+	private boolean m_forceDefaultDatapointTtl = false;
 
 	@Inject
 	@Named(ROW_KEY_CACHE_SIZE_PROPERTY)
@@ -160,6 +171,16 @@ public class CassandraConfiguration
 	public int getDatapointTtl()
 	{
 		return m_datapointTtl;
+	}
+	
+	public boolean isAlignDatapointTtlWithTimestamp() 
+	{
+		return m_alignDatapointTtlWithTimestamp;
+	}
+	
+	public boolean isForceDefaultDatapointTtl()
+	{
+		return m_forceDefaultDatapointTtl;
 	}
 
 	public int getRowKeyCacheSize()

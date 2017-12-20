@@ -38,6 +38,8 @@ public class BatchHandler extends RetryCallable
 	private final List<DataPointEvent> m_events;
 	private final EventCompletionCallBack m_callBack;
 	private final int m_defaultTtl;
+	private final boolean m_allignDatapointTtl;
+	private final boolean m_forceDefaultDatapointTtl;
 	private final DataCache<DataPointsRowKey> m_rowKeyCache;
 	private final DataCache<String> m_metricNameCache;
 	private final CassandraModule.CQLBatchFactory m_cqlBatchFactory;
@@ -57,6 +59,8 @@ public class BatchHandler extends RetryCallable
 		m_events = events;
 		m_callBack = callBack;
 		m_defaultTtl = configuration.getDatapointTtl();
+		m_allignDatapointTtl = configuration.isAlignDatapointTtlWithTimestamp();
+		m_forceDefaultDatapointTtl = configuration.isForceDefaultDatapointTtl();
 		m_rowKeyCache = rowKeyCache;
 		m_metricNameCache = metricNameCache;
 
@@ -81,18 +85,33 @@ public class BatchHandler extends RetryCallable
 
 			ImmutableSortedMap<String, String> tags = event.getTags();
 			DataPoint dataPoint = event.getDataPoint();
-			int ttl = event.getTtl();
+			
+			// force default ttl if property is set, use event's ttl otherwise
+			int ttl = m_forceDefaultDatapointTtl ? m_defaultTtl : event.getTtl();
+			logger.trace("ttl (seconds): {}", ttl);
 
 			DataPointsRowKey rowKey = null;
 			//time the data is written.
 			long writeTime = System.currentTimeMillis();
-			if (0 == ttl)
-				ttl = m_defaultTtl;
 
-			int rowKeyTtl = 0;
+			// check if datapoint ttl alignment should be used
+			if (m_allignDatapointTtl) {
+				// determine the datapoint's "age" comparing it's timestamp and now
+				int datapointAgeInMs = (int) (writeTime - dataPoint.getTimestamp());
+				logger.trace("datapointAgeInMs (milliseconds): {}", datapointAgeInMs);
+				
+				// the resulting aligned ttl is the former calculated ttl minus the datapoint's age
+				ttl = ttl - datapointAgeInMs / 1000;
+				logger.trace("alligned ttl (seconds): {}", ttl);
+				// if the aligned ttl is negative, the datapoint is already dead
+				if (ttl <= 0) {
+			        logger.warn("alligned ttl for {} with tags {} is negative, so the datapoint is already dead, no need to store it", metricName, tags);
+			        continue;
+				}
+			}
+			
 			//Row key will expire 3 weeks after the data in the row expires
-			if (ttl != 0)
-				rowKeyTtl = ttl + ((int) (ROW_WIDTH / 1000));
+			int rowKeyTtl = ttl + ((int) (ROW_WIDTH / 1000));
 
 			long rowTime = calculateRowTime(dataPoint.getTimestamp());
 

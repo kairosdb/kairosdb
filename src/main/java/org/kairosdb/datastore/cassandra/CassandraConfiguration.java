@@ -40,6 +40,8 @@ public class CassandraConfiguration
 	public static final String REMOTE_MAX_REQ_PER_CONN = "kairosdb.datastore.cassandra.max_requests_per_connection.remote";
 
 	public static final String MAX_QUEUE_SIZE = "kairosdb.datastore.cassandra.max_queue_size";
+	
+	public static final String LOCAL_DATACENTER = "kairosdb.datastore.cassandra.local_datacenter";
 
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
@@ -122,6 +124,10 @@ public class CassandraConfiguration
 	@Inject
 	@Named(MAX_QUEUE_SIZE)
 	private int m_maxQueueSize = 500;
+	
+	@Inject(optional = true)
+	@Named(LOCAL_DATACENTER)
+	private String m_localDatacenter;
 
 	public CassandraConfiguration()
 	{
@@ -230,6 +236,11 @@ public class CassandraConfiguration
 	public int getMaxQueueSize()
 	{
 		return m_maxQueueSize;
+	}
+	
+	public String getLocalDatacenter()
+	{
+		return m_localDatacenter;
 	}
 
 	public int getQueryReaderThreads()

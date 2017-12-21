@@ -63,7 +63,7 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 					.setMaxRequestsPerConnection(HostDistance.LOCAL, configuration.getLocalMaxReqPerConn())
 					.setMaxRequestsPerConnection(HostDistance.REMOTE, configuration.getRemoteMaxReqPerConn())
 					.setMaxQueueSize(configuration.getMaxQueueSize()))
-				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 10 * 1000))
+				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 5 * 1000))
 				.withLoadBalancingPolicy(m_loadBalancingPolicy)
 				.withCompression(ProtocolOptions.Compression.LZ4)
 				.withoutJMXReporting()

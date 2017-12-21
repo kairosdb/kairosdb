@@ -93,6 +93,10 @@ public class BatchHandler extends RetryCallable
 			DataPointsRowKey rowKey = null;
 			//time the data is written.
 			long writeTime = System.currentTimeMillis();
+			
+			// set ttl to default if the event's ttl is not present or 0 (which actually can be 0 as well)
+			if (0 == ttl)
+				ttl = m_defaultTtl;
 
 			// check if datapoint ttl alignment should be used
 			if (m_allignDatapointTtl) {
@@ -111,7 +115,7 @@ public class BatchHandler extends RetryCallable
 			}
 			
 			//Row key will expire 3 weeks after the data in the row expires
-			int rowKeyTtl = ttl + ((int) (ROW_WIDTH / 1000));
+			int rowKeyTtl = (ttl == 0) ? 0 : ttl + ((int) (ROW_WIDTH / 1000));
 
 			long rowTime = calculateRowTime(dataPoint.getTimestamp());
 

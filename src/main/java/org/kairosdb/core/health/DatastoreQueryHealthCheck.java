@@ -31,7 +31,6 @@ public class DatastoreQueryHealthCheck extends HealthCheck implements HealthStat
 	{
 		try
 		{
-			datastore.getMetricNames();
 			DatastoreQuery query = datastore.createQuery(
 					new QueryMetric(System.currentTimeMillis() - (10 * 60 * 1000),
 					0, "kairosdb.jvm.thread_count"));

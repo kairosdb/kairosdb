@@ -23,13 +23,15 @@ public class HealthCheckResourceTest
 {
 	private HealthCheckResource resourceService;
 	private KairosDatastore datastore;
+	private DatastoreQuery query;
 
 	@Before
 	public void setup() throws DatastoreException
 	{
 		datastore = mock(KairosDatastore.class);
+		query = mock(DatastoreQuery.class);
 		when(datastore.getMetricNames()).thenReturn(Collections.<String>emptyList());
-		when(datastore.createQuery(any(QueryMetric.class))).thenReturn(mock(DatastoreQuery.class));
+		when(datastore.createQuery(any(QueryMetric.class))).thenReturn(query);
 
 		HealthCheckService healthCheckService = new TestHealthCheckService();
 		resourceService = new HealthCheckResource(healthCheckService);
@@ -52,7 +54,7 @@ public class HealthCheckResourceTest
 	@Test
 	public void testCheckUnHealthy() throws DatastoreException
 	{
-		when(datastore.getMetricNames()).thenThrow(new DatastoreException("Error"));
+		when(query.execute()).thenThrow(new DatastoreException("Error"));
 		Response response = resourceService.check();
 
 		assertThat(response.getStatus(), equalTo(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()));

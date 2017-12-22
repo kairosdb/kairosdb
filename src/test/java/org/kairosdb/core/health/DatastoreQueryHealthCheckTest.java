@@ -20,14 +20,16 @@ import static org.mockito.Mockito.when;
 public class DatastoreQueryHealthCheckTest
 {
 	private KairosDatastore datastore;
+	private DatastoreQuery query;
 	private DatastoreQueryHealthCheck healthCheck;
 
 	@Before
 	public void setup() throws DatastoreException
 	{
 		datastore = mock(KairosDatastore.class);
-		when(datastore.getMetricNames()).thenReturn(Collections.<String>emptyList());
-		when(datastore.createQuery(any(QueryMetric.class))).thenReturn(mock(DatastoreQuery.class));
+		query = mock(DatastoreQuery.class);
+		//when(datastore.getMetricNames()).thenReturn(Collections.<String>emptyList());
+		when(datastore.createQuery(any(QueryMetric.class))).thenReturn(query);
 
 		healthCheck = new DatastoreQueryHealthCheck(datastore);
 	}
@@ -50,7 +52,7 @@ public class DatastoreQueryHealthCheckTest
 	public void testCheckUnHealthy() throws Exception
 	{
 		Exception exception = new DatastoreException("Error message");
-		when(datastore.getMetricNames()).thenThrow(exception);
+		when(query.execute()).thenThrow(exception);
 
 		Result result = healthCheck.check();
 

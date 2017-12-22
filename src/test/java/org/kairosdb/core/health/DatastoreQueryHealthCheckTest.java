@@ -3,8 +3,9 @@ package org.kairosdb.core.health;
 import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
-import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 
 import java.util.Collections;
@@ -12,6 +13,7 @@ import java.util.Collections;
 import static com.codahale.metrics.health.HealthCheck.Result;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -25,6 +27,7 @@ public class DatastoreQueryHealthCheckTest
 	{
 		datastore = mock(KairosDatastore.class);
 		when(datastore.getMetricNames()).thenReturn(Collections.<String>emptyList());
+		when(datastore.createQuery(any(QueryMetric.class))).thenReturn(mock(DatastoreQuery.class));
 
 		healthCheck = new DatastoreQueryHealthCheck(datastore);
 	}

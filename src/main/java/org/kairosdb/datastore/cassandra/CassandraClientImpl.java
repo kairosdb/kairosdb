@@ -6,6 +6,7 @@ import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -50,7 +51,9 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	{
 		//Passing shuffleReplicas = false so we can properly batch data to
 		//instances.
-		m_loadBalancingPolicy = new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build(), false);
+		// When connecting to Cassandra notes in different datacenters, the local datacenter should be provided.
+		// Not doing this will select the datacenter from the first connected Cassandra node, which is not guaranteed to be the correct one.
+		m_loadBalancingPolicy = new TokenAwarePolicy((configuration.getLocalDatacenter() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(configuration.getLocalDatacenter()).build(), false);
 		final Cluster.Builder builder = new Cluster.Builder()
 				//.withProtocolVersion(ProtocolVersion.V3)
 				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL,
@@ -60,10 +63,11 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 					.setMaxRequestsPerConnection(HostDistance.LOCAL, configuration.getLocalMaxReqPerConn())
 					.setMaxRequestsPerConnection(HostDistance.REMOTE, configuration.getRemoteMaxReqPerConn())
 					.setMaxQueueSize(configuration.getMaxQueueSize()))
-				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 10 * 1000))
+				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 5 * 1000))
 				.withLoadBalancingPolicy(m_loadBalancingPolicy)
 				.withCompression(ProtocolOptions.Compression.LZ4)
 				.withoutJMXReporting()
+				.withQueryOptions(new QueryOptions().setConsistencyLevel(configuration.getDataReadLevel()))
 				.withTimestampGenerator(new TimestampGenerator() //todo need to remove this and put it only on the datapoints call
 				{
 					@Override

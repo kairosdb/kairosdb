@@ -101,11 +101,11 @@ public class BatchHandler extends RetryCallable
 			// check if datapoint ttl alignment should be used
 			if (m_allignDatapointTtl) {
 				// determine the datapoint's "age" comparing it's timestamp and now
-				int datapointAgeInMs = (int) (writeTime - dataPoint.getTimestamp());
-				logger.trace("datapointAgeInMs (milliseconds): {}", datapointAgeInMs);
+				int datapointAgeInSeconds = (int) ((writeTime - dataPoint.getTimestamp()) / 1000);
+				logger.trace("datapointAgeInSeconds: {}", datapointAgeInSeconds);
 				
 				// the resulting aligned ttl is the former calculated ttl minus the datapoint's age
-				ttl = ttl - datapointAgeInMs / 1000;
+				ttl = ttl - datapointAgeInSeconds;
 				logger.trace("alligned ttl (seconds): {}", ttl);
 				// if the aligned ttl is negative, the datapoint is already dead
 				if (ttl <= 0) {

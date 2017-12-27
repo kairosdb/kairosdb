@@ -822,6 +822,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		private ResultSet m_currentResultSet;
 		private final String m_metricName;
 		private int m_rawRowKeyCount = 0;
+		private Set<DataPointsRowKey> m_returnedKeys;  //keep from returning duplicates, querying old and new indexes
 
 
 		public CQLFilteredRowKeyIterator(String metricName, long startTime, long endTime,
@@ -830,6 +831,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			m_filterTags = filterTags;
 			m_metricName = metricName;
 			List<ResultSetFuture> futures = new ArrayList<>();
+			m_returnedKeys = new HashSet<>();
 			long timerStart = System.currentTimeMillis();
 
 			//Legacy key index - index is all in one row
@@ -927,6 +929,11 @@ outer:
 						continue outer; //Don't want this key
 				}
 
+				/* We can get duplicate keys from querying old and new indexes */
+				if (m_returnedKeys.contains(rowKey))
+					continue;
+
+				m_returnedKeys.add(rowKey);
 				next = rowKey;
 				break;
 			}

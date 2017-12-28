@@ -1,0 +1,26 @@
+version: "2017-09-20"
+pipeline:
+  - id: build
+    type: script
+    commands:
+      - desc: "Install Java, Maven and Docker"
+        cmd: |
+          apt-get update
+          apt-get install -y openjdk-8-jdk maven git
+          curl -fLOsS https://delivery.cloud.zalando.com/utils/ensure-docker && sh ensure-docker && rm ensure-docker
+      - desc: "Build with Maven"
+        cmd: |
+          ./mvnw clean package
+      - desc: "Push Docker Image"
+        cmd: |
+          IS_PR_BUILD=${CDP_PULL_REQUEST_NUMBER+"true"}
+          if [[ ${IS_PR_BUILD} != "true" ]]
+          then
+            RELEASE_VERSION=$(git describe --tags --always --dirty)
+            IMAGE_TAG=${RELEASE_VERSION}
+          else
+            IMAGE_TAG=${CDP_BUILD_VERSION}
+          fi
+          IMAGE="registry-write.opensource.zalan.do/zmon/kairosdb:${IMAGE_TAG}"
+          docker build --tag "$IMAGE" .
+          docker push "$IMAGE"

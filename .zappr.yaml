@@ -1,0 +1,9 @@
+approvals:
+  groups:
+    zalando:
+      minimum: 2
+      from:
+        orgs:
+          - "zalando"
+  ignore: none
+X-Zalando-Team: "zmon"

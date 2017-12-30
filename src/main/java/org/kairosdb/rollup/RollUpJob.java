@@ -239,7 +239,7 @@ public class RollUpJob implements InterruptableJob
 	 and its time stamp is too old, return a time that is 4 intervals from
 	 the data point time.
 	 */
-	protected static long calculateEndTime(DataPoint datapoint, Duration executionInterval, long now)
+	static long calculateEndTime(DataPoint datapoint, Duration executionInterval, long now)
 	{
 		long endTime = now;
 
@@ -256,7 +256,7 @@ public class RollUpJob implements InterruptableJob
 	 Returns the sampling from the last RangeAggregator in the aggregators list
 	 or null if no sampling is found
 	 */
-	protected static Sampling getLastSampling(List<Aggregator> aggregators)
+	static Sampling getLastSampling(List<Aggregator> aggregators)
 	{
 		for (int i = aggregators.size() - 1; i >= 0; i--)
 		{

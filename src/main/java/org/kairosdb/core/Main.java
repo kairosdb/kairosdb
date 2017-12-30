@@ -63,6 +63,8 @@ import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -74,6 +76,8 @@ public class Main
 	public static final Charset UTF_8 = Charset.forName("UTF-8");
 	public static final String SERVICE_PREFIX = "kairosdb.service.";
 	public static final String SERVICE_FOLDER_PREFIX = "kairosdb.service_folder.";
+	public static final String KAIROSDB_SERVER_GUID = "kairosdb.server.guid";
+	private static final String GUID_PROPERTIES_FILENAME = "kairosdb_guid.properties";
 
 	private final static CountDownLatch s_shutdownObject = new CountDownLatch(1);
 
@@ -195,6 +199,17 @@ public class Main
 		}
 
 		applyEnvironmentVariables(props);
+
+		// Create guid for this server
+		if (!props.containsKey(KAIROSDB_SERVER_GUID)) {
+			String guid = UUID.randomUUID().toString();
+			props.put(KAIROSDB_SERVER_GUID, guid);
+
+			if (propertiesFile != null) {
+				Path path = Paths.get(propertiesFile.getAbsoluteFile().getParent(), GUID_PROPERTIES_FILENAME);
+				java.nio.file.Files.write(path, (KAIROSDB_SERVER_GUID + "=" + guid).getBytes(Charset.forName("UTF-8")));
+			}
+		}
 
 		List<Module> moduleList = new ArrayList<Module>();
 		moduleList.add(new CoreModule(props));

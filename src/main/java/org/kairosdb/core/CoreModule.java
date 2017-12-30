@@ -17,6 +17,7 @@
 package org.kairosdb.core;
 
 import com.google.common.net.InetAddresses;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
@@ -88,9 +89,11 @@ import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR;
 import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR_CLASS;
+
 
 public class CoreModule extends AbstractModule
 {
@@ -99,6 +102,7 @@ public class CoreModule extends AbstractModule
 
 	public static final String DATAPOINTS_FACTORY_LONG = "kairosdb.datapoints.factory.long";
 	public static final String DATAPOINTS_FACTORY_DOUBLE = "kairosdb.datapoints.factory.double";
+
 	private Properties m_props;
 	private final FilterEventBus m_eventBus;
 
@@ -227,6 +231,8 @@ public class CoreModule extends AbstractModule
 
 		bind(IngestExecutorService.class);
 
+		bind(HostManager.class).in(Singleton.class);
+
 		String hostIp = m_props.getProperty("kairosdb.host_ip");
 		bindConstant().annotatedWith(Names.named("HOST_IP")).to(hostIp != null ? hostIp: InetAddresses.toAddrString(Util.findPublicIp()));
 
@@ -244,6 +250,16 @@ public class CoreModule extends AbstractModule
 	@Provides @Named(QUEUE_PROCESSOR) @Singleton
 	public Executor getQueueExecutor()
 	{
-		return Executors.newSingleThreadExecutor();
+		return Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("QueueProcessor-%s").build());
+	}
+
+	@Provides
+	@Singleton
+	@Named(HostManager.HOST_MANAGER_SERVICE_EXECUTOR)
+	public ScheduledExecutorService getExecutorService()
+	{
+		return Executors.newSingleThreadScheduledExecutor(
+				new ThreadFactoryBuilder().setNameFormat("HostManagerService-%s").build());
+
 	}
 }

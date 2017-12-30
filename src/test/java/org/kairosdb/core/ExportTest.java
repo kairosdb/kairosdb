@@ -76,7 +76,7 @@ public class ExportTest
 
 		os.close();
 		sock.close();
-		Thread.sleep(2000);
+		Thread.sleep(10000);
 	}
 
 	@BeforeClass
@@ -106,7 +106,7 @@ public class ExportTest
 
 		QueryMetric metric = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, METRIC_NAME);
 		ds.delete(metric);
-		Thread.sleep(2000);
+		Thread.sleep(3000);
 	}
 
 	@AfterClass

@@ -10,78 +10,66 @@ import org.slf4j.LoggerFactory;
 	should not be modified.
 	
 */
-public class DataPoint_base extends GenOrmRecord
+public class ServiceModification_base extends GenOrmRecord
 	{
-	protected static final Logger s_logger = LoggerFactory.getLogger(DataPoint.class.getName());
+	protected static final Logger s_logger = LoggerFactory.getLogger(ServiceModification.class.getName());
 
-	public static final String COL_METRIC_ID = "metric_id";
-	public static final String COL_TIMESTAMP = "timestamp";
-	public static final String COL_VALUE = "value";
+	public static final String COL_SERVICE = "service";
+	public static final String COL_SERVICE_KEY = "service_key";
+	public static final String COL_MODIFICATION_TIME = "modification_time";
 
 	//Change this value to true to turn on warning messages
 	private static final boolean WARNINGS = false;
-	private static final String SELECT = "SELECT this.\"metric_id\", this.\"timestamp\", this.\"value\" ";
-	private static final String FROM = "FROM data_point this ";
+	private static final String SELECT = "SELECT this.\"service\", this.\"service_key\", this.\"modification_time\" ";
+	private static final String FROM = "FROM service_modification this ";
 	private static final String WHERE = "WHERE ";
-	private static final String KEY_WHERE = "WHERE \"metric_id\" = ? AND \"timestamp\" = ?";
+	private static final String KEY_WHERE = "WHERE \"service\" = ? AND \"service_key\" = ?";
 	
-	public static final String TABLE_NAME = "data_point";
+	public static final String TABLE_NAME = "service_modification";
 	public static final int NUMBER_OF_COLUMNS = 3;
 	
 	
 	private static final String s_fieldEscapeString = "\""; 
 	
-	public static final GenOrmFieldMeta METRIC_ID_FIELD_META = new GenOrmFieldMeta("metric_id", "string", 0, true, true);
-	public static final GenOrmFieldMeta TIMESTAMP_FIELD_META = new GenOrmFieldMeta("timestamp", "timestamp", 1, true, false);
-	public static final GenOrmFieldMeta VALUE_FIELD_META = new GenOrmFieldMeta("value", "binary", 2, false, false);
+	public static final GenOrmFieldMeta SERVICE_FIELD_META = new GenOrmFieldMeta("service", "string", 0, true, false);
+	public static final GenOrmFieldMeta SERVICE_KEY_FIELD_META = new GenOrmFieldMeta("service_key", "string", 1, true, false);
+	public static final GenOrmFieldMeta MODIFICATION_TIME_FIELD_META = new GenOrmFieldMeta("modification_time", "timestamp", 2, false, false);
 
 	
 		
 	//===========================================================================
-	public static DataPointFactoryImpl factory = new DataPointFactoryImpl();
+	public static ServiceModificationFactoryImpl factory = new ServiceModificationFactoryImpl();
 	
-	public static interface DataPointFactory extends GenOrmRecordFactory
+	public static interface ServiceModificationFactory extends GenOrmRecordFactory
 		{
-		public boolean delete(String metricId, java.sql.Timestamp timestamp);
-		public DataPoint find(String metricId, java.sql.Timestamp timestamp);
-		public DataPoint findOrCreate(String metricId, java.sql.Timestamp timestamp);
-		/**
-		*/
-		public ResultSet getForMetricId(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, String order);/**
-			Check for at least a single data point for a given metric id
-		*/
-		public DataPoint getWithMetricId(String metricId);/**
-		*/
-		public ResultSet getByMetric(String metricId);/**
-		*/
-		public ResultSet getForMetricIdWithLimit(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, int limit, String order);
+		public boolean delete(String service, String serviceKey);
+		public ServiceModification find(String service, String serviceKey);
+		public ServiceModification findOrCreate(String service, String serviceKey);
 		}
 	
-	public static class DataPointFactoryImpl //Inherit interfaces
-			implements DataPointFactory 
+	public static class ServiceModificationFactoryImpl //Inherit interfaces
+			implements ServiceModificationFactory 
 		{
-		public static final String CREATE_SQL = "CREATE CACHED TABLE data_point (\n	\"metric_id\" VARCHAR  NOT NULL,\n	\"timestamp\" TIMESTAMP  NOT NULL,\n	\"value\" BINARY  NULL,\n	PRIMARY KEY (\"metric_id\", \"timestamp\"),\n	CONSTRAINT data_point_metric_id_fkey FOREIGN KEY (\"metric_id\")\n		REFERENCES metric (\"id\") \n	)";
+		public static final String CREATE_SQL = "CREATE CACHED TABLE service_modification (\n	\"service\" VARCHAR  NOT NULL,\n	\"service_key\" VARCHAR  NOT NULL,\n	\"modification_time\" TIMESTAMP  NULL,\n	PRIMARY KEY (\"service\", \"service_key\")\n	)";
 
 		private ArrayList<GenOrmFieldMeta> m_fieldMeta;
 		private ArrayList<GenOrmConstraint> m_foreignKeyConstraints;
 		
-		protected DataPointFactoryImpl()
+		protected ServiceModificationFactoryImpl()
 			{
 			m_fieldMeta = new ArrayList<GenOrmFieldMeta>();
-			m_fieldMeta.add(METRIC_ID_FIELD_META);
-			m_fieldMeta.add(TIMESTAMP_FIELD_META);
-			m_fieldMeta.add(VALUE_FIELD_META);
+			m_fieldMeta.add(SERVICE_FIELD_META);
+			m_fieldMeta.add(SERVICE_KEY_FIELD_META);
+			m_fieldMeta.add(MODIFICATION_TIME_FIELD_META);
 
 			m_foreignKeyConstraints = new ArrayList<GenOrmConstraint>();
-			m_foreignKeyConstraints.add(new GenOrmConstraint("metric", "data_point_metric_id_fkey", "CONSTRAINT data_point_metric_id_fkey FOREIGN KEY (\"metric_id\")\n	REFERENCES metric (\"id\")"));
-
 			}
 			
-		protected DataPoint newDataPoint(java.sql.ResultSet rs)
+		protected ServiceModification newServiceModification(java.sql.ResultSet rs)
 			{
-			DataPoint rec = new DataPoint();
-			((DataPoint_base)rec).initialize(rs);
-			return ((DataPoint)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
+			ServiceModification rec = new ServiceModification();
+			((ServiceModification_base)rec).initialize(rs);
+			return ((ServiceModification)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
 			}
 	
 		//---------------------------------------------------------------------------
@@ -115,38 +103,38 @@ public class DataPoint_base extends GenOrmRecord
 		/**
 			Creates a new entry with the specified primary keys.
 		*/
-		public DataPoint create(String metricId, java.sql.Timestamp timestamp)
+		public ServiceModification create(String service, String serviceKey)
 			{
-			DataPoint rec = new DataPoint();
+			ServiceModification rec = new ServiceModification();
 			rec.m_isNewRecord = true;
 			
-			((DataPoint_base)rec).setMetricId(metricId);
-			((DataPoint_base)rec).setTimestamp(timestamp);
+			((ServiceModification_base)rec).setService(service);
+			((ServiceModification_base)rec).setServiceKey(serviceKey);
 
 			
-			return ((DataPoint)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
+			return ((ServiceModification)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
 			}
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry that is empty
 		*/
-		public DataPoint createRecord()
+		public ServiceModification createRecord()
 			{
-			DataPoint rec = new DataPoint();
+			ServiceModification rec = new ServiceModification();
 			rec.m_isNewRecord = true;
 			
-			return ((DataPoint)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
+			return ((ServiceModification)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
 			}
 			
 		//---------------------------------------------------------------------------
 		/**
 		If the table has a primary key that has a key generator this method will 
 		return a new table entry with a generated primary key.
-		@return DataPoint with generated primary key
+		@return ServiceModification with generated primary key
 		*/
-		public DataPoint createWithGeneratedKey()
+		public ServiceModification createWithGeneratedKey()
 			{
-			throw new UnsupportedOperationException("DataPoint does not support a generated primary key");
+			throw new UnsupportedOperationException("ServiceModification does not support a generated primary key");
 			}
 			
 		//---------------------------------------------------------------------------
@@ -155,12 +143,12 @@ public class DataPoint_base extends GenOrmRecord
 		@param keys This must match the primary key for this record.  If the 
 		record has multiple primary keys this parameter must be of type Object[] 
 		where each element is the corresponding key.
-		@return DataPoint or null if no record is found
+		@return ServiceModification or null if no record is found
 		*/
-		public DataPoint findRecord(Object keys)
+		public ServiceModification findRecord(Object keys)
 			{
 			Object[] kArr = (Object[])keys;
-			return (find((String)kArr[0], (java.sql.Timestamp)kArr[1]));
+			return (find((String)kArr[0], (String)kArr[1]));
 			}
 			
 		//---------------------------------------------------------------------------
@@ -173,14 +161,14 @@ public class DataPoint_base extends GenOrmRecord
 			@return Returns true if the record was previous created and existed
 			either in the transaction cache or the db.
 		*/
-		public boolean delete(String metricId, java.sql.Timestamp timestamp)
+		public boolean delete(String service, String serviceKey)
 			{
 			boolean ret = false;
-			DataPoint rec = new DataPoint();
+			ServiceModification rec = new ServiceModification();
 			
-			((DataPoint_base)rec).initialize(metricId, timestamp);
+			((ServiceModification_base)rec).initialize(service, serviceKey);
 			GenOrmConnection con = GenOrmDataSource.getGenOrmConnection();
-			DataPoint cachedRec = (DataPoint)con.getCachedRecord(rec.getRecordKey());
+			ServiceModification cachedRec = (ServiceModification)con.getCachedRecord(rec.getRecordKey());
 			
 			if (cachedRec != null)
 				{
@@ -189,7 +177,7 @@ public class DataPoint_base extends GenOrmRecord
 				}
 			else
 				{
-				rec = (DataPoint)con.getUniqueRecord(rec);  //This adds the record to the cache
+				rec = (ServiceModification)con.getUniqueRecord(rec);  //This adds the record to the cache
 				rec.delete();
 				ret = rec.flush();
 				rec.setIgnored(true); //So the system does not try to delete it again at commmit
@@ -201,15 +189,15 @@ public class DataPoint_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 		Find the record with the specified primary keys
-		@return DataPoint or null if no record is found
+		@return ServiceModification or null if no record is found
 		*/
-		public DataPoint find(String metricId, java.sql.Timestamp timestamp)
+		public ServiceModification find(String service, String serviceKey)
 			{
-			DataPoint rec = new DataPoint();
+			ServiceModification rec = new ServiceModification();
 			
 			//Create temp object and look in cache for it
-			((DataPoint_base)rec).initialize(metricId, timestamp);
-			rec = (DataPoint)GenOrmDataSource.getGenOrmConnection().getCachedRecord(rec.getRecordKey());
+			((ServiceModification_base)rec).initialize(service, serviceKey);
+			rec = (ServiceModification)GenOrmDataSource.getGenOrmConnection().getCachedRecord(rec.getRecordKey());
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			java.sql.ResultSet genorm_rs = null;
@@ -220,14 +208,14 @@ public class DataPoint_base extends GenOrmRecord
 					{
 					//No cached object so look in db
 					genorm_statement = GenOrmDataSource.prepareStatement(SELECT+FROM+KEY_WHERE);
-					genorm_statement.setString(1, metricId);
-					genorm_statement.setTimestamp(2, timestamp);
+					genorm_statement.setString(1, service);
+					genorm_statement.setString(2, serviceKey);
 
 					s_logger.debug(genorm_statement.toString());
 						
 					genorm_rs = genorm_statement.executeQuery();
 					if (genorm_rs.next())
-						rec = newDataPoint(genorm_rs);
+						rec = newServiceModification(genorm_rs);
 					}
 				catch (java.sql.SQLException sqle)
 					{
@@ -259,11 +247,11 @@ public class DataPoint_base extends GenOrmRecord
 		is created with the specified primary keys
 		@return A new or existing record.  
 		*/
-		public DataPoint findOrCreate(String metricId, java.sql.Timestamp timestamp)
+		public ServiceModification findOrCreate(String service, String serviceKey)
 			{
-			DataPoint rec = find(metricId, timestamp);
+			ServiceModification rec = find(service, serviceKey);
 			if (rec == null)
-				rec = create(metricId, timestamp);
+				rec = create(service, serviceKey);
 				
 			return (rec);
 			}
@@ -327,154 +315,6 @@ public class DataPoint_base extends GenOrmRecord
 			return (rs);
 			}
 			
-		//---------------------------------------------------------------------------
-		/**
-		*/
-		public ResultSet getForMetricId(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, String order)
-			{
-			String query = SELECT+"from data_point this\n				where\n				this.\"metric_id\" = ?\n				and this.\"timestamp\" >= ?\n				and this.\"timestamp\" <= ?\n				order by this.\"timestamp\" %order%";
-			HashMap<String, String> replaceMap = new HashMap<String, String>();
-			replaceMap.put("order", order);
-			query = QueryHelper.replaceText(query, replaceMap);
-			
-			java.sql.PreparedStatement genorm_statement = null;
-			
-			try
-				{
-				genorm_statement = GenOrmDataSource.prepareStatement(query);
-				genorm_statement.setString(1, metricId);genorm_statement.setTimestamp(2, startTime);genorm_statement.setTimestamp(3, endTime);
-				
-				s_logger.debug(genorm_statement.toString());
-				
-				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
-				
-				return (rs);
-				}
-			catch (java.sql.SQLException sqle)
-				{
-				try
-					{
-					if (genorm_statement != null)
-						genorm_statement.close();
-					}
-				catch (java.sql.SQLException sqle2) { }
-					
-				if (s_logger.isDebugEnabled())
-					sqle.printStackTrace();
-				throw new GenOrmException(sqle);
-				}
-			}
-			
-		//---------------------------------------------------------------------------
-		/**
-			Check for at least a single data point for a given metric id
-		*/
-		public DataPoint getWithMetricId(String metricId)
-			{
-			String query = SELECT+"from data_point this\n				where\n				this.\"metric_id\" = ?\n				limit 1";
-			
-			java.sql.PreparedStatement genorm_statement = null;
-			
-			try
-				{
-				genorm_statement = GenOrmDataSource.prepareStatement(query);
-				genorm_statement.setString(1, metricId);
-				
-				s_logger.debug(genorm_statement.toString());
-				
-				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
-				
-				return (rs.getOnlyRecord());
-				}
-			catch (java.sql.SQLException sqle)
-				{
-				try
-					{
-					if (genorm_statement != null)
-						genorm_statement.close();
-					}
-				catch (java.sql.SQLException sqle2) { }
-					
-				if (s_logger.isDebugEnabled())
-					sqle.printStackTrace();
-				throw new GenOrmException(sqle);
-				}
-			}
-			
-		//---------------------------------------------------------------------------
-		/**
-		*/
-		public ResultSet getByMetric(String metricId)
-			{
-			String query = SELECT+"FROM data_point this WHERE this.\"metric_id\" = ?";
-			
-			java.sql.PreparedStatement genorm_statement = null;
-			
-			try
-				{
-				genorm_statement = GenOrmDataSource.prepareStatement(query);
-				genorm_statement.setString(1, metricId);
-				
-				s_logger.debug(genorm_statement.toString());
-				
-				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
-				
-				return (rs);
-				}
-			catch (java.sql.SQLException sqle)
-				{
-				try
-					{
-					if (genorm_statement != null)
-						genorm_statement.close();
-					}
-				catch (java.sql.SQLException sqle2) { }
-					
-				if (s_logger.isDebugEnabled())
-					sqle.printStackTrace();
-				throw new GenOrmException(sqle);
-				}
-			}
-			
-		//---------------------------------------------------------------------------
-		/**
-		*/
-		public ResultSet getForMetricIdWithLimit(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, int limit, String order)
-			{
-			String query = SELECT+"from data_point this\n				where\n				this.\"metric_id\" = ?\n				and this.\"timestamp\" >= ?\n				and this.\"timestamp\" <= ?\n				order by this.\"timestamp\" %order%\n				limit ?";
-			HashMap<String, String> replaceMap = new HashMap<String, String>();
-			replaceMap.put("order", order);
-			query = QueryHelper.replaceText(query, replaceMap);
-			
-			java.sql.PreparedStatement genorm_statement = null;
-			
-			try
-				{
-				genorm_statement = GenOrmDataSource.prepareStatement(query);
-				genorm_statement.setString(1, metricId);genorm_statement.setTimestamp(2, startTime);genorm_statement.setTimestamp(3, endTime);genorm_statement.setInt(4, limit);
-				
-				s_logger.debug(genorm_statement.toString());
-				
-				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
-				
-				return (rs);
-				}
-			catch (java.sql.SQLException sqle)
-				{
-				try
-					{
-					if (genorm_statement != null)
-						genorm_statement.close();
-					}
-				catch (java.sql.SQLException sqle2) { }
-					
-				if (s_logger.isDebugEnabled())
-					sqle.printStackTrace();
-				throw new GenOrmException(sqle);
-				}
-			}
-			
-
 		
 		//---------------------------------------------------------------------------
 		/**
@@ -483,26 +323,16 @@ public class DataPoint_base extends GenOrmRecord
 		public void testQueryMethods()
 			{
 			ResultSet rs;
-			System.out.println("DataPoint.getForMetricId");
-			rs = getForMetricId("foo", new java.sql.Timestamp(0L), new java.sql.Timestamp(0L), "asc");
-			rs.close();
-			System.out.println("DataPoint.getWithMetricId");
-			getWithMetricId("foo");
-
-			System.out.println("DataPoint.getForMetricIdWithLimit");
-			rs = getForMetricIdWithLimit("foo", new java.sql.Timestamp(0L), new java.sql.Timestamp(0L), 10, "asc");
-			rs.close();
-
 			}
 		}
 		
 	//===========================================================================
 	public static interface ResultSet extends GenOrmResultSet
 		{
-		public ArrayList<DataPoint> getArrayList(int maxRows);
-		public ArrayList<DataPoint> getArrayList();
-		public DataPoint getRecord();
-		public DataPoint getOnlyRecord();
+		public ArrayList<ServiceModification> getArrayList(int maxRows);
+		public ArrayList<ServiceModification> getArrayList();
+		public ServiceModification getRecord();
+		public ServiceModification getOnlyRecord();
 		}
 		
 	//===========================================================================
@@ -548,9 +378,9 @@ public class DataPoint_base extends GenOrmRecord
 			@param maxRows if the result set contains more than this param
 				then an exception is thrown
 		*/
-		public ArrayList<DataPoint> getArrayList(int maxRows)
+		public ArrayList<ServiceModification> getArrayList(int maxRows)
 			{
-			ArrayList<DataPoint> results = new ArrayList<DataPoint>();
+			ArrayList<ServiceModification> results = new ArrayList<ServiceModification>();
 			int count = 0;
 			
 			try
@@ -558,13 +388,13 @@ public class DataPoint_base extends GenOrmRecord
 				if (m_onFirstResult)
 					{
 					count ++;
-					results.add(factory.newDataPoint(m_resultSet));
+					results.add(factory.newServiceModification(m_resultSet));
 					}
 					
 				while (m_resultSet.next() && (count < maxRows))
 					{
 					count ++;
-					results.add(factory.newDataPoint(m_resultSet));
+					results.add(factory.newServiceModification(m_resultSet));
 					}
 					
 				if (m_resultSet.next())
@@ -585,17 +415,17 @@ public class DataPoint_base extends GenOrmRecord
 			Returns the reults as an ArrayList of Record objects.
 			The Result set is closed within this call
 		*/
-		public ArrayList<DataPoint> getArrayList()
+		public ArrayList<ServiceModification> getArrayList()
 			{
-			ArrayList<DataPoint> results = new ArrayList<DataPoint>();
+			ArrayList<ServiceModification> results = new ArrayList<ServiceModification>();
 			
 			try
 				{
 				if (m_onFirstResult)
-					results.add(factory.newDataPoint(m_resultSet));
+					results.add(factory.newServiceModification(m_resultSet));
 					
 				while (m_resultSet.next())
-					results.add(factory.newDataPoint(m_resultSet));
+					results.add(factory.newServiceModification(m_resultSet));
 				}
 			catch (java.sql.SQLException sqle)
 				{
@@ -620,9 +450,9 @@ public class DataPoint_base extends GenOrmRecord
 		/**
 			Returns the current record in the result set
 		*/
-		public DataPoint getRecord()
+		public ServiceModification getRecord()
 			{
-			return (factory.newDataPoint(m_resultSet));
+			return (factory.newServiceModification(m_resultSet));
 			}
 			
 		//------------------------------------------------------------------------
@@ -631,17 +461,17 @@ public class DataPoint_base extends GenOrmRecord
 			are found an excpetion is thrown.
 			The ResultSet object is automatically closed by this call.
 		*/
-		public DataPoint getOnlyRecord()
+		public ServiceModification getOnlyRecord()
 			{
-			DataPoint ret = null;
+			ServiceModification ret = null;
 			
 			try
 				{
 				if (m_resultSet.next())
-					ret = factory.newDataPoint(m_resultSet);
+					ret = factory.newServiceModification(m_resultSet);
 					
 				if (m_resultSet.next())
-					throw new GenOrmException("Multiple rows returned in call from DataPoint.getOnlyRecord");
+					throw new GenOrmException("Multiple rows returned in call from ServiceModification.getOnlyRecord");
 				}
 			catch (java.sql.SQLException sqle)
 				{
@@ -675,9 +505,9 @@ public class DataPoint_base extends GenOrmRecord
 		
 	//===========================================================================
 		
-	private GenOrmString m_metricId;
-	private GenOrmTimestamp m_timestamp;
-	private GenOrmBinary m_value;
+	private GenOrmString m_service;
+	private GenOrmString m_serviceKey;
+	private GenOrmTimestamp m_modificationTime;
 
 	
 	private List<GenOrmRecordKey> m_foreignKeys;
@@ -688,10 +518,10 @@ public class DataPoint_base extends GenOrmRecord
 	//---------------------------------------------------------------------------
 	/**
 	*/
-	public String getMetricId() { return (m_metricId.getValue()); }
-	public DataPoint setMetricId(String data)
+	public String getService() { return (m_service.getValue()); }
+	public ServiceModification setService(String data)
 		{
-		boolean changed = m_metricId.setValue(data);
+		boolean changed = m_service.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
@@ -699,23 +529,23 @@ public class DataPoint_base extends GenOrmRecord
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
-			m_dirtyFlags.set(METRIC_ID_FIELD_META.getDirtyFlag());
+			m_dirtyFlags.set(SERVICE_FIELD_META.getDirtyFlag());
 			
 			if (m_isNewRecord) //Force set the prev value
-				m_metricId.setPrevValue(data);
+				m_service.setPrevValue(data);
 			}
 			
-		return ((DataPoint)this);
+		return ((ServiceModification)this);
 		}
 		
 
 	//---------------------------------------------------------------------------
 	/**
 	*/
-	public java.sql.Timestamp getTimestamp() { return (m_timestamp.getValue()); }
-	public DataPoint setTimestamp(java.sql.Timestamp data)
+	public String getServiceKey() { return (m_serviceKey.getValue()); }
+	public ServiceModification setServiceKey(String data)
 		{
-		boolean changed = m_timestamp.setValue(data);
+		boolean changed = m_serviceKey.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
@@ -723,23 +553,23 @@ public class DataPoint_base extends GenOrmRecord
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
-			m_dirtyFlags.set(TIMESTAMP_FIELD_META.getDirtyFlag());
+			m_dirtyFlags.set(SERVICE_KEY_FIELD_META.getDirtyFlag());
 			
 			if (m_isNewRecord) //Force set the prev value
-				m_timestamp.setPrevValue(data);
+				m_serviceKey.setPrevValue(data);
 			}
 			
-		return ((DataPoint)this);
+		return ((ServiceModification)this);
 		}
 		
 
 	//---------------------------------------------------------------------------
 	/**
 	*/
-	public byte[] getValue() { return (m_value.getValue()); }
-	public DataPoint setValue(byte[] data)
+	public java.sql.Timestamp getModificationTime() { return (m_modificationTime.getValue()); }
+	public ServiceModification setModificationTime(java.sql.Timestamp data)
 		{
-		boolean changed = m_value.setValue(data);
+		boolean changed = m_modificationTime.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
@@ -747,69 +577,45 @@ public class DataPoint_base extends GenOrmRecord
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
-			m_dirtyFlags.set(VALUE_FIELD_META.getDirtyFlag());
+			m_dirtyFlags.set(MODIFICATION_TIME_FIELD_META.getDirtyFlag());
 			
 			if (m_isNewRecord) //Force set the prev value
-				m_value.setPrevValue(data);
+				m_modificationTime.setPrevValue(data);
 			}
 			
-		return ((DataPoint)this);
+		return ((ServiceModification)this);
 		}
 		
-	public boolean isValueNull()
+	public boolean isModificationTimeNull()
 		{
-		return (m_value.isNull());
+		return (m_modificationTime.isNull());
 		}
 		
-	public DataPoint setValueNull()
+	public ServiceModification setModificationTimeNull()
 		{
-		boolean changed = m_value.setNull();
+		boolean changed = m_modificationTime.setNull();
 		
 		if (changed)
 			{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
-			m_dirtyFlags.set(VALUE_FIELD_META.getDirtyFlag());
+			m_dirtyFlags.set(MODIFICATION_TIME_FIELD_META.getDirtyFlag());
 			}
 		
-		return ((DataPoint)this);
+		return ((ServiceModification)this);
 		}
+	
+	
 	
 	
 	//---------------------------------------------------------------------------
-	public Metric getMetricRef()
+	protected void initialize(String service, String serviceKey)
 		{
-		return (Metric.factory.find(m_metricId.getValue()));
-		}
-		
-	//--------------------------------------------------------------------------
-	public DataPoint setMetricRef(Metric table)
-		{
-		//We add the record to the transaction if one of the key values change
-		if (m_metricId.setValue(table.getId()))
-			{
-			if ((m_dirtyFlags.isEmpty()) && (GenOrmDataSource.getGenOrmConnection() != null))
-				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
-			
-			m_dirtyFlags.set(METRIC_ID_FIELD_META.getDirtyFlag());
-			}
-
-
-			
-		return ((DataPoint)this);
-		}
-
-
-	
-	
-	//---------------------------------------------------------------------------
-	protected void initialize(String metricId, java.sql.Timestamp timestamp)
-		{
-		m_metricId.setValue(metricId);
-		m_metricId.setPrevValue(metricId);
-		m_timestamp.setValue(timestamp);
-		m_timestamp.setPrevValue(timestamp);
+		m_service.setValue(service);
+		m_service.setPrevValue(service);
+		m_serviceKey.setValue(serviceKey);
+		m_serviceKey.setPrevValue(serviceKey);
 
 		}
 		
@@ -826,9 +632,9 @@ public class DataPoint_base extends GenOrmRecord
 					s_logger.debug("Reading - "+meta.getColumnName(I) +" : "+rs.getString(I));
 					}
 				}
-			m_metricId.setValue(rs, 1);
-			m_timestamp.setValue(rs, 2);
-			m_value.setValue(rs, 3);
+			m_service.setValue(rs, 1);
+			m_serviceKey.setValue(rs, 2);
+			m_modificationTime.setValue(rs, 3);
 
 			}
 		catch (java.sql.SQLException sqle)
@@ -838,7 +644,7 @@ public class DataPoint_base extends GenOrmRecord
 		}
 	
 	//---------------------------------------------------------------------------
-	/*package*/ DataPoint_base()
+	/*package*/ ServiceModification_base()
 		{
 		super(TABLE_NAME);
 		m_logger = s_logger;
@@ -846,21 +652,16 @@ public class DataPoint_base extends GenOrmRecord
 		m_dirtyFlags = new java.util.BitSet(NUMBER_OF_COLUMNS);
 		
 
-		m_metricId = new GenOrmString(METRIC_ID_FIELD_META);
-		addField(COL_METRIC_ID, m_metricId);
+		m_service = new GenOrmString(SERVICE_FIELD_META);
+		addField(COL_SERVICE, m_service);
 
-		m_timestamp = new GenOrmTimestamp(TIMESTAMP_FIELD_META);
-		addField(COL_TIMESTAMP, m_timestamp);
+		m_serviceKey = new GenOrmString(SERVICE_KEY_FIELD_META);
+		addField(COL_SERVICE_KEY, m_serviceKey);
 
-		m_value = new GenOrmBinary(VALUE_FIELD_META);
-		addField(COL_VALUE, m_value);
+		m_modificationTime = new GenOrmTimestamp(MODIFICATION_TIME_FIELD_META);
+		addField(COL_MODIFICATION_TIME, m_modificationTime);
 
 		GenOrmRecordKey foreignKey;
-		foreignKey = new GenOrmRecordKey("metric");
-		foreignKey.addKeyField("id", m_metricId);
-
-		m_foreignKeys.add(foreignKey);
-
 		}
 	
 	//---------------------------------------------------------------------------
@@ -894,14 +695,14 @@ public class DataPoint_base extends GenOrmRecord
 		{
 		StringBuilder sb = new StringBuilder();
 		
-		sb.append("metric_id=\"");
-		sb.append(m_metricId.getValue());
+		sb.append("service=\"");
+		sb.append(m_service.getValue());
 		sb.append("\" ");
-		sb.append("timestamp=\"");
-		sb.append(m_timestamp.getValue());
+		sb.append("service_key=\"");
+		sb.append(m_serviceKey.getValue());
 		sb.append("\" ");
-		sb.append("value=\"");
-		sb.append(m_value.getValue());
+		sb.append("modification_time=\"");
+		sb.append(m_modificationTime.getValue());
 		sb.append("\" ");
 
 		

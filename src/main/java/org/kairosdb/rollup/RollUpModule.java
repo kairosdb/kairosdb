@@ -13,7 +13,7 @@ import java.util.concurrent.ScheduledExecutorService;
 public class RollUpModule extends AbstractModule
 {
 
-	public static final String ROLLUP_EXECUTOR = "RollupExecutor";
+	static final String ROLLUP_EXECUTOR = "RollupExecutor";
 
 	@Override
 	protected void configure()
@@ -24,7 +24,6 @@ public class RollUpModule extends AbstractModule
 		bind(RollUpTasksStore.class).to(RollUpTasksStoreImpl.class).in(Scopes.SINGLETON);
 		bind(RollUpAssignmentStore.class).to(RollUpAssignmentStoreImpl.class).in(Scopes.SINGLETON);
 		bind(BalancingAlgorithm.class).to(ScoreBalancingAlgorithm.class).in(Scopes.SINGLETON);
-		bind(RollUpJob.class);
 	}
 
 	@Provides

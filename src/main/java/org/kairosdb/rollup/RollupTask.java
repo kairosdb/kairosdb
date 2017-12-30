@@ -24,7 +24,7 @@ public class RollupTask
 	// todo add tags
 
 	private final String id;
-	private final transient List<Rollup> rollups = new ArrayList<Rollup>();
+	private final transient List<Rollup> rollups = new ArrayList<>();
 
 	@NotNull
 	@NotEmpty()

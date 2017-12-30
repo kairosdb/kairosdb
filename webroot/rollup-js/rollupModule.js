@@ -505,7 +505,7 @@ module.directive('aggregatorproperties', function ($compile)
                 html = '';
                 _.each(scope.descriptors, function (descriptor)
                 {
-                    if (descriptor.name == scope.agg.name) {
+                    if (descriptor.name === scope.agg.name) {
                         _.each(descriptor.properties, function (property)
                         {
                             if (html.length > 0) {
@@ -543,35 +543,32 @@ module.directive('aggregatorproperties', function ($compile)
                 obj[path[i]] = value;
             };
 
-            scope.getHtml = function(property, parentName)
-            {
-                var name = parentName ? parentName + "." + property.name: property.name;
+            scope.getHtml = function(property, parentName) {
+                var name = parentName ? parentName + "." + property.name : property.name;
                 var html = "";
-                var modelName = 'agg.' + name;
-                if (property.type == 'boolean') {
+                var modelName = 'agg1.' + name;
+                if (property.type === 'boolean') {
                     html += "<span>" + property.name + "</span> ";
                     html += "<input name='" + modelName + "' type='checkbox' ng-init=\"" + modelName + "=" + property.defaultValue + "\" + ng-model='" + modelName + "' >";
                 }
-                else if (property.type == 'double') {
+                else if (property.type === 'double') {
                     html += "<span>" + property.name + "</span> ";
                     html += "<input  class='small-input' type='text' ng-init=\"" + modelName + "=" + property.defaultValue + "\" + ng-model='" + modelName + "' style='width:30px'>";
                 }
-                else if (property.type == 'int' || property.type == 'long') {
+                else if (property.type === 'int' || property.type === 'long') {
                     html += "<span>" + property.name + "</span> ";
                     html += "<input name='" + modelName + "' class='small-input' type='text' ng-init=\"" + modelName + "='" + property.defaultValue + "'\" + ng-model='" + modelName + "' value='" + property.defaultValue + "' style='width:30px'>";
                 }
-                else if (property.type == 'String') {
+                else if (property.type === 'String') {
                     html += "<span>" + property.name + "</span> ";
                     html += "<input class='small-input' type='text' ng-init=\"" + modelName + "='" + property.defaultValue + "'\" ng-model='" + modelName + "' style='width:90px' ng-model='agg." + property.name + "'>";
                 }
-                else if (property.type == "Object")
-                {
-                    _.each(property.properties, function (subProperty)
-                    {
+                else if (property.type === "Object") {
+                    _.each(property.properties, function (subProperty) {
                         html += scope.getHtml(subProperty, property.name);
                     });
                 }
-                else if (property.type == 'enum') {
+                else if (property.type === 'enum') {
                     scope.values = property.options;
                     scope.setValue(scope.agg, modelName, property.defaultValue);
                     html += "<span>" + property.name + "</span> ";

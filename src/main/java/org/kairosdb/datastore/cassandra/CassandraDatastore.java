@@ -263,7 +263,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	}
 
 	@Override
-	public String getValue(String service, String serviceKey, String key) throws DatastoreException
+	public ServiceKeyValue getValue(String service, String serviceKey, String key) throws DatastoreException
 	{
 		BoundStatement statement = new BoundStatement(m_schema.psServiceIndexGet);
 		statement.setString(0, service);
@@ -273,11 +273,10 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		ResultSet resultSet = m_session.execute(statement);
 		Row row = resultSet.one();
 
-		String value = null;
 		if (row != null)
-			value = row.getString(0);
+			return new ServiceKeyValue(row.getString(0), new Date(row.getTime(1)));
 
-		return value;
+		return null;
 	}
 
 	@Override
@@ -315,7 +314,10 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		ResultSet resultSet = m_session.execute(statement);
 		while (!resultSet.isExhausted())
 		{
-			ret.add(resultSet.one().getString(0));
+			String key = resultSet.one().getString(0);
+			if (key != null) {  // The last row for the primary key doesn't get deleted and has a null key and isExhausted still return false. So check for null
+				ret.add(key);
+			}
 		}
 
 		return ret;
@@ -338,7 +340,10 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		ResultSet resultSet = m_session.execute(statement);
 		while (!resultSet.isExhausted())
 		{
-			ret.add(resultSet.one().getString(0));
+			String key = resultSet.one().getString(0);
+			if (key != null) {  // The last row for the primary key doesn't get deleted and has a null key and isExhausted still return false. So check for null
+				ret.add(key);
+			}
 		}
 
 		return ret;
@@ -354,9 +359,32 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		statement.setString(2, key);
 
 		m_session.execute(statement);
+
+		// Update modification time
+		statement = new BoundStatement(m_schema.psServiceIndexInsertModifiedTime);
+		statement.setString(0, service);
+		statement.setString(1, serviceKey);
+
+		m_session.execute(statement);
 	}
 
-    @Override
+	@Override
+	public Date getServiceKeyLastModifiedTime(String service, String serviceKey) throws DatastoreException
+	{
+		BoundStatement statement = new BoundStatement(m_schema.psServiceIndexModificationTime);
+		statement.setString(0, service);
+		statement.setString(1, serviceKey);
+
+		ResultSet resultSet = m_session.execute(statement);
+		Row row = resultSet.one();
+
+		if (row != null)
+			return new Date(row.getTime(0));
+
+		return new Date(0L);
+	}
+
+	@Override
 	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 	{
 		cqlQueryWithRowKeys(query, queryCallback, getKeysForQueryIterator(query));

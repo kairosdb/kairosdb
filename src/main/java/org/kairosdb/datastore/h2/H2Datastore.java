@@ -17,6 +17,8 @@
 package org.kairosdb.datastore.h2;
 
 import com.google.common.collect.ImmutableSortedMap;
+import org.kairosdb.core.datastore.ServiceKeyValue;
+import org.kairosdb.datastore.h2.orm.ServiceModification;
 import org.kairosdb.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -66,6 +68,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -461,8 +464,13 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 		try
 		{
 			ServiceIndex serviceIndex = ServiceIndex.factory.findOrCreate(service, serviceKey, key);
-			if (value != null)
+			if (value != null) {
 				serviceIndex.setValue(value);
+
+				// Update the service key timestamp
+				ServiceModification orCreate = ServiceModification.factory.findOrCreate(service, serviceKey);
+				orCreate.setModificationTime(new java.sql.Timestamp(System.currentTimeMillis()));
+			}
 
 			GenOrmDataSource.commit();
 		}
@@ -473,11 +481,11 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	}
 
 	@Override
-	public String getValue(String service, String serviceKey, String key) throws DatastoreException
+	public ServiceKeyValue getValue(String service, String serviceKey, String key) throws DatastoreException
 	{
 		ServiceIndex serviceIndex = ServiceIndex.factory.find(service, serviceKey, key);
 		if (serviceIndex != null)
-			return serviceIndex.getValue();
+			return new ServiceKeyValue(serviceIndex.getValue(), serviceIndex.getModificationTime());
 		else
 			return null;
 	}
@@ -583,7 +591,12 @@ public class H2Datastore implements Datastore, ServiceKeyStore
         try
         {
             ServiceIndex.factory.delete(service, serviceKey, key);
-            GenOrmDataSource.commit();
+
+            // Update the service key timestamp
+			ServiceModification orCreate = ServiceModification.factory.findOrCreate(service, serviceKey);
+			orCreate.setModificationTime(new java.sql.Timestamp(System.currentTimeMillis()));
+
+			GenOrmDataSource.commit();
         }
         finally
         {
@@ -591,7 +604,18 @@ public class H2Datastore implements Datastore, ServiceKeyStore
         }
     }
 
-    private String createMetricKey(String metricName, SortedMap<String, String> tags,
+	@Override
+	public Date getServiceKeyLastModifiedTime(String service, String serviceKey)
+			throws DatastoreException
+	{
+		ServiceModification serviceModification = ServiceModification.factory.find(service, serviceKey);
+		if (serviceModification != null)
+			return serviceModification.getModificationTime();
+		else
+			return null;
+	}
+
+	private String createMetricKey(String metricName, SortedMap<String, String> tags,
 			String type)
 	{
 		StringBuilder sb = new StringBuilder();

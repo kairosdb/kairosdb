@@ -201,6 +201,7 @@
 					<tr ng-repeat="aggregator in task.aggregators track by $index">
 						<td>
 							<span ng-show="task.complex">{{ toHumanReadableAggregator(aggregator) }}</span>
+							<!-- todo att ngif -->
  							<span ng-show="aggregator.edit">
 								<aggregator agg="aggregator"
                                             descriptors="getAggregatorDescriptors()"
@@ -210,7 +211,9 @@
 							</span>
                             <a href="" ng-show="!aggregator.edit && !task.complex"
                                ng-click="aggregator.edit=true" style="color:black">
-                                {{ toHumanReadableAggregator(aggregator) }}</a>
+								{{aggregator}}
+                                <!--{{ toHumanReadableAggregator(aggregator) }}-->
+							</a>
 
                         </td>
                         <td style="width:20%; vertical-align:top; text-align:right; margin-left: 5px; margin-right: 5px">
@@ -243,7 +246,7 @@
 	</table>
 </div>
 
-  <!--{{ tasks }}-->
+  {{ tasks }}
 <script>
 	$(document).ready(function () {
 		$("[data-toggle=tooltip]").tooltip();

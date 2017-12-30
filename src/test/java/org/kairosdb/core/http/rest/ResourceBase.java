@@ -41,6 +41,7 @@ import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
 import org.kairosdb.core.processingstage.FeatureProcessingFactory;
 import org.kairosdb.core.processingstage.FeatureProcessor;
+import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.plugin.Aggregator;
@@ -249,11 +250,11 @@ public abstract class ResourceBase
         }
 
         @Override
-        public String getValue(String service, String serviceKey, String key) throws DatastoreException
+        public ServiceKeyValue getValue(String service, String serviceKey, String key) throws DatastoreException
         {
             if (m_toThrow != null)
                 throw m_toThrow;
-            return metadata.get(service + "/" + serviceKey + "/" + key);
+            return new ServiceKeyValue(metadata.get(service + "/" + serviceKey + "/" + key), new Date());
         }
 
         @Override
@@ -313,6 +314,13 @@ public abstract class ResourceBase
                 throw m_toThrow;
 
             metadata.remove(service + "/" + serviceKey + "/" + key);
+        }
+
+        @Override
+        public Date getServiceKeyLastModifiedTime(String service, String serviceKey)
+                throws DatastoreException
+        {
+            return null;
         }
     }
 }

@@ -31,12 +31,32 @@
 		<col name="type" type="string"/>
 	</table>
 
+	<table name="service_modification">
+		<property key="hsqldb_tableType" value="CACHED"/>
+		<col name="service" type="string" primary_key="true"/>
+		<col name="service_key" type="string" primary_key="true"/>
+		<col name="modification_time" type="timestamp"/>
+	</table>
+
 	<table name="service_index">
 		<property key="hsqldb_tableType" value="CACHED"/>
 		<col name="service" type="string" primary_key="true"/>
 		<col name="service_key" type="string" primary_key="true"/>
 		<col name="key" type="string" primary_key="true"/>
 		<col name="value" type="string"/>
+		<col name="modification_time" type="timestamp" auto_set="mts"/>
+
+		<table_query name="service_keys" result_type="multi">
+			<input>
+				<param name="service" type="string" test="foo"/>
+			</input>
+			<sql>
+				from service_index this
+				where
+				this."service" = ?
+				order by this."key" asc
+			</sql>
+		</table_query>
 
 		<table_query name="keys" result_type="multi">
 			<input>
@@ -67,6 +87,17 @@
 				ORDER BY this."key" asc
 			</sql>
 		</table_query>
+
+		<table_query name="modification_time" result_type="single">
+			<input>
+			</input>
+			<return>
+			</return>
+			<sql>
+				select "modification_time" from service_index
+			</sql>
+		</table_query>
+
 	</table>
 
 	<table name="tag">

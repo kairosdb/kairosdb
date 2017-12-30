@@ -12,12 +12,18 @@ import org.kairosdb.rollup.RollupTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.*;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
-import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.core.http.rest.MetricsResource.setHeaders;
@@ -70,11 +76,11 @@ public class RollUpResource
 	{
 		try
 		{
-			List<RollupTask> tasks = store.read();
+			Map<String, RollupTask> tasks = store.read();
 
 			StringBuilder json = new StringBuilder();
 			json.append('[');
-			for (RollupTask task : tasks)
+			for (RollupTask task : tasks.values())
 			{
 				json.append(task.getJson()).append(",");
 			}
@@ -103,20 +109,10 @@ public class RollUpResource
 		try
 		{
 			ResponseBuilder responseBuilder;
-			RollupTask found = null;
-			List<RollupTask> tasks = store.read();
-			for (RollupTask task : tasks)
+			RollupTask task = store.read(id);
+			if (task != null)
 			{
-				if (task.getId().equals(id))
-				{
-					found = task;
-					break;
-				}
-			}
-
-			if (found != null)
-			{
-				responseBuilder = Response.status(Status.OK).entity(found.getJson());
+				responseBuilder = Response.status(Status.OK).entity(task.getJson());
 			}
 			else
 			{
@@ -141,7 +137,8 @@ public class RollUpResource
 		{
 			checkNotNullOrEmpty(id);
 
-			if (findExistingTask(id) != null)
+			RollupTask task = store.read(id);
+			if (task != null)
 			{
 				store.remove(id);
 				return setHeaders(Response.status(Status.NO_CONTENT)).entity("").build();
@@ -171,7 +168,8 @@ public class RollUpResource
 		try
 		{
 			ResponseBuilder responseBuilder;
-			if (findExistingTask(id) == null)
+			RollupTask found = store.read(id);
+			if (found == null)
 			{
 				responseBuilder = Response.status(Status.NOT_FOUND).entity(new ErrorResponse("Resource not found for id " + id));
 			}
@@ -200,19 +198,5 @@ public class RollUpResource
 	private RollupResponse createResponse(RollupTask task)
 	{
 		return new RollupResponse(task.getId(), task.getName(), RESOURCE_URL + task.getId());
-	}
-
-	private RollupTask findExistingTask(String id) throws RollUpException
-	{
-		List<RollupTask> tasks = store.read();
-		for (RollupTask task : tasks)
-		{
-			if (task.getId().equals(id))
-			{
-				return task;
-			}
-		}
-
-		return null;
 	}
 }

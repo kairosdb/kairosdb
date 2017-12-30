@@ -22,14 +22,14 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	$scope.TOOLTIP_INCOMPLETE = "Roll-up is not complete. Complete all grey-out fields.";
 	$scope.TOOLTIP_COMPLEX = "This roll-up is a complex roll-up and cannot be managed from this UI.";
 
-	$scope.EXECUTION_TYPES = ["Hourly", "Daily", "Weekly", "Monthly", "Yearly"];
+	$scope.EXECUTION_TYPES = ["Every Minute", "Hourly", "Daily", "Weekly", "Monthly", "Yearly"];
 	$scope.GROUP_BY_TYPES = ["tag", "time"];
 	$scope.SAMPLING_UNITS = ['milliseconds', 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'];
 
 	$scope.DEFAULT_TASK_NAME = "<roll-up name>";
 	$scope.DEFAULT_METRIC_NAME = "<metric name>";
 	$scope.DEFAULT_SAVE_AS = "<new metric name>";
-	$scope.DEFAULT_EXECUTE = $scope.EXECUTION_TYPES[1];
+	$scope.DEFAULT_EXECUTE = $scope.EXECUTION_TYPES[2];
 	$scope.METRIC_NAME_LIST_MAX_LENGTH = 20;
 	$scope.DEFAULT_GROUP_BY_TYPE = "tag";
 	$scope.DEFAULT_SAMPLING = {"value": 1, "unit": "hours"};
@@ -39,7 +39,8 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		{'name': 'dev', 'sampling': $scope.DEFAULT_SAMPLING},
 		{'name': 'max', 'sampling': $scope.DEFAULT_SAMPLING},
 		{'name': 'min', 'sampling': $scope.DEFAULT_SAMPLING},
-		{'name': 'sum', 'sampling': $scope.DEFAULT_SAMPLING},
+		// {'name': 'sum', 'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'sum', 'sampling': {'value': 2, 'unit': 'minutes'}},
 		{'name': 'least_squares', 'sampling': $scope.DEFAULT_SAMPLING},
 		{'name': 'count', 'sampling': $scope.DEFAULT_SAMPLING},
 		{'name': 'percentile', 'sampling': $scope.DEFAULT_SAMPLING}];
@@ -62,10 +63,12 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
                             if (response) {
                                 _.each(response, function (rollupTask)
                                 {
+                                	console.log(rollupTask);
                                     // convert to a simpler model
                                     var task = $scope.toSimpleTask(rollupTask);
+                                    console.log(task);
                                     $scope.tasks.push(task);
-                                    $scope.checkForIncompleteTask(task)
+                                    $scope.checkForIncompleteTask(task);
 
                                 });
 
@@ -239,7 +242,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 			metric_name: angular.copy($scope.DEFAULT_METRIC_NAME),
 			save_as: angular.copy($scope.DEFAULT_SAVE_AS),
 			executionType: angular.copy($scope.DEFAULT_EXECUTE),
-			aggregators: [angular.copy($scope.DEFAULT_AGGREGATOR)],
+			aggregators: [{'name': 'sum1', 'sampling': {'value': 2, 'unit': 'minutes'}}],
 			group_by_type: angular.copy($scope.DEFAULT_GROUP_BY_TYPE)
 		};
 		task.incomplete = true;
@@ -266,7 +269,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 
 			var query = task.rollups[0].query;
 			if (query) {
-				$scope.toSimpleQuery(query, newTask, task);
+				$scope.toSimpleQuery(query, newTask);
 			}
 		}
 		return newTask;
@@ -354,16 +357,17 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 			case 'milliseconds':
 			case 'seconds':
 			case 'minutes':
+                return $scope.EXECUTION_TYPES[0];
 			case 'hours':
-				return $scope.EXECUTION_TYPES[0];
-			case 'days':
 				return $scope.EXECUTION_TYPES[1];
-			case 'weeks':
+			case 'days':
 				return $scope.EXECUTION_TYPES[2];
-			case 'months':
+			case 'weeks':
 				return $scope.EXECUTION_TYPES[3];
-			case 'years':
+			case 'months':
 				return $scope.EXECUTION_TYPES[4];
+			case 'years':
+				return $scope.EXECUTION_TYPES[5];
 			default:
 				$scope.alert("Invalid execution interval specified: " + executionInterval.unit);
 		}
@@ -372,14 +376,16 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	$scope.convertToExecutionInterval = function (executionType) {
 		switch (executionType) {
 			case $scope.EXECUTION_TYPES[0]:
-				return 'hours';
+				return 'minutes';
 			case $scope.EXECUTION_TYPES[1]:
-				return "days";
+				return 'hours';
 			case $scope.EXECUTION_TYPES[2]:
-				return "weeks";
+				return "days";
 			case $scope.EXECUTION_TYPES[3]:
-				return "months";
+				return "weeks";
 			case $scope.EXECUTION_TYPES[4]:
+				return "months";
+			case $scope.EXECUTION_TYPES[5]:
 				return "years";
 			default:
 				$scope.alert("Invalid execution interval specified: " + executionInterval.unit);

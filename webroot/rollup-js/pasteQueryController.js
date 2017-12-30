@@ -2,8 +2,8 @@ module.controller('PasteQueryCtrl', ['$scope', '$modalInstance', PasteQueryCtrl]
 
 function PasteQueryCtrl($scope, $modalInstance) {
 
-	$scope.EXECUTION_TYPES = ["Hourly", "Daily", "Weekly", "Monthly", "Yearly"];
-	$scope.executionType = $scope.EXECUTION_TYPES[1];
+    $scope.EXECUTION_TYPES = ["Every Minute", "Hourly", "Daily", "Weekly", "Monthly", "Yearly"];
+	$scope.executionType = $scope.EXECUTION_TYPES[2];
 
 	$scope.ok = function () {
 		var error = $scope.validate();

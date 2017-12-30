@@ -19,8 +19,8 @@ public class RollUpAssignmentStoreImpl implements RollUpAssignmentStore
 {
     public static final Logger logger = LoggerFactory.getLogger(RollUpAssignmentStoreImpl.class);
 
-    public static final String SERVICE = "Rollups";
-    public static final String SERVICE_KEY_ASSIGNMENTS = "Assignment";
+    static final String SERVICE = "Rollups";
+    static final String SERVICE_KEY_ASSIGNMENTS = "Assignment";
 
     private final ServiceKeyStore serviceKeyStore;
 

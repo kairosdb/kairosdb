@@ -24,8 +24,8 @@ public class RollUpTasksStoreImpl implements RollUpTasksStore
 {
     public static final Logger logger = LoggerFactory.getLogger(SchedulingManager.class);
 
-    public static final String SERVICE = "_Rollups";
-    public static final String SERVICE_KEY_CONFIG = "Config";
+    static final String SERVICE = "_Rollups";
+    static final String SERVICE_KEY_CONFIG = "Config";
 
     private ServiceKeyStore keyStore;
     private final QueryParser parser;

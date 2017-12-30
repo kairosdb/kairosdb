@@ -39,7 +39,7 @@ public class RollUpJob implements InterruptableJob
 
 	private static final String ROLLUP_TIME = "kairosdb.rollup.execution-time";
 
-	protected static final int TOO_OLD_MULTIPLIER = 4;
+	private static final int TOO_OLD_MULTIPLIER = 4;
 	private boolean interrupted;
 	private LongDataPointFactory longDataPointFactory = new LongDataPointFactoryImpl();
 	private StringDataPointFactory stringDataPointFactory = new StringDataPointFactory();
@@ -167,7 +167,7 @@ public class RollUpJob implements InterruptableJob
 	/**
 	 Returns the last data point the rollup created
 	 */
-	protected static DataPoint getLastRollupDataPoint(KairosDatastore datastore, String rollupName, long now) throws DatastoreException
+	static DataPoint getLastRollupDataPoint(KairosDatastore datastore, String rollupName, long now) throws DatastoreException
 	{
 		QueryMetric rollupQuery = new QueryMetric(0, now, 0, rollupName);
 		rollupQuery.setLimit(1);
@@ -179,7 +179,7 @@ public class RollUpJob implements InterruptableJob
 	/**
 	 Returns the next data point for the metric given a starting data point
 	 */
-	protected static DataPoint getFutureDataPoint(KairosDatastore datastore, String metricName, long now, DataPoint startPoint) throws DatastoreException
+	static DataPoint getFutureDataPoint(KairosDatastore datastore, String metricName, long now, DataPoint startPoint) throws DatastoreException
 	{
 		QueryMetric rollupQuery = new QueryMetric(startPoint.getTimestamp() + 1, now, 0, metricName);
 		rollupQuery.setLimit(1);
@@ -218,7 +218,7 @@ public class RollUpJob implements InterruptableJob
 	 Returns the time stamp of the specified data point. If the data point is
 	 null then it returns the start time for one sampling period before now.
 	 */
-	protected static long calculateStartTime(DataPoint dataPoint, Sampling lastSampling, long now)
+	static long calculateStartTime(DataPoint dataPoint, Sampling lastSampling, long now)
 	{
 		checkNotNull(lastSampling, "At least one aggregators in the query must be a RangeAggregator.");
 

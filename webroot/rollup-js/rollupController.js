@@ -39,8 +39,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 		{'name': 'dev', 'sampling': $scope.DEFAULT_SAMPLING},
 		{'name': 'max', 'sampling': $scope.DEFAULT_SAMPLING},
 		{'name': 'min', 'sampling': $scope.DEFAULT_SAMPLING},
-		// {'name': 'sum', 'sampling': $scope.DEFAULT_SAMPLING},
-		{'name': 'sum', 'sampling': {'value': 2, 'unit': 'minutes'}},
+		{'name': 'sum', 'sampling': $scope.DEFAULT_SAMPLING},
 		{'name': 'least_squares', 'sampling': $scope.DEFAULT_SAMPLING},
 		{'name': 'count', 'sampling': $scope.DEFAULT_SAMPLING},
 		{'name': 'percentile', 'sampling': $scope.DEFAULT_SAMPLING}];
@@ -63,10 +62,8 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
                             if (response) {
                                 _.each(response, function (rollupTask)
                                 {
-                                	console.log(rollupTask);
                                     // convert to a simpler model
                                     var task = $scope.toSimpleTask(rollupTask);
-                                    console.log(task);
                                     $scope.tasks.push(task);
                                     $scope.checkForIncompleteTask(task);
 
@@ -242,7 +239,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 			metric_name: angular.copy($scope.DEFAULT_METRIC_NAME),
 			save_as: angular.copy($scope.DEFAULT_SAVE_AS),
 			executionType: angular.copy($scope.DEFAULT_EXECUTE),
-			aggregators: [{'name': 'sum1', 'sampling': {'value': 2, 'unit': 'minutes'}}],
+			aggregators: [angular.copy($scope.DEFAULT_AGGREGATOR)],
 			group_by_type: angular.copy($scope.DEFAULT_GROUP_BY_TYPE)
 		};
 		task.incomplete = true;

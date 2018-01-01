@@ -1,6 +1,7 @@
 package org.kairosdb.rollup;
 
 import com.google.inject.Inject;
+import org.apache.commons.io.FileUtils;
 import org.h2.util.StringUtils;
 import org.kairosdb.core.datastore.ServiceKeyStore;
 import org.kairosdb.core.exception.DatastoreException;
@@ -11,6 +12,10 @@ import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +29,7 @@ public class RollUpTasksStoreImpl implements RollUpTasksStore
 {
     public static final Logger logger = LoggerFactory.getLogger(SchedulingManager.class);
 
+    private static final String OLD_FILENAME = "/tmp/rollup.config";
     static final String SERVICE = "_Rollups";
     static final String SERVICE_KEY_CONFIG = "Config";
 
@@ -32,9 +38,17 @@ public class RollUpTasksStoreImpl implements RollUpTasksStore
 
     @Inject
     public RollUpTasksStoreImpl(ServiceKeyStore keyStore, QueryParser parser)
+            throws RollUpException
     {
         this.keyStore = checkNotNull(keyStore, "keyStore cannot be null");
         this.parser = checkNotNull(parser, "parser cannot be null");
+
+        try {
+            importFromOldFile();
+        }
+        catch (RollUpException | IOException | QueryException e) {
+            throw new RollUpException("Failed to complete import from old roll-up format to new format in the datastore.", e);
+        }
     }
 
     @Override
@@ -143,6 +157,29 @@ public class RollUpTasksStoreImpl implements RollUpTasksStore
         }
         catch (DatastoreException e) {
             throw new RollUpException("Could not read from service keystore", e);
+        }
+    }
+
+    private void importFromOldFile()
+            throws RollUpException, IOException, QueryException
+    {
+        File oldFile = new File(OLD_FILENAME);
+        if (oldFile.exists()) {
+            List<String> taskJson = FileUtils.readLines(oldFile, Charset.forName("UTF-8"));
+            List<RollupTask> tasks = new ArrayList<>();
+            for (String json : taskJson) {
+                RollupTask task = parser.parseRollupTask(json);
+                if (task != null) {
+                    tasks.add(task);
+                }
+            }
+            write(tasks);
+            boolean deleted = oldFile.delete();
+            if (!deleted)
+            {
+                throw new IOException("Could not delete imported roll-up task file " + oldFile.getAbsolutePath());
+            }
+            logger.info("Roll-up task successfully imported from old format into the new format into the datastore. Old file was removed " + oldFile.getAbsolutePath());
         }
     }
 }

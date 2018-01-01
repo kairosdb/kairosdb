@@ -33,16 +33,17 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	$scope.METRIC_NAME_LIST_MAX_LENGTH = 20;
 	$scope.DEFAULT_GROUP_BY_TYPE = "tag";
 	$scope.DEFAULT_SAMPLING = {"value": 1, "unit": "hours"};
+	$scope.DEFAULT_ALIGNMENT = "'align_sampling': true";
 
 	$scope.AGGREGATORS = [
-		{'name': 'avg', 'sampling': $scope.DEFAULT_SAMPLING},
-		{'name': 'dev', 'sampling': $scope.DEFAULT_SAMPLING},
-		{'name': 'max', 'sampling': $scope.DEFAULT_SAMPLING},
-		{'name': 'min', 'sampling': $scope.DEFAULT_SAMPLING},
-		{'name': 'sum', 'sampling': $scope.DEFAULT_SAMPLING},
-		{'name': 'least_squares', 'sampling': $scope.DEFAULT_SAMPLING},
-		{'name': 'count', 'sampling': $scope.DEFAULT_SAMPLING},
-		{'name': 'percentile', 'sampling': $scope.DEFAULT_SAMPLING}];
+		{'name': 'avg', 'align_sampling': true, 'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'dev', 'align_sampling': true,  'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'max', 'align_sampling': true,  'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'min', 'align_sampling': true,  'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'sum', 'align_sampling': true,  'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'least_squares',  'align_sampling': true, 'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'count',  'align_sampling': true, 'sampling': $scope.DEFAULT_SAMPLING},
+		{'name': 'percentile',  'align_sampling': true, 'sampling': $scope.DEFAULT_SAMPLING}];
 
     $scope.aggregatorDescriptor = {};
 

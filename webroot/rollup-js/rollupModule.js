@@ -549,19 +549,19 @@ module.directive('aggregatorproperties', function ($compile)
                 var modelName = 'agg.' + name;
                 if (property.type === 'boolean') {
                     html += "<span>" + property.name + "</span> ";
-                    html += "<input name='" + modelName + "' type='checkbox' ng-init=\"" + modelName + "=" + property.defaultValue + "\" + ng-model='" + modelName + "' >";
+                    html += "<input name='" + modelName + "' type='checkbox' ng-model='" + modelName + "' >";
                 }
                 else if (property.type === 'double') {
                     html += "<span>" + property.name + "</span> ";
-                    html += "<input  class='small-input' type='text' ng-init=\"" + modelName + "=" + property.defaultValue + "\" + ng-model='" + modelName + "' style='width:30px'>";
+                    html += "<input  class='small-input' type='text' ng-model='" + modelName + "' style='width:30px'>";
                 }
                 else if (property.type === 'int' || property.type === 'long') {
                     html += "<span>" + property.name + "</span> ";
-                    html += "<input name='" + modelName + "' class='small-input' type='text' ng-init=\"" + modelName + "='" + property.defaultValue + "'\" + ng-model='" + modelName + "' value='" + property.defaultValue + "' style='width:30px'>";
+                    html += "<input name='" + modelName + "' class='small-input' type='text' ng-model='" + modelName + "' value='" + property.defaultValue + "' style='width:30px'>";
                 }
                 else if (property.type === 'String') {
                     html += "<span>" + property.name + "</span> ";
-                    html += "<input class='small-input' type='text' ng-init=\"" + modelName + "='" + property.defaultValue + "'\" ng-model='" + modelName + "' style='width:90px' ng-model='agg." + property.name + "'>";
+                    html += "<input class='small-input' type='text' ng-model='" + modelName + "' style='width:90px' ng-model='agg." + property.name + "'>";
                 }
                 else if (property.type === "Object") {
                     _.each(property.properties, function (subProperty) {
@@ -570,7 +570,6 @@ module.directive('aggregatorproperties', function ($compile)
                 }
                 else if (property.type === 'enum') {
                     scope.values = property.options;
-                    scope.setValue(scope.agg, modelName, property.defaultValue);
                     html += "<span>" + property.name + "</span> ";
                     html += '<div class="dropdown" style="display:inline-block">';
                     html += '	<button class="btn btn-default dropdown-toggle" type="button" ' +

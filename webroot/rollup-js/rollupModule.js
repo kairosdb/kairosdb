@@ -530,10 +530,23 @@ module.directive('aggregatorproperties', function ($compile)
                 scope.renderHtml();
             });
 
+            scope.getValue = function(obj, path)
+            {
+                path = path.split('.');
+                for(var i = 0; i < path.length; i++){
+                    if (!obj[path[i]])
+                    {
+                        return null;
+                    }
+                    obj = obj[path[i]];
+                }
+                return obj;
+            };
+
             scope.setValue = function (obj, path, value)
             {
                 path = path.split('.');
-                for(var i = 1; i < path.length - 1; i++){
+                for(var i = 0; i < path.length - 1; i++){
                     if (!obj[path[i]])
                     {
                         obj[path[i]] = {}; // create object if doesn't exist
@@ -543,23 +556,36 @@ module.directive('aggregatorproperties', function ($compile)
                 obj[path[i]] = value;
             };
 
+            scope.setDefaultValue = function(modelName, defaultValue)
+            {
+                var value = scope.getValue(scope, modelName);
+                if (value === null)
+                {
+                    scope.setValue(scope, modelName, defaultValue);
+                }
+            };
+
             scope.getHtml = function(property, parentName) {
                 var name = parentName ? parentName + "." + property.name : property.name;
                 var html = "";
                 var modelName = 'agg.' + name;
                 if (property.type === 'boolean') {
+                    scope.setDefaultValue(modelName, property.defaultValue === "true");
                     html += "<span>" + property.name + "</span> ";
                     html += "<input name='" + modelName + "' type='checkbox' ng-model='" + modelName + "' >";
                 }
                 else if (property.type === 'double') {
+                    scope.setDefaultValue(modelName, property.defaultValue);
                     html += "<span>" + property.name + "</span> ";
                     html += "<input  class='small-input' type='text' ng-model='" + modelName + "' style='width:30px'>";
                 }
                 else if (property.type === 'int' || property.type === 'long') {
+                    scope.setDefaultValue(modelName, property.defaultValue);
                     html += "<span>" + property.name + "</span> ";
-                    html += "<input name='" + modelName + "' class='small-input' type='text' ng-model='" + modelName + "' value='" + property.defaultValue + "' style='width:30px'>";
+                    html += "<input name='" + modelName + "' class='small-input' type='text' ng-model='" + modelName + "' style='width:30px'>";
                 }
                 else if (property.type === 'String') {
+                    scope.setDefaultValue(modelName, property.defaultValue);
                     html += "<span>" + property.name + "</span> ";
                     html += "<input class='small-input' type='text' ng-model='" + modelName + "' style='width:90px' ng-model='agg." + property.name + "'>";
                 }
@@ -570,6 +596,7 @@ module.directive('aggregatorproperties', function ($compile)
                 }
                 else if (property.type === 'enum') {
                     scope.values = property.options;
+                    scope.setDefaultValue(modelName, property.defaultValue);
                     html += "<span>" + property.name + "</span> ";
                     html += '<div class="dropdown" style="display:inline-block">';
                     html += '	<button class="btn btn-default dropdown-toggle" type="button" ' +

@@ -323,7 +323,7 @@ module.factory('KairosDBDatasource', function ($q, $http) {
 	};
 
 	KairosDBDatasource.convertToShortTimeUnit = function (timeUnit) {
-		var unit = timeUnit.unit;
+		var unit = timeUnit.unit.toLowerCase();
 
 		switch (unit) {
 			case 'milliseconds':

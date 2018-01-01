@@ -210,7 +210,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
         for (var property in obj)
         {
             if (obj.hasOwnProperty(property)){
-                if (typeof obj[property] == "object")
+                if (typeof obj[property] === "object")
                 {
                     printObject(obj[property], result);
                 }
@@ -227,10 +227,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 
 	$scope.toHumanReadableTimeUnit = function (timeUnit) {
 		if (timeUnit) {
-			if (timeUnit.value == 1)
-				return timeUnit.value + " " + timeUnit.unit.substring(0, timeUnit.unit.length - 1);
-			else
-				return timeUnit.value + " " + timeUnit.unit;
+            return KairosDBDatasource.convertToShortTimeUnit(timeUnit);
 		}
 	};
 

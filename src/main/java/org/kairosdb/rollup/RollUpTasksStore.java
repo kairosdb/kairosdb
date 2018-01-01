@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Manages access to the roll up store.
+ * Manages access to the roll up store. These are stored as Roll-id to Roll-up task JSON.
  */
 public interface RollUpTasksStore
 {

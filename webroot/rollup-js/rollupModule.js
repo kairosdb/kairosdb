@@ -546,7 +546,7 @@ module.directive('aggregatorproperties', function ($compile)
             scope.getHtml = function(property, parentName) {
                 var name = parentName ? parentName + "." + property.name : property.name;
                 var html = "";
-                var modelName = 'agg1.' + name;
+                var modelName = 'agg.' + name;
                 if (property.type === 'boolean') {
                     html += "<span>" + property.name + "</span> ";
                     html += "<input name='" + modelName + "' type='checkbox' ng-init=\"" + modelName + "=" + property.defaultValue + "\" + ng-model='" + modelName + "' >";

@@ -48,8 +48,8 @@ public class CassandraConfiguration
 
 	public static final String CASSANDRA_INDEX_TAG_LIST = "kairosdb.datastore.cassandra.index_tag_list";
 
-	public static final String USE_NEW_SPLIT_INDEX = "kairosdb.datastore.cassandra.new-split-index-start-time-ms";
-	public static final String NEW_SPLIT_INDEX_START_TIME_MS = "kairosdb.datastore.cassandra.use-new-split-index";
+	public static final String NEW_SPLIT_INDEX_START_TIME_MS = "kairosdb.datastore.cassandra.new-split-index-start-time-ms";
+	public static final String USE_NEW_SPLIT_INDEX = "kairosdb.datastore.cassandra.use-new-split-index";
 
 	@Inject(optional = true)
 	@Named(USE_NEW_SPLIT_INDEX)

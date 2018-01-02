@@ -612,7 +612,7 @@ public abstract class DatastoreTestHelper
 		}
 	}
 
-    @Ignore
+	@Ignore
 	@Test
 	public void test_queryNegativeTime() throws DatastoreException
 	{
@@ -683,7 +683,7 @@ public abstract class DatastoreTestHelper
 		}
 	}
 
-    @Ignore
+	@Ignore
 	@Test
 	public void test_notReturningTagsForEmptyData() throws DatastoreException, InterruptedException
 	{

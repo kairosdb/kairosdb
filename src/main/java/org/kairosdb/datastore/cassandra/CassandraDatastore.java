@@ -65,6 +65,7 @@ public class CassandraDatastore implements Datastore {
     public static final String QUERY_ROW_KEY_INDEX = "SELECT column1 FROM row_key_index WHERE key = ? AND column1 >= ? and column1 <= ? ORDER BY column1 ASC LIMIT ?";
 
     public static final String QUERY_ROW_KEY_SPLIT_INDEX = "SELECT column1 FROM row_key_split_index WHERE metric_name = ? AND tag_name = ? and tag_value IN ? AND column1 >= ? and column1 <= ? LIMIT ?";
+    public static final String QUERY_ROW_KEY_SPLIT_INDEX_2 = "SELECT column1 FROM row_key_split_index_2 WHERE metric_name = ? AND tag_name = ? and tag_value IN ? AND column1 >= ? and column1 <= ? LIMIT ?";
 
     public static final String QUERY_DATA_POINTS = "SELECT column1, value FROM data_points WHERE key = ? AND column1 >= ? and column1 < ? ORDER BY column1 ASC";
 
@@ -95,6 +96,7 @@ public class CassandraDatastore implements Datastore {
     private final PreparedStatement m_psQueryStringIndex;
     private final PreparedStatement m_psQueryRowKeyIndex;
     private final PreparedStatement m_psQueryRowKeySplitIndex;
+    private final PreparedStatement m_psQueryRowKeySplitIndex2;
     private final PreparedStatement m_psQueryDataPoints;
 
     private final RowKeyCache rowKeyCache;
@@ -142,6 +144,7 @@ public class CassandraDatastore implements Datastore {
         m_psQueryStringIndex = m_session.prepare(QUERY_STRING_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryRowKeyIndex = m_session.prepare(QUERY_ROW_KEY_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryRowKeySplitIndex = m_session.prepare(QUERY_ROW_KEY_SPLIT_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
+        m_psQueryRowKeySplitIndex2 = m_session.prepare(QUERY_ROW_KEY_SPLIT_INDEX_2).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryDataPoints = m_session.prepare(QUERY_DATA_POINTS).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
 
         m_rowWidthRead = cassandraConfiguration.getRowWidthRead();
@@ -659,7 +662,16 @@ public class CassandraDatastore implements Datastore {
         if (useSplitField != null && !"".equals(useSplitField) && useSplit.size() > 0) {
             // logger.warn("using split lookup: name={} fields={}", useSplitField, useSplit);
             bsShift = 2;
-            bs = m_psQueryRowKeySplitIndex.bind();
+
+            //  If any part of the query window falls before the new split index
+            //  start time, use the old split index:
+            if (m_cassandraConfiguration.isUseNewSplitIndex() && startTime > m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
+                logger.info("Using new split index for query starting at {}.", startTime);
+                bs = m_psQueryRowKeySplitIndex2.bind();
+            } else {
+                bs = m_psQueryRowKeySplitIndex.bind();
+            }
+
             bs.setString(0, metricName);
             bs.setString(1, useSplitField);
             bs.setList(2, Arrays.asList(useSplit.toArray()));

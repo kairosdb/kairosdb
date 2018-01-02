@@ -39,6 +39,18 @@ public abstract class CassandraSetup {
             "  PRIMARY KEY ((metric_name, tag_name, tag_value), column1)" +
             ") WITH CLUSTERING ORDER BY (column1 DESC);";
 
+    //  The above split index table looks identical, but was not initially made with
+    //  CLUSTERING ORDER BY (column1 DESC):
+    public static final String ROW_KEY_SPLIT_INDEX_TABLE_2 = "" +
+            "CREATE TABLE IF NOT EXISTS row_key_split_index_2 (" +
+            "  metric_name text," +
+            "  tag_name text," +
+            "  tag_value text, " +
+            "  column1 blob," +
+            "  value blob," +
+            "  PRIMARY KEY ((metric_name, tag_name, tag_value), column1)" +
+            ") WITH CLUSTERING ORDER BY (column1 DESC);";
+
     public static final String ROW_KEY_INDEX_TABLE = "" +
             "CREATE TABLE IF NOT EXISTS row_key_index (\n" +
             "  key blob,\n" +
@@ -92,6 +104,11 @@ public abstract class CassandraSetup {
             if(!tableExists(session, "row_key_split_index")) {
                 logger.info("Creating table 'row_key_split_index' ...");
                 session.execute(ROW_KEY_SPLIT_INDEX_TABLE);
+            }
+
+            if(!tableExists(session, "row_key_split_index_2")) {
+                logger.info("Creating table 'row_key_split_index_2' ...");
+                session.execute(ROW_KEY_SPLIT_INDEX_TABLE_2);
             }
 
             if(!tableExists(session, "string_index")) {

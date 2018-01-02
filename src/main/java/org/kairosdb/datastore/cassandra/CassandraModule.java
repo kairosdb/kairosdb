@@ -19,6 +19,7 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.SetMultimap;
 import com.google.inject.*;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
@@ -26,6 +27,7 @@ import org.kairosdb.core.KairosConfig;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.ServiceKeyStore;
+import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.events.DataPointEvent;
 import org.slf4j.Logger;
@@ -84,6 +86,8 @@ public class CassandraModule extends AbstractModule
 		install(new FactoryModuleBuilder().build(DeleteBatchHandlerFactory.class));
 
 		install(new FactoryModuleBuilder().build(CQLBatchFactory.class));
+
+		install(new FactoryModuleBuilder().build(CQLFilteredRowKeyIteratorFactory.class));
 	}
 
 	/*@Provides
@@ -204,6 +208,15 @@ public class CassandraModule extends AbstractModule
 	public interface CQLBatchFactory
 	{
 		CQLBatch create();
+	}
+
+	public interface CQLFilteredRowKeyIteratorFactory
+	{
+		CQLFilteredRowKeyIterator create(ClusterConnection cluster,
+				String metricName,
+				long startTime,
+				long endTime,
+				SetMultimap<String, String> filterTags) throws DatastoreException;
 	}
 
 

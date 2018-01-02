@@ -8,12 +8,17 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.google.inject.name.Named;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.ThreadReporter;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
+
+import static org.kairosdb.core.KairosConfigProperties.QUERIES_REGEX_PREFIX;
 
 class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 {
@@ -28,20 +33,22 @@ class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 	private Map<String, Pattern> m_patternFilter;
 
 
-	public CQLFilteredRowKeyIterator(ClusterConnection cluster,
-			String metricName,
-			long startTime,
-			long endTime,
-			SetMultimap<String, String> filterTags) throws DatastoreException
+	@Inject
+	public CQLFilteredRowKeyIterator(
+			@Assisted ClusterConnection cluster,
+			@Assisted String metricName,
+			@Assisted long startTime,
+			@Assisted long endTime,
+			@Assisted SetMultimap<String, String> filterTags,
+			@Named(QUERIES_REGEX_PREFIX) String regexPrefix) throws DatastoreException
 	{
-		String regexPrefix = "regex:";
 		m_filterTags = HashMultimap.create();
 		m_filterTagNames = new HashSet<>();
 		m_patternFilter = new HashMap<>();
 
 		for (Map.Entry<String, String> entry : filterTags.entries())
 		{
-			if (regexPrefix != null && entry.getValue().startsWith(regexPrefix))
+			if (regexPrefix.length() != 0 && entry.getValue().startsWith(regexPrefix))
 			{
 				String regex = entry.getValue().substring(regexPrefix.length());
 

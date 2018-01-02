@@ -262,16 +262,16 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 			@Override
 			public CQLBatch create()
 			{
-				return new CQLBatch(ConsistencyLevel.QUORUM, session, m_clusterConnection,
+				return new CQLBatch(ConsistencyLevel.QUORUM, m_clusterConnection,
 						batchStats, client.getLoadBalancingPolicy());
 			}
 		};
 
 		s_datastore = new CassandraDatastore(
-				client,
 				configuration,
 				m_clusterConnection,
-				session,
+				m_clusterConnection,
+				Collections.EMPTY_LIST,
 				dataPointFactory,
 				new MemoryQueueProcessor(Executors.newSingleThreadExecutor(), 1000, 10000, 10),
 				new IngestExecutorService(s_eventBus, 1),
@@ -293,6 +293,14 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 					{
 						return new DeleteBatchHandler(metricName, tags, dataPoints,
 								callBack, cqlBatchFactory);
+					}
+				},
+				new CassandraModule.CQLFilteredRowKeyIteratorFactory()
+				{
+					@Override
+					public CQLFilteredRowKeyIterator create(ClusterConnection cluster, String metricName, long startTime, long endTime, SetMultimap<String, String> filterTags) throws DatastoreException
+					{
+						return null;
 					}
 				});
 

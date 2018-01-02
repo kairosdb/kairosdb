@@ -94,6 +94,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	private final IngestExecutorService m_congestionExecutor;
 	private final CassandraModule.BatchHandlerFactory m_batchHandlerFactory;
 	private final CassandraModule.DeleteBatchHandlerFactory m_deleteBatchHandlerFactory;
+	private final CassandraModule.CQLFilteredRowKeyIteratorFactory m_rowKeyFilterFactory;
 
 	private CassandraConfiguration m_cassandraConfiguration;
 
@@ -115,7 +116,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			QueueProcessor queueProcessor,
 			IngestExecutorService congestionExecutor,
 			CassandraModule.BatchHandlerFactory batchHandlerFactory,
-			CassandraModule.DeleteBatchHandlerFactory deleteBatchHandlerFactory) throws DatastoreException
+			CassandraModule.DeleteBatchHandlerFactory deleteBatchHandlerFactory,
+			CassandraModule.CQLFilteredRowKeyIteratorFactory rowKeyFilterFactory) throws DatastoreException
 	{
 		//m_astyanaxClient = astyanaxClient;
 		m_kairosDataPointFactory = kairosDataPointFactory;
@@ -124,6 +126,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 		m_batchHandlerFactory = batchHandlerFactory;
 		m_deleteBatchHandlerFactory = deleteBatchHandlerFactory;
+		m_rowKeyFilterFactory = rowKeyFilterFactory;
 
 		m_writeCluster = writeCluster;
 		m_metaCluster = metaCluster;
@@ -844,12 +847,12 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			//one issue is that the queries are done in the constructor
 			//would like to do them lazily but would have to throw an exception through
 			//hasNext call, ick
-			ret = new CQLFilteredRowKeyIterator(m_writeCluster, query.getName(), query.getStartTime(),
+			ret = m_rowKeyFilterFactory.create(m_writeCluster, query.getName(), query.getStartTime(),
 					query.getEndTime(), query.getTags());
 
 			for (ClusterConnection cluster : m_readClusters)
 			{
-				ret = Iterators.concat(ret, new CQLFilteredRowKeyIterator(cluster, query.getName(), query.getStartTime(),
+				ret = Iterators.concat(ret, m_rowKeyFilterFactory.create(cluster, query.getName(), query.getStartTime(),
 						query.getEndTime(), query.getTags()));
 			}
 		}

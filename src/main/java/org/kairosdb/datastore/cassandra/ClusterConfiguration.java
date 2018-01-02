@@ -2,6 +2,7 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigBeanFactory;
 
 import java.util.List;
 
@@ -46,10 +47,10 @@ public class ClusterConfiguration
 
 		m_hostList = config.getStringList("cql_host_list");
 
-		System.out.println("Hosts: "+m_hostList);
+		//System.out.println("Hosts: "+m_hostList);
 
-		if (config.hasPath("auth.username"))
-			m_authUser = config.getString("auth.username");
+		if (config.hasPath("auth.user_name"))
+			m_authUser = config.getString("auth.user_name");
 
 		if (config.hasPath("auth.password"))
 			m_authPassword = config.getString("auth.password");

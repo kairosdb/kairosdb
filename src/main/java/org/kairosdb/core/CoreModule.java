@@ -47,6 +47,7 @@ import org.kairosdb.core.aggregator.SmaAggregator;
 import org.kairosdb.core.aggregator.StdAggregator;
 import org.kairosdb.core.aggregator.SumAggregator;
 import org.kairosdb.core.aggregator.TrimAggregator;
+import org.kairosdb.core.configuration.ConfigurationTypeListener;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
@@ -166,6 +167,8 @@ public class CoreModule extends AbstractModule
 				e.printStackTrace();
 			}
 		}
+
+		binder.bindListener(Matchers.any(), new ConfigurationTypeListener(m_config));
 	}
 
 	@SuppressWarnings("unchecked")

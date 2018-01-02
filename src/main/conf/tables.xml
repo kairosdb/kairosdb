@@ -67,6 +67,19 @@
 				ORDER BY this."key" asc
 			</sql>
 		</table_query>
+
+		<table_query name="service_keys" result_type="multi">
+			<input>
+				<param name="service" type="string" test="foo"/>
+			</input>
+			<sql>
+				from service_index this
+				WHERE
+				this."service" = ?
+				ORDER BY this."key" asc
+			</sql>
+		</table_query>
+
 	</table>
 
 	<table name="tag">
@@ -156,6 +169,20 @@
 
 	<!-- ======================================================================= -->
 	<queries>
+		<query name="metric_tag_values">
+			<input>
+				<param name="metric_name" type="string" test="foo"/>
+				<param name="tag_name" type="string" test="host"/>
+			</input>
+			<return>
+				<param name="tag_value" type="string"/>
+			</return>
+			<sql>
+				select "tag_value" from metric_tag
+				where "metric_id" = ? and "tag_name" = ?
+			</sql>
+		</query>
+
 		<query name="metric_names">
 			<input>
 			</input>

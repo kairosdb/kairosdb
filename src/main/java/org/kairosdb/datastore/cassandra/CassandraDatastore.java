@@ -57,6 +57,11 @@ public class CassandraDatastore implements Datastore {
     public static final String ROW_KEY_INDEX_SPLIT_INSERT = "INSERT INTO row_key_split_index " +
             "(metric_name, tag_name, tag_value, column1, value) VALUES (?, ?, ?, ?, 0x00) USING TTL ?";
 
+    // TODO: name of this constant is ugly on purpose. Remove this once we finish with
+    // row_key_split_index_2
+    public static final String ROW_KEY_INDEX_SPLIT_2_INSERT = "INSERT INTO row_key_split_index_2 " +
+            "(metric_name, tag_name, tag_value, column1, value) VALUES (?, ?, ?, ?, 0x00) USING TTL ?";
+
     public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
             "(key, column1, value) VALUES (?, ?, 0x00)";
 
@@ -92,6 +97,8 @@ public class CassandraDatastore implements Datastore {
     private final PreparedStatement m_psInsertData;
     private final PreparedStatement m_psInsertRowKey;
     private final PreparedStatement m_psInsertRowKeySplit;
+    // TODO: Remove this once we finish with row_key_split_index_2
+    private final PreparedStatement m_psInsertRowKeySplit2;
     private final PreparedStatement m_psInsertString;
     private final PreparedStatement m_psQueryStringIndex;
     private final PreparedStatement m_psQueryRowKeyIndex;
@@ -139,6 +146,8 @@ public class CassandraDatastore implements Datastore {
 
         m_psInsertData = m_session.prepare(DATA_POINTS_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelDataPoint());
         m_psInsertRowKeySplit = m_session.prepare(ROW_KEY_INDEX_SPLIT_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
+        // TODO: Remove this once we finish with row_key_split_index_2
+        m_psInsertRowKeySplit2 = m_session.prepare(ROW_KEY_INDEX_SPLIT_2_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psInsertRowKey = m_session.prepare(ROW_KEY_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psInsertString = m_session.prepare(STRING_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psQueryStringIndex = m_session.prepare(QUERY_STRING_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
@@ -288,15 +297,24 @@ public class CassandraDatastore implements Datastore {
                 continue;
             }
 
-            bs = new BoundStatement(m_psInsertRowKeySplit);
-            bs.setString(0, metricName);
-            bs.setString(1, split);
-            bs.setString(2, v);
-            bs.setBytes(3, serializedKey);
-            bs.setInt(4, rowKeyTtl);
-
-            m_session.executeAsync(bs);
+            storeRowKeySplit(m_psInsertRowKeySplit, metricName, serializedKey, rowKeyTtl, split, v);
+            if (m_cassandraConfiguration.isUseNewSplitIndex()) {
+                storeRowKeySplit(m_psInsertRowKeySplit2, metricName, serializedKey, rowKeyTtl, split, v);
+            }
         }
+    }
+
+    private void storeRowKeySplit(final PreparedStatement insertStatement, final String metricName,
+                                  final ByteBuffer serializedKey, final int rowKeyTtl,
+                                  final String splitTagName, final String splitTagValue) {
+        final BoundStatement bs = new BoundStatement(insertStatement);
+        bs.setString(0, metricName);
+        bs.setString(1, splitTagName);
+        bs.setString(2, splitTagValue);
+        bs.setBytes(3, serializedKey);
+        bs.setInt(4, rowKeyTtl);
+
+        m_session.executeAsync(bs);
     }
 
     private Iterable<String> queryStringIndex(final String key) {

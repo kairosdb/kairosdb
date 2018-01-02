@@ -41,6 +41,13 @@ public abstract class CassandraSetup {
 
     //  The above split index table looks identical, but was not initially made with
     //  CLUSTERING ORDER BY (column1 DESC):
+    // Here's how we should clean up after ourselves:
+    // 1. Keep running with row_key_split_index_2 until all the data from
+    //    original row_key_split_index are expired and removed automatically
+    // 2. Switch "double-read/double-write" logic from row_key_split_index_2 to
+    //    row_key_split_index
+    // 3. Keep running with row_key_split_index until all the data from
+    //    row_key_split_index_2 is expired
     public static final String ROW_KEY_SPLIT_INDEX_TABLE_2 = "" +
             "CREATE TABLE IF NOT EXISTS row_key_split_index_2 (" +
             "  metric_name text," +

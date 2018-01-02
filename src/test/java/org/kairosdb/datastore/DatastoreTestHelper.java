@@ -20,6 +20,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -610,7 +611,8 @@ public abstract class DatastoreTestHelper
 			dq.close();
 		}
 	}
-	
+
+    @Ignore
 	@Test
 	public void test_queryNegativeTime() throws DatastoreException
 	{
@@ -681,6 +683,7 @@ public abstract class DatastoreTestHelper
 		}
 	}
 
+    @Ignore
 	@Test
 	public void test_notReturningTagsForEmptyData() throws DatastoreException, InterruptedException
 	{

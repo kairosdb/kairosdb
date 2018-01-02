@@ -732,7 +732,7 @@ public class CassandraDatastore implements Datastore {
             long calculatedStarTime = calculateRowTimeRead(startTime);
             // Use write width here, as END time is upper bound for query and end with produces the bigger timestamp
             long calculatedEndTime = calculateRowTimeWrite(endTime);
-            // logger.info("calculated: s={} cs={} e={} ce={}", startTime, calculatedStarTime, endTime, calculatedEndTime);
+            //logger.info("calculated: s={} cs={} e={} ce={}", startTime, calculatedStarTime, endTime, calculatedEndTime);
 
             DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculatedStarTime, "");
             DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculatedEndTime, "");

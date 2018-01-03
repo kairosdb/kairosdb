@@ -74,6 +74,7 @@ import org.kairosdb.core.queue.DataPointEventSerializer;
 import org.kairosdb.core.queue.QueueProcessor;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
+import org.kairosdb.datastore.cassandra.CassandraModule;
 import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.plugin.Aggregator;
@@ -82,6 +83,8 @@ import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.SimpleStatsReporter;
 import org.kairosdb.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.ugli.bigqueue.BigArray;
 
 import javax.inject.Named;
@@ -98,6 +101,8 @@ import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR_CLASS;
 
 public class CoreModule extends AbstractModule
 {
+	public static final Logger logger = LoggerFactory.getLogger(CoreModule.class);
+
 	public static final String QUEUE_PATH = "kairosdb.queue_processor.queue_path";
 	public static final String PAGE_SIZE = "kairosdb.queue_processor.page_size";
 
@@ -158,6 +163,7 @@ public class CoreModule extends AbstractModule
 				}*/
 
 				//binder.bind(Key.get(String.class, Names.named(propertyName))).toInstance(value);
+				logger.debug("%s = %s", propertyName, value.unwrapped().toString());
 
 				bindConstant().annotatedWith(Names.named(propertyName)).to(value.unwrapped().toString());
 			}

@@ -38,6 +38,16 @@ public class ConfigurationTypeListener implements TypeListener
 			{
 				if (method.isAnnotationPresent(InjectProperty.class))
 				{
+					InjectProperty annotation = method.getAnnotation(InjectProperty.class);
+
+					String prop = annotation.prop();
+					if (m_config.getConfig().hasPath(prop))
+					{
+					}
+					else if (!annotation.optional())
+					{
+						encounter.addError("Configuration not set for '"+prop+"' on method "+method.getName() +" in class "+clazz.getName());
+					}
 
 				}
 			}

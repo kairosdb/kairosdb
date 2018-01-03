@@ -23,7 +23,7 @@ public class ClusterConnection
 			"  column1 blob,\n" +
 			"  value blob,\n" +
 			"  PRIMARY KEY ((key), column1)\n" +
-			")";
+			") WITH COMPACT STORAGE";
 
 	//This is effectively what the above table is
 	/*public static final String DATA_POINTS_TABLE = "" +

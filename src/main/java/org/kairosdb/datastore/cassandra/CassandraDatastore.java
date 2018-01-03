@@ -18,6 +18,7 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.*;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterators;
+import org.kairosdb.core.annotation.InjectProperty;
 import org.kairosdb.eventbus.Subscribe;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;

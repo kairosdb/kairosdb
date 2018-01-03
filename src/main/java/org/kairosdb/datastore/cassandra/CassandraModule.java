@@ -38,7 +38,7 @@ import java.util.*;
 
 public class CassandraModule extends AbstractModule
 {
-	private static final Logger logger = LoggerFactory.getLogger(CassandraModule.class);
+	public static final Logger logger = LoggerFactory.getLogger(CassandraModule.class);
 
 	public static final String CASSANDRA_AUTH_MAP = "cassandra.auth.map";
 	public static final String CASSANDRA_HECTOR_MAP = "cassandra.hector.map";

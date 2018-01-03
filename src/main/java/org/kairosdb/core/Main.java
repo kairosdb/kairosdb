@@ -231,6 +231,8 @@ public class Main
 						pluginLoader = new PluginClassLoader(getJarsInPath(pluginFolder), pluginLoader);
 					}
 
+					logger.info("Loading service {}: {}", serviceName, config.getProperty(propName));
+
 					aClass = pluginLoader.loadClass(config.getProperty(propName));
 					if (Module.class.isAssignableFrom(aClass))
 					{
@@ -408,6 +410,8 @@ public class Main
 		}
 		catch (Exception e)
 		{
+			System.out.println(e.getClass().getName());
+			System.out.println(e.getMessage());
 			logger.error("Failed to startup", e);
 		}
 	}

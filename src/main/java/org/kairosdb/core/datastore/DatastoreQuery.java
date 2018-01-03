@@ -18,10 +18,11 @@ package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.exception.DatastoreException;
 
+import java.io.Closeable;
 import java.util.List;
 
 
-public interface DatastoreQuery
+public interface DatastoreQuery extends AutoCloseable
 {
 
 	public List<DataPointGroup> execute() throws DatastoreException;

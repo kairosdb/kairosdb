@@ -39,6 +39,25 @@ public abstract class CassandraSetup {
             "  PRIMARY KEY ((metric_name, tag_name, tag_value), column1)" +
             ") WITH CLUSTERING ORDER BY (column1 DESC);";
 
+    //  The above split index table looks identical, but was not initially made with
+    //  CLUSTERING ORDER BY (column1 DESC):
+    // Here's how we should clean up after ourselves:
+    // 1. Keep running with row_key_split_index_2 until all the data from
+    //    original row_key_split_index are expired and removed automatically
+    // 2. Switch "double-read/double-write" logic from row_key_split_index_2 to
+    //    row_key_split_index
+    // 3. Keep running with row_key_split_index until all the data from
+    //    row_key_split_index_2 is expired
+    public static final String ROW_KEY_SPLIT_INDEX_TABLE_2 = "" +
+            "CREATE TABLE IF NOT EXISTS row_key_split_index_2 (" +
+            "  metric_name text," +
+            "  tag_name text," +
+            "  tag_value text, " +
+            "  column1 blob," +
+            "  value blob," +
+            "  PRIMARY KEY ((metric_name, tag_name, tag_value), column1)" +
+            ") WITH CLUSTERING ORDER BY (column1 DESC);";
+
     public static final String ROW_KEY_INDEX_TABLE = "" +
             "CREATE TABLE IF NOT EXISTS row_key_index (\n" +
             "  key blob,\n" +
@@ -92,6 +111,11 @@ public abstract class CassandraSetup {
             if(!tableExists(session, "row_key_split_index")) {
                 logger.info("Creating table 'row_key_split_index' ...");
                 session.execute(ROW_KEY_SPLIT_INDEX_TABLE);
+            }
+
+            if(!tableExists(session, "row_key_split_index_2")) {
+                logger.info("Creating table 'row_key_split_index_2' ...");
+                session.execute(ROW_KEY_SPLIT_INDEX_TABLE_2);
             }
 
             if(!tableExists(session, "string_index")) {

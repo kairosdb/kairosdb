@@ -57,6 +57,11 @@ public class CassandraDatastore implements Datastore {
     public static final String ROW_KEY_INDEX_SPLIT_INSERT = "INSERT INTO row_key_split_index " +
             "(metric_name, tag_name, tag_value, column1, value) VALUES (?, ?, ?, ?, 0x00) USING TTL ?";
 
+    // TODO: name of this constant is ugly on purpose. Remove this once we finish with
+    // row_key_split_index_2
+    public static final String ROW_KEY_INDEX_SPLIT_2_INSERT = "INSERT INTO row_key_split_index_2 " +
+            "(metric_name, tag_name, tag_value, column1, value) VALUES (?, ?, ?, ?, 0x00) USING TTL ?";
+
     public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
             "(key, column1, value) VALUES (?, ?, 0x00)";
 
@@ -65,6 +70,7 @@ public class CassandraDatastore implements Datastore {
     public static final String QUERY_ROW_KEY_INDEX = "SELECT column1 FROM row_key_index WHERE key = ? AND column1 >= ? and column1 <= ? ORDER BY column1 ASC LIMIT ?";
 
     public static final String QUERY_ROW_KEY_SPLIT_INDEX = "SELECT column1 FROM row_key_split_index WHERE metric_name = ? AND tag_name = ? and tag_value IN ? AND column1 >= ? and column1 <= ? LIMIT ?";
+    public static final String QUERY_ROW_KEY_SPLIT_INDEX_2 = "SELECT column1 FROM row_key_split_index_2 WHERE metric_name = ? AND tag_name = ? and tag_value IN ? AND column1 >= ? and column1 <= ? LIMIT ?";
 
     public static final String QUERY_DATA_POINTS = "SELECT column1, value FROM data_points WHERE key = ? AND column1 >= ? and column1 < ? ORDER BY column1 ASC";
 
@@ -91,10 +97,13 @@ public class CassandraDatastore implements Datastore {
     private final PreparedStatement m_psInsertData;
     private final PreparedStatement m_psInsertRowKey;
     private final PreparedStatement m_psInsertRowKeySplit;
+    // TODO: Remove this once we finish with row_key_split_index_2
+    private final PreparedStatement m_psInsertRowKeySplit2;
     private final PreparedStatement m_psInsertString;
     private final PreparedStatement m_psQueryStringIndex;
     private final PreparedStatement m_psQueryRowKeyIndex;
     private final PreparedStatement m_psQueryRowKeySplitIndex;
+    private final PreparedStatement m_psQueryRowKeySplitIndex2;
     private final PreparedStatement m_psQueryDataPoints;
 
     private final RowKeyCache rowKeyCache;
@@ -137,11 +146,14 @@ public class CassandraDatastore implements Datastore {
 
         m_psInsertData = m_session.prepare(DATA_POINTS_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelDataPoint());
         m_psInsertRowKeySplit = m_session.prepare(ROW_KEY_INDEX_SPLIT_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
+        // TODO: Remove this once we finish with row_key_split_index_2
+        m_psInsertRowKeySplit2 = m_session.prepare(ROW_KEY_INDEX_SPLIT_2_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psInsertRowKey = m_session.prepare(ROW_KEY_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psInsertString = m_session.prepare(STRING_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psQueryStringIndex = m_session.prepare(QUERY_STRING_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryRowKeyIndex = m_session.prepare(QUERY_ROW_KEY_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryRowKeySplitIndex = m_session.prepare(QUERY_ROW_KEY_SPLIT_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
+        m_psQueryRowKeySplitIndex2 = m_session.prepare(QUERY_ROW_KEY_SPLIT_INDEX_2).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryDataPoints = m_session.prepare(QUERY_DATA_POINTS).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
 
         m_rowWidthRead = cassandraConfiguration.getRowWidthRead();
@@ -285,15 +297,24 @@ public class CassandraDatastore implements Datastore {
                 continue;
             }
 
-            bs = new BoundStatement(m_psInsertRowKeySplit);
-            bs.setString(0, metricName);
-            bs.setString(1, split);
-            bs.setString(2, v);
-            bs.setBytes(3, serializedKey);
-            bs.setInt(4, rowKeyTtl);
-
-            m_session.executeAsync(bs);
+            storeRowKeySplit(m_psInsertRowKeySplit, metricName, serializedKey, rowKeyTtl, split, v);
+            if (m_cassandraConfiguration.isUseNewSplitIndex()) {
+                storeRowKeySplit(m_psInsertRowKeySplit2, metricName, serializedKey, rowKeyTtl, split, v);
+            }
         }
+    }
+
+    private void storeRowKeySplit(final PreparedStatement insertStatement, final String metricName,
+                                  final ByteBuffer serializedKey, final int rowKeyTtl,
+                                  final String splitTagName, final String splitTagValue) {
+        final BoundStatement bs = new BoundStatement(insertStatement);
+        bs.setString(0, metricName);
+        bs.setString(1, splitTagName);
+        bs.setString(2, splitTagValue);
+        bs.setBytes(3, serializedKey);
+        bs.setInt(4, rowKeyTtl);
+
+        m_session.executeAsync(bs);
     }
 
     private Iterable<String> queryStringIndex(final String key) {
@@ -659,7 +680,16 @@ public class CassandraDatastore implements Datastore {
         if (useSplitField != null && !"".equals(useSplitField) && useSplit.size() > 0) {
             // logger.warn("using split lookup: name={} fields={}", useSplitField, useSplit);
             bsShift = 2;
-            bs = m_psQueryRowKeySplitIndex.bind();
+
+            //  If any part of the query window falls before the new split index
+            //  start time, use the old split index:
+            if (m_cassandraConfiguration.isUseNewSplitIndex() && startTime > m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
+                logger.info("Using new split index for query starting at {}.", startTime);
+                bs = m_psQueryRowKeySplitIndex2.bind();
+            } else {
+                bs = m_psQueryRowKeySplitIndex.bind();
+            }
+
             bs.setString(0, metricName);
             bs.setString(1, useSplitField);
             bs.setList(2, Arrays.asList(useSplit.toArray()));
@@ -702,7 +732,7 @@ public class CassandraDatastore implements Datastore {
             long calculatedStarTime = calculateRowTimeRead(startTime);
             // Use write width here, as END time is upper bound for query and end with produces the bigger timestamp
             long calculatedEndTime = calculateRowTimeWrite(endTime);
-            // logger.info("calculated: s={} cs={} e={} ce={}", startTime, calculatedStarTime, endTime, calculatedEndTime);
+            //logger.info("calculated: s={} cs={} e={} ce={}", startTime, calculatedStarTime, endTime, calculatedEndTime);
 
             DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculatedStarTime, "");
             DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculatedEndTime, "");

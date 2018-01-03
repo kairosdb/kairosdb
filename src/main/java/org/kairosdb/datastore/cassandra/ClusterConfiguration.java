@@ -24,6 +24,7 @@ public class ClusterConfiguration
 	private final String m_clusterName;
 	private String m_authPassword;
 	private String m_authUser;
+	private String m_localDCName;
 
 	public ClusterConfiguration(Config config)
 	{
@@ -46,6 +47,9 @@ public class ClusterConfiguration
 		m_requestsPerConnectionRemote = config.getInt("max_requests_per_connection.remote");
 
 		m_hostList = config.getStringList("cql_host_list");
+
+		if (config.hasPath("local_dc_name"))
+			m_localDCName = config.getString("local_dc_name");
 
 		//System.out.println("Hosts: "+m_hostList);
 
@@ -129,5 +133,10 @@ public class ClusterConfiguration
 	public String getClusterName()
 	{
 		return m_clusterName;
+	}
+
+	public String getLocalDCName()
+	{
+		return m_localDCName;
 	}
 }

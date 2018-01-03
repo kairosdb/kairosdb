@@ -2,9 +2,10 @@ package org.kairosdb.core.health;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.google.inject.Inject;
-import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
+
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -28,9 +29,11 @@ public class DatastoreQueryHealthCheck extends HealthCheck implements HealthStat
 	@Override
 	protected Result check() throws Exception
 	{
-		try
+		try (DatastoreQuery query = datastore.createQuery(
+				new QueryMetric(System.currentTimeMillis() - (10 * 60 * 1000),
+						0, "kairosdb.jvm.thread_count")))
 		{
-			datastore.getMetricNames();
+			List<DataPointGroup> results = query.execute();
 			return Result.healthy();
 		}
 		catch (DatastoreException e)

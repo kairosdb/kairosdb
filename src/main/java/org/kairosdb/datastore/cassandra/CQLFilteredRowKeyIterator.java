@@ -31,6 +31,7 @@ class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 	private final String m_clusterName;
 	private int m_rawRowKeyCount = 0;
 	private Map<String, Pattern> m_patternFilter;
+	private Set<DataPointsRowKey> m_returnedKeys;  //keep from returning duplicates, querying old and new indexes
 
 
 	@Inject
@@ -68,6 +69,7 @@ class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 		m_metricName = metricName;
 		m_clusterName = cluster.getClusterName();
 		List<ResultSetFuture> futures = new ArrayList<>();
+		m_returnedKeys = new HashSet<>();
 		long timerStart = System.currentTimeMillis();
 
 		//Legacy key index - index is all in one row
@@ -180,6 +182,11 @@ outer:
 					continue outer; //Don't want this key
 			}
 
+			/* We can get duplicate keys from querying old and new indexes */
+			if (m_returnedKeys.contains(rowKey))
+				continue;
+
+			m_returnedKeys.add(rowKey);
 			next = rowKey;
 			break;
 		}

@@ -19,7 +19,6 @@ package org.kairosdb.datastore.h2;
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import org.kairosdb.core.datastore.Datastore;
-import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.ServiceKeyStore;
 
 public class H2Module extends AbstractModule
@@ -29,5 +28,6 @@ public class H2Module extends AbstractModule
 	{
 		bind(Datastore.class).to(H2Datastore.class).in(Scopes.SINGLETON);
 		bind(ServiceKeyStore.class).to(H2Datastore.class).in(Scopes.SINGLETON);
+		bind(H2Datastore.class).in(Scopes.SINGLETON);
 	}
 }

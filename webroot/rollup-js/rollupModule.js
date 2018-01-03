@@ -463,7 +463,7 @@ module.directive('aggregatornamedropdown', function ($compile)
             html += '	</button>';
             html += '	<ul class="dropdown-menu" aria-labelledby="aggregatorDropdown">';
             html += '   <li ng-repeat="descriptor in descriptors">';
-			html += '       <a href="#" ng-click="setName(agg, descriptor.name, descriptors)"';
+            html += '       <a href="#" ng-click="setName(agg, descriptor.name, descriptors)"';
             html += '           title="{{descriptor.description}}" bs-tooltip';
             html += '       >';
             html += '           {{ descriptor.name }}';
@@ -505,7 +505,7 @@ module.directive('aggregatorproperties', function ($compile)
                 html = '';
                 _.each(scope.descriptors, function (descriptor)
                 {
-                    if (descriptor.name == scope.agg.name) {
+                    if (descriptor.name === scope.agg.name) {
                         _.each(descriptor.properties, function (property)
                         {
                             if (html.length > 0) {
@@ -530,10 +530,23 @@ module.directive('aggregatorproperties', function ($compile)
                 scope.renderHtml();
             });
 
+            scope.getValue = function(obj, path)
+            {
+                path = path.split('.');
+                for(var i = 0; i < path.length; i++){
+                    if (!obj[path[i]])
+                    {
+                        return null;
+                    }
+                    obj = obj[path[i]];
+                }
+                return obj;
+            };
+
             scope.setValue = function (obj, path, value)
             {
                 path = path.split('.');
-                for(var i = 1; i < path.length - 1; i++){
+                for(var i = 0; i < path.length - 1; i++){
                     if (!obj[path[i]])
                     {
                         obj[path[i]] = {}; // create object if doesn't exist
@@ -543,37 +556,47 @@ module.directive('aggregatorproperties', function ($compile)
                 obj[path[i]] = value;
             };
 
-            scope.getHtml = function(property, parentName)
+            scope.setDefaultValue = function(modelName, defaultValue)
             {
-                var name = parentName ? parentName + "." + property.name: property.name;
+                var value = scope.getValue(scope, modelName);
+                if (value === null)
+                {
+                    scope.setValue(scope, modelName, defaultValue);
+                }
+            };
+
+            scope.getHtml = function(property, parentName) {
+                var name = parentName ? parentName + "." + property.name : property.name;
                 var html = "";
                 var modelName = 'agg.' + name;
-                if (property.type == 'boolean') {
+                if (property.type === 'boolean') {
+                    scope.setDefaultValue(modelName, property.defaultValue === "true");
                     html += "<span>" + property.name + "</span> ";
-                    html += "<input name='" + modelName + "' type='checkbox' ng-init=\"" + modelName + "=" + property.defaultValue + "\" + ng-model='" + modelName + "' >";
+                    html += "<input name='" + modelName + "' type='checkbox' ng-model='" + modelName + "' >";
                 }
-                else if (property.type == 'double') {
+                else if (property.type === 'double') {
+                    scope.setDefaultValue(modelName, property.defaultValue);
                     html += "<span>" + property.name + "</span> ";
-                    html += "<input  class='small-input' type='text' ng-init=\"" + modelName + "=" + property.defaultValue + "\" + ng-model='" + modelName + "' style='width:30px'>";
+                    html += "<input  class='small-input' type='text' ng-model='" + modelName + "' style='width:30px'>";
                 }
-                else if (property.type == 'int' || property.type == 'long') {
+                else if (property.type === 'int' || property.type === 'long') {
+                    scope.setDefaultValue(modelName, property.defaultValue);
                     html += "<span>" + property.name + "</span> ";
-                    html += "<input name='" + modelName + "' class='small-input' type='text' ng-init=\"" + modelName + "='" + property.defaultValue + "'\" + ng-model='" + modelName + "' value='" + property.defaultValue + "' style='width:30px'>";
+                    html += "<input name='" + modelName + "' class='small-input' type='text' ng-model='" + modelName + "' style='width:30px'>";
                 }
-                else if (property.type == 'String') {
+                else if (property.type === 'String') {
+                    scope.setDefaultValue(modelName, property.defaultValue);
                     html += "<span>" + property.name + "</span> ";
-                    html += "<input class='small-input' type='text' ng-init=\"" + modelName + "='" + property.defaultValue + "'\" ng-model='" + modelName + "' style='width:90px' ng-model='agg." + property.name + "'>";
+                    html += "<input class='small-input' type='text' ng-model='" + modelName + "' style='width:90px' ng-model='agg." + property.name + "'>";
                 }
-                else if (property.type == "Object")
-                {
-                    _.each(property.properties, function (subProperty)
-                    {
+                else if (property.type === "Object") {
+                    _.each(property.properties, function (subProperty) {
                         html += scope.getHtml(subProperty, property.name);
                     });
                 }
-                else if (property.type == 'enum') {
+                else if (property.type === 'enum') {
                     scope.values = property.options;
-                    scope.setValue(scope.agg, modelName, property.defaultValue);
+                    scope.setDefaultValue(modelName, property.defaultValue);
                     html += "<span>" + property.name + "</span> ";
                     html += '<div class="dropdown" style="display:inline-block">';
                     html += '	<button class="btn btn-default dropdown-toggle" type="button" ' +

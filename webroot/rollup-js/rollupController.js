@@ -457,11 +457,11 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	};
 
 	$scope.isMetricOrDefault = function (task) {
-		return !task.metric_name || task.metric_name == $scope.DEFAULT_METRIC_NAME;
+		return !task.metric_name || task.metric_name === $scope.DEFAULT_METRIC_NAME;
 	};
 
 	$scope.isSaveAsEmptyOrDefault = function (task) {
-		return !task.save_as || task.save_as == $scope.DEFAULT_SAVE_AS;
+		return !task.save_as || task.save_as === $scope.DEFAULT_SAVE_AS;
 	};
 
 	$scope.alert = function (message, status, data) {

@@ -27,11 +27,11 @@
 		<!--<dependency org="org.powermock" name="powermock-api-mockito" rev="1.4.12" />
 		<dependency org="org.powermock" name="powermock-module-junit4" rev="1.4.12" />-->
 		<!--<dependency org="org.apache.zookeeper" name="zookeeper" rev="3.4.5" transitive="false" />-->
-		<dependency org="com.google.inject" name="guice" rev="3.0" />
+		<dependency org="com.google.inject" name="guice" rev="4.1.0" />
 		<dependency org="com.google.inject.extensions"
-		            name="guice-multibindings" rev="3.0"/>
-		<dependency org="com.google.inject.extensions" name="guice-assistedinject" rev="3.0" />
-		<dependency org="com.google.inject.extensions" name="guice-servlet" rev="3.0" />
+		            name="guice-multibindings" rev="4.1.0"/>
+		<dependency org="com.google.inject.extensions" name="guice-assistedinject" rev="4.1.0" />
+		<dependency org="com.google.inject.extensions" name="guice-servlet" rev="4.1.0" />
 		<dependency org="com.h2database" name="h2" rev="1.3.170" />
 		<dependency org="se.ugli.bigqueue" name="bigqueue" rev="1.6.0.0" />
 

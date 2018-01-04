@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 
 import static org.kairosdb.core.KairosConfigProperties.QUERIES_REGEX_PREFIX;
 
-class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
+public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 {
 	private final SetMultimap<String, String> m_filterTags;
 	private final Set<String> m_filterTagNames;
@@ -38,8 +38,8 @@ class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 	public CQLFilteredRowKeyIterator(
 			@Assisted ClusterConnection cluster,
 			@Assisted String metricName,
-			@Assisted long startTime,
-			@Assisted long endTime,
+			@Assisted("startTime") long startTime,
+			@Assisted("endTime") long endTime,
 			@Assisted SetMultimap<String, String> filterTags,
 			@Named(QUERIES_REGEX_PREFIX) String regexPrefix) throws DatastoreException
 	{

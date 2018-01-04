@@ -21,6 +21,7 @@ import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.*;
+import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
 import org.kairosdb.core.KairosConfig;
@@ -110,7 +111,7 @@ public class CassandraModule extends AbstractModule
 		catch (Exception e)
 		{
 			logger.error("Error building write cluster", e);
-			throw new RuntimeException("Error building write cluster");
+			throw e;
 		}
 
 
@@ -130,7 +131,7 @@ public class CassandraModule extends AbstractModule
 		catch (Exception e)
 		{
 			logger.error("Error building meta cluster", e);
-			throw new RuntimeException("Error building meta cluster");
+			throw e;
 		}
 	}
 
@@ -151,7 +152,7 @@ public class CassandraModule extends AbstractModule
 		catch (Exception e)
 		{
 			logger.error("Error building read cluster", e);
-			throw new RuntimeException("Error building read cluster");
+			throw e;
 		}
 
 		return clusters.build();
@@ -214,8 +215,8 @@ public class CassandraModule extends AbstractModule
 	{
 		CQLFilteredRowKeyIterator create(ClusterConnection cluster,
 				String metricName,
-				long startTime,
-				long endTime,
+				@Assisted("startTime") long startTime,
+				@Assisted("endTime") long endTime,
 				SetMultimap<String, String> filterTags) throws DatastoreException;
 	}
 

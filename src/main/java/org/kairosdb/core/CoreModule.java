@@ -202,6 +202,10 @@ public class CoreModule extends AbstractModule
 			}
 		});
 
+		//Names.bindProperties(binder(), m_config);
+		bindConfiguration(binder());
+		bind(KairosConfig.class).toInstance(m_config);
+
 		bind(QueryQueuingManager.class).in(Singleton.class);
 		bind(KairosDatastore.class).in(Singleton.class);
 
@@ -244,10 +248,6 @@ public class CoreModule extends AbstractModule
 		bind(TimeGroupBy.class);
 		bind(TagGroupBy.class);
 		bind(BinGroupBy.class);
-
-		//Names.bindProperties(binder(), m_config);
-		bindConfiguration(binder());
-		bind(KairosConfig.class).toInstance(m_config);
 
 		String hostname = m_config.getProperty("kairosdb.hostname");
 		bindConstant().annotatedWith(Names.named("HOSTNAME")).to(hostname != null ? hostname: Util.getHostName());

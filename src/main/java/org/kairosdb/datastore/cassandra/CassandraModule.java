@@ -110,7 +110,11 @@ public class CassandraModule extends AbstractModule
 		}
 		catch (Exception e)
 		{
+<<<<<<< HEAD
 			logger.error("Error building write cluster", e);
+=======
+			logger.error("Unable to setup cassandra connection to cluster", e);
+>>>>>>> develop
 			throw e;
 		}
 
@@ -130,7 +134,11 @@ public class CassandraModule extends AbstractModule
 		}
 		catch (Exception e)
 		{
+<<<<<<< HEAD
 			logger.error("Error building meta cluster", e);
+=======
+			logger.error("Unable to setup cassandra schema", e);
+>>>>>>> develop
 			throw e;
 		}
 	}

@@ -298,7 +298,7 @@ public class CassandraDatastore implements Datastore {
             }
 
             storeRowKeySplit(m_psInsertRowKeySplit, metricName, serializedKey, rowKeyTtl, split, v);
-            if (m_cassandraConfiguration.isUseNewSplitIndex()) {
+            if (m_cassandraConfiguration.isUseNewSplitIndexWrite()) {
                 storeRowKeySplit(m_psInsertRowKeySplit2, metricName, serializedKey, rowKeyTtl, split, v);
             }
         }
@@ -683,7 +683,7 @@ public class CassandraDatastore implements Datastore {
 
             //  If any part of the query window falls before the new split index
             //  start time, use the old split index:
-            if (m_cassandraConfiguration.isUseNewSplitIndex() && startTime > m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
+            if (m_cassandraConfiguration.isUseNewSplitIndexRead() && startTime > m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
                 logger.info("Using new split index for query starting at {}.", startTime);
                 bs = m_psQueryRowKeySplitIndex2.bind();
             } else {

@@ -49,18 +49,27 @@ public class CassandraConfiguration
 	public static final String CASSANDRA_INDEX_TAG_LIST = "kairosdb.datastore.cassandra.index_tag_list";
 
 	public static final String NEW_SPLIT_INDEX_START_TIME_MS = "kairosdb.datastore.cassandra.new-split-index-start-time-ms";
-	public static final String USE_NEW_SPLIT_INDEX = "kairosdb.datastore.cassandra.use-new-split-index";
+	public static final String USE_NEW_SPLIT_INDEX_READ = "kairosdb.datastore.cassandra.use-new-split-index-read";
+	public static final String USE_NEW_SPLIT_INDEX_WRITE = "kairosdb.datastore.cassandra.use-new-split-index-write";
 
 	@Inject(optional = true)
-	@Named(USE_NEW_SPLIT_INDEX)
-	private boolean m_useNewSplitIndex = false;
+	@Named(USE_NEW_SPLIT_INDEX_READ)
+	private boolean m_useNewSplitIndexRead = false;
+
+	@Inject(optional = true)
+	@Named(USE_NEW_SPLIT_INDEX_WRITE)
+	private boolean m_useNewSplitIndexWrite = false;
 
 	@Inject(optional = true)
 	@Named(NEW_SPLIT_INDEX_START_TIME_MS)
 	private long m_newSplitIndexStartTimeMs = 0l;
 
-	public boolean isUseNewSplitIndex() {
-		return m_useNewSplitIndex;
+	public boolean isUseNewSplitIndexRead() {
+		return m_useNewSplitIndexRead;
+	}
+
+	public boolean isUseNewSplitIndexWrite() {
+		return m_useNewSplitIndexWrite;
 	}
 
 	public long getNewSplitIndexStartTimeMs() {

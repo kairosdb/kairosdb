@@ -664,7 +664,6 @@ public class CassandraDatastore implements Datastore {
     // TODO remove when old getMatchingRowKeys is uncommented
     private List<DataPointsRowKey> getMatchingRowKeys(String metricName, long startTime, long endTime, SetMultimap<String, String> filterTags, int limit) {
         // determine whether to use split index or not
-        final List<DataPointsRowKey> rowKeys = new LinkedList<>();
         String useSplitField = null;
         Set<String> useSplitSet = new HashSet<>();
 
@@ -681,57 +680,113 @@ public class CassandraDatastore implements Datastore {
         List<String> useSplit = new ArrayList<>(useSplitSet);
 
         if (useSplitField != null && !"".equals(useSplitField) && useSplitSet.size() > 0) {
-            // go with split index
-            if (m_cassandraConfiguration.isUseNewSplitIndexRead() && startTime > m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
+            return getMatchingRowKeysFromSplitIndex(metricName, useSplitField, useSplit, startTime, endTime, filterTags, limit);
+        } else {
+            return getMatchingRowKeysFromRegularIndex(metricName, startTime, endTime, filterTags, limit);
+        }
+    }
 
-                // go with combined approach: select data after m_cassandraConfiguration.getNewSplitIndexStartTimeMs
-                // from new table first, then from the old table (if it's still possible to run a query with changed limit)
-                if (startTime < m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
+    private List<DataPointsRowKey> getMatchingRowKeysFromRegularIndex(String metricName,
+                                                                      long startTime,
+                                                                      long endTime,
+                                                                      SetMultimap<String, String> filterTags,
+                                                                      int limit) {
+        final List<DataPointsRowKey> rowKeys = new LinkedList<>();
+        collectFromRowKeyIndex(rowKeys,
+                m_psQueryRowKeyIndex,
+                metricName,
+                startTime,
+                endTime,
+                filterTags,
+                limit);
+        return rowKeys;
+    }
+
+    private List<DataPointsRowKey> getMatchingRowKeysFromSplitIndex(String metricName,
+                                                                    String useSplitField,
+                                                                    List<String> useSplit,
+                                                                    long startTime,
+                                                                    long endTime,
+                                                                    SetMultimap<String, String> filterTags,
+                                                                    int limit) {
+        final List<DataPointsRowKey> rowKeys = new LinkedList<>();
+        if (m_cassandraConfiguration.isUseNewSplitIndexRead() && endTime >= m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
+            // Allowed cases for this branch (* - a point defined by m_cassandraConfiguration.getNewSplitIndexStartTimeMs())
+            //  --|-------*------|--
+            // startTime     endTime
+            //
+            //  --|--------------*--
+            // startTime     endTime
+            //
+            //  *--------|--------------|--
+            //        startTime     endTime
+            //
+            //  --*--------------|--
+            //  startTime     endTime
+
+            if (startTime < m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
+                // cases
+                //  --|-------*------|--
+                // startTime     endTime
+                //  --|--------------*--
+                // startTime     endTime
+
+                // in case m_cassandraConfiguration.getNewSplitIndexStartTimeMs() == endTime
+                // with first round it will fetch data from new table for a single time point == 'endTime'
+                // the second round will fetch all the data until 'endTime' (exclusively)
+                collectFromRowKeySplitIndex(rowKeys,
+                        m_psQueryRowKeySplitIndex2,
+                        metricName,
+                        useSplitField,
+                        useSplit,
+                        m_cassandraConfiguration.getNewSplitIndexStartTimeMs(),
+                        endTime,
+                        filterTags,
+                        limit);
+
+                limit -= rowKeys.size();
+                if (limit > 0) {
                     collectFromRowKeySplitIndex(rowKeys,
-                            m_psQueryRowKeySplitIndex2,
+                            m_psQueryRowKeySplitIndexExclusive,
                             metricName,
                             useSplitField,
                             useSplit,
+                            startTime,
                             m_cassandraConfiguration.getNewSplitIndexStartTimeMs(),
-                            endTime,
                             filterTags,
                             limit);
-
-                    limit -= rowKeys.size();
-                    if (limit > 0) {
-                        collectFromRowKeySplitIndex(rowKeys,
-                                m_psQueryRowKeySplitIndexExclusive,
-                                metricName,
-                                useSplitField,
-                                useSplit,
-                                startTime,
-                                m_cassandraConfiguration.getNewSplitIndexStartTimeMs() - 1,
-                                filterTags,
-                                limit);
-                    }
                 }
             } else {
-                // otherwise just fetch all the data from new table
+                // cases
+                //  *--------|--------------|--
+                //        startTime     endTime
+                //
+                //  --*--------------|--
+                //  startTime     endTime
                 collectFromRowKeySplitIndex(rowKeys,
                         m_psQueryRowKeySplitIndex2,
                         metricName,
                         useSplitField,
                         useSplit,
                         startTime,
-                        m_cassandraConfiguration.getNewSplitIndexStartTimeMs(),
+                        endTime,
                         filterTags,
                         limit);
             }
         } else {
-            // go without split index
-            collectFromRowKeyIndex(rowKeys,
-                    m_psQueryRowKeyIndex,
+            // Allowed cases for this branch (* - a point defined by m_cassandraConfiguration.getNewSplitIndexStartTimeMs())
+            //  --|--------------|-------*
+            // startTime     endTime
+
+            collectFromRowKeySplitIndex(rowKeys,
+                    m_psQueryRowKeySplitIndex,
                     metricName,
+                    useSplitField,
+                    useSplit,
                     startTime,
-                    m_cassandraConfiguration.getNewSplitIndexStartTimeMs(),
+                    endTime,
                     filterTags,
                     limit);
-
         }
 
         return rowKeys;
@@ -777,12 +832,12 @@ public class CassandraDatastore implements Datastore {
             rs = m_session.execute(bs);
             filterAndAddKeys(metricName, filterTags, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
         } else {
-            long calculatedStarTime = calculateRowTimeRead(startTime);
+            long calculatedStartTime = calculateRowTimeRead(startTime);
             // Use write width here, as END time is upper bound for query and end with produces the bigger timestamp
             long calculatedEndTime = calculateRowTimeWrite(endTime);
             // logger.info("calculated: s={} cs={} e={} ce={}", startTime, calculatedStarTime, endTime, calculatedEndTime);
 
-            DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculatedStarTime, "");
+            DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculatedStartTime, "");
             DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculatedEndTime, "");
             endKey.setEndSearchKey(true);
 
@@ -830,12 +885,12 @@ public class CassandraDatastore implements Datastore {
             rs = m_session.execute(bs);
             filterAndAddKeys(metricName, filterTags, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
         } else {
-            long calculatedStarTime = calculateRowTimeRead(startTime);
+            long calculatedStartTime = calculateRowTimeRead(startTime);
             // Use write width here, as END time is upper bound for query and end with produces the bigger timestamp
             long calculatedEndTime = calculateRowTimeWrite(endTime);
             // logger.info("calculated: s={} cs={} e={} ce={}", startTime, calculatedStarTime, endTime, calculatedEndTime);
 
-            DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculatedStarTime, "");
+            DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculatedStartTime, "");
             DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculatedEndTime, "");
             endKey.setEndSearchKey(true);
 

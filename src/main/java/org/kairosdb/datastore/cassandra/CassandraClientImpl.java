@@ -30,7 +30,8 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	public static final Logger logger = LoggerFactory.getLogger(CassandraClientImpl.class);
 
 	private final Cluster m_cluster;
-	private String m_keyspace;
+	private final String m_keyspace;
+	private final String m_replication;
 	private LoadBalancingPolicy m_loadBalancingPolicy;
 
 	@Inject
@@ -99,6 +100,7 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 
 		m_cluster = builder.build();
 		m_keyspace = configuration.getKeyspaceName();
+		m_replication = configuration.getReplication();
 	}
 
 	public LoadBalancingPolicy getLoadBalancingPolicy()
@@ -123,6 +125,9 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	{
 		return m_keyspace;
 	}
+
+	@Override
+	public String getReplication() { return m_replication; }
 
 	@Override
 	public void close()

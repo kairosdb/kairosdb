@@ -21,6 +21,7 @@ public class CassandraConfiguration
 	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
 
 	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
+	public static final String REPLICATION_PROPERTY = "kairosdb.datastore.cassandra.replication";
 	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
 	public static final String SIMULTANIOUS_QUERIES = "kairosdb.datastore.cassandra.simultaneous_cql_queries";
 	public static final String QUERY_LIMIT = "kairosdb.datastore.cassandra.query_limit";
@@ -82,6 +83,10 @@ public class CassandraConfiguration
 	@Inject
 	@Named(KEYSPACE_PROPERTY)
 	private String m_keyspaceName;
+
+	@Inject
+	@Named(REPLICATION_PROPERTY)
+	private String m_replication = "{'class': 'SimpleStrategy','replication_factor' : 1}";
 
 	private List<String> m_hostList;
 
@@ -256,5 +261,10 @@ public class CassandraConfiguration
 	public boolean isUseSsl()
 	{
 		return m_useSsl;
+	}
+
+	public String getReplication()
+	{
+		return m_replication;
 	}
 }

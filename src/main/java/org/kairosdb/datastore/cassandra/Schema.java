@@ -15,8 +15,7 @@ public class Schema
 
 	public static final String CREATE_KEYSPACE = "" +
 			"CREATE KEYSPACE IF NOT EXISTS %s" +
-			"  WITH REPLICATION = {'class': 'SimpleStrategy'," +
-			"  'replication_factor' : 1}";
+			"  WITH REPLICATION = %s";
 
 	public static final String DATA_POINTS_TABLE = "" +
 			"CREATE TABLE IF NOT EXISTS data_points (\n" +
@@ -273,7 +272,8 @@ public class Schema
 	{
 		try (Session session = cassandraClient.getSession())
 		{
-			session.execute(String.format(CREATE_KEYSPACE, cassandraClient.getKeyspace()));
+			session.execute(String.format(CREATE_KEYSPACE, cassandraClient.getKeyspace(),
+					cassandraClient.getReplication()));
 		}
 
 		try (Session session = cassandraClient.getKeyspaceSession())

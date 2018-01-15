@@ -860,7 +860,14 @@ public class CassandraDatastore implements Datastore {
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 
         final BoundStatement bs = statement.bind();
-        bs.setString(0, metricName);
+        ByteBuffer bMetricName;
+        try {
+            bMetricName = ByteBuffer.wrap(metricName.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        bs.setBytes(0, bMetricName);
         bs.setInt(3, limit);
 
 

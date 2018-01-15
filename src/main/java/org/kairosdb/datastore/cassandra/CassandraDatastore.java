@@ -67,9 +67,6 @@ public class CassandraDatastore implements Datastore {
     public static final String QUERY_ROW_KEY_SPLIT_INDEX = "SELECT column1 FROM row_key_split_index WHERE metric_name = ? AND tag_name = ? and tag_value IN ? AND column1 >= ? and column1 <= ? LIMIT ?";
 
     // TODO: delete next 3 constants when we're done with switching tables and row_key_split_index_2 is deleted
-    // **EXCLUSIVE** because select interval excludes the upper bound ("column1 < ?")
-    // original query includes both bounds
-    public static final String QUERY_ROW_KEY_SPLIT_INDEX_EXCLUSIVE = "SELECT column1 FROM row_key_split_index WHERE metric_name = ? AND tag_name = ? and tag_value IN ? AND column1 >= ? and column1 < ? LIMIT ?";
     public static final String QUERY_ROW_KEY_SPLIT_INDEX_2 = "SELECT column1 FROM row_key_split_index_2 WHERE metric_name = ? AND tag_name = ? and tag_value IN ? AND column1 >= ? and column1 <= ? LIMIT ?";
     public static final String ROW_KEY_INDEX_SPLIT_2_INSERT = "INSERT INTO row_key_split_index_2 " +
             "(metric_name, tag_name, tag_value, column1, value) VALUES (?, ?, ?, ?, 0x00) USING TTL ?";
@@ -107,7 +104,6 @@ public class CassandraDatastore implements Datastore {
 
     // TODO: delete next 3 vars when we're done with switching tables and row_key_split_index_2 is deleted
     private final PreparedStatement m_psInsertRowKeySplit2;
-    private final PreparedStatement m_psQueryRowKeySplitIndexExclusive;
     private final PreparedStatement m_psQueryRowKeySplitIndex2;
 
     private final RowKeyCache rowKeyCache;
@@ -157,7 +153,6 @@ public class CassandraDatastore implements Datastore {
         m_psQueryStringIndex = m_session.prepare(QUERY_STRING_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryRowKeyIndex = m_session.prepare(QUERY_ROW_KEY_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryRowKeySplitIndex = m_session.prepare(QUERY_ROW_KEY_SPLIT_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
-        m_psQueryRowKeySplitIndexExclusive = m_session.prepare(QUERY_ROW_KEY_SPLIT_INDEX_EXCLUSIVE).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryRowKeySplitIndex2 = m_session.prepare(QUERY_ROW_KEY_SPLIT_INDEX_2).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryDataPoints = m_session.prepare(QUERY_DATA_POINTS).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
 
@@ -747,12 +742,12 @@ public class CassandraDatastore implements Datastore {
                 limit -= rowKeys.size();
                 if (limit > 0) {
                     collectFromRowKeySplitIndex(rowKeys,
-                            m_psQueryRowKeySplitIndexExclusive,
+                            m_psQueryRowKeySplitIndex,
                             metricName,
                             useSplitField,
                             useSplit,
                             startTime,
-                            m_cassandraConfiguration.getNewSplitIndexStartTimeMs(),
+                            m_cassandraConfiguration.getNewSplitIndexStartTimeMs() - m_rowWidthRead,
                             filterTags,
                             limit);
                 }

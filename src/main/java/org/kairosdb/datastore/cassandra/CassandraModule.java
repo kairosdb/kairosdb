@@ -111,7 +111,7 @@ public class CassandraModule extends AbstractModule
 		catch (Exception e)
 		{
 			logger.error("Unable to setup cassandra connection to cluster", e);
-			throw new RuntimeException("Unable to setup cassandra connection to cluster");
+			throw e;
 		}
 	}
 
@@ -126,7 +126,7 @@ public class CassandraModule extends AbstractModule
 		catch (Exception e)
 		{
 			logger.error("Unable to setup cassandra schema", e);
-			throw new RuntimeException("Unable to setup cassandra schema");
+			throw e;
 		}
 	}
 

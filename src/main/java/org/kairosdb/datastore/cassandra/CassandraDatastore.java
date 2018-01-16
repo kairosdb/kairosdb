@@ -461,7 +461,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		@Override
 		public void onFailure(Throwable t)
 		{
-			System.out.println(t);
+			logger.error("Async query failure", t);
+			m_queryMonitor.failQuery(t);
 			m_semaphore.release();
 		}
 	}
@@ -581,7 +582,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		}
 		catch (InterruptedException e)
 		{
-			e.printStackTrace();
+			logger.error("Query interrupted", e);
 		}
 
 		if (queryMonitor.getException() != null)

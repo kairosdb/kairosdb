@@ -14,6 +14,8 @@ public interface CassandraClient
 
 	String getKeyspace();
 
+	String getReplication();
+
 	LoadBalancingPolicy getLoadBalancingPolicy();
 
 	void close();

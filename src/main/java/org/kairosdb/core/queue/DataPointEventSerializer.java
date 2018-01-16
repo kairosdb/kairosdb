@@ -81,7 +81,7 @@ public class DataPointEventSerializer
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			logger.error("Unable to deserialize event", e);
 		}
 
 		return ret;

@@ -1,14 +1,13 @@
 package org.kairosdb.datastore.cassandra;
 
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.http.rest.json.Query;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 public class QueryMonitor
 {
 	private volatile boolean m_keepRunning;
-	private Exception m_exception;
+	private Throwable m_exception;
 	private final long m_limit;
 	private final AtomicLong m_counter = new AtomicLong();
 
@@ -32,13 +31,13 @@ public class QueryMonitor
 		return m_keepRunning;
 	}
 
-	public void failQuery(Exception e)
+	public void failQuery(Throwable e)
 	{
 		m_keepRunning = false;
 		m_exception = e;
 	}
 
-	public Exception getException()
+	public Throwable getException()
 	{
 		return m_exception;
 	}

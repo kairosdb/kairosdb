@@ -20,7 +20,8 @@ function showFlotChart(subTitle, yaxis, data) {
 		},
 		legend: {
 			container: $("#graphLegend"),
-			noColumns: 5
+			noColumns: 4,
+			sorted: true
 		},
 		colors: ["#4572a7", "#aa4643", "#89a54e", "#80699b", "#db843d"]
 	};

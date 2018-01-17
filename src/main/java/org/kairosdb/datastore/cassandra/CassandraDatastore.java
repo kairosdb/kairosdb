@@ -297,9 +297,10 @@ public class CassandraDatastore implements Datastore {
                 continue;
             }
 
-            storeRowKeySplit(m_psInsertRowKeySplit, metricName, serializedKey, rowKeyTtl, split, v);
             if (m_cassandraConfiguration.isUseNewSplitIndexWrite()) {
                 storeRowKeySplit(m_psInsertRowKeySplit2, metricName, serializedKey, rowKeyTtl, split, v);
+            } else {
+                storeRowKeySplit(m_psInsertRowKeySplit, metricName, serializedKey, rowKeyTtl, split, v);
             }
         }
     }

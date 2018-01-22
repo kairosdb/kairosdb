@@ -12,4 +12,7 @@ public interface QueryMeasurementProvider extends InternalMetricsProvider {
 
     void measureDistanceError(QueryMetric query);
 
+    void measureSpanForMetric(QueryMetric query);
+
+    void measureDistanceForMetric(QueryMetric query);
 }

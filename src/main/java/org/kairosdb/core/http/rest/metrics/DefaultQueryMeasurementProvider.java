@@ -42,6 +42,18 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 
 
     @Override
+    public void measureSpanForMetric(final QueryMetric query) {
+        final Histogram histogram = metricRegistry.histogram(MEASURES_PREFIX + query.getName() + ".span");
+        measureSpan(histogram, query);
+    }
+
+    @Override
+    public void measureDistanceForMetric(final QueryMetric query) {
+        final Histogram histogram = metricRegistry.histogram(MEASURES_PREFIX + query.getName() + ".distance");
+        measureDistance(histogram, query);
+    }
+
+    @Override
     public void measureSpanSuccess(final QueryMetric query) {
         measureSpan(spanHistogramSuccess, query);
     }

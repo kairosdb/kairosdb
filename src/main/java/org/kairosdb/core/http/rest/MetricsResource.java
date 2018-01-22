@@ -414,6 +414,9 @@ public class MetricsResource implements KairosMetricReporter
 
 			for (QueryMetric query : queries)
 			{
+				queryMeasurementProvider.measureSpanForMetric(query);
+				queryMeasurementProvider.measureDistanceForMetric(query);
+
 				DatastoreQuery dq = datastore.createQuery(query);
 				try {
 					List<DataPointGroup> results = dq.execute();

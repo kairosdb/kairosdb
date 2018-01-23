@@ -58,7 +58,7 @@ public class CassandraDatastore implements Datastore {
             "(metric_name, tag_name, tag_value, column1, value) VALUES (?, ?, ?, ?, 0x00) USING TTL ?";
 
     public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
-            "(key, column1, value) VALUES (?, ?, 0x00)";
+            "(key, column1, value) VALUES (?, ?, 0x00) USING TTL ?";
 
     public static final String QUERY_STRING_INDEX = "SELECT column1 FROM string_index WHERE key = ?";
 
@@ -280,6 +280,7 @@ public class CassandraDatastore implements Datastore {
         BoundStatement bs = new BoundStatement(m_psInsertString);
         bs.setBytes(0, key);
         bs.setString(1, value);
+        bs.setInt(2, m_cassandraConfiguration.getDatapointTtl());
         m_session.executeAsync(bs);
     }
 

@@ -412,22 +412,24 @@ public class MetricsResource implements KairosMetricReporter
 
 			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
-			int queryCount = 0;
 			for (QueryMetric query : queries)
 			{
-				queryCount++;
-				queryMeasurementProvider.measureSpan(query);
-				queryMeasurementProvider.measureDistance(query);
+				queryMeasurementProvider.measureSpanForMetric(query);
+				queryMeasurementProvider.measureDistanceForMetric(query);
 
 				DatastoreQuery dq = datastore.createQuery(query);
-				long startQuery = System.currentTimeMillis();
-				try
-				{
+				try {
 					List<DataPointGroup> results = dq.execute();
 					jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
+				} catch (Throwable e) {
+					queryMeasurementProvider.measureSpanError(query);
+					queryMeasurementProvider.measureDistanceError(query);
+					throw e;
 				}
 				finally
 				{
+					queryMeasurementProvider.measureSpanSuccess(query);
+					queryMeasurementProvider.measureDistanceSuccess(query);
 					dq.close();
 				}
 			}

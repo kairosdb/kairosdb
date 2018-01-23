@@ -22,38 +22,55 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
     private static final String MEASURES_PREFIX = "kairosdb.queries";
 
     private final MetricRegistry metricRegistry;
-    private final Histogram spanHistogram;
-    private final Histogram distanceHistogram;
+    private final Histogram spanHistogramSuccess;
+    private final Histogram distanceHistogramSuccess;
+
+    private final Histogram spanHistogramError;
+    private final Histogram distanceHistogramError;
 
     @Inject
     public DefaultQueryMeasurementProvider(@Nonnull final MetricRegistry metricRegistry) {
         checkNotNull(metricRegistry, "metricRegistry can't be null");
         this.metricRegistry = metricRegistry;
 
+        spanHistogramSuccess = metricRegistry.histogram(MEASURES_PREFIX + ".span.success");
+        distanceHistogramSuccess = metricRegistry.histogram(MEASURES_PREFIX + ".distance.success");
 
-        spanHistogram = metricRegistry.histogram(MEASURES_PREFIX + ".span");
-        distanceHistogram = metricRegistry.histogram(MEASURES_PREFIX + ".distance");
+        spanHistogramError = metricRegistry.histogram(MEASURES_PREFIX + ".span.error");
+        distanceHistogramError = metricRegistry.histogram(MEASURES_PREFIX + ".distance.error");
     }
 
 
     @Override
-    public void measureSpan(final QueryMetric query) {
-        long endTime = query.getEndTime();
-        if(endTime == Long.MAX_VALUE) {
-            final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
-            endTime = nowUTC.getMillis();
-        }
-        final long spanInMillis = endTime - query.getStartTime();
-        final long spanInMinutes = spanInMillis / 1000 / 60;
-        spanHistogram.update(spanInMinutes);
+    public void measureSpanForMetric(final QueryMetric query) {
+        final Histogram histogram = metricRegistry.histogram(MEASURES_PREFIX + query.getName() + ".span");
+        measureSpan(histogram, query);
     }
 
     @Override
-    public void measureDistance(final QueryMetric query) {
-        final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
-        final long distanceInMillis = nowUTC.getMillis() - query.getStartTime();
-        final long distanceInMinutes = distanceInMillis / 1000 / 60;
-        distanceHistogram.update(distanceInMinutes);
+    public void measureDistanceForMetric(final QueryMetric query) {
+        final Histogram histogram = metricRegistry.histogram(MEASURES_PREFIX + query.getName() + ".distance");
+        measureDistance(histogram, query);
+    }
+
+    @Override
+    public void measureSpanSuccess(final QueryMetric query) {
+        measureSpan(spanHistogramSuccess, query);
+    }
+
+    @Override
+    public void measureDistanceSuccess(final QueryMetric query) {
+        measureDistance(distanceHistogramSuccess, query);
+    }
+
+    @Override
+    public void measureSpanError(final QueryMetric query) {
+        measureSpan(spanHistogramError, query);
+    }
+
+    @Override
+    public void measureDistanceError(final QueryMetric query) {
+        measureDistance(distanceHistogramError, query);
     }
 
     @Override
@@ -76,5 +93,23 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return ImmutableMap.copyOf(filteredMetrics);
+    }
+
+    private void measureSpan(final Histogram histogram, final QueryMetric query) {
+        long endTime = query.getEndTime();
+        if (endTime == Long.MAX_VALUE) {
+            final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
+            endTime = nowUTC.getMillis();
+        }
+        final long spanInMillis = endTime - query.getStartTime();
+        final long spanInMinutes = spanInMillis / 1000 / 60;
+        histogram.update(spanInMinutes);
+    }
+
+    public void measureDistance(final Histogram histogram, final QueryMetric query) {
+        final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
+        final long distanceInMillis = nowUTC.getMillis() - query.getStartTime();
+        final long distanceInMinutes = distanceInMillis / 1000 / 60;
+        histogram.update(distanceInMinutes);
     }
 }

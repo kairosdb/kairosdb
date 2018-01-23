@@ -4,6 +4,15 @@ import org.kairosdb.core.admin.InternalMetricsProvider;
 import org.kairosdb.core.datastore.QueryMetric;
 
 public interface QueryMeasurementProvider extends InternalMetricsProvider {
-    void measureSpan(QueryMetric query);
-    void measureDistance(QueryMetric query);
+    void measureSpanSuccess(QueryMetric query);
+
+    void measureDistanceSuccess(QueryMetric query);
+
+    void measureSpanError(QueryMetric query);
+
+    void measureDistanceError(QueryMetric query);
+
+    void measureSpanForMetric(QueryMetric query);
+
+    void measureDistanceForMetric(QueryMetric query);
 }

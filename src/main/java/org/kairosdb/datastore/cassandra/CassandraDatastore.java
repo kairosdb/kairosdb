@@ -144,6 +144,14 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_queueProcessor.setProcessorHandler(this);
 	}
 
+	//Used for creating the end string for prefix searches
+	private static ByteBuffer serializeEndString(String str)
+	{
+		byte[] bytes = str.getBytes(UTF_8);
+		bytes[bytes.length-1]++;
+		return ByteBuffer.wrap(bytes);
+	}
+
 	private static ByteBuffer serializeString(String str)
 	{
 		return ByteBuffer.wrap(str.getBytes(UTF_8));
@@ -191,6 +199,27 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_congestionExecutor.submit(batchHandler);
 	}
 
+	private Iterable<String> queryStringIndex(final String key, final String prefix)
+	{
+		BoundStatement boundStatement = new BoundStatement(m_schema.psStringIndexPrefixQuery);
+		boundStatement.setBytesUnsafe(0, serializeString(key));
+		boundStatement.setBytesUnsafe(1, serializeString(prefix));
+		boundStatement.setBytesUnsafe(2, serializeEndString(prefix));
+
+		boundStatement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+
+		ResultSet resultSet = m_session.execute(boundStatement);
+
+		List<String> ret = new ArrayList<String>();
+
+		while (!resultSet.isExhausted())
+		{
+			Row row = resultSet.one();
+			ret.add(row.getString(0));
+		}
+
+		return ret;
+	}
 
 	private Iterable<String> queryStringIndex(final String key)
 	{
@@ -212,9 +241,12 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	}
 
 	@Override
-	public Iterable<String> getMetricNames()
+	public Iterable<String> getMetricNames(String prefix)
 	{
-		return queryStringIndex(ROW_KEY_METRIC_NAMES);
+		if (prefix == null)
+			return queryStringIndex(ROW_KEY_METRIC_NAMES);
+		else
+			return queryStringIndex(ROW_KEY_METRIC_NAMES, prefix);
 	}
 
 	@Override

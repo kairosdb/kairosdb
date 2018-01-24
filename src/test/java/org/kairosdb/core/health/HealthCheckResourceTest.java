@@ -30,7 +30,7 @@ public class HealthCheckResourceTest
 	{
 		datastore = mock(KairosDatastore.class);
 		query = mock(DatastoreQuery.class);
-		when(datastore.getMetricNames()).thenReturn(Collections.<String>emptyList());
+		when(datastore.getMetricNames(null)).thenReturn(Collections.<String>emptyList());
 		when(datastore.createQuery(any(QueryMetric.class))).thenReturn(query);
 
 		HealthCheckService healthCheckService = new TestHealthCheckService();
@@ -71,7 +71,7 @@ public class HealthCheckResourceTest
 	@Test
 	public void testStatusUnHealthy() throws DatastoreException
 	{
-		when(datastore.getMetricNames()).thenThrow(new DatastoreException("Error"));
+		when(datastore.getMetricNames(null)).thenThrow(new DatastoreException("Error"));
 		Response response = resourceService.status();
 
 		assertThat(response.getStatus(), equalTo(Response.Status.OK.getStatusCode()));

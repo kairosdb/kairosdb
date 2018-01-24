@@ -14,7 +14,7 @@ public interface Datastore
 
 	//public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint, int ttl) throws DatastoreException;
 
-	Iterable<String> getMetricNames() throws DatastoreException;
+	Iterable<String> getMetricNames(String prefix) throws DatastoreException;
 
 	Iterable<String> getTagNames() throws DatastoreException;
 

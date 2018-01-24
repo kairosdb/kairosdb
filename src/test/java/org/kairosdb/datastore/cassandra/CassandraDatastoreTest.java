@@ -421,7 +421,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
-		assertThat(s_datastore.getMetricNames(), not(hasItem(metricToDelete)));
+		assertThat(s_datastore.getMetricNames(null), not(hasItem(metricToDelete)));
 	}
 
 	@Test
@@ -449,7 +449,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
-		assertThat(s_datastore.getMetricNames(), not(hasItem(metricToDelete)));
+		assertThat(s_datastore.getMetricNames(null), not(hasItem(metricToDelete)));
 	}
 
 	@Test
@@ -480,7 +480,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
-		assertThat(s_datastore.getMetricNames(), hasItem(metricToDelete));
+		assertThat(s_datastore.getMetricNames(null), hasItem(metricToDelete));
 	}
 
 	@Test
@@ -511,7 +511,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
-		assertThat(s_datastore.getMetricNames(), hasItem(metricToDelete));
+		assertThat(s_datastore.getMetricNames(null), hasItem(metricToDelete));
 	}
 
 	@Test
@@ -541,7 +541,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
-		assertThat(s_datastore.getMetricNames(), not(hasItem(metricToDelete)));
+		assertThat(s_datastore.getMetricNames(null), not(hasItem(metricToDelete)));
 	}
 
 	@Test
@@ -570,7 +570,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
-		assertThat(s_datastore.getMetricNames(), not(hasItem(metricToDelete)));
+		assertThat(s_datastore.getMetricNames(null), not(hasItem(metricToDelete)));
 	}
 
 	@Test
@@ -602,7 +602,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
-		assertThat(s_datastore.getMetricNames(), hasItem(metricToDelete));
+		assertThat(s_datastore.getMetricNames(null), hasItem(metricToDelete));
 	}
 
 	@Test
@@ -634,7 +634,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
-		assertThat(s_datastore.getMetricNames(), hasItem(metricToDelete));
+		assertThat(s_datastore.getMetricNames(null), hasItem(metricToDelete));
 	}
 
 	/**

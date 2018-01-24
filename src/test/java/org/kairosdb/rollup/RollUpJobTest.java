@@ -288,7 +288,7 @@ public class RollUpJobTest
 		}
 
 		@Override
-		public Iterable<String> getMetricNames() throws DatastoreException
+		public Iterable<String> getMetricNames(String prefix) throws DatastoreException
 		{
 			throw new UnsupportedOperationException();
 		}

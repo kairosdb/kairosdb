@@ -48,13 +48,13 @@ public class DataPoint_base extends GenOrmRecord
 		/**
 		*/
 		public ResultSet getForMetricId(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, String order);/**
-		*/
-		public ResultSet getForMetricIdWithLimit(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, int limit, String order);/**
 			Check for at least a single data point for a given metric id
 		*/
 		public DataPoint getWithMetricId(String metricId);/**
 		*/
-		public ResultSet getByMetric(String metricId);
+		public ResultSet getByMetric(String metricId);/**
+		*/
+		public ResultSet getForMetricIdWithLimit(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, int limit, String order);
 		}
 	
 	public static class DataPointFactoryImpl //Inherit interfaces
@@ -367,44 +367,6 @@ public class DataPoint_base extends GenOrmRecord
 			
 		//---------------------------------------------------------------------------
 		/**
-		*/
-		public ResultSet getForMetricIdWithLimit(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, int limit, String order)
-			{
-			String query = SELECT+"from data_point this\n				where\n				this.\"metric_id\" = ?\n				and this.\"timestamp\" >= ?\n				and this.\"timestamp\" <= ?\n				order by this.\"timestamp\" %order%\n				limit ?";
-			HashMap<String, String> replaceMap = new HashMap<String, String>();
-			replaceMap.put("order", order);
-			query = QueryHelper.replaceText(query, replaceMap);
-			
-			java.sql.PreparedStatement genorm_statement = null;
-			
-			try
-				{
-				genorm_statement = GenOrmDataSource.prepareStatement(query);
-				genorm_statement.setString(1, metricId);genorm_statement.setTimestamp(2, startTime);genorm_statement.setTimestamp(3, endTime);genorm_statement.setInt(4, limit);
-				
-				s_logger.debug(genorm_statement.toString());
-				
-				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
-				
-				return (rs);
-				}
-			catch (java.sql.SQLException sqle)
-				{
-				try
-					{
-					if (genorm_statement != null)
-						genorm_statement.close();
-					}
-				catch (java.sql.SQLException sqle2) { }
-					
-				if (s_logger.isDebugEnabled())
-					sqle.printStackTrace();
-				throw new GenOrmException(sqle);
-				}
-			}
-			
-		//---------------------------------------------------------------------------
-		/**
 			Check for at least a single data point for a given metric id
 		*/
 		public DataPoint getWithMetricId(String metricId)
@@ -474,6 +436,44 @@ public class DataPoint_base extends GenOrmRecord
 				}
 			}
 			
+		//---------------------------------------------------------------------------
+		/**
+		*/
+		public ResultSet getForMetricIdWithLimit(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, int limit, String order)
+			{
+			String query = SELECT+"from data_point this\n				where\n				this.\"metric_id\" = ?\n				and this.\"timestamp\" >= ?\n				and this.\"timestamp\" <= ?\n				order by this.\"timestamp\" %order%\n				limit ?";
+			HashMap<String, String> replaceMap = new HashMap<String, String>();
+			replaceMap.put("order", order);
+			query = QueryHelper.replaceText(query, replaceMap);
+			
+			java.sql.PreparedStatement genorm_statement = null;
+			
+			try
+				{
+				genorm_statement = GenOrmDataSource.prepareStatement(query);
+				genorm_statement.setString(1, metricId);genorm_statement.setTimestamp(2, startTime);genorm_statement.setTimestamp(3, endTime);genorm_statement.setInt(4, limit);
+				
+				s_logger.debug(genorm_statement.toString());
+				
+				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
+				
+				return (rs);
+				}
+			catch (java.sql.SQLException sqle)
+				{
+				try
+					{
+					if (genorm_statement != null)
+						genorm_statement.close();
+					}
+				catch (java.sql.SQLException sqle2) { }
+					
+				if (s_logger.isDebugEnabled())
+					sqle.printStackTrace();
+				throw new GenOrmException(sqle);
+				}
+			}
+			
 
 		
 		//---------------------------------------------------------------------------
@@ -486,12 +486,12 @@ public class DataPoint_base extends GenOrmRecord
 			System.out.println("DataPoint.getForMetricId");
 			rs = getForMetricId("foo", new java.sql.Timestamp(0L), new java.sql.Timestamp(0L), "asc");
 			rs.close();
-			System.out.println("DataPoint.getForMetricIdWithLimit");
-			rs = getForMetricIdWithLimit("foo", new java.sql.Timestamp(0L), new java.sql.Timestamp(0L), 10, "asc");
-			rs.close();
 			System.out.println("DataPoint.getWithMetricId");
 			getWithMetricId("foo");
 
+			System.out.println("DataPoint.getForMetricIdWithLimit");
+			rs = getForMetricIdWithLimit("foo", new java.sql.Timestamp(0L), new java.sql.Timestamp(0L), 10, "asc");
+			rs.close();
 
 			}
 		}

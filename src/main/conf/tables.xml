@@ -67,6 +67,19 @@
 				ORDER BY this."key" asc
 			</sql>
 		</table_query>
+
+		<table_query name="service_keys" result_type="multi">
+			<input>
+				<param name="service" type="string" test="foo"/>
+			</input>
+			<sql>
+				from service_index this
+				WHERE
+				this."service" = ?
+				ORDER BY this."key" asc
+			</sql>
+		</table_query>
+
 	</table>
 
 	<table name="tag">
@@ -164,6 +177,18 @@
 			</return>
 			<sql>
 				select distinct "name" from metric
+			</sql>
+		</query>
+
+		<query name="metric_names_prefix">
+			<input>
+				<param name="prefix" type="string" test="kairos%"/>
+			</input>
+			<return>
+				<param name="name" type="string"/>
+			</return>
+			<sql>
+				select distinct "name" from metric where "name" like ?
 			</sql>
 		</query>
 

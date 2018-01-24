@@ -17,6 +17,7 @@
 package org.kairosdb.datastore.h2;
 
 import com.google.common.collect.ImmutableSortedMap;
+import org.kairosdb.datastore.h2.orm.*;
 import org.kairosdb.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -32,22 +33,6 @@ import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.datastore.TagSetImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.cassandra.DataPointsRowKey;
-import org.kairosdb.datastore.h2.orm.DSEnvelope;
-import org.kairosdb.datastore.h2.orm.DataPoint;
-import org.kairosdb.datastore.h2.orm.DeleteMetricsQuery;
-import org.kairosdb.datastore.h2.orm.GenOrmDataSource;
-import org.kairosdb.datastore.h2.orm.InsertDataPointQuery;
-import org.kairosdb.datastore.h2.orm.Metric;
-import org.kairosdb.datastore.h2.orm.MetricIdResults;
-import org.kairosdb.datastore.h2.orm.MetricIdsQuery;
-import org.kairosdb.datastore.h2.orm.MetricIdsWithTagsQuery;
-import org.kairosdb.datastore.h2.orm.MetricNamesQuery;
-import org.kairosdb.datastore.h2.orm.MetricTag;
-import org.kairosdb.datastore.h2.orm.ServiceIndex;
-import org.kairosdb.datastore.h2.orm.ServiceIndex_base;
-import org.kairosdb.datastore.h2.orm.Tag;
-import org.kairosdb.datastore.h2.orm.TagNamesQuery;
-import org.kairosdb.datastore.h2.orm.TagValuesQuery;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
@@ -221,18 +206,33 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 
 
 	@Override
-	public Iterable<String> getMetricNames()
+	public Iterable<String> getMetricNames(String prefix)
 	{
-		MetricNamesQuery query = new MetricNamesQuery();
-		MetricNamesQuery.ResultSet results = query.runQuery();
-
 		List<String> metricNames = new ArrayList<>();
-		while (results.next())
+		if (prefix == null)
 		{
-			metricNames.add(results.getRecord().getName());
-		}
+			MetricNamesQuery query = new MetricNamesQuery();
+			MetricNamesQuery.ResultSet results = query.runQuery();
 
-		results.close();
+			while (results.next())
+			{
+				metricNames.add(results.getRecord().getName());
+			}
+
+			results.close();
+		}
+		else
+		{
+			MetricNamesPrefixQuery query = new MetricNamesPrefixQuery(prefix+"%");
+			MetricNamesPrefixQuery.ResultSet results = query.runQuery();
+
+			while (results.next())
+			{
+				metricNames.add(results.getRecord().getName());
+			}
+
+			results.close();
+		}
 
 		return (metricNames);
 	}

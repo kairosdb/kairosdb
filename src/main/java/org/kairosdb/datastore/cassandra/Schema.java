@@ -102,6 +102,9 @@ public class Schema
 	public static final String STRING_INDEX_QUERY = "SELECT column1 FROM string_index " +
 			"WHERE key = ?";
 
+	public static final String STRING_INDEX_PREFIX_QUERY = "SELECT column1 FROM string_index " +
+			"WHERE key = ? and column1 >= ? and column1 < ?";
+
 	public static final String STRING_INDEX_DELETE = "DELETE FROM string_index " +
 			"WHERE key = ? AND column1 = ?";
 
@@ -176,6 +179,7 @@ public class Schema
 	public final PreparedStatement psStringIndexInsert;
 	public final PreparedStatement psDataPointsQueryAsc;
 	public final PreparedStatement psStringIndexQuery;
+	public final PreparedStatement psStringIndexPrefixQuery;
 	public final PreparedStatement psStringIndexDelete;
 	public final PreparedStatement psRowKeyIndexQuery;
 	public final PreparedStatement psRowKeyQuery;
@@ -214,6 +218,7 @@ public class Schema
 		psRowKeyInsert = m_session.prepare(ROW_KEY_INSERT);
 		psStringIndexInsert = m_session.prepare(STRING_INDEX_INSERT);
 		psStringIndexQuery = m_session.prepare(STRING_INDEX_QUERY);
+		psStringIndexPrefixQuery = m_session.prepare(STRING_INDEX_PREFIX_QUERY);
 		psStringIndexDelete = m_session.prepare(STRING_INDEX_DELETE);
 		psDataPointsQueryAsc = m_session.prepare(DATA_POINTS_QUERY_ASC);
 		psDataPointsQueryDesc = m_session.prepare(DATA_POINTS_QUERY_DESC);

@@ -178,7 +178,7 @@ public abstract class ResourceBase
         }
 
         @Override
-        public Iterable<String> getMetricNames()
+        public Iterable<String> getMetricNames(String prefix)
         {
             return Arrays.asList("cpu", "memory", "disk", "network");
         }

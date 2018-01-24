@@ -741,7 +741,7 @@ public class DataPointsParserTest
 		}*/
 
 		@Override
-		public Iterable<String> getMetricNames() throws DatastoreException
+		public Iterable<String> getMetricNames(String prefix) throws DatastoreException
 		{
 			return null;
 		}

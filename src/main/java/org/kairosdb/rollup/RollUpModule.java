@@ -24,6 +24,8 @@ public class RollUpModule extends AbstractModule
 		bind(RollUpTasksStore.class).to(RollUpTasksStoreImpl.class).in(Scopes.SINGLETON);
 		bind(RollUpAssignmentStore.class).to(RollUpAssignmentStoreImpl.class).in(Scopes.SINGLETON);
 		bind(BalancingAlgorithm.class).to(ScoreBalancingAlgorithm.class).in(Scopes.SINGLETON);
+		bind(RollupTaskStatusStore.class).to(RollupTaskStatusStoreImpl.class).in(Scopes.SINGLETON);
+		bind(RollUpJob.class);
 	}
 
 	@Provides

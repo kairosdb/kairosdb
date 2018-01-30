@@ -32,8 +32,6 @@ public abstract class RollupTestBase
     static final RollupTask TASK3 = createTask("3", "task3");
     static final RollupTask TASK4 = createTask("4", "task4");
     static final RollupTask TASK5 = createTask("5", "task5");
-    static final RollupTask TASK6 = createTask("6", "task6");
-
 
     @Mock
     ScheduledExecutorService mockExecutionService;
@@ -41,14 +39,16 @@ public abstract class RollupTestBase
     FakeServiceKeyStore fakeServiceKeyStore = new FakeServiceKeyStore();
     RollUpAssignmentStore assignmentStore = new RollUpAssignmentStoreImpl(fakeServiceKeyStore);
     RollUpTasksStore taskStore;
+    QueryParser queryParser;
 
     @Before
     public void setupBase()
             throws KairosDBException
     {
         initMocks(this);
+        queryParser = new QueryParser(new TestKairosDBProcessor(ImmutableList.of(new TestAggregatorFactory())), new TestQueryPluginFactory());
         taskStore = new RollUpTasksStoreImpl(fakeServiceKeyStore,
-                new QueryParser(new TestKairosDBProcessor(ImmutableList.of(new TestAggregatorFactory())), new TestQueryPluginFactory()));
+                queryParser);
     }
 
     private static RollupTask createTask(String id, String name)

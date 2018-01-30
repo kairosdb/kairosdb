@@ -1,5 +1,6 @@
 var ROLLUP_URL = "/api/v1/rollups/";
 var AGGREGATORS_URL = "/api/v1/features/aggregators";
+var TASK_STATUS_URL = "/api/v1/rollups/status/";
 var semaphore = false;
 var metricList = null;
 
@@ -21,6 +22,8 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	$scope.TOOLTIP_COMPLETE = "Roll-up contains all necessary data.";
 	$scope.TOOLTIP_INCOMPLETE = "Roll-up is not complete. Complete all grey-out fields.";
 	$scope.TOOLTIP_COMPLEX = "This roll-up is a complex roll-up and cannot be managed from this UI.";
+	$scope.TOOLTIP_STATUS = "The execution status of the Roll-up.";
+
 
 	$scope.EXECUTION_TYPES = ["Every Minute", "Hourly", "Daily", "Weekly", "Monthly", "Yearly"];
 	$scope.GROUP_BY_TYPES = ["tag", "time"];
@@ -559,14 +562,39 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 			});
 	};
 
-	$scope.checkForIncompleteTask = function (task) {
-		if (!task.name || _.isEmpty(task.name) || task.name == $scope.DEFAULT_TASK_NAME) {
+	$scope.showStatus = function (task) {
+        $scope.getTaskStatus(task);
+		var modalInstance = $uibModal.open({
+			templateUrl: 'rollup-status.html?cacheBust=' + Math.random().toString(36).slice(2), //keep dialog from caching
+			controller: simpleController,
+			scope: $scope,
+			size: 'lg'
+		});
+	};
+
+    $scope.getTaskStatus = function(task)
+    {
+        $scope.status = "Getting status...";
+        $scope.statusTask = task;
+        $http.get(TASK_STATUS_URL + task.id)
+                .success(function (response)
+                {
+                    $scope.status = response;
+                })
+                .error(function (data, status, headers, config)
+                {
+                    $scope.status = "No status available"
+                });
+    };
+
+    $scope.checkForIncompleteTask = function (task) {
+		if (!task.name || _.isEmpty(task.name) || task.name === $scope.DEFAULT_TASK_NAME) {
 			task.incomplete = true;
 		}
-		else if (!task.metric_name || _.isEmpty(task.metric_name) || task.metric_name == $scope.DEFAULT_METRIC_NAME) {
+		else if (!task.metric_name || _.isEmpty(task.metric_name) || task.metric_name === $scope.DEFAULT_METRIC_NAME) {
 			task.incomplete = true;
 		}
-		else if (!task.save_as || _.isEmpty(task.save_as) || task.save_as == $scope.DEFAULT_SAVE_AS) {
+		else if (!task.save_as || _.isEmpty(task.save_as) || task.save_as === $scope.DEFAULT_SAVE_AS) {
 			task.incomplete = true;
 		}
 		else  if (!task.aggregators || task.aggregators.size < 1) {

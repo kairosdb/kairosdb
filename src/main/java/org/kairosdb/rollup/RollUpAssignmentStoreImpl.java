@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
-// todo need unit test
 public class RollUpAssignmentStoreImpl implements RollUpAssignmentStore
 {
     public static final Logger logger = LoggerFactory.getLogger(RollUpAssignmentStoreImpl.class);
@@ -104,6 +104,9 @@ public class RollUpAssignmentStoreImpl implements RollUpAssignmentStore
     public void setAssignment(String unassignedId, String hostName)
             throws RollUpException
     {
+        checkNotNullOrEmpty(unassignedId, "unassignedId cannot be null or empty");
+        checkNotNullOrEmpty(hostName, "hostName cannot be null or empty");
+
         try {
             serviceKeyStore.setValue(SERVICE, SERVICE_KEY_ASSIGNMENTS, unassignedId, hostName);
         }

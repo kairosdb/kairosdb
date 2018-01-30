@@ -87,11 +87,6 @@ public class HostManager implements KairosDBService
         }
     }
 
-//    private long getInactiveTime()
-//    {
-//        return System.currentTimeMillis() - (1000 * inactiveTimeSeconds);
-//    }
-
     private Map<String, ServiceKeyValue> getHostsFromKeyStore()
             throws DatastoreException
     {

@@ -4,11 +4,11 @@ import com.google.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.h2.util.StringUtils;
 import org.kairosdb.core.datastore.ServiceKeyStore;
+import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.core.http.rest.json.QueryParser;
-import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,9 +27,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class RollUpTasksStoreImpl implements RollUpTasksStore
 {
-    public static final Logger logger = LoggerFactory.getLogger(SchedulingManager.class);
+    public static final Logger logger = LoggerFactory.getLogger(RollUpTasksStoreImpl.class);
 
-    private static final String OLD_FILENAME = "/tmp/rollup.config";
+    static final String OLD_FILENAME = "/tmp/rollup.config";
     static final String SERVICE = "_Rollups";
     static final String SERVICE_KEY_CONFIG = "Config";
 
@@ -55,8 +55,10 @@ public class RollUpTasksStoreImpl implements RollUpTasksStore
     public void write(List<RollupTask> tasks)
             throws RollUpException
     {
+        checkNotNull(tasks, "tasks cannot be null");
         try {
             for (RollupTask task : tasks) {
+                checkNotNull(task, "task cannot be null");
                 keyStore.setValue(SERVICE, SERVICE_KEY_CONFIG, task.getId(), task.getJson());
             }
         }

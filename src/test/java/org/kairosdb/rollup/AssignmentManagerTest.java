@@ -35,13 +35,14 @@ public class AssignmentManagerTest extends RollupTestBase
     @Mock
     private HostManager mockHostManager;
 
+    private RollupTaskStatusStore statusStore = new RollupTaskStatusStoreImpl(fakeServiceKeyStore);
     private BalancingAlgorithm balancingAlgorithm = new ScoreBalancingAlgorithm();
     private AssignmentManager manager;
 
     @Before
     public void setup() throws RollUpException
     {
-        manager = new AssignmentManager(LOCAL_HOST, taskStore, assignmentStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
+        manager = new AssignmentManager(LOCAL_HOST, taskStore, assignmentStore, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
     }
 
     @Test
@@ -50,7 +51,7 @@ public class AssignmentManagerTest extends RollupTestBase
         expectedException.expect(NullPointerException.class);
         expectedException.expectMessage("guid cannot be null or empty");
 
-        new AssignmentManager(null, taskStore, assignmentStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
+        new AssignmentManager(null, taskStore, assignmentStore, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
     }
 
     @Test
@@ -59,7 +60,7 @@ public class AssignmentManagerTest extends RollupTestBase
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("guid cannot be null or empty");
 
-        new AssignmentManager("", taskStore, assignmentStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
+        new AssignmentManager("", taskStore, assignmentStore, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
     }
 
     @Test
@@ -68,7 +69,7 @@ public class AssignmentManagerTest extends RollupTestBase
         expectedException.expect(NullPointerException.class);
         expectedException.expectMessage("taskStore cannot be null");
 
-        new AssignmentManager("guid", null, assignmentStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
+        new AssignmentManager("guid", null, assignmentStore, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
     }
 
     @Test
@@ -77,7 +78,16 @@ public class AssignmentManagerTest extends RollupTestBase
         expectedException.expect(NullPointerException.class);
         expectedException.expectMessage("assignmentStore cannot be null");
 
-        new AssignmentManager("guid", taskStore, null, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
+        new AssignmentManager("guid", taskStore, null, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
+    }
+
+    @Test
+    public void testConstructor_statusStore_null_invalid() throws RollUpException
+    {
+        expectedException.expect(NullPointerException.class);
+        expectedException.expectMessage("statusStore cannot be null");
+
+        new AssignmentManager("guid", taskStore, assignmentStore, null, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
     }
 
     @Test
@@ -86,7 +96,7 @@ public class AssignmentManagerTest extends RollupTestBase
         expectedException.expect(NullPointerException.class);
         expectedException.expectMessage("executorService cannot be null");
 
-        new AssignmentManager("guid", taskStore, assignmentStore, null, mockHostManager, balancingAlgorithm, 10);
+        new AssignmentManager("guid", taskStore, assignmentStore, statusStore,null, mockHostManager, balancingAlgorithm, 10);
     }
 
     @Test
@@ -95,7 +105,7 @@ public class AssignmentManagerTest extends RollupTestBase
         expectedException.expect(NullPointerException.class);
         expectedException.expectMessage("balancing cannot be null");
 
-        new AssignmentManager("guid", taskStore, assignmentStore, mockExecutionService, mockHostManager,null, 10);
+        new AssignmentManager("guid", taskStore, assignmentStore, statusStore, mockExecutionService, mockHostManager,null, 10);
     }
 
     @Test
@@ -104,6 +114,11 @@ public class AssignmentManagerTest extends RollupTestBase
     {
         setupActiveHosts(LOCAL_HOST);
         addTasks(TASK1, TASK2, TASK3);
+        addStatuses(TASK1, TASK2, TASK3);
+
+        assertNotNull(statusStore.read(TASK1.getId()));
+        assertNotNull(statusStore.read(TASK2.getId()));
+        assertNotNull(statusStore.read(TASK3.getId()));
 
         manager.checkAssignmentChanges();
 
@@ -115,6 +130,7 @@ public class AssignmentManagerTest extends RollupTestBase
         assertThat(getAssignedHost(TASK1.getId()), equalTo(LOCAL_HOST));
         assertNull(getAssignedHost(TASK2.getId()));
         assertThat(getAssignedHost(TASK3.getId()), equalTo(LOCAL_HOST));
+        assertNull(statusStore.read(TASK2.getId()));
     }
 
     @Test
@@ -267,5 +283,13 @@ public class AssignmentManagerTest extends RollupTestBase
         ArrayList<Long> list = new ArrayList<>(counts.values());
         Collections.sort(list);
         return list;
+    }
+
+    private void addStatuses(RollupTask... tasks)
+            throws RollUpException
+    {
+        for (RollupTask task : tasks) {
+            statusStore.write(task.getId(), new RollupTaskStatus(new Date(), LOCAL_HOST));
+        }
     }
 }

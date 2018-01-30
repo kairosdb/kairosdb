@@ -43,6 +43,7 @@ public class AssignmentManager implements KairosDBService
 
     private final RollUpAssignmentStore assignmentStore;
     private final RollUpTasksStore taskStore;
+    private final RollupTaskStatusStore statusStore;
     private final ScheduledExecutorService executorService;
     private final BalancingAlgorithm balancing;
     private final HostManager hostManager;
@@ -56,14 +57,18 @@ public class AssignmentManager implements KairosDBService
 
 
     @Inject
-    public AssignmentManager(@Named(Main.KAIROSDB_SERVER_GUID) String guid, RollUpTasksStore taskStore,
+    public AssignmentManager(@Named(Main.KAIROSDB_SERVER_GUID) String guid,
+            RollUpTasksStore taskStore,
             RollUpAssignmentStore assignmentStore,
+            RollupTaskStatusStore statusStore,
             @Named(RollUpModule.ROLLUP_EXECUTOR) ScheduledExecutorService executorService, HostManager hostManager,
             BalancingAlgorithm balancing, @Named(DELAY) long delay)
     {
         this.guid = checkNotNullOrEmpty(guid, "guid cannot be null or empty");
         this.assignmentStore = checkNotNull(assignmentStore, "assignmentStore cannot be null");
         this.taskStore = checkNotNull(taskStore, "taskStore cannot be null");
+        this.statusStore = checkNotNull(statusStore, "statusStore cannot be null");
+
         this.executorService = checkNotNull(executorService, "executorService cannot be null");
         this.balancing = checkNotNull(balancing, "balancing cannot be null");
         this.hostManager = checkNotNull(hostManager, "hostManager cannot be null");
@@ -105,6 +110,7 @@ public class AssignmentManager implements KairosDBService
                     SetView<String> removedTasks = Sets.difference(previousAssignments.keySet(), tasks.keySet());
                     for (String taskToRemove : removedTasks) {
                         newAssignments.remove(taskToRemove);
+                        statusStore.remove(taskToRemove);
                     }
 
                     // Remove assignments for hosts that are inactive

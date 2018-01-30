@@ -9,6 +9,8 @@ import org.kairosdb.core.http.rest.json.RollupResponse;
 import org.kairosdb.rollup.RollUpException;
 import org.kairosdb.rollup.RollUpTasksStore;
 import org.kairosdb.rollup.RollupTask;
+import org.kairosdb.rollup.RollupTaskStatus;
+import org.kairosdb.rollup.RollupTaskStatusStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,12 +39,14 @@ public class RollUpResource
 
 	private final QueryParser parser;
 	private final RollUpTasksStore store;
+	private final RollupTaskStatusStore statusStore;
 
 	@Inject
-	public RollUpResource(QueryParser parser, RollUpTasksStore store)
+	public RollUpResource(QueryParser parser, RollUpTasksStore store, RollupTaskStatusStore statusStore)
 	{
 		this.parser = checkNotNull(parser);
 		this.store = checkNotNull(store);
+		this.statusStore = checkNotNull(statusStore);
 	}
 
 	@POST
@@ -96,6 +100,34 @@ public class RollUpResource
 		catch (RollUpException e)
 		{
 			logger.error("Failed to list roll-ups.", e);
+			return setHeaders(Response.status(Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/status/{id}")
+	public Response getStatus(@PathParam("id") String id)
+	{
+		checkNotNullOrEmpty(id);
+		try
+		{
+			ResponseBuilder responseBuilder;
+			RollupTaskStatus status = statusStore.read(id);
+			if (status != null)
+			{
+				responseBuilder = Response.status(Status.OK).entity(parser.getGson().toJson(status));
+			}
+			else
+			{
+				responseBuilder = Response.status(Status.NOT_FOUND).entity(new ErrorResponse("Status not found for id " + id));
+			}
+			setHeaders(responseBuilder);
+			return responseBuilder.build();
+		}
+		catch (RollUpException e)
+		{
+			logger.error("Failed to get status for roll-up.", e);
 			return setHeaders(Response.status(Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}
 	}

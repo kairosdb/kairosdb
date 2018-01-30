@@ -6,8 +6,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.name.Named;
 import org.kairosdb.core.KairosDBService;
+import org.kairosdb.core.Main;
 import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
@@ -21,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -46,6 +49,7 @@ public class SchedulingManager implements KairosDBService
 
 
     private final String hostName;
+    private final String serverGuid;
     private final KairosDBScheduler scheduler;
     private final KairosDatastore dataStore;
     private final RollUpAssignmentStore assignmentStore;
@@ -53,6 +57,7 @@ public class SchedulingManager implements KairosDBService
     private final ScheduledExecutorService executorService;
     private final FilterEventBus eventBus;
     private final ReentrantLock lock = new ReentrantLock();
+    private final RollupTaskStatusStore statusStore;
 
     private long assignmentsLastModified;
     private long rollupsLastModified;
@@ -62,8 +67,12 @@ public class SchedulingManager implements KairosDBService
     @Inject
     public SchedulingManager(RollUpTasksStore taskStore, RollUpAssignmentStore assignmentStore,
             KairosDBScheduler scheduler, KairosDatastore dataStore,
-            @Named(RollUpModule.ROLLUP_EXECUTOR)ScheduledExecutorService executorService, FilterEventBus eventBus,
-            @Named(DELAY) long delay, @Named("HOSTNAME") String hostName)
+            @Named(RollUpModule.ROLLUP_EXECUTOR)ScheduledExecutorService executorService,
+            FilterEventBus eventBus,
+            RollupTaskStatusStore statusStore,
+            @Named(DELAY) long delay,
+            @Named("HOSTNAME") String hostName,
+            @Named(Main.KAIROSDB_SERVER_GUID) String guid)
             throws RollUpException
     {
         this.taskStore = checkNotNull(taskStore, "taskStore cannot be null");
@@ -73,6 +82,8 @@ public class SchedulingManager implements KairosDBService
         this.hostName = checkNotNullOrEmpty(hostName, "hostname cannot be null or empty");
         this.executorService = checkNotNull(executorService, "executorService cannot be null or empty");
         this.eventBus = checkNotNull(eventBus, "eventBus cannot be null");
+        this.statusStore = checkNotNull(statusStore, "statusStore cannot be null");
+        this.serverGuid = checkNotNullOrEmpty(guid, "guid cannot be null or empty");
 
         // Start thread that checks for rollup changes and rollup assignments
         executorService.scheduleWithFixedDelay(new CheckChanges(), 0, delay, java.util.concurrent.TimeUnit.MILLISECONDS);
@@ -98,7 +109,7 @@ public class SchedulingManager implements KairosDBService
 
                 Set<String> currentAssignments = getAssignmentsCache();
                 Map<String, RollupTask> tasks = taskStore.read();
-                Set<String> myAssignmentIds = getMyAssignmentIds(hostName, assignmentStore.getAssignments());
+                Set<String> myAssignmentIds = getMyAssignmentIds(serverGuid, assignmentStore.getAssignments());
 
                 // Schedule modified tasks
                 rescheduleModifiedTasks(tasks);                                                         // unschedule and then reschedule changed tasks
@@ -139,11 +150,11 @@ public class SchedulingManager implements KairosDBService
         }
     }
 
-    private Set<String> getMyAssignmentIds(String hostName, Map<String, String> assignments)
+    private Set<String> getMyAssignmentIds(String guid, Map<String, String> assignments)
     {
         Set<String> myIds = new HashSet<>();
         for (String id : assignments.keySet()) {
-            if (assignments.get(id).equals(hostName))
+            if (assignments.get(id).equals(guid))
             {
                 myIds.add(id);
             }
@@ -183,8 +194,9 @@ public class SchedulingManager implements KairosDBService
                 RollupTask task = taskStore.read(id);
                 if (task != null) {
                     Trigger trigger = createTrigger(task);
-                    JobDetailImpl jobDetail = createJobDetail(task, dataStore, hostName, eventBus);
+                    JobDetailImpl jobDetail = createJobDetail(task, dataStore, hostName, eventBus, statusStore);
                     scheduler.schedule(jobDetail, trigger);
+                    updateStatus(task, trigger.getNextFireTime());
                     logger.info("Scheduled roll-up task " + task.getName() + " with id " + jobDetail.getFullName() + ". Next execution time " + trigger.getNextFireTime());
                 }
                 else {
@@ -212,7 +224,7 @@ public class SchedulingManager implements KairosDBService
 
         try {
             logger.info("Updating schedule for rollup " + task.getName());
-            JobDetailImpl jobDetail = createJobDetail(task, dataStore, hostName, eventBus);
+            JobDetailImpl jobDetail = createJobDetail(task, dataStore, hostName, eventBus, statusStore);
             Trigger trigger = createTrigger(task);
             scheduler.schedule(jobDetail, trigger);
             logger.info("Roll-up task " + task.getName() + " with id " + jobDetail.getKey() + " scheduled. Next execution time " + trigger.getNextFireTime());
@@ -239,13 +251,41 @@ public class SchedulingManager implements KairosDBService
         }
     }
 
+    private void updateStatus(RollupTask task, Date nextExecutionTime)
+    {
+        try {
+            RollupTaskStatus status = getOrCreateStatus(task, nextExecutionTime);
+
+            if (status.getStatuses().isEmpty() && !task.getRollups().isEmpty() && !task.getRollups().get(0).getQueryMetrics().isEmpty()) {
+                // Add empty status
+                QueryMetric metric = task.getRollups().get(0).getQueryMetrics().get(0);
+                status.addStatus(RollupTaskStatus.createQueryMetricStatus(metric.getName(), 0, 0, 0));
+            }
+            statusStore.write(task.getId(), status);
+        }
+        catch (RollUpException e) {
+            logger.error("Could not update status.", e);
+        }
+    }
+
+    private RollupTaskStatus getOrCreateStatus(RollupTask task, Date nextExecutionTime)
+            throws RollUpException
+    {
+        RollupTaskStatus status = statusStore.read(task.getId());
+        if (status == null) {
+            return new RollupTaskStatus(nextExecutionTime, hostName);
+        }
+        status.setNextScheduled(nextExecutionTime);
+        return status;
+    }
+
     private static JobKey getJobKey(String id)
     {
         return new JobKey(id, GROUP_ID);
     }
 
     @VisibleForTesting
-    static JobDetailImpl createJobDetail(RollupTask task, KairosDatastore dataStore, String hostName, FilterEventBus eventBus)
+    static JobDetailImpl createJobDetail(RollupTask task, KairosDatastore dataStore, String hostName, FilterEventBus eventBus, RollupTaskStatusStore statusStore)
     {
         JobDetailImpl jobDetail = new JobDetailImpl();
         jobDetail.setJobClass(RollUpJob.class);
@@ -256,6 +296,7 @@ public class SchedulingManager implements KairosDBService
         map.put("datastore", dataStore);
         map.put("hostName", hostName);
         map.put("eventBus", eventBus);
+        map.put("statusStore", statusStore);
         jobDetail.setJobDataMap(map);
         return jobDetail;
     }

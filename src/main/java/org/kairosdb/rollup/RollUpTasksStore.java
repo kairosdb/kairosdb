@@ -22,8 +22,6 @@ public interface RollUpTasksStore
 	 * @return all roll up tasks
 	 */
 	Map<String, RollupTask> read() throws RollUpException;
-	/**
-	 * Returns the time the store was last modified.
 
 	/**
 	 Removes the task specified by the id.

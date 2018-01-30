@@ -36,21 +36,6 @@
 			<h1>Roll-ups</h1>
 		</div>
 
-		<!--<div class="text-center text-info" data-toggle="collapse" data-target="#description">-->
-			<!--<a href="#" style="font-size: 12px">What's a Roll-up?</a>-->
-		<!--</div>-->
-
-		<!--<div id="description" class="text-info collapse" style="width: 50%; float: none; margin: 0 auto; margin-top: 30px">-->
-			<!--Roll-ups are a way to improve query performance by aggregating or-->
-			<!--rolling up data into a larger time range such as averaging-->
-			<!--millisecond data over a minute.-->
-			<!--Roll-ups perform queries on existing data, aggregate the data, and-->
-			<!--write the results to another metric. The original data is left-->
-			<!--intact.-->
-			<!--Roll-ups are continuously run on a schedule rolling up a small time-->
-			<!--period of data on each execution.-->
-		<!--</div>-->
-
 		<span id="lastSaved"
 			  class="last-saved pull-right text-info small"
 			  ng-hide="lastSaved == null">Last Saved {{lastSaved}}</span>
@@ -141,6 +126,8 @@
                 <i class="glyphicon glyphicon-info-sign text-info" title="{{TOOLTIP_COMPLEX}}" bs-tooltip="" ng-show="task.complex"></i>
                 <i class="glyphicon glyphicon-warning-sign text-warning" title="{{getIncompleteTooltip()}}" bs-tooltip="" ng-show="!task.complex && task.incomplete"></i>
                 <i class="glyphicon glyphicon-ok text-success" title="{{TOOLTIP_COMPLETE}}" bs-tooltip="" ng-show="!task.incomplete"></i>
+
+				<a href="#" title="{{TOOLTIP_STATUS}}" ng-click="showStatus(task)" style="padding-left: 5px;"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>
             </td>
 
             <td style="text-align: center; vertical-align: top">

@@ -1,9 +1,11 @@
 var module = angular.module('rollupApp',
-        ['mgcrea.ngStrap',
+        [
+            'mgcrea.ngStrap',
             // 'mgcrea.ngStrap.tooltip',
             'ui.bootstrap.modal',
             'template/modal/backdrop.html',
-            'template/modal/window.html']);
+            'template/modal/window.html'
+        ]);
 
 module.directive('editable', function ($compile)
 {

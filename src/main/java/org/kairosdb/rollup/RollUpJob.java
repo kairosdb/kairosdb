@@ -1,5 +1,6 @@
 package org.kairosdb.rollup;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.RangeAggregator;
 import org.kairosdb.core.aggregator.Sampling;
@@ -59,10 +60,12 @@ public class RollUpJob implements InterruptableJob
 			FilterEventBus eventBus = (FilterEventBus) dataMap.get("eventBus");
 			KairosDatastore datastore = (KairosDatastore) dataMap.get("datastore");
 			String hostName = (String) dataMap.get("hostName");
+			RollupTaskStatusStore statusStore = (RollupTaskStatusStore) dataMap.get("statusStore");
 			checkState(task != null, "Task was null");
 			checkState(eventBus != null, "EventBus was null");
 			checkState(datastore != null, "Datastore was null");
 			checkState(hostName != null, "hostname was null");
+			checkState(statusStore != null, "statusStore was null");
 
 			Publisher<DataPointEvent> publisher = eventBus.createPublisher(DataPointEvent.class);
 
@@ -73,6 +76,7 @@ public class RollUpJob implements InterruptableJob
 				if (interrupted)
 					break;
 
+				RollupTaskStatus status = new RollupTaskStatus(jobExecutionContext.getNextFireTime(), hostName);
 				for (QueryMetric queryMetric : rollup.getQueryMetrics())
 				{
 					boolean success = true;
@@ -85,7 +89,9 @@ public class RollUpJob implements InterruptableJob
 						DataPoint rollupDataPoint = getLastRollupDataPoint(datastore, rollup.getSaveAs(), startQueryTime);
 						queryMetric.setStartTime(calculateStartTime(rollupDataPoint, getLastSampling(queryMetric.getAggregators()), startQueryTime));
 						queryMetric.setEndTime(calculateEndTime(rollupDataPoint, task.getExecutionInterval(), startQueryTime));
+						long executionStartTime = System.currentTimeMillis();
 						long dpCount = executeRollup(datastore, queryMetric);
+						long executionLength = System.currentTimeMillis() - executionStartTime;
 						log.info("Rollup Task: " + task.getName() + " for Rollup " + rollup.getSaveAs() + " data point count of " + dpCount);
 
 						if (dpCount == 0 && rollupDataPoint != null)
@@ -94,19 +100,25 @@ public class RollUpJob implements InterruptableJob
 							DataPoint dataPoint = getFutureDataPoint(datastore, queryMetric.getName(), startQueryTime, rollupDataPoint);
 							queryMetric.setStartTime(calculateStartTime(dataPoint, getLastSampling(queryMetric.getAggregators()), startQueryTime));
 							queryMetric.setEndTime(calculateEndTime(dataPoint, task.getExecutionInterval(), startQueryTime));
+							executionStartTime = System.currentTimeMillis();
 							dpCount = executeRollup(datastore, queryMetric);
-							log.info("Tried again Rollup Task: " + task.getName() + " for Rollup " + rollup.getSaveAs() + " data point count of " + dpCount);
+							executionLength = System.currentTimeMillis() - executionStartTime;
+							log.info("Datapoint exists for time range, advancing forward for Rollup Task: " + task.getName() + " for Rollup " + rollup.getSaveAs() + " data point count of " + dpCount);
 						}
+
+						status.addStatus(RollupTaskStatus.createQueryMetricStatus(queryMetric.getName(), System.currentTimeMillis(), dpCount, executionLength));
 					}
 					catch (DatastoreException e)
 					{
 						success = false;
 						log.error("Failed to execute query for roll-up task: " + task.getName() + " roll-up: " + rollup.getSaveAs(), e);
+						status.addStatus(RollupTaskStatus.createErrorQueryMetricStatus(queryMetric.getName(), System.currentTimeMillis(), ExceptionUtils.getStackTrace(e), 0));
 					}
 					catch (Exception e)
 					{
 						success = false;
 						log.error("Failed to roll-up task: " + task.getName() + " roll-up: " + rollup.getSaveAs(), e);
+						status.addStatus(RollupTaskStatus.createErrorQueryMetricStatus(queryMetric.getName(), System.currentTimeMillis(), ExceptionUtils.getStackTrace(e), 0));
 					}
 					finally
 					{
@@ -124,6 +136,13 @@ public class RollUpJob implements InterruptableJob
 						catch (DatastoreException e)
 						{
 							log.error("Could not report metrics for rollup job.", e);
+						}
+
+						try {
+							statusStore.write(task.getId(), status);
+						}
+						catch (RollUpException e) {
+							log.error("Could not write status to status store" , e);
 						}
 					}
 				}

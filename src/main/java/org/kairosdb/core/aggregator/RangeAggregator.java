@@ -49,7 +49,8 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
             label = "Align sampling",
             description = "When set to true the time for the aggregated data point for each range will fall on the start"
                     + " of the range instead of being the value for the first data point within that range. Note that"
-                    + " align_sampling and align_start_time are mutually exclusive. If both are set, unexpected results will occur.",
+                    + " align_sampling, align_start_time, and align_end_time are mutually exclusive. If more than one"
+                    + " are set, unexpected results will occur.",
             default_value = "true"
     )
     private boolean m_alignSampling;
@@ -71,10 +72,26 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
                     + " size. For example if your sample size is either milliseconds, seconds, minutes or hours then the"
                     + " start of the range will always be at the top of the hour. The effect of setting this to true is"
                     + " that your data will take the same shape when graphed as you refresh the data. Note that"
-                    + " align_sampling and align_start_time are mutually exclusive. If both are set, unexpected results will occur.",
+                    + " align_sampling, align_start_time, and align_end_time are mutually exclusive. If more than one"
+                    + " are set, unexpected results will occur.",
             default_value = "false"
     )
     protected boolean m_alignStartTime;
+
+    @FeatureProperty(
+            name = "align_end_time",
+            label = "Align end time",
+            description = "Setting this to true will cause the aggregation range to be aligned based on the sampling"
+                    + " size. For example if your sample size is either milliseconds, seconds, minutes or hours then the"
+                    + " start of the range will always be at the top of the hour. The difference between align_start_time"
+                    + " and align_end_time is that align_end_time sets the timestamp for the datapoint to the beginning of"
+                    + " the following period versus the beginning of the current period. As with align_start_time, setting"
+                    + " this to true will cause your data to take the same shape when graphed as you refresh the data. Note"
+                    + " that align_sampling, align_start_time, and align_end_time are mutually exclusive. If more than one"
+                    + " are set, unexpected results will occur.",
+            default_value = "false"
+    )
+    protected boolean m_alignEndTime;
 
     public RangeAggregator()
     {
@@ -163,6 +180,18 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
     public void setAlignStartTime(boolean align)
     {
         m_alignStartTime = align;
+    }
+
+    /**
+     * When set to true the time for the aggregated data point for each range will
+     * fall on the end of the range instead of being the value for the first
+     * data point within that range.
+     *
+     * @param align
+     */
+    public void setAlignEndTime(boolean align)
+    {
+        m_alignEndTime = align;
     }
 
     /**
@@ -315,11 +344,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
                 SubRangeIterator subIterator = new SubRangeIterator(
                         endRange);
 
-                long dataPointTime = currentDataPoint.getTimestamp();
-                if (m_alignStartTime)
-                    dataPointTime = startRange;
-
-                m_dpIterator = m_subAggregator.getNextDataPoints(dataPointTime,
+                m_dpIterator = m_subAggregator.getNextDataPoints(getDataPointTime(),
                         subIterator).iterator();
             }
 
@@ -339,7 +364,13 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
          */
         private long getDataPointTime()
         {
-            return currentDataPoint.getTimestamp();
+        	long datapointTime = currentDataPoint.getTimestamp();
+        	if (m_alignStartTime) {
+        		datapointTime = getStartRange(datapointTime);
+        	} else if (m_alignEndTime) {
+        		datapointTime = getEndRange(datapointTime);
+        	}
+            return datapointTime;
         }
 
         /**
@@ -455,7 +486,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
     public interface RangeSubAggregator
     {
         /**
-         * Returns an aggregated data point from a ragne that is passed in
+         * Returns an aggregated data point from a range that is passed in
          * as dataPointRange.
          *
          * @param returnTime     Timestamp to use on return data point.  This is currently

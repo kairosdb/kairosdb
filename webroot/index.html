@@ -1086,14 +1086,18 @@
 						</option>
 					</select>
 				</div>
-				<div style="float: left" class="aggregatorAlignStartTime">
+				<div style="float: left">
 					<span class="header"
-						  style="margin-left: 10px; vertical-align: top;">Align start time
-					</span>
+						  style="margin-left: 10px; vertical-align: top;">Align:</span>
 				</div>
-				<div style="float: left" class="aggregatorAlignStartTime">
-					<input class="ui-widget aggregatorAlignStartTimeValue"
-						   style="margin-left: 10px;" type="checkbox"/>
+				<div style="float: left">
+					<select class="ui-widget aggregatorAlign" default="none"
+							style="margin-left: 10px;">
+						<option value="none">None</option>
+						<option value="sample">Sample</option>
+						<option value="start">Start Time</option>
+						<option value="end">End Time</option>
+					</select>
 				</div>
 			</div>
 			<div style="display: table-cell" class="aggregatorPercentile">

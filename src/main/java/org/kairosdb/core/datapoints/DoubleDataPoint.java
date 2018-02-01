@@ -6,7 +6,6 @@ import org.json.JSONWriter;
 
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  Created with IntelliJ IDEA.
@@ -88,6 +87,7 @@ public class DoubleDataPoint extends DataPointHelper
 	{
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
+		if (!super.equals(o)) return false;
 
 		DoubleDataPoint that = (DoubleDataPoint) o;
 
@@ -99,7 +99,9 @@ public class DoubleDataPoint extends DataPointHelper
 	@Override
 	public int hashCode()
 	{
+		int result = super.hashCode();
 		long temp = Double.doubleToLongBits(m_value);
-		return (int) (temp ^ (temp >>> 32));
+		result = 31 * result + (int) (temp ^ (temp >>> 32));
+		return result;
 	}
 }

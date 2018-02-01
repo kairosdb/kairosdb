@@ -78,7 +78,7 @@ public class LastAggregator extends RangeAggregator
 			if (last != null)
 			{
 				long retTime = returnTime;
-				if (!m_alignStartTime)
+				if (!m_alignStartTime && !m_alignEndTime)
 					retTime = lastTime;
 
 				return Collections.singletonList(m_dataPointFactory.createDataPoint(retTime, last));

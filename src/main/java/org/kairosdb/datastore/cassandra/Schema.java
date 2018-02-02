@@ -2,7 +2,6 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.InvalidQueryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,6 +173,15 @@ public class Schema
 	public static final String SERVICE_INDEX_DELETE_KEY = "DELETE FROM service_index " +
 			"WHERE service = ? AND service_key = ? AND key = ?";
 
+	public static final String SERVICE_INDEX_LAST_MODIFIED_TIME = "select toUnixTimestamp(mtime) from service_index " +
+			"WHERE service = ? AND service_key = ? LIMIT 1";
+
+	public static final String SERVICE_INDEX_GET_ENTRIES = "select key, value from service_index " +
+			"WHERE service = ? AND service_key = ?";
+
+	public static final String SERVICE_INDEX_INSERT_MODIFIED_TIME = "INSERT INTO service_index " +
+			"(service, service_key, mtime) VALUES (?, ?, now())";
+
 	public final PreparedStatement psDataPointsInsert;
 	//public final PreparedStatement m_psInsertRowKey;
 	public final PreparedStatement psStringIndexInsert;
@@ -199,6 +207,9 @@ public class Schema
 	public final PreparedStatement psServiceIndexListKeysPrefix;
 	public PreparedStatement psServiceIndexListServiceKeys;
 	public final PreparedStatement psServiceIndexDeleteKey;
+	public final PreparedStatement psServiceIndexModificationTime;
+	public final PreparedStatement psServiceIndexInsertModifiedTime;
+	public final PreparedStatement psServiceIndexGetEntries;
 	public final PreparedStatement psRowKeyTimeDelete;
 	public final PreparedStatement psRowKeyDelete;
 	public final PreparedStatement psDataPointsDelete;
@@ -264,8 +275,9 @@ public class Schema
 			logger.warn("Unable to perform service key list query, consider upgrading to newer version of Cassandra");
 		}
 		psServiceIndexDeleteKey = m_session.prepare(SERVICE_INDEX_DELETE_KEY);
-
-
+		psServiceIndexModificationTime = m_session.prepare(SERVICE_INDEX_LAST_MODIFIED_TIME);
+		psServiceIndexGetEntries = m_session.prepare(SERVICE_INDEX_GET_ENTRIES);
+		psServiceIndexInsertModifiedTime = m_session.prepare(SERVICE_INDEX_INSERT_MODIFIED_TIME);
 	}
 
 	public Session getSession()

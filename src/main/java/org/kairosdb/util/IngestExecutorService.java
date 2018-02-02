@@ -10,7 +10,6 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.reporting.KairosMetricReporter;
-import org.kairosdb.datastore.cassandra.BatchHandler;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.ShutdownEvent;

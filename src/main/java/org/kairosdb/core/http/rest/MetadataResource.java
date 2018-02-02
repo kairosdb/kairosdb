@@ -105,7 +105,7 @@ public class MetadataResource
 		try
 		{
 			checkLocalService(service);
-			String value = m_keyStore.getValue(service, serviceKey, key);
+			String value = m_keyStore.getValue(service, serviceKey, key).getValue();
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(value);
 			setHeaders(responseBuilder);
 			return responseBuilder.build();

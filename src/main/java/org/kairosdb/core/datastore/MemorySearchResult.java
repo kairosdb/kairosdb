@@ -2,11 +2,15 @@ package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.util.MemoryMonitor;
-import org.kairosdb.util.SimpleStats;
 
-import javax.xml.crypto.Data;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
 
 /**
  Created by bhawkins on 1/28/17.

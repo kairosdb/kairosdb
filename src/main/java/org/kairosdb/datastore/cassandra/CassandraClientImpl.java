@@ -1,8 +1,15 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.codahale.metrics.*;
-import com.datastax.driver.core.*;
-import com.datastax.driver.core.ConsistencyLevel;
+import com.codahale.metrics.Snapshot;
+import com.datastax.driver.core.AuthProvider;
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.HostDistance;
+import com.datastax.driver.core.Metrics;
+import com.datastax.driver.core.PoolingOptions;
+import com.datastax.driver.core.ProtocolOptions;
+import com.datastax.driver.core.QueryOptions;
+import com.datastax.driver.core.Session;
+import com.datastax.driver.core.TimestampGenerator;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;

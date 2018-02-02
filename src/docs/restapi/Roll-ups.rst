@@ -80,7 +80,7 @@ Roll-up Properties
 The name of the roll-up task.
 
 *execution_interval*
-When the roll-up task is exected specified as value and unit. Possible unit values are "milliseconds", "seconds", "minutes", "hours", "days", "weeks", "months", and "years".
+When the roll-up task is exected specified as value and unit. Possible unit values are "seconds", "minutes", "hours", "days", "weeks", "months", and "years".
 
 *rollups*
 An array of roll-ups. A roll-up consists of

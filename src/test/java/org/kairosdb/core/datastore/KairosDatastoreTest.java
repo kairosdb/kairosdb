@@ -336,7 +336,7 @@ public class KairosDatastoreTest
 		}
 
 		@Override
-		public Iterable<String> getMetricNames()
+		public Iterable<String> getMetricNames(String prefix)
 		{
 			return null;
 		}

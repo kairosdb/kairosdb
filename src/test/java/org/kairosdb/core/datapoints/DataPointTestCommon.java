@@ -5,6 +5,7 @@ import org.kairosdb.core.DataPoint;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -48,5 +49,12 @@ public class DataPointTestCommon
 		}
 
 		assertEquals(sum, testSum, 0.0001);
+	}
+
+	@Test
+	public void testEqualsHashCode() {
+		final HashSet<DataPoint> dataPointsSet = new HashSet<>(dataPointList);
+
+		assertEquals(dataPointList.size(), dataPointsSet.size());
 	}
 }

@@ -206,12 +206,22 @@ public abstract class DatastoreTestHelper
 	@Test
 	public void test_getMetricNames() throws DatastoreException
 	{
-		List<String> metrics = listFromIterable(s_datastore.getMetricNames());
+		List<String> metrics = listFromIterable(s_datastore.getMetricNames(null));
 
 		assertThat(metrics, hasItem("metric1"));
 		assertThat(metrics, hasItem("metric2"));
 		assertThat(metrics, hasItem("duplicates"));
 		assertThat(metrics, hasItem("old_data"));
+	}
+
+	@Test
+	public void test_getMetricNames_with_prefix() throws DatastoreException
+	{
+		List<String> metrics = listFromIterable(s_datastore.getMetricNames("m"));
+
+		assertThat(metrics, hasItem("metric1"));
+		assertThat(metrics, hasItem("metric2"));
+		assertThat(metrics.size(), equalTo(2));
 	}
 
 	//names and values not being stored

@@ -279,10 +279,11 @@ public class MetricsResource implements KairosMetricReporter
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/metricnames")
-	public Response getMetricNames() throws InvalidServerTypeException
+	public Response getMetricNames(@QueryParam("prefix") String prefix) throws InvalidServerTypeException
 	{
 		checkServerType(ServerType.QUERY, "/metricnames", "GET");
-		return executeNameQuery(NameType.METRIC_NAMES);
+		
+		return executeNameQuery(NameType.METRIC_NAMES, prefix);
 	}
 
 	@OPTIONS
@@ -779,13 +780,18 @@ public class MetricsResource implements KairosMetricReporter
 
 	private Response executeNameQuery(NameType type)
 	{
+		return executeNameQuery(type, null);
+	}
+
+	private Response executeNameQuery(NameType type, String prefix)
+	{
 		try
 		{
 			Iterable<String> values = null;
 			switch (type)
 			{
 				case METRIC_NAMES:
-					values = datastore.getMetricNames();
+					values = datastore.getMetricNames(prefix);
 					break;
 				case TAG_KEYS:
 					values = datastore.getTagNames();

@@ -5,6 +5,22 @@ CREATE CACHED TABLE metric (
 	PRIMARY KEY ("id")
 	);
 
+CREATE CACHED TABLE service_modification (
+	"service" VARCHAR  NOT NULL,
+	"service_key" VARCHAR  NOT NULL,
+	"modification_time" TIMESTAMP  NULL,
+	PRIMARY KEY ("service", "service_key")
+	);
+
+CREATE CACHED TABLE service_index (
+	"service" VARCHAR  NOT NULL,
+	"service_key" VARCHAR  NOT NULL,
+	"key" VARCHAR  NOT NULL,
+	"value" VARCHAR  NULL,
+	"modification_time" TIMESTAMP  NULL,
+	PRIMARY KEY ("service", "service_key", "key")
+	);
+
 CREATE CACHED TABLE tag (
 	"name" VARCHAR  NOT NULL,
 	"value" VARCHAR  NOT NULL,
@@ -17,7 +33,7 @@ CREATE CACHED TABLE data_point (
 	"value" BINARY  NULL,
 	PRIMARY KEY ("metric_id", "timestamp"),
 	CONSTRAINT data_point_metric_id_fkey FOREIGN KEY ("metric_id")
-		REFERENCES metric ("id") 
+		REFERENCES metric ("id")
 	);
 
 CREATE CACHED TABLE metric_tag (
@@ -28,15 +44,6 @@ CREATE CACHED TABLE metric_tag (
 	CONSTRAINT metric_tag_metric_id_fkey FOREIGN KEY ("metric_id")
 		REFERENCES metric ("id") ON DELETE CASCADE,
 	CONSTRAINT metric_tag_tag_name_fkey FOREIGN KEY ("tag_name", "tag_value")
-		REFERENCES tag ("name", "value") 
+		REFERENCES tag ("name", "value")
 	);
-
-CREATE CACHED TABLE service_index (
-  "service" VARCHAR  NOT NULL,
-  "service_key" VARCHAR  NOT NULL,
-  "key" VARCHAR  NOT NULL,
-  "value" VARCHAR  NULL,
-  PRIMARY KEY ("service", "service_key", "key")
-  );
-
 

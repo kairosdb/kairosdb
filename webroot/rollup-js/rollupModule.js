@@ -1,9 +1,11 @@
 var module = angular.module('rollupApp',
-        ['mgcrea.ngStrap',
-            'mgcrea.ngStrap.tooltip',
+        [
+            'mgcrea.ngStrap',
+            // 'mgcrea.ngStrap.tooltip',
             'ui.bootstrap.modal',
             'template/modal/backdrop.html',
-            'template/modal/window.html']);
+            'template/modal/window.html'
+        ]);
 
 module.directive('editable', function ($compile)
 {
@@ -11,6 +13,7 @@ module.directive('editable', function ($compile)
             '<span>' +
             '<input class="small-input" type="text" ' +
             '	ng-model="model"  ' +
+            '   ng-change="shorten()" ' +
             '	ng-blur="$parent.onBlur($parent.task)" ' +
             '	ng-show="edit" ' +
             '	my-blur="edit">' +
@@ -18,13 +21,24 @@ module.directive('editable', function ($compile)
             '<a href="" ' +
             '	ng-show="!edit && !$parent.task.complex" ' +
             '	ng-click="onClick()" ' +
-            '	ng-class="model.indexOf(\'<\') == 0 ? \'gray\' : \'black\'">{{model}}</a>' +
+            '   title="{{model}}"' +
+            '	ng-class="short.indexOf(\'<\') == 0 ? \'gray\' : \'black\'">{{short}}</a>' +
 
-            '	<span ng-show="$parent.task.complex">{{model}}</span> ' +
+            '	<span ng-show="$parent.task.complex">{{short}}</span> ' +
             '</span>';
 
     var linker = function (scope, element, attributes)
     {
+        scope.$watch('model', function(newValue, oldValue, scope){
+            scope.short = scope.shorten();
+        });
+
+        scope.shorten = function()
+        {
+            var maxLength = 40;
+            // shorten the text and add ellipses on to the left side
+            return scope.model.length < maxLength ? scope.model : "..." + scope.model.substr(scope.model.length - maxLength);
+        };
 
         scope.onClick = function ()
         {
@@ -80,7 +94,7 @@ module.directive('autocompleteeditable', function ()
         '   placeholder="<metric name>"' +
         '   min-length="0"' +
         '   limit="METRIC_NAME_LIST_MAX_LENGTH"' +
-        '   ng-change="targetBlur()"' +
+        '   ng-change="shorten();targetBlur()"' +
         '   ng-blur="suggestSaveAs()"' +
         '   data-provide="typeahead"' +
         '   style="width:100%;"' +
@@ -88,13 +102,24 @@ module.directive('autocompleteeditable', function ()
 
         '<a href="" ' +
         '	ng-show="!edit && !task.complex" ' +
-        '	ng-class="task.metric_name.indexOf(\'<\') == 0 ? \'gray\' : \'black\'"' +
-        '>{{task.metric_name}}</a>' +
+        '	ng-class="short.indexOf(\'<\') == 0 ? \'gray\' : \'black\'"' +
+        '   title="{{task.metric_name}}"' +
+        '>{{short}}</a>' +
 
-        '<span ng-show="task.complex">{{task.metric_name}}</span> ' +
+        '<span ng-show="task.complex">{{short}}</span> ' +
         '</span>',
         link: function (scope, element, attrs)
         {
+            scope.$watch(attrs.model, function(newValue, oldValue, scope){
+                scope.short = scope.shorten();
+            });
+
+            scope.shorten = function()
+            {
+                var maxLength = 40;
+                // shorten the text and add ellipses on to the left side
+                return scope.task.metric_name.length < maxLength ? scope.task.metric_name : "..." + scope.task.metric_name.substr(scope.task.metric_name.length - maxLength);
+            };
             if (scope.task.complex) {
                 // Ignore complex tasks
                 return;
@@ -103,7 +128,6 @@ module.directive('autocompleteeditable', function ()
             scope.edit = false;
             element.bind('click', function ()
             {
-
                 inputField = element.find('input').get(0);
                 inputField = element.find('input').get(0);
                 inputField.style.width = element[0].parentElement.offsetWidth - 15 + "px";

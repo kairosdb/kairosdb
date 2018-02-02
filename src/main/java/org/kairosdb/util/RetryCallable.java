@@ -1,9 +1,9 @@
 package org.kairosdb.util;
 
-import java.util.concurrent.Callable;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.Callable;
 
 public abstract class RetryCallable implements Callable<Integer>
 {

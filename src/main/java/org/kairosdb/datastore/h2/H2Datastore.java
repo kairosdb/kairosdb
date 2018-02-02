@@ -17,8 +17,6 @@
 package org.kairosdb.datastore.h2;
 
 import com.google.common.collect.ImmutableSortedMap;
-import org.kairosdb.datastore.h2.orm.*;
-import org.kairosdb.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mchange.v2.c3p0.DataSources;
@@ -29,12 +27,32 @@ import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
 import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.ServiceKeyStore;
+import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.datastore.TagSetImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.cassandra.DataPointsRowKey;
+import org.kairosdb.datastore.h2.orm.DSEnvelope;
+import org.kairosdb.datastore.h2.orm.DataPoint;
+import org.kairosdb.datastore.h2.orm.DeleteMetricsQuery;
+import org.kairosdb.datastore.h2.orm.GenOrmDataSource;
+import org.kairosdb.datastore.h2.orm.InsertDataPointQuery;
+import org.kairosdb.datastore.h2.orm.Metric;
+import org.kairosdb.datastore.h2.orm.MetricIdResults;
+import org.kairosdb.datastore.h2.orm.MetricIdsQuery;
+import org.kairosdb.datastore.h2.orm.MetricIdsWithTagsQuery;
+import org.kairosdb.datastore.h2.orm.MetricNamesPrefixQuery;
+import org.kairosdb.datastore.h2.orm.MetricNamesQuery;
+import org.kairosdb.datastore.h2.orm.MetricTag;
+import org.kairosdb.datastore.h2.orm.ServiceIndex;
+import org.kairosdb.datastore.h2.orm.ServiceIndex_base;
+import org.kairosdb.datastore.h2.orm.ServiceModification;
+import org.kairosdb.datastore.h2.orm.Tag;
+import org.kairosdb.datastore.h2.orm.TagNamesQuery;
+import org.kairosdb.datastore.h2.orm.TagValuesQuery;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
+import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.events.RowKeyEvent;
 import org.kairosdb.util.KDataInput;
@@ -51,6 +69,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -461,8 +480,13 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 		try
 		{
 			ServiceIndex serviceIndex = ServiceIndex.factory.findOrCreate(service, serviceKey, key);
-			if (value != null)
+			if (value != null) {
 				serviceIndex.setValue(value);
+
+				// Update the service key timestamp
+				ServiceModification orCreate = ServiceModification.factory.findOrCreate(service, serviceKey);
+				orCreate.setModificationTime(new java.sql.Timestamp(System.currentTimeMillis()));
+			}
 
 			GenOrmDataSource.commit();
 		}
@@ -473,11 +497,11 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	}
 
 	@Override
-	public String getValue(String service, String serviceKey, String key) throws DatastoreException
+	public ServiceKeyValue getValue(String service, String serviceKey, String key) throws DatastoreException
 	{
 		ServiceIndex serviceIndex = ServiceIndex.factory.find(service, serviceKey, key);
 		if (serviceIndex != null)
-			return serviceIndex.getValue();
+			return new ServiceKeyValue(serviceIndex.getValue(), serviceIndex.getModificationTime());
 		else
 			return null;
 	}
@@ -583,7 +607,12 @@ public class H2Datastore implements Datastore, ServiceKeyStore
         try
         {
             ServiceIndex.factory.delete(service, serviceKey, key);
-            GenOrmDataSource.commit();
+
+            // Update the service key timestamp
+			ServiceModification orCreate = ServiceModification.factory.findOrCreate(service, serviceKey);
+			orCreate.setModificationTime(new java.sql.Timestamp(System.currentTimeMillis()));
+
+			GenOrmDataSource.commit();
         }
         finally
         {
@@ -591,7 +620,18 @@ public class H2Datastore implements Datastore, ServiceKeyStore
         }
     }
 
-    private String createMetricKey(String metricName, SortedMap<String, String> tags,
+	@Override
+	public Date getServiceKeyLastModifiedTime(String service, String serviceKey)
+			throws DatastoreException
+	{
+		ServiceModification serviceModification = ServiceModification.factory.find(service, serviceKey);
+		if (serviceModification != null)
+			return serviceModification.getModificationTime();
+		else
+			return null;
+	}
+
+	private String createMetricKey(String metricName, SortedMap<String, String> tags,
 			String type)
 	{
 		StringBuilder sb = new StringBuilder();

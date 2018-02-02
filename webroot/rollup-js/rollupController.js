@@ -1,5 +1,6 @@
 var ROLLUP_URL = "/api/v1/rollups/";
 var AGGREGATORS_URL = "/api/v1/features/aggregators";
+var TASK_STATUS_URL = "/api/v1/rollups/status/";
 var semaphore = false;
 var metricList = null;
 
@@ -21,19 +22,19 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
     $scope.TOOLTIP_COMPLETE = "Roll-up contains all necessary data.";
     $scope.TOOLTIP_INCOMPLETE = "Roll-up is not complete. Complete all grey-out fields.";
     $scope.TOOLTIP_COMPLEX = "This roll-up is a complex roll-up and cannot be managed from this UI.";
+	$scope.TOOLTIP_STATUS = "The execution status of the Roll-up.";
 
-    $scope.EXECUTION_TYPES = ["Every Minute", "Hourly", "Daily", "Weekly", "Monthly", "Yearly"];
-    $scope.GROUP_BY_TYPES = ["tag", "time"];
-    $scope.SAMPLING_UNITS = ['milliseconds', 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'];
+	$scope.EXECUTION_TYPES = ["Every Minute", "Hourly", "Daily", "Weekly", "Monthly", "Yearly"];
+	$scope.GROUP_BY_TYPES = ["tag", "time"];
+	$scope.SAMPLING_UNITS = ['milliseconds', 'seconds', 'minutes', 'hours', 'days', 'weeks', 'years'];
 
-    $scope.DEFAULT_TASK_NAME = "<roll-up name>";
-    $scope.DEFAULT_METRIC_NAME = "<metric name>";
-    $scope.DEFAULT_SAVE_AS = "<new metric name>";
-    $scope.DEFAULT_EXECUTE = $scope.EXECUTION_TYPES[2];
-    $scope.METRIC_NAME_LIST_MAX_LENGTH = 20;
-    $scope.DEFAULT_GROUP_BY_TYPE = "tag";
-    $scope.DEFAULT_SAMPLING = {"value": 1, "unit": "hours"};
-    $scope.DEFAULT_ALIGNMENT = "'align_sampling': true";
+	$scope.DEFAULT_TASK_NAME = "<roll-up name>";
+	$scope.DEFAULT_METRIC_NAME = "<metric name>";
+	$scope.DEFAULT_SAVE_AS = "<new metric name>";
+	$scope.DEFAULT_EXECUTE = $scope.EXECUTION_TYPES[2];
+	$scope.METRIC_NAME_LIST_MAX_LENGTH = 20;
+	$scope.DEFAULT_GROUP_BY_TYPE = "tag";
+	$scope.DEFAULT_SAMPLING = {"value": 1, "unit": "hours"};$scope.DEFAULT_ALIGNMENT = "'align_sampling': true";
 
     $scope.AGGREGATORS = [
         {'name': 'avg', 'align_sampling': true, 'sampling': $scope.DEFAULT_SAMPLING},
@@ -347,45 +348,43 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
         return newTask;
     };
 
-    $scope.convertFromExecutionInterval = function (executionInterval) {
-        switch (executionInterval.unit.toLowerCase()) {
-            case 'milliseconds':
-            case 'seconds':
-            case 'minutes':
-                return $scope.EXECUTION_TYPES[0];
-            case 'hours':
-                return $scope.EXECUTION_TYPES[1];
-            case 'days':
-                return $scope.EXECUTION_TYPES[2];
-            case 'weeks':
-                return $scope.EXECUTION_TYPES[3];
-            case 'months':
-                return $scope.EXECUTION_TYPES[4];
-            case 'years':
-                return $scope.EXECUTION_TYPES[5];
-            default:
-                $scope.alert("Invalid execution interval specified: " + executionInterval.unit);
-        }
-    };
+	$scope.convertFromExecutionInterval = function (executionInterval) {
+		switch (executionInterval.unit.toLowerCase()) {
+			case 'milliseconds':
+			case 'seconds':
+			case 'minutes':
+			return $scope.EXECUTION_TYPES[0];case 'hours':
+				return $scope.EXECUTION_TYPES[1];
+			case 'days':
+				return $scope.EXECUTION_TYPES[2];
+			case 'weeks':
+				return $scope.EXECUTION_TYPES[3];
+			case 'months':
+				return $scope.EXECUTION_TYPES[4];
+			case 'years':
+				return $scope.EXECUTION_TYPES[5];
+			default:
+				$scope.alert("Invalid execution interval specified: " + executionInterval.unit);
+		}
+	};
 
-    $scope.convertToExecutionInterval = function (executionType) {
-        switch (executionType) {
-            case $scope.EXECUTION_TYPES[0]:
-                return 'minutes';
-            case $scope.EXECUTION_TYPES[1]:
-                return 'hours';
-            case $scope.EXECUTION_TYPES[2]:
-                return "days";
-            case $scope.EXECUTION_TYPES[3]:
-                return "weeks";
-            case $scope.EXECUTION_TYPES[4]:
-                return "months";
-            case $scope.EXECUTION_TYPES[5]:
-                return "years";
-            default:
-                $scope.alert("Invalid execution interval specified: " + executionInterval.unit);
-        }
-    };
+	$scope.convertToExecutionInterval = function (executionType) {
+		switch (executionType) {
+			case $scope.EXECUTION_TYPES[0]:
+				return 'minutes';
+			case $scope.EXECUTION_TYPES[1]:
+				return 'hours';
+			case $scope.EXECUTION_TYPES[2]:
+				return "days";
+			case $scope.EXECUTION_TYPES[3]:
+				return "weeks";
+			case $scope.EXECUTION_TYPES[4]:return "months";
+			case $scope.EXECUTION_TYPES[5]:
+				return "years";
+			default:
+				$scope.alert("Invalid execution interval specified: " + executionInterval.unit);
+		}
+	};
 
     $scope.displayLastSaved = function () {
         currentDate = new Date();
@@ -457,11 +456,11 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
     };
 
     $scope.isMetricOrDefault = function (task) {
-        return !task.metric_name || task.metric_name == $scope.DEFAULT_METRIC_NAME;
+        return !task.metric_name || task.metric_name === $scope.DEFAULT_METRIC_NAME;
     };
 
     $scope.isSaveAsEmptyOrDefault = function (task) {
-        return !task.save_as || task.save_as == $scope.DEFAULT_SAVE_AS;
+        return !task.save_as || task.save_as === $scope.DEFAULT_SAVE_AS;
     };
 
     $scope.alert = function (message, status, data) {
@@ -559,14 +558,39 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
                 });
     };
 
+    $scope.showStatus = function (task) {
+        $scope.getTaskStatus(task);
+		var modalInstance = $uibModal.open({
+			templateUrl: 'rollup-status.html?cacheBust=' + Math.random().toString(36).slice(2), //keep dialog from caching
+			controller: simpleController,
+			scope: $scope,
+			size: 'lg'
+		});
+	};
+
+    $scope.getTaskStatus = function(task)
+    {
+        $scope.status = "Getting status...";
+        $scope.statusTask = task;
+        $http.get(TASK_STATUS_URL + task.id)
+                .success(function (response)
+                {
+                    $scope.status = response;
+                })
+                .error(function (data, status, headers, config)
+                {
+                    $scope.status = "No status available"
+                });
+    };
+
     $scope.checkForIncompleteTask = function (task) {
-        if (!task.name || _.isEmpty(task.name) || task.name == $scope.DEFAULT_TASK_NAME) {
+        if (!task.name || _.isEmpty(task.name) || task.name === $scope.DEFAULT_TASK_NAME) {
             task.incomplete = true;
         }
-        else if (!task.metric_name || _.isEmpty(task.metric_name) || task.metric_name == $scope.DEFAULT_METRIC_NAME) {
+        else if (!task.metric_name || _.isEmpty(task.metric_name) || task.metric_name === $scope.DEFAULT_METRIC_NAME) {
             task.incomplete = true;
         }
-        else if (!task.save_as || _.isEmpty(task.save_as) || task.save_as == $scope.DEFAULT_SAVE_AS) {
+        else if (!task.save_as || _.isEmpty(task.save_as) || task.save_as === $scope.DEFAULT_SAVE_AS) {
             task.incomplete = true;
         }
         else  if (!task.aggregators || task.aggregators.size < 1) {

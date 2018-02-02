@@ -18,16 +18,17 @@ public class ServiceIndex_base extends GenOrmRecord
 	public static final String COL_SERVICE_KEY = "service_key";
 	public static final String COL_KEY = "key";
 	public static final String COL_VALUE = "value";
+	public static final String COL_MODIFICATION_TIME = "modification_time";
 
 	//Change this value to true to turn on warning messages
 	private static final boolean WARNINGS = false;
-	private static final String SELECT = "SELECT this.\"service\", this.\"service_key\", this.\"key\", this.\"value\" ";
+	private static final String SELECT = "SELECT this.\"service\", this.\"service_key\", this.\"key\", this.\"value\", this.\"modification_time\" ";
 	private static final String FROM = "FROM service_index this ";
 	private static final String WHERE = "WHERE ";
 	private static final String KEY_WHERE = "WHERE \"service\" = ? AND \"service_key\" = ? AND \"key\" = ?";
 	
 	public static final String TABLE_NAME = "service_index";
-	public static final int NUMBER_OF_COLUMNS = 4;
+	public static final int NUMBER_OF_COLUMNS = 5;
 	
 	
 	private static final String s_fieldEscapeString = "\""; 
@@ -36,6 +37,7 @@ public class ServiceIndex_base extends GenOrmRecord
 	public static final GenOrmFieldMeta SERVICE_KEY_FIELD_META = new GenOrmFieldMeta("service_key", "string", 1, true, false);
 	public static final GenOrmFieldMeta KEY_FIELD_META = new GenOrmFieldMeta("key", "string", 2, true, false);
 	public static final GenOrmFieldMeta VALUE_FIELD_META = new GenOrmFieldMeta("value", "string", 3, false, false);
+	public static final GenOrmFieldMeta MODIFICATION_TIME_FIELD_META = new GenOrmFieldMeta("modification_time", "timestamp", 4, false, false);
 
 	
 		
@@ -53,13 +55,15 @@ public class ServiceIndex_base extends GenOrmRecord
 		*/
 		public ResultSet getServiceKeys(String service);/**
 		*/
+		public ServiceIndex getModificationTime();/**
+		*/
 		public ResultSet getKeysLike(String service, String serviceKey, String keyPrefix);
 		}
 	
 	public static class ServiceIndexFactoryImpl //Inherit interfaces
 			implements ServiceIndexFactory 
 		{
-		public static final String CREATE_SQL = "CREATE CACHED TABLE service_index (\n	\"service\" VARCHAR  NOT NULL,\n	\"service_key\" VARCHAR  NOT NULL,\n	\"key\" VARCHAR  NOT NULL,\n	\"value\" VARCHAR  NULL,\n	PRIMARY KEY (\"service\", \"service_key\", \"key\")\n	)";
+		public static final String CREATE_SQL = "CREATE CACHED TABLE service_index (\n	\"service\" VARCHAR  NOT NULL,\n	\"service_key\" VARCHAR  NOT NULL,\n	\"key\" VARCHAR  NOT NULL,\n	\"value\" VARCHAR  NULL,\n	\"modification_time\" TIMESTAMP  NULL,\n	PRIMARY KEY (\"service\", \"service_key\", \"key\")\n	)";
 
 		private ArrayList<GenOrmFieldMeta> m_fieldMeta;
 		private ArrayList<GenOrmConstraint> m_foreignKeyConstraints;
@@ -71,6 +75,7 @@ public class ServiceIndex_base extends GenOrmRecord
 			m_fieldMeta.add(SERVICE_KEY_FIELD_META);
 			m_fieldMeta.add(KEY_FIELD_META);
 			m_fieldMeta.add(VALUE_FIELD_META);
+			m_fieldMeta.add(MODIFICATION_TIME_FIELD_META);
 
 			m_foreignKeyConstraints = new ArrayList<GenOrmConstraint>();
 			}
@@ -367,7 +372,7 @@ public class ServiceIndex_base extends GenOrmRecord
 		*/
 		public ResultSet getServiceKeys(String service)
 			{
-			String query = SELECT+"from service_index this\n				WHERE\n				this.\"service\" = ?\n				ORDER BY this.\"key\" asc";
+			String query = SELECT+"from service_index this\n				where\n				this.\"service\" = ?\n				order by this.\"key\" asc";
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			
@@ -381,6 +386,40 @@ public class ServiceIndex_base extends GenOrmRecord
 				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
 				
 				return (rs);
+				}
+			catch (java.sql.SQLException sqle)
+				{
+				try
+					{
+					if (genorm_statement != null)
+						genorm_statement.close();
+					}
+				catch (java.sql.SQLException sqle2) { }
+					
+				if (s_logger.isDebugEnabled())
+					sqle.printStackTrace();
+				throw new GenOrmException(sqle);
+				}
+			}
+			
+		//---------------------------------------------------------------------------
+		/**
+		*/
+		public ServiceIndex getModificationTime()
+			{
+			String query = SELECT+"select \"modification_time\" from service_index";
+			
+			java.sql.PreparedStatement genorm_statement = null;
+			
+			try
+				{
+				genorm_statement = GenOrmDataSource.prepareStatement(query);
+				
+				s_logger.debug(genorm_statement.toString());
+				
+				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
+				
+				return (rs.getOnlyRecord());
 				}
 			catch (java.sql.SQLException sqle)
 				{
@@ -447,6 +486,9 @@ public class ServiceIndex_base extends GenOrmRecord
 			System.out.println("ServiceIndex.getServiceKeys");
 			rs = getServiceKeys("foo");
 			rs.close();
+			System.out.println("ServiceIndex.getModificationTime");
+			getModificationTime();
+
 			System.out.println("ServiceIndex.getKeysLike");
 			rs = getKeysLike("foo", "foo", "key%");
 			rs.close();
@@ -637,6 +679,7 @@ public class ServiceIndex_base extends GenOrmRecord
 	private GenOrmString m_serviceKey;
 	private GenOrmString m_key;
 	private GenOrmString m_value;
+	private GenOrmTimestamp m_modificationTime;
 
 	
 	private List<GenOrmRecordKey> m_foreignKeys;
@@ -758,6 +801,49 @@ public class ServiceIndex_base extends GenOrmRecord
 		
 		return ((ServiceIndex)this);
 		}
+
+	//---------------------------------------------------------------------------
+	/**
+	*/
+	public java.sql.Timestamp getModificationTime() { return (m_modificationTime.getValue()); }
+	public ServiceIndex setModificationTime(java.sql.Timestamp data)
+		{
+		boolean changed = m_modificationTime.setValue(data);
+		
+		//Add the now dirty record to the transaction only if it is not previously dirty
+		if (changed)
+			{
+			if (m_dirtyFlags.isEmpty())
+				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
+				
+			m_dirtyFlags.set(MODIFICATION_TIME_FIELD_META.getDirtyFlag());
+			
+			if (m_isNewRecord) //Force set the prev value
+				m_modificationTime.setPrevValue(data);
+			}
+			
+		return ((ServiceIndex)this);
+		}
+		
+	public boolean isModificationTimeNull()
+		{
+		return (m_modificationTime.isNull());
+		}
+		
+	public ServiceIndex setModificationTimeNull()
+		{
+		boolean changed = m_modificationTime.setNull();
+		
+		if (changed)
+			{
+			if (m_dirtyFlags.isEmpty())
+				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
+				
+			m_dirtyFlags.set(MODIFICATION_TIME_FIELD_META.getDirtyFlag());
+			}
+		
+		return ((ServiceIndex)this);
+		}
 	
 	
 	
@@ -791,6 +877,7 @@ public class ServiceIndex_base extends GenOrmRecord
 			m_serviceKey.setValue(rs, 2);
 			m_key.setValue(rs, 3);
 			m_value.setValue(rs, 4);
+			m_modificationTime.setValue(rs, 5);
 
 			}
 		catch (java.sql.SQLException sqle)
@@ -820,6 +907,9 @@ public class ServiceIndex_base extends GenOrmRecord
 		m_value = new GenOrmString(VALUE_FIELD_META);
 		addField(COL_VALUE, m_value);
 
+		m_modificationTime = new GenOrmTimestamp(MODIFICATION_TIME_FIELD_META);
+		addField(COL_MODIFICATION_TIME, m_modificationTime);
+
 		GenOrmRecordKey foreignKey;
 		}
 	
@@ -841,6 +931,7 @@ public class ServiceIndex_base extends GenOrmRecord
 	@Override
 	public void setMTS()
 		{
+		setModificationTime(new java.sql.Timestamp(System.currentTimeMillis()));
 		}
 		
 	//---------------------------------------------------------------------------
@@ -865,6 +956,9 @@ public class ServiceIndex_base extends GenOrmRecord
 		sb.append("\" ");
 		sb.append("value=\"");
 		sb.append(m_value.getValue());
+		sb.append("\" ");
+		sb.append("modification_time=\"");
+		sb.append(m_modificationTime.getValue());
 		sb.append("\" ");
 
 		

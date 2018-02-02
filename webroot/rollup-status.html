@@ -1,0 +1,36 @@
+<div style="font-family: Lucida Console, Monaco, monospace">
+	<div class="modal-header text-center">
+        <h3 class="modal-title text-info">{{statusTask.name}} status</h3>
+	</div>
+
+	<div class="modal-body">
+		<table ng-if="!status.statuses">
+            <tr>
+                <td>
+                    <span class="text-info">Metric:</span> {{statusTask.metric_name}}<br>
+                    <span class="text-info">Saved as:</span> {{statusTask.save_as}} <br>
+                    <span class="text-info">Executing on:</span> {{status.executing_host}} <br>
+                    <span class="text-info">Last Executed:</span> Never<br>
+                    <span class="text-info">Next execution:</span> <br>
+                    <span class="text-info">Data points written:</span> 0<br>
+                    <span class="text-info">Execution time: </span> 0 ms<br>
+                </td>
+            </tr>
+        </table>
+
+        <table ng-if="status.statuses">
+			<tr ng-repeat="taskStatus in status.statuses">
+				<td>
+                    <span class="text-info">Metric:</span> {{taskStatus.metric_name}}<br>
+                    <span class="text-info">Saved as:</span> {{statusTask.save_as}} <br>
+                    <span class="text-info">Executing on:</span> {{status.executing_host}} <br>
+                    <span class="text-info">Last Executed:</span> {{taskStatus.last_executed}}<br>
+                    <span class="text-info">Next execution:</span> <span>{{status.next_scheduled}}<br></span>
+                    <span class="text-info">Data points written:</span> {{taskStatus.data_point_count}}<br>
+                    <span class="text-info">Execution time: </span> {{taskStatus.execution_length}} ms<br>
+					<span class="text-info" ng-if="taskStatus.error_message.length > 0">Error:</span> {{taskStatus.error_message}}
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>

@@ -1,9 +1,9 @@
 package org.kairosdb.core.queue;
 
-import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.BatchReductionEvent;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.SimpleStats;
@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 /**

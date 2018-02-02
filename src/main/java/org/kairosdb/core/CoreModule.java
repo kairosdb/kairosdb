@@ -88,6 +88,7 @@ import javax.inject.Singleton;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -248,7 +249,7 @@ public class CoreModule extends AbstractModule
 	}
 
 	@Provides @Named(QUEUE_PROCESSOR) @Singleton
-	public Executor getQueueExecutor()
+	public ExecutorService getQueueExecutor()
 	{
 		return Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("QueueProcessor-%s").build());
 	}

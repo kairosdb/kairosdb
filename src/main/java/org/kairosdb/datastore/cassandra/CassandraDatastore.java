@@ -15,11 +15,8 @@
  */
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
+import com.datastax.driver.core.*;
+import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.SetMultimap;
 import org.kairosdb.eventbus.Subscribe;
 import com.google.common.util.concurrent.FutureCallback;
@@ -51,12 +48,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.datastore.cassandra.CassandraConfiguration.KEYSPACE_PROPERTY;
 
 public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMetricReporter,
 		ServiceKeyStore
@@ -73,6 +68,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 	public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
 	public static final String ROW_KEY_COUNT = "kairosdb.datastore.cassandra.row_key_count";
+	public static final String RAW_ROW_KEY_COUNT = "kairosdb.datastore.cassandra.raw_row_key_count";
 
 
 	public static final String ROW_KEY_METRIC_NAMES = "metric_names";
@@ -93,7 +89,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	@Inject
 	private final BatchStats m_batchStats = new BatchStats();
 
+	@Inject
 	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
+	@Inject
 	private DataCache<String> m_metricNameCache = new DataCache<String>(1024);
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
@@ -110,6 +108,10 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	@Inject
 	@Named("kairosdb.queue_processor.batch_size")
 	private int m_batchSize;  //Used for batching delete requests
+
+	@Inject
+	@Named(KEYSPACE_PROPERTY)
+	private String m_keyspace = "kairosdb";
 
 
 	@Inject
@@ -137,9 +139,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_session = session;
 
 		m_cassandraConfiguration = cassandraConfiguration;
-
-		m_rowKeyCache = new DataCache<DataPointsRowKey>(m_cassandraConfiguration.getRowKeyCacheSize());
-		m_metricNameCache = new DataCache<String>(m_cassandraConfiguration.getStringCacheSize());
 
 		//This needs to be done last as it tells the processor we are ready for data
 		m_queueProcessor.setProcessorHandler(this);
@@ -413,12 +412,14 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		private final DataPointsRowKey m_rowKey;
 		private final QueryCallback m_callback;
 		private final Semaphore m_semaphore;  //Used to notify caller when last query is done
+		private final QueryMonitor m_queryMonitor;
 
-		public QueryListener(DataPointsRowKey rowKey, QueryCallback callback, Semaphore querySemaphor)
+		public QueryListener(DataPointsRowKey rowKey, QueryCallback callback, Semaphore querySemaphor, QueryMonitor queryMonitor)
 		{
 			m_rowKey = rowKey;
 			m_callback = callback;
 			m_semaphore = querySemaphor;
+			m_queryMonitor = queryMonitor;
 		}
 
 		@Override
@@ -468,13 +469,16 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 									dataPointFactory.getDataPoint(timestamp, KDataInput.createInput(value)));
 						}
 
+						m_queryMonitor.incrementCounter();
+
 					}
 				}
 
 			}
-			catch (IOException e)
+			catch (Exception e)
 			{
-				e.printStackTrace();
+				logger.error("QueryListener failure", e);
+				m_queryMonitor.failQuery(e);
 			}
 			finally
 			{
@@ -485,31 +489,41 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		@Override
 		public void onFailure(Throwable t)
 		{
-			System.out.println(t);
+			logger.error("Async query failure", t);
+			m_queryMonitor.failQuery(t);
 			m_semaphore.release();
 		}
 	}
 
 
 	private void cqlQueryWithRowKeys(DatastoreMetricQuery query,
-			QueryCallback queryCallback, Iterator<DataPointsRowKey> rowKeys)
+			QueryCallback queryCallback, Iterator<DataPointsRowKey> rowKeys) throws DatastoreException
 	{
-		long timerStart = System.currentTimeMillis();
 		List<ResultSetFuture> queryResults = new ArrayList<>();
 		int rowCount = 0;
 		long queryStartTime = query.getStartTime();
 		long queryEndTime = query.getEndTime();
 		boolean useLimit = query.getLimit() != 0;
+		QueryMonitor queryMonitor = new QueryMonitor(m_cassandraConfiguration.getQueryLimit());
 
-		//todo add memory monitor
-
-		ExecutorService resultsExecutor = Executors.newSingleThreadExecutor();
+		ExecutorService resultsExecutor = Executors.newFixedThreadPool(m_cassandraConfiguration.getQueryReaderThreads(),
+				new ThreadFactory()
+				{
+					private int m_count = 0;
+					@Override
+					public Thread newThread(Runnable r)
+					{
+						m_count ++;
+						return new Thread(r, "query_"+query.getName()+"-"+m_count);
+					}
+				});
 		//Controls the number of queries sent out at the same time.
-		Semaphore querySemaphor = new Semaphore(m_cassandraConfiguration.getSimultaneousQueries());
+		Semaphore querySemaphore = new Semaphore(m_cassandraConfiguration.getSimultaneousQueries());
 
 		while (rowKeys.hasNext())
 		{
 			rowCount ++;
+			int sessionNum = 1; //rowCount % 2;
 			DataPointsRowKey rowKey = rowKeys.next();
 			long tierRowTime = rowKey.getTimestamp();
 			int startTime;
@@ -559,32 +573,51 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 			try
 			{
-				querySemaphor.acquire();
+				querySemaphore.acquire();
 			}
 			catch (InterruptedException e)
 			{
 				e.printStackTrace();
 			}
-			ResultSetFuture resultSetFuture = m_session.executeAsync(boundStatement);
 
-			Futures.addCallback(resultSetFuture, new QueryListener(rowKey, queryCallback, querySemaphor), resultsExecutor);
+			if (queryMonitor.keepRunning())
+			{
+				ResultSetFuture resultSetFuture = m_session.executeAsync(boundStatement);
+				queryResults.add(resultSetFuture);
+
+				Futures.addCallback(resultSetFuture, new QueryListener(rowKey, queryCallback, querySemaphore, queryMonitor), resultsExecutor);
+			}
+			else
+			{
+				//Something broke cancel queries
+				for (ResultSetFuture queryResult : queryResults)
+				{
+					queryResult.cancel(true);
+				}
+
+				break;
+			}
+
 		}
 
-		ThreadReporter.addDataPoint(KEY_QUERY_TIME, System.currentTimeMillis() - timerStart);
 		ThreadReporter.addDataPoint(ROW_KEY_COUNT, rowCount);
 
 		try
 		{
-			querySemaphor.acquire(m_cassandraConfiguration.getSimultaneousQueries());
+			if (queryMonitor.getException() == null)
+				querySemaphore.acquire(m_cassandraConfiguration.getSimultaneousQueries());
 			resultsExecutor.shutdown();
 		}
 		catch (InterruptedException e)
 		{
-			e.printStackTrace();
+			logger.error("Query interrupted", e);
 		}
+
+		if (queryMonitor.getException() != null)
+			throw new DatastoreException(queryMonitor.getException());
 	}
 
-	private void deletePartialRow(DataPointsRowKey rowKey, long start, long end)
+	private void deletePartialRow(DataPointsRowKey rowKey, long start, long end) throws DatastoreException
 	{
 		if (m_schema.psDataPointsDeleteRange != null)
 		{
@@ -641,6 +674,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 				m_session.execute(statement);
 
+				//Delete from old row keys
 				statement = new BoundStatement(m_schema.psRowKeyIndexDelete);
 				statement.setBytesUnsafe(0, serializeString(rowKey.getMetricName()));
 				statement.setBytesUnsafe(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
@@ -816,6 +850,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		private final Iterator<ResultSet> m_resultSets;
 		private ResultSet m_currentResultSet;
 		private final String m_metricName;
+		private int m_rawRowKeyCount = 0;
+		private Set<DataPointsRowKey> m_returnedKeys;  //keep from returning duplicates, querying old and new indexes
 
 
 		public CQLFilteredRowKeyIterator(String metricName, long startTime, long endTime,
@@ -824,6 +860,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			m_filterTags = filterTags;
 			m_metricName = metricName;
 			List<ResultSetFuture> futures = new ArrayList<>();
+			m_returnedKeys = new HashSet<>();
+			long timerStart = System.currentTimeMillis();
 
 			//Legacy key index - index is all in one row
 			if ((startTime < 0) && (endTime >= 0))
@@ -856,6 +894,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				futures.add(future);
 			}
 
+			//System.out.println();
 			//New index query index is broken up by time tier
 			List<Long> queryKeyList = createQueryKeyList(metricName, startTime, endTime);
 			for (Long keyTime : queryKeyList)
@@ -864,6 +903,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				statement.setString(0, metricName);
 				statement.setTimestamp(1, new Date(keyTime));
 				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+
+				//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
 
 				ResultSetFuture future = m_session.executeAsync(statement);
 				futures.add(future);
@@ -876,6 +917,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				m_resultSets = listListenableFuture.get().iterator();
 				if (m_resultSets.hasNext())
 					m_currentResultSet = m_resultSets.next();
+
+				ThreadReporter.addDataPoint(KEY_QUERY_TIME, System.currentTimeMillis() - timerStart);
 			}
 			catch (InterruptedException e)
 			{
@@ -899,6 +942,7 @@ outer:
 			{
 				DataPointsRowKey rowKey;
 				Row record = iterator.one();
+				m_rawRowKeyCount ++;
 
 				if (newIndex)
 					rowKey = new DataPointsRowKey(m_metricName, record.getTimestamp(0).getTime(),
@@ -914,6 +958,11 @@ outer:
 						continue outer; //Don't want this key
 				}
 
+				/* We can get duplicate keys from querying old and new indexes */
+				if (m_returnedKeys.contains(rowKey))
+					continue;
+
+				m_returnedKeys.add(rowKey);
 				next = rowKey;
 				break;
 			}
@@ -931,6 +980,8 @@ outer:
 			statement.setTimestamp(1, new Date(calculateRowTime(startTime)));
 			statement.setTimestamp(2, new Date(endTime));
 			statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+
+			//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
 
 			ResultSet rows = m_session.execute(statement);
 
@@ -970,6 +1021,11 @@ outer:
 
 				if (m_resultSets.hasNext())
 					m_currentResultSet = m_resultSets.next();
+			}
+
+			if (m_nextKey == null)
+			{
+				ThreadReporter.addDataPoint(RAW_ROW_KEY_COUNT, m_rawRowKeyCount);
 			}
 
 			return (m_nextKey != null);
@@ -1046,6 +1102,17 @@ outer:
 				}
 			}
 		}
+	}
+
+	private void printHosts(Iterator<Host> hostIterator)
+	{
+		StringBuilder sb = new StringBuilder();
+
+		while (hostIterator.hasNext())
+		{
+			sb.append(hostIterator.next().toString()).append(" ");
+		}
+		System.out.println(sb.toString());
 	}
 
 	private static final IDontCareCallBack s_dontCareCallBack = new IDontCareCallBack();

@@ -46,6 +46,7 @@ public class DoubleDataPoint extends DataPointHelper
 	@Override
 	public void writeValueToJson(JSONWriter writer) throws JSONException
 	{
+		//m_value will not equal itself if it is Double.NaN.  Weird I know but that is how it is.
 		if (m_value != m_value || Double.isInfinite(m_value))
 			throw new IllegalStateException("NaN or Infinity:" + m_value + " data point=" + this);
 

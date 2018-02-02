@@ -43,6 +43,7 @@ import org.kairosdb.core.http.rest.json.ValidationErrors;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.events.ShutdownEvent;
 import org.kairosdb.util.PluginClassLoader;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -336,6 +337,7 @@ public class Main
 				main.runExport(ps, arguments.exportMetricNames);
 				ps.flush();
 				ps.close();
+				System.out.println("Export finished");
 			}
 			else
 			{
@@ -345,6 +347,7 @@ public class Main
 			}
 
 			main.stopServices();
+			System.out.println("All done");
 		}
 		else if (arguments.operationCommand.equals("import"))
 		{
@@ -358,8 +361,11 @@ public class Main
 			{
 				main.runImport(System.in);
 			}
+			System.out.println("Import finished");
+			Thread.sleep(10000);
 
 			main.stopServices();
+			System.out.println("All done");
 		}
 		else if (arguments.operationCommand.equals("run") || arguments.operationCommand.equals("start"))
 		{
@@ -558,6 +564,9 @@ public class Main
 		//Stop the datastore
 		KairosDatastore ds = m_injector.getInstance(KairosDatastore.class);
 		ds.close();
+
+		FilterEventBus eventBus = m_injector.getInstance(FilterEventBus.class);
+		eventBus.createPublisher(ShutdownEvent.class).post(new ShutdownEvent());
 	}
 
 	private static class RecoveryFile

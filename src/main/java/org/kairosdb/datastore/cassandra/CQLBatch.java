@@ -6,11 +6,13 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.util.KDataOutput;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
 
+import static org.kairosdb.datastore.cassandra.CassandraConfiguration.KEYSPACE_PROPERTY;
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.*;
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER;
 
@@ -35,6 +37,10 @@ public class CQLBatch
 	private BatchStatement rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 
 	@Inject
+	@Named(KEYSPACE_PROPERTY)
+	private String m_keyspace = "kairosdb";
+
+	@Inject
 	public CQLBatch(
 			ConsistencyLevel consistencyLevel, Session session,
 			Schema schema, BatchStats batchStats,
@@ -53,12 +59,12 @@ public class CQLBatch
 		ByteBuffer bb = ByteBuffer.allocate(8);
 		bb.putLong(0, rowKey.getTimestamp());
 
-		BoundStatement bs = m_schema.psRowKeyTimeInsert.bind()
+		Statement bs = m_schema.psRowKeyTimeInsert.bind()
 				.setString(0, metricName)
 				.setTimestamp(1, new Date(rowKey.getTimestamp()))
 				//.setBytesUnsafe(1, bb) //Setting timestamp in a more optimal way
 				.setInt(2, rowKeyTtl)
-				.setLong(3, m_now);
+				.setIdempotent(true);
 
 		bs.setConsistencyLevel(m_consistencyLevel);
 
@@ -70,8 +76,8 @@ public class CQLBatch
 				//.setBytesUnsafe(1, bb)  //Setting timestamp in a more optimal way
 				.setString(2, rowKey.getDataType())
 				.setMap(3, rowKey.getTags())
-				.setInt(4, rowKeyTtl);
-				//.setLong(5, m_now);
+				.setInt(4, rowKeyTtl)
+				.setIdempotent(true);
 
 		bs.setConsistencyLevel(m_consistencyLevel);
 
@@ -89,7 +95,7 @@ public class CQLBatch
 
 	private void addBoundStatement(BoundStatement boundStatement)
 	{
-		Iterator<Host> hosts = m_loadBalancingPolicy.newQueryPlan("kairosdb", boundStatement);
+		Iterator<Host> hosts = m_loadBalancingPolicy.newQueryPlan(m_keyspace, boundStatement);
 		if (hosts.hasNext())
 		{
 			Host hostKey = hosts.next();

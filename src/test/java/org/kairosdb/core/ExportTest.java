@@ -76,7 +76,7 @@ public class ExportTest
 
 		os.close();
 		sock.close();
-		Thread.sleep(10000);
+		Thread.sleep(2000);
 	}
 
 	@BeforeClass
@@ -87,7 +87,7 @@ public class ExportTest
 			props = null;
 
 		//Ensure the memory queue processor is used
-		System.setProperty("kairosdb.queue_processor", "org.kairosdb.core.queue.MemoryQueueProcessor");
+		System.setProperty("kairosdb.queue_processor.class", "org.kairosdb.core.queue.MemoryQueueProcessor");
 		s_main = new Main(props);
 		s_main.startServices();
 		s_injector = s_main.getInjector();
@@ -106,7 +106,7 @@ public class ExportTest
 
 		QueryMetric metric = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, METRIC_NAME);
 		ds.delete(metric);
-		Thread.sleep(3000);
+		Thread.sleep(500);
 	}
 
 	@AfterClass
@@ -150,7 +150,7 @@ public class ExportTest
 		s_main.runImport(export);
 
 		export.close();
-		Thread.sleep(3000);
+		Thread.sleep(2000);
 
 		verifyDataPoints();
 	}

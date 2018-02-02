@@ -106,6 +106,9 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 	{
 		DataPointFactory factory = m_factoryMapRegistered.get(type);
 
+		if (factory == null)
+			throw new IOException("Unable to find data point factory for type: "+type);
+
 		DataPoint dp = factory.getDataPoint(timestamp, json);
 
 		return (dp);
@@ -122,6 +125,9 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 	public DataPoint createDataPoint(String dataStoreType, long timestamp, DataInput buffer) throws IOException
 	{
 		DataPointFactory factory = m_factoryMapDataStore.get(dataStoreType);
+
+		if (factory == null)
+			throw new IOException("Unable to find data point factory for store type: "+dataStoreType);
 
 		DataPoint dp = factory.getDataPoint(timestamp, buffer);
 

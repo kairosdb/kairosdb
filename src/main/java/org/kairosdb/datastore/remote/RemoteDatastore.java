@@ -40,6 +40,7 @@ import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.events.ShutdownEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,8 +52,11 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.SortedMap;
 import java.util.zip.GZIPOutputStream;
+
+import static com.google.common.base.Strings.isNullOrEmpty;
 
 
 public class RemoteDatastore implements Datastore
@@ -77,7 +81,7 @@ public class RemoteDatastore implements Datastore
 	private int m_dataPointCounter;
 
 	private volatile Multimap<DataPointKey, DataPoint> m_dataPointMultimap;
-	private Object m_mapLock = new Object();  //Lock for the above map
+	private final Object m_mapLock = new Object();  //Lock for the above map
 
 	private CloseableHttpClient m_client;
 	private boolean m_running;
@@ -86,12 +90,20 @@ public class RemoteDatastore implements Datastore
 	@Named("HOSTNAME")
 	private String m_hostName = "localhost";
 
-	@Inject(optional = true)
-	@Named(METRIC_PREFIX_FILTER)
-	private String m_prefixFilter = null;
+	private String[] m_prefixFilterArray = new String[0];
 
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
+
+	@Inject(optional = true)
+	public void setPrefixFilter(@Named(METRIC_PREFIX_FILTER) String prefixFilter)
+	{
+		if (!isNullOrEmpty(prefixFilter))
+		{
+			m_prefixFilterArray = prefixFilter.replaceAll("\\s+","").split(",");
+			logger.info("List of metric prefixes to forward to remote KairosDB: " + Arrays.toString(m_prefixFilterArray));
+		}
+	}
 
 
 	@Inject
@@ -111,26 +123,23 @@ public class RemoteDatastore implements Datastore
 		openDataFile();
 		m_running = true;
 
-		Thread flushThread = new Thread(new Runnable()
-		{
-			@Override
-			public void run()
+		Thread flushThread = new Thread(() -> {
+			while (m_running)
 			{
-				while (m_running)
+				try
 				{
-					try
-					{
-						flushMap();
+					flushMap();
 
-						Thread.sleep(2000);
-					}
-					catch (Exception e)
-					{
-						logger.error("Error flushing map", e);
-					}
+					Thread.sleep(2000);
+				}
+				catch (Exception e)
+				{
+					logger.error("Error flushing map", e);
 				}
 			}
 		});
+
+		flushThread.setName("Remote flush");
 
 		flushThread.start();
 
@@ -143,7 +152,7 @@ public class RemoteDatastore implements Datastore
 		{
 			ret = m_dataPointMultimap;
 
-			m_dataPointMultimap = ArrayListMultimap.<DataPointKey, DataPoint>create();
+			m_dataPointMultimap = ArrayListMultimap.create();
 		}
 
 		return ret;
@@ -282,12 +291,40 @@ public class RemoteDatastore implements Datastore
 	}
 
 	@Subscribe
+	public void shutdown(ShutdownEvent shutdownEvent)
+	{
+		try
+		{
+			close();
+		}
+		catch (InterruptedException | DatastoreException e)
+		{
+			logger.error("Remote shutdown failure", e);
+		}
+	}
+
+	@Subscribe
 	public void putDataPoint(DataPointEvent event) throws DatastoreException
 	{
-		if ((m_prefixFilter != null) && (!event.getMetricName().startsWith(m_prefixFilter)))
-			return;
+		String metricName = event.getMetricName();
 
-		DataPointKey key = new DataPointKey(event.getMetricName(), event.getTags(),
+		if (m_prefixFilterArray.length != 0)
+		{
+			boolean prefixMatch = false;
+			for (String prefixFilter : m_prefixFilterArray)
+			{
+				if (metricName.startsWith(prefixFilter))
+				{
+					prefixMatch = true;
+					break;
+				}
+			}
+
+			if (!prefixMatch)
+				return;
+		}
+
+		DataPointKey key = new DataPointKey(metricName, event.getTags(),
 				event.getDataPoint().getApiDataType(), event.getTtl());
 
 		synchronized (m_mapLock)

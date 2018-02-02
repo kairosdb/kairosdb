@@ -210,9 +210,9 @@ public class KairosDatastore
 	}*/
 
 
-	public Iterable<String> getMetricNames() throws DatastoreException
+	public Iterable<String> getMetricNames(String prefix) throws DatastoreException
 	{
-		return (m_datastore.getMetricNames());
+		return (m_datastore.getMetricNames(prefix));
 	}
 
 	public Iterable<String> getTagNames() throws DatastoreException

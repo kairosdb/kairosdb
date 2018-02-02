@@ -470,7 +470,7 @@ public class RemoteDatastore implements Datastore
 
 
 	@Override
-	public Iterable<String> getMetricNames() throws DatastoreException
+	public Iterable<String> getMetricNames(String prefix) throws DatastoreException
 	{
 		throw new DatastoreException("Method not implemented.");
 	}

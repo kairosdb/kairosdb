@@ -20,7 +20,9 @@ public class DoubleDataPointTest extends DataPointTestCommon
 		dataPointList.clear();
 		dataPointList.add(doubleFactory.createDataPoint(123, 123.0));
 		dataPointList.add(doubleFactory.createDataPoint(1, 12345.67890));
+		dataPointList.add(doubleFactory.createDataPoint(1, 1.0));
+		dataPointList.add(doubleFactory.createDataPoint(123, 1.0));
 
-		sum = 12468.6789;
+		sum = 12470.6789;
 	}
 }

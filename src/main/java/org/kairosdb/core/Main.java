@@ -465,7 +465,7 @@ public class Main
 			if (metricNames != null && metricNames.size() > 0)
 				metrics = metricNames;
 			else
-				metrics = ds.getMetricNames();
+				metrics = ds.getMetricNames(null);
 
 			for (String metric : metrics)
 			{

@@ -133,6 +133,45 @@ public class RangeAggregatorTest
 	}
 
 	@Test
+	public void test_multipleMonthAggregationWithUTCCheckAlignmentEndTime()
+	{
+		ListDataPointGroup dpGroup = new ListDataPointGroup("range_test");
+		DateTimeZone utc = DateTimeZone.UTC;
+
+		DateTime startDate = new DateTime(2014, 1, 1, 1, 1, utc); // LEAP year
+		DateTime stopDate = new DateTime(2014, 7, 10, 1, 1, utc);
+		for (DateTime iterationDT = startDate;
+		     iterationDT.isBefore(stopDate);
+		     iterationDT = iterationDT.plusDays(5))
+		{
+			dpGroup.addDataPoint(new LongDataPoint(iterationDT.getMillis(), 1));
+		}
+
+		SumAggregator agg = new SumAggregator(new DoubleDataPointFactoryImpl());
+		agg.setTimeZone(utc);
+		agg.setSampling(new Sampling(3, TimeUnit.MONTHS));
+		agg.setAlignSampling(true);
+		agg.setAlignEndTime(true);
+		agg.setStartTime(startDate.getMillis());
+
+		DataPointGroup dpg = agg.aggregate(dpGroup);
+
+		assertThat(dpg.hasNext(), is(true));
+		DataPoint next = dpg.next();
+		assertThat(new DateTime(next.getTimestamp(), utc), is(new DateTime(2014, 4, 1, 0, 0, utc)));
+
+		assertThat(dpg.hasNext(), is(true));
+		next = dpg.next();
+		assertThat(new DateTime(next.getTimestamp(), utc), is(new DateTime(2014, 7, 1, 0, 0, utc)));
+
+		assertThat(dpg.hasNext(), is(true));
+		next = dpg.next();
+		assertThat(new DateTime(next.getTimestamp(), utc), is(new DateTime(2014, 10, 1, 0, 0, utc)));
+
+		assertThat(dpg.hasNext(), is(false));
+	}
+
+	@Test
 	public void test_aggregateByMonthStartAtMidMonthDontAlign()
 	{
 		ListDataPointGroup dpGroup = new ListDataPointGroup("range_test");
@@ -217,6 +256,50 @@ public class RangeAggregatorTest
 	}
 
 	@Test
+	public void test_aggregateByMonthStartAtMidMonthAlignEnd()
+	{
+		DateTimeZone utc = DateTimeZone.UTC;
+
+		DateTime startDate = new DateTime(2014, 3, 10, 0, 0, utc);
+		DateTime stopDate = new DateTime(2014, 5, 23, 0, 0, utc);
+		ListDataPointGroup dpGroup = new ListDataPointGroup("range_test");
+		for (DateTime iterationDT = startDate;
+		     iterationDT.isBefore(stopDate);
+		     iterationDT = iterationDT.plusDays(1))
+		{
+			dpGroup.addDataPoint(new LongDataPoint(iterationDT.getMillis(), 1));
+		}
+
+		SumAggregator aggregator = new SumAggregator(new DoubleDataPointFactoryImpl());
+		aggregator.setSampling(new Sampling(1, TimeUnit.MONTHS));
+		aggregator.setAlignSampling(true);
+		aggregator.setAlignEndTime(true);
+		aggregator.setStartTime(startDate.getMillis());
+
+		DataPointGroup aggregated = aggregator.aggregate(dpGroup);
+
+		assertThat(aggregated.hasNext(), is(true));
+		DateTime marchFirst = new DateTime(2014, 4, 1, 0, 0, utc);
+		DataPoint marchDataPoint = aggregated.next();
+		assertThat(new DateTime(marchDataPoint.getTimestamp(), utc), equalTo(marchFirst));
+		assertThat(marchDataPoint.getLongValue(), is(22L));
+
+		assertThat(aggregated.hasNext(), is(true));
+		DateTime aprilFirst = new DateTime(2014, 5, 1, 0, 0, utc);
+		DataPoint aprilDataPoint = aggregated.next();
+		assertThat(new DateTime(aprilDataPoint.getTimestamp(), utc), equalTo(aprilFirst));
+		assertThat(aprilDataPoint.getLongValue(), is(30L));
+
+		assertThat(aggregated.hasNext(), is(true));
+		DateTime mayFirst = new DateTime(2014, 6, 1, 0, 0, utc);
+		DataPoint mayMonthDataPoint = aggregated.next();
+		assertThat(new DateTime(mayMonthDataPoint.getTimestamp(), utc), equalTo(mayFirst));
+		assertThat(mayMonthDataPoint.getLongValue(), is(22L));
+
+		assertThat(aggregated.hasNext(), is(false));
+	}
+
+	@Test
 	public void test_aggregationByWeekAlign()
 	{
 		DateTimeZone utc = DateTimeZone.UTC;
@@ -253,6 +336,50 @@ public class RangeAggregatorTest
 
 		assertThat(aggregated.hasNext(), is(true));
 		DateTime thirdWeekStart = new DateTime(2015, 1, 12, 0, 0, utc);
+		DataPoint thirdWeekDataPoint = aggregated.next();
+		assertThat(new DateTime(thirdWeekDataPoint.getTimestamp(), utc), equalTo(thirdWeekStart));
+		assertThat(thirdWeekDataPoint.getLongValue(), is(7L));
+
+		assertThat(aggregated.hasNext(), is(false));
+	}
+
+	@Test
+	public void test_aggregationByWeekAlignEnd()
+	{
+		DateTimeZone utc = DateTimeZone.UTC;
+		DateTime startDate = new DateTime(2015, 1, 2, 1, 11, utc);
+		DateTime endDate = new DateTime(2015, 1, 18, 11, 11, utc);
+
+		ListDataPointGroup dpGroup = new ListDataPointGroup("range_test");
+		for (DateTime iterationDT = startDate;
+		     iterationDT.isBefore(endDate);
+		     iterationDT = iterationDT.plusDays(1))
+		{
+			dpGroup.addDataPoint(new LongDataPoint(iterationDT.getMillis(), 1));
+		}
+
+		SumAggregator aggregator = new SumAggregator(new DoubleDataPointFactoryImpl());
+		aggregator.setSampling(new Sampling(1, TimeUnit.WEEKS));
+		aggregator.setAlignSampling(true);
+		aggregator.setAlignEndTime(true);
+		aggregator.setStartTime(startDate.getMillis());
+
+		DataPointGroup aggregated = aggregator.aggregate(dpGroup);
+
+		assertThat(aggregated.hasNext(), is(true));
+		DateTime firstWeekStart = new DateTime(2015, 1, 5, 0, 0, utc);
+		DataPoint firstWeekDataPoint = aggregated.next();
+		assertThat(new DateTime(firstWeekDataPoint.getTimestamp(), utc), equalTo(firstWeekStart));
+		assertThat(firstWeekDataPoint.getLongValue(), is(3L));
+
+		assertThat(aggregated.hasNext(), is(true));
+		DateTime secondWeekStart = new DateTime(2015, 1, 12, 0, 0, utc);
+		DataPoint secondWeekDataPoint = aggregated.next();
+		assertThat(new DateTime(secondWeekDataPoint.getTimestamp(), utc), equalTo(secondWeekStart));
+		assertThat(secondWeekDataPoint.getLongValue(), is(7L));
+
+		assertThat(aggregated.hasNext(), is(true));
+		DateTime thirdWeekStart = new DateTime(2015, 1, 19, 0, 0, utc);
 		DataPoint thirdWeekDataPoint = aggregated.next();
 		assertThat(new DateTime(thirdWeekDataPoint.getTimestamp(), utc), equalTo(thirdWeekStart));
 		assertThat(thirdWeekDataPoint.getLongValue(), is(7L));

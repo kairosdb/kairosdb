@@ -7,4 +7,3 @@ else
 	chkconfig kairosdb on
 fi
 
-/etc/init.d/kairosdb start

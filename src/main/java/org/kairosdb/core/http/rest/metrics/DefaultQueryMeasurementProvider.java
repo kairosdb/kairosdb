@@ -33,11 +33,11 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
         checkNotNull(metricRegistry, "metricRegistry can't be null");
         this.metricRegistry = metricRegistry;
 
-        spanHistogramSuccess = metricRegistry.histogram(MEASURES_PREFIX + ".span.success");
-        distanceHistogramSuccess = metricRegistry.histogram(MEASURES_PREFIX + ".distance.success");
+        spanHistogramSuccess = metricRegistry.histogram(MEASURES_PREFIX + "span.success");
+        distanceHistogramSuccess = metricRegistry.histogram(MEASURES_PREFIX + "distance.success");
 
-        spanHistogramError = metricRegistry.histogram(MEASURES_PREFIX + ".span.error");
-        distanceHistogramError = metricRegistry.histogram(MEASURES_PREFIX + ".distance.error");
+        spanHistogramError = metricRegistry.histogram(MEASURES_PREFIX + "span.error");
+        distanceHistogramError = metricRegistry.histogram(MEASURES_PREFIX + "distance.error");
     }
 
 

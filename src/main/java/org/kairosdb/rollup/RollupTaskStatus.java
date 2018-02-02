@@ -71,4 +71,34 @@ public class RollupTaskStatus
     {
         return executingHost;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        RollupTaskStatus that = (RollupTaskStatus) o;
+
+        if (!statuses.equals(that.statuses)) {
+            return false;
+        }
+        if (!executingHost.equals(that.executingHost)) {
+            return false;
+        }
+        return nextScheduled.equals(that.nextScheduled);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = statuses.hashCode();
+        result = 31 * result + executingHost.hashCode();
+        result = 31 * result + nextScheduled.hashCode();
+        return result;
+    }
 }

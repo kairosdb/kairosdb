@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -38,7 +39,7 @@ public class MemoryQueueProcessor extends QueueProcessor implements KairosMetric
 
 	@Inject
 	public MemoryQueueProcessor(
-			@Named(QUEUE_PROCESSOR) Executor executor,
+			@Named(QUEUE_PROCESSOR) ExecutorService executor,
 			@Named(BATCH_SIZE) int batchSize,
 			@Named(MEMORY_QUEUE_SIZE) int memoryQueueSize,
 			@Named(MINIMUM_BATCH_SIZE) int minimumBatchSize)

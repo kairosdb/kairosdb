@@ -27,11 +27,16 @@ import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.ServiceKeyStore;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.events.DataPointEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.inject.Named;
 import java.util.*;
 
 public class CassandraModule extends AbstractModule
 {
+	public static final Logger logger = LoggerFactory.getLogger(CassandraModule.class);
+
 	public static final String CASSANDRA_AUTH_MAP = "cassandra.auth.map";
 	public static final String CASSANDRA_HECTOR_MAP = "cassandra.hector.map";
 	public static final String AUTH_PREFIX = "kairosdb.datastore.cassandra.auth.";
@@ -70,7 +75,7 @@ public class CassandraModule extends AbstractModule
 		bind(CassandraDatastore.class).in(Scopes.SINGLETON);
 		bind(CleanRowKeyCache.class).in(Scopes.SINGLETON);
 		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);
-		bind(CassandraClient.class).to(CassandraClientImpl.class);
+		//bind(CassandraClient.class).to(CassandraClientImpl.class);
 		bind(CassandraClientImpl.class).in(Scopes.SINGLETON);
 		bind(BatchStats.class).in(Scopes.SINGLETON);
 
@@ -89,10 +94,40 @@ public class CassandraModule extends AbstractModule
 	}
 
 	@Provides
+	@Named("keyspace")
+	String getKeyspace(CassandraConfiguration configuration)
+	{
+		return configuration.getKeyspaceName();
+	}
+
+	@Provides
+	@Singleton
+	CassandraClient getCassandraClient(CassandraConfiguration configuration)
+	{
+		try
+		{
+			return new CassandraClientImpl(configuration);
+		}
+		catch (Exception e)
+		{
+			logger.error("Unable to setup cassandra connection to cluster", e);
+			throw e;
+		}
+	}
+
+	@Provides
 	@Singleton
 	Schema getCassandraSchema(CassandraClient cassandraClient)
 	{
-		return new Schema(cassandraClient);
+		try
+		{
+			return new Schema(cassandraClient);
+		}
+		catch (Exception e)
+		{
+			logger.error("Unable to setup cassandra schema", e);
+			throw e;
+		}
 	}
 
 	@Provides

@@ -20,6 +20,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryType;
 import java.lang.management.MemoryUsage;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  Created with IntelliJ IDEA.
@@ -48,7 +49,7 @@ public class MemoryMonitor
 	}
 
 	private int m_checkRate;
-	private int m_checkCounter = 0;
+	private AtomicInteger m_checkCounter;
 
 	public MemoryMonitor()
 	{
@@ -58,6 +59,7 @@ public class MemoryMonitor
 	public MemoryMonitor(int checkRate)
 	{
 		m_checkRate = checkRate;
+		m_checkCounter = new AtomicInteger();
 	}
 
 	public void setCheckRate(int checkRate)
@@ -67,9 +69,9 @@ public class MemoryMonitor
 
 	public boolean isMemoryLow()
 	{
-		m_checkCounter ++;
+		int value = m_checkCounter.incrementAndGet();
 
-		if (m_checkCounter % m_checkRate == 0)
+		if (value % m_checkRate == 0)
 			return (s_pool.isCollectionUsageThresholdExceeded());
 		else
 			return (false);

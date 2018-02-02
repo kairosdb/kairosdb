@@ -32,7 +32,7 @@ import java.util.Date;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.inject.internal.util.$Preconditions.checkState;
+import static com.google.common.base.Preconditions.checkState;
 
 public class RollUpJob implements InterruptableJob
 {

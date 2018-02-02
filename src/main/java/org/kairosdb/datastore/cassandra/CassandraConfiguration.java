@@ -21,11 +21,15 @@ public class CassandraConfiguration
 	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
 
 	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
+	public static final String REPLICATION_PROPERTY = "kairosdb.datastore.cassandra.replication";
 	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
 	public static final String SIMULTANIOUS_QUERIES = "kairosdb.datastore.cassandra.simultaneous_cql_queries";
+	public static final String QUERY_LIMIT = "kairosdb.datastore.cassandra.query_limit";
+	public static final String QUERY_READER_THREADS = "kairosdb.datastore.cassandra.query_reader_threads";
 
 	public static final String AUTH_USER_NAME = "kairosdb.datastore.cassandra.auth.user_name";
 	public static final String AUTH_PASSWORD = "kairosdb.datastore.cassandra.auth.password";
+	public static final String USE_SSL = "kairosdb.datastore.cassandra.use_ssl";
 
 	public static final String LOCAL_CORE_CONNECTIONS = "kairosdb.datastore.cassandra.connections_per_host.local.core";
 	public static final String LOCAL_MAX_CONNECTIONS = "kairosdb.datastore.cassandra.connections_per_host.local.max";
@@ -37,6 +41,8 @@ public class CassandraConfiguration
 	public static final String REMOTE_MAX_REQ_PER_CONN = "kairosdb.datastore.cassandra.max_requests_per_connection.remote";
 
 	public static final String MAX_QUEUE_SIZE = "kairosdb.datastore.cassandra.max_queue_size";
+	
+	public static final String LOCAL_DATACENTER = "kairosdb.datastore.cassandra.local_datacenter";
 
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
@@ -64,11 +70,23 @@ public class CassandraConfiguration
 
 	@Inject
 	@Named(SIMULTANIOUS_QUERIES)
-	private int m_simultaneousQueries = 100;
+	private int m_simultaneousQueries = 20;
+
+	@Inject
+	@Named(QUERY_READER_THREADS)
+	private int m_queryReaderThreads = 6;
+
+	@Inject(optional = true)
+	@Named(QUERY_LIMIT)
+	private int m_queryLimit = 0;
 
 	@Inject
 	@Named(KEYSPACE_PROPERTY)
 	private String m_keyspaceName;
+
+	@Inject
+	@Named(REPLICATION_PROPERTY)
+	private String m_replication = "{'class': 'SimpleStrategy','replication_factor' : 1}";
 
 	private List<String> m_hostList;
 
@@ -79,6 +97,10 @@ public class CassandraConfiguration
 	@Inject(optional = true)
 	@Named(AUTH_PASSWORD)
 	private String m_authPassword;
+
+	@Inject
+	@Named(USE_SSL)
+	private boolean m_useSsl;
 
 	@Inject
 	@Named(LOCAL_CORE_CONNECTIONS)
@@ -107,6 +129,10 @@ public class CassandraConfiguration
 	@Inject
 	@Named(MAX_QUEUE_SIZE)
 	private int m_maxQueueSize = 500;
+	
+	@Inject(optional = true)
+	@Named(LOCAL_DATACENTER)
+	private String m_localDatacenter;
 
 	public CassandraConfiguration()
 	{
@@ -128,7 +154,7 @@ public class CassandraConfiguration
 		m_hostList = new ArrayList<>();
 		for (String node : hostList.split(","))
 		{
-			m_hostList.add(node.split(":")[0]);
+			m_hostList.add(node.split(":")[0].trim());
 		}
 	}
 
@@ -215,5 +241,30 @@ public class CassandraConfiguration
 	public int getMaxQueueSize()
 	{
 		return m_maxQueueSize;
+	}
+	
+	public String getLocalDatacenter()
+	{
+		return m_localDatacenter;
+	}
+
+	public int getQueryReaderThreads()
+	{
+		return m_queryReaderThreads;
+	}
+
+	public int getQueryLimit()
+	{
+		return m_queryLimit;
+	}
+
+	public boolean isUseSsl()
+	{
+		return m_useSsl;
+	}
+
+	public String getReplication()
+	{
+		return m_replication;
 	}
 }

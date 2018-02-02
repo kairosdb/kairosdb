@@ -4,7 +4,6 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
-import org.apache.commons.lang3.RandomUtils;
 import org.joda.time.DateTime;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;

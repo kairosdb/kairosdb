@@ -18,7 +18,6 @@ package org.kairosdb.core.datastore;
 
 import org.kairosdb.core.exception.DatastoreException;
 
-import java.io.Closeable;
 import java.util.List;
 
 

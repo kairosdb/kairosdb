@@ -87,7 +87,6 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.MissingResourceException;
 import java.util.Properties;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

@@ -105,7 +105,7 @@ public class AssignmentManager implements KairosDBService
                     newAssignments = balancing.rebalance(hosts.keySet(), getScores(tasks));
                 }
                 else {
-                    logger.info("Checking for roll-up assignment changes...");
+                    logger.debug("Checking for roll-up assignment changes...");
                     // Remove assignments for task that have been removed
                     SetView<String> removedTasks = Sets.difference(previousAssignments.keySet(), tasks.keySet());
                     for (String taskToRemove : removedTasks) {

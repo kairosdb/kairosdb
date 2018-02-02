@@ -105,7 +105,7 @@ public class SchedulingManager implements KairosDBService
             long assignmentTime = assignmentStore.getLastModifiedTime();
             long taskStoreTime = taskStore.getLastModifiedTime();
             if (haveRollupsOrAssignmentsChanged(assignmentTime, taskStoreTime)) {
-                logger.info("Checking for roll-up scheduling changes...");
+                logger.debug("Checking for roll-up scheduling changes...");
 
                 Set<String> currentAssignments = getAssignmentsCache();
                 Map<String, RollupTask> tasks = taskStore.read();

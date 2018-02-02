@@ -85,6 +85,7 @@ public class DataCache<T>
 
 			if (mappedItem != null)
 			{
+				//moves item to top of list
 				remove(mappedItem);
 				addItem(mappedItem);
 			}

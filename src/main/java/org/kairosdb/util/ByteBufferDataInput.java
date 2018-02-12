@@ -5,6 +5,8 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import static org.kairosdb.core.Main.UTF_8;
+
 /**
  Created by bhawkins on 12/19/16.
  */
@@ -72,9 +74,7 @@ public class ByteBufferDataInput implements DataInput
 	@Override
 	public int readUnsignedShort() throws IOException
 	{
-		byte a = m_buffer.get();
-		byte b = m_buffer.get();
-		return ((a & 0xff << 8) | (b & 0xff));
+		return (m_buffer.getShort() & 0xffff);
 	}
 
 	@Override

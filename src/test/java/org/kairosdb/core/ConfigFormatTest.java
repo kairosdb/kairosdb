@@ -2,7 +2,7 @@ package org.kairosdb.core;
 
 import org.junit.Test;
 
-import static org.kairosdb.core.KairosConfig.ConfigFormat;
+import static org.kairosdb.core.KairosRootConfig.ConfigFormat;
 import static org.junit.Assert.*;
 
 public class ConfigFormatTest {

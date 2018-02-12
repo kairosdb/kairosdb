@@ -17,7 +17,7 @@
 package org.kairosdb.core.oauth;
 
 import com.google.inject.servlet.ServletModule;
-import org.kairosdb.core.KairosConfig;
+import org.kairosdb.core.KairosRootConfig;
 
 import javax.inject.Singleton;
 
@@ -27,7 +27,7 @@ public class OAuthModule extends ServletModule
 
 	private ConsumerTokenStore m_tokenStore;
 
-	public OAuthModule(KairosConfig props)
+	public OAuthModule(KairosRootConfig props)
 	{
 		m_tokenStore = new ConsumerTokenStore();
 

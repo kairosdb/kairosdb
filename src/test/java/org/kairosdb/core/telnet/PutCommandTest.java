@@ -15,7 +15,6 @@
  */
 package org.kairosdb.core.telnet;
 
-import org.kairosdb.eventbus.Subscribe;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelConfig;
 import org.jboss.netty.channel.ChannelFactory;
@@ -25,7 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.KairosConfig;
+import org.kairosdb.core.KairosRootConfig;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.Datastore;
@@ -35,6 +34,7 @@ import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.ValidationException;
 
@@ -54,7 +54,7 @@ public class PutCommandTest
 	@Before
 	public void setup() throws DatastoreException
 	{
-		FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfig()));
+		FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new KairosRootConfig()));
 		m_datastore = new FakeDatastore();
 		eventBus.register(m_datastore);
 
@@ -365,7 +365,7 @@ public class PutCommandTest
 		}*/
 
 		@Override
-		public Iterable<String> getMetricNames() throws DatastoreException
+		public Iterable<String> getMetricNames(String prefix) throws DatastoreException
 		{
 			return null;
 		}

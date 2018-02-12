@@ -16,6 +16,7 @@
 package org.kairosdb.core.http.rest.json;
 
 import com.google.common.base.Charsets;
+import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.kairosdb.eventbus.Subscribe;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
@@ -41,6 +42,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
@@ -60,7 +62,7 @@ public class DataPointsParserTest
 	@Before
 	public void setup()
 	{
-		eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfig()));
+		eventBus = new FilterEventBus(new EventBusConfiguration(new KairosRootConfig()));
 		publisher = eventBus.createPublisher(DataPointEvent.class);
 	}
 
@@ -737,7 +739,7 @@ public class DataPointsParserTest
 		}*/
 
 		@Override
-		public Iterable<String> getMetricNames() throws DatastoreException
+		public Iterable<String> getMetricNames(String prefix) throws DatastoreException
 		{
 			return null;
 		}
@@ -778,7 +780,7 @@ public class DataPointsParserTest
 		}
 
 		@Override
-		public String getValue(String service, String serviceKey, String key) throws DatastoreException
+		public ServiceKeyValue getValue(String service, String serviceKey, String key) throws DatastoreException
 		{
 			return null;
 		}
@@ -806,6 +808,13 @@ public class DataPointsParserTest
 		public void deleteKey(String service, String serviceKey, String key)
 				throws DatastoreException
 		{
+		}
+
+		@Override
+		public Date getServiceKeyLastModifiedTime(String service, String serviceKey)
+				throws DatastoreException
+		{
+			return null;
 		}
 	}
 }

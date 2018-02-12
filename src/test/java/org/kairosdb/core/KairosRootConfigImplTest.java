@@ -3,7 +3,6 @@ package org.kairosdb.core;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
-import com.typesafe.config.ConfigException;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -18,12 +17,11 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
-import static org.kairosdb.core.KairosConfig.ConfigFormat;
+import static org.kairosdb.core.KairosRootConfig.ConfigFormat;
 import static org.junit.Assert.*;
 
-public class KairosConfigImplTest
+public class KairosRootConfigImplTest
 {
 
 	private static final String PROPERITES_CONFIG_FILE = "config.properties";
@@ -65,7 +63,7 @@ public class KairosConfigImplTest
 		return mergedMap;
 	}
 
-	private static void verifyContains(Map<String, String> map, KairosConfig config)
+	private static void verifyContains(Map<String, String> map, KairosRootConfig config)
 	{
 		for (String key : map.keySet())
 		{
@@ -73,7 +71,7 @@ public class KairosConfigImplTest
 		}
 	}
 
-	private KairosConfig m_config;
+	private KairosRootConfig m_config;
 
 	@Rule
 	public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -81,7 +79,7 @@ public class KairosConfigImplTest
 	@Before
 	public void setup()
 	{
-		this.m_config = new KairosConfig();
+		this.m_config = new KairosRootConfig();
 	}
 
 	private File getFile(String fileName) throws URISyntaxException
@@ -265,8 +263,8 @@ public class KairosConfigImplTest
 	@Test
 	public void isSupportedFormat()
 	{
-		assertTrue(m_config.isSupportedFormat(KairosConfig.ConfigFormat.PROPERTIES));
+		assertTrue(m_config.isSupportedFormat(KairosRootConfig.ConfigFormat.PROPERTIES));
 		//assertTrue(m_config.isSupportedFormat(KairosConfig.ConfigFormat.JSON));
-		assertTrue(m_config.isSupportedFormat(KairosConfig.ConfigFormat.HOCON));
+		assertTrue(m_config.isSupportedFormat(KairosRootConfig.ConfigFormat.HOCON));
 	}
 }

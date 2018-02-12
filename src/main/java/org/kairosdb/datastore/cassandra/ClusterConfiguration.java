@@ -3,12 +3,13 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigBeanFactory;
+import org.kairosdb.core.KairosConfig;
 
+import java.util.Collections;
 import java.util.List;
 
 public class ClusterConfiguration
 {
-
 	private final String m_keyspace;
 	private final ConsistencyLevel m_readConsistencyLevel;
 	private final ConsistencyLevel m_writeConsistencyLevel;
@@ -25,28 +26,30 @@ public class ClusterConfiguration
 	private String m_authPassword;
 	private String m_authUser;
 	private String m_localDCName;
+	private String m_replication;
 
-	public ClusterConfiguration(Config config)
+	public ClusterConfiguration(KairosConfig config)
 	{
 		//todo load defaults into a config before getting values using withfallback
 
-		m_keyspace = config.getString("keyspace");
-		m_clusterName = config.getString("name");
-		m_readConsistencyLevel = ConsistencyLevel.valueOf(config.getString("read_consistency_level"));
-		m_writeConsistencyLevel = ConsistencyLevel.valueOf(config.getString("write_consistency_level"));
+		m_keyspace = config.getString("keyspace", "kairosdb");
+		m_replication = config.getString("replication", "{'class': 'SimpleStrategy','replication_factor' : 1}");
+		m_clusterName = config.getString("name", "default");
+		m_readConsistencyLevel = ConsistencyLevel.valueOf(config.getString("read_consistency_level", "ONE"));
+		m_writeConsistencyLevel = ConsistencyLevel.valueOf(config.getString("write_consistency_level", "QUORUM"));
 
-		m_useSsl = config.getBoolean("use_ssl");
-		m_maxQueueSize = config.getInt("max_queue_size");
+		m_useSsl = config.getBoolean("use_ssl", false);
+		m_maxQueueSize = config.getInt("max_queue_size", 500);
 
-		m_connectionsLocalCore = config.getInt("connections_per_host.local.core");
-		m_connectionsLocalMax = config.getInt("connections_per_host.local.max");
-		m_connectionsRemoteCore = config.getInt("connections_per_host.remote.core");
-		m_connectionsRemoteMax = config.getInt("connections_per_host.remote.max");
+		m_connectionsLocalCore = config.getInt("connections_per_host.local.core", 5);
+		m_connectionsLocalMax = config.getInt("connections_per_host.local.max", 100);
+		m_connectionsRemoteCore = config.getInt("connections_per_host.remote.core", 1);
+		m_connectionsRemoteMax = config.getInt("connections_per_host.remote.max", 10);
 		
-		m_requestsPerConnectionLocal = config.getInt("max_requests_per_connection.local");
-		m_requestsPerConnectionRemote = config.getInt("max_requests_per_connection.remote");
+		m_requestsPerConnectionLocal = config.getInt("max_requests_per_connection.local",128);
+		m_requestsPerConnectionRemote = config.getInt("max_requests_per_connection.remote", 128);
 
-		m_hostList = config.getStringList("cql_host_list");
+		m_hostList = config.getStringList("cql_host_list", Collections.singletonList("localhost"));
 
 		if (config.hasPath("local_dc_name"))
 			m_localDCName = config.getString("local_dc_name");
@@ -138,5 +141,10 @@ public class ClusterConfiguration
 	public String getLocalDCName()
 	{
 		return m_localDCName;
+	}
+
+	public String getReplication()
+	{
+		return m_replication;
 	}
 }

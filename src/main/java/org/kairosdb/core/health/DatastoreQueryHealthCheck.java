@@ -2,7 +2,10 @@ package org.kairosdb.core.health;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.google.inject.Inject;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.core.datastore.DatastoreQuery;
+import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 
 import java.util.List;

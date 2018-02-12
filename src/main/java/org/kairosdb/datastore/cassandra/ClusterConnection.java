@@ -1,6 +1,11 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.*;
+import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.ResultSetFuture;
+import com.datastax.driver.core.Session;
+import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,8 +19,7 @@ public class ClusterConnection
 
 	public static final String CREATE_KEYSPACE = "" +
 			"CREATE KEYSPACE IF NOT EXISTS %s" +
-			"  WITH REPLICATION = {'class': 'SimpleStrategy'," +
-			"  'replication_factor' : 1}";
+			"  WITH REPLICATION = %s";
 
 	public static final String DATA_POINTS_TABLE = "" +
 			"CREATE TABLE IF NOT EXISTS data_points (\n" +
@@ -102,6 +106,9 @@ public class ClusterConnection
 	public static final String STRING_INDEX_QUERY = "SELECT column1 FROM string_index " +
 			"WHERE key = ?";
 
+	public static final String STRING_INDEX_PREFIX_QUERY = "SELECT column1 FROM string_index " +
+			"WHERE key = ? and column1 >= ? and column1 < ?";
+
 	public static final String STRING_INDEX_DELETE = "DELETE FROM string_index " +
 			"WHERE key = ? AND column1 = ?";
 
@@ -171,11 +178,21 @@ public class ClusterConnection
 	public static final String SERVICE_INDEX_DELETE_KEY = "DELETE FROM service_index " +
 			"WHERE service = ? AND service_key = ? AND key = ?";
 
+	public static final String SERVICE_INDEX_LAST_MODIFIED_TIME = "select toUnixTimestamp(mtime) from service_index " +
+			"WHERE service = ? AND service_key = ? LIMIT 1";
+
+	public static final String SERVICE_INDEX_GET_ENTRIES = "select key, value from service_index " +
+			"WHERE service = ? AND service_key = ?";
+
+	public static final String SERVICE_INDEX_INSERT_MODIFIED_TIME = "INSERT INTO service_index " +
+			"(service, service_key, mtime) VALUES (?, ?, now())";
+
 	public final PreparedStatement psDataPointsInsert;
 	//public final PreparedStatement m_psInsertRowKey;
 	public final PreparedStatement psStringIndexInsert;
 	public final PreparedStatement psDataPointsQueryAsc;
 	public final PreparedStatement psStringIndexQuery;
+	public final PreparedStatement psStringIndexPrefixQuery;
 	public final PreparedStatement psStringIndexDelete;
 	public final PreparedStatement psRowKeyIndexQuery;
 	public PreparedStatement psRowKeyQuery;
@@ -197,6 +214,9 @@ public class ClusterConnection
 	public PreparedStatement psServiceIndexDeleteKey;
 	public PreparedStatement psRowKeyTimeDelete;
 	public PreparedStatement psRowKeyDelete;
+	public final PreparedStatement psServiceIndexModificationTime;
+	public final PreparedStatement psServiceIndexInsertModifiedTime;
+	public final PreparedStatement psServiceIndexGetEntries;
 	public final PreparedStatement psDataPointsDelete;
 
 	private final Session m_session;
@@ -211,6 +231,13 @@ public class ClusterConnection
 		m_session = cassandraClient.getKeyspaceSession();
 
 		m_cassandraClient = cassandraClient;
+		//m_psInsertRowKey      = m_session.prepare(ROW_KEY_INDEX_INSERT);
+		psRowKeyTimeInsert = m_session.prepare(ROW_KEY_TIME_INSERT);
+		psRowKeyInsert = m_session.prepare(ROW_KEY_INSERT);
+
+		psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
+		psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);
+		psRowKeyTimeDelete = m_session.prepare(ROW_KEY_TIME_DELETE);
 
 		psDataPointsInsert = m_session.prepare(DATA_POINTS_INSERT);
 		psDataPointsDelete = m_session.prepare(DATA_POINTS_DELETE);
@@ -235,6 +262,7 @@ public class ClusterConnection
 
 		psStringIndexInsert = m_session.prepare(STRING_INDEX_INSERT);
 		psStringIndexQuery = m_session.prepare(STRING_INDEX_QUERY);
+		psStringIndexPrefixQuery = m_session.prepare(STRING_INDEX_PREFIX_QUERY);
 		psStringIndexDelete = m_session.prepare(STRING_INDEX_DELETE);
 
 
@@ -262,7 +290,10 @@ public class ClusterConnection
 			psServiceIndexDeleteKey = m_session.prepare(SERVICE_INDEX_DELETE_KEY);
 		}
 
-
+		psServiceIndexDeleteKey = m_session.prepare(SERVICE_INDEX_DELETE_KEY);
+		psServiceIndexModificationTime = m_session.prepare(SERVICE_INDEX_LAST_MODIFIED_TIME);
+		psServiceIndexGetEntries = m_session.prepare(SERVICE_INDEX_GET_ENTRIES);
+		psServiceIndexInsertModifiedTime = m_session.prepare(SERVICE_INDEX_INSERT_MODIFIED_TIME);
 	}
 
 	public void close()
@@ -315,7 +346,8 @@ public class ClusterConnection
 	{
 		try (Session session = cassandraClient.getSession())
 		{
-			session.execute(String.format(CREATE_KEYSPACE, cassandraClient.getKeyspace()));
+			session.execute(String.format(CREATE_KEYSPACE, cassandraClient.getKeyspace(),
+					cassandraClient.getReplication()));
 		}
 
 		try (Session session = cassandraClient.getKeyspaceSession())

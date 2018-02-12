@@ -68,7 +68,7 @@ Response
 			"properties": [{
 				"name": "align_sampling",
 				"label": "Align sampling",
-				"description": "When set to true the time for the aggregated data point for each range will fall on the start of the range instead of being the value for the first data point within that range. Note that align_sampling and align_start_time are mutually exclusive. If both are set, unexpected results will occur.",
+				"description": "When set to true the time for the aggregated data point for each range will fall on the start of the range instead of being the value for the first data point within that range. Note that align_sampling, align_start_time, and align_end_time are mutually exclusive. If more than one are set, unexpected results will occur.",
 				"optional": false,
 				"type": "boolean",
 				"options": [],
@@ -120,7 +120,7 @@ Response
 			"properties": [{
 				"name": "align_sampling",
 				"label": "Align sampling",
-				"description": "When set to true the time for the aggregated data point for each range will fall on the start of the range instead of being the value for the first data point within that range. Note that align_sampling and align_start_time are mutually exclusive. If both are set, unexpected results will occur.",
+				"description": "When set to true the time for the aggregated data point for each range will fall on the start of the range instead of being the value for the first data point within that range. Note that align_sampling, align_start_time, and align_end_time are mutually exclusive. If more than one are set, unexpected results will occur.",
 				"optional": false,
 				"type": "boolean",
 				"options": [],
@@ -131,7 +131,7 @@ Response
 			}, {
 				"name": "align_start_time",
 				"label": "Align start time",
-				"description": "Setting this to true will cause the aggregation range to be aligned based on the sampling size. For example if your sample size is either milliseconds, seconds, minutes or hours then the start of the range will always be at the top of the hour. The effect of setting this to true is that your data will take the same shape when graphed as you refresh the data. Note that align_sampling and align_start_time are mutually exclusive. If both are set, unexpected results will occur.",
+				"description": "Setting this to true will cause the aggregation range to be aligned based on the sampling size. For example if your sample size is either milliseconds, seconds, minutes or hours then the start of the range will always be at the top of the hour. The effect of setting this to true is that your data will take the same shape when graphed as you refresh the data. Note that align_sampling, align_start_time, and align_end_time are mutually exclusive. If more than one are set, unexpected results will occur.",
 				"optional": false,
 				"type": "boolean",
 				"options": [],
@@ -140,6 +140,17 @@ Response
 				"multiline": false,
 				"validations": []
 			}, {
+        "name": "align_end_time",
+        "label": "Align end time",
+        "description": "Setting this to true will cause the aggregation range to be aligned based on the sampling size. For example if your sample size is either milliseconds, seconds, minutes or hours then the start of the range will always be at the top of the hour. The difference between align_start_time and align_end_time is that align_end_time sets the timestamp for the datapoint to the beginning of the following period versus the beginning of the current period. As with align_start_time, setting this to true will cause your data to take the same shape when graphed as you refresh the data. Note that align_start_time and align_end_time are mutually exclusive. If more than one are set, unexpected results will occur.",
+        "optional": false,
+        "type": "boolean",
+        "options": [],
+        "defaultValue": "false",
+        "autocomplete": "",
+        "multiline": false,
+        "validations": []
+      }, {
 				"name": "sampling",
 				"label": "Sampling",
 				"optional": false,

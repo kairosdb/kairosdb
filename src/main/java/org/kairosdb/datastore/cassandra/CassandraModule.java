@@ -20,11 +20,15 @@ import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.SetMultimap;
-import com.google.inject.*;
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Scopes;
+import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
-import org.kairosdb.core.KairosConfig;
+import org.kairosdb.core.KairosRootConfig;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.ServiceKeyStore;
@@ -35,7 +39,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
 
 public class CassandraModule extends AbstractModule
 {
@@ -48,7 +55,7 @@ public class CassandraModule extends AbstractModule
 
 	private Map<String, String> m_authMap = new HashMap<String, String>();
 
-	public CassandraModule(KairosConfig props)
+	public CassandraModule(KairosRootConfig props)
 	{
 		for (String key : props)
 		{

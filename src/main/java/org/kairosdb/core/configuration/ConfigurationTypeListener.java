@@ -4,11 +4,10 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.typesafe.config.*;
-import org.kairosdb.core.KairosConfig;
+import org.kairosdb.core.KairosRootConfig;
 import org.kairosdb.core.annotation.InjectProperty;
 
 import java.lang.reflect.*;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,9 +15,9 @@ import java.util.stream.Collectors;
 
 public class ConfigurationTypeListener implements TypeListener
 {
-	private final KairosConfig m_config;
+	private final KairosRootConfig m_config;
 
-	public ConfigurationTypeListener(KairosConfig config)
+	public ConfigurationTypeListener(KairosRootConfig config)
 	{
 		m_config = config;
 	}
@@ -47,7 +46,7 @@ public class ConfigurationTypeListener implements TypeListener
 					InjectProperty annotation = method.getAnnotation(InjectProperty.class);
 
 					String prop = annotation.prop();
-					if (m_config.getConfig().hasPath(prop))
+					if (m_config.hasPath(prop))
 					{
 						Parameter[] parameters = method.getParameters();
 						//Class<?>[] parameterTypes = method.getParameterTypes();
@@ -57,7 +56,7 @@ public class ConfigurationTypeListener implements TypeListener
 						}
 						else
 						{
-							Object configValue = getConfigurationValue(parameters[0].getType(), encounter);
+							Object configValue = getConfigurationValue(parameters[0], prop, encounter);
 
 							if (configValue != null)
 								encounter.register(new ConfigMethodInjector<>(method, configValue));
@@ -75,9 +74,11 @@ public class ConfigurationTypeListener implements TypeListener
 		}
 	}
 
-	private <I> Optional<Object> getConfigurationValue(Class paramClass,  String path, TypeEncounter<I> encounter)
+	@SuppressWarnings("unchecked")
+	private <I> Optional<Object> getConfigurationValue(Parameter parameter,  String path, TypeEncounter<I> encounter)
 	{
-		Config config = m_config.getConfig();
+		Config config = m_config.getRawConfig();
+		Class paramClass = parameter.getType();
 		Optional<Object> extractedValue = ConfigExtractors.extractConfigValue(config,
 				paramClass, path);
 		if (extractedValue.isPresent()) {
@@ -93,7 +94,7 @@ public class ConfigurationTypeListener implements TypeListener
 			Object bean = ConfigBeanFactory.create(config.getConfig(path), paramClass);
 			return Optional.of(bean);
 		} else if (valueType.equals(ConfigValueType.LIST) && List.class.isAssignableFrom(paramClass)) {
-			Type listType = ((ParameterizedType) paramType).getActualTypeArguments()[0];
+			Type listType = ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0];
 
 			Optional<List<?>> extractedListValue =
 					ListExtractors.extractConfigListValue(config, listType, path);
@@ -111,7 +112,7 @@ public class ConfigurationTypeListener implements TypeListener
 			}
 		}
 
-		encounter.addError("Cannot obtain config value for " + paramType + " at path: " + path);
+		encounter.addError("Cannot obtain config value for " + parameter.getParameterizedType() + " at path: " + path);
 		return Optional.empty();
 	}
 }

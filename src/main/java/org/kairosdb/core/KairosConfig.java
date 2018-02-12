@@ -1,14 +1,13 @@
 package org.kairosdb.core;
 
-import com.typesafe.config.*;
+import com.typesafe.config.Config;
 import org.apache.commons.io.FilenameUtils;
 
-import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-public class KairosConfig implements Iterable<String>
+public class KairosConfig
 {
-
 	public enum ConfigFormat
 	{
 		PROPERTIES("properties"),
@@ -45,97 +44,98 @@ public class KairosConfig implements Iterable<String>
 		}
 	}
 
-	private static final Set<ConfigFormat> supportedFormats = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-			ConfigFormat.PROPERTIES, ConfigFormat.HOCON)));
+	protected Config m_config;
 
-	private Config m_config;
-	private final Set<String> m_keys = new TreeSet<>();
-
-	public void load(File file) throws IOException
+	public KairosConfig()
 	{
-		System.out.println("Loading "+file.getAbsolutePath());
-		try (InputStream is = new FileInputStream(file))
-		{
-			load(is, ConfigFormat.fromFileName(file.getName()));
-		}
 	}
 
-	public void load(InputStream inputStream, ConfigFormat format)
+	public KairosConfig(Config config)
 	{
-		if (!isSupportedFormat(format))
-		{
-			throw new IllegalArgumentException("Config format is not supported: " + format.toString());
-		}
-
-		Reader reader = new InputStreamReader(inputStream);
-		Config config = ConfigFactory.parseReader(reader, getParseOptions(format));
-
-		addConfig(config);
+		m_config = config;
 	}
 
-	public void loadSystemProperties()
-	{
-		Config config = ConfigFactory.systemProperties();
-		addConfig(config);
-	}
-
-	public void load(Map<String, String> map)
-	{
-		Config config = ConfigFactory.parseMap(map);
-		addConfig(config);
-	}
-
-	private void addConfig(Config config)
-	{
-		if (m_config != null)
-			m_config = config.withFallback(m_config);
-		else
-			m_config = config;
-
-		for (Map.Entry<String, ConfigValue> entry : m_config.entrySet())
-		{
-			m_keys.add(entry.getKey());
-		}
-	}
-
-	public void resolve()
-	{
-		m_config = m_config.resolve();
-	}
-
-	public Config getConfig()
+	public Config getRawConfig()
 	{
 		return m_config;
 	}
 
-	private ConfigParseOptions getParseOptions(ConfigFormat format)
+	public KairosConfig getConfig(String path)
 	{
-		ConfigSyntax syntax = ConfigSyntax.valueOf(format.getExtension().toUpperCase());
-		return ConfigParseOptions.defaults().setSyntax(syntax);
+		return new KairosConfig(m_config.getConfig(path));
 	}
 
-	public boolean isSupportedFormat(ConfigFormat format)
+	public boolean hasPath(String path)
 	{
-		return supportedFormats.contains(format);
+		return m_config.hasPath(path);
 	}
 
-	public String getProperty(String key)
+	public List<KairosConfig> getConfigList(String path)
 	{
-		try
+		List<? extends Config> configList = m_config.getConfigList(path);
+		ArrayList<KairosConfig> ret = new ArrayList<>();
+
+		for (Config config : configList)
 		{
-			return (m_config == null ? null : m_config.getString(key));
+			ret.add(new KairosConfig(config));
 		}
-		catch (ConfigException e)
-		{
-			return null;
-		}
+
+		return ret;
 	}
 
-	@Override
-	public Iterator<String> iterator()
+	public String getString(String path)
 	{
-		return m_keys.iterator();
+		return m_config.getString(path);
 	}
+
+	public String getString(String path, String def)
+	{
+		if (m_config.hasPath(path))
+			return m_config.getString(path);
+		else
+			return def;
+	}
+
+	public boolean getBoolean(String path)
+	{
+		return m_config.getBoolean(path);
+	}
+
+	public boolean getBoolean(String path, boolean def)
+	{
+		if (m_config.hasPath(path))
+			return m_config.getBoolean(path);
+		else
+			return def;
+	}
+
+	public int getInt(String path)
+	{
+		return m_config.getInt(path);
+	}
+
+	public int getInt(String path, int def)
+	{
+		if (m_config.hasPath(path))
+			return m_config.getInt(path);
+		else
+			return def;
+	}
+
+	public List<String> getStringList(String path)
+	{
+		return m_config.getStringList(path);
+	}
+
+	public List<String> getStringList(String path, List<String> def)
+	{
+		if (m_config.hasPath(path))
+			return m_config.getStringList(path);
+		else
+			return def;
+	}
+
+
 
 
 }

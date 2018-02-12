@@ -5,11 +5,19 @@ CREATE CACHED TABLE metric (
 	PRIMARY KEY ("id")
 	);
 
+CREATE CACHED TABLE service_modification (
+	"service" VARCHAR  NOT NULL,
+	"service_key" VARCHAR  NOT NULL,
+	"modification_time" TIMESTAMP  NULL,
+	PRIMARY KEY ("service", "service_key")
+	);
+
 CREATE CACHED TABLE service_index (
 	"service" VARCHAR  NOT NULL,
 	"service_key" VARCHAR  NOT NULL,
 	"key" VARCHAR  NOT NULL,
 	"value" VARCHAR  NULL,
+	"modification_time" TIMESTAMP  NULL,
 	PRIMARY KEY ("service", "service_key", "key")
 	);
 

@@ -18,7 +18,6 @@ package org.kairosdb.core.http.rest;
 
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
@@ -36,9 +35,9 @@ import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.exception.InvalidServerTypeException;
 import org.kairosdb.core.datastore.QueryPlugin;
 import org.kairosdb.core.datastore.QueryPostProcessingPlugin;
+import org.kairosdb.core.exception.InvalidServerTypeException;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
@@ -88,7 +87,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
@@ -141,7 +145,7 @@ public class MetricsResource implements KairosMetricReporter
 	@Inject
 	private StringDataPointFactory m_stringDataPointFactory = new StringDataPointFactory();
 
-	@Inject
+	@Inject(optional = true)
 	private QueryPreProcessorContainer m_queryPreProcessor = new QueryPreProcessorContainer()
 	{
 		@Override
@@ -277,10 +281,11 @@ public class MetricsResource implements KairosMetricReporter
 	@GET
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/metricnames")
-	public Response getMetricNames() throws InvalidServerTypeException
+	public Response getMetricNames(@QueryParam("prefix") String prefix) throws InvalidServerTypeException
 	{
 		checkServerType(ServerType.QUERY, "/metricnames", "GET");
-		return executeNameQuery(NameType.METRIC_NAMES);
+		
+		return executeNameQuery(NameType.METRIC_NAMES, prefix);
 	}
 
 	@OPTIONS
@@ -777,13 +782,18 @@ public class MetricsResource implements KairosMetricReporter
 
 	private Response executeNameQuery(NameType type)
 	{
+		return executeNameQuery(type, null);
+	}
+
+	private Response executeNameQuery(NameType type, String prefix)
+	{
 		try
 		{
 			Iterable<String> values = null;
 			switch (type)
 			{
 				case METRIC_NAMES:
-					values = datastore.getMetricNames();
+					values = datastore.getMetricNames(prefix);
 					break;
 				case TAG_KEYS:
 					values = datastore.getTagNames();

@@ -5,6 +5,7 @@ public class GenOrmUnitTest
 	public static void performUnitTests()
 		{
 		Metric.factory.testQueryMethods();
+		ServiceModification.factory.testQueryMethods();
 		ServiceIndex.factory.testQueryMethods();
 		Tag.factory.testQueryMethods();
 		DataPoint.factory.testQueryMethods();

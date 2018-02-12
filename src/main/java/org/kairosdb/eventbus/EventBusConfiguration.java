@@ -1,7 +1,7 @@
 package org.kairosdb.eventbus;
 
 import com.google.inject.Inject;
-import org.kairosdb.core.KairosConfig;
+import org.kairosdb.core.KairosRootConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +27,7 @@ public class EventBusConfiguration
     private final Map<String, Integer> priorities = new HashMap<>();
 
     @Inject
-    public EventBusConfiguration(KairosConfig config)
+    public EventBusConfiguration(KairosRootConfig config)
     {
         checkNotNull(config, "properties cannot be null");
 

@@ -947,6 +947,11 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			}
 		}
 
+		if (ret == null && query.isExplicitTags())
+		{
+
+		}
+
 		//Default to query index if no plugin was provided
 		if (ret == null)
 		{

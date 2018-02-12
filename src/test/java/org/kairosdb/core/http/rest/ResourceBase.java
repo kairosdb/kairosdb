@@ -30,6 +30,7 @@ import org.kairosdb.core.datastore.QueryCallback;
 import org.kairosdb.core.datastore.QueryPluginFactory;
 import org.kairosdb.core.datastore.QueryQueuingManager;
 import org.kairosdb.core.datastore.ServiceKeyStore;
+import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
@@ -49,11 +50,19 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public abstract class ResourceBase
 {
-    private static final FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfig()));
+    private static final FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new KairosRootConfig()));
     private static WebServer server;
 
     static QueryQueuingManager queuingManager;
@@ -71,7 +80,7 @@ public abstract class ResourceBase
         datastore = new TestDatastore();
         queuingManager = new QueryQueuingManager(3, "localhost");
 
-        Injector injector = Guice.createInjector(new WebServletModule(new KairosConfig()), new AbstractModule()
+        Injector injector = Guice.createInjector(new WebServletModule(new KairosRootConfig()), new AbstractModule()
         {
             @Override
             protected void configure()
@@ -110,12 +119,12 @@ public abstract class ResourceBase
                 bind(SimpleStatsReporter.class);
                 bind(String.class).annotatedWith(Names.named("kairosdb.server.type")).toInstance("ALL");
 
-                KairosConfig props = new KairosConfig();
+                KairosRootConfig props = new KairosRootConfig();
                 String configFileName = "kairosdb.properties";
                 InputStream is = getClass().getClassLoader().getResourceAsStream(configFileName);
                 try
                 {
-                    props.load(is, KairosConfig.ConfigFormat.fromFileName(configFileName));
+                    props.load(is, KairosRootConfig.ConfigFormat.fromFileName(configFileName));
                     is.close();
                 }
                 catch (IOException e)
@@ -124,7 +133,7 @@ public abstract class ResourceBase
                 }
 
                 //Names.bindProperties(binder(), props);
-                bind(KairosConfig.class).toInstance(props);
+                bind(KairosRootConfig.class).toInstance(props);
 
                 bind(DoubleDataPointFactory.class)
                         .to(DoubleDataPointFactoryImpl.class).in(Singleton.class);
@@ -177,7 +186,7 @@ public abstract class ResourceBase
         }
 
         @Override
-        public Iterable<String> getMetricNames()
+        public Iterable<String> getMetricNames(String prefix)
         {
             return Arrays.asList("cpu", "memory", "disk", "network");
         }
@@ -251,11 +260,11 @@ public abstract class ResourceBase
         }
 
         @Override
-        public String getValue(String service, String serviceKey, String key) throws DatastoreException
+        public ServiceKeyValue getValue(String service, String serviceKey, String key) throws DatastoreException
         {
             if (m_toThrow != null)
                 throw m_toThrow;
-            return metadata.get(service + "/" + serviceKey + "/" + key);
+            return new ServiceKeyValue(metadata.get(service + "/" + serviceKey + "/" + key), new Date());
         }
 
         @Override
@@ -315,6 +324,13 @@ public abstract class ResourceBase
                 throw m_toThrow;
 
             metadata.remove(service + "/" + serviceKey + "/" + key);
+        }
+
+        @Override
+        public Date getServiceKeyLastModifiedTime(String service, String serviceKey)
+                throws DatastoreException
+        {
+            return null;
         }
     }
 }

@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -335,7 +336,7 @@ public class KairosDatastoreTest
 		}
 
 		@Override
-		public Iterable<String> getMetricNames()
+		public Iterable<String> getMetricNames(String prefix)
 		{
 			return null;
 		}
@@ -411,7 +412,7 @@ public class KairosDatastoreTest
 		}
 
 		@Override
-		public String getValue(String service, String serviceKey, String key) throws DatastoreException
+		public ServiceKeyValue getValue(String service, String serviceKey, String key) throws DatastoreException
 		{
 			return null;
 		}
@@ -439,6 +440,13 @@ public class KairosDatastoreTest
 		public void deleteKey(String service, String serviceKey, String key)
 				throws DatastoreException
 		{
+		}
+
+		@Override
+		public Date getServiceKeyLastModifiedTime(String service, String serviceKey)
+				throws DatastoreException
+		{
+			return null;
 		}
 	}
 }

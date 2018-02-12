@@ -18,14 +18,17 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.SetMultimap;
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.theories.suppliers.TestedOn;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.KairosRootConfig;
 import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.CachedSearchResult;
@@ -36,6 +39,7 @@ import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.datastore.QueryQueuingManager;
+import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.core.queue.MemoryQueueProcessor;
@@ -45,22 +49,34 @@ import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.IngestExecutorService;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.Executors;
 
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 
 public class CassandraDatastoreTest extends DatastoreTestHelper
 {
-	public static final String ROW_KEY_TEST_METRIC = "row_key_test_metric";
-	public static final String ROW_KEY_BIG_METRIC = "row_key_big_metric";
+	private static final String ROW_KEY_TEST_METRIC = "row_key_test_metric";
+	private static final String ROW_KEY_BIG_METRIC = "row_key_big_metric";
 
 	private static final int MAX_ROW_READ_SIZE = 1024;
 	private static final int OVERFLOW_SIZE = MAX_ROW_READ_SIZE * 2 + 10;
@@ -248,9 +264,16 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		if (System.getenv("CASSANDRA_HOST") != null)
 			cassandraHost = System.getenv("CASSANDRA_HOST");
 
-		CassandraConfiguration configuration = new CassandraConfiguration("kairosdb_test");
-		configuration.setHostList(cassandraHost);
-		CassandraClient client = new CassandraClientImpl(configuration);
+		ImmutableMap<String, ? extends Object> configMap = ImmutableMap.<String, Object>builder()
+				.put("kairosdb.datastore.cassandra.write_cluster.keyspace", "kairosdb_test")
+				.put("kairosdb.datastore.cassandra.write_cluster.cql_host_list", Collections.singletonList(cassandraHost))
+				.build();
+
+		KairosRootConfig config = new KairosRootConfig();
+		config.load(configMap);
+
+		CassandraConfiguration configuration = new CassandraConfiguration(config);
+		CassandraClient client = new CassandraClientImpl(configuration.getWriteCluster());
 		m_clusterConnection = new ClusterConnection(client);
 		Session session = m_clusterConnection.getSession();
 		BatchStats batchStats = new BatchStats();
@@ -271,7 +294,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				configuration,
 				m_clusterConnection,
 				m_clusterConnection,
-				Collections.EMPTY_LIST,
+				Collections.emptyList(),
 				dataPointFactory,
 				new MemoryQueueProcessor(Executors.newSingleThreadExecutor(), 1000, 10000, 10),
 				new IngestExecutorService(s_eventBus, 1),
@@ -298,9 +321,12 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				new CassandraModule.CQLFilteredRowKeyIteratorFactory()
 				{
 					@Override
-					public CQLFilteredRowKeyIterator create(ClusterConnection cluster, String metricName, long startTime, long endTime, SetMultimap<String, String> filterTags) throws DatastoreException
+					public CQLFilteredRowKeyIterator create(ClusterConnection cluster,
+							String metricName, long startTime, long endTime,
+							SetMultimap<String, String> filterTags) throws DatastoreException
 					{
-						return null;
+						return new CQLFilteredRowKeyIterator(cluster, metricName,
+								startTime, endTime, filterTags, "");
 					}
 				});
 
@@ -346,7 +372,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	public void test_getKeysForQuery() throws DatastoreException
 	{
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(ROW_KEY_TEST_METRIC,
-				HashMultimap.<String, String>create(), s_dataPointTime, s_dataPointTime);
+				HashMultimap.create(), s_dataPointTime, s_dataPointTime);
 
 		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
 
@@ -429,7 +455,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
-		assertThat(s_datastore.getMetricNames(), not(hasItem(metricToDelete)));
+		assertThat(s_datastore.getMetricNames(null), not(hasItem(metricToDelete)));
 	}
 
 	@Test
@@ -457,7 +483,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
-		assertThat(s_datastore.getMetricNames(), not(hasItem(metricToDelete)));
+		assertThat(s_datastore.getMetricNames(null), not(hasItem(metricToDelete)));
 	}
 
 	@Test
@@ -488,7 +514,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
-		assertThat(s_datastore.getMetricNames(), hasItem(metricToDelete));
+		assertThat(s_datastore.getMetricNames(null), hasItem(metricToDelete));
 	}
 
 	@Test
@@ -519,7 +545,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
-		assertThat(s_datastore.getMetricNames(), hasItem(metricToDelete));
+		assertThat(s_datastore.getMetricNames(null), hasItem(metricToDelete));
 	}
 
 	@Test
@@ -549,7 +575,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
-		assertThat(s_datastore.getMetricNames(), not(hasItem(metricToDelete)));
+		assertThat(s_datastore.getMetricNames(null), not(hasItem(metricToDelete)));
 	}
 
 	@Test
@@ -578,7 +604,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(0));
 
 		// Verify that the metric name is gone from the Strings column family
-		assertThat(s_datastore.getMetricNames(), not(hasItem(metricToDelete)));
+		assertThat(s_datastore.getMetricNames(null), not(hasItem(metricToDelete)));
 	}
 
 	@Test
@@ -610,7 +636,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
-		assertThat(s_datastore.getMetricNames(), hasItem(metricToDelete));
+		assertThat(s_datastore.getMetricNames(null), hasItem(metricToDelete));
 	}
 
 	@Test
@@ -642,7 +668,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(indexRowKeys.size(), equalTo(1));
 
 		// Verify that the metric name still exists in the Strings column family
-		assertThat(s_datastore.getMetricNames(), hasItem(metricToDelete));
+		assertThat(s_datastore.getMetricNames(null), hasItem(metricToDelete));
 	}
 
 	/**
@@ -727,5 +753,102 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		{
 			dq.close();
 		}
+	}
+
+	@Test
+	public void test_serviceKeyStore_singleService()
+			throws DatastoreException
+	{
+		s_datastore.setValue("Service", "ServiceKey", "key1", "value1");
+		s_datastore.setValue("Service", "ServiceKey", "key2", "value2");
+		s_datastore.setValue("Service", "ServiceKey", "foo", "value3");
+
+		// Test setValue and getValue
+		assertServiceKeyValue("Service", "ServiceKey", "key1", "value1");
+		assertServiceKeyValue("Service", "ServiceKey", "key2", "value2");
+		assertServiceKeyValue("Service", "ServiceKey", "foo", "value3");
+
+		// Test lastModified value changes
+		long lastModified = s_datastore.getValue("Service", "ServiceKey", "key2").getLastModified().getTime();
+		s_datastore.setValue("Service", "ServiceKey", "key2", "changed");
+		assertServiceKeyValue("Service", "ServiceKey", "key2", "changed");
+		assertThat(s_datastore.getValue("Service", "ServiceKey", "key2").getLastModified().getTime(), greaterThan(lastModified));
+
+		// Test listKeys
+		assertThat(s_datastore.listKeys("Service", "ServiceKey"), hasItems("foo", "key1", "key2"));
+		assertThat(s_datastore.listKeys("Service", "ServiceKey", "key"), hasItems("key1", "key2"));
+
+		// Test delete
+		lastModified = s_datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime();
+		s_datastore.deleteKey("Service", "ServiceKey", "key2");
+		assertThat(s_datastore.listKeys("Service", "ServiceKey"), hasItems("key1", "foo"));
+		assertThat(s_datastore.getValue("Service", "ServiceKey", "key2"), is(nullValue()));
+		assertThat(s_datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime(), greaterThan(lastModified));
+
+		lastModified = s_datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime();
+		s_datastore.deleteKey("Service", "ServiceKey", "foo");
+		assertThat(s_datastore.listKeys("Service", "ServiceKey"), hasItems("key1"));
+		assertThat(s_datastore.getValue("Service", "ServiceKey", "foo"), is(nullValue()));
+		assertThat(s_datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime(), greaterThan(lastModified));
+	}
+
+	@Test
+	public void test_serviceKeyStore_multipleServices()
+			throws DatastoreException
+	{
+		s_datastore.setValue("Service1", "ServiceKey1", "key1", "value1");
+		s_datastore.setValue("Service1", "ServiceKey2", "key1", "value2");
+		s_datastore.setValue("Service1", "ServiceKey3", "key1", "value3");
+
+		s_datastore.setValue("Service2", "ServiceKey1", "key1", "value4");
+		s_datastore.setValue("Service2", "ServiceKey1", "key2", "value5");
+		s_datastore.setValue("Service2", "ServiceKey1", "key3", "value6");
+		s_datastore.setValue("Service2", "ServiceKey1", "key4", "value7");
+
+		s_datastore.setValue("Service3", "ServiceKey1", "foo", "value8");
+		s_datastore.setValue("Service3", "ServiceKey1", "bar", "value9");
+
+		// Test listKeys
+		assertThat(s_datastore.listKeys("Service1", "ServiceKey1"), hasItems("key1"));
+		assertThat(s_datastore.listKeys("Service1", "ServiceKey2"), hasItems("key1"));
+		assertThat(s_datastore.listKeys("Service1", "ServiceKey3"), hasItems("key1"));
+		assertThat(s_datastore.listKeys("Service2", "ServiceKey1"), hasItems("key1", "key2", "key3", "key4"));
+		assertThat(s_datastore.listKeys("Service3", "ServiceKey1"), hasItems("foo", "bar"));
+
+		// Test listServiceKeys
+		assertThat(s_datastore.listServiceKeys("Service1"), hasItems("ServiceKey1", "ServiceKey2", "ServiceKey3"));
+
+		// Test get
+		assertServiceKeyValue("Service1", "ServiceKey1", "key1", "value1");
+		assertServiceKeyValue("Service1", "ServiceKey2", "key1", "value2");
+		assertServiceKeyValue("Service1", "ServiceKey3", "key1", "value3");
+		assertServiceKeyValue("Service2", "ServiceKey1", "key1", "value4");
+		assertServiceKeyValue("Service2", "ServiceKey1", "key2", "value5");
+		assertServiceKeyValue("Service2", "ServiceKey1", "key3", "value6");
+		assertServiceKeyValue("Service2", "ServiceKey1", "key4", "value7");
+		assertServiceKeyValue("Service3", "ServiceKey1", "foo", "value8");
+		assertServiceKeyValue("Service3", "ServiceKey1", "bar", "value9");
+	}
+
+	/**
+	 * Delete on the last row of a primary key leaves a row with a null (empty) column for the key.
+	 * Verify that we ignore this row.
+	 */
+	@Test
+	public void test_serviceKeyStore_nullKey()
+			throws DatastoreException
+	{
+		s_datastore.setValue("Service1", "ServiceKey1", "key1", "value1");
+		s_datastore.deleteKey("Service1", "ServiceKey1", "key1");
+
+		assertThat(s_datastore.listKeys("Service1", "ServiceKey1").iterator().hasNext(), equalTo(false));
+	}
+
+	private void assertServiceKeyValue(String service, String serviceKey, String key, String expected)
+			throws DatastoreException
+	{
+		ServiceKeyValue value = s_datastore.getValue(service, serviceKey, key);
+		assertThat(value.getValue(), equalTo(expected));
+		assertThat(value.getLastModified(), is(notNullValue()));
 	}
 }

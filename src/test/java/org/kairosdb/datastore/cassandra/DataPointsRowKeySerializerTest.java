@@ -31,7 +31,7 @@ public class DataPointsRowKeySerializerTest
 
 		DataPointsRowKeySerializer serializer = new DataPointsRowKeySerializer();
 
-		DataPointsRowKey rowKey = serializer.fromByteBuffer(buffer);
+		DataPointsRowKey rowKey = serializer.fromByteBuffer(buffer, "default");
 
 		assertThat(rowKey.getMetricName(), equalTo(metricName));
 		assertThat(rowKey.getDataType(), equalTo(LegacyDataPointFactory.DATASTORE_TYPE));
@@ -45,10 +45,11 @@ public class DataPointsRowKeySerializerTest
 		map.put("a", "b");
 
 		DataPointsRowKeySerializer serializer = new DataPointsRowKeySerializer();
-		ByteBuffer buffer = serializer.toByteBuffer(new DataPointsRowKey("myMetric", 12345L, LegacyDataPointFactory.DATASTORE_TYPE, map));
+		ByteBuffer buffer = serializer.toByteBuffer(new DataPointsRowKey("myMetric",
+				"default", 12345L, LegacyDataPointFactory.DATASTORE_TYPE, map));
 
 		assertThat(buffer.remaining(), equalTo(21));//This should be the size of the legacy buffer
-		DataPointsRowKey rowKey = serializer.fromByteBuffer(buffer);
+		DataPointsRowKey rowKey = serializer.fromByteBuffer(buffer, "default");
 
 		assertThat(rowKey.getMetricName(), equalTo("myMetric"));
 		assertThat(rowKey.getDataType(), equalTo(LegacyDataPointFactory.DATASTORE_TYPE));
@@ -64,9 +65,10 @@ public class DataPointsRowKeySerializerTest
 		map.put("e", "f");
 
 		DataPointsRowKeySerializer serializer = new DataPointsRowKeySerializer();
-		ByteBuffer buffer = serializer.toByteBuffer(new DataPointsRowKey("myMetric", 12345L, "myDataType", map));
+		ByteBuffer buffer = serializer.toByteBuffer(new DataPointsRowKey("myMetric",
+				"default", 12345L, "myDataType", map));
 
-		DataPointsRowKey rowKey = serializer.fromByteBuffer(buffer);
+		DataPointsRowKey rowKey = serializer.fromByteBuffer(buffer, "default");
 
 		assertThat(rowKey.getMetricName(), equalTo("myMetric"));
 		assertThat(rowKey.getDataType(), equalTo("myDataType"));
@@ -92,9 +94,10 @@ public class DataPointsRowKeySerializerTest
 		map.put("=c=", "normal");
 
 		DataPointsRowKeySerializer serializer = new DataPointsRowKeySerializer();
-		ByteBuffer buffer = serializer.toByteBuffer(new DataPointsRowKey("myMetric", 12345L, "myDataType", map));
+		ByteBuffer buffer = serializer.toByteBuffer(new DataPointsRowKey("myMetric", "default",
+				12345L, "myDataType", map));
 
-		DataPointsRowKey rowKey = serializer.fromByteBuffer(buffer);
+		DataPointsRowKey rowKey = serializer.fromByteBuffer(buffer, "default");
 
 		assertThat(rowKey.getMetricName(), equalTo("myMetric"));
 		assertThat(rowKey.getDataType(), equalTo("myDataType"));

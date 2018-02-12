@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 import org.junit.Test;
-import org.kairosdb.core.KairosConfig;
+import org.kairosdb.core.KairosRootConfig;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.StringDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -51,7 +51,7 @@ import static org.junit.Assert.assertFalse;
 public abstract class DatastoreTestHelper
 {
 	protected static KairosDatastore s_datastore;
-	protected static FilterEventBus s_eventBus = new FilterEventBus(new EventBusConfiguration(new KairosConfig()));
+	protected static FilterEventBus s_eventBus = new FilterEventBus(new EventBusConfiguration(new KairosRootConfig()));
 	protected static final List<String> metricNames = new ArrayList<>();
 	private static long s_startTime;
 	private static String s_unicodeNameWithSpace = "你好 means hello";
@@ -206,12 +206,22 @@ public abstract class DatastoreTestHelper
 	@Test
 	public void test_getMetricNames() throws DatastoreException
 	{
-		List<String> metrics = listFromIterable(s_datastore.getMetricNames());
+		List<String> metrics = listFromIterable(s_datastore.getMetricNames(null));
 
 		assertThat(metrics, hasItem("metric1"));
 		assertThat(metrics, hasItem("metric2"));
 		assertThat(metrics, hasItem("duplicates"));
 		assertThat(metrics, hasItem("old_data"));
+	}
+
+	@Test
+	public void test_getMetricNames_with_prefix() throws DatastoreException
+	{
+		List<String> metrics = listFromIterable(s_datastore.getMetricNames("m"));
+
+		assertThat(metrics, hasItem("metric1"));
+		assertThat(metrics, hasItem("metric2"));
+		assertThat(metrics.size(), equalTo(2));
 	}
 
 	//names and values not being stored

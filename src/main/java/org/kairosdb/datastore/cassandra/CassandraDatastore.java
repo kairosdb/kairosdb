@@ -15,11 +15,15 @@
  */
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.*;
+import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.Host;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.ResultSetFuture;
+import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterators;
-import org.kairosdb.core.annotation.InjectProperty;
-import org.kairosdb.eventbus.Subscribe;
+import com.google.common.collect.SetMultimap;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -31,15 +35,29 @@ import org.kairosdb.core.datapoints.DataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDoubleDataPoint;
 import org.kairosdb.core.datapoints.LegacyLongDataPoint;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.DataPointRow;
+import org.kairosdb.core.datastore.Datastore;
+import org.kairosdb.core.datastore.DatastoreMetricQuery;
+import org.kairosdb.core.datastore.Order;
+import org.kairosdb.core.datastore.QueryCallback;
+import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.datastore.QueryPlugin;
+import org.kairosdb.core.datastore.ServiceKeyStore;
+import org.kairosdb.core.datastore.ServiceKeyValue;
+import org.kairosdb.core.datastore.TagSet;
+import org.kairosdb.core.datastore.TagSetImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.core.queue.ProcessorHandler;
 import org.kairosdb.core.queue.QueueProcessor;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.DataPointEvent;
-import org.kairosdb.util.*;
+import org.kairosdb.util.IngestExecutorService;
+import org.kairosdb.util.KDataInput;
+import org.kairosdb.util.MemoryMonitor;
+import org.kairosdb.util.SimpleStatsReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,8 +66,21 @@ import javax.inject.Named;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -149,6 +180,14 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_queueProcessor.setProcessorHandler(this);
 	}
 
+	//Used for creating the end string for prefix searches
+	private static ByteBuffer serializeEndString(String str)
+	{
+		byte[] bytes = str.getBytes(UTF_8);
+		bytes[bytes.length-1]++;
+		return ByteBuffer.wrap(bytes);
+	}
+
 	public static ByteBuffer serializeString(String str)
 	{
 		return ByteBuffer.wrap(str.getBytes(UTF_8));
@@ -245,6 +284,42 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	}
 
 
+	private Iterable<String> queryStringIndex(final String key, final String prefix) throws DatastoreException
+	{
+		List<ResultSetFuture> futures = queryClusters((cluster) -> {
+					BoundStatement boundStatement = new BoundStatement(cluster.psStringIndexPrefixQuery);
+					boundStatement.setBytesUnsafe(0, serializeString(key));
+					boundStatement.setBytesUnsafe(1, serializeString(prefix));
+					boundStatement.setBytesUnsafe(2, serializeEndString(prefix));
+					boundStatement.setConsistencyLevel(cluster.getReadConsistencyLevel());
+					return cluster.executeAsync(boundStatement);
+				});
+
+		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);
+
+		List<String> ret = new ArrayList<String>();
+
+		try
+		{
+			Iterator<ResultSet> iterator = listListenableFuture.get().iterator();
+			while (iterator.hasNext())
+			{
+				ResultSet resultSet = iterator.next();
+				while (!resultSet.isExhausted())
+				{
+					Row row = resultSet.one();
+					ret.add(row.getString(0));
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			throw new DatastoreException("CQL Query failure", e);
+		}
+
+		return ret;
+	}
+
 	private Iterable<String> queryStringIndex(final String key) throws DatastoreException
 	{
 		List<ResultSetFuture> futures = queryClusters((cluster) -> {
@@ -281,9 +356,12 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	}
 
 	@Override
-	public Iterable<String> getMetricNames() throws DatastoreException
+	public Iterable<String> getMetricNames(String prefix) throws DatastoreException
 	{
-		return queryStringIndex(ROW_KEY_METRIC_NAMES);
+		if (prefix == null)
+			return queryStringIndex(ROW_KEY_METRIC_NAMES);
+		else
+			return queryStringIndex(ROW_KEY_METRIC_NAMES, prefix);
 	}
 
 	@Override
@@ -332,7 +410,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	}
 
 	@Override
-	public String getValue(String service, String serviceKey, String key) throws DatastoreException
+	public ServiceKeyValue getValue(String service, String serviceKey, String key) throws DatastoreException
 	{
 		BoundStatement statement = new BoundStatement(m_metaCluster.psServiceIndexGet);
 		statement.setString(0, service);
@@ -343,11 +421,10 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		ResultSet resultSet = m_metaCluster.execute(statement);
 		Row row = resultSet.one();
 
-		String value = null;
 		if (row != null)
-			value = row.getString(0);
+			return new ServiceKeyValue(row.getString(0), new Date(row.getTime(1)));
 
-		return value;
+		return null;
 	}
 
 	@Override
@@ -387,7 +464,10 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		ResultSet resultSet = m_metaCluster.execute(statement);
 		while (!resultSet.isExhausted())
 		{
-			ret.add(resultSet.one().getString(0));
+			String key = resultSet.one().getString(0);
+			if (key != null) {  // The last row for the primary key doesn't get deleted and has a null key and isExhausted still return false. So check for null
+				ret.add(key);
+			}
 		}
 
 		return ret;
@@ -411,7 +491,10 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		ResultSet resultSet = m_metaCluster.execute(statement);
 		while (!resultSet.isExhausted())
 		{
-			ret.add(resultSet.one().getString(0));
+			String key = resultSet.one().getString(0);
+			if (key != null) {  // The last row for the primary key doesn't get deleted and has a null key and isExhausted still return false. So check for null
+				ret.add(key);
+			}
 		}
 
 		return ret;
@@ -428,9 +511,32 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		statement.setConsistencyLevel(m_metaCluster.getWriteConsistencyLevel());
 
 		m_metaCluster.execute(statement);
+
+		// Update modification time
+		statement = new BoundStatement(m_metaCluster.psServiceIndexInsertModifiedTime);
+		statement.setString(0, service);
+		statement.setString(1, serviceKey);
+
+		m_metaCluster.execute(statement);
 	}
 
-    @Override
+	@Override
+	public Date getServiceKeyLastModifiedTime(String service, String serviceKey) throws DatastoreException
+	{
+		BoundStatement statement = new BoundStatement(m_metaCluster.psServiceIndexModificationTime);
+		statement.setString(0, service);
+		statement.setString(1, serviceKey);
+
+		ResultSet resultSet = m_metaCluster.execute(statement);
+		Row row = resultSet.one();
+
+		if (row != null)
+			return new Date(row.getTime(0));
+
+		return new Date(0L);
+	}
+
+	@Override
 	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 	{
 		cqlQueryWithRowKeys(query, queryCallback, getKeysForQueryIterator(query));
@@ -841,7 +947,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			}
 		}
 
-		//Default to old behavior if no plugin was provided
+		//Default to query index if no plugin was provided
 		if (ret == null)
 		{
 			//todo use Iterable.concat to query multiple metrics at the same time.
@@ -858,7 +964,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 						query.getEndTime(), query.getTags()));
 			}
 		}
-
 
 		return (ret);
 	}

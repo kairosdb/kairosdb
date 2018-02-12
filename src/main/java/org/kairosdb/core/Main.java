@@ -64,7 +64,17 @@ import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -75,6 +85,8 @@ public class Main
 	public static final Charset UTF_8 = Charset.forName("UTF-8");
 	public static final String SERVICE_PREFIX = "kairosdb.service.";
 	public static final String SERVICE_FOLDER_PREFIX = "kairosdb.service_folder.";
+	public static final String KAIROSDB_SERVER_GUID = "kairosdb.server.guid";
+	private static final String GUID_PROPERTIES_FILENAME = "kairosdb_guid.properties";
 
 	private final static CountDownLatch s_shutdownObject = new CountDownLatch(1);
 
@@ -83,7 +95,7 @@ public class Main
 	private Injector m_injector;
 	private List<KairosDBService> m_services = new ArrayList<KairosDBService>();
 
-	private void loadPlugins(KairosConfig config, final File propertiesFile) throws IOException
+	private void loadPlugins(KairosRootConfig config, final File propertiesFile) throws IOException
 	{
 		File propDir = propertiesFile.getParentFile();
 		if (propDir == null)
@@ -96,7 +108,7 @@ public class Main
 			{
 				try
 				{
-					KairosConfig.ConfigFormat format = KairosConfig.ConfigFormat.fromFileName(name);
+					KairosRootConfig.ConfigFormat format = KairosRootConfig.ConfigFormat.fromFileName(name);
 					return (config.isSupportedFormat(format)) && !name.equals(propertiesFile.getName());
 				}
 				catch (IllegalArgumentException ignored) {}
@@ -119,7 +131,7 @@ public class Main
 			{
 				try
 				{
-					config.load(propStream, KairosConfig.ConfigFormat.fromFileName(prop));
+					config.load(propStream, KairosRootConfig.ConfigFormat.fromFileName(prop));
 				}
 				finally
 				{
@@ -160,7 +172,7 @@ public class Main
 	 * allow overwriting any existing property via correctly named environment variable
 	 * e.g. kairosdb.datastore.cassandra.host_list via KAIROSDB_DATASTORE_CASSANDRA_HOST_LIST
 	 */
-	protected void applyEnvironmentVariables(KairosConfig config)
+	protected void applyEnvironmentVariables(KairosRootConfig config)
 	{
 		Map<String, String> env = System.getenv();
 		Map<String, String> props = new HashMap<>();
@@ -178,11 +190,12 @@ public class Main
 
 	public Main(File propertiesFile) throws IOException
 	{
-		KairosConfig config = new KairosConfig();
+		KairosRootConfig config = new KairosRootConfig();
 		String defaultConfig = "kairosdb.conf";
 		try (InputStream is = getClass().getClassLoader().getResourceAsStream(defaultConfig))
 		{
-			config.load(is, KairosConfig.ConfigFormat.fromFileName(defaultConfig));
+			if (is != null)
+				config.load(is, KairosRootConfig.ConfigFormat.fromFileName(defaultConfig));
 		}
 
 		if (propertiesFile != null)
@@ -201,6 +214,17 @@ public class Main
 		{
 			System.out.println(s);
 		}*/
+
+		// Create guid for this server
+		if (!config.hasPath(KAIROSDB_SERVER_GUID)) {
+			String guid = UUID.randomUUID().toString();
+			config.load(Collections.singletonMap(KAIROSDB_SERVER_GUID, guid));
+
+			if (propertiesFile != null) {
+				Path path = Paths.get(propertiesFile.getAbsoluteFile().getParent(), GUID_PROPERTIES_FILENAME);
+				java.nio.file.Files.write(path, (KAIROSDB_SERVER_GUID + "=" + guid).getBytes(Charset.forName("UTF-8")));
+			}
+		}
 
 		List<Module> moduleList = new ArrayList<Module>();
 		moduleList.add(new CoreModule(config));
@@ -240,7 +264,7 @@ public class Main
 
 						try
 						{
-							constructor = aClass.getConstructor(KairosConfig.class);
+							constructor = aClass.getConstructor(KairosRootConfig.class);
 						}
 						catch (NoSuchMethodException ignore)
 						{
@@ -272,9 +296,7 @@ public class Main
 			}
 		}
 
-		System.out.println("here");
 		m_injector = Guice.createInjector(moduleList);
-		System.out.println("done");
 	}
 
 
@@ -461,7 +483,7 @@ public class Main
 			if (metricNames != null && metricNames.size() > 0)
 				metrics = metricNames;
 			else
-				metrics = ds.getMetricNames();
+				metrics = ds.getMetricNames(null);
 
 			for (String metric : metrics)
 			{

@@ -137,8 +137,8 @@ function buildKairosDBQuery() {
 					showErrorMessage("sampling value must be an integer greater than 0.");
 					return true;
 				}
-				var align_start_time = $(aggregator).find(".aggregatorAlignStartTimeValue").prop("checked");
-				metric.addPercentile(value, unit, percentile, time_zone, align_start_time);
+				var align = $(aggregator).find(".aggregatorAlign").val();
+				metric.addPercentile(value, unit, percentile, time_zone, align);
 			}
 			else if (name == 'div') {
 				var divisor = $(aggregator).find(".divisorValue").val();
@@ -186,9 +186,9 @@ function buildKairosDBQuery() {
 					showErrorMessage("sampling value must be an integer greater than 0.");
 					return true;
 				}
-				var align_start_time = $(aggregator).find(".aggregatorAlignStartTimeValue").prop("checked");
+				var align = $(aggregator).find(".aggregatorAlign").val();
 
-				var agg = metric.addRangeAggregator(name, value, unit, percentile, time_zone, align_start_time);
+				var agg = metric.addRangeAggregator(name, value, unit, percentile, time_zone, align);
 				agg.return_type = $(aggregator).find(".aggregatorDevValue").val();
 			}
 			else if (name == 'save_as')
@@ -204,8 +204,8 @@ function buildKairosDBQuery() {
 					return true;
 				}
 				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
-				var align_start_time = $(aggregator).find(".aggregatorAlignStartTimeValue").prop("checked");
-				metric.addRangeAggregator(name, value, unit, time_zone, align_start_time);
+				var align = $(aggregator).find(".aggregatorAlign").val();
+				metric.addRangeAggregator(name, value, unit, time_zone, align);
 			}
 		});
 
@@ -649,7 +649,7 @@ function addAggregator(container) {
 		$aggregatorContainer.find(".aggregatorDev").hide();
 		$aggregatorContainer.find(".aggregatorSaveAs").hide();
 		$aggregatorContainer.find(".aggregatorRate").hide();
-		$aggregatorContainer.find(".aggregatorAlignStartTime").hide();
+		$aggregatorContainer.find(".aggregatorAlign").hide();
 
 		if (name == "rate" || name == "sampler") {
 			$aggregatorContainer.find(".aggregatorRate").show();
@@ -660,7 +660,7 @@ function addAggregator(container) {
 		else if (name == "percentile") {
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
-			$aggregatorContainer.find(".aggregatorAlignStartTime").show();
+			$aggregatorContainer.find(".aggregatorAlign").show();
 		}
 		else if (name == "div") {
 			$aggregatorContainer.find(".divisor").show();
@@ -683,12 +683,12 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".aggregatorDev").show();
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
-			$aggregatorContainer.find(".aggregatorAlignStartTime").show();
+			$aggregatorContainer.find(".aggregatorAlign").show();
 		}
 		else {
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
 			$aggregatorContainer.find(".aggregatorSampling").show();
-			$aggregatorContainer.find(".aggregatorAlignStartTime").show();
+			$aggregatorContainer.find(".aggregatorAlign").show();
 		}
 	});
 }

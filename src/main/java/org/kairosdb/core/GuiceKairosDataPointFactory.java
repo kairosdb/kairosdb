@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.io.DataInput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,7 +47,7 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 
 
 	@Inject
-	public GuiceKairosDataPointFactory(Injector injector, KairosConfig props)
+	public GuiceKairosDataPointFactory(Injector injector, KairosRootConfig props)
 	{
 		Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
 

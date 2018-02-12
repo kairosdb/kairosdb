@@ -17,7 +17,11 @@
 package org.kairosdb.core;
 
 import com.google.common.net.InetAddresses;
-import com.google.inject.*;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.AbstractModule;
+import com.google.inject.Binder;
+import com.google.inject.Provides;
+import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
 import com.google.inject.name.Names;
 import com.google.inject.spi.InjectionListener;
@@ -74,7 +78,6 @@ import org.kairosdb.core.queue.DataPointEventSerializer;
 import org.kairosdb.core.queue.QueueProcessor;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
-import org.kairosdb.datastore.cassandra.CassandraModule;
 import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.plugin.Aggregator;
@@ -89,15 +92,15 @@ import se.ugli.bigqueue.BigArray;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
-import java.util.Enumeration;
 import java.util.MissingResourceException;
 import java.util.Properties;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR;
 import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR_CLASS;
+
 
 public class CoreModule extends AbstractModule
 {
@@ -108,10 +111,11 @@ public class CoreModule extends AbstractModule
 
 	public static final String DATAPOINTS_FACTORY_LONG = "kairosdb.datapoints.factory.long";
 	public static final String DATAPOINTS_FACTORY_DOUBLE = "kairosdb.datapoints.factory.double";
-	private final FilterEventBus m_eventBus;
-	private KairosConfig m_config;
 
-	public CoreModule(KairosConfig config)
+	private final FilterEventBus m_eventBus;
+	private KairosRootConfig m_config;
+
+	public CoreModule(KairosRootConfig config)
 	{
 		m_config = config;
 		m_eventBus = new FilterEventBus(new EventBusConfiguration(m_config));
@@ -139,7 +143,7 @@ public class CoreModule extends AbstractModule
 	{
 		binder = binder.skipSources(Names.class);
 
-		Config config = m_config.getConfig();
+		Config config = m_config.getRawConfig();
 		for (String propertyName : m_config)
 		{
 			ConfigValue value = config.getValue(propertyName);
@@ -204,7 +208,7 @@ public class CoreModule extends AbstractModule
 
 		//Names.bindProperties(binder(), m_config);
 		bindConfiguration(binder());
-		bind(KairosConfig.class).toInstance(m_config);
+		bind(KairosRootConfig.class).toInstance(m_config);
 
 		bind(QueryQueuingManager.class).in(Singleton.class);
 		bind(KairosDatastore.class).in(Singleton.class);
@@ -279,7 +283,10 @@ public class CoreModule extends AbstractModule
 
 		bind(IngestExecutorService.class);
 
+		bind(HostManager.class).in(Singleton.class);
+
 		String hostIp = m_config.getProperty("kairosdb.host_ip");
+
 		bindConstant().annotatedWith(Names.named("HOST_IP")).to(hostIp != null ? hostIp: InetAddresses.toAddrString(Util.findPublicIp()));
 
 		bind(QueryPreProcessorContainer.class).to(GuiceQueryPreProcessor.class).in(Singleton.class);
@@ -296,6 +303,16 @@ public class CoreModule extends AbstractModule
 	@Provides @Named(QUEUE_PROCESSOR) @Singleton
 	public ExecutorService getQueueExecutor()
 	{
-		return Executors.newSingleThreadExecutor();
+		return Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("QueueProcessor-%s").build());
+	}
+
+	@Provides
+	@Singleton
+	@Named(HostManager.HOST_MANAGER_SERVICE_EXECUTOR)
+	public ScheduledExecutorService getExecutorService()
+	{
+		return Executors.newSingleThreadScheduledExecutor(
+				new ThreadFactoryBuilder().setNameFormat("HostManagerService-%s").build());
+
 	}
 }

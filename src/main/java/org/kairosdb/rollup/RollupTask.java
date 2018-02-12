@@ -24,7 +24,7 @@ public class RollupTask
 	// todo add tags
 
 	private final String id;
-	private final transient List<Rollup> rollups = new ArrayList<Rollup>();
+	private final transient List<Rollup> rollups = new ArrayList<>();
 
 	@NotNull
 	@NotEmpty()
@@ -34,7 +34,7 @@ public class RollupTask
 	@SerializedName("execution_interval")
 	private Duration executionInterval;
 
-	private long timestamp;
+	private long lastModified;
 	private String json;
 
 	public RollupTask()
@@ -68,7 +68,7 @@ public class RollupTask
 		this.name = checkNotNullOrEmpty(name);
 		this.rollups.addAll(rollups);
 		this.executionInterval = checkNotNull(executionInterval);
-		this.timestamp = System.currentTimeMillis();
+		this.lastModified = System.currentTimeMillis();
 	}
 
 	public String getName()
@@ -112,9 +112,14 @@ public class RollupTask
 		return executionInterval;
 	}
 
-	public long getTimestamp()
+	public long getLastModified()
 	{
-		return timestamp;
+		return lastModified;
+	}
+
+	public void setLastModified(long lastModified)
+	{
+		this.lastModified = lastModified;
 	}
 
 	public String getJson()

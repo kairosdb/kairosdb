@@ -4,7 +4,7 @@ package org.kairosdb.eventbus;
 import com.google.common.eventbus.AllowConcurrentEvents;
 import org.junit.Before;
 import org.junit.Test;
-import org.kairosdb.core.KairosConfig;
+import org.kairosdb.core.KairosRootConfig;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -27,7 +27,7 @@ public class FilterSubscriberTest {
 
     @Before
     public void setUp() throws Exception {
-        bus = new FilterEventBus(new EventBusConfiguration(new KairosConfig()));
+        bus = new FilterEventBus(new EventBusConfiguration(new KairosRootConfig()));
         methodCalled = false;
         methodArgument = null;
     }

@@ -18,8 +18,7 @@ package org.kairosdb.core.oauth;
 
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
-import org.kairosdb.core.KairosConfig;
-import org.kairosdb.core.KairosConfig;
+import org.kairosdb.core.KairosRootConfig;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -29,7 +28,7 @@ public class OAuthModuleTest
 	@Test
 	public void testReadingProperties()
 	{
-		KairosConfig props = new KairosConfig();
+		KairosRootConfig props = new KairosRootConfig();
 
 		props.load(ImmutableMap.of("kairosdb.oauth.consumer.cust1", "ABC123"));
 		props.load(ImmutableMap.of("kairosdb.oauth.consumerNot.cust1", "XYZ"));

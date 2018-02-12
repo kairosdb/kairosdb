@@ -1,13 +1,12 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.ConsistencyLevel;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.typesafe.config.Config;
 import org.kairosdb.core.KairosConfig;
+import org.kairosdb.core.KairosRootConfig;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -19,11 +18,13 @@ public class CassandraConfiguration
 	public static final String READ_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.read_consistency_level";
 	public static final String WRITE_CONSISTENCY_LEVEL = "kairosdb.datastore.cassandra.write_consistency_level";
 	public static final String DATAPOINT_TTL = "kairosdb.datastore.cassandra.datapoint_ttl";
+	
+	public static final String ALIGN_DATAPOINT_TTL_WITH_TIMESTAMP = "kairosdb.datastore.cassandra.align_datapoint_ttl_with_timestamp";
+	public static final String FORCE_DEFAULT_DATAPOINT_TTL = "kairosdb.datastore.cassandra.force_default_datapoint_ttl";
 
 	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
 	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
 
-	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
 	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
 	public static final String SIMULTANEOUS_QUERIES = "kairosdb.datastore.cassandra.simultaneous_cql_queries";
 	public static final String QUERY_LIMIT = "kairosdb.datastore.cassandra.query_limit";
@@ -51,6 +52,14 @@ public class CassandraConfiguration
 	@Named(DATAPOINT_TTL)
 	private int m_datapointTtl = 0; //Zero ttl means data lives forever.
 
+	@Inject(optional = true)
+	@Named(ALIGN_DATAPOINT_TTL_WITH_TIMESTAMP)
+	private boolean m_alignDatapointTtlWithTimestamp = false;
+	
+	@Inject(optional = true)
+	@Named(FORCE_DEFAULT_DATAPOINT_TTL)
+	private boolean m_forceDefaultDatapointTtl = false;
+
 	@Inject
 	@Named(ROW_KEY_CACHE_SIZE_PROPERTY)
 	private int m_rowKeyCacheSize = 1024;
@@ -75,6 +84,7 @@ public class CassandraConfiguration
 	@Named(QUERY_LIMIT)
 	private int m_queryLimit = 0;
 
+	private List<String> m_hostList;
 
 	private final ClusterConfiguration m_writeCluster;
 	private final ClusterConfiguration m_metaCluster;
@@ -89,10 +99,9 @@ public class CassandraConfiguration
 	private String m_localDatacenter;
 
 	@Inject
-	public CassandraConfiguration(KairosConfig kairosConfig)
+	public CassandraConfiguration(KairosRootConfig config)
 	{
-		Config config = kairosConfig.getConfig();
-		Config writeConfig = config.getConfig("kairosdb.datastore.cassandra.write_cluster");
+		KairosConfig writeConfig = config.getConfig("kairosdb.datastore.cassandra.write_cluster");
 
 		m_writeCluster = new ClusterConfiguration(writeConfig);
 
@@ -106,10 +115,10 @@ public class CassandraConfiguration
 		if (config.hasPath("kairosdb.datastore.cassandra.read_clusters"))
 		{
 			System.out.println("LOADING READ CLUSTERS");
-			List<? extends Config> clientList = config.getConfigList("kairosdb.datastore.cassandra.read_clusters");
+			List<KairosConfig> clientList = config.getConfigList("kairosdb.datastore.cassandra.read_clusters");
 
 			ImmutableList.Builder<ClusterConfiguration> readClusterBuilder = new ImmutableList.Builder<>();
-			for (Config client : clientList)
+			for (KairosConfig client : clientList)
 			{
 				readClusterBuilder.add(new ClusterConfiguration(client));
 			}
@@ -124,6 +133,16 @@ public class CassandraConfiguration
 	public int getDatapointTtl()
 	{
 		return m_datapointTtl;
+	}
+	
+	public boolean isAlignDatapointTtlWithTimestamp() 
+	{
+		return m_alignDatapointTtlWithTimestamp;
+	}
+	
+	public boolean isForceDefaultDatapointTtl()
+	{
+		return m_forceDefaultDatapointTtl;
 	}
 
 	public int getRowKeyCacheSize()

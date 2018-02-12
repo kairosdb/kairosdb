@@ -43,6 +43,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	private int limit;
 	private Order order = Order.ASC;
 	private List<QueryPlugin> plugins;
+	private boolean explicitTags = false;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
@@ -90,6 +91,12 @@ public class QueryMetric implements DatastoreMetricQuery
 	return this;
 	}
 
+	public QueryMetric setExplicitTags(boolean explicitTags)
+	{
+		this.explicitTags = explicitTags;
+		return this;
+	}
+
 	public QueryMetric addTag(String name, String value)
 	{
 		this.tags.put(name, value);
@@ -111,6 +118,12 @@ public class QueryMetric implements DatastoreMetricQuery
 	public SetMultimap<String, String> getTags()
 	{
 		return (tags);
+	}
+
+	@Override
+	public boolean isExplicitTags()
+	{
+		return explicitTags;
 	}
 
 	@Override

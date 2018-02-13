@@ -88,7 +88,7 @@ jc.getDefinition().set("encoding", "UTF8")
 jc.getDefinition().set("deprecation")
 jc.getDefinition().set("unchecked")
 
-jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
+jp.getJarRule().addFiles("src/main/resources", "kairosdb.conf")
 jp.getJarRule().addFiles("src/main/resources", "create.sql")
 
 
@@ -244,7 +244,7 @@ tarRule = new TarRule("build/${programName}-${version}-${release}.tar")
 		.addDepend(resolveIvyFileSetRule)
 		.addFileSetTo(zipBinDir, scriptsFileSet)
 		.addFileSetTo(zipWebRootDir, webrootFileSet)
-		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.properties")
+		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.conf")
 		.addFileTo(zipConfLoggingDir, "src/main/resources", "logback.xml")
 		.setFilePermission(".*\\.sh", 0755)
 
@@ -309,8 +309,8 @@ def doRPM(Rule rule)
 	addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/bin", scriptsFileSet)
 
 	rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
-	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.properties",
-			new File("src/main/resources/kairosdb.properties"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
+	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.conf",
+			new File("src/main/resources/kairosdb.conf"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/logging/logback.xml",
 			new File("src/main/resources/logback.xml"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/bin/kairosdb-env.sh",

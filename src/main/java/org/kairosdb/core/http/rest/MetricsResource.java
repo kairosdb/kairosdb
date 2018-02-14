@@ -489,8 +489,8 @@ public class MetricsResource implements KairosMetricReporter
 
 	/**
 	 Information for this endpoint was taken from https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS.
-	 <p/>
-	 <p/>Response to a cors preflight request to access data.
+	 <p>
+	 <p>Response to a cors preflight request to access data.
 	 */
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")

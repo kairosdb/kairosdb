@@ -580,7 +580,7 @@ void signArtifacts(Rule rule)
 {
 	for (String source : new RegExFileSet("build/bundle", ".*").getFullFilePaths())
 	{
-		cmd = "gpg -ab "+source
+		cmd = "gpg2 -ab "+source
 		saw.exec(cmd)
 	}
 }

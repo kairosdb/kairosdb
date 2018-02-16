@@ -28,6 +28,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	public static final String BATCH_SIZE = "kairosdb.queue_processor.batch_size";
 	public static final String MEMORY_QUEUE_SIZE = "kairosdb.queue_processor.memory_queue_size";
 	public static final String MINIMUM_BATCH_SIZE = "kairosdb.queue_processor.min_batch_size";
+	public static final String MINIMUM_BATCH_WAIT = "kairosdb.queue_processor.min_batch_wait";
 
 
 	private final DeliveryThread m_deliveryThread;
@@ -43,7 +44,8 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
 
-	public QueueProcessor(ExecutorService executor, int batchSize, int minimumBatchSize)
+	public QueueProcessor(ExecutorService executor, int batchSize, int minimumBatchSize,
+			int minBatchWait)
 	{
 		m_deliveryThread = new DeliveryThread();
 		m_initialBatchSize = m_batchSize = batchSize;

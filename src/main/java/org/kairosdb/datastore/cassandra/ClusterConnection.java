@@ -10,12 +10,21 @@ import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.EnumSet;
+
 /**
  Created by bhawkins on 4/29/17.
  */
 public class ClusterConnection
 {
 	public static final Logger logger = LoggerFactory.getLogger(ClusterConnection.class);
+
+	public enum Type
+	{
+		WRITE,
+		META,
+		READ
+	}
 
 	public static final String CREATE_KEYSPACE = "" +
 			"CREATE KEYSPACE IF NOT EXISTS %s" +
@@ -187,25 +196,25 @@ public class ClusterConnection
 	public static final String SERVICE_INDEX_INSERT_MODIFIED_TIME = "INSERT INTO service_index " +
 			"(service, service_key, mtime) VALUES (?, ?, now())";
 
-	public final PreparedStatement psDataPointsInsert;
+	public PreparedStatement psDataPointsInsert;
 	//public final PreparedStatement m_psInsertRowKey;
-	public final PreparedStatement psStringIndexInsert;
-	public final PreparedStatement psDataPointsQueryAsc;
-	public final PreparedStatement psStringIndexQuery;
-	public final PreparedStatement psStringIndexPrefixQuery;
-	public final PreparedStatement psStringIndexDelete;
-	public final PreparedStatement psRowKeyIndexQuery;
+	public PreparedStatement psStringIndexInsert;
+	public PreparedStatement psDataPointsQueryAsc;
+	public PreparedStatement psStringIndexQuery;
+	public PreparedStatement psStringIndexPrefixQuery;
+	public PreparedStatement psStringIndexDelete;
+	public PreparedStatement psRowKeyIndexQuery;
 	public PreparedStatement psRowKeyQuery;
 	public PreparedStatement psRowKeyTimeQuery;
-	public final PreparedStatement psDataPointsDeleteRow;
+	public PreparedStatement psDataPointsDeleteRow;
 	public PreparedStatement psDataPointsDeleteRange;
-	public final PreparedStatement psRowKeyIndexDelete;
-	public final PreparedStatement psRowKeyIndexDeleteRow;
-	public final PreparedStatement psDataPointsQueryDesc;
+	public PreparedStatement psRowKeyIndexDelete;
+	public PreparedStatement psRowKeyIndexDeleteRow;
+	public PreparedStatement psDataPointsQueryDesc;
 	public PreparedStatement psRowKeyTimeInsert;
 	public PreparedStatement psRowKeyInsert;
-	public final PreparedStatement psDataPointsQueryAscLimit;
-	public final PreparedStatement psDataPointsQueryDescLimit;
+	public PreparedStatement psDataPointsQueryAscLimit;
+	public PreparedStatement psDataPointsQueryDescLimit;
 	public PreparedStatement psServiceIndexInsert;
 	public PreparedStatement psServiceIndexGet;
 	public PreparedStatement psServiceIndexListKeys;
@@ -214,59 +223,56 @@ public class ClusterConnection
 	public PreparedStatement psServiceIndexDeleteKey;
 	public PreparedStatement psRowKeyTimeDelete;
 	public PreparedStatement psRowKeyDelete;
-	public final PreparedStatement psServiceIndexModificationTime;
-	public final PreparedStatement psServiceIndexInsertModifiedTime;
-	public final PreparedStatement psServiceIndexGetEntries;
-	public final PreparedStatement psDataPointsDelete;
+	public PreparedStatement psServiceIndexModificationTime;
+	public PreparedStatement psServiceIndexInsertModifiedTime;
+	public PreparedStatement psServiceIndexGetEntries;
+	public PreparedStatement psDataPointsDelete;
 
 	private final Session m_session;
 	private final CassandraClient m_cassandraClient;
 	private boolean m_readonlyMode;
 
 
-	public ClusterConnection(CassandraClient cassandraClient)
+	public ClusterConnection(CassandraClient cassandraClient, EnumSet<Type> clusterType)
 	{
-		setupSchema(cassandraClient);
+		setupSchema(cassandraClient, clusterType);
 
 		m_session = cassandraClient.getKeyspaceSession();
 
 		m_cassandraClient = cassandraClient;
 		//m_psInsertRowKey      = m_session.prepare(ROW_KEY_INDEX_INSERT);
-		psRowKeyTimeInsert = m_session.prepare(ROW_KEY_TIME_INSERT);
-		psRowKeyInsert = m_session.prepare(ROW_KEY_INSERT);
 
-		psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
-		psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);
-		psRowKeyTimeDelete = m_session.prepare(ROW_KEY_TIME_DELETE);
-
-		psDataPointsInsert = m_session.prepare(DATA_POINTS_INSERT);
-		psDataPointsDelete = m_session.prepare(DATA_POINTS_DELETE);
-		psDataPointsDeleteRow = m_session.prepare(DATA_POINTS_DELETE_ROW);
-		try
+		if (clusterType.contains(Type.READ) || clusterType.contains(Type.WRITE))
 		{
-			psDataPointsDeleteRange = m_session.prepare(DATA_POINTS_DELETE_RANGE);
+			psDataPointsInsert = m_session.prepare(DATA_POINTS_INSERT);
+			psDataPointsDelete = m_session.prepare(DATA_POINTS_DELETE);
+			psDataPointsDeleteRow = m_session.prepare(DATA_POINTS_DELETE_ROW);
+			try
+			{
+				psDataPointsDeleteRange = m_session.prepare(DATA_POINTS_DELETE_RANGE);
+			}
+			catch (Exception e)
+			{
+				//Nothing to do, we run old format delete if psDataPointsDeleteRange is null
+				logger.warn("Unable to perform efficient range deletes, consider upgrading to a newer version of Cassandra");
+			}
+			psDataPointsQueryAsc = m_session.prepare(DATA_POINTS_QUERY_ASC);
+			psDataPointsQueryDesc = m_session.prepare(DATA_POINTS_QUERY_DESC);
+			psDataPointsQueryAscLimit = m_session.prepare(DATA_POINTS_QUERY_ASC_LIMIT);
+			psDataPointsQueryDescLimit = m_session.prepare(DATA_POINTS_QUERY_DESC_LIMIT);
+
+			psRowKeyIndexQuery = m_session.prepare(ROW_KEY_INDEX_QUERY);
+			psRowKeyIndexDelete = m_session.prepare(ROW_KEY_INDEX_DELETE);
+			psRowKeyIndexDeleteRow = m_session.prepare(ROW_KEY_INDEX_DELETE_ROW);
+
+			psStringIndexInsert = m_session.prepare(STRING_INDEX_INSERT);
+			psStringIndexQuery = m_session.prepare(STRING_INDEX_QUERY);
+			psStringIndexPrefixQuery = m_session.prepare(STRING_INDEX_PREFIX_QUERY);
+			psStringIndexDelete = m_session.prepare(STRING_INDEX_DELETE);
 		}
-		catch (Exception e)
-		{
-			//Nothing to do, we run old format delete if psDataPointsDeleteRange is null
-			logger.warn("Unable to perform efficient range deletes, consider upgrading to a newer version of Cassandra");
-		}
-		psDataPointsQueryAsc = m_session.prepare(DATA_POINTS_QUERY_ASC);
-		psDataPointsQueryDesc = m_session.prepare(DATA_POINTS_QUERY_DESC);
-		psDataPointsQueryAscLimit = m_session.prepare(DATA_POINTS_QUERY_ASC_LIMIT);
-		psDataPointsQueryDescLimit = m_session.prepare(DATA_POINTS_QUERY_DESC_LIMIT);
-
-		psRowKeyIndexQuery = m_session.prepare(ROW_KEY_INDEX_QUERY);
-		psRowKeyIndexDelete = m_session.prepare(ROW_KEY_INDEX_DELETE);
-		psRowKeyIndexDeleteRow = m_session.prepare(ROW_KEY_INDEX_DELETE_ROW);
-
-		psStringIndexInsert = m_session.prepare(STRING_INDEX_INSERT);
-		psStringIndexQuery = m_session.prepare(STRING_INDEX_QUERY);
-		psStringIndexPrefixQuery = m_session.prepare(STRING_INDEX_PREFIX_QUERY);
-		psStringIndexDelete = m_session.prepare(STRING_INDEX_DELETE);
 
 
-		if (!m_readonlyMode)
+		if ((!m_readonlyMode)&&(clusterType.contains(Type.WRITE)))
 		{
 			psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
 			psRowKeyInsert = m_session.prepare(ROW_KEY_INSERT);
@@ -274,7 +280,10 @@ public class ClusterConnection
 			psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);
 			psRowKeyTimeDelete = m_session.prepare(ROW_KEY_TIME_DELETE);
 			psRowKeyTimeInsert = m_session.prepare(ROW_KEY_TIME_INSERT);
+		}
 
+		if (clusterType.contains(Type.META))
+		{
 			psServiceIndexInsert = m_session.prepare(SERVICE_INDEX_INSERT);
 			psServiceIndexGet = m_session.prepare(SERVICE_INDEX_GET);
 			psServiceIndexListKeys = m_session.prepare(SERVICE_INDEX_LIST_KEYS);
@@ -288,12 +297,11 @@ public class ClusterConnection
 				logger.warn("Unable to perform service key list query, consider upgrading to newer version of Cassandra");
 			}
 			psServiceIndexDeleteKey = m_session.prepare(SERVICE_INDEX_DELETE_KEY);
+			psServiceIndexModificationTime = m_session.prepare(SERVICE_INDEX_LAST_MODIFIED_TIME);
+			psServiceIndexGetEntries = m_session.prepare(SERVICE_INDEX_GET_ENTRIES);
+			psServiceIndexInsertModifiedTime = m_session.prepare(SERVICE_INDEX_INSERT_MODIFIED_TIME);
 		}
 
-		psServiceIndexDeleteKey = m_session.prepare(SERVICE_INDEX_DELETE_KEY);
-		psServiceIndexModificationTime = m_session.prepare(SERVICE_INDEX_LAST_MODIFIED_TIME);
-		psServiceIndexGetEntries = m_session.prepare(SERVICE_INDEX_GET_ENTRIES);
-		psServiceIndexInsertModifiedTime = m_session.prepare(SERVICE_INDEX_INSERT_MODIFIED_TIME);
 	}
 
 	public void close()
@@ -342,7 +350,7 @@ public class ClusterConnection
 		return m_cassandraClient.getKeyspace();
 	}
 
-	private void setupSchema(CassandraClient cassandraClient)
+	private void setupSchema(CassandraClient cassandraClient, EnumSet<Type> clusterType)
 	{
 		try (Session session = cassandraClient.getSession())
 		{
@@ -352,20 +360,35 @@ public class ClusterConnection
 
 		try (Session session = cassandraClient.getKeyspaceSession())
 		{
-			session.execute(DATA_POINTS_TABLE);
-			session.execute(ROW_KEY_INDEX_TABLE);
-			session.execute(STRING_INDEX_TABLE);
+			if (clusterType.contains(Type.WRITE))
+			{
+				try
+				{
+					session.execute(DATA_POINTS_TABLE);
+					session.execute(ROW_KEY_INDEX_TABLE);
+					session.execute(STRING_INDEX_TABLE);
 
-			try
-			{
-				session.execute(ROW_KEYS);
-				session.execute(ROW_KEY_TIME_INDEX);
-				session.execute(SERVICE_INDEX);
+					session.execute(ROW_KEYS);
+					session.execute(ROW_KEY_TIME_INDEX);
+				}
+				catch (Exception e)
+				{
+					m_readonlyMode = true;
+					logger.warn("Unable to create new schema, cluster is in read only mode.  You may need to upgrade to a newer version of Cassandra.", e);
+				}
 			}
-			catch (Exception e)
+
+			if (clusterType.contains(Type.META))
 			{
-				m_readonlyMode = true;
-				logger.warn("Unable to create new schema, cluster is in read only mode.  You may need to upgrade to a newer version of Cassandra.", e);
+				try
+				{
+					session.execute(SERVICE_INDEX);
+				}
+				catch (Exception e)
+				{
+					m_readonlyMode = true;
+					logger.warn("Unable to create new schema, cluster is in read only mode.  You may need to upgrade to a newer version of Cassandra.", e);
+				}
 			}
 		}
 	}

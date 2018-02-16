@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +106,33 @@ public class CassandraModule extends AbstractModule
 		return configuration.getKeyspaceName();
 	}*/
 
+	private ClusterConnection m_writeCluster;
+	private ClusterConnection m_metaCluster;
+
+	private void createClients(CassandraConfiguration configuration)
+	{
+		if (m_metaCluster != null)
+			return;
+
+		ClusterConfiguration writeConfig = configuration.getWriteCluster();
+		ClusterConfiguration metaConfig = configuration.getMetaCluster();
+
+		CassandraClientImpl writeClient = new CassandraClientImpl(writeConfig);
+		if (writeConfig == metaConfig) //No separate meta cluster configuration
+		{
+			m_metaCluster = m_writeCluster = new ClusterConnection(writeClient, EnumSet.of(
+					ClusterConnection.Type.WRITE, ClusterConnection.Type.META));
+		}
+		else
+		{
+			m_writeCluster = new ClusterConnection(writeClient, EnumSet.of(
+					ClusterConnection.Type.WRITE));
+
+			m_metaCluster = new ClusterConnection(writeClient, EnumSet.of(
+					ClusterConnection.Type.META));
+		}
+	}
+
 	@Provides
 	@Singleton
 	@Named("write_cluster")
@@ -112,8 +140,8 @@ public class CassandraModule extends AbstractModule
 	{
 		try
 		{
-			CassandraClient client = new CassandraClientImpl(configuration.getWriteCluster());
-			return new ClusterConnection(client);
+			createClients(configuration);
+			return m_writeCluster;
 		}
 		catch (Exception e)
 		{
@@ -132,8 +160,8 @@ public class CassandraModule extends AbstractModule
 	{
 		try
 		{
-			CassandraClient client = new CassandraClientImpl(configuration.getMetaCluster());
-			return new ClusterConnection(client);
+			createClients(configuration);
+			return m_metaCluster;
 		}
 		catch (Exception e)
 		{
@@ -153,7 +181,7 @@ public class CassandraModule extends AbstractModule
 			for (ClusterConfiguration clusterConfiguration : configuration.getReadClusters())
 			{
 				CassandraClient client = new CassandraClientImpl(clusterConfiguration);
-				clusters.add(new ClusterConnection(client));
+				clusters.add(new ClusterConnection(client, EnumSet.of(ClusterConnection.Type.READ)));
 			}
 		}
 		catch (Exception e)

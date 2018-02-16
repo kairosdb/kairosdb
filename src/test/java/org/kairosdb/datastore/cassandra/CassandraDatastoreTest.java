@@ -286,7 +286,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				m_schema,
 				session,
 				dataPointFactory,
-				new MemoryQueueProcessor(Executors.newSingleThreadExecutor(), 1000, 10000, 10),
+				new MemoryQueueProcessor(Executors.newSingleThreadExecutor(), 1000, 10000, 10, 500),
 				new IngestExecutorService(s_eventBus, 1),
 				new CassandraModule.BatchHandlerFactory()
 				{

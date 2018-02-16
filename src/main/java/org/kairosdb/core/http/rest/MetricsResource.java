@@ -235,7 +235,7 @@ public class MetricsResource implements KairosMetricReporter
 		if (!serverType.contains(methodServerType))
 		{
 			String logtext = "Disabled request type: " + methodServerType.name() + ", " + requestType + " request via URI \"" +  methodName + "\"";
-			logger.error(logtext);
+			logger.info(logtext);
 
 			String exceptionMessage = "[{\"Forbidden\": \"" + methodServerType.toString() + " API methods are disabled on this KairosDB instance.\"}]\n";
 

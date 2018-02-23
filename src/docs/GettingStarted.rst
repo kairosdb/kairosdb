@@ -6,7 +6,7 @@ Getting Started
 Install
 =======
 
-KairosDB runs with java 1.7 or later.
+KairosDB runs with Java 1.8 or later.
 
 #. Download the tar.gz file from the Downloads section
 #. Extract to where you wish to run from
@@ -33,7 +33,7 @@ Using with H2
 
 ``kairosdb.service.datastore=org.kairosdb.datastore.h2.H2Module``
 
-By default KairosDB is configured to run using the H2 datbase.  This lets you do development work without setting up and running Cassandra or HBase.
+By default KairosDB is configured to run using the H2 datbase.  This lets you do development work without setting up and running Cassandra.
 
 """""""""""""""""""""
 Configuration Options

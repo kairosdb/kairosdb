@@ -19,7 +19,7 @@ The format of the data is
 
 **Metric name** must be one word no spaces.
 
-**Time stamp** can either be in milliseconds or in seconds since Jan 1, 1970 (unix epoch) - seconds are for backwards compatibility with the original opentsdb.  The Cassandra datastore supports milliseconds.
+**Time stamp** can either be in milliseconds or in seconds since Jan 1, 1970 (unix epoch).  The Cassandra datastore supports milliseconds.
 
 	**Note:** The REST API only supports a timestamp in milliseconds.
 
@@ -69,7 +69,7 @@ The url for submitting data is http://localhost:8080/api/v1/datapoints
 	    "tags":{"host":"test"}
 	}]
 
-In the case of the rest api the timestamp is always treated as milliseconds since Jan 1, 1970.  If you are writing to HBase it is truncated off to the second.
+In the case of the rest api the timestamp is always treated as milliseconds since Jan 1, 1970.
 
 See the :doc:`REST API documentation <restapi/AddDataPoints>` for more details
 

@@ -52,4 +52,4 @@ Comparison to OpenTSDB HBase
 
 For one we do not use id's for strings.  The string data (metric names and tags) are written to row keys and the appropriate indexes.  Because Cassandra has much wider rows there are far fewer keys written to the database.  The space saved by using id's is minor and by not using id's we avoid having to use any kind of locks across the cluster.
 
-As mentioned the Cassandra has wider rows.  The default row size in OpenTSDB HBase is 1 hour.  Cassandra is set to 3 weeks.
+As mentioned the Cassandra has wider row which are set to 3 weeks.

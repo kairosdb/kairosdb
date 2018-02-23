@@ -6,7 +6,7 @@ Roll-ups are a way to improve query performance by aggregating or rolling up dat
 Roll-ups perform queries on existing data, aggregate the data, and write the results to another metric. The original data is left intact.
 Roll-ups are continuously run on a schedule rolling up a small time period of data on each execution.
 Roll-ups are scheduled by creating a roll-up task. A task contains one or more roll-ups and an execution interval (how often the task is executed).
-Roll-ups can be created using the :doc:`Roll-up REST API <restapi/Roll-ups>` or by using the Web UI (`http://<kairosServer>:<port>/rollup.html`).
+Roll-ups can be created using the :doc:`Roll-up REST API <restapi/Roll-ups>` or by using the Web UI (`http://<kairosServer>:<port>/rollups.html`).
 
 ----------
 Installing

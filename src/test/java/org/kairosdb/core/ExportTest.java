@@ -60,6 +60,13 @@ public class ExportTest
 	private static Injector s_injector;
 	public static final long LOAD = 1000L;
 
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	@BeforeClass
+	public static void setup()
+	{
+		new File("build").mkdir();
+	}
+
 	private static void loadData(int port) throws IOException, InterruptedException
 	{
 		Socket sock = new Socket("localhost", port);

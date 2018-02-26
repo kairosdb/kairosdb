@@ -819,7 +819,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			deleteAll = true;
 
 		Iterator<DataPointsRowKey> rowKeyIterator = getKeysForQueryIterator(deleteQuery);
-		List<DataPointsRowKey> partialRows = new ArrayList<DataPointsRowKey>();
 
 		while (rowKeyIterator.hasNext())
 		{

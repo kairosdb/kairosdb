@@ -16,4 +16,4 @@ script:
 
 before_install:
   - sudo rm -rf /var/lib/cassandra/*
-  - wget http://www.us.apache.org/dist/cassandra/3.11.1/apache-cassandra-3.0.15-bin.tar.gz && tar -xvzf apache-cassandra-3.11.1-bin.tar.gz && sudo sh apache-cassandra-3.11.1/bin/cassandra
+  - wget http://www.us.apache.org/dist/cassandra/3.11.1/apache-cassandra-3.11.1-bin.tar.gz && tar -xvzf apache-cassandra-3.11.1-bin.tar.gz && sudo sh apache-cassandra-3.11.1/bin/cassandra

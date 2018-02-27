@@ -12,7 +12,7 @@ before_script:
   - export CLASSPATH=tools/tablesaw-1.2.6.jar
 
 script:
-  - java make clean test-all
+  - java make ivy-resolve;java make clean test-all
 
 before_install:
   - sudo rm -rf /var/lib/cassandra/*

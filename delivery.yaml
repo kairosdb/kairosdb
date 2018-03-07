@@ -17,9 +17,9 @@ pipeline:
           if [[ ${IS_PR_BUILD} != "true" ]]
           then
             RELEASE_VERSION=$(git describe --tags --always --dirty)
-            IMAGE_TAG=${RELEASE_VERSION}
+            IMAGE=registry-write.opensource.zalan.do/zmon/kairosdb:${RELEASE_VERSION}
           else
-            IMAGE_TAG=${CDP_BUILD_VERSION}
+            IMAGE=registry-write.opensource.zalan.do/zmon/kairosdb-unstable:${CDP_BUILD_VERSION}
           fi
           IMAGE="registry-write.opensource.zalan.do/zmon/kairosdb:${IMAGE_TAG}"
           docker build --tag "$IMAGE" .

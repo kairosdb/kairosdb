@@ -36,6 +36,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	private int m_batchSize;
 	private final int m_initialBatchSize;
 	private final int m_minimumBatchSize;
+	private final int m_minBatchWait;
 	private final SimpleStats m_batchStats = new SimpleStats();
 
 	private volatile ProcessorHandler m_processorHandler;
@@ -50,6 +51,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 		m_deliveryThread = new DeliveryThread();
 		m_initialBatchSize = m_batchSize = batchSize;
 		m_minimumBatchSize = minimumBatchSize;
+		m_minBatchWait = minBatchWait;
 
 		executor.execute(m_deliveryThread);
 		m_executor = executor;
@@ -162,7 +164,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 				{
 					if (getAvailableDataPointEvents() < m_minimumBatchSize)
 					{
-						Thread.sleep(500);
+						Thread.sleep(m_minBatchWait);
 					}
 
 					if (getAvailableDataPointEvents() == 0)

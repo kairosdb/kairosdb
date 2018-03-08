@@ -1,12 +1,16 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
+import com.google.common.base.Splitter;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  Created by bhawkins on 10/13/14.
@@ -99,7 +103,7 @@ public class CassandraConfiguration
 	@Named(REPLICATION_PROPERTY)
 	private String m_replication = "{'class': 'SimpleStrategy','replication_factor' : 1}";
 
-	private List<String> m_hostList;
+	private Map<String, Integer> m_hostList = new HashMap<>();
 
 	@Inject(optional = true)
 	@Named(AUTH_USER_NAME)
@@ -154,19 +158,34 @@ public class CassandraConfiguration
 		m_keyspaceName = keyspaceName;
 	}
 
-	public List<String> getHostList()
+	public Map<String, Integer> getHostList()
 	{
 		return m_hostList;
 	}
 
+	private final Splitter HostSplitter = Splitter.on(',')
+			.trimResults().omitEmptyStrings();
+
+	private final Splitter PortSplitter = Splitter.on(':')
+			.trimResults().omitEmptyStrings();
+
 	@Inject
 	public void setHostList(@Named(HOST_LIST_PROPERTY) String hostList)
 	{
-		m_hostList = new ArrayList<>();
-		for (String node : hostList.split(","))
+		Iterable<String> strHostList = HostSplitter.split(hostList);
+		for (String hostEntry : strHostList)
 		{
-			m_hostList.add(node.split(":")[0].trim());
+			Iterator<String> hostPort = PortSplitter.split(hostEntry).iterator();
+
+			String host = hostPort.next();
+			int port = 9042;
+
+			if (hostPort.hasNext())
+				port = Integer.parseInt(hostPort.next());
+
+			m_hostList.put(host, port);
 		}
+
 	}
 
 	public ConsistencyLevel getDataWriteLevel()

@@ -17,10 +17,12 @@
 package org.kairosdb.datastore;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 import org.junit.Test;
+import org.kairosdb.core.datapoints.DoubleDataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.StringDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -201,6 +203,20 @@ public abstract class DatastoreTestHelper
 				.put("ghost", "tag").build();
 
 		publisher.post(new DataPointEvent(metricName, tags, new LongDataPoint(s_startTime, 50)));
+
+
+		metricName = "double_delete";
+		metricNames.add(metricName);
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("tag", "1").build();
+
+		publisher.post(new DataPointEvent(metricName, tags, new DoubleDataPoint(s_startTime, 100.1D)));
+
+		metricName = "double_delete";
+		tags = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("tag", "2").build();
+
+		publisher.post(new DataPointEvent(metricName, tags, new DoubleDataPoint(s_startTime, 100.1D)));
 	}
 
 	@Test
@@ -807,6 +823,43 @@ public abstract class DatastoreTestHelper
 	}
 
 
+	@Test
+	public void test_deleteDoubleWithTag() throws DatastoreException, InterruptedException
+	{
+		QueryMetric query = new QueryMetric(1, 0, "double_delete");
+		query.setTags(ImmutableMap.of("tag", "1"));
+		query.setEndTime(Long.MAX_VALUE);
+		//query.setEndTime(s_startTime +1);
+
+		s_datastore.delete(query);
+
+		query = new QueryMetric(0, 0, "double_delete");
+		query.setEndTime(s_startTime + 1);
+
+		Thread.sleep(1500);
+		//Now query for the data
+		DatastoreQuery dq = s_datastore.createQuery(query);
+		try
+		{
+			List<DataPointGroup> results = dq.execute();
+
+			assertThat(results.size(), equalTo(1));
+
+			DataPointGroup dpg = results.get(0);
+			SetMultimap<String, String> resTags = extractTags(dpg);
+			assertThat("there is only one tag", resTags.size(), is(1));
+
+			assertThat("there is one data point", dpg.hasNext(), is(true));
+			dpg.next();
+			assertThat("there is only one data point", dpg.hasNext(), is(false));
+		}
+		finally
+		{
+			dq.close();
+		}
+	}
+
+
 	private void assertValues(DataPointGroup group, long... values)
 	{
 		for (long expected : values)
@@ -818,6 +871,9 @@ public abstract class DatastoreTestHelper
 
 		assertThat(group.hasNext(), is(false));
 	}
+
+
+
 
 
 }

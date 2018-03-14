@@ -173,7 +173,7 @@ public class Schema
 	public static final String SERVICE_INDEX_DELETE_KEY = "DELETE FROM service_index " +
 			"WHERE service = ? AND service_key = ? AND key = ?";
 
-	public static final String SERVICE_INDEX_LAST_MODIFIED_TIME = "select toUnixTimestamp(mtime) from service_index " +
+	public static final String SERVICE_INDEX_LAST_MODIFIED_TIME = "select mtime from service_index " +
 			"WHERE service = ? AND service_key = ? LIMIT 1";
 
 	public static final String SERVICE_INDEX_GET_ENTRIES = "select key, value from service_index " +

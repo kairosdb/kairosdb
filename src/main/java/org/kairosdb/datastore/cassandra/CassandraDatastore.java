@@ -21,6 +21,7 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.collect.SetMultimap;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -440,7 +441,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		Row row = resultSet.one();
 
 		if (row != null)
-			return new Date(row.getTime(0));
+			return new Date(UUIDs.unixTimestamp(row.getUUID(0)));
 
 		return new Date(0L);
 	}
@@ -743,12 +744,14 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 				m_session.execute(statement);
 
+				//Need to include tags in delete statement.
 				statement = new BoundStatement(m_schema.psRowKeyDelete);
 				statement.setString(0, rowKey.getMetricName());
 				statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
 				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 				m_session.execute(statement);
 
+				//Should only remove if the entire time window goes away.
 				statement = new BoundStatement(m_schema.psRowKeyTimeDelete);
 				statement.setString(0, rowKey.getMetricName());
 				statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
@@ -787,6 +790,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		// If index is gone, delete metric name from Strings column family
 		if (deleteAll)
 		{
+			//System.out.println("Delete All");
 			BoundStatement statement = new BoundStatement(m_schema.psRowKeyIndexDeleteRow);
 			statement.setBytesUnsafe(0, serializeString(deleteQuery.getName()));
 			statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());

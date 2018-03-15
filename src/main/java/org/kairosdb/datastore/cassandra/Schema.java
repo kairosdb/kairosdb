@@ -151,7 +151,9 @@ public class Schema
 	public static final String ROW_KEY_TIME_DELETE = "DELETE FROM row_key_time_index " +
 			"WHERE metric = ? AND table_name = 'data_points' AND row_time = ?";
 
-	public static final String ROW_KEY_DELETE = "DELETE FROM row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ?";
+	public static final String ROW_KEY_DELETE = "DELETE FROM row_keys WHERE metric = ? " +
+			"AND table_name = 'data_points' AND row_time = ? AND data_type = ? " +
+			"AND tags = ?";
 
 	//Service index queries
 	public static final String SERVICE_INDEX_INSERT = "INSERT INTO service_index " +

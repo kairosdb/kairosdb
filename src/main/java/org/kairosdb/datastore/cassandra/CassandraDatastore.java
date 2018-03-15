@@ -216,6 +216,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	public void putDataPoint(DataPointEvent dataPointEvent) throws DatastoreException
 	{
 		//Todo make sure when shutting down this throws an exception
+		checkNotNull(dataPointEvent.getDataPoint().getDataStoreDataType());
 		m_queueProcessor.put(dataPointEvent);
 	}
 
@@ -744,19 +745,26 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 				m_session.execute(statement);
 
-				//Need to include tags in delete statement.
+				//Delete new row key index
 				statement = new BoundStatement(m_schema.psRowKeyDelete);
 				statement.setString(0, rowKey.getMetricName());
 				statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
+				statement.setString(2, rowKey.getDataType());
+				statement.setMap(3, rowKey.getTags());
 				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
 				m_session.execute(statement);
 
-				//Should only remove if the entire time window goes away.
-				statement = new BoundStatement(m_schema.psRowKeyTimeDelete);
-				statement.setString(0, rowKey.getMetricName());
-				statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
-				statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
-				m_session.execute(statement);
+
+				//Should only remove if the entire time window goes away and no tags are specified in query
+				//todo if we allow deletes for specific types this needs to change
+				if (deleteQuery.getTags().isEmpty())
+				{
+					statement = new BoundStatement(m_schema.psRowKeyTimeDelete);
+					statement.setString(0, rowKey.getMetricName());
+					statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
+					statement.setConsistencyLevel(m_cassandraConfiguration.getDataReadLevel());
+					m_session.execute(statement);
+				}
 
 				clearCache = true;
 			}
@@ -1008,13 +1016,19 @@ outer:
 			{
 				DataPointsRowKey rowKey;
 				Row record = iterator.one();
-				m_rawRowKeyCount ++;
 
 				if (newIndex)
+				{
+					if (record.getString(1) == null)
+						continue; //empty row
+
 					rowKey = new DataPointsRowKey(m_metricName, record.getTimestamp(0).getTime(),
 							record.getString(1), new TreeMap<String, String>(record.getMap(2, String.class, String.class)));
+				}
 				else
 					rowKey = DATA_POINTS_ROW_KEY_SERIALIZER.fromByteBuffer(record.getBytes(0));
+
+				m_rawRowKeyCount ++;
 
 				Map<String, String> keyTags = rowKey.getTags();
 				for (String tag : m_filterTags.keySet())

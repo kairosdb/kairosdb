@@ -67,6 +67,7 @@ public class HostManagerTest
         long timeChange = 1000 * 10; // 10 seconds
         keyStore.setKeyModificationTime(SERVICE, SERVICE_KEY, "1", new Date(timeChange));
         keyStore.setKeyModificationTime(SERVICE, SERVICE_KEY, "3", new Date(timeChange));
+        keyStore.setKeyModificationTime(SERVICE, SERVICE_KEY, "myGuid", new Date(timeChange));
 
         manager.checkHostChanges();
 
@@ -74,6 +75,6 @@ public class HostManagerTest
         assertNull(activeKairosHosts.get("1"));
         assertThat(activeKairosHosts.get("2").getValue(), equalTo("host2"));
         assertNull(activeKairosHosts.get("3"));
-        assertThat(activeKairosHosts.get("myGuid").getValue(), equalTo("myHost"));
+        assertThat(activeKairosHosts.get("myGuid").getValue(), equalTo("myHost")); // current host should always be there
     }
 }

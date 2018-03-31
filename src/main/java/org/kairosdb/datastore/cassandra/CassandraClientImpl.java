@@ -1,8 +1,15 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.codahale.metrics.*;
-import com.datastax.driver.core.*;
-import com.datastax.driver.core.ConsistencyLevel;
+import com.codahale.metrics.Snapshot;
+import com.datastax.driver.core.AuthProvider;
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.HostDistance;
+import com.datastax.driver.core.Metrics;
+import com.datastax.driver.core.PoolingOptions;
+import com.datastax.driver.core.ProtocolOptions;
+import com.datastax.driver.core.QueryOptions;
+import com.datastax.driver.core.Session;
+import com.datastax.driver.core.TimestampGenerator;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
@@ -21,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  Created by bhawkins on 3/4/15.
@@ -89,10 +97,11 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		}
 
 
-		for (String node : configuration.getHostList())
+		for (Map.Entry<String, Integer> hostPort : configuration.getHostList().entrySet())
 		{
-			logger.info("Connecting to "+node);
-			builder.addContactPoint(node);
+			logger.info("Connecting to "+hostPort.getKey()+":"+hostPort.getValue());
+			builder.addContactPoint(hostPort.getKey())
+					.withPort(hostPort.getValue());
 		}
 
 		if (configuration.isUseSsl())

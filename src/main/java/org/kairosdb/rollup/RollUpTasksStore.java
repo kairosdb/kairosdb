@@ -1,9 +1,11 @@
 package org.kairosdb.rollup;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Manages access to the roll up task store.
+ * Manages access to the roll up store. These are stored as Roll-id to Roll-up task JSON.
  */
 public interface RollUpTasksStore
 {
@@ -19,9 +21,7 @@ public interface RollUpTasksStore
 	 *
 	 * @return all roll up tasks
 	 */
-	List<RollupTask> read() throws RollUpException;
-	/**
-	 * Returns the time the store was last modified.
+	Map<String, RollupTask> read() throws RollUpException;
 
 	/**
 	 Removes the task specified by the id.
@@ -31,9 +31,24 @@ public interface RollUpTasksStore
 	void remove(String id) throws RollUpException;
 
 	/**
-	 Adds the listener to be notified when a task is added, changed, or removed.
-	 @param listener listener to notify
+	 * Returns the task associated with the id.
+	 *
+	 * @param id task id
+	 * @return task or null
 	 */
-	void addListener(RollupTaskChangeListener listener);
+	RollupTask read(String id) throws RollUpException;
 
-	}
+	/**
+	 * Returns a list of all task ids
+	 * @return list of task ids or an empty list
+	 */
+	Set<String> listIds()
+			throws RollUpException;
+
+	/**
+	 * Returns the last time the store was modified.
+	 * @return when the store was last modified
+	 */
+    long getLastModifiedTime()
+			throws RollUpException;
+}

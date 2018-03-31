@@ -34,9 +34,9 @@ import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.management.ManagementFactory;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 import static org.quartz.TriggerBuilder.newTrigger;
 
@@ -74,13 +74,7 @@ public class MetricReporterService implements KairosDBJob
 
 	private int getThreadCount()
 	{
-		ThreadGroup tg = Thread.currentThread().getThreadGroup();
-		while (tg.getParent() != null)
-		{
-			tg = tg.getParent();
-		}
-
-		return tg.activeCount();
+		return ManagementFactory.getThreadMXBean().getThreadCount();
 	}
 
 	@Override

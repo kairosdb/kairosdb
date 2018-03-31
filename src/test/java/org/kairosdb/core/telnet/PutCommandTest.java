@@ -15,7 +15,6 @@
  */
 package org.kairosdb.core.telnet;
 
-import org.kairosdb.eventbus.Subscribe;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelConfig;
 import org.jboss.netty.channel.ChannelFactory;
@@ -34,6 +33,7 @@ import org.kairosdb.core.datastore.TagSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.ValidationException;
 

@@ -21,7 +21,6 @@ import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.ROW_WIDTH;
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.calculateRowTime;

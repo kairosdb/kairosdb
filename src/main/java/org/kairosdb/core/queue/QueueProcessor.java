@@ -1,9 +1,9 @@
 package org.kairosdb.core.queue;
 
-import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.BatchReductionEvent;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.SimpleStats;
@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -29,6 +28,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	public static final String BATCH_SIZE = "kairosdb.queue_processor.batch_size";
 	public static final String MEMORY_QUEUE_SIZE = "kairosdb.queue_processor.memory_queue_size";
 	public static final String MINIMUM_BATCH_SIZE = "kairosdb.queue_processor.min_batch_size";
+	public static final String MINIMUM_BATCH_WAIT = "kairosdb.queue_processor.min_batch_wait";
 
 
 	private final DeliveryThread m_deliveryThread;
@@ -36,6 +36,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	private int m_batchSize;
 	private final int m_initialBatchSize;
 	private final int m_minimumBatchSize;
+	private final int m_minBatchWait;
 	private final SimpleStats m_batchStats = new SimpleStats();
 
 	private volatile ProcessorHandler m_processorHandler;
@@ -44,11 +45,13 @@ public abstract class QueueProcessor implements KairosMetricReporter
 	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
 
-	public QueueProcessor(ExecutorService executor, int batchSize, int minimumBatchSize)
+	public QueueProcessor(ExecutorService executor, int batchSize, int minimumBatchSize,
+			int minBatchWait)
 	{
 		m_deliveryThread = new DeliveryThread();
 		m_initialBatchSize = m_batchSize = batchSize;
 		m_minimumBatchSize = minimumBatchSize;
+		m_minBatchWait = minBatchWait;
 
 		executor.execute(m_deliveryThread);
 		m_executor = executor;
@@ -161,7 +164,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 				{
 					if (getAvailableDataPointEvents() < m_minimumBatchSize)
 					{
-						Thread.sleep(500);
+						Thread.sleep(m_minBatchWait);
 					}
 
 					if (getAvailableDataPointEvents() == 0)

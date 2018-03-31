@@ -10,16 +10,25 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.events.DataPointEvent;
-import org.mockito.Matchers;
 import se.ugli.bigqueue.BigArray;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  Created by bhawkins on 10/15/16.
@@ -156,7 +165,7 @@ public class QueueProcessorTest
 	{
 		BigArray bigArray = mock(BigArray.class);
 
-		when(bigArray.append(Matchers.<byte[]>any())).thenReturn(0L);
+		when(bigArray.append(any())).thenReturn(0L);
 		when(bigArray.getTailIndex()).thenReturn(0L);
 		when(bigArray.getHeadIndex()).thenReturn(1L);
 
@@ -164,7 +173,7 @@ public class QueueProcessorTest
 		ProcessorHandler processorHandler = mock(ProcessorHandler.class);
 
 		QueueProcessor queueProcessor = new FileQueueProcessor(serializer,
-				bigArray, new TestExecutor(), 2, 10, 500, 1);
+				bigArray, new TestExecutor(), 2, 10, 500, 1, 500);
 
 		queueProcessor.setProcessorHandler(processorHandler);
 
@@ -176,7 +185,7 @@ public class QueueProcessorTest
 		m_deliveryThread.run();
 
 		verify(bigArray, times(1)).append(eq(serializer.serializeEvent(event)));
-		verify(processorHandler, times(1)).handleEvents(eq(Arrays.asList(event)), Matchers.<EventCompletionCallBack>any(), eq(false));
+		verify(processorHandler, times(1)).handleEvents(eq(Arrays.asList(event)), any(), eq(false));
 		verify(bigArray, times(0)).get(anyLong());
 	}
 
@@ -185,21 +194,21 @@ public class QueueProcessorTest
 	{
 		BigArray bigArray = mock(BigArray.class);
 
-		when(bigArray.append(Matchers.<byte[]>any())).thenReturn(0L);
+		when(bigArray.append(any())).thenReturn(0L);
 		when(bigArray.getHeadIndex()).thenReturn(2L);
 
 		DataPointEventSerializer serializer = new DataPointEventSerializer(new TestDataPointFactory());
 		ProcessorHandler processorHandler = mock(ProcessorHandler.class);
 
 		QueueProcessor queueProcessor = new FileQueueProcessor(serializer,
-				bigArray, new TestExecutor(), 3, 1, 500, 1);
+				bigArray, new TestExecutor(), 3, 1, 500, 1, 500);
 
 		queueProcessor.setProcessorHandler(processorHandler);
 
 		DataPointEvent event = createDataPointEvent();
 
 		queueProcessor.put(event);
-		when(bigArray.append(Matchers.<byte[]>any())).thenReturn(1L);
+		when(bigArray.append(any())).thenReturn(1L);
 		queueProcessor.put(event);
 
 		when(bigArray.get(0L)).thenReturn(serializer.serializeEvent(event));
@@ -209,7 +218,7 @@ public class QueueProcessorTest
 		m_deliveryThread.run();
 
 		verify(bigArray, times(2)).append(eq(serializer.serializeEvent(event)));
-		verify(processorHandler, times(1)).handleEvents(eq(Arrays.asList(event, event)), Matchers.<EventCompletionCallBack>any(), eq(false));
+		verify(processorHandler, times(1)).handleEvents(eq(Arrays.asList(event, event)), any(), eq(false));
 		verify(bigArray, times(1)).get(anyLong());
 	}
 
@@ -219,7 +228,7 @@ public class QueueProcessorTest
 		final EventBus eventBus = mock(EventBus.class);
 		BigArray bigArray = mock(BigArray.class);
 
-		when(bigArray.append(Matchers.<byte[]>any())).thenReturn(0L);
+		when(bigArray.append(any())).thenReturn(0L);
 		when(bigArray.getHeadIndex()).thenReturn(2L);
 
 		DataPointEventSerializer serializer = new DataPointEventSerializer(new TestDataPointFactory());
@@ -234,14 +243,14 @@ public class QueueProcessorTest
 		};
 
 		QueueProcessor queueProcessor = new FileQueueProcessor(serializer,
-				bigArray, new TestExecutor(), 3, 2, -1, 1);
+				bigArray, new TestExecutor(), 3, 2, -1, 1, 500);
 
 		queueProcessor.setProcessorHandler(processorHandler);
 
 		DataPointEvent event = createDataPointEvent();
 
 		queueProcessor.put(event);
-		when(bigArray.append(Matchers.<byte[]>any())).thenReturn(1L);
+		when(bigArray.append(any())).thenReturn(1L);
 		queueProcessor.put(event);
 
 		when(bigArray.get(1L)).thenReturn(serializer.serializeEvent(event));

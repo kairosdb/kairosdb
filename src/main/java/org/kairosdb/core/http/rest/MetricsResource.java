@@ -18,7 +18,6 @@ package org.kairosdb.core.http.rest;
 
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
@@ -35,9 +34,9 @@ import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.DatastoreQuery;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.exception.InvalidServerTypeException;
 import org.kairosdb.core.datastore.QueryPlugin;
 import org.kairosdb.core.datastore.QueryPostProcessingPlugin;
+import org.kairosdb.core.exception.InvalidServerTypeException;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
@@ -87,7 +86,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
@@ -231,7 +235,7 @@ public class MetricsResource implements KairosMetricReporter
 		if (!serverType.contains(methodServerType))
 		{
 			String logtext = "Disabled request type: " + methodServerType.name() + ", " + requestType + " request via URI \"" +  methodName + "\"";
-			logger.error(logtext);
+			logger.info(logtext);
 
 			String exceptionMessage = "[{\"Forbidden\": \"" + methodServerType.toString() + " API methods are disabled on this KairosDB instance.\"}]\n";
 

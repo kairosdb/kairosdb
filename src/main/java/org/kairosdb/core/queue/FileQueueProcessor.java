@@ -7,7 +7,6 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.events.DataPointEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +16,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,9 +56,10 @@ public class FileQueueProcessor extends QueueProcessor
 			@Named(BATCH_SIZE) int batchSize,
 			@Named(MEMORY_QUEUE_SIZE) int memoryQueueSize,
 			@Named(SECONDS_TILL_CHECKPOINT) int secondsTillCheckpoint,
-			@Named(MINIMUM_BATCH_SIZE) int minimumBatchSize)
+			@Named(MINIMUM_BATCH_SIZE) int minimumBatchSize,
+			@Named(MINIMUM_BATCH_WAIT) int minBatchWait)
 	{
-		super(executor, batchSize, minimumBatchSize);
+		super(executor, batchSize, minimumBatchSize, minBatchWait);
 		m_bigArray = bigArray;
 		m_memoryQueue = new CircularFifoQueue<>(memoryQueueSize);
 		m_eventSerializer = eventSerializer;

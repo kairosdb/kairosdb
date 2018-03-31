@@ -5,7 +5,6 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -64,18 +63,5 @@ public class DataPointEventUtil
 		DataPointEvent event = verifyPost(eventBus);
 		assertThat(event.getMetricName(), equalTo(metricName));
 		assertThat(event.getDataPoint(), equalTo(dataPoint));
-	}
-
-	private class DataPointEventMatcher extends ArgumentMatcher<DataPointEvent>
-	{
-		@Override
-		public boolean matches(Object argument)
-		{
-			DataPointEvent event = (DataPointEvent)argument;
-			return true;
-			/*return metricName.equals(event.getMetricName()) &&
-					dataPoint.equals(event.getDataPoint()) &&
-					ttl == event.getTtl();*/
-		}
 	}
 }

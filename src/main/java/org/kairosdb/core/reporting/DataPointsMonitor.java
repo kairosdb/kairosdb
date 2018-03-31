@@ -6,6 +6,8 @@
 
 package org.kairosdb.core.reporting;
 
+import org.kairosdb.core.KairosDBService;
+import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.eventbus.Subscribe;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -26,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class DataPointsMonitor implements KairosMetricReporter
+public class DataPointsMonitor implements KairosMetricReporter, KairosDBService
 {
 	public static final Logger logger = LoggerFactory.getLogger(DataPointsMonitor.class);
 	public static final String METRIC_NAME = "kairosdb.metric_counters";
@@ -98,5 +100,17 @@ public class DataPointsMonitor implements KairosMetricReporter
 			return; //Skip our own metrics.
 
 		addCounter(metricName, 1);
+	}
+
+	@Override
+	public void start() throws KairosDBException
+	{
+
+	}
+
+	@Override
+	public void stop()
+	{
+
 	}
 }

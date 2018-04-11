@@ -49,15 +49,7 @@ import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.IngestExecutorService;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.Executors;
 
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -274,7 +266,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		CassandraConfiguration configuration = new CassandraConfiguration(config);
 		CassandraClient client = new CassandraClientImpl(configuration.getWriteCluster());
-		m_clusterConnection = new ClusterConnection(client);
+		m_clusterConnection = new ClusterConnection(client, EnumSet.of(ClusterConnection.Type.WRITE));
 		Session session = m_clusterConnection.getSession();
 		BatchStats batchStats = new BatchStats();
 		DataCache<DataPointsRowKey> rowKeyCache = new DataCache<>(1024);
@@ -296,7 +288,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				m_clusterConnection,
 				Collections.emptyList(),
 				dataPointFactory,
-				new MemoryQueueProcessor(Executors.newSingleThreadExecutor(), 1000, 10000, 10),
+				new MemoryQueueProcessor(Executors.newSingleThreadExecutor(), 1000, 10000, 10, 500),
 				new IngestExecutorService(s_eventBus, 1),
 				new CassandraModule.BatchHandlerFactory()
 				{

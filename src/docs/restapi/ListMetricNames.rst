@@ -2,7 +2,8 @@
 List Metric Names
 =================
 
-Returns a list of all metric names.
+Returns a list of all metric names. If you specify the prefix parameter, only
+names that start with prefix are returned.
 
 ------
 Method
@@ -14,6 +15,8 @@ Request
 -------
 
   http://[host]:[port]/api/v1/metricnames
+
+  http://[host]:[port]/api/v1/metricnames?prefix=[prefix]
 
 ----
 Body

@@ -165,13 +165,19 @@ outer:
 		{
 			DataPointsRowKey rowKey;
 			Row record = iterator.one();
-			m_rawRowKeyCount ++;
 
 			if (newIndex)
+			{
+				if (record.getString(1) == null)
+					continue; //empty row
+
 				rowKey = new DataPointsRowKey(m_metricName, m_clusterName, record.getTimestamp(0).getTime(),
 						record.getString(1), new TreeMap<String, String>(record.getMap(2, String.class, String.class)));
+			}
 			else
 				rowKey = CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER.fromByteBuffer(record.getBytes(0), m_clusterName);
+
+			m_rawRowKeyCount ++;
 
 			Map<String, String> keyTags = rowKey.getTags();
 			for (String tag : m_filterTagNames)

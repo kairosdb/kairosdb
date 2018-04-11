@@ -217,4 +217,24 @@ public class QueryMetric implements DatastoreMetricQuery
 	{
 		this.plugins.add(plugin);
 	}
+
+	@Override
+	public String toString()
+	{
+		return "QueryMetric{" +
+				"startTime=" + startTime +
+				", endTime=" + endTime +
+				", endTimeSet=" + endTimeSet +
+				", cacheTime=" + cacheTime +
+				", name='" + name + '\'' +
+				", tags=" + tags +
+				", groupBys=" + groupBys +
+				", aggregators=" + aggregators +
+				", cacheString='" + cacheString + '\'' +
+				", excludeTags=" + excludeTags +
+				", limit=" + limit +
+				", order=" + order +
+				", plugins=" + plugins +
+				'}';
+	}
 }

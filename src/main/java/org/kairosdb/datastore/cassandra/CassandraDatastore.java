@@ -20,10 +20,9 @@ import com.datastax.driver.core.Host;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.SetMultimap;
+import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -69,14 +68,12 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -224,6 +221,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	public void putDataPoint(DataPointEvent dataPointEvent) throws DatastoreException
 	{
 		//Todo make sure when shutting down this throws an exception
+		checkNotNull(dataPointEvent.getDataPoint().getDataStoreDataType());
 		m_queueProcessor.put(dataPointEvent);
 	}
 
@@ -531,7 +529,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		Row row = resultSet.one();
 
 		if (row != null)
-			return new Date(row.getTime(0));
+			return new Date(UUIDs.unixTimestamp(row.getUUID(0)));
 
 		return new Date(0L);
 	}
@@ -845,14 +843,21 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 							statement = new BoundStatement(cluster.psRowKeyDelete);
 							statement.setString(0, rowKey.getMetricName());
 							statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
+							statement.setString(2, rowKey.getDataType());
+							statement.setMap(3, rowKey.getTags());
 							statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
 							cluster.execute(statement);
 
-							statement = new BoundStatement(cluster.psRowKeyTimeDelete);
-							statement.setString(0, rowKey.getMetricName());
-							statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
-							statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
-							cluster.execute(statement);
+							//Should only remove if the entire time window goes away and no tags are specified in query
+							//todo if we allow deletes for specific types this needs to change
+							if (deleteQuery.getTags().isEmpty())
+							{
+								statement = new BoundStatement(cluster.psRowKeyTimeDelete);
+								statement.setString(0, rowKey.getMetricName());
+								statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
+								statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
+								cluster.execute(statement);
+							}
 							return null;
 						});
 

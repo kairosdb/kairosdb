@@ -165,7 +165,9 @@ public class ClusterConnection
 	public static final String ROW_KEY_TIME_DELETE = "DELETE FROM row_key_time_index " +
 			"WHERE metric = ? AND table_name = 'data_points' AND row_time = ?";
 
-	public static final String ROW_KEY_DELETE = "DELETE FROM row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ?";
+	public static final String ROW_KEY_DELETE = "DELETE FROM row_keys WHERE metric = ? " +
+			"AND table_name = 'data_points' AND row_time = ? AND data_type = ? " +
+			"AND tags = ?";
 
 	//Service index queries
 	public static final String SERVICE_INDEX_INSERT = "INSERT INTO service_index " +
@@ -187,7 +189,7 @@ public class ClusterConnection
 	public static final String SERVICE_INDEX_DELETE_KEY = "DELETE FROM service_index " +
 			"WHERE service = ? AND service_key = ? AND key = ?";
 
-	public static final String SERVICE_INDEX_LAST_MODIFIED_TIME = "select toUnixTimestamp(mtime) from service_index " +
+	public static final String SERVICE_INDEX_LAST_MODIFIED_TIME = "select mtime from service_index " +
 			"WHERE service = ? AND service_key = ? LIMIT 1";
 
 	public static final String SERVICE_INDEX_GET_ENTRIES = "select key, value from service_index " +

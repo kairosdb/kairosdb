@@ -32,9 +32,9 @@ Go to Modules and select the main module.
 
 .. image:: idea_kairos_dependencies.png
 
---------------------
-Alternative Approach
---------------------
+----------------------
+Alternative Approach 1
+----------------------
 
 Create 'kairosdb.iml' at the root of your kairos project and copy the following into it:
 
@@ -85,9 +85,9 @@ Create 'kairosdb.iml' at the root of your kairos project and copy the following 
 
 IntelliJ will see this as a new module and you can remove all the others it created during the initial import.
 
-------------------------
-Alternative Approach - 1
-------------------------
+----------------------
+Alternative Approach 2
+----------------------
 Install IvyIdea Plugin and restart
 
 ::
@@ -102,6 +102,12 @@ Now open IntelliJ and it should detect it as a Maven, should start resolving the
 
 Note: You might have to add some jars to the class path ( Alt + Enter) would give the the most appropriate libs.
 
+----------------------
+Alternative Approach 3
+----------------------
+Use Maven
+
+Go to File->Open and select pom.xml. This will create a Maven project and download dependencies.
 
 --------------
 Running Kairos

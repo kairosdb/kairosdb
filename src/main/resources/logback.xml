@@ -67,6 +67,8 @@
 
 	<logger name="org.kairosdb.datastore.h2.orm" level="WARN"/>
 
+	<logger name="org.apache.kafka.streams.processor.internals" level="WARN"/>
+
 	<!--<logger name="org.hbase.async.RegionClient" level="DEBUG"/>-->
 
 	<!--<logger name="org.kairosdb.core.aggregator.SumAggregator" level="DEBUG"/>

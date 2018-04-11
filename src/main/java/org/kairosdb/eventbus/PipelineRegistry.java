@@ -51,7 +51,7 @@ public class PipelineRegistry
 	/**
 	 All registered subscribers, indexed by event type.
 	 <p>
-	 <p>The {@link SortedCopyOnWriteArrayList} values make it easy and relatively lightweight to get an
+	 <p>The SortedCopyOnWriteArrayList values make it easy and relatively lightweight to get an
 	 immutable snapshot of all current subscribers to an event without any locking.
 	 */
 	//private final ConcurrentMap<Class<?>, SortedCopyOnWriteArrayList<FilterSubscriber>> subscribers =

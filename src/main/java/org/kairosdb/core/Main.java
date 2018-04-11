@@ -17,6 +17,7 @@ package org.kairosdb.core;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import com.beust.jcommander.JCommander;
@@ -328,14 +329,18 @@ public class Main
 		{
 			//Turn off console logging
 			Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-			root.getAppender("stdout").addFilter(new Filter<ILoggingEvent>()
+			Appender<ILoggingEvent> stdout = root.getAppender("stdout");
+			if (stdout != null)
 			{
-				@Override
-				public FilterReply decide(ILoggingEvent iLoggingEvent)
+				stdout.addFilter(new Filter<ILoggingEvent>()
 				{
-					return (FilterReply.DENY);
-				}
-			});
+					@Override
+					public FilterReply decide(ILoggingEvent iLoggingEvent)
+					{
+						return (FilterReply.DENY);
+					}
+				});
+			}
 		}
 
 		File propertiesFile = null;

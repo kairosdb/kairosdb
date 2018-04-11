@@ -56,9 +56,10 @@ public class FileQueueProcessor extends QueueProcessor
 			@Named(BATCH_SIZE) int batchSize,
 			@Named(MEMORY_QUEUE_SIZE) int memoryQueueSize,
 			@Named(SECONDS_TILL_CHECKPOINT) int secondsTillCheckpoint,
-			@Named(MINIMUM_BATCH_SIZE) int minimumBatchSize)
+			@Named(MINIMUM_BATCH_SIZE) int minimumBatchSize,
+			@Named(MINIMUM_BATCH_WAIT) int minBatchWait)
 	{
-		super(executor, batchSize, minimumBatchSize);
+		super(executor, batchSize, minimumBatchSize, minBatchWait);
 		m_bigArray = bigArray;
 		m_memoryQueue = new CircularFifoQueue<>(memoryQueueSize);
 		m_eventSerializer = eventSerializer;

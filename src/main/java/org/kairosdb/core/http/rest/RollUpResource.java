@@ -173,7 +173,7 @@ public class RollUpResource
 			if (task != null)
 			{
 				store.remove(id);
-				return setHeaders(Response.status(Status.NO_CONTENT)).entity("").build();
+				return setHeaders(Response.status(Status.NO_CONTENT)).build();
 			}
 			else
 			{

@@ -3,10 +3,10 @@ package org.kairosdb.datastore.cassandra;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.typesafe.config.Config;
 import org.kairosdb.core.KairosConfig;
 import org.kairosdb.core.KairosRootConfig;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -84,7 +84,7 @@ public class CassandraConfiguration
 	@Named(QUERY_LIMIT)
 	private int m_queryLimit = 0;
 
-	private List<String> m_hostList;
+	private Map<String, Integer> m_hostList = new HashMap<>();
 
 	private final ClusterConfiguration m_writeCluster;
 	private final ClusterConfiguration m_metaCluster;

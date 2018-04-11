@@ -64,11 +64,10 @@ public class HostManager implements KairosDBService
     void checkHostChanges()
     {
         try {
-            // Add this host to the table if it doesn't exist
+            // Add this host to the table if it doesn't exist or update its timestamp
+            keyStore.setValue(SERVICE, SERVICE_KEY, guid, hostname);
+
             Map<String, ServiceKeyValue> hosts = getHostsFromKeyStore();
-            if (!hosts.containsKey(guid)) {
-                keyStore.setValue(SERVICE, SERVICE_KEY, guid, hostname);
-            }
 
             // Remove inactive nodes from the table
             long now = System.currentTimeMillis();

@@ -1,15 +1,23 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigBeanFactory;
 import org.kairosdb.core.KairosConfig;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class ClusterConfiguration
 {
+	private final Splitter PortSplitter = Splitter.on(':')
+			.trimResults().omitEmptyStrings();
+
 	private final String m_keyspace;
 	private final ConsistencyLevel m_readConsistencyLevel;
 	private final ConsistencyLevel m_writeConsistencyLevel;
@@ -21,7 +29,7 @@ public class ClusterConfiguration
 	private final int m_connectionsRemoteMax;
 	private final int m_requestsPerConnectionLocal;
 	private final int m_requestsPerConnectionRemote;
-	private final List<String> m_hostList;
+	private final Map<String, Integer> m_hostList;
 	private final String m_clusterName;
 	private String m_authPassword;
 	private String m_authUser;
@@ -49,7 +57,23 @@ public class ClusterConfiguration
 		m_requestsPerConnectionLocal = config.getInt("max_requests_per_connection.local",128);
 		m_requestsPerConnectionRemote = config.getInt("max_requests_per_connection.remote", 128);
 
-		m_hostList = config.getStringList("cql_host_list", Collections.singletonList("localhost"));
+		List<String> hostList = config.getStringList("cql_host_list", Collections.singletonList("localhost"));
+
+		ImmutableMap.Builder<String, Integer> hostBuilder = ImmutableMap.<String, Integer>builder();
+		for (String hostEntry : hostList)
+		{
+			Iterator<String> hostPort = PortSplitter.split(hostEntry).iterator();
+
+			String host = hostPort.next();
+			int port = 9042;
+
+			if (hostPort.hasNext())
+				port = Integer.parseInt(hostPort.next());
+
+			hostBuilder.put(host, port);
+		}
+
+		m_hostList = hostBuilder.build();
 
 		if (config.hasPath("local_dc_name"))
 			m_localDCName = config.getString("local_dc_name");
@@ -118,7 +142,7 @@ public class ClusterConfiguration
 		return m_requestsPerConnectionRemote;
 	}
 
-	public List<String> getHostList()
+	public Map<String, Integer> getHostList()
 	{
 		return m_hostList;
 	}

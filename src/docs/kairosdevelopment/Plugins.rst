@@ -55,7 +55,7 @@ property Kairos will use a new ClassLoader to load your jar and dependencies.
 Lets say you have a plugin called foo.  You install a properties file that contains
 ::
   kairosdb.service.foo=com.foo.MyPluginModule
-  kairosdb.service_folder=lib/foo
+  kairosdb.service_folder.foo=lib/foo
 
 You can then place your jar and dependencies in the folder
 ::

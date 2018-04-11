@@ -12,7 +12,7 @@ The format of the data is
 
 **Metric name** must be one word and is limited to to utf8 characters.
 
-**Time stamp** can either be in milliseconds or in seconds since Jan 1, 1970 (unix epoch) - seconds are for backwards compatibility with the original opentsdb.  If the value is less than 3,000,000,000 it is considered seconds.  If you want to send milliseconds you may want to consider using putm.
+**Time stamp** can either be in milliseconds or in seconds since Jan 1, 1970 (unix epoch).  If the value is less than 3,000,000,000 it is considered seconds.  If you want to send milliseconds you may want to consider using putm.
 
 **Value** can either be a long or double value.
 

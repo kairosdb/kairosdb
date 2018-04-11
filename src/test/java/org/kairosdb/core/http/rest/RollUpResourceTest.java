@@ -39,6 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
@@ -246,7 +247,7 @@ public class RollUpResourceTest
 		Response response = resource.delete(tasks.get(0).getId());
 
 		assertThat(response.getStatus(), equalTo(NO_CONTENT.getStatusCode()));
-		assertThat(response.getEntity(), equalTo(""));
+		assertNull(response.getEntity());
 	}
 
 	@Test

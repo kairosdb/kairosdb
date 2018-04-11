@@ -52,7 +52,7 @@ public class QueryException extends Exception
 
 	/**
 	 Constructs a new {@code QueryException} with the specified detail message and cause.
-	 <p/>
+	 <p>
 	 Note that the detail message associated with {@code cause} is <i>not</i> automatically
 	 incorporated in this exception's detail message.
 

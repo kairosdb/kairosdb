@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  Created by bhawkins on 3/4/15.
@@ -102,10 +103,11 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		}
 
 
-		for (String node : configuration.getHostList())
+		for (Map.Entry<String, Integer> hostPort : configuration.getHostList().entrySet())
 		{
-			logger.info("Connecting to "+node);
-			builder.addContactPoint(node);
+			logger.info("Connecting to "+hostPort.getKey()+":"+hostPort.getValue());
+			builder.addContactPoint(hostPort.getKey())
+					.withPort(hostPort.getValue());
 		}
 
 		if (configuration.isUseSsl())

@@ -39,10 +39,11 @@ public class MemoryQueueProcessor extends QueueProcessor implements KairosMetric
 			@Named(QUEUE_PROCESSOR) ExecutorService executor,
 			@Named(BATCH_SIZE) int batchSize,
 			@Named(MEMORY_QUEUE_SIZE) int memoryQueueSize,
-			@Named(MINIMUM_BATCH_SIZE) int minimumBatchSize)
+			@Named(MINIMUM_BATCH_SIZE) int minimumBatchSize,
+			@Named(MINIMUM_BATCH_WAIT) int minBatchWait)
 
 	{
-		super(executor, batchSize, minimumBatchSize);
+		super(executor, batchSize, minimumBatchSize, minBatchWait);
 
 		m_queue = new ArrayBlockingQueue<>(memoryQueueSize, true);
 	}

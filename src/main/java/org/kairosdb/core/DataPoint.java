@@ -19,18 +19,13 @@ public interface DataPoint
 	public long getTimestamp();
 
 
-	/**
-	 Provides serialized form of data so it can be written to the data store
-	 @return
-	 */
-	//public ByteBuffer toByteBuffer();
-
 	public void writeValueToBuffer(DataOutput buffer) throws IOException;
 
 	public void writeValueToJson(JSONWriter writer) throws JSONException;
 
 	/**
 		This is used to identify the data type on the wire in json format
+	 @return api data type used in json
 	 */
 	public String getApiDataType();
 
@@ -39,9 +34,9 @@ public interface DataPoint
 	 The reason this is different from api data type is you may want to provide
 	 a new implementation for storing long values.  So the api type may be 'long'
 	 but the data store type may be 'long2'.  this way going forward new
-	 incomming long values will be stored as 'long2' but you can still read both
+	 incoming long values will be stored as 'long2' but you can still read both
 	 'long' and 'long2' from the data store.
-	 @return
+	 @return data store type
 	 */
 	public String getDataStoreDataType();
 

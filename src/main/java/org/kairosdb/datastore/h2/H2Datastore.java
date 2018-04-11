@@ -22,6 +22,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mchange.v2.c3p0.DataSources;
 import org.agileclick.genorm.runtime.GenOrmQueryResultSet;
+import org.agileclick.genorm.runtime.LeakDetectorDataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.Datastore;
@@ -112,12 +113,17 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 		String jdbcPath = (dataDir.isAbsolute() || dbPath.startsWith("./") ? "" : "./") + dbPath;
 		logger.info("Starting H2 database in " + jdbcPath);
 		
-		JdbcDataSource ds = new JdbcDataSource();
-		ds.setURL("jdbc:h2:" + jdbcPath + "/kairosdb");
-		ds.setUser("sa");
+		JdbcDataSource jdbcds = new JdbcDataSource();
+		jdbcds.setURL("jdbc:h2:" + jdbcPath + "/kairosdb");
+		jdbcds.setUser("sa");
+
+		DataSource ds = jdbcds;
 
 		try
 		{
+
+			//Uncomment this line to detect db leaks in H2
+			//ds = new LeakDetectorDataSource(ds, 4, 9);
 			GenOrmDataSource.setDataSource(new DSEnvelope(DataSources.pooledDataSource(ds)));
 		}
 		catch (SQLException e)
@@ -548,7 +554,7 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	@Override
 	public Iterable<String> listServiceKeys(String service) throws DatastoreException
 	{
-		final ServiceIndex_base.ResultSet keys = ServiceIndex.factory.getServiceKeys(service);
+		final Iterator<ServiceIndex> keys = ServiceIndex.factory.getServiceKeys(service).getArrayList().iterator();
 
 		return new Iterable<String>()
 		{
@@ -560,13 +566,13 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 					@Override
 					public boolean hasNext()
 					{
-						return keys.next();
+						return keys.hasNext();
 					}
 
 					@Override
 					public String next()
 					{
-						return keys.getRecord().getServiceKey();
+						return keys.next().getServiceKey();
 					}
 
 					@Override
@@ -579,7 +585,7 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	@Override
 	public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
 	{
-		final ServiceIndex_base.ResultSet keys = ServiceIndex.factory.getKeys(service, serviceKey);
+		final Iterator<ServiceIndex> keys = ServiceIndex.factory.getKeys(service, serviceKey).getArrayList().iterator();
 
 		return new Iterable<String>()
 		{
@@ -591,13 +597,13 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 					@Override
 					public boolean hasNext()
 					{
-						return keys.next();
+						return keys.hasNext();
 					}
 
 					@Override
 					public String next()
 					{
-						return keys.getRecord().getKey();
+						return keys.next().getKey();
 					}
 
 					@Override
@@ -610,7 +616,8 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	@Override
 	public Iterable<String> listKeys(String service, String serviceKey, String keyStartsWith) throws DatastoreException
 	{
-		final ServiceIndex_base.ResultSet keys = ServiceIndex.factory.getKeysLike(service, serviceKey, keyStartsWith+"%");
+		final Iterator<ServiceIndex> results = ServiceIndex.factory.getKeysLike(service, serviceKey, keyStartsWith+"%").getArrayList().iterator();
+
 
 		return new Iterable<String>()
 		{
@@ -622,13 +629,13 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 					@Override
 					public boolean hasNext()
 					{
-						return keys.next();
+						return results.hasNext();
 					}
 
 					@Override
 					public String next()
 					{
-						return keys.getRecord().getKey();
+						return results.next().getKey();
 					}
 
 					@Override

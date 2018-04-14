@@ -28,7 +28,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "1.2.2"
+version = "1.3.0"
 release = saw.getProperty("KAIROS_RELEASE_NUMBER", "0.1beta") //package release number
 summary = "KairosDB"
 description = """\
@@ -91,24 +91,31 @@ jc.getDefinition().set("unchecked")
 jp.getJarRule().addFiles("src/main/resources", "kairosdb.conf")
 jp.getJarRule().addFiles("src/main/resources", "create.sql")
 
+def configurePomRule(PomRule pomRule)
+{
+	println("configuring pom")
+	pomRule.addDepend("ivy.xml")
+			.addDepend("ivysettings.xml")
+			.setJavaVersion("1.8")
+			.addLicense("The Apache Software License, Version 2.0", "http://www.apache.org/licenses/LICENSE-2.0.txt", "repo")
+			.addDeveloper("brianhks", "Brian", "brianhks1+kairos@gmail.com")
+			.addDeveloper("jeff", "Jeff", "jeff.sabin+kairos@gmail.com")
+
+	return pomRule;
+}
 
 //------------------------------------------------------------------------------
 //==-- Generate Project Pom --==
-ivy.createPomRule("pom.xml", ivy.getResolveRule("default"), ivy.getResolveRule("test"))
-		.addDepend("ivy.xml")
-		.addDepend("ivysettings.xml")
+configurePomRule(ivy.createPomRule("pom.xml", ivy.getResolveRule("default"), ivy.getResolveRule("test")))
 		.setName("project-pom")
 		.setDescription("Use this target to generate a pom used for opening project in IDE")
-		.setJavaVersion("1.8")
 		//.alwaysRun()
 
 //------------------------------------------------------------------------------
 //==-- Maven POM Rule --==
-pomRule = ivy.createPomRule("build/jar/pom.xml", ivy.getResolveRule("default"))
+pomRule = configurePomRule(ivy.createPomRule("build/jar/pom.xml", ivy.getResolveRule("default")))
 		.addDepend(jp.getJarRule())
-		.addLicense("The Apache Software License, Version 2.0", "http://www.apache.org/licenses/LICENSE-2.0.txt", "repo")
-		.addDeveloper("brianhks", "Brian", "brianhks1+kairos@gmail.com")
-		.addDeveloper("jeff", "Jeff", "jeff.sabin+kairos@gmail.com")
+
 
 //------------------------------------------------------------------------------
 //==-- Publish Artifacts --==

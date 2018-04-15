@@ -93,7 +93,6 @@ jp.getJarRule().addFiles("src/main/resources", "create.sql")
 
 def configurePomRule(PomRule pomRule)
 {
-	println("configuring pom")
 	pomRule.addDepend("ivy.xml")
 			.addDepend("ivysettings.xml")
 			.setJavaVersion("1.8")

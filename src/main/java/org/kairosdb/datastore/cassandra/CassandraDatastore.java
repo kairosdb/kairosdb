@@ -68,6 +68,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -295,7 +296,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);
 
-		List<String> ret = new ArrayList<String>();
+		Set<String> ret = new HashSet<String>();
 
 		try
 		{
@@ -330,7 +331,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);
 
-		List<String> ret = new ArrayList<String>();
+		Set<String> ret = new HashSet<String>();
 
 		try
 		{
@@ -628,7 +629,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			}
 			catch (Exception e)
 			{
-				logger.error("QueryListener failure", e);
+				logger.error("QueryListener failure on cluster "+m_rowKey.getClusterName(), e);
 				m_queryMonitor.failQuery(e);
 			}
 			finally
@@ -640,7 +641,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		@Override
 		public void onFailure(Throwable t)
 		{
-			logger.error("Async query failure", t);
+			logger.error("Async query failure on cluster "+m_rowKey.getClusterName(), t);
 			m_queryMonitor.failQuery(t);
 			m_semaphore.release();
 		}

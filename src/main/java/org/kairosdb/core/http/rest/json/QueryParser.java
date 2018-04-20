@@ -364,10 +364,22 @@ public class QueryParser
 
 	public RollupTask parseRollupTask(String json) throws BeanValidationException, QueryException
 	{
+		return parseRollupTask(json, null);
+	}
+
+	public RollupTask parseRollupTask(String json, String id) throws BeanValidationException, QueryException
+	{
 		JsonParser parser = new JsonParser();
 		JsonObject taskObject = parser.parse(json).getAsJsonObject();
 		RollupTask task = parseRollupTask(taskObject, "");
-		task.addJson(taskObject.toString().replaceAll("\\n", ""));
+		String newJson = taskObject.toString();
+
+		if (id != null)
+		{
+			// If updating the task, replace the new Id with the old Id
+			newJson = newJson.replace(task.getId(), id);
+		}
+		task.addJson(newJson.replaceAll("\\n", ""));
 		return task;
 	}
 

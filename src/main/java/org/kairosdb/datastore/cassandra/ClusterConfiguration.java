@@ -29,6 +29,7 @@ public class ClusterConfiguration
 	private final int m_connectionsRemoteMax;
 	private final int m_requestsPerConnectionLocal;
 	private final int m_requestsPerConnectionRemote;
+	private final int m_requestRetryCount;
 	private final Map<String, Integer> m_hostList;
 	private final String m_clusterName;
 	private String m_authPassword;
@@ -56,6 +57,8 @@ public class ClusterConfiguration
 		
 		m_requestsPerConnectionLocal = config.getInt("max_requests_per_connection.local",128);
 		m_requestsPerConnectionRemote = config.getInt("max_requests_per_connection.remote", 128);
+
+		m_requestRetryCount = config.getInt("request_retry_count", 2);
 
 		List<String> hostList = config.getStringList("cql_host_list", Collections.singletonList("localhost"));
 
@@ -171,4 +174,10 @@ public class ClusterConfiguration
 	{
 		return m_replication;
 	}
+
+	public int getRequestRetryCount()
+	{
+		return m_requestRetryCount;
+	}
 }
+

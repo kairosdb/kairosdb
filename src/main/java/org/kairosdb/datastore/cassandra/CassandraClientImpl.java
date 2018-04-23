@@ -40,7 +40,7 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	private final Cluster m_cluster;
 	private final String m_keyspace;
 	private final String m_replication;
-	private LoadBalancingPolicy m_loadBalancingPolicy;
+	private LoadBalancingPolicy m_writeLoadBalancingPolicy;
 
 	@Inject
 	@Named("HOSTNAME")
@@ -65,10 +65,12 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		m_clusterConfiguration = configuration;
 		m_clusterName = configuration.getClusterName();
 		//Passing shuffleReplicas = false so we can properly batch data to
-		//instances.
+		//instances.  A load balancing policy for reads will set shuffle to true
 		// When connecting to Cassandra notes in different datacenters, the local datacenter should be provided.
 		// Not doing this will select the datacenter from the first connected Cassandra node, which is not guaranteed to be the correct one.
-		m_loadBalancingPolicy = new TokenAwarePolicy((configuration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(configuration.getLocalDCName()).build(), false);
+		m_writeLoadBalancingPolicy = new TokenAwarePolicy((configuration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(configuration.getLocalDCName()).build(), false);
+		TokenAwarePolicy readLoadBalancePolicy = new TokenAwarePolicy((configuration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(configuration.getLocalDCName()).build(), true);
+
 		final Cluster.Builder builder = new Cluster.Builder()
 				//.withProtocolVersion(ProtocolVersion.V3)
 				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL,
@@ -79,7 +81,7 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 					.setMaxRequestsPerConnection(HostDistance.REMOTE, configuration.getRequestsPerConnectionRemote())
 					.setMaxQueueSize(configuration.getMaxQueueSize()))
 				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 5 * 1000))
-				.withLoadBalancingPolicy(m_loadBalancingPolicy)
+				.withLoadBalancingPolicy(new SelectiveLoadBalancingPolicy(readLoadBalancePolicy, m_writeLoadBalancingPolicy))
 				.withCompression(ProtocolOptions.Compression.LZ4)
 				.withoutJMXReporting()
 				.withQueryOptions(new QueryOptions().setConsistencyLevel(configuration.getReadConsistencyLevel()))
@@ -90,7 +92,8 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 					{
 						return System.currentTimeMillis();
 					}
-				});
+				})
+				.withRetryPolicy(new KairosRetryPolicy(m_clusterConfiguration.getRequestRetryCount()));
 
 		if (m_authProvider != null)
 		{
@@ -118,9 +121,9 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		m_replication = configuration.getReplication();
 	}
 
-	public LoadBalancingPolicy getLoadBalancingPolicy()
+	public LoadBalancingPolicy getWriteLoadBalancingPolicy()
 	{
-		return m_loadBalancingPolicy;
+		return m_writeLoadBalancingPolicy;
 	}
 
 	public ClusterConfiguration getClusterConfiguration()

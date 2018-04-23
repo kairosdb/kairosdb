@@ -24,7 +24,6 @@ import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.theories.suppliers.TestedOn;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -278,7 +277,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 			public CQLBatch create()
 			{
 				return new CQLBatch(ConsistencyLevel.QUORUM, m_clusterConnection,
-						batchStats, client.getLoadBalancingPolicy());
+						batchStats, client.getWriteLoadBalancingPolicy());
 			}
 		};
 

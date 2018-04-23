@@ -319,7 +319,7 @@ public class ClusterConnection
 
 	public LoadBalancingPolicy getLoadBalancingPolicy()
 	{
-		return m_cassandraClient.getLoadBalancingPolicy();
+		return m_cassandraClient.getWriteLoadBalancingPolicy();
 	}
 
 	public String getClusterName()

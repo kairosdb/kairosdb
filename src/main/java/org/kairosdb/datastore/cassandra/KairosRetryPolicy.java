@@ -24,7 +24,7 @@ public class KairosRetryPolicy implements RetryPolicy
 		if (nbRetry == m_retryCount)
 			return RetryDecision.rethrow();
 		else
-			return RetryDecision.retry(cl);
+			return RetryDecision.tryNextHost(cl);
 	}
 
 	@Override
@@ -34,7 +34,7 @@ public class KairosRetryPolicy implements RetryPolicy
 		if (nbRetry == m_retryCount)
 			return RetryDecision.rethrow();
 		else
-			return RetryDecision.retry(cl);
+			return RetryDecision.tryNextHost(cl);
 	}
 
 	@Override
@@ -44,7 +44,7 @@ public class KairosRetryPolicy implements RetryPolicy
 		if (nbRetry == m_retryCount)
 			return RetryDecision.rethrow();
 		else
-			return RetryDecision.retry(cl);
+			return RetryDecision.tryNextHost(cl);
 	}
 
 	@Override
@@ -54,7 +54,7 @@ public class KairosRetryPolicy implements RetryPolicy
 		if (nbRetry == m_retryCount)
 			return RetryDecision.rethrow();
 		else
-			return RetryDecision.retry(cl);
+			return RetryDecision.tryNextHost(cl);
 	}
 
 	@Override

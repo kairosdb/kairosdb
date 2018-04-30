@@ -288,7 +288,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				Collections.emptyList(),
 				dataPointFactory,
 				new MemoryQueueProcessor(Executors.newSingleThreadExecutor(), 1000, 10000, 10, 500),
-				new IngestExecutorService(s_eventBus, 1),
+				new IngestExecutorService(1),
 				new CassandraModule.BatchHandlerFactory()
 				{
 					@Override

@@ -12,20 +12,32 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 
+import javax.inject.Named;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 {
-	private int m_retryCount;
+	private final int m_retryCount;
+
+	private AtomicInteger m_readRetries = new AtomicInteger(0);
+	private AtomicInteger m_writeRetries = new AtomicInteger(0);
+	private AtomicInteger m_unavailableRetries = new AtomicInteger(0);
+	private AtomicInteger m_errorRetries = new AtomicInteger(0);
+
+	@Inject
+	@Named("HOSTNAME")
+	private String m_hostName = "localhost";
 
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
-	public KairosRetryPolicy()
-	{
-	}
-
-	public void setRetryCount(int retryCount)
+	@Inject
+	public KairosRetryPolicy(@Named("request_retry_count") int retryCount)
 	{
 		m_retryCount = retryCount;
 	}
@@ -37,7 +49,10 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 		if (nbRetry == m_retryCount)
 			return RetryDecision.rethrow();
 		else
+		{
+			m_readRetries.addAndGet(1);
 			return RetryDecision.tryNextHost(cl);
+		}
 	}
 
 	@Override
@@ -47,7 +62,10 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 		if (nbRetry == m_retryCount)
 			return RetryDecision.rethrow();
 		else
+		{
+			m_writeRetries.addAndGet(1);
 			return RetryDecision.tryNextHost(cl);
+		}
 	}
 
 	@Override
@@ -57,7 +75,10 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 		if (nbRetry == m_retryCount)
 			return RetryDecision.rethrow();
 		else
+		{
+			m_unavailableRetries.addAndGet(1);
 			return RetryDecision.tryNextHost(cl);
+		}
 	}
 
 	@Override
@@ -67,7 +88,10 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 		if (nbRetry == m_retryCount)
 			return RetryDecision.rethrow();
 		else
+		{
+			m_errorRetries.addAndGet(1);
 			return RetryDecision.tryNextHost(cl);
+		}
 	}
 
 	@Override
@@ -85,6 +109,28 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 	@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
-		return null;
+		List<DataPointSet> ret = new ArrayList<>();
+
+		Map<String, String> tags = new HashMap<>();
+		tags.put("host", m_hostName);
+
+		tags.put("retry_type", "read_timeout");
+		ret.add(new DataPointSet("kairosdb.datastore.cassandra.retry_count", tags,
+				Collections.singletonList(m_longDataPointFactory.createDataPoint(now, m_readRetries.getAndSet(0)))));
+
+		tags.put("retry_type", "write_timeout");
+		ret.add(new DataPointSet("kairosdb.datastore.cassandra.retry_count", tags,
+				Collections.singletonList(m_longDataPointFactory.createDataPoint(now, m_writeRetries.getAndSet(0)))));
+
+		tags.put("retry_type", "unavailable");
+		ret.add(new DataPointSet("kairosdb.datastore.cassandra.retry_count", tags,
+				Collections.singletonList(m_longDataPointFactory.createDataPoint(now, m_unavailableRetries.getAndSet(0)))));
+
+		tags.put("retry_type", "request_error");
+		ret.add(new DataPointSet("kairosdb.datastore.cassandra.retry_count", tags,
+				Collections.singletonList(m_longDataPointFactory.createDataPoint(now, m_errorRetries.getAndSet(0)))));
+
+
+		return ret;
 	}
 }

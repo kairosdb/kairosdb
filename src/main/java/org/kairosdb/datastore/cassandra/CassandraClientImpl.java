@@ -52,6 +52,9 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	@Inject
 	private DoubleDataPointFactory m_doubleDataPointFactory = new DoubleDataPointFactoryImpl();
 
+	@Inject
+	private KairosRetryPolicy m_kairosRetryPolicy = new KairosRetryPolicy(1);
+
 	@Inject(optional=true)
 	private AuthProvider m_authProvider = null;
 
@@ -93,7 +96,7 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 						return System.currentTimeMillis();
 					}
 				})
-				.withRetryPolicy(new KairosRetryPolicy(m_clusterConfiguration.getRequestRetryCount()));
+				.withRetryPolicy(m_kairosRetryPolicy);
 
 		if (m_authProvider != null)
 		{

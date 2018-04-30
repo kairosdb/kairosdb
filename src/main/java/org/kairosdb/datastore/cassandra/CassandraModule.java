@@ -109,6 +109,19 @@ public class CassandraModule extends AbstractModule
 		return configuration.getKeyspaceName();
 	}*/
 
+	/**
+	 Bind classes that are specific to the cluster connection
+	 @param binder
+	 @param config
+	 */
+	private void bindCassandraClient(Binder binder, ClusterConfiguration config)
+	{
+		binder.bind(ClusterConfiguration.class).toInstance(config);
+		binder.bind(CassandraClient.class).to(CassandraClientImpl.class);
+		binder.bindConstant().annotatedWith(Names.named("request_retry_count")).to(config.getRequestRetryCount());
+		binder.bind(KairosRetryPolicy.class);
+	}
+
 	private ClusterConnection m_writeCluster;
 	private ClusterConnection m_metaCluster;
 
@@ -120,7 +133,7 @@ public class CassandraModule extends AbstractModule
 		ClusterConfiguration writeConfig = configuration.getWriteCluster();
 		ClusterConfiguration metaConfig = configuration.getMetaCluster();
 
-		Injector writeInjector = injector.createChildInjector((Module) binder -> binder.bind(CassandraClient.class).to(CassandraClientImpl.class));
+		Injector writeInjector = injector.createChildInjector((Module) binder -> bindCassandraClient(binder, writeConfig) );
 
 		CassandraClient writeClient = writeInjector.getInstance(CassandraClient.class);
 
@@ -134,11 +147,11 @@ public class CassandraModule extends AbstractModule
 			m_writeCluster = new ClusterConnection(writeClient, EnumSet.of(
 					ClusterConnection.Type.WRITE));
 
-			Injector metaInjector = injector.createChildInjector((Module) binder -> binder.bind(CassandraClient.class).to(CassandraClientImpl.class));
+			Injector metaInjector = injector.createChildInjector((Module) binder -> bindCassandraClient(binder, metaConfig) );
 
 			CassandraClient metaClient = metaInjector.getInstance(CassandraClient.class);
 
-			m_metaCluster = new ClusterConnection(writeClient, EnumSet.of(
+			m_metaCluster = new ClusterConnection(metaClient, EnumSet.of(
 					ClusterConnection.Type.META));
 		}
 	}
@@ -182,7 +195,7 @@ public class CassandraModule extends AbstractModule
 
 	@Provides
 	@Singleton
-	List<ClusterConnection> getReadClusters(CassandraConfiguration configuration)
+	List<ClusterConnection> getReadClusters(CassandraConfiguration configuration, Injector injector)
 	{
 		ImmutableList.Builder<ClusterConnection> clusters = new ImmutableList.Builder<>();
 
@@ -190,7 +203,10 @@ public class CassandraModule extends AbstractModule
 		{
 			for (ClusterConfiguration clusterConfiguration : configuration.getReadClusters())
 			{
-				CassandraClient client = new CassandraClientImpl(clusterConfiguration);
+				Injector readInjector = injector.createChildInjector((Module) binder -> bindCassandraClient(binder, clusterConfiguration) );
+
+				CassandraClient client = readInjector.getInstance(CassandraClient.class);
+
 				clusters.add(new ClusterConnection(client, EnumSet.of(ClusterConnection.Type.READ)));
 			}
 		}

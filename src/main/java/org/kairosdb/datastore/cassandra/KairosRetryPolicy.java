@@ -6,16 +6,29 @@ import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.WriteType;
 import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.policies.RetryPolicy;
+import com.google.inject.Inject;
+import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
+import org.kairosdb.core.reporting.KairosMetricReporter;
 
-public class KairosRetryPolicy implements RetryPolicy
+import java.util.List;
+
+public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 {
-	private final int m_retryCount;
+	private int m_retryCount;
 
-	public KairosRetryPolicy(int retryCount)
+	@Inject
+	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
+
+	public KairosRetryPolicy()
+	{
+	}
+
+	public void setRetryCount(int retryCount)
 	{
 		m_retryCount = retryCount;
 	}
-
 
 	@Override
 	public RetryDecision onReadTimeout(Statement statement, ConsistencyLevel cl,
@@ -67,5 +80,11 @@ public class KairosRetryPolicy implements RetryPolicy
 	public void close()
 	{
 
+	}
+
+	@Override
+	public List<DataPointSet> getMetrics(long now)
+	{
+		return null;
 	}
 }

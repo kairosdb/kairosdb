@@ -135,6 +135,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	@Named("kairosdb.queue_processor.batch_size")
 	private int m_batchSize;  //Used for batching delete requests
 
+	@Inject
+	@Named("kairosdb.datastore.cassandra.query_failure_tolerance")
+	private double m_query_failure_tolerance;	//Used to allow queries with a configurable percentage of failures to complete
 
 	@Inject
 	public CassandraDatastore(
@@ -656,7 +659,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		long queryStartTime = query.getStartTime();
 		long queryEndTime = query.getEndTime();
 		boolean useLimit = query.getLimit() != 0;
-		QueryMonitor queryMonitor = new QueryMonitor(m_cassandraConfiguration.getQueryLimit());
+		QueryMonitor queryMonitor = new QueryMonitor(m_cassandraConfiguration.getQueryLimit(), m_query_failure_tolerance);
 
 		ExecutorService resultsExecutor = Executors.newFixedThreadPool(m_cassandraConfiguration.getQueryReaderThreads(),
 				new ThreadFactory()
@@ -735,6 +738,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 			if (queryMonitor.keepRunning())
 			{
+				queryMonitor.incrementQueryCounter();
+
 				ResultSetFuture resultSetFuture = cluster.executeAsync(boundStatement);
 
 				queryResults.add(resultSetFuture);

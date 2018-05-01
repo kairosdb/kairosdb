@@ -18,6 +18,7 @@ import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.KairosPostConstructInit;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
@@ -33,11 +34,11 @@ import java.util.Map;
 /**
  Created by bhawkins on 3/4/15.
  */
-public class CassandraClientImpl implements CassandraClient, KairosMetricReporter
+public class CassandraClientImpl implements CassandraClient, KairosMetricReporter, KairosPostConstructInit
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraClientImpl.class);
 
-	private final Cluster m_cluster;
+	private Cluster m_cluster;
 	private final String m_keyspace;
 	private final String m_replication;
 	private LoadBalancingPolicy m_writeLoadBalancingPolicy;
@@ -67,27 +68,34 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	{
 		m_clusterConfiguration = configuration;
 		m_clusterName = configuration.getClusterName();
+
+		m_keyspace = m_clusterConfiguration.getKeyspace();
+		m_replication = m_clusterConfiguration.getReplication();
+	}
+
+	public void init()
+	{
 		//Passing shuffleReplicas = false so we can properly batch data to
 		//instances.  A load balancing policy for reads will set shuffle to true
 		// When connecting to Cassandra notes in different datacenters, the local datacenter should be provided.
 		// Not doing this will select the datacenter from the first connected Cassandra node, which is not guaranteed to be the correct one.
-		m_writeLoadBalancingPolicy = new TokenAwarePolicy((configuration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(configuration.getLocalDCName()).build(), false);
-		TokenAwarePolicy readLoadBalancePolicy = new TokenAwarePolicy((configuration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(configuration.getLocalDCName()).build(), true);
+		m_writeLoadBalancingPolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), false);
+		TokenAwarePolicy readLoadBalancePolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), true);
 
 		final Cluster.Builder builder = new Cluster.Builder()
 				//.withProtocolVersion(ProtocolVersion.V3)
 				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL,
-						configuration.getConnectionsLocalCore(), configuration.getConnectionsLocalMax())
+						m_clusterConfiguration.getConnectionsLocalCore(), m_clusterConfiguration.getConnectionsLocalMax())
 						.setConnectionsPerHost(HostDistance.REMOTE,
-						configuration.getConnectionsRemoteCore(), configuration.getConnectionsRemoteMax())
-					.setMaxRequestsPerConnection(HostDistance.LOCAL, configuration.getRequestsPerConnectionLocal())
-					.setMaxRequestsPerConnection(HostDistance.REMOTE, configuration.getRequestsPerConnectionRemote())
-					.setMaxQueueSize(configuration.getMaxQueueSize()))
+								m_clusterConfiguration.getConnectionsRemoteCore(), m_clusterConfiguration.getConnectionsRemoteMax())
+						.setMaxRequestsPerConnection(HostDistance.LOCAL, m_clusterConfiguration.getRequestsPerConnectionLocal())
+						.setMaxRequestsPerConnection(HostDistance.REMOTE, m_clusterConfiguration.getRequestsPerConnectionRemote())
+						.setMaxQueueSize(m_clusterConfiguration.getMaxQueueSize()))
 				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 5 * 1000))
 				.withLoadBalancingPolicy(new SelectiveLoadBalancingPolicy(readLoadBalancePolicy, m_writeLoadBalancingPolicy))
 				.withCompression(ProtocolOptions.Compression.LZ4)
 				.withoutJMXReporting()
-				.withQueryOptions(new QueryOptions().setConsistencyLevel(configuration.getReadConsistencyLevel()))
+				.withQueryOptions(new QueryOptions().setConsistencyLevel(m_clusterConfiguration.getReadConsistencyLevel()))
 				.withTimestampGenerator(new TimestampGenerator() //todo need to remove this and put it only on the datapoints call
 				{
 					@Override
@@ -102,26 +110,24 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		{
 			builder.withAuthProvider(m_authProvider);
 		}
-		else if (configuration.getAuthUser() != null && configuration.getAuthPassword() != null)
+		else if (m_clusterConfiguration.getAuthUser() != null && m_clusterConfiguration.getAuthPassword() != null)
 		{
-			builder.withCredentials(configuration.getAuthUser(),
-					configuration.getAuthPassword());
+			builder.withCredentials(m_clusterConfiguration.getAuthUser(),
+					m_clusterConfiguration.getAuthPassword());
 		}
 
 
-		for (Map.Entry<String, Integer> hostPort : configuration.getHostList().entrySet())
+		for (Map.Entry<String, Integer> hostPort : m_clusterConfiguration.getHostList().entrySet())
 		{
 			logger.info("Connecting to "+hostPort.getKey()+":"+hostPort.getValue());
 			builder.addContactPoint(hostPort.getKey())
 					.withPort(hostPort.getValue());
 		}
 
-		if (configuration.isUseSsl())
+		if (m_clusterConfiguration.isUseSsl())
 			builder.withSSL();
 
 		m_cluster = builder.build();
-		m_keyspace = configuration.getKeyspace();
-		m_replication = configuration.getReplication();
 	}
 
 	public LoadBalancingPolicy getWriteLoadBalancingPolicy()
@@ -190,6 +196,9 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		String prefix = "kairosdb.datastore.cassandra.client";
 		List<DataPointSet> ret = new ArrayList<>();
 		Metrics metrics = m_cluster.getMetrics();
+
+		ret.add(newDataPointSet(prefix, "connection_errors", now,
+				metrics.getErrorMetrics().getConnectionErrors().getCount()));
 
 		ret.add(newDataPointSet(prefix, "blocking_executor_queue_depth", now,
 				metrics.getBlockingExecutorQueueDepth().getValue()));

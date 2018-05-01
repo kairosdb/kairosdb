@@ -119,6 +119,7 @@ public class CassandraModule extends AbstractModule
 		binder.bind(ClusterConfiguration.class).toInstance(config);
 		binder.bind(CassandraClient.class).to(CassandraClientImpl.class);
 		binder.bindConstant().annotatedWith(Names.named("request_retry_count")).to(config.getRequestRetryCount());
+		binder.bindConstant().annotatedWith(Names.named("cluster_name")).to(config.getClusterName());
 		binder.bind(KairosRetryPolicy.class);
 	}
 

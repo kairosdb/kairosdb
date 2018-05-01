@@ -11,6 +11,8 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
 import java.util.ArrayList;
@@ -22,6 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 {
+	public static final Logger logger = LoggerFactory.getLogger(KairosRetryPolicy.class);
+
 	private final int m_retryCount;
 
 	private AtomicInteger m_readRetries = new AtomicInteger(0);
@@ -32,6 +36,10 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 	@Inject
 	@Named("HOSTNAME")
 	private String m_hostName = "localhost";
+
+	@Inject
+	@Named("cluster_name")
+	private String m_clusterName = "cluster_name";
 
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
@@ -50,7 +58,7 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 			return RetryDecision.rethrow();
 		else
 		{
-			m_readRetries.addAndGet(1);
+			int count = m_readRetries.incrementAndGet();
 			return RetryDecision.tryNextHost(cl);
 		}
 	}
@@ -63,7 +71,7 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 			return RetryDecision.rethrow();
 		else
 		{
-			m_writeRetries.addAndGet(1);
+			m_writeRetries.incrementAndGet();
 			return RetryDecision.tryNextHost(cl);
 		}
 	}
@@ -76,7 +84,7 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 			return RetryDecision.rethrow();
 		else
 		{
-			m_unavailableRetries.addAndGet(1);
+			m_unavailableRetries.incrementAndGet();
 			return RetryDecision.tryNextHost(cl);
 		}
 	}
@@ -89,7 +97,7 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 			return RetryDecision.rethrow();
 		else
 		{
-			m_errorRetries.addAndGet(1);
+			m_errorRetries.incrementAndGet();
 			return RetryDecision.tryNextHost(cl);
 		}
 	}
@@ -97,13 +105,13 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 	@Override
 	public void init(Cluster cluster)
 	{
-
+		logger.info("Initializing KairosRetryPolicy: retry count set to "+m_retryCount);
 	}
 
 	@Override
 	public void close()
 	{
-
+		logger.info("Closing KairosRetryPolicy");
 	}
 
 	@Override
@@ -113,6 +121,7 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 
 		Map<String, String> tags = new HashMap<>();
 		tags.put("host", m_hostName);
+		tags.put("cluster", m_clusterName);
 
 		tags.put("retry_type", "read_timeout");
 		ret.add(new DataPointSet("kairosdb.datastore.cassandra.retry_count", tags,

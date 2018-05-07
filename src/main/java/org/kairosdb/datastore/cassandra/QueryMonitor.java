@@ -45,12 +45,12 @@ public class QueryMonitor
 		if (m_query_fail_counter.doubleValue() / m_query_counter.doubleValue() > m_tolerance)
 		{
 			m_keepRunning = false;
+			m_exception = e;
 		}
 		else
 		{
-			logger.warn("Query failure tolerance not reached, continuing additional queries.", e);
+			logger.warn("Failures: " + m_query_fail_counter.doubleValue() + " Queries:  " + m_query_counter.doubleValue() + ", Query failure tolerance not reached, continuing additional queries.", e);
 		}
-		m_exception = e;
 	}
 
 	public void incrementQueryCounter()

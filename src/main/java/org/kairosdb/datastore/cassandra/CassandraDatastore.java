@@ -27,6 +27,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
+import com.typesafe.config.Optional;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -137,7 +138,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 	@Inject
 	@Named("kairosdb.datastore.cassandra.query_failure_tolerance")
-	private double m_query_failure_tolerance;	//Used to allow queries with a configurable percentage of failures to complete
+	private double m_query_failure_tolerance=0.0;	//Used to allow queries with a configurable percentage of failures to complete
 
 	@Inject
 	public CassandraDatastore(

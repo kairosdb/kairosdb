@@ -3,15 +3,16 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigBeanFactory;
 import org.kairosdb.core.KairosConfig;
 
+import java.text.ParseException;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class ClusterConfiguration
 {
@@ -36,8 +37,10 @@ public class ClusterConfiguration
 	private String m_authUser;
 	private String m_localDCName;
 	private String m_replication;
+	private long m_startTime;
+	private long m_endTime;
 
-	public ClusterConfiguration(KairosConfig config)
+	public ClusterConfiguration(KairosConfig config) throws ParseException
 	{
 		//todo load defaults into a config before getting values using withfallback
 
@@ -54,8 +57,8 @@ public class ClusterConfiguration
 		m_connectionsLocalMax = config.getInt("connections_per_host.local.max", 100);
 		m_connectionsRemoteCore = config.getInt("connections_per_host.remote.core", 1);
 		m_connectionsRemoteMax = config.getInt("connections_per_host.remote.max", 10);
-		
-		m_requestsPerConnectionLocal = config.getInt("max_requests_per_connection.local",128);
+
+		m_requestsPerConnectionLocal = config.getInt("max_requests_per_connection.local", 128);
 		m_requestsPerConnectionRemote = config.getInt("max_requests_per_connection.remote", 128);
 
 		m_requestRetryCount = config.getInt("request_retry_count", 2);
@@ -88,6 +91,20 @@ public class ClusterConfiguration
 
 		if (config.hasPath("auth.password"))
 			m_authPassword = config.getString("auth.password");
+
+		Date startDate = config.getDateTime("start_time");
+		if (startDate != null)
+			m_startTime = startDate.getTime();
+		else
+			m_startTime = Long.MIN_VALUE;
+
+		Date endDate = config.getDateTime("end_time");
+		if (endDate != null)
+			m_endTime = endDate.getTime();
+		else
+			m_endTime = Long.MAX_VALUE;
+
+		checkState(m_startTime < m_endTime, "Cluster start time must be before end time");
 	}
 
 	public String getKeyspace()
@@ -178,6 +195,21 @@ public class ClusterConfiguration
 	public int getRequestRetryCount()
 	{
 		return m_requestRetryCount;
+	}
+
+	public long getStartTime()
+	{
+		return m_startTime;
+	}
+
+	public long getEndTime()
+	{
+		return m_endTime;
+	}
+
+	public boolean containRange(long queryStartTime, long queryEndTime)
+	{
+		return (!(queryEndTime < m_startTime || queryStartTime > m_endTime));
 	}
 }
 

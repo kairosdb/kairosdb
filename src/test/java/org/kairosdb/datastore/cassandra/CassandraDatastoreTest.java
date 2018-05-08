@@ -48,6 +48,7 @@ import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.IngestExecutorService;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.Executors;
 
@@ -249,7 +250,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	}
 
 	@BeforeClass
-	public static void setupDatastore() throws InterruptedException, DatastoreException
+	public static void setupDatastore() throws InterruptedException, DatastoreException, ParseException
 	{
 		String cassandraHost = "localhost";
 		if (System.getenv("CASSANDRA_HOST") != null)

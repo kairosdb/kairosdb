@@ -3,11 +3,16 @@ package org.kairosdb.core;
 import com.typesafe.config.Config;
 import org.apache.commons.io.FilenameUtils;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class KairosConfig
 {
+	public static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
+
 	public enum ConfigFormat
 	{
 		PROPERTIES("properties"),
@@ -133,6 +138,18 @@ public class KairosConfig
 			return m_config.getStringList(path);
 		else
 			return def;
+	}
+
+	public Date getDateTime(String path) throws ParseException
+	{
+		if (m_config.hasPath(path))
+		{
+			String stringDate = getString(path);
+			return DATE_TIME_FORMAT.parse(stringDate);
+		}
+		else
+			return null;
+
 	}
 
 

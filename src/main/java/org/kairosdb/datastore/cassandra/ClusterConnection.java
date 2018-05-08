@@ -394,4 +394,9 @@ public class ClusterConnection
 			}
 		}
 	}
+
+	public boolean containRange(long queryStartTime, long queryEndTime)
+	{
+		return m_cassandraClient.getClusterConfiguration().containRange(queryStartTime, queryEndTime);
+	}
 }

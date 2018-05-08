@@ -6,6 +6,7 @@ import com.google.inject.name.Named;
 import org.kairosdb.core.KairosConfig;
 import org.kairosdb.core.KairosRootConfig;
 
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +100,7 @@ public class CassandraConfiguration
 	private String m_localDatacenter;
 
 	@Inject
-	public CassandraConfiguration(KairosRootConfig config)
+	public CassandraConfiguration(KairosRootConfig config) throws ParseException
 	{
 		KairosConfig writeConfig = config.getConfig("kairosdb.datastore.cassandra.write_cluster");
 

@@ -7,13 +7,14 @@ import org.junit.Test;
 import org.kairosdb.core.KairosConfig;
 import org.kairosdb.core.KairosRootConfig;
 
+import java.text.ParseException;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
 public class CassandraConfigurationTest
 {
-	private ClusterConfiguration setHosts(List<String> hosts)
+	private ClusterConfiguration setHosts(List<String> hosts) throws ParseException
 	{
 		KairosRootConfig rootConfig = new KairosRootConfig();
 		rootConfig.load(ImmutableMap.of("cql_host_list", hosts));
@@ -24,7 +25,7 @@ public class CassandraConfigurationTest
 	}
 
 	@Test
-	public void test_setHostList()
+	public void test_setHostList() throws ParseException
 	{
 		ClusterConfiguration config = setHosts(ImmutableList.of("localhost:9000"));
 		assertEquals(ImmutableMap.of("localhost", 9000), config.getHostList());

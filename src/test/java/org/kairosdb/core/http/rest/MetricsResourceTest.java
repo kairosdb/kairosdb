@@ -18,6 +18,9 @@ package org.kairosdb.core.http.rest;
 import ch.qos.logback.classic.Level;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import org.apache.commons.collections4.Get;
+import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -43,6 +46,7 @@ public class MetricsResourceTest extends ResourceBase
 	private static final String TAG_VALUES_URL = "http://localhost:9001/api/v1/tagvalues";
 	private static final String DELETE_DATAPOINTS_URL = "http://localhost:9001/api/v1/datapoints/delete";
 	private static final String DELETE_METRIC_URL = "http://localhost:9001/api/v1/metric/";
+	private static final String GET_SAVED_QUERY_URL = "http://localhost:9001/api/v1/queries";
 
     @Test
 	public void testAddEmptyBody() throws Exception
@@ -148,6 +152,61 @@ public class MetricsResourceTest extends ResourceBase
 	}
 
 	@Test
+	public void testGetSavedQueryWithQueryNotFound() throws IOException
+	{
+		JsonResponse response = client.get(GET_SAVED_QUERY_URL + "/SavedQueries/default/bogus");
+		assertResponse(response, 404, "[{\"Not Found\": \"Query was not found.\"}]\n");
+	}
+
+	@Test
+	public void testGetSavedQueryWithNoParameters() throws IOException, DatastoreException
+	{
+		String json = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
+		datastore.setValue("SavedQueries", "default", "query-metric-absolute-dates", json);
+
+		JsonResponse response = client.get(GET_SAVED_QUERY_URL + "/SavedQueries/default/query-metric-absolute-dates");
+
+		assertResponse(response, 200,
+				"{\"queries\":" +
+						"[{\"sample_size\":10,\"results\":" +
+						"[{\"name\":\"abc.123\",\"group_by\":[{\"name\":\"type\",\"type\":\"number\"}],\"tags\":{\"server\":[\"server1\",\"server2\"]},\"values\":[[1,60.2],[2,30.200000000000003],[3,20.1]]}]}]}");
+	}
+
+	@Test
+	public void testGetSavedQueryWithDatastoreException() throws IOException, DatastoreException
+	{
+		datastore.throwException(new DatastoreException("expected"));
+
+		JsonResponse response = client.get(GET_SAVED_QUERY_URL + "/SavedQueries/default/query");
+
+		assertResponse(response, 500, "{\"errors\":[\"expected\"]}");
+	}
+
+	@Test
+	public void testGetSavedQueryWithBeanValidationException() throws IOException, DatastoreException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-relative-unit.json"), Charsets.UTF_8);
+		datastore.setValue("SavedQueries", "default", "invalid-query-metric-relative-unit", json);
+
+		JsonResponse response = client.get(GET_SAVED_QUERY_URL + "/SavedQueries/default/invalid-query-metric-relative-unit");
+
+		assertResponse(response, 400,
+				"{\"errors\":[\"query.bogus is not a valid time unit, must be one of MILLISECONDS,SECONDS,MINUTES,HOURS,DAYS,WEEKS,MONTHS,YEARS\"]}");
+	}
+
+	@Test
+	public void testGetSavedQueryWithJsonMapperParsingException() throws IOException, DatastoreException
+	{
+		String json = Resources.toString(Resources.getResource("invalid-query-metric-json.json"), Charsets.UTF_8);
+		datastore.setValue("SavedQueries", "default", "invalid-query-metric-json", json);
+
+		JsonResponse response = client.get(GET_SAVED_QUERY_URL + "/SavedQueries/default/invalid-query-metric-json");
+
+		assertResponse(response, 400,
+				"{\"errors\":[\"com.google.gson.stream.MalformedJsonException: Use JsonReader.setLenient(true) to accept malformed JSON at line 2 column 22\"]}");
+	}
+
+	@Test
 	public void testMetricNames() throws IOException
 	{
 		JsonResponse response = client.get(METRIC_NAMES_URL);
@@ -183,8 +242,6 @@ public class MetricsResourceTest extends ResourceBase
 			String json = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
 
 			JsonResponse response = client.post(json, GET_METRIC_URL);
-
-			datastore.throwException(null);
 
 			assertThat(response.getStatusCode(), equalTo(500));
 			assertThat(response.getJson(), equalTo("{\"errors\":[\"org.kairosdb.core.exception.DatastoreException: bogus\"]}"));
@@ -269,6 +326,19 @@ public class MetricsResourceTest extends ResourceBase
 
 		resource.setServerType("INGEST,QUERY,DELETE");
 	}
+
+	@Test
+	public void testGetSavedQueryWithQueryDisabled() throws IOException
+	{
+		resource.setServerType("INGEST");
+
+		JsonResponse response = client.get(GET_SAVED_QUERY_URL + "/SavedQueries/default/query1");
+
+		assertResponse(response, 403, "[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]\n");
+
+		resource.setServerType("INGEST,QUERY,DELETE");
+	}
+
 
 	@Test
 	public void testMetricNamesQueryDisabled() throws IOException

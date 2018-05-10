@@ -7,6 +7,7 @@ import com.google.inject.name.Names;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.kairosdb.core.GuiceKairosDataPointFactory;
@@ -130,13 +131,19 @@ public abstract class ResourceBase
     }
 
     @AfterClass
-    public static void tearDown()
+    public static void shutdown() throws Exception
     {
         if (server != null)
         {
             server.stop();
         }
     }
+//
+//    @After
+//    public void tearDown()
+//    {
+//        datastore.throwException(null);
+//    }
 
     public static class TestDatastore implements Datastore, ServiceKeyStore
     {

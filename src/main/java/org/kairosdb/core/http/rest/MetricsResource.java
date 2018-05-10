@@ -31,12 +31,7 @@ import org.kairosdb.core.annotation.InjectProperty;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
-import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.DatastoreQuery;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.datastore.QueryPlugin;
-import org.kairosdb.core.datastore.QueryPostProcessingPlugin;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.InvalidServerTypeException;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
@@ -72,10 +67,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -87,12 +79,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
@@ -123,11 +110,13 @@ public class MetricsResource implements KairosMetricReporter
 	public static final String INGEST_TIME = "kairosdb.http.ingest_time";
 
 	public static final String QUERY_URL = "/datapoints/query";
+	public static final String SAVED_QUERY_URL = "/queries";
 
 	private final KairosDatastore datastore;
 	private final Publisher<DataPointEvent> m_publisher;
 	private final Map<String, DataFormatter> formatters = new HashMap<>();
 	private final QueryParser queryParser;
+	private final ServiceKeyStore keyStore;
 
 	//Used for parsing incoming metrics
 	private final Gson gson;
@@ -202,10 +191,11 @@ public class MetricsResource implements KairosMetricReporter
 
 	@Inject
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
-			KairosDataPointFactory dataPointFactory, FilterEventBus eventBus)
+			KairosDataPointFactory dataPointFactory, FilterEventBus eventBus, ServiceKeyStore keyStore)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.queryParser = checkNotNull(queryParser);
+		this.keyStore = keyStore;
 		m_kairosDataPointFactory = dataPointFactory;
 		m_publisher = checkNotNull(eventBus).createPublisher(DataPointEvent.class);
 		formatters.put("json", new JsonFormatter());
@@ -527,6 +517,52 @@ public class MetricsResource implements KairosMetricReporter
 		return runQuery(json, request.getRemoteAddr());
 	}
 
+	@OPTIONS
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path(SAVED_QUERY_URL + "/{service}/{serviceKey}/{queryName}")
+	public Response corsPreflightGetSavedQuery(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
+		   	@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
+	{
+		checkServerType(ServerType.QUERY, SAVED_QUERY_URL + "/{service}/{serviceKey}/{queryName}", "OPTIONS");
+		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
+		return (responseBuilder.build());
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path(SAVED_QUERY_URL + "/{service}/{serviceKey}/{queryName}")
+	public Response getSavedQuery(@PathParam("service") String service, @PathParam("serviceKey") String serviceKey,
+								  @PathParam("queryName") String queryName, @Context UriInfo uriInfo,
+								  @Context HttpServletRequest request) throws Exception
+	{
+		checkServerType(ServerType.QUERY, SAVED_QUERY_URL + "/{service}/{serviceKey}/{queryName}", "GET");
+
+		try
+		{
+			ServiceKeyValue value = keyStore.getValue(service, serviceKey, queryName);
+			Optional<String> maybeJson = Optional.ofNullable(value)
+												.map(ServiceKeyValue::getValue);
+
+			if (!maybeJson.isPresent())
+			{
+				String content = "[{\"Not Found\": \"Query was not found.\"}]\n";
+				ResponseBuilder responseBuilder = Response.status(Response.Status.NOT_FOUND).entity(content);
+				return setHeaders(responseBuilder).build();
+			}
+
+			String json = maybeJson.get();
+//			MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+
+//			json = parameterizeQuery(json, queryParams);
+
+			return runQuery(json, request.getRemoteAddr());
+		}
+		catch (Exception e)
+		{
+			logger.error("Failed to execute saved query.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+	}
 
 	public Response runQuery(String json, String remoteAddr) throws Exception
 	{

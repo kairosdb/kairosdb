@@ -138,12 +138,13 @@ public abstract class ResourceBase
             server.stop();
         }
     }
-//
-//    @After
-//    public void tearDown()
-//    {
-//        datastore.throwException(null);
-//    }
+
+    @After
+    public void tearDown()
+    {
+        datastore.throwException(null);
+        datastore.clear();
+    }
 
     public static class TestDatastore implements Datastore, ServiceKeyStore
     {
@@ -303,6 +304,11 @@ public abstract class ResourceBase
                 throw m_toThrow;
 
             metadata.remove(service + "/" + serviceKey + "/" + key);
+        }
+
+        public void clear()
+        {
+            metadata = new TreeMap<>();
         }
 
         @Override

@@ -16,7 +16,9 @@ public interface CassandraClient
 
 	String getReplication();
 
-	LoadBalancingPolicy getLoadBalancingPolicy();
+	LoadBalancingPolicy getWriteLoadBalancingPolicy();
+
+	ClusterConfiguration getClusterConfiguration();
 
 	void close();
 }

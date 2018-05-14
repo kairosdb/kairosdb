@@ -19,6 +19,7 @@ package org.kairosdb.core;
 import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
+import com.google.inject.Binder;
 import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
@@ -26,6 +27,9 @@ import com.google.inject.name.Names;
 import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigValue;
+import com.typesafe.config.ConfigValueType;
 import org.kairosdb.core.aggregator.AggregatorFactory;
 import org.kairosdb.core.aggregator.AvgAggregator;
 import org.kairosdb.core.aggregator.CountAggregator;
@@ -47,6 +51,7 @@ import org.kairosdb.core.aggregator.SmaAggregator;
 import org.kairosdb.core.aggregator.StdAggregator;
 import org.kairosdb.core.aggregator.SumAggregator;
 import org.kairosdb.core.aggregator.TrimAggregator;
+import org.kairosdb.core.configuration.ConfigurationTypeListener;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
@@ -81,6 +86,8 @@ import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.SimpleStatsReporter;
 import org.kairosdb.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.ugli.bigqueue.BigArray;
 
 import javax.inject.Named;
@@ -97,25 +104,27 @@ import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR_CLASS;
 
 public class CoreModule extends AbstractModule
 {
+	public static final Logger logger = LoggerFactory.getLogger(CoreModule.class);
+
 	public static final String QUEUE_PATH = "kairosdb.queue_processor.queue_path";
 	public static final String PAGE_SIZE = "kairosdb.queue_processor.page_size";
 
 	public static final String DATAPOINTS_FACTORY_LONG = "kairosdb.datapoints.factory.long";
 	public static final String DATAPOINTS_FACTORY_DOUBLE = "kairosdb.datapoints.factory.double";
 
-	private Properties m_props;
 	private final FilterEventBus m_eventBus;
+	private KairosRootConfig m_config;
 
-	public CoreModule(Properties props)
+	public CoreModule(KairosRootConfig config)
 	{
-		m_props = props;
-		m_eventBus = new FilterEventBus(new EventBusConfiguration(m_props));
+		m_config = config;
+		m_eventBus = new FilterEventBus(new EventBusConfiguration(m_config));
 	}
 
 	@SuppressWarnings("rawtypes")
 	private Class getClassForProperty(String property)
 	{
-		String className = m_props.getProperty(property);
+		String className = m_config.getProperty(property);
 
 		Class klass;
 		try
@@ -128,6 +137,48 @@ public class CoreModule extends AbstractModule
 		}
 
 		return (klass);
+	}
+
+	public void bindConfiguration(Binder binder)
+	{
+		binder = binder.skipSources(Names.class);
+
+		Config config = m_config.getRawConfig();
+		for (String propertyName : m_config)
+		{
+			ConfigValue value = config.getValue(propertyName);
+
+			ConfigValueType configValueType = value.valueType();
+
+			try
+			{
+				//type binding didn't work well for numbers, guice will not convert double to int
+				/*switch (configValueType)
+				{
+					case STRING:
+						binder.bindConstant().annotatedWith(Names.named(propertyName)).to((String) value.unwrapped());
+						break;
+					case BOOLEAN:
+						binder.bindConstant().annotatedWith(Names.named(propertyName)).to((Boolean) value.unwrapped());
+						break;
+					case NUMBER:
+						Number number = (Number) value.unwrapped();
+						binder.bindConstant().annotatedWith(Names.named(propertyName)).to(number.doubleValue());
+				}*/
+
+				//binder.bind(Key.get(String.class, Names.named(propertyName))).toInstance(value);
+				logger.debug("%s = %s", propertyName, value.unwrapped().toString());
+
+				bindConstant().annotatedWith(Names.named(propertyName)).to(value.unwrapped().toString());
+			}
+			catch (Exception e)
+			{
+				System.out.println("Failed to bind property "+propertyName);
+				e.printStackTrace();
+			}
+		}
+
+		binder.bindListener(Matchers.any(), new ConfigurationTypeListener(m_config));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -150,10 +201,18 @@ public class CoreModule extends AbstractModule
 					public void afterInjection(I i)
 					{
 						m_eventBus.register(i);
+						if (i instanceof KairosPostConstructInit)
+						{
+							((KairosPostConstructInit)i).init();
+						}
 					}
 				});
 			}
 		});
+
+		//Names.bindProperties(binder(), m_config);
+		bindConfiguration(binder());
+		bind(KairosRootConfig.class).toInstance(m_config);
 
 		bind(QueryQueuingManager.class).in(Singleton.class);
 		bind(KairosDatastore.class).in(Singleton.class);
@@ -198,10 +257,7 @@ public class CoreModule extends AbstractModule
 		bind(TagGroupBy.class);
 		bind(BinGroupBy.class);
 
-		Names.bindProperties(binder(), m_props);
-		bind(Properties.class).toInstance(m_props);
-
-		String hostname = m_props.getProperty("kairosdb.hostname");
+		String hostname = m_config.getProperty("kairosdb.hostname");
 		bindConstant().annotatedWith(Names.named("HOSTNAME")).to(hostname != null ? hostname: Util.getHostName());
 
 		//bind queue processor impl
@@ -233,7 +289,8 @@ public class CoreModule extends AbstractModule
 
 		bind(HostManager.class).in(Singleton.class);
 
-		String hostIp = m_props.getProperty("kairosdb.host_ip");
+		String hostIp = m_config.getProperty("kairosdb.host_ip");
+
 		bindConstant().annotatedWith(Names.named("HOST_IP")).to(hostIp != null ? hostIp: InetAddresses.toAddrString(Util.findPublicIp()));
 
 		bind(QueryPreProcessorContainer.class).to(GuiceQueryPreProcessor.class).in(Singleton.class);

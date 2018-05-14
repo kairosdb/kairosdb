@@ -1,12 +1,12 @@
 package org.kairosdb.eventbus;
 
 import com.google.inject.Inject;
+import org.kairosdb.core.KairosRootConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -27,21 +27,20 @@ public class EventBusConfiguration
     private final Map<String, Integer> priorities = new HashMap<>();
 
     @Inject
-    public EventBusConfiguration(Properties properties)
+    public EventBusConfiguration(KairosRootConfig config)
     {
-        checkNotNull(properties, "properties cannot be null");
+        checkNotNull(config, "properties cannot be null");
 
-        for (Object o : properties.keySet()) {
-            String property = (String) o;
+        for (String property : config) {
             if (property.startsWith(KAIROSDB_EVENTBUS_FILTER_PRIORITY_PREFIX))
             {
                 String className = property.substring(property.indexOf(KAIROSDB_EVENTBUS_FILTER_PRIORITY_PREFIX) + PREFIX_LENGTH);
                 try {
-                    int priority = Integer.parseInt(properties.getProperty(property));
+                    int priority = Integer.parseInt(config.getProperty(property));
                     priorities.put(className, priority);
                 }
                 catch (NumberFormatException e) {
-                    logger.error("Priority is invalid " + properties.getProperty(property));
+                    logger.error("Priority is invalid " + config.getProperty(property));
                 }
             }
         }

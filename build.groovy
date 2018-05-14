@@ -28,8 +28,8 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "1.2.1"
-release = saw.getProperty("KAIROS_RELEASE_NUMBER", "1") //package release number
+version = "1.3.0"
+release = saw.getProperty("KAIROS_RELEASE_NUMBER", "0.1beta") //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -88,27 +88,33 @@ jc.getDefinition().set("encoding", "UTF8")
 jc.getDefinition().set("deprecation")
 jc.getDefinition().set("unchecked")
 
-jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
+jp.getJarRule().addFiles("src/main/resources", "kairosdb.conf")
 jp.getJarRule().addFiles("src/main/resources", "create.sql")
 
+def configurePomRule(PomRule pomRule)
+{
+	pomRule.addDepend("ivy.xml")
+			.addDepend("ivysettings.xml")
+			.setJavaVersion("1.8")
+			.addLicense("The Apache Software License, Version 2.0", "http://www.apache.org/licenses/LICENSE-2.0.txt", "repo")
+			.addDeveloper("brianhks", "Brian", "brianhks1+kairos@gmail.com")
+			.addDeveloper("jeff", "Jeff", "jeff.sabin+kairos@gmail.com")
+
+	return pomRule;
+}
 
 //------------------------------------------------------------------------------
 //==-- Generate Project Pom --==
-ivy.createPomRule("pom.xml", ivy.getResolveRule("default"), ivy.getResolveRule("test"))
-		.addDepend("ivy.xml")
-		.addDepend("ivysettings.xml")
+configurePomRule(ivy.createPomRule("pom.xml", ivy.getResolveRule("default"), ivy.getResolveRule("test")))
 		.setName("project-pom")
 		.setDescription("Use this target to generate a pom used for opening project in IDE")
-		.setJavaVersion("1.8")
 		//.alwaysRun()
 
 //------------------------------------------------------------------------------
 //==-- Maven POM Rule --==
-pomRule = ivy.createPomRule("build/jar/pom.xml", ivy.getResolveRule("default"))
+pomRule = configurePomRule(ivy.createPomRule("build/jar/pom.xml", ivy.getResolveRule("default")))
 		.addDepend(jp.getJarRule())
-		.addLicense("The Apache Software License, Version 2.0", "http://www.apache.org/licenses/LICENSE-2.0.txt", "repo")
-		.addDeveloper("brianhks", "Brian", "brianhks1+kairos@gmail.com")
-		.addDeveloper("jeff", "Jeff", "jeff.sabin+kairos@gmail.com")
+
 
 //------------------------------------------------------------------------------
 //==-- Publish Artifacts --==
@@ -244,7 +250,7 @@ tarRule = new TarRule("build/${programName}-${version}-${release}.tar")
 		.addDepend(resolveIvyFileSetRule)
 		.addFileSetTo(zipBinDir, scriptsFileSet)
 		.addFileSetTo(zipWebRootDir, webrootFileSet)
-		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.properties")
+		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.conf")
 		.addFileTo(zipConfLoggingDir, "src/main/resources", "logback.xml")
 		.setFilePermission(".*\\.sh", 0755)
 
@@ -309,8 +315,8 @@ def doRPM(Rule rule)
 	addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/bin", scriptsFileSet)
 
 	rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
-	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.properties",
-			new File("src/main/resources/kairosdb.properties"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
+	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.conf",
+			new File("src/main/resources/kairosdb.conf"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/logging/logback.xml",
 			new File("src/main/resources/logback.xml"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/bin/kairosdb-env.sh",
@@ -420,8 +426,11 @@ def doRun(Rule rule)
 		kairosDefinition.set("command", "run")
 
 	//Check if you have a custom kairosdb.properties file and load it.
+	customConf = new File("kairosdb.conf")
 	customProps = new File("kairosdb.properties")
-	if (customProps.exists())
+	if (customConf.exists())
+		kairosDefinition.set("properties", "kairosdb.conf")
+	else if (customProps.exists())
 		kairosDefinition.set("properties", "kairosdb.properties")
 
 	if (rule.getProperty("DEBUG"))

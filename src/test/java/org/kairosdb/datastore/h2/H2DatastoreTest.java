@@ -76,7 +76,7 @@ public class H2DatastoreTest extends DatastoreTestHelper
 	public static void setupDatabase() throws DatastoreException
 	{
 		KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
-		h2Datastore = new H2Datastore(DB_PATH, dataPointFactory, s_eventBus);
+		h2Datastore = new H2Datastore(DB_PATH, dataPointFactory, s_eventBus, "regex:");
 
 		s_datastore = new KairosDatastore(h2Datastore,
 				new QueryQueuingManager(1, "hostname"),

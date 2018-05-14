@@ -99,7 +99,7 @@ public class QueryParser
 		return m_gson;
 	}
 
-	static String getUnderscorePropertyName(String camelCaseName)
+	public static String getUnderscorePropertyName(String camelCaseName)
 	{
 		StringBuilder sb = new StringBuilder();
 

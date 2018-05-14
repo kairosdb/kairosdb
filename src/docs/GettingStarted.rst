@@ -33,7 +33,7 @@ Using with H2
 
 ``kairosdb.service.datastore=org.kairosdb.datastore.h2.H2Module``
 
-By default KairosDB is configured to run using the H2 datbase.  This lets you do development work without setting up and running Cassandra.
+By default KairosDB is configured to run using the H2 database.  This lets you do development work without setting up and running Cassandra.
 
 """""""""""""""""""""
 Configuration Options

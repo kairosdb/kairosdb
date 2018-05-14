@@ -178,7 +178,6 @@ public class QueryParser
 		}
 	}
 
-
 	public Query parseQueryMetric(String json) throws QueryException, BeanValidationException
 	{
 		JsonParser parser = new JsonParser();

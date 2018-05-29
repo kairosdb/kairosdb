@@ -33,7 +33,6 @@ public class IngestExecutorService implements KairosMetricReporter
 {
 	public static final String PERMIT_COUNT = "kairosdb.ingest_executor.thread_count";
 
-	private final FilterEventBus m_eventBus;
 	private final ExecutorService m_internalExecutor;
 	private final ThreadGroup m_threadGroup;
 	//Original idea behind this is that the number of threads could
@@ -50,9 +49,8 @@ public class IngestExecutorService implements KairosMetricReporter
 	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
 	@Inject
-	public IngestExecutorService(FilterEventBus eventBus, @Named(PERMIT_COUNT) int permitCount)
+	public IngestExecutorService(@Named(PERMIT_COUNT) int permitCount)
 	{
-		m_eventBus = eventBus;
 		m_permitCount = permitCount;
 		//m_congestionTimer = new CongestionTimer(m_permitCount);
 		m_semaphore = new CongestionSemaphore(m_permitCount);

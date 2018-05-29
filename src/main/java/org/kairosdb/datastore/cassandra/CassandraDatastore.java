@@ -954,7 +954,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 		if (ret == null && query.isExplicitTags())
 		{
-
+			//todo I should really finish this
 		}
 
 		//Default to query index if no plugin was provided
@@ -965,13 +965,19 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			//one issue is that the queries are done in the constructor
 			//would like to do them lazily but would have to throw an exception through
 			//hasNext call, ick
-			ret = m_rowKeyFilterFactory.create(m_writeCluster, query.getName(), query.getStartTime(),
-					query.getEndTime(), query.getTags());
+			if (m_writeCluster.containRange(query.getStartTime(), query.getEndTime()))
+			{
+				ret = m_rowKeyFilterFactory.create(m_writeCluster, query.getName(), query.getStartTime(),
+						query.getEndTime(), query.getTags());
+			}
 
 			for (ClusterConnection cluster : m_readClusters)
 			{
-				ret = Iterators.concat(ret, m_rowKeyFilterFactory.create(cluster, query.getName(), query.getStartTime(),
-						query.getEndTime(), query.getTags()));
+				if (cluster.containRange(query.getStartTime(), query.getEndTime()))
+				{
+					ret = Iterators.concat(ret, m_rowKeyFilterFactory.create(cluster, query.getName(), query.getStartTime(),
+							query.getEndTime(), query.getTags()));
+				}
 			}
 		}
 

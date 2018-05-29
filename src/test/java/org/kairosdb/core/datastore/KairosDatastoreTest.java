@@ -25,7 +25,6 @@ import org.kairosdb.core.datapoints.LegacyLongDataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
-import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.groupby.TagGroupByResult;
@@ -34,11 +33,7 @@ import org.kairosdb.plugin.Aggregator;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -72,6 +67,8 @@ public class KairosDatastoreTest
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
 				new TestDataPointFactory(), false);
+		datastore.init();
+
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 		metric.addAggregator(aggFactory.createFeatureProcessor("sum"));
 
@@ -101,6 +98,7 @@ public class KairosDatastoreTest
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
 				new TestDataPointFactory(), false);
+		datastore.init();
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 
 		DatastoreQuery dq = datastore.createQuery(metric);
@@ -175,6 +173,7 @@ public class KairosDatastoreTest
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
 				new TestDataPointFactory(), false);
+		datastore.init();
 
 		// Create files in the cache directory
 		File cacheDir = new File(datastore.getCacheDir());
@@ -193,7 +192,7 @@ public class KairosDatastoreTest
 	}
 
 	@Test
-	public void test_groupByTypeAndTag_SameTagValue() throws DatastoreException, FormatterException
+	public void test_groupByTypeAndTag_SameTagValue() throws DatastoreException
 	{
 		TestKairosDatastore datastore = new TestKairosDatastore(new TestDatastore(), new QueryQueuingManager(1, "hostname"),
 				new TestDataPointFactory());
@@ -224,7 +223,7 @@ public class KairosDatastoreTest
 	}
 
 	@Test
-	public void test_groupByTypeAndTag_DifferentTagValues() throws DatastoreException, FormatterException
+	public void test_groupByTypeAndTag_DifferentTagValues() throws DatastoreException
 	{
 		TestKairosDatastore datastore = new TestKairosDatastore(new TestDatastore(), new QueryQueuingManager(1, "hostname"),
 				new TestDataPointFactory());
@@ -255,7 +254,7 @@ public class KairosDatastoreTest
 	}
 
 	@Test
-	public void test_groupByTypeAndTag_MultipleTags() throws DatastoreException, FormatterException
+	public void test_groupByTypeAndTag_MultipleTags() throws DatastoreException
 	{
 		TestKairosDatastore datastore = new TestKairosDatastore(new TestDatastore(), new QueryQueuingManager(1, "hostname"),
 				new TestDataPointFactory());
@@ -315,8 +314,8 @@ public class KairosDatastoreTest
 	private static class TestKairosDatastore extends KairosDatastore
 	{
 
-		public TestKairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-		                           KairosDataPointFactory dataPointFactory) throws DatastoreException
+		TestKairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
+				KairosDataPointFactory dataPointFactory) throws DatastoreException
 		{
 			super(datastore, queuingManager, dataPointFactory, false);
 		}
@@ -324,14 +323,12 @@ public class KairosDatastoreTest
 
 	private static class TestDatastore implements Datastore, ServiceKeyStore
 	{
-		private DatastoreException m_toThrow = null;
-
-		protected TestDatastore() throws DatastoreException
+		TestDatastore()
 		{
 		}
 
 		@Override
-		public void close() throws InterruptedException
+		public void close()
 		{
 		}
 
@@ -353,21 +350,13 @@ public class KairosDatastoreTest
 			return null;
 		}
 
-		public void throwQueryException(DatastoreException toThrow)
-		{
-			m_toThrow = toThrow;
-		}
-
 		@Override
 		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback)
 				throws DatastoreException
 		{
-			if (m_toThrow != null)
-				throw m_toThrow;
-
 			try
 			{
-				QueryCallback.DataPointWriter dataPointWriter = queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptySortedMap());
+				QueryCallback.DataPointWriter dataPointWriter = queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.emptySortedMap());
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 3));
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 10));
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 20));
@@ -377,7 +366,7 @@ public class KairosDatastoreTest
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(3, 25));
 				dataPointWriter.close();
 
-				dataPointWriter = queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptySortedMap());
+				dataPointWriter = queryCallback.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.emptySortedMap());
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 5));
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 14));
 				dataPointWriter.addDataPoint(new LegacyLongDataPoint(1, 20));
@@ -395,56 +384,53 @@ public class KairosDatastoreTest
 		}
 
 		@Override
-		public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
+		public void deleteDataPoints(DatastoreMetricQuery deleteQuery)
 		{
 		}
 
 		@Override
-		public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
+		public TagSet queryMetricTags(DatastoreMetricQuery query)
 		{
 			return null;  //To change body of implemented methods use File | Settings | File Templates.
 		}
 
 		@Override
-		public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
+		public void setValue(String service, String serviceKey, String key, String value)
 		{
 
 		}
 
 		@Override
-		public ServiceKeyValue getValue(String service, String serviceKey, String key) throws DatastoreException
+		public ServiceKeyValue getValue(String service, String serviceKey, String key)
 		{
 			return null;
 		}
 
 		@Override
 		public Iterable<String> listServiceKeys(String service)
-				throws DatastoreException
 		{
 			return null;
 		}
 
 		@Override
-		public Iterable<String> listKeys(String service, String serviceKey) throws DatastoreException
+		public Iterable<String> listKeys(String service, String serviceKey)
 		{
 			return null;
 		}
 
 		@Override
-		public Iterable<String> listKeys(String service, String serviceKey, String keyStartsWith) throws DatastoreException
+		public Iterable<String> listKeys(String service, String serviceKey, String keyStartsWith)
 		{
 			return null;
 		}
 
 		@Override
 		public void deleteKey(String service, String serviceKey, String key)
-				throws DatastoreException
 		{
 		}
 
 		@Override
 		public Date getServiceKeyLastModifiedTime(String service, String serviceKey)
-				throws DatastoreException
 		{
 			return null;
 		}

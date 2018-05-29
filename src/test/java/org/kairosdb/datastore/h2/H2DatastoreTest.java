@@ -22,14 +22,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.TestDataPointFactory;
-import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.DatastoreQuery;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.datastore.QueryQueuingManager;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreTestHelper;
-import org.kairosdb.core.datastore.ServiceKeyValue;
 
 import java.io.File;
 import java.util.List;
@@ -81,6 +76,7 @@ public class H2DatastoreTest extends DatastoreTestHelper
 		s_datastore = new KairosDatastore(h2Datastore,
 				new QueryQueuingManager(1, "hostname"),
 				dataPointFactory, false);
+		s_datastore.init();
 
 		s_eventBus.register(h2Datastore);
 

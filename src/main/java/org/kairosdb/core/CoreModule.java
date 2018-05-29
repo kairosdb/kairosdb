@@ -201,6 +201,10 @@ public class CoreModule extends AbstractModule
 					public void afterInjection(I i)
 					{
 						m_eventBus.register(i);
+						if (i instanceof KairosPostConstructInit)
+						{
+							((KairosPostConstructInit)i).init();
+						}
 					}
 				});
 			}

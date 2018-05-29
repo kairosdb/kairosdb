@@ -24,7 +24,6 @@ import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.theories.suppliers.TestedOn;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -49,6 +48,7 @@ import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.IngestExecutorService;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.Executors;
 
@@ -250,7 +250,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	}
 
 	@BeforeClass
-	public static void setupDatastore() throws InterruptedException, DatastoreException
+	public static void setupDatastore() throws InterruptedException, DatastoreException, ParseException
 	{
 		String cassandraHost = "localhost";
 		if (System.getenv("CASSANDRA_HOST") != null)
@@ -278,7 +278,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 			public CQLBatch create()
 			{
 				return new CQLBatch(ConsistencyLevel.QUORUM, m_clusterConnection,
-						batchStats, client.getLoadBalancingPolicy());
+						batchStats, client.getWriteLoadBalancingPolicy());
 			}
 		};
 
@@ -289,7 +289,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				Collections.emptyList(),
 				dataPointFactory,
 				new MemoryQueueProcessor(Executors.newSingleThreadExecutor(), 1000, 10000, 10, 500),
-				new IngestExecutorService(s_eventBus, 1),
+				new IngestExecutorService(1),
 				new CassandraModule.BatchHandlerFactory()
 				{
 					@Override

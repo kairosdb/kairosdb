@@ -99,7 +99,7 @@ public class QueryParser
 		return m_gson;
 	}
 
-	static String getUnderscorePropertyName(String camelCaseName)
+	public static String getUnderscorePropertyName(String camelCaseName)
 	{
 		StringBuilder sb = new StringBuilder();
 
@@ -415,7 +415,7 @@ public class QueryParser
 					saveAsAggregator.setGroupBys(query.getGroupBys());
 
 					TrimAggregator trimAggregator = (TrimAggregator) m_processingChain.getFeatureProcessingFactory(Aggregator.class).createFeatureProcessor("trim");
-					trimAggregator.setTrim(TrimAggregator.Trim.LAST);
+					trimAggregator.setTrim(TrimAggregator.Trim.BOTH);
 
 					query.addAggregator(saveAsAggregator);
 					query.addAggregator(trimAggregator);

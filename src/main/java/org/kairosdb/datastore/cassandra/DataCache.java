@@ -144,4 +144,10 @@ public class DataCache<T>
 			m_hashMap.clear();
 		}
 	}
+
+	public T getItem(T cacheData) {
+		synchronized (m_lock) {
+			return m_hashMap.containsKey(cacheData) ? m_hashMap.get(cacheData).m_data : null;
+		}
+	}
 }

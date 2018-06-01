@@ -15,10 +15,7 @@ import javax.inject.Named;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER;
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.ROW_KEY_METRIC_NAMES;
@@ -42,6 +39,8 @@ public class CQLBatch
 	private BatchStatement dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 	private BatchStatement rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 
+	private List<String> metricNames = new ArrayList<>();
+	private List<DataPointsRowKey> rowKeys = new ArrayList<>();
 
 	@Inject
 	public CQLBatch(
@@ -55,6 +54,10 @@ public class CQLBatch
 		m_batchStats = batchStats;
 		m_now = System.currentTimeMillis();
 		m_loadBalancingPolicy = loadBalancingPolicy;
+	}
+
+	public List<DataPointsRowKey> getRowKeys() {
+		return rowKeys;
 	}
 
 	public void addRowKey(String metricName, DataPointsRowKey rowKey, int rowKeyTtl)
@@ -85,6 +88,12 @@ public class CQLBatch
 		bs.setConsistencyLevel(m_consistencyLevel);
 
 		rowKeyBatch.add(bs);
+
+		rowKeys.add(rowKey);
+	}
+
+	public List<String> getMetricNames() {
+		return metricNames;
 	}
 
 	public void addMetricName(String metricName)
@@ -94,6 +103,7 @@ public class CQLBatch
 		bs.setString(1, metricName);
 		bs.setConsistencyLevel(m_consistencyLevel);
 		metricNamesBatch.add(bs);
+		metricNames.add(metricName);
 	}
 
 	private void addBoundStatement(BoundStatement boundStatement)

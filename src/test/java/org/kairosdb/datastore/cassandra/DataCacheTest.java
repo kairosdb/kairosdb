@@ -19,6 +19,7 @@ package org.kairosdb.datastore.cassandra;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -57,14 +58,23 @@ public class DataCacheTest
 	{
 		DataCache<String> cache = new DataCache<String>(3);
 
+		assertNull(cache.getItem("one"));
 		assertNull(cache.cacheItem("one"));
+		assertNotNull(cache.getItem("one"));
+
+		assertNull(cache.getItem("two"));
 		assertNull(cache.cacheItem("two"));
+		assertNotNull(cache.getItem("two"));
+
+		assertNull(cache.getItem("three"));
 		assertNull(cache.cacheItem("three"));
+		assertNotNull(cache.getItem("three"));
 
 		assertNotNull(cache.cacheItem("one")); //This puts 'one' as the newest
 		assertNull(cache.cacheItem("four")); //This should boot out 'two'
 		assertNull(cache.cacheItem("two")); //Should have booted 'three'
 		assertNotNull(cache.cacheItem("one"));
+		assertNull(cache.getItem("three"));
 		assertNull(cache.cacheItem("three")); //Should have booted 'four'
 		assertNotNull(cache.cacheItem("one"));
 	}

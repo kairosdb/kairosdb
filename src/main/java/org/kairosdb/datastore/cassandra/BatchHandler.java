@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.StringWriter;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,6 @@ public class BatchHandler extends RetryCallable
 		m_rowKeyPublisher = eventBus.createPublisher(RowKeyEvent.class);
 		m_batchReductionPublisher = eventBus.createPublisher(BatchReductionEvent.class);
 	}
-
 
 	private void loadBatch(int limit, CQLBatch batch, Iterator<DataPointEvent> events) throws Exception
 	{
@@ -126,7 +126,7 @@ public class BatchHandler extends RetryCallable
 					tags);
 
 			//Write out the row key if it is not cached
-			DataPointsRowKey cachedKey = m_rowKeyCache.cacheItem(rowKey);
+			DataPointsRowKey cachedKey = m_rowKeyCache.getItem(rowKey);
 			if (cachedKey == null)
 			{
 				batch.addRowKey(metricName, rowKey, rowKeyTtl);
@@ -137,7 +137,7 @@ public class BatchHandler extends RetryCallable
 				rowKey = cachedKey;
 
 			//Write metric name if not in cache
-			String cachedName = m_metricNameCache.cacheItem(metricName);
+			String cachedName = m_metricNameCache.getItem(metricName);
 			if (cachedName == null)
 			{
 				if (metricName.length() == 0)
@@ -184,6 +184,14 @@ public class BatchHandler extends RetryCallable
 
 					batch.submitBatch();
 
+					// Add to cache
+					for (String s : batch.getMetricNames()) {
+						m_metricNameCache.cacheItem(s);
+					}
+
+					for (DataPointsRowKey dataPointsRowKey : batch.getRowKeys()) {
+						m_rowKeyCache.cacheItem(dataPointsRowKey);
+					}
 				}
 
 			}

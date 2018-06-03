@@ -540,8 +540,7 @@ public class MetricsResource implements KairosMetricReporter
 		try
 		{
 			ServiceKeyValue value = keyStore.getValue(service, serviceKey, queryName);
-			Optional<String> maybeJson = Optional.ofNullable(value)
-												.map(ServiceKeyValue::getValue);
+			Optional<String> maybeJson = Optional.ofNullable(value).map(ServiceKeyValue::getValue);
 
 			if (!maybeJson.isPresent())
 			{
@@ -551,9 +550,8 @@ public class MetricsResource implements KairosMetricReporter
 			}
 
 			String json = maybeJson.get();
-//			MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-
-//			json = parameterizeQuery(json, queryParams);
+			MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+			json = queryParser.parameterizeQuery(json, queryParams);
 
 			return runQuery(json, request.getRemoteAddr());
 		}

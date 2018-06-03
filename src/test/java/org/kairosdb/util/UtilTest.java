@@ -1,8 +1,13 @@
 package org.kairosdb.util;
 
+import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 public class UtilTest
@@ -89,5 +94,46 @@ public class UtilTest
 	public void test_isNumber_withMinusSign()
 	{
 		assertThat(Util.isNumber("-102"), equalTo(true));
+	}
+
+	@Test
+	public void test_replaceEach_emptyString()
+	{
+		assertEquals("", Util.replaceEach("", ImmutableMap.of("foo", "*")));
+	}
+
+	@Test
+	public void test_replaceEach_emptyMap()
+	{
+		String text = "foo bar";
+		assertEquals(text, Util.replaceEach(text, new HashMap<>()));
+	}
+
+	@Test
+	public void test_replaceEach_searchValueNotInText()
+	{
+		String text = "foo bar";
+		assertEquals(text, Util.replaceEach(text, ImmutableMap.of("baz", "$")));
+	}
+
+	@Test
+	public void test_replaceEach_replaceSingleValue()
+	{
+		String text = "foo bar";
+		assertEquals("* bar", Util.replaceEach(text, ImmutableMap.of("foo", "*")));
+	}
+
+	@Test
+	public void test_replaceEach_replaceMultipleValues()
+	{
+		String text = "foo bar";
+		assertEquals("* #", Util.replaceEach(text, ImmutableMap.of("foo", "*", "bar", "#")));
+	}
+
+	@Test
+	public void test_replaceEach_replaceMultipleFoundInstances()
+	{
+		String text = "foo bar foo";
+		assertEquals("* bar *", Util.replaceEach(text, ImmutableMap.of("foo", "*")));
 	}
 }

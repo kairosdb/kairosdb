@@ -18,7 +18,9 @@ package org.kairosdb.core.http.rest.json;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
+import com.google.gson.*;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +32,7 @@ import org.kairosdb.core.datastore.Duration;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.core.formatter.JsonFormatter;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
@@ -41,10 +44,13 @@ import org.kairosdb.rollup.Rollup;
 import org.kairosdb.rollup.RollupTask;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class QueryParserTest
@@ -573,6 +579,67 @@ public class QueryParserTest
 						ImmutableList.of("group3", "group4")),
 				createSumAggregator(new Sampling(24, TimeUnit.HOURS))
 		);
+	}
+
+	@Test
+	public void test_parameterizeQuery_noParams() throws IOException
+	{
+		String json = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
+		assertJson(json, parser.parameterizeQuery(json, new HashMap<>()));
+	}
+
+	@Test
+	public void test_parameterizeQuery_paramPlaceholderNotFound() throws IOException
+	{
+		String json = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
+		assertJson(json, parser.parameterizeQuery(json, ImmutableMap.of(
+				"start_absolute", ImmutableList.of("784041330")
+		)));
+	}
+
+	@Test
+	public void test_parameterizeQuery_withLongParams() throws IOException
+	{
+		String json = Resources.toString(Resources.getResource("query-metric-with-variable-absolute-dates.json"), Charsets.UTF_8);
+		String result = Resources.toString(Resources.getResource("query-metric-absolute-dates.json"), Charsets.UTF_8);
+
+		assertJson(result, parser.parameterizeQuery(json, ImmutableMap.of(
+				"start_absolute", ImmutableList.of("784041330"),
+				"end_absolute", ImmutableList.of("788879730")
+		)));
+	}
+
+	@Test
+	public void test_parameterizeQuery_withStringParam() throws IOException
+	{
+		String json = Resources.toString(Resources.getResource("query-metric-with-variable-timezone.json"), Charsets.UTF_8);
+		String result = Resources.toString(Resources.getResource("query-metric-timezone.json"), Charsets.UTF_8);
+
+		assertJson(result, parser.parameterizeQuery(json, ImmutableMap.of(
+				"time_zone", ImmutableList.of("\"America/Denver\"")
+		)));
+	}
+
+	@Test
+	public void test_parameterizeQuery_withListParam() throws IOException
+	{
+		String json = Resources.toString(Resources.getResource("query-metric-with-variable-host-tag.json"), Charsets.UTF_8);
+		String result = Resources.toString(Resources.getResource("query-metric-two-tags.json"), Charsets.UTF_8);
+
+		assertJson(result, parser.parameterizeQuery(json, ImmutableMap.of(
+				"metrics[0].tags.host", ImmutableList.of("\"bar\"","\"foo\"")
+		)));
+	}
+
+	private void assertJson(String expected, String actual)
+	{
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		JsonParser parser = new JsonParser();
+
+		JsonElement expectedJson = parser.parse(expected);
+		JsonElement actualJson = parser.parse(actual);
+
+		assertEquals(gson.toJson(expectedJson), gson.toJson(actualJson));
 	}
 
 	private void assertRollupBeanValidation(String json, String expectedMessage)

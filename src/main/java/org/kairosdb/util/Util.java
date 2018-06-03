@@ -17,6 +17,7 @@ package org.kairosdb.util;
 
 
 import com.google.common.collect.ImmutableList;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.aggregator.Sampling;
@@ -34,8 +35,11 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.UnaryOperator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toMap;
 
 public class Util
 {
@@ -330,5 +334,28 @@ public class Util
 				break;
 		}
 		return ret;
+	}
+
+	public static String replaceEach(String text, Map<String, String> replacementMap)
+	{
+		String[] keys = new String[replacementMap.size()];
+		String[] values = new String[replacementMap.size()];
+		int i = 0;
+		for (Map.Entry<String, String> entry : replacementMap.entrySet())
+		{
+			keys[i] = entry.getKey();
+			values[i] = entry.getValue();
+			i++;
+		}
+		return StringUtils.replaceEach(text, keys, values);
+	}
+
+	public static <K,V> Map<K,V> transformMap(Map<K,V> map, UnaryOperator<K> keyMapper, UnaryOperator<V> valueMapper)
+	{
+		return map.entrySet().stream()
+				.collect(toMap(
+						entry -> keyMapper.apply(entry.getKey()),
+						entry -> valueMapper.apply(entry.getValue())
+				));
 	}
 }

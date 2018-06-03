@@ -1,0 +1,22 @@
+{
+  "start_absolute": "$start_absolute",
+  "end_absolute": "$end_absolute",
+  "metrics": [
+    {
+      "name": "abc.123",
+      "aggregators": [
+        {
+          "name": "sum",
+          "sampling": {
+            "value": 1,
+            "unit": "milliseconds"
+          }
+        }
+      ],
+      "tags": {
+        "host": "foo",
+        "type": "bar"
+      }
+    }
+  ]
+}

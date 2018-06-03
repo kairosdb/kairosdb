@@ -40,6 +40,7 @@ import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.rollup.Rollup;
 import org.kairosdb.rollup.RollupTask;
+import org.kairosdb.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,9 +55,15 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
+
+import static java.util.stream.Collectors.toMap;
 
 
 public class QueryParser
@@ -176,6 +183,19 @@ public class QueryParser
 		{
 			throw new BeanValidationException(violations, context);
 		}
+	}
+
+	public String parameterizeQuery(String json, Map<String, List<String>> params)
+	{
+		Map<String, String> flatParams = flattenMultiValuedMap(params, p -> p != null ? String.join(",", p) : "");
+		flatParams = Util.transformMap(flatParams, key -> "\"$" + key + "\"", UnaryOperator.identity());
+		return Util.replaceEach(json, flatParams);
+	}
+
+	private static <K, V> Map<K, V> flattenMultiValuedMap(Map<K, List<V>> map, Function<List<V>, V> listReducer)
+	{
+		return map.entrySet().stream()
+				.collect(toMap(Map.Entry::getKey, entry -> listReducer.apply(entry.getValue())));
 	}
 
 

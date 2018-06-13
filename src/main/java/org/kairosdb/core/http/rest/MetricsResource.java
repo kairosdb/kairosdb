@@ -27,6 +27,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.annotation.InjectProperty;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
@@ -144,7 +145,7 @@ public class MetricsResource implements KairosMetricReporter
 	@Inject
 	private StringDataPointFactory m_stringDataPointFactory = new StringDataPointFactory();
 
-	@Inject
+	@Inject(optional = true)
 	private QueryPreProcessorContainer m_queryPreProcessor = new QueryPreProcessorContainer()
 	{
 		@Override
@@ -194,6 +195,7 @@ public class MetricsResource implements KairosMetricReporter
 
 		logger.info("KairosDB server type set to: " + m_serverType.toString());
 	}
+
 
 	@Inject
 	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();

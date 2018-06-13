@@ -208,7 +208,7 @@ public class DataPointsRowKeySerializer
 	}
 
 
-	public DataPointsRowKey fromByteBuffer(ByteBuffer byteBuffer)
+	public DataPointsRowKey fromByteBuffer(ByteBuffer byteBuffer, String clusterName)
 	{
 		int start = byteBuffer.position();
 		byteBuffer.mark();
@@ -241,6 +241,7 @@ public class DataPointsRowKeySerializer
 		}
 
 		DataPointsRowKey rowKey = new DataPointsRowKey(getString(new String(metricName, UTF8)),
+				clusterName,
 				timestamp, dataType);
 
 		byte[] tagString = new byte[byteBuffer.remaining()];

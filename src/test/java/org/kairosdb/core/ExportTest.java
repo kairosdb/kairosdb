@@ -95,6 +95,7 @@ public class ExportTest
 
 		//Ensure the memory queue processor is used
 		System.setProperty("kairosdb.queue_processor.class", "org.kairosdb.core.queue.MemoryQueueProcessor");
+		System.setProperty("kairosdb.hostname", "ExportText");
 		s_main = new Main(props);
 		s_main.startServices();
 		s_injector = s_main.getInjector();

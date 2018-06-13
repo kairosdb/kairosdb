@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 import org.junit.Test;
+import org.kairosdb.core.KairosRootConfig;
 import org.kairosdb.core.datapoints.DoubleDataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.StringDataPoint;
@@ -41,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -54,7 +54,7 @@ import static org.junit.Assert.assertFalse;
 public abstract class DatastoreTestHelper
 {
 	protected static KairosDatastore s_datastore;
-	protected static FilterEventBus s_eventBus = new FilterEventBus(new EventBusConfiguration(new Properties()));
+	protected static FilterEventBus s_eventBus = new FilterEventBus(new EventBusConfiguration(new KairosRootConfig()));
 	protected static final List<String> metricNames = new ArrayList<>();
 	private static long s_startTime;
 	private static String s_unicodeNameWithSpace = "你好 means hello";

@@ -10,7 +10,9 @@ import org.kairosdb.core.exception.DatastoreException;
 
 import static com.codahale.metrics.health.HealthCheck.Result;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

@@ -1,8 +1,8 @@
 package org.kairosdb.eventbus;
 
+import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
-
-import java.util.Properties;
+import org.kairosdb.core.KairosRootConfig;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -19,11 +19,11 @@ public class EventBusConfigurationTest
     @Test
     public void test()
     {
-        Properties properties = new Properties();
-        properties.put("kairosdb.eventbus.filter.priority.com.foo.Filter1", "10");
-        properties.put("kairosdb.eventbus.filter.priority.com.bar.Filter2", "20");
-        properties.put("kairosdb.eventbus.filter.priority.com.fi.Filter3", "30");
-        properties.put("kairosdb.eventbus.filter.priority.org.apache.Filter4", "40");
+        KairosRootConfig properties = new KairosRootConfig();
+        properties.load(ImmutableMap.of("kairosdb.eventbus.filter.priority.com.foo.Filter1", "10"));
+        properties.load(ImmutableMap.of("kairosdb.eventbus.filter.priority.com.bar.Filter2", "20"));
+        properties.load(ImmutableMap.of("kairosdb.eventbus.filter.priority.com.fi.Filter3", "30"));
+        properties.load(ImmutableMap.of("kairosdb.eventbus.filter.priority.org.apache.Filter4", "40"));
 
         EventBusConfiguration config = new EventBusConfiguration(properties);
 
@@ -37,8 +37,8 @@ public class EventBusConfigurationTest
     @Test
     public void test_invalid_priority()
     {
-        Properties properties = new Properties();
-        properties.put("kairosdb.eventbus.filter.priority.com.foo.Filter1", "10.5");
+        KairosRootConfig properties = new KairosRootConfig();
+        properties.load(ImmutableMap.of("kairosdb.eventbus.filter.priority.com.foo.Filter1", "10.5"));
 
         EventBusConfiguration config = new EventBusConfiguration(properties);
 

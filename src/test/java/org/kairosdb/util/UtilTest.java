@@ -90,4 +90,9 @@ public class UtilTest
 	{
 		assertThat(Util.isNumber("-102"), equalTo(true));
 	}
+
+	@Test
+	public void test_isNumber_withPoint(){
+		assertThat(Util.isNumber("6.0.5"), equalTo(false));
+	}
 }

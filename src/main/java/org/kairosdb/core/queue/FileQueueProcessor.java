@@ -197,7 +197,11 @@ public class FileQueueProcessor extends QueueProcessor
 
 					returnIndex = m_nextIndex;
 					m_nextIndex = incrementIndex(m_nextIndex);
-					ret.add(event.m_dataPointEvent);
+
+					if (event.m_dataPointEvent != null)
+					{
+                        ret.add(event.m_dataPointEvent);
+                    }
 				}
 				else
 					break; //exhausted queue

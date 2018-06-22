@@ -8,6 +8,9 @@ import com.datastax.driver.core.policies.EC2AwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.EC2MultiRegionAddressTranslator;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.google.inject.Inject;
+import io.opentracing.contrib.cassandra.TracingCluster;
+import io.opentracing.util.GlobalTracer;
+
 /**
  Created by bhawkins on 3/4/15.
  */
@@ -41,7 +44,7 @@ public class CassandraClientImpl implements CassandraClient
 			builder.withCredentials(user, password);
 		}
 
-		m_cluster = builder.build();
+		m_cluster = new TracingCluster(builder, GlobalTracer.get());
 		m_keyspace = config.getKeyspaceName();
 	}
 

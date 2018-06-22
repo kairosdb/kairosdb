@@ -21,6 +21,9 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -61,6 +64,9 @@ public class KairosDatastore
 
 	private String m_baseCacheDir;
 	private volatile String m_cacheDir;
+
+	@javax.inject.Inject
+	private Tracer tracer;
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
@@ -444,6 +450,9 @@ public class KairosDatastore
 		@Override
 		public List<DataPointGroup> execute() throws DatastoreException
 		{
+
+			Span span = tracer.buildSpan("query_database_datapoints_count").start();
+
 			long queryStartTime = System.currentTimeMillis();
 			
 			CachedSearchResult cachedResults = null;
@@ -483,11 +492,18 @@ public class KairosDatastore
 				m_dataPointCount += returnedRow.getDataPointCount();
 			}
 
+			span.setTag("datapoint_count", m_dataPointCount);
+
             m_rowCount = returnedRows.size();
+
+			span.setTag("row_count", m_rowCount);
+
+			span.finish();
+
+			span = tracer.buildSpan("query_database_get_datapoint_rows").start();
 
 			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
 					returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
-
 
 			// Now group for all other types of group bys.
 			Grouper grouper = new Grouper(m_dataPointFactory);
@@ -527,6 +543,8 @@ public class KairosDatastore
 
 				m_results.add(aggregatedGroup);
 			}
+
+			span.finish();
 
 			return (m_results);
 		}

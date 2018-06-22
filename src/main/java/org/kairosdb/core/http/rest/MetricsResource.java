@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.http.rest;
 
+import com.google.common.collect.SetMultimap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
@@ -454,6 +455,15 @@ public class MetricsResource implements KairosMetricReporter
 
 			for (QueryMetric query : queries)
 			{
+				Map<String, Collection<String>> tags = query.getTags().asMap();
+				Set<String> keys = tags.keySet();
+
+				for (String key : keys) {
+					Iterator<String> iter = tags.get(key).iterator();
+					while(iter.hasNext())
+						span.setTag(key, iter.next());
+				}
+
 				queryMeasurementProvider.measureSpanForMetric(query);
 				queryMeasurementProvider.measureDistanceForMetric(query);
 
@@ -804,7 +814,7 @@ public class MetricsResource implements KairosMetricReporter
 	public io.opentracing.Scope activateScope(String spanName, HttpHeaders httpHeaders) {
 		ScopeManager scopeManager = tracer.scopeManager();
 		SpanContext spanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new HttpHeadersCarrier(httpHeaders.getRequestHeaders()));
-		Tracer.SpanBuilder spanBuild = tracer.buildSpan(spanName).withTag("Name",spanName).withTag(Tags.SPAN_KIND.getKey(),Tags.SPAN_KIND_SERVER);
+		Tracer.SpanBuilder spanBuild = tracer.buildSpan(spanName).withTag(Tags.SPAN_KIND.getKey(),Tags.SPAN_KIND_SERVER);
 		if (spanContext != null)
 			spanBuild.asChildOf(spanContext);
 

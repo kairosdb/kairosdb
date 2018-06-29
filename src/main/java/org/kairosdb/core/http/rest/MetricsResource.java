@@ -239,11 +239,14 @@ public class MetricsResource implements KairosMetricReporter
 	@Path("/datapoints")
 	public Response add(@Context HttpHeaders httpHeaders, InputStream json)
 	{
-		Scope scope = activateScope("datapoints", httpHeaders);
-		Span span = scope.span();
 
-		try
+
+		Span span = null;
+
+		try (Scope scope = activateScope("datapoints", httpHeaders))
 		{
+			span = scope.span();
+
 			DataPointsParser parser = new DataPointsParser(datastore, new InputStreamReader(json, "UTF-8"),
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
@@ -298,7 +301,7 @@ public class MetricsResource implements KairosMetricReporter
 			span.log(e.getMessage());
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}finally {
-			scope.close();
+			span.finish();
 		}
 	}
 
@@ -317,14 +320,15 @@ public class MetricsResource implements KairosMetricReporter
 	@Path("/datapoints/query/tags")
 	public Response getMeta(@Context HttpHeaders httpHeaders, String json)
 	{
-		Scope scope = activateScope("datapoints_query_tags", httpHeaders);
-		Span span = scope.span();
-
 		checkNotNull(json);
 		logger.debug(json);
 
-		try
+		Span span = null;
+
+		try (Scope scope = activateScope("datapoints_query_tags", httpHeaders))
 		{
+			span = scope.span();
+
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new FileWriter(respFile));
 
@@ -404,7 +408,7 @@ public class MetricsResource implements KairosMetricReporter
 			span.log(e.getMessage());
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}finally {
-			scope.close();
+			span.finish();
 		}
 	}
 
@@ -436,14 +440,15 @@ public class MetricsResource implements KairosMetricReporter
 	@Path(QUERY_URL)
 	public Response get(@Context HttpHeaders httpHeaders, String json) throws Exception
 	{
-		Scope scope = activateScope("datapoints_query", httpHeaders);
-		Span span = scope.span();
-
 		checkNotNull(json);
 		logger.debug(json);
 
-		try
+		Span span = null;
+
+		try (Scope scope = activateScope("datapoints_query", httpHeaders))
 		{
+			span = scope.span();
+
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(respFile), "UTF-8"));
 
@@ -458,10 +463,16 @@ public class MetricsResource implements KairosMetricReporter
 				Map<String, Collection<String>> tags = query.getTags().asMap();
 				Set<String> keys = tags.keySet();
 
+				span.setTag("metric_name", query.getName());
+
 				for (String key : keys) {
+					StringBuilder str = new StringBuilder();
 					Iterator<String> iter = tags.get(key).iterator();
-					while(iter.hasNext())
-						span.setTag(key, iter.next());
+					while(iter.hasNext()) {
+						str.append(iter.next() + ",");
+					}
+					str.deleteCharAt(str.lastIndexOf(","));
+					span.setTag(key, str.toString());
 				}
 
 				queryMeasurementProvider.measureSpanForMetric(query);
@@ -554,7 +565,7 @@ public class MetricsResource implements KairosMetricReporter
 		}
 		finally
 		{
-			scope.close();
+			span.finish();
 			ThreadReporter.clear();
 		}
 	}
@@ -574,15 +585,15 @@ public class MetricsResource implements KairosMetricReporter
 	@Path("/datapoints/delete")
 	public Response delete(@Context HttpHeaders httpHeaders, String json) throws Exception
 	{
-
-		Scope scope = activateScope("datapoints_delete", httpHeaders);
-		Span span = scope.span();
-
 		checkNotNull(json);
 		logger.debug(json);
 
-		try
+		Span span = null;
+
+		try (Scope scope = activateScope("datapoints_delete", httpHeaders))
 		{
+			span = scope.span();
+
 			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
 			for (QueryMetric query : queries)
@@ -635,7 +646,7 @@ public class MetricsResource implements KairosMetricReporter
 			span.log(e.getMessage());
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}finally {
-			scope.close();
+			span.finish();
 		}
 	}
 
@@ -670,11 +681,13 @@ public class MetricsResource implements KairosMetricReporter
 	@Path("/metric/{metricName}")
 	public Response metricDelete(@Context HttpHeaders httpHeaders, @PathParam("metricName") String metricName) throws Exception
 	{
-		Scope scope = activateScope("datapoints_" + metricName, httpHeaders);
-		Span span = scope.span();
 
-		try
+		Span span = null;
+
+		try (Scope scope = activateScope("delete_metric", httpHeaders))
 		{
+			span = scope.span();
+
 			QueryMetric query = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, metricName);
 			datastore.delete(query);
 
@@ -688,7 +701,7 @@ public class MetricsResource implements KairosMetricReporter
 			span.log(e.getMessage());
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}finally {
-			scope.close();
+			span.finish();
 		}
 	}
 

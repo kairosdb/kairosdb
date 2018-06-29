@@ -5,10 +5,12 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import io.opentracing.Tracer;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.admin.InternalMetricsProvider;
 import org.kairosdb.core.datastore.QueryMetric;
+import sun.java2d.CRenderer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,6 +29,9 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 
     private final Histogram spanHistogramError;
     private final Histogram distanceHistogramError;
+
+    @Inject
+    Tracer tracer;
 
     @Inject
     public DefaultQueryMeasurementProvider(@Nonnull final MetricRegistry metricRegistry) {
@@ -108,6 +113,7 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
         final long spanInMillis = endTime - query.getStartTime();
         final long spanInMinutes = spanInMillis / 1000 / 60;
         histogram.update(spanInMinutes);
+        tracer.activeSpan().setTag("query_span_in_days", spanInMinutes/1440);
     }
 
     private void measureDistance(final Histogram histogram, final QueryMetric query) {
@@ -115,6 +121,7 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
         final long distanceInMillis = nowUTC.getMillis() - query.getStartTime();
         final long distanceInMinutes = distanceInMillis / 1000 / 60;
         histogram.update(distanceInMinutes);
+        tracer.activeSpan().setTag("query_distance_in_days", distanceInMinutes/1440);
     }
 
     private boolean canQueryBeReported(final QueryMetric query) {

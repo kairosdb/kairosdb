@@ -10,7 +10,6 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.admin.InternalMetricsProvider;
 import org.kairosdb.core.datastore.QueryMetric;
-import sun.java2d.CRenderer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

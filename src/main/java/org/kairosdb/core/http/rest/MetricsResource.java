@@ -251,6 +251,7 @@ public class MetricsResource implements KairosMetricReporter
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 
+			span.setTag("datapoint_count", parser.getDataPointCount());
 			m_ingestedDataPoints.addAndGet(parser.getDataPointCount());
 			m_ingestTime.addAndGet(parser.getIngestTime());
 

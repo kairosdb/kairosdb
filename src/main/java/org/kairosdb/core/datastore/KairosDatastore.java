@@ -498,10 +498,6 @@ public class KairosDatastore
 
 			span.setTag("row_count", m_rowCount);
 
-			span.finish();
-
-			span = tracer.buildSpan("query_database_get_datapoint_rows").start();
-
 			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
 					returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
 

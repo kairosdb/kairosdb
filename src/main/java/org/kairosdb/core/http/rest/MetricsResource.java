@@ -241,12 +241,10 @@ public class MetricsResource implements KairosMetricReporter
 	{
 
 
-		Span span = null;
+		Span span = createSpan("datapoints_insert", httpHeaders);
 
-		try (Scope scope = activateScope("datapoints", httpHeaders))
+		try (Scope scope = tracer.scopeManager().activate(span, false))
 		{
-			span = scope.span();
-
 			DataPointsParser parser = new DataPointsParser(datastore, new InputStreamReader(json, "UTF-8"),
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
@@ -324,12 +322,10 @@ public class MetricsResource implements KairosMetricReporter
 		checkNotNull(json);
 		logger.debug(json);
 
-		Span span = null;
+		Span span = createSpan("datapoints_query_tags", httpHeaders);
 
-		try (Scope scope = activateScope("datapoints_query_tags", httpHeaders))
+		try (Scope scope = tracer.scopeManager().activate(span, false))
 		{
-			span = scope.span();
-
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new FileWriter(respFile));
 
@@ -444,9 +440,9 @@ public class MetricsResource implements KairosMetricReporter
 		checkNotNull(json);
 		logger.debug(json);
 
-		Span span = null;
+		Span span = createSpan("datapoints_query", httpHeaders);
 
-		try (Scope scope = activateScope("datapoints_query", httpHeaders))
+		try (Scope scope = tracer.scopeManager().activate(span, false))
 		{
 			span = scope.span();
 
@@ -589,9 +585,9 @@ public class MetricsResource implements KairosMetricReporter
 		checkNotNull(json);
 		logger.debug(json);
 
-		Span span = null;
+		Span span = createSpan("datapoints_delete", httpHeaders);
 
-		try (Scope scope = activateScope("datapoints_delete", httpHeaders))
+		try (Scope scope = tracer.scopeManager().activate(span, false))
 		{
 			span = scope.span();
 
@@ -683,9 +679,9 @@ public class MetricsResource implements KairosMetricReporter
 	public Response metricDelete(@Context HttpHeaders httpHeaders, @PathParam("metricName") String metricName) throws Exception
 	{
 
-		Span span = null;
+		Span span = createSpan("delete_metric", httpHeaders);
 
-		try (Scope scope = activateScope("delete_metric", httpHeaders))
+		try (Scope scope = tracer.scopeManager().activate(span, false))
 		{
 			span = scope.span();
 
@@ -824,15 +820,13 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
-	//Activate a scope with a span and return
-	public io.opentracing.Scope activateScope(String spanName, HttpHeaders httpHeaders) {
-		ScopeManager scopeManager = tracer.scopeManager();
+	public Span createSpan(String spanName, HttpHeaders httpHeaders) {
 		SpanContext spanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new HttpHeadersCarrier(httpHeaders.getRequestHeaders()));
 		Tracer.SpanBuilder spanBuild = tracer.buildSpan(spanName).withTag(Tags.SPAN_KIND.getKey(),Tags.SPAN_KIND_SERVER);
 		if (spanContext != null)
 			spanBuild.asChildOf(spanContext);
 
 		Span span = spanBuild.start();
-		return scopeManager.activate(span, true);
+		return span;
 	}
 }

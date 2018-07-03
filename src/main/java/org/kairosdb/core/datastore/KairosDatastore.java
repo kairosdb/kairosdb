@@ -485,7 +485,6 @@ public class KairosDatastore
 				}
 				catch (Exception e)
 				{
-					span.log(e.getMessage());
 					throw new DatastoreException(e);
 				}
 
@@ -512,7 +511,6 @@ public class KairosDatastore
 				}
 				catch (IOException e)
 				{
-					span.log(e.getMessage());
 					throw new DatastoreException(e);
 				}
 

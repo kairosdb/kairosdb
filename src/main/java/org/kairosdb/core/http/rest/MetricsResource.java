@@ -444,8 +444,6 @@ public class MetricsResource implements KairosMetricReporter
 
 		try (Scope scope = tracer.scopeManager().activate(span, false))
 		{
-			span = scope.span();
-
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(respFile), "UTF-8"));
 
@@ -678,16 +676,12 @@ public class MetricsResource implements KairosMetricReporter
 	@Path("/metric/{metricName}")
 	public Response metricDelete(@Context HttpHeaders httpHeaders, @PathParam("metricName") String metricName) throws Exception
 	{
-
 		Span span = createSpan("delete_metric", httpHeaders);
 
 		try (Scope scope = tracer.scopeManager().activate(span, false))
 		{
-			span = scope.span();
-
 			QueryMetric query = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, metricName);
 			datastore.delete(query);
-
 
 			return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
 		}

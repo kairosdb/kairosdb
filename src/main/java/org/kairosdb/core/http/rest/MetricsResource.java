@@ -23,6 +23,7 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.name.Named;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import io.opentracing.*;
 import io.opentracing.propagation.Format;
 import io.opentracing.tag.Tags;
@@ -524,6 +525,7 @@ public class MetricsResource implements KairosMetricReporter
 		catch (MaxRowKeysForQueryExceededException e) {
 			logger.error("Query failed with too many rows", e);
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			span.setTag("MaxRowKeys", Boolean.TRUE);
 			Tags.ERROR.set(span, Boolean.TRUE);
 			span.log(e.getMessage());
 			return builder.addError(e.getMessage()).build();

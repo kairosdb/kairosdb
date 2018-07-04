@@ -123,7 +123,12 @@ public class ByteBufferDataInput implements DataInput
 	@Override
 	public String readUTF() throws IOException
 	{
-		return new String(Snappy.uncompress(m_buffer.array()));
-//		return DataInputStream.readUTF(this);
+		String result;
+		if (Snappy.isValidCompressedBuffer(m_buffer.array())) {
+			result = new String(Snappy.uncompress(m_buffer.array()));
+		} else {
+			result = DataInputStream.readUTF(this);
+		}
+		return result;
 	}
 }

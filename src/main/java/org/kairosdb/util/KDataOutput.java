@@ -114,6 +114,5 @@ public class KDataOutput implements DataOutput
 	public void writeUTF(String s) throws IOException
 	{
 		m_dataOutputStream.write(Snappy.compress(s));
-//		m_dataOutputStream.writeUTF(s);
 	}
 }

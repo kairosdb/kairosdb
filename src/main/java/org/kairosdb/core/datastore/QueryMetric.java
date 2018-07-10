@@ -46,11 +46,11 @@ public class QueryMetric implements DatastoreMetricQuery
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
-		this.aggregators = new ArrayList<Aggregator>();
-		this.plugins = new ArrayList<QueryPlugin>();
-		this.startTime = start_time;
-		this.cacheTime = cacheTime;
-		this.name = Preconditions.checkNotNullOrEmpty(name);
+	this.aggregators = new ArrayList<Aggregator>();
+	this.plugins = new ArrayList<QueryPlugin>();
+	this.startTime = start_time;
+	this.cacheTime = cacheTime;
+	this.name = Preconditions.checkNotNullOrEmpty(name);
 	}
 
 	public QueryMetric(long start_time, long end_time, int cacheTime, String name)

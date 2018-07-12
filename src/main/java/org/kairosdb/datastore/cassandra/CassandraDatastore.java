@@ -19,6 +19,7 @@ import com.datastax.driver.core.*;
 import com.google.common.collect.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.opentracing.Span;
 import io.opentracing.util.GlobalTracer;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -203,7 +204,7 @@ public class CassandraDatastore implements Datastore {
                              DataPoint dataPoint,
                              int ttl) throws DatastoreException {
         try {
-
+                Span span = GlobalTracer.get().activeSpan();
             //time the data is written.
             long writeTime = System.currentTimeMillis();
             if (0 == ttl) {
@@ -224,10 +225,17 @@ public class CassandraDatastore implements Datastore {
             final boolean rowKeyKnown = rowKeyCache.isKnown(serializedKey);
             if (!rowKeyKnown) {
                 storeRowKeyReverseLookups(metricName, serializedKey, rowKeyTtl, tags);
+                if ( span != null) {
+                    span.setTag("row_key_not_in_cache", Boolean.TRUE);
+                }
+
                 rowKeyCache.put(serializedKey);
 
                 //Write metric name if not in cache
                 if (!metricNameCache.isKnown(metricName)) {
+                    if ( span != null) {
+                        span.setTag("metric_name_not_in_cache", Boolean.TRUE);
+                    }
                     if (metricName.length() == 0) {
                         logger.warn("Attempted to add empty metric name to string index. Row looks like: {}", dataPoint);
                     }
@@ -238,6 +246,9 @@ public class CassandraDatastore implements Datastore {
                 //Check tag names and values to write them out
                 for (final String tagName : tags.keySet()) {
                     if (!tagNameCache.isKnown(tagName)) {
+                        if ( span != null) {
+                            span.setTag("tag_name_not_in_cache", Boolean.TRUE);
+                        }
                         if (tagName.length() == 0) {
                             logger.warn("Attempted to add empty tagName to string cache for metric: {}", metricName);
                         }
@@ -248,6 +259,9 @@ public class CassandraDatastore implements Datastore {
                     final String value = tags.get(tagName);
                     boolean isCachedValue = tagValueCache.isKnown(value);
                     if (m_cassandraConfiguration.getTagValueCacheSize() > 0 && !isCachedValue) {
+                        if ( span != null) {
+                            span.setTag("tag_value_not_in_cache", Boolean.TRUE);
+                        }
                         if (value.length() == 0) {
                             logger.warn("Attempted to add empty tagValue (tag name {}) to string cache for metric: {}",
                                     tagName, metricName);

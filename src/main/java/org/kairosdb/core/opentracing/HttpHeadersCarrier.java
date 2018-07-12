@@ -31,5 +31,4 @@ public class HttpHeadersCarrier implements TextMap {
     public Iterator<Map.Entry<String, String>> iterator() {
         return new HttpServletRequestExtractAdapter.MultivaluedMapFlatIterator<>(httpHeaders.entrySet());
     }
-
 }

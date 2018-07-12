@@ -240,8 +240,6 @@ public class MetricsResource implements KairosMetricReporter
 	@Path("/datapoints")
 	public Response add(@Context HttpHeaders httpHeaders, InputStream json)
 	{
-
-
 		Span span = createSpan("datapoints_insert", httpHeaders);
 
 		try (Scope scope = tracer.scopeManager().activate(span, false))
@@ -478,12 +476,7 @@ public class MetricsResource implements KairosMetricReporter
 				try {
 					List<DataPointGroup> results = dq.execute();
 					jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
-				} catch (Throwable e) {
-					queryMeasurementProvider.measureSpanError(query);
-					queryMeasurementProvider.measureDistanceError(query);
-					throw e;
-				}
-				finally
+				} finally
 				{
 					queryMeasurementProvider.measureSpanSuccess(query);
 					queryMeasurementProvider.measureDistanceSuccess(query);
@@ -505,6 +498,7 @@ public class MetricsResource implements KairosMetricReporter
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			Tags.ERROR.set(span, Boolean.TRUE);
+			span.log("JsonSyntaxException");
 			span.log(e.getMessage());
 			return builder.addError(e.getMessage()).build();
 		}
@@ -512,6 +506,7 @@ public class MetricsResource implements KairosMetricReporter
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			Tags.ERROR.set(span, Boolean.TRUE);
+			span.log("QueryException");
 			span.log(e.getMessage());
 			return builder.addError(e.getMessage()).build();
 		}
@@ -519,21 +514,23 @@ public class MetricsResource implements KairosMetricReporter
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			Tags.ERROR.set(span, Boolean.TRUE);
+			span.log("BeanValidationException");
 			span.log(e.getMessage());
 			return builder.addErrors(e.getErrorMessages()).build();
 		}
 		catch (MaxRowKeysForQueryExceededException e) {
 			logger.error("Query failed with too many rows", e);
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			span.setTag("MaxRowKeys", Boolean.TRUE);
-			Tags.ERROR.set(span, Boolean.TRUE);
-			span.log(e.getMessage());
+			//Tags.ERROR.set(span, Boolean.TRUE);
+			span.setTag("max_row_keys", Boolean.TRUE);
+			//span.log(e.getMessage());
 			return builder.addError(e.getMessage()).build();
 		}
 		catch (MemoryMonitorException e)
 		{
 			logger.error("Query failed.", e);
 			Tags.ERROR.set(span, Boolean.TRUE);
+			span.log("MemoryMonitorException");
 			span.log(e.getMessage());
 			Thread.sleep(1000);
 			System.gc();
@@ -543,6 +540,7 @@ public class MetricsResource implements KairosMetricReporter
 		{
 			logger.error("Failed to open temp folder "+datastore.getCacheDir(), e);
 			Tags.ERROR.set(span, Boolean.TRUE);
+			span.log("IOException");
 			span.log(e.getMessage());
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}
@@ -550,6 +548,7 @@ public class MetricsResource implements KairosMetricReporter
 		{
 			logger.error("Query failed.", e);
 			Tags.ERROR.set(span, Boolean.TRUE);
+			span.log("Exception");
 			span.log(e.getMessage());
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}
@@ -557,6 +556,7 @@ public class MetricsResource implements KairosMetricReporter
 		{
 			logger.error("Out of memory error.", e);
 			Tags.ERROR.set(span, Boolean.TRUE);
+			span.log("OutOfMemoryError");
 			span.log(e.getMessage());
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}
@@ -817,7 +817,8 @@ public class MetricsResource implements KairosMetricReporter
 	}
 
 	public Span createSpan(String spanName, HttpHeaders httpHeaders) {
-		SpanContext spanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new HttpHeadersCarrier(httpHeaders.getRequestHeaders()));
+		HttpHeadersCarrier carrier = new HttpHeadersCarrier(httpHeaders.getRequestHeaders());
+		SpanContext spanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, carrier);
 		Tracer.SpanBuilder spanBuild = tracer.buildSpan(spanName).withTag(Tags.SPAN_KIND.getKey(),Tags.SPAN_KIND_SERVER);
 		if (spanContext != null)
 			spanBuild.asChildOf(spanContext);

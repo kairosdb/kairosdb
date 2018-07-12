@@ -23,6 +23,8 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
+import com.google.inject.Inject;
+import io.opentracing.Tracer;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
@@ -62,6 +64,9 @@ public class DataPointsParser
 
 	private int dataPointCount;
 	private int ingestTime;
+
+	@Inject
+	private Tracer tracer;
 
 	public DataPointsParser(KairosDatastore datastore, Reader stream, Gson gson,
 	                        KairosDataPointFactory dataPointFactory)
@@ -106,6 +111,8 @@ public class DataPointsParser
 			else if (reader.peek().equals(JsonToken.BEGIN_OBJECT))
 			{
 				NewMetric metric = parseMetric(reader);
+				tracer.activeSpan().setTag("metric_name", metric.name);
+				tracer.activeSpan().log("tags: " + metric.tags.toString());
 				validateAndAddDataPoints(metric, validationErrors, 0);
 			}
 			else

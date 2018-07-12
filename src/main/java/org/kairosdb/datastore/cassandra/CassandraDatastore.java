@@ -19,6 +19,7 @@ import com.datastax.driver.core.*;
 import com.google.common.collect.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.opentracing.util.GlobalTracer;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
@@ -523,6 +524,8 @@ public class CassandraDatastore implements Datastore {
         }
 
         if (ret.size() > m_cassandraConfiguration.getMaxRowKeysForQuery()) {
+            GlobalTracer.get().activeSpan().setTag("row_count", ret.size());
+            GlobalTracer.get().activeSpan().setTag("max_row_keys", Boolean.TRUE);
             throw new MaxRowKeysForQueryExceededException(String.format("Query for metric %s matches %d row keys, but only %d are allowed",
                     query.getName(), ret.size(), m_cassandraConfiguration.getMaxRowKeysForQuery()));
         }
@@ -633,6 +636,8 @@ public class CassandraDatastore implements Datastore {
             i++;
 
             if (i > limit) {
+                GlobalTracer.get().activeSpan().setTag("row_count", i);
+                GlobalTracer.get().activeSpan().setTag("max_row_keys", Boolean.TRUE);
                 throw new MaxRowKeysForQueryExceededException(String.format("Too many rows too scan: metric=%s limit=%d", metricName, limit));
             }
 

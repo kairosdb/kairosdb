@@ -476,7 +476,12 @@ public class MetricsResource implements KairosMetricReporter
 				try {
 					List<DataPointGroup> results = dq.execute();
 					jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
-				} finally
+				} catch (Throwable e) {
+					queryMeasurementProvider.measureSpanError(query);
+					queryMeasurementProvider.measureDistanceError(query);
+					throw e;
+				}
+				finally
 				{
 					queryMeasurementProvider.measureSpanSuccess(query);
 					queryMeasurementProvider.measureDistanceSuccess(query);

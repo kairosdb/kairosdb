@@ -25,6 +25,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.inject.Inject;
 import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
@@ -97,6 +98,8 @@ public class DataPointsParser
 					while (reader.hasNext())
 					{
 						NewMetric metric = parseMetric(reader);
+						GlobalTracer.get().activeSpan().log("metric_name " + metric.name);  //Experimental, will be tweaked/removed after testing
+						GlobalTracer.get().activeSpan().log("tags: " + metric.tags.toString()); //Experimental, will be tweaked/removed after testing
 						validateAndAddDataPoints(metric, validationErrors, metricCount);
 						metricCount++;
 					}
@@ -111,8 +114,8 @@ public class DataPointsParser
 			else if (reader.peek().equals(JsonToken.BEGIN_OBJECT))
 			{
 				NewMetric metric = parseMetric(reader);
-				tracer.activeSpan().setTag("metric_name", metric.name);
-				tracer.activeSpan().log("tags: " + metric.tags.toString());
+				GlobalTracer.get().activeSpan().setTag("metric_name", metric.name);
+				GlobalTracer.get().activeSpan().log("tags: " + metric.tags.toString());
 				validateAndAddDataPoints(metric, validationErrors, 0);
 			}
 			else

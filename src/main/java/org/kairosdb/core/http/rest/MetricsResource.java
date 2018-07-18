@@ -240,8 +240,6 @@ public class MetricsResource implements KairosMetricReporter
 	@Path("/datapoints")
 	public Response add(@Context HttpHeaders httpHeaders, InputStream json)
 	{
-
-
 		Span span = createSpan("datapoints_insert", httpHeaders);
 
 		try (Scope scope = tracer.scopeManager().activate(span, false))
@@ -250,7 +248,7 @@ public class MetricsResource implements KairosMetricReporter
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 
-			span.setTag("datapoint_count", parser.getDataPointCount());
+			span.log("datapoint_count: " + parser.getDataPointCount());
 			m_ingestedDataPoints.addAndGet(parser.getDataPointCount());
 			m_ingestTime.addAndGet(parser.getIngestTime());
 
@@ -525,7 +523,6 @@ public class MetricsResource implements KairosMetricReporter
 		catch (MaxRowKeysForQueryExceededException e) {
 			logger.error("Query failed with too many rows", e);
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
-			span.setTag("MaxRowKeys", Boolean.TRUE);
 			Tags.ERROR.set(span, Boolean.TRUE);
 			span.log(e.getMessage());
 			return builder.addError(e.getMessage()).build();
@@ -817,7 +814,8 @@ public class MetricsResource implements KairosMetricReporter
 	}
 
 	public Span createSpan(String spanName, HttpHeaders httpHeaders) {
-		SpanContext spanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new HttpHeadersCarrier(httpHeaders.getRequestHeaders()));
+		HttpHeadersCarrier carrier = new HttpHeadersCarrier(httpHeaders.getRequestHeaders());
+		SpanContext spanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, carrier);
 		Tracer.SpanBuilder spanBuild = tracer.buildSpan(spanName).withTag(Tags.SPAN_KIND.getKey(),Tags.SPAN_KIND_SERVER);
 		if (spanContext != null)
 			spanBuild.asChildOf(spanContext);

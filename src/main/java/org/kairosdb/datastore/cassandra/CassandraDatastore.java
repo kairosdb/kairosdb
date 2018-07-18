@@ -19,6 +19,8 @@ import com.datastax.driver.core.*;
 import com.google.common.collect.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.opentracing.Span;
+import io.opentracing.util.GlobalTracer;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
@@ -202,7 +204,7 @@ public class CassandraDatastore implements Datastore {
                              DataPoint dataPoint,
                              int ttl) throws DatastoreException {
         try {
-
+                Span span = GlobalTracer.get().activeSpan();
             //time the data is written.
             long writeTime = System.currentTimeMillis();
             if (0 == ttl) {
@@ -223,10 +225,17 @@ public class CassandraDatastore implements Datastore {
             final boolean rowKeyKnown = rowKeyCache.isKnown(serializedKey);
             if (!rowKeyKnown) {
                 storeRowKeyReverseLookups(metricName, serializedKey, rowKeyTtl, tags);
+                if (span != null) {
+                    span.setTag("cache_miss_row_key", Boolean.TRUE);
+                }
+
                 rowKeyCache.put(serializedKey);
 
                 //Write metric name if not in cache
                 if (!metricNameCache.isKnown(metricName)) {
+                    if (span != null) {
+                        span.setTag("cache_miss_metric_name", Boolean.TRUE);
+                    }
                     if (metricName.length() == 0) {
                         logger.warn("Attempted to add empty metric name to string index. Row looks like: {}", dataPoint);
                     }
@@ -237,6 +246,9 @@ public class CassandraDatastore implements Datastore {
                 //Check tag names and values to write them out
                 for (final String tagName : tags.keySet()) {
                     if (!tagNameCache.isKnown(tagName)) {
+                        if (span != null) {
+                            span.setTag("cache_miss_tag_name", Boolean.TRUE);
+                        }
                         if (tagName.length() == 0) {
                             logger.warn("Attempted to add empty tagName to string cache for metric: {}", metricName);
                         }
@@ -247,6 +259,9 @@ public class CassandraDatastore implements Datastore {
                     final String value = tags.get(tagName);
                     boolean isCachedValue = tagValueCache.isKnown(value);
                     if (m_cassandraConfiguration.getTagValueCacheSize() > 0 && !isCachedValue) {
+                        if (span != null) {
+                            span.setTag("cache_miss_tag_value", Boolean.TRUE);
+                        }
                         if (value.length() == 0) {
                             logger.warn("Attempted to add empty tagValue (tag name {}) to string cache for metric: {}",
                                     tagName, metricName);
@@ -504,6 +519,7 @@ public class CassandraDatastore implements Datastore {
      * @return row keys for the query
      */
     public Collection<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query, int limit) {
+        Span span = GlobalTracer.get().activeSpan();
         Collection<DataPointsRowKey> ret = null;
 
         List<QueryPlugin> plugins = query.getPlugins();
@@ -523,6 +539,11 @@ public class CassandraDatastore implements Datastore {
         }
 
         if (ret.size() > m_cassandraConfiguration.getMaxRowKeysForQuery()) {
+            if(span != null) {
+                span.setTag("row_count", ret.size());
+                span.setTag("max_row_keys", Boolean.TRUE);
+            }
+
             throw new MaxRowKeysForQueryExceededException(String.format("Query for metric %s matches %d row keys, but only %d are allowed",
                     query.getName(), ret.size(), m_cassandraConfiguration.getMaxRowKeysForQuery()));
         }
@@ -622,6 +643,7 @@ public class CassandraDatastore implements Datastore {
     }
 
     private static void filterAndAddKeys(String metricName, SetMultimap<String, String> filterTags, ResultSet rs, List<DataPointsRowKey> targetList, int limit) {
+        Span span = GlobalTracer.get().activeSpan();
         long startTime = System.currentTimeMillis();
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
         final SetMultimap<String, Pattern> tagPatterns = MultimapBuilder.hashKeys(filterTags.size()).hashSetValues().build();
@@ -633,6 +655,11 @@ public class CassandraDatastore implements Datastore {
             i++;
 
             if (i > limit) {
+                if(span != null) {
+                    span.setTag("row_count", i);
+                    span.setTag("max_row_keys", Boolean.TRUE);
+                }
+
                 throw new MaxRowKeysForQueryExceededException(String.format("Too many rows too scan: metric=%s limit=%d", metricName, limit));
             }
 

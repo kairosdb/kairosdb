@@ -23,6 +23,8 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
+import io.opentracing.Span;
+import io.opentracing.util.GlobalTracer;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
@@ -32,7 +34,9 @@ import org.kairosdb.util.Validator;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -81,6 +85,9 @@ public class DataPointsParser
 
 		try
 		{
+			Span span = GlobalTracer.get().activeSpan();
+			List<String> list = new ArrayList<String>();
+
 			int metricCount = 0;
 
 			if (reader.peek().equals(JsonToken.BEGIN_ARRAY))
@@ -92,8 +99,17 @@ public class DataPointsParser
 					while (reader.hasNext())
 					{
 						NewMetric metric = parseMetric(reader);
+
+						if(!list.contains(metric.name)) {
+							list.add(metric.name);
+						}
+
 						validateAndAddDataPoints(metric, validationErrors, metricCount);
 						metricCount++;
+					}
+
+					if ( span!= null) {
+						span.log("metric_name: " + list.toString());
 					}
 				}
 				catch (EOFException e)
@@ -106,6 +122,9 @@ public class DataPointsParser
 			else if (reader.peek().equals(JsonToken.BEGIN_OBJECT))
 			{
 				NewMetric metric = parseMetric(reader);
+				if ( span!= null) {
+					span.log("metric_name" + metric.name);
+				}
 				validateAndAddDataPoints(metric, validationErrors, 0);
 			}
 			else

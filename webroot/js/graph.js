@@ -188,7 +188,7 @@ function buildKairosDBQuery() {
 				}
 				var align = $(aggregator).find(".aggregatorAlign").val();
 
-				var agg = metric.addRangeAggregator(name, value, unit, percentile, time_zone, align);
+				var agg = metric.addRangeAggregator(name, value, unit, time_zone, align);
 				agg.return_type = $(aggregator).find(".aggregatorDevValue").val();
 			}
 			else if (name == 'save_as')

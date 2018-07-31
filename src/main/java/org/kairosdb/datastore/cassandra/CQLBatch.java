@@ -145,7 +145,6 @@ public class CQLBatch
 		boundStatement.setBytesUnsafe(1, b);
 		boundStatement.setBytesUnsafe(2, ByteBuffer.wrap(kDataOutput.getBytes()));
 		boundStatement.setInt(3, ttl);
-		boundStatement.setLong(4, m_now);
 		boundStatement.setConsistencyLevel(m_consistencyLevel);
 		boundStatement.setIdempotent(true);
 

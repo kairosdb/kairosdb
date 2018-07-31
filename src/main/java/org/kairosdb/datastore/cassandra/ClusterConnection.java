@@ -101,7 +101,7 @@ public class ClusterConnection
 
 	//All inserts and deletes add millisecond timestamp consistency with old code and TWCS instead of nanos
 	public static final String DATA_POINTS_INSERT = "INSERT INTO data_points " +
-			"(key, column1, value) VALUES (?, ?, ?) USING TTL ? AND TIMESTAMP ?";
+			"(key, column1, value) VALUES (?, ?, ?) USING TTL ?";
 
 	public static final String ROW_KEY_TIME_INSERT = "INSERT INTO row_key_time_index " +
 			"(metric, table_name, row_time) VALUES (?, 'data_points', ?) USING TTL ?";

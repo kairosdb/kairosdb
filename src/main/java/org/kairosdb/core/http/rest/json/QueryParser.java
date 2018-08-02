@@ -99,7 +99,7 @@ public class QueryParser
 		return m_gson;
 	}
 
-	static String getUnderscorePropertyName(String camelCaseName)
+	public static String getUnderscorePropertyName(String camelCaseName)
 	{
 		StringBuilder sb = new StringBuilder();
 
@@ -364,10 +364,22 @@ public class QueryParser
 
 	public RollupTask parseRollupTask(String json) throws BeanValidationException, QueryException
 	{
+		return parseRollupTask(json, null);
+	}
+
+	public RollupTask parseRollupTask(String json, String id) throws BeanValidationException, QueryException
+	{
 		JsonParser parser = new JsonParser();
 		JsonObject taskObject = parser.parse(json).getAsJsonObject();
 		RollupTask task = parseRollupTask(taskObject, "");
-		task.addJson(taskObject.toString().replaceAll("\\n", ""));
+		String newJson = taskObject.toString();
+
+		if (id != null)
+		{
+			// If updating the task, replace the new Id with the old Id
+			newJson = newJson.replace(task.getId(), id);
+		}
+		task.addJson(newJson.replaceAll("\\n", ""));
 		return task;
 	}
 
@@ -403,7 +415,7 @@ public class QueryParser
 					saveAsAggregator.setGroupBys(query.getGroupBys());
 
 					TrimAggregator trimAggregator = (TrimAggregator) m_processingChain.getFeatureProcessingFactory(Aggregator.class).createFeatureProcessor("trim");
-					trimAggregator.setTrim(TrimAggregator.Trim.LAST);
+					trimAggregator.setTrim(TrimAggregator.Trim.BOTH);
 
 					query.addAggregator(saveAsAggregator);
 					query.addAggregator(trimAggregator);

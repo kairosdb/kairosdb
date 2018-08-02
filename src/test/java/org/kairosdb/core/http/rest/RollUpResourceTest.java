@@ -29,11 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
-import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
-import static javax.ws.rs.core.Response.Status.NO_CONTENT;
-import static javax.ws.rs.core.Response.Status.OK;
+import static javax.ws.rs.core.Response.Status.*;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -42,11 +38,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class RollUpResourceTest
 {
@@ -314,7 +306,7 @@ public class RollUpResourceTest
 	public void testUpdate() throws IOException, QueryException, RollUpException
 	{
 		resource = new RollUpResource(queryParser, mockStore, mockStatusStore);
-		String json = Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8);
+		String json = Resources.toString(Resources.getResource("rolluptasksExisting.json"), Charsets.UTF_8);
 		List<RollupTask> tasks = mockTasks(json);
 
 		// Replace task 1 with task 2
@@ -332,7 +324,11 @@ public class RollUpResourceTest
 		RollupTask modifiedTask = modifiedTasks.get(0);
 		assertThat(modifiedTask.getId(), equalTo(tasks.get(0).getId()));
 		assertThat(modifiedTask.getName(), equalTo(tasks.get(1).getName()));
-		assertThat(modifiedTask.getJson(), equalTo(tasks.get(1).getJson()));
+		assertThat(response.getStatus(), equalTo(200));
+		assertRollupResponse((String)response.getEntity(), modifiedTasks.get(0));
+
+		// since the id is stored in the json, verify that the id has not changed
+		assertThat(new GsonBuilder().create().fromJson(modifiedTask.getJson(), RollupTask.class).getId(), equalTo(tasks.get(0).getId()));
 	}
 
 	@Test

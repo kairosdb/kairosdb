@@ -16,7 +16,6 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Session;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.SetMultimap;
@@ -24,21 +23,9 @@ import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.KairosRootConfig;
-import org.kairosdb.core.TestDataPointFactory;
+import org.kairosdb.core.*;
 import org.kairosdb.core.datapoints.LongDataPoint;
-import org.kairosdb.core.datastore.CachedSearchResult;
-import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
-import org.kairosdb.core.datastore.DatastoreQuery;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.datastore.QueryQueuingManager;
-import org.kairosdb.core.datastore.ServiceKeyValue;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.core.queue.MemoryQueueProcessor;
@@ -52,10 +39,7 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.Executors;
 
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -265,9 +249,9 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		config.load(configMap);
 
 		CassandraConfiguration configuration = new CassandraConfiguration(config);
-		CassandraClient client = new CassandraClientImpl(configuration.getWriteCluster());
+		CassandraClientImpl client = new CassandraClientImpl(configuration.getWriteCluster());
+		client.init();
 		m_clusterConnection = new ClusterConnection(client, EnumSet.of(ClusterConnection.Type.WRITE, ClusterConnection.Type.META));
-		Session session = m_clusterConnection.getSession();
 		BatchStats batchStats = new BatchStats();
 		DataCache<DataPointsRowKey> rowKeyCache = new DataCache<>(1024);
 		DataCache<String> metricNameCache = new DataCache<>(1024);
@@ -326,6 +310,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				new QueryQueuingManager(1, "hostname"),
 				dataPointFactory, false);
 
+		DatastoreTestHelper.s_datastore.init();
 		s_eventBus.register(s_datastore);
 
 		loadCassandraData();

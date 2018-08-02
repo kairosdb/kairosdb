@@ -1,11 +1,6 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -266,6 +261,8 @@ public class ClusterConnection
 			psRowKeyIndexQuery = m_session.prepare(ROW_KEY_INDEX_QUERY);
 			psRowKeyIndexDelete = m_session.prepare(ROW_KEY_INDEX_DELETE);
 			psRowKeyIndexDeleteRow = m_session.prepare(ROW_KEY_INDEX_DELETE_ROW);
+			psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
+			psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);
 
 			psStringIndexInsert = m_session.prepare(STRING_INDEX_INSERT);
 			psStringIndexQuery = m_session.prepare(STRING_INDEX_QUERY);
@@ -276,10 +273,8 @@ public class ClusterConnection
 
 		if ((!m_readonlyMode)&&(clusterType.contains(Type.WRITE)))
 		{
-			psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
 			psRowKeyInsert = m_session.prepare(ROW_KEY_INSERT);
 			psRowKeyDelete = m_session.prepare(ROW_KEY_DELETE);
-			psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);
 			psRowKeyTimeDelete = m_session.prepare(ROW_KEY_TIME_DELETE);
 			psRowKeyTimeInsert = m_session.prepare(ROW_KEY_TIME_INSERT);
 		}

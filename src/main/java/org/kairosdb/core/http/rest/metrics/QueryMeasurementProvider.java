@@ -3,6 +3,8 @@ package org.kairosdb.core.http.rest.metrics;
 import org.kairosdb.core.admin.InternalMetricsProvider;
 import org.kairosdb.core.datastore.QueryMetric;
 
+import java.util.concurrent.ThreadPoolExecutor;
+
 public interface QueryMeasurementProvider extends InternalMetricsProvider {
     void measureSpanSuccess(QueryMetric query);
 
@@ -15,4 +17,6 @@ public interface QueryMeasurementProvider extends InternalMetricsProvider {
     void measureSpanForMetric(QueryMetric query);
 
     void measureDistanceForMetric(QueryMetric query);
+
+    void measureThreadPoolMetrics(ThreadPoolExecutor executor);
 }

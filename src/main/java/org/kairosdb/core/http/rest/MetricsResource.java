@@ -16,14 +16,15 @@
 
 package org.kairosdb.core.http.rest;
 
-import com.google.common.collect.SetMultimap;
+import com.google.common.util.concurrent.SimpleTimeLimiter;
+import com.google.common.util.concurrent.TimeLimiter;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.name.Named;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import io.opentracing.*;
 import io.opentracing.propagation.Format;
 import io.opentracing.tag.Tags;
@@ -54,6 +55,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
@@ -91,6 +93,27 @@ public class MetricsResource implements KairosMetricReporter
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
+	public static final String READ_TIMEOUT = "kairosdb.datastore.datapoints.read.timeout";
+	public static final String READ_THREAD_POOL_MAX_SIZE = "kairosdb.datastore.datapoints.read.threadpool.max.size";
+	public static final String READ_THREAD_POOL_CORE_SIZE = "kairosdb.datastore.datapoints.read.threadpool.core.size";
+	public static final String READ_THREAD_KEEP_ALIVE_TIME = "kairosdb.datastore.datapoints.read.thread.keep.alive.time.milliseconds";
+
+	@com.google.inject.Inject
+	@Named(READ_TIMEOUT)
+	private int m_readTimeout = 20000;
+
+	@com.google.inject.Inject
+	@Named(READ_THREAD_POOL_MAX_SIZE)
+	private int m_readThreadPoolMaxSize = 100;
+
+	@com.google.inject.Inject
+	@Named(READ_THREAD_POOL_CORE_SIZE)
+	private int m_readThreadPoolCoreSize = 10;
+
+	@com.google.inject.Inject
+	@Named(READ_THREAD_KEEP_ALIVE_TIME)
+	private int m_readThreadKeepAliveTime = 500;
+
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
@@ -102,6 +125,9 @@ public class MetricsResource implements KairosMetricReporter
 	private QueryMeasurementProvider queryMeasurementProvider;
 
 	private Tracer tracer;
+
+	private TimeLimiter limiter;
+	private ThreadPoolExecutor executor;
 
 	@Inject
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
@@ -117,6 +143,11 @@ public class MetricsResource implements KairosMetricReporter
 		gson = builder.create();
 
 		this.tracer = tracer;
+
+		executor=new ThreadPoolExecutor(m_readThreadPoolCoreSize, m_readThreadPoolMaxSize, m_readThreadKeepAliveTime, TimeUnit.MILLISECONDS,
+				new SynchronousQueue<>(),
+				new ThreadPoolExecutor.AbortPolicy());
+		limiter = new SimpleTimeLimiter(executor);
 	}
 
 	private ResponseBuilder setHeaders(ResponseBuilder responseBuilder)
@@ -440,65 +471,76 @@ public class MetricsResource implements KairosMetricReporter
 		checkNotNull(json);
 		logger.debug(json);
 
-		Span span = createSpan("datapoints_query", httpHeaders);
 
+		final Span span = createSpan("datapoints_query", httpHeaders);
 		try (Scope scope = tracer.scopeManager().activate(span, false))
 		{
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(respFile), "UTF-8"));
-
 			JsonResponse jsonResponse = new JsonResponse(writer);
-
 			jsonResponse.begin();
-
 			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
-			for (QueryMetric query : queries)
-			{
-				Map<String, Collection<String>> tags = query.getTags().asMap();
-				Set<String> keys = tags.keySet();
 
-				span.setTag("metric_name", query.getName());
+            return limiter.callWithTimeout(()->{
+                try (Scope internalScope = tracer.scopeManager().activate(span, false))
+                {
+					Map threadMetrics = new HashMap();
+					threadMetrics.put("response_thread_pool_size", executor.getPoolSize());
+					threadMetrics.put("active_threads", executor.getActiveCount());
+					threadMetrics.put("threadpool_queue_size", executor.getQueue().size());
+					span.log(threadMetrics);
+					queryMeasurementProvider.measureThreadPoolMetrics(executor);
 
-				for (String key : keys) {
-					StringBuilder str = new StringBuilder();
-					Iterator<String> iter = tags.get(key).iterator();
-					while(iter.hasNext()) {
-						str.append(iter.next() + ",");
-					}
-					str.deleteCharAt(str.lastIndexOf(","));
-					span.setTag(key, str.toString());
-				}
+                    for (QueryMetric query : queries)
+                    {
+                        Map<String, Collection<String>> tags = query.getTags().asMap();
+                        Set<String> keys = tags.keySet();
 
-				queryMeasurementProvider.measureSpanForMetric(query);
-				queryMeasurementProvider.measureDistanceForMetric(query);
+                        span.setTag("metric_name", query.getName());
 
-				DatastoreQuery dq = datastore.createQuery(query);
-				try {
-					List<DataPointGroup> results = dq.execute();
-					jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
-				} catch (Throwable e) {
-					queryMeasurementProvider.measureSpanError(query);
-					queryMeasurementProvider.measureDistanceError(query);
-					throw e;
-				}
-				finally
-				{
-					queryMeasurementProvider.measureSpanSuccess(query);
-					queryMeasurementProvider.measureDistanceSuccess(query);
-					dq.close();
-				}
-			}
+                        for (String key : keys) {
+                            StringBuilder str = new StringBuilder();
+                            Iterator<String> iter = tags.get(key).iterator();
+                            while(iter.hasNext()) {
+                                str.append(iter.next() + ",");
+                            }
+                            str.deleteCharAt(str.lastIndexOf(","));
+                            span.setTag(key, str.toString());
+                        }
 
-			jsonResponse.end();
-			writer.flush();
-			writer.close();
+                        queryMeasurementProvider.measureSpanForMetric(query);
+                        queryMeasurementProvider.measureDistanceForMetric(query);
 
-			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
-					new FileStreamingOutput(respFile));
+                        DatastoreQuery dq = datastore.createQuery(query);
+                        try {
+                            List<DataPointGroup> results = dq.execute();
+                            jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
+                        } catch (Throwable e) {
+                            queryMeasurementProvider.measureSpanError(query);
+                            queryMeasurementProvider.measureDistanceError(query);
+                            throw e;
+                        }
+                        finally
+                        {
+                            queryMeasurementProvider.measureSpanSuccess(query);
+                            queryMeasurementProvider.measureDistanceSuccess(query);
+                            dq.close();
+                        }
+                    }
 
-			setHeaders(responseBuilder);
-			return responseBuilder.build();
+                    jsonResponse.end();
+                    writer.flush();
+                    writer.close();
+
+                    ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
+                            new FileStreamingOutput(respFile));
+
+                    setHeaders(responseBuilder);
+                    return responseBuilder.build();
+                }
+
+            }, m_readTimeout, TimeUnit.MILLISECONDS, true);
 		}
 		catch (JsonSyntaxException e)
 		{
@@ -540,6 +582,13 @@ public class MetricsResource implements KairosMetricReporter
 		catch (IOException e)
 		{
 			logger.error("Failed to open temp folder "+datastore.getCacheDir(), e);
+			Tags.ERROR.set(span, Boolean.TRUE);
+			span.log(e.getMessage());
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+		catch (UncheckedTimeoutException e)
+		{
+			logger.error("Request to read datapoints timed out at " + m_readTimeout + " milli seconds", e);
 			Tags.ERROR.set(span, Boolean.TRUE);
 			span.log(e.getMessage());
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();

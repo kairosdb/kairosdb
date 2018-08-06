@@ -32,7 +32,6 @@ import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.LimitAggregator;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.*;
-import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +56,6 @@ public class KairosDatastore
     public static final String QUERY_SAMPLE_SIZE = "kairosdb.datastore.query_sample_size";
     public static final String QUERY_ROW_COUNT = "kairosdb.datastore.query_row_count";
 	public static final String METRIC_QUERY_CACHE_READ_TIME = "kairosdb.datastore.cache_read_time";
-
 	private final Datastore m_datastore;
 	private final QueryQueuingManager m_queuingManager;
 	private final List<DataPointListener> m_dataPointListeners;

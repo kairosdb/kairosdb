@@ -54,6 +54,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
@@ -443,6 +444,8 @@ public class MetricsResource implements KairosMetricReporter
 
 		try (Scope scope = tracer.scopeManager().activate(span, false))
 		{
+			final long start = System.currentTimeMillis();
+
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(respFile), "UTF-8"));
 
@@ -454,6 +457,10 @@ public class MetricsResource implements KairosMetricReporter
 
 			for (QueryMetric query : queries)
 			{
+				if (System.currentTimeMillis()-start > 2000){
+					throw new TimeoutException();
+				}
+
 				Map<String, Collection<String>> tags = query.getTags().asMap();
 				Set<String> keys = tags.keySet();
 
@@ -539,6 +546,13 @@ public class MetricsResource implements KairosMetricReporter
 		catch (IOException e)
 		{
 			logger.error("Failed to open temp folder "+datastore.getCacheDir(), e);
+			Tags.ERROR.set(span, Boolean.TRUE);
+			span.log(e.getMessage());
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+		catch (TimeoutException e)
+		{
+			logger.error("Request timed out", e);
 			Tags.ERROR.set(span, Boolean.TRUE);
 			span.log(e.getMessage());
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();

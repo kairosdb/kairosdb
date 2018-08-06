@@ -1,6 +1,7 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.*;
+import com.datastax.driver.core.exceptions.InvalidQueryException;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -261,8 +262,19 @@ public class ClusterConnection
 			psRowKeyIndexQuery = m_session.prepare(ROW_KEY_INDEX_QUERY);
 			psRowKeyIndexDelete = m_session.prepare(ROW_KEY_INDEX_DELETE);
 			psRowKeyIndexDeleteRow = m_session.prepare(ROW_KEY_INDEX_DELETE_ROW);
-			psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
-			psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);
+			try
+			{
+				psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
+				psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);
+			}
+			catch (InvalidQueryException e)
+			{
+				// Reading data from an older version of Kairos. This table did not exist so ignore.
+				if (!e.getMessage().startsWith("unconfigured columnfamily row_key"))
+				{
+					throw e;
+				}
+			}
 
 			psStringIndexInsert = m_session.prepare(STRING_INDEX_INSERT);
 			psStringIndexQuery = m_session.prepare(STRING_INDEX_QUERY);

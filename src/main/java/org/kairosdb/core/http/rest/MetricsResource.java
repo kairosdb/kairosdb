@@ -27,27 +27,16 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.annotation.InjectProperty;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
-import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.DatastoreQuery;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.datastore.QueryPlugin;
-import org.kairosdb.core.datastore.QueryPostProcessingPlugin;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.InvalidServerTypeException;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.formatter.JsonFormatter;
 import org.kairosdb.core.formatter.JsonResponse;
-import org.kairosdb.core.http.rest.json.DataPointsParser;
-import org.kairosdb.core.http.rest.json.ErrorResponse;
-import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
-import org.kairosdb.core.http.rest.json.Query;
-import org.kairosdb.core.http.rest.json.QueryParser;
-import org.kairosdb.core.http.rest.json.ValidationErrors;
+import org.kairosdb.core.http.rest.json.*;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.eventbus.FilterEventBus;
@@ -61,38 +50,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
@@ -287,48 +251,6 @@ public class MetricsResource implements KairosMetricReporter
 		
 		return executeNameQuery(NameType.METRIC_NAMES, prefix);
 	}
-
-	@OPTIONS
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/tagnames")
-	public Response corsPreflightTagNames(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
-	{
-		checkServerType(ServerType.QUERY, "/tagnames", "OPTIONS");
-		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
-		return (responseBuilder.build());
-	}
-
-	@GET
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/tagnames")
-	public Response getTagNames() throws InvalidServerTypeException
-	{
-		checkServerType(ServerType.QUERY, "/tagnames", "GET");
-		return executeNameQuery(NameType.TAG_KEYS);
-	}
-
-
-	@OPTIONS
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/tagvalues")
-	public Response corsPreflightTagValues(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-			@HeaderParam("Access-Control-Request-Method") final String requestMethod) throws InvalidServerTypeException
-	{
-		checkServerType(ServerType.QUERY, "/tagvalues", "OPTIONS");
-		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
-		return (responseBuilder.build());
-	}
-
-	@GET
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/tagvalues")
-	public Response getTagValues() throws InvalidServerTypeException
-	{
-		checkServerType(ServerType.QUERY, "/tagvalues", "GET");
-		return executeNameQuery(NameType.TAG_VALUES);
-	}
-
 
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")

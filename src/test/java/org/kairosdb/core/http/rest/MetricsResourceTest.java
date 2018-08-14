@@ -156,22 +156,6 @@ public class MetricsResourceTest extends ResourceBase
 	}
 
 	@Test
-	public void testTagNames() throws IOException
-	{
-		JsonResponse response = client.get(TAG_NAMES_URL);
-
-		assertResponse(response, 200, "{\"results\":[\"server1\",\"server2\",\"server3\"]}");
-	}
-
-	@Test
-	public void testTagValues() throws IOException
-	{
-		JsonResponse response = client.get(TAG_VALUES_URL);
-
-		assertResponse(response, 200, "{\"results\":[\"larry\",\"moe\",\"curly\"]}");
-	}
-
-	@Test
 	public void test_datastoreThrowsException() throws DatastoreException, IOException
 	{
 		Level previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);
@@ -276,30 +260,6 @@ public class MetricsResourceTest extends ResourceBase
 		resource.setServerType("INGEST");
 
 		JsonResponse response = client.get(METRIC_NAMES_URL);
-
-		assertResponse(response, 403, "[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]\n");
-
-		resource.setServerType("INGEST,QUERY,DELETE");
-	}
-
-	@Test
-	public void testTagNamesQueryDisabled() throws IOException
-	{
-		resource.setServerType("INGEST");
-
-		JsonResponse response = client.get(TAG_NAMES_URL);
-
-		assertResponse(response, 403, "[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]\n");
-
-		resource.setServerType("INGEST,QUERY,DELETE");
-	}
-
-	@Test
-	public void testTagValuesQueryDisabled() throws IOException
-	{
-		resource.setServerType("INGEST");
-
-		JsonResponse response = client.get(TAG_VALUES_URL);
 
 		assertResponse(response, 403, "[{\"Forbidden\": \"QUERY API methods are disabled on this KairosDB instance.\"}]\n");
 

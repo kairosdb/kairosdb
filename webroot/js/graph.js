@@ -660,6 +660,7 @@ function addAggregator(container) {
 		else if (name == "percentile") {
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
+			$aggregatorContainer.find(".aggregatorSampling").show();
 			$aggregatorContainer.find(".aggregatorAlign").show();
 		}
 		else if (name == "div") {

@@ -73,6 +73,7 @@ public abstract class ResourceBase
                 bind(String.class).annotatedWith(Names.named(WebServer.JETTY_ADDRESS_PROPERTY)).toInstance("0.0.0.0");
                 bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9001);
                 bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
+                bind(Boolean.class).annotatedWith(Names.named(WebServer.JETTY_SHOW_STACKTRACE)).toInstance(Boolean.FALSE);
                 bind(Datastore.class).toInstance(datastore);
                 bind(ServiceKeyStore.class).toInstance(datastore);
                 bind(KairosDatastore.class).in(Singleton.class);

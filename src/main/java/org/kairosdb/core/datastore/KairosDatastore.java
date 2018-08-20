@@ -66,13 +66,12 @@ public class KairosDatastore
 	private String m_baseCacheDir;
 	private volatile String m_cacheDir;
 
-	@javax.inject.Inject
 	private Tracer tracer;
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-	      List<DataPointListener> dataPointListeners, KairosDataPointFactory dataPointFactory)
+	      List<DataPointListener> dataPointListeners, KairosDataPointFactory dataPointFactory, Tracer tracer)
 			throws DatastoreException
 	{
 		m_datastore = checkNotNull(datastore);
@@ -83,6 +82,8 @@ public class KairosDatastore
 		m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
 
 		setupCacheDirectory();
+
+		this.tracer = tracer;
 	}
 
 	@SuppressWarnings("UnusedDeclaration")
@@ -248,9 +249,15 @@ public class KairosDatastore
 
 		DatastoreQuery dq;
 
+		Span span = tracer.activeSpan();
+
 		try
 		{
 			dq = new DatastoreQueryImpl(metric);
+
+			if(span != null) {
+				span.setTag("query_waiting_count", m_queuingManager.getQueryWaitingCount());
+			}
 		}
 		catch (UnsupportedEncodingException e)
 		{

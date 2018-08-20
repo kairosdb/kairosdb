@@ -17,6 +17,7 @@ package org.kairosdb.datastore.cassandra;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import io.opentracing.mock.MockTracer;
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -56,6 +57,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper {
     private static CassandraDatastore s_datastore;
     private static long s_dataPointTime;
     public static final HashMultimap<String, String> EMPTY_MAP = HashMultimap.create();
+    private static MockTracer tracer = new MockTracer();
 
     private static void putDataPoints(DataPointSet dps) throws DatastoreException {
         for (DataPoint dataPoint : dps.getDataPoints()) {
@@ -188,7 +190,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper {
         System.out.println("Creating KairosDataStore");
         DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
                 new QueryQueuingManager(1, "hostname"),
-                Collections.<DataPointListener>emptyList(), dataPointFactory);
+                Collections.<DataPointListener>emptyList(), dataPointFactory, tracer);
 
         System.out.println("Loading Cassandra data");
         loadCassandraData();

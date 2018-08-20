@@ -22,6 +22,7 @@ import static org.junit.Assert.fail;
 import java.net.SocketAddress;
 import java.util.Collections;
 
+import io.opentracing.mock.MockTracer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelConfig;
 import org.jboss.netty.channel.ChannelFactory;
@@ -50,13 +51,14 @@ public class PutCommandTest
 {
 	private PutCommand command;
 	private FakeDatastore datastore;
+	private static MockTracer tracer = new MockTracer();
 
 	@Before
 	public void setup() throws DatastoreException
 	{
 		datastore = new FakeDatastore();
 		KairosDatastore kairosDatastore = new KairosDatastore(datastore, new QueryQueuingManager(1, "test"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), tracer);
 		command = new PutCommand(kairosDatastore, "test", new LongDataPointFactoryImpl(),
 				new DoubleDataPointFactoryImpl());
 	}

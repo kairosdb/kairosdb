@@ -16,6 +16,7 @@
 package org.kairosdb.datastore.h2;
 
 
+import io.opentracing.mock.MockTracer;
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -40,6 +41,7 @@ import static org.hamcrest.core.Is.is;
 public class H2DatastoreTest extends DatastoreTestHelper
 {
 	public static final String DB_PATH = "build/h2db_test";
+	private static MockTracer tracer = new MockTracer();
 
 
 	private static void deltree(File directory)
@@ -68,7 +70,7 @@ public class H2DatastoreTest extends DatastoreTestHelper
 
 		s_datastore = new KairosDatastore(new H2Datastore(DB_PATH, dataPointFactory),
 				new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), dataPointFactory);
+				Collections.<DataPointListener>emptyList(), dataPointFactory, tracer);
 
 		loadData();
 	}

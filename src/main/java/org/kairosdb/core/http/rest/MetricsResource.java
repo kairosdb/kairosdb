@@ -101,12 +101,11 @@ public class MetricsResource implements KairosMetricReporter
 
 	private QueryMeasurementProvider queryMeasurementProvider;
 
-	@Inject
 	private Tracer tracer;
 
 	@Inject
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
-			KairosDataPointFactory dataPointFactory, QueryMeasurementProvider queryMeasurementProvider)
+			KairosDataPointFactory dataPointFactory, QueryMeasurementProvider queryMeasurementProvider, Tracer tracer)
 	{
 		this.datastore = checkNotNull(datastore);
 		this.queryParser = checkNotNull(queryParser);
@@ -116,6 +115,8 @@ public class MetricsResource implements KairosMetricReporter
 
 		GsonBuilder builder = new GsonBuilder();
 		gson = builder.create();
+
+		this.tracer = tracer;
 	}
 
 	private ResponseBuilder setHeaders(ResponseBuilder responseBuilder)

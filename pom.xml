@@ -23,7 +23,6 @@
 	<skipTests>true</skipTests>
         <argLine />
     </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
@@ -250,6 +249,12 @@
             <groupId>io.opentracing.contrib</groupId>
             <artifactId>opentracing-web-servlet-filter</artifactId>
             <version>0.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.opentracing</groupId>
+            <artifactId>opentracing-mock</artifactId>
+            <version>0.31.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

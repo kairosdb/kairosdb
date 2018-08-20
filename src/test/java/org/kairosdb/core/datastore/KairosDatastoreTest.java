@@ -16,6 +16,7 @@
 package org.kairosdb.core.datastore;
 
 import com.google.common.collect.ImmutableSortedMap;
+import io.opentracing.mock.MockTracer;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointListener;
@@ -32,6 +33,7 @@ import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.core.groupby.GroupByResult;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.groupby.TagGroupByResult;
+import org.mockito.Mock;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,6 +52,7 @@ import static org.junit.Assert.assertThat;
 public class KairosDatastoreTest
 {
 	private AggregatorFactory aggFactory;
+	private static MockTracer tracer = new MockTracer();
 
 	public KairosDatastoreTest() throws KairosDBException
 	{
@@ -61,7 +64,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), tracer);
 
 		datastore.createQuery(null);
 	}
@@ -71,7 +74,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), tracer);
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 		metric.addAggregator(aggFactory.createAggregator("sum"));
 
@@ -100,7 +103,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), tracer);
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 
 		DatastoreQuery dq = datastore.createQuery(metric);
@@ -174,7 +177,7 @@ public class KairosDatastoreTest
 	{
 		TestDatastore testds = new TestDatastore();
 		KairosDatastore datastore = new KairosDatastore(testds, new QueryQueuingManager(1, "hostname"),
-				Collections.<DataPointListener>emptyList(), new TestDataPointFactory());
+				Collections.<DataPointListener>emptyList(), new TestDataPointFactory(), tracer);
 
 		// Create files in the cache directory
 		File cacheDir = new File(datastore.getCacheDir());
@@ -319,7 +322,7 @@ public class KairosDatastoreTest
 		                           List<DataPointListener> dataPointListeners,
 		                           KairosDataPointFactory dataPointFactory) throws DatastoreException
 		{
-			super(datastore, queuingManager, dataPointListeners, dataPointFactory);
+			super(datastore, queuingManager, dataPointListeners, dataPointFactory, tracer);
 		}
 	}
 

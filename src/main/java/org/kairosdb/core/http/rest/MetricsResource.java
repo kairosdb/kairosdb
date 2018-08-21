@@ -96,21 +96,21 @@ public class MetricsResource implements KairosMetricReporter
 	public static final String READ_TIMEOUT = "kairosdb.datastore.datapoints.read.timeout";
 	public static final String READ_THREAD_POOL_MAX_SIZE = "kairosdb.datastore.datapoints.read.threadpool.max.size";
 	public static final String READ_THREAD_POOL_CORE_SIZE = "kairosdb.datastore.datapoints.read.threadpool.core.size";
-	public static final String READ_THREAD_KEEP_ALIVE_TIME = "kairosdb.datastore.datapoints.read.thread.keep.alive.time.milliseconds";
+	public static final String READ_THREAD_KEEP_ALIVE_TIME = "kairosdb.datastore.datapoints.read.threadpool.keep_alive_time_milliseconds";
 
-	@com.google.inject.Inject
+	@Inject
 	@Named(READ_TIMEOUT)
 	private int m_readTimeout = 20000;
 
-	@com.google.inject.Inject
+	@Inject
 	@Named(READ_THREAD_POOL_MAX_SIZE)
 	private int m_readThreadPoolMaxSize = 100;
 
-	@com.google.inject.Inject
+	@Inject
 	@Named(READ_THREAD_POOL_CORE_SIZE)
 	private int m_readThreadPoolCoreSize = 10;
 
-	@com.google.inject.Inject
+	@Inject
 	@Named(READ_THREAD_KEEP_ALIVE_TIME)
 	private int m_readThreadKeepAliveTime = 500;
 
@@ -120,7 +120,6 @@ public class MetricsResource implements KairosMetricReporter
 	@Inject
 	@Named("HOSTNAME")
 	private String hostName = "localhost";
-
 
 	private QueryMeasurementProvider queryMeasurementProvider;
 

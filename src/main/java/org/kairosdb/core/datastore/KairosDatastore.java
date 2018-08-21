@@ -47,14 +47,13 @@ import java.util.*;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-public class KairosDatastore
-{
+public class KairosDatastore {
 	public static final Logger logger = LoggerFactory.getLogger(KairosDatastore.class);
 	public static final String QUERY_CACHE_DIR = "kairosdb.query_cache.cache_dir";
 	public static final String QUERY_METRIC_TIME = "kairosdb.datastore.query_time";
 	public static final String QUERIES_WAITING_METRIC_NAME = "kairosdb.datastore.queries_waiting";
-    public static final String QUERY_SAMPLE_SIZE = "kairosdb.datastore.query_sample_size";
-    public static final String QUERY_ROW_COUNT = "kairosdb.datastore.query_row_count";
+	public static final String QUERY_SAMPLE_SIZE = "kairosdb.datastore.query_sample_size";
+	public static final String QUERY_ROW_COUNT = "kairosdb.datastore.query_row_count";
 	public static final String METRIC_QUERY_CACHE_READ_TIME = "kairosdb.datastore.cache_read_time";
 	private final Datastore m_datastore;
 	private final QueryQueuingManager m_queuingManager;
@@ -69,9 +68,8 @@ public class KairosDatastore
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
-	      List<DataPointListener> dataPointListeners, KairosDataPointFactory dataPointFactory, Tracer tracer)
-			throws DatastoreException
-	{
+						   List<DataPointListener> dataPointListeners, KairosDataPointFactory dataPointFactory, Tracer tracer)
+			throws DatastoreException {
 		m_datastore = checkNotNull(datastore);
 		m_dataPointListeners = checkNotNull(dataPointListeners);
 		m_queuingManager = checkNotNull(queuingManager);
@@ -86,18 +84,15 @@ public class KairosDatastore
 
 	@SuppressWarnings("UnusedDeclaration")
 	@Inject(optional = true)
-	public void setBaseCacheDir(@Named(QUERY_CACHE_DIR) String cacheTempDir)
-	{
-		if (cacheTempDir != null && !cacheTempDir.equals(""))
-		{
+	public void setBaseCacheDir(@Named(QUERY_CACHE_DIR) String cacheTempDir) {
+		if (cacheTempDir != null && !cacheTempDir.equals("")) {
 			m_baseCacheDir = cacheTempDir;
 			setupCacheDirectory();
 		}
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private void setupCacheDirectory()
-	{
+	private void setupCacheDirectory() {
 		cleanDirectory(new File(m_baseCacheDir));
 		newCacheDirectory();
 		File cacheDirectory = new File(m_cacheDir);
@@ -106,41 +101,36 @@ public class KairosDatastore
 	}
 
 	/**
-	 Make sure the folder exists
-	 @param path
+	 * Make sure the folder exists
+	 *
+	 * @param path
 	 */
-	private static void ensureFolder(String path)
-	{
+	private static void ensureFolder(String path) {
 		File fPath = new File(path);
 		if (!fPath.exists())
 			fPath.mkdirs();
 	}
 
-	public String getCacheDir()
-	{
+	public String getCacheDir() {
 		ensureFolder(m_cacheDir);
 		return (m_cacheDir);
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private void newCacheDirectory()
-	{
+	private void newCacheDirectory() {
 		String newCacheDir = m_baseCacheDir + "/" + System.currentTimeMillis() + "/";
 		ensureFolder(newCacheDir);
 		m_cacheDir = newCacheDir;
 	}
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private void cleanDirectory(File directory)
-	{
+	private void cleanDirectory(File directory) {
 		if (!directory.exists())
 			return;
 		File[] list = directory.listFiles();
 
-		if (list != null && list.length > 0)
-		{
-			for (File aList : list)
-			{
+		if (list != null && list.length > 0) {
+			for (File aList : list) {
 				if (aList.isDirectory())
 					cleanDirectory(aList);
 
@@ -151,19 +141,14 @@ public class KairosDatastore
 		directory.delete();
 	}
 
-	public void cleanCacheDir(boolean wait)
-	{
+	public void cleanCacheDir(boolean wait) {
 		String oldCacheDir = m_cacheDir;
 		newCacheDirectory();
 
-		if (wait)
-		{
-			try
-			{
+		if (wait) {
+			try {
 				Thread.sleep(60000);
-			}
-			catch (InterruptedException e)
-			{
+			} catch (InterruptedException e) {
 				logger.error("Sleep interrupted:", e);
 			}
 		}
@@ -178,44 +163,37 @@ public class KairosDatastore
 	/**
 	 * Close the datastore
 	 */
-	public void close() throws InterruptedException, DatastoreException
-	{
+	public void close() throws InterruptedException, DatastoreException {
 		m_datastore.close();
 	}
 
 	public void putDataPoint(String metricName,
-			ImmutableSortedMap<String, String> tags,
-			DataPoint dataPoint) throws DatastoreException
-	{
+							 ImmutableSortedMap<String, String> tags,
+							 DataPoint dataPoint) throws DatastoreException {
 		putDataPoint(metricName, tags, dataPoint, 0);
 	}
 
 	public void putDataPoint(String metricName,
-			ImmutableSortedMap<String, String> tags,
-			DataPoint dataPoint, int ttl) throws DatastoreException
-	{
+							 ImmutableSortedMap<String, String> tags,
+							 DataPoint dataPoint, int ttl) throws DatastoreException {
 		//Add to datastore first.
 		m_datastore.putDataPoint(metricName, tags, dataPoint, ttl);
 
-		for (DataPointListener dataPointListener : m_dataPointListeners)
-		{
+		for (DataPointListener dataPointListener : m_dataPointListeners) {
 			dataPointListener.dataPoint(metricName, tags, dataPoint);
 		}
 	}
 
 
-	public Iterable<String> getMetricNames() throws DatastoreException
-	{
+	public Iterable<String> getMetricNames() throws DatastoreException {
 		return (m_datastore.getMetricNames());
 	}
 
-	public Iterable<String> getTagNames() throws DatastoreException
-	{
+	public Iterable<String> getTagNames() throws DatastoreException {
 		return (m_datastore.getTagNames());
 	}
 
-	public Iterable<String> getTagValues() throws DatastoreException
-	{
+	public Iterable<String> getTagValues() throws DatastoreException {
 		return (m_datastore.getTagValues());
 	}
 
@@ -225,48 +203,37 @@ public class KairosDatastore
 	 * @param metric metric
 	 * @throws DatastoreException
 	 */
-	public void export(QueryMetric metric, QueryCallback callback) throws DatastoreException
-	{
+	public void export(QueryMetric metric, QueryCallback callback) throws DatastoreException {
 		checkNotNull(metric);
 
 		m_datastore.queryDatabase(metric, callback);
 	}
 
 
-	public List<DataPointGroup> queryTags(QueryMetric metric) throws DatastoreException
-	{
+	public List<DataPointGroup> queryTags(QueryMetric metric) throws DatastoreException {
 		TagSet tagSet = m_datastore.queryMetricTags(metric);
 
 		return Collections.<DataPointGroup>singletonList(new EmptyDataPointGroup(metric.getName(), tagSet));
 
 	}
 
-	public DatastoreQuery createQuery(QueryMetric metric) throws DatastoreException
-	{
+	public DatastoreQuery createQuery(QueryMetric metric) throws DatastoreException {
 		checkNotNull(metric);
 
 		DatastoreQuery dq;
-
 		Span span = tracer.activeSpan();
 
-		try
-		{
+		try {
 			dq = new DatastoreQueryImpl(metric);
 
-			if(span != null) {
+			if (span != null) {
 				span.setTag("query_waiting_count", m_queuingManager.getQueryWaitingCount());
 			}
-		}
-		catch (UnsupportedEncodingException e)
-		{
+		} catch (UnsupportedEncodingException e) {
 			throw new DatastoreException(e);
-		}
-		catch (NoSuchAlgorithmException e)
-		{
+		} catch (NoSuchAlgorithmException e) {
 			throw new DatastoreException(e);
-		}
-		catch (InterruptedException e)
-		{
+		} catch (InterruptedException e) {
 			throw new DatastoreException(e);
 		}
 
@@ -274,35 +241,27 @@ public class KairosDatastore
 	}
 
 
-	public void delete(QueryMetric metric) throws DatastoreException
-	{
+	public void delete(QueryMetric metric) throws DatastoreException {
 		checkNotNull(metric);
 
-		try
-		{
+		try {
 			m_datastore.deleteDataPoints(metric);
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			throw new DatastoreException(e);
 		}
 	}
 
-	private static List<GroupBy> removeTagGroupBy(List<GroupBy> groupBys)
-	{
+	private static List<GroupBy> removeTagGroupBy(List<GroupBy> groupBys) {
 		List<GroupBy> modifiedGroupBys = new ArrayList<GroupBy>();
-		for (GroupBy groupBy : groupBys)
-		{
+		for (GroupBy groupBy : groupBys) {
 			if (!(groupBy instanceof TagGroupBy))
 				modifiedGroupBys.add(groupBy);
 		}
 		return modifiedGroupBys;
 	}
 
-	private static TagGroupBy getTagGroupBy(List<GroupBy> groupBys)
-	{
-		for (GroupBy groupBy : groupBys)
-		{
+	private static TagGroupBy getTagGroupBy(List<GroupBy> groupBys) {
+		for (GroupBy groupBy : groupBys) {
 			if (groupBy instanceof TagGroupBy)
 				return (TagGroupBy) groupBy;
 		}
@@ -310,22 +269,17 @@ public class KairosDatastore
 	}
 
 	protected List<DataPointGroup> groupByTypeAndTag(String metricName,
-			List<DataPointRow> rows, TagGroupBy tagGroupBy, Order order)
-	{
+													 List<DataPointRow> rows, TagGroupBy tagGroupBy, Order order) {
 		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
 		MemoryMonitor mm = new MemoryMonitor(20);
 
-		if (rows.isEmpty())
-		{
+		if (rows.isEmpty()) {
 			ret.add(new SortingDataPointGroup(metricName, order));
-		}
-		else
-		{
+		} else {
 			ListMultimap<String, DataPointGroup> typeGroups = ArrayListMultimap.create();
 
 			//Go through each row grouping them by type
-			for (DataPointRow row : rows)
-			{
+			for (DataPointRow row : rows) {
 				String groupType = m_dataPointFactory.getGroupType(row.getDatastoreType());
 
 				typeGroups.put(groupType, new DataPointGroupRowWrapper(row));
@@ -336,15 +290,12 @@ public class KairosDatastore
 			TreeSet<String> sortedTypes = new TreeSet<String>(typeGroups.keySet());
 
 			//Now go through each type group and group by tag if needed.
-			for (String type : sortedTypes)
-			{
-				if (tagGroupBy != null)
-				{
+			for (String type : sortedTypes) {
+				if (tagGroupBy != null) {
 					ListMultimap<String, DataPointGroup> groups = ArrayListMultimap.create();
 					Map<String, TagGroupByResult> groupByResults = new HashMap<String, TagGroupByResult>();
 
-					for (DataPointGroup dataPointGroup : typeGroups.get(type))
-					{
+					for (DataPointGroup dataPointGroup : typeGroups.get(type)) {
 						//Todo: Add code to datastore implementations to filter by the group by tag
 
 						LinkedHashMap<String, String> matchingTags = getMatchingTags(dataPointGroup, tagGroupBy.getTagNames());
@@ -357,15 +308,12 @@ public class KairosDatastore
 					//Sort groups by tags
 					TreeSet<String> sortedGroups = new TreeSet<String>(groups.keySet());
 
-					for (String key : sortedGroups)
-					{
+					for (String key : sortedGroups) {
 						SortingDataPointGroup sdpGroup = new SortingDataPointGroup(groups.get(key), groupByResults.get(key), order);
 						sdpGroup.addGroupByResult(new TypeGroupByResult(type));
 						ret.add(sdpGroup);
 					}
-				}
-				else
-				{
+				} else {
 					ret.add(new SortingDataPointGroup(typeGroups.get(type), new TypeGroupByResult(type), order));
 				}
 			}
@@ -378,11 +326,9 @@ public class KairosDatastore
 	/**
 	 * Create a unique identifier for this combination of tags to be used as the key of a hash map.
 	 */
-	private static String getTagsKey(LinkedHashMap<String, String> tags)
-	{
+	private static String getTagsKey(LinkedHashMap<String, String> tags) {
 		StringBuilder builder = new StringBuilder();
-		for (String name : tags.keySet())
-		{
+		for (String name : tags.keySet()) {
 			builder.append(name).append(tags.get(name));
 		}
 
@@ -390,21 +336,19 @@ public class KairosDatastore
 	}
 
 	/**
-	 Tags are inserted in the order specified in tagNames which is the order
-	 from the query.  We use a linked hashmap so that order is preserved and
-	 the group by responses are sorted in the order specified in the query.
-	 @param datapointGroup
-	 @param tagNames
-	 @return
+	 * Tags are inserted in the order specified in tagNames which is the order
+	 * from the query.  We use a linked hashmap so that order is preserved and
+	 * the group by responses are sorted in the order specified in the query.
+	 *
+	 * @param datapointGroup
+	 * @param tagNames
+	 * @return
 	 */
-	private static LinkedHashMap<String, String> getMatchingTags(DataPointGroup datapointGroup, List<String> tagNames)
-	{
+	private static LinkedHashMap<String, String> getMatchingTags(DataPointGroup datapointGroup, List<String> tagNames) {
 		LinkedHashMap<String, String> matchingTags = new LinkedHashMap<String, String>();
-		for (String tagName : tagNames)
-		{
+		for (String tagName : tagNames) {
 			Set<String> tagValues = datapointGroup.getTagValues(tagName);
-			if (tagValues != null)
-			{
+			if (tagValues != null) {
 				String tagValue = tagValues.iterator().next();
 				matchingTags.put(tagName, tagValue != null ? tagValue : "");
 			}
@@ -414,8 +358,7 @@ public class KairosDatastore
 	}
 
 
-	private static String calculateFilenameHash(QueryMetric metric) throws NoSuchAlgorithmException, UnsupportedEncodingException
-	{
+	private static String calculateFilenameHash(QueryMetric metric) throws NoSuchAlgorithmException, UnsupportedEncodingException {
 		String hashString = metric.getCacheString();
 		if (hashString == null)
 			hashString = String.valueOf(System.currentTimeMillis());
@@ -427,18 +370,16 @@ public class KairosDatastore
 	}
 
 
-	private class DatastoreQueryImpl implements DatastoreQuery
-	{
+	private class DatastoreQueryImpl implements DatastoreQuery {
 		private String m_cacheFilename;
 		private QueryMetric m_metric;
 		private List<DataPointGroup> m_results;
 		private int m_dataPointCount;
-        private int m_rowCount;
-		
+		private int m_rowCount;
+
 		public DatastoreQueryImpl(QueryMetric metric)
 				throws UnsupportedEncodingException, NoSuchAlgorithmException,
-				InterruptedException, DatastoreException
-		{
+				InterruptedException, DatastoreException {
 			//Report number of queries waiting
 			int waitingCount = m_queuingManager.getQueryWaitingCount();
 
@@ -447,55 +388,48 @@ public class KairosDatastore
 			m_queuingManager.waitForTimeToRun(m_cacheFilename);
 		}
 
-		public int getSampleSize()
-		{
+		public int getSampleSize() {
 			return m_dataPointCount;
 		}
-        public int getRowCount() { return m_rowCount; }
+
+		public int getRowCount() {
+			return m_rowCount;
+		}
 
 		@Override
-		public List<DataPointGroup> execute() throws DatastoreException
-		{
+		public List<DataPointGroup> execute() throws DatastoreException {
 			Span span = tracer.buildSpan("query_database_datapoints_count").start();
 
-			try (Scope scope = tracer.scopeManager().activate(span, false))
-			{
+			try (Scope scope = tracer.scopeManager().activate(span, false)) {
 				long queryStartTime = System.currentTimeMillis();
 
 				CachedSearchResult cachedResults = null;
 
 				List<DataPointRow> returnedRows = null;
 
-				try
-				{
+				try {
 					String tempFile = m_cacheDir + m_cacheFilename;
 
-					if (m_metric.getCacheTime() > 0)
-					{
+					if (m_metric.getCacheTime() > 0) {
 						cachedResults = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
 								tempFile, m_metric.getCacheTime(), m_dataPointFactory);
-						if (cachedResults != null)
-						{
+						if (cachedResults != null) {
 							returnedRows = cachedResults.getRows();
 						}
 					}
 
-					if (cachedResults == null)
-					{
+					if (cachedResults == null) {
 						cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
 								tempFile, m_dataPointFactory);
 						m_datastore.queryDatabase(m_metric, cachedResults);
 						returnedRows = cachedResults.getRows();
 					}
-				}
-				catch (Exception e)
-				{
+				} catch (Exception e) {
 					throw new DatastoreException(e);
 				}
 
 				//Get data point count
-				for (DataPointRow returnedRow : returnedRows)
-				{
+				for (DataPointRow returnedRow : returnedRows) {
 					m_dataPointCount += returnedRow.getDataPointCount();
 				}
 
@@ -510,12 +444,9 @@ public class KairosDatastore
 
 				// Now group for all other types of group bys.
 				Grouper grouper = new Grouper(m_dataPointFactory);
-				try
-				{
+				try {
 					queryResults = grouper.group(removeTagGroupBy(m_metric.getGroupBys()), queryResults);
-				}
-				catch (IOException e)
-				{
+				} catch (IOException e) {
 					throw new DatastoreException(e);
 				}
 
@@ -546,31 +477,25 @@ public class KairosDatastore
 
 					m_results.add(aggregatedGroup);
 				}
-			}catch(Exception e){
+			} catch (Exception e) {
 				Tags.ERROR.set(span, Boolean.TRUE);
 				span.log(e.getMessage());
 				throw e;
-			}finally {
+			} finally {
 				span.finish();
 			}
 			return (m_results);
 		}
 
 		@Override
-		public void close()
-		{
-			try
-			{
-				if (m_results != null)
-				{
-					for (DataPointGroup result : m_results)
-					{
+		public void close() {
+			try {
+				if (m_results != null) {
+					for (DataPointGroup result : m_results) {
 						result.close();
 					}
 				}
-			}
-			finally
-			{  //This must get done
+			} finally {  //This must get done
 				m_queuingManager.done(m_cacheFilename);
 			}
 		}

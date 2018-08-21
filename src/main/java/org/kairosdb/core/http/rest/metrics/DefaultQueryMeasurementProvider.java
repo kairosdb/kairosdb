@@ -21,125 +21,125 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider, InternalMetricsProvider {
-    private static final String MEASURES_PREFIX = "kairosdb.queries.";
+	private static final String MEASURES_PREFIX = "kairosdb.queries.";
 
-    private final MetricRegistry metricRegistry;
-    private final Histogram spanHistogramSuccess;
-    private final Histogram distanceHistogramSuccess;
+	private final MetricRegistry metricRegistry;
+	private final Histogram spanHistogramSuccess;
+	private final Histogram distanceHistogramSuccess;
 
-    private final Histogram spanHistogramError;
-    private final Histogram distanceHistogramError;
+	private final Histogram spanHistogramError;
+	private final Histogram distanceHistogramError;
 
-    private final Histogram threadpoolQueueSize;
-    private final Histogram activeThreads;
-    private final Histogram threadPoolSize;
+	private final Histogram threadpoolQueueSize;
+	private final Histogram activeThreads;
+	private final Histogram threadPoolSize;
 
-    @Inject
-    Tracer tracer;
+	@Inject
+	Tracer tracer;
 
-    @Inject
-    public DefaultQueryMeasurementProvider(@Nonnull final MetricRegistry metricRegistry) {
-        checkNotNull(metricRegistry, "metricRegistry can't be null");
-        this.metricRegistry = metricRegistry;
+	@Inject
+	public DefaultQueryMeasurementProvider(@Nonnull final MetricRegistry metricRegistry) {
+		checkNotNull(metricRegistry, "metricRegistry can't be null");
+		this.metricRegistry = metricRegistry;
 
-        spanHistogramSuccess = metricRegistry.histogram(MEASURES_PREFIX + "span.success");
-        distanceHistogramSuccess = metricRegistry.histogram(MEASURES_PREFIX + "distance.success");
+		spanHistogramSuccess = metricRegistry.histogram(MEASURES_PREFIX + "span.success");
+		distanceHistogramSuccess = metricRegistry.histogram(MEASURES_PREFIX + "distance.success");
 
-        spanHistogramError = metricRegistry.histogram(MEASURES_PREFIX + "span.error");
-        distanceHistogramError = metricRegistry.histogram(MEASURES_PREFIX + "distance.error");
+		spanHistogramError = metricRegistry.histogram(MEASURES_PREFIX + "span.error");
+		distanceHistogramError = metricRegistry.histogram(MEASURES_PREFIX + "distance.error");
 
-        threadpoolQueueSize = metricRegistry.histogram(MEASURES_PREFIX + "threadpool.queue.size");
-        activeThreads = metricRegistry.histogram(MEASURES_PREFIX + "threadpool.active.threads");
-        threadPoolSize = metricRegistry.histogram(MEASURES_PREFIX + "threadpool.size");
-    }
+		threadpoolQueueSize = metricRegistry.histogram(MEASURES_PREFIX + "threadpool.queue.size");
+		activeThreads = metricRegistry.histogram(MEASURES_PREFIX + "threadpool.active.threads");
+		threadPoolSize = metricRegistry.histogram(MEASURES_PREFIX + "threadpool.size");
+	}
 
-    @Override
-        public void measureThreadPoolMetrics(ThreadPoolExecutor executor){
-        threadpoolQueueSize.update(executor.getQueue().size());
-        activeThreads.update(executor.getActiveCount());
-        threadPoolSize.update(executor.getPoolSize());
-    }
+	@Override
+	public void measureThreadPoolMetrics(ThreadPoolExecutor executor) {
+		threadpoolQueueSize.update(executor.getQueue().size());
+		activeThreads.update(executor.getActiveCount());
+		threadPoolSize.update(executor.getPoolSize());
+	}
 
 
-    @Override
-    public void measureSpanForMetric(final QueryMetric query) {
-        if (canQueryBeReported(query)) {
-            final Histogram histogram = metricRegistry.histogram(MEASURES_PREFIX + query.getName() + ".span");
-            measureSpan(histogram, query);
-        }
-    }
+	@Override
+	public void measureSpanForMetric(final QueryMetric query) {
+		if (canQueryBeReported(query)) {
+			final Histogram histogram = metricRegistry.histogram(MEASURES_PREFIX + query.getName() + ".span");
+			measureSpan(histogram, query);
+		}
+	}
 
-    @Override
-    public void measureDistanceForMetric(final QueryMetric query) {
-        if (canQueryBeReported(query)) {
-            final Histogram histogram = metricRegistry.histogram(MEASURES_PREFIX + query.getName() + ".distance");
-            measureDistance(histogram, query);
-        }
-    }
+	@Override
+	public void measureDistanceForMetric(final QueryMetric query) {
+		if (canQueryBeReported(query)) {
+			final Histogram histogram = metricRegistry.histogram(MEASURES_PREFIX + query.getName() + ".distance");
+			measureDistance(histogram, query);
+		}
+	}
 
-    @Override
-    public void measureSpanSuccess(final QueryMetric query) {
-        measureSpan(spanHistogramSuccess, query);
-    }
+	@Override
+	public void measureSpanSuccess(final QueryMetric query) {
+		measureSpan(spanHistogramSuccess, query);
+	}
 
-    @Override
-    public void measureDistanceSuccess(final QueryMetric query) {
-        measureDistance(distanceHistogramSuccess, query);
-    }
+	@Override
+	public void measureDistanceSuccess(final QueryMetric query) {
+		measureDistance(distanceHistogramSuccess, query);
+	}
 
-    @Override
-    public void measureSpanError(final QueryMetric query) {
-        measureSpan(spanHistogramError, query);
-    }
+	@Override
+	public void measureSpanError(final QueryMetric query) {
+		measureSpan(spanHistogramError, query);
+	}
 
-    @Override
-    public void measureDistanceError(final QueryMetric query) {
-        measureDistance(distanceHistogramError, query);
-    }
+	@Override
+	public void measureDistanceError(final QueryMetric query) {
+		measureDistance(distanceHistogramError, query);
+	}
 
-    @Override
-    public Map<String, Metric> getAll() {
-        final Map<String, Metric> cacheMetrics = metricRegistry.getMetrics().entrySet().stream()
-                .filter(e -> e.getKey() != null && e.getKey().startsWith(MEASURES_PREFIX))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+	@Override
+	public Map<String, Metric> getAll() {
+		final Map<String, Metric> cacheMetrics = metricRegistry.getMetrics().entrySet().stream()
+				.filter(e -> e.getKey() != null && e.getKey().startsWith(MEASURES_PREFIX))
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        return ImmutableMap.copyOf(cacheMetrics);
-    }
+		return ImmutableMap.copyOf(cacheMetrics);
+	}
 
-    @Override
-    public Map<String, Metric> getForPrefix(@Nullable final String prefix) {
-        if (prefix == null || prefix.isEmpty()) {
-            return getAll();
-        }
+	@Override
+	public Map<String, Metric> getForPrefix(@Nullable final String prefix) {
+		if (prefix == null || prefix.isEmpty()) {
+			return getAll();
+		}
 
-        final Map<String, Metric> filteredMetrics = getAll().entrySet().stream()
-                .filter(e -> e.getKey() != null && e.getKey().startsWith(MEASURES_PREFIX + "." + prefix))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+		final Map<String, Metric> filteredMetrics = getAll().entrySet().stream()
+				.filter(e -> e.getKey() != null && e.getKey().startsWith(MEASURES_PREFIX + "." + prefix))
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        return ImmutableMap.copyOf(filteredMetrics);
-    }
+		return ImmutableMap.copyOf(filteredMetrics);
+	}
 
-    private void measureSpan(final Histogram histogram, final QueryMetric query) {
-        long endTime = query.getEndTime();
-        if (endTime == Long.MAX_VALUE) {
-            final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
-            endTime = nowUTC.getMillis();
-        }
-        final long spanInMillis = endTime - query.getStartTime();
-        final long spanInMinutes = spanInMillis / 1000 / 60;
-        histogram.update(spanInMinutes);
-        tracer.activeSpan().setTag("query_span_in_days", spanInMinutes/1440);
-    }
+	private void measureSpan(final Histogram histogram, final QueryMetric query) {
+		long endTime = query.getEndTime();
+		if (endTime == Long.MAX_VALUE) {
+			final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
+			endTime = nowUTC.getMillis();
+		}
+		final long spanInMillis = endTime - query.getStartTime();
+		final long spanInMinutes = spanInMillis / 1000 / 60;
+		histogram.update(spanInMinutes);
+		tracer.activeSpan().setTag("query_span_in_days", spanInMinutes / 1440);
+	}
 
-    private void measureDistance(final Histogram histogram, final QueryMetric query) {
-        final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
-        final long distanceInMillis = nowUTC.getMillis() - query.getStartTime();
-        final long distanceInMinutes = distanceInMillis / 1000 / 60;
-        histogram.update(distanceInMinutes);
-        tracer.activeSpan().setTag("query_distance_in_days", distanceInMinutes/1440);
-    }
+	private void measureDistance(final Histogram histogram, final QueryMetric query) {
+		final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
+		final long distanceInMillis = nowUTC.getMillis() - query.getStartTime();
+		final long distanceInMinutes = distanceInMillis / 1000 / 60;
+		histogram.update(distanceInMinutes);
+		tracer.activeSpan().setTag("query_distance_in_days", distanceInMinutes / 1440);
+	}
 
-    private boolean canQueryBeReported(final QueryMetric query) {
-        return !query.getName().startsWith(MEASURES_PREFIX);
-    }
+	private boolean canQueryBeReported(final QueryMetric query) {
+		return !query.getName().startsWith(MEASURES_PREFIX);
+	}
 }

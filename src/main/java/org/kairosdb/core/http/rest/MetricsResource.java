@@ -239,7 +239,7 @@ public class MetricsResource implements KairosMetricReporter
 			String logtext = "Disabled request type: " + methodServerType.name() + ", " + requestType + " request via URI \"" +  methodName + "\"";
 			logger.info(logtext);
 
-			String exceptionMessage = "[{\"Forbidden\": \"" + methodServerType.toString() + " API methods are disabled on this KairosDB instance.\"}]\n";
+			String exceptionMessage = "{\"errors\": [{\"Forbidden: " + methodServerType.toString() + " API methods are disabled on this KairosDB instance.\"}]}";
 
 			throw new InvalidServerTypeException(exceptionMessage);
 		}

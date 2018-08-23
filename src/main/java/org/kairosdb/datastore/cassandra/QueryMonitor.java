@@ -58,11 +58,6 @@ public class QueryMonitor
 		m_query_counter.incrementAndGet();
 	}
 
-	public void incrementQueryCounter()
-	{
-		m_query_counter.incrementAndGet();
-	}
-
 	public Throwable getException()
 	{
 		return m_exception;

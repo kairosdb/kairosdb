@@ -30,10 +30,6 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 	private final Histogram spanHistogramError;
 	private final Histogram distanceHistogramError;
 
-	private final Histogram threadpoolQueueSize;
-	private final Histogram activeThreads;
-	private final Histogram threadPoolSize;
-
 	@Inject
 	Tracer tracer;
 
@@ -47,19 +43,7 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 
 		spanHistogramError = metricRegistry.histogram(MEASURES_PREFIX + "span.error");
 		distanceHistogramError = metricRegistry.histogram(MEASURES_PREFIX + "distance.error");
-
-		threadpoolQueueSize = metricRegistry.histogram(MEASURES_PREFIX + "threadpool.queue.size");
-		activeThreads = metricRegistry.histogram(MEASURES_PREFIX + "threadpool.active.threads");
-		threadPoolSize = metricRegistry.histogram(MEASURES_PREFIX + "threadpool.size");
 	}
-
-	@Override
-	public void measureThreadPoolMetrics(ThreadPoolExecutor executor) {
-		threadpoolQueueSize.update(executor.getQueue().size());
-		activeThreads.update(executor.getActiveCount());
-		threadPoolSize.update(executor.getPoolSize());
-	}
-
 
 	@Override
 	public void measureSpanForMetric(final QueryMetric query) {

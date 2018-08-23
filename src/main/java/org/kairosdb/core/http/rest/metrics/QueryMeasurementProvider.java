@@ -17,6 +17,4 @@ public interface QueryMeasurementProvider extends InternalMetricsProvider {
     void measureSpanForMetric(QueryMetric query);
 
     void measureDistanceForMetric(QueryMetric query);
-
-    void measureThreadPoolMetrics(ThreadPoolExecutor executor);
 }

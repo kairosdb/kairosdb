@@ -92,25 +92,10 @@ public class MetricsResource implements KairosMetricReporter {
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
 	public static final String READ_TIMEOUT = "kairosdb.datastore.datapoints.read.timeout";
-	public static final String READ_THREAD_POOL_MAX_SIZE = "kairosdb.datastore.datapoints.read.threadpool.max.size";
-	public static final String READ_THREAD_POOL_CORE_SIZE = "kairosdb.datastore.datapoints.read.threadpool.core.size";
-	public static final String READ_THREAD_KEEP_ALIVE_TIME = "kairosdb.datastore.datapoints.read.threadpool.keep_alive_time_milliseconds";
 
 	@Inject
 	@Named(READ_TIMEOUT)
-	private int m_readTimeout = 20000;
-
-	@Inject
-	@Named(READ_THREAD_POOL_MAX_SIZE)
-	private int m_readThreadPoolMaxSize = 100;
-
-	@Inject
-	@Named(READ_THREAD_POOL_CORE_SIZE)
-	private int m_readThreadPoolCoreSize = 10;
-
-	@Inject
-	@Named(READ_THREAD_KEEP_ALIVE_TIME)
-	private int m_readThreadKeepAliveTime = 500;
+	private int m_readTimeout = 30000;
 
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
@@ -124,7 +109,6 @@ public class MetricsResource implements KairosMetricReporter {
 	private Tracer tracer;
 
 	private TimeLimiter limiter;
-	private ThreadPoolExecutor executor;
 
 	@Inject
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
@@ -139,10 +123,7 @@ public class MetricsResource implements KairosMetricReporter {
 		gson = builder.create();
 
 		this.tracer = tracer;
-		executor = new ThreadPoolExecutor(m_readThreadPoolCoreSize, m_readThreadPoolMaxSize, m_readThreadKeepAliveTime, TimeUnit.MILLISECONDS,
-				new SynchronousQueue<>(),
-				new ThreadPoolExecutor.AbortPolicy());
-		limiter = new SimpleTimeLimiter(executor);
+		limiter = new SimpleTimeLimiter(Executors.newCachedThreadPool());
 	}
 
 	private ResponseBuilder setHeaders(ResponseBuilder responseBuilder) {
@@ -427,12 +408,6 @@ public class MetricsResource implements KairosMetricReporter {
 
 			return limiter.callWithTimeout(() -> {
 				try (Scope internalScope = tracer.scopeManager().activate(span, false)) {
-					Map threadMetrics = new HashMap();
-					threadMetrics.put("response_thread_pool_size", executor.getPoolSize());
-					threadMetrics.put("active_threads", executor.getActiveCount());
-					threadMetrics.put("threadpool_queue_size", executor.getQueue().size());
-					span.log(threadMetrics);
-					queryMeasurementProvider.measureThreadPoolMetrics(executor);
 
 					for (QueryMetric query : queries) {
 						Map<String, Collection<String>> tags = query.getTags().asMap();

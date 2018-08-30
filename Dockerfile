@@ -2,17 +2,20 @@
 ## USE 'java -cp tools/tablesaw-1.2.6.jar  make docker-image'
 ## TO BUILD.
 
-FROM openjdk:8u151
+FROM azul/zulu-openjdk-debian:8u181
 
 ARG VERSION
 
-RUN useradd -M kairosdb
+RUN adduser --no-create-home --disabled-password kairosdb
 
 ADD build/kairosdb-${VERSION}.tar /opt/
 
 RUN chown -R kairosdb /opt/kairosdb
 
 WORKDIR /opt/kairosdb
+
+## KairosDB Configuration Environment Variables
+ENV KAIROSDB_SERVICE_TELNET=<disabled>
 
 CMD ["/opt/kairosdb/bin/kairosdb.sh", "run"]
 

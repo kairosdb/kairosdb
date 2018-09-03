@@ -40,7 +40,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
     private long m_startTime = 0L;
     private long m_queryStartTime = 0L;
     private long m_queryEndTime = 0L;
-    //	private boolean m_started = false;
+    private boolean m_started = false;
     private boolean m_exhaustive;
     private DateTimeZone m_timeZone = DateTimeZone.UTC;
 
@@ -93,6 +93,14 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
     )
     protected boolean m_alignEndTime;
 
+    @FeatureProperty(
+            name = "trim",
+            label = "Trim",
+            description = " Trim off empty ranges before and after the actual data",
+            default_value = "false"
+    )
+    protected boolean m_trim;
+    
     public RangeAggregator()
     {
         this(false);
@@ -233,6 +241,11 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 			m_queryEndTime = endTime;
 	}
 
+	public void setTrim(boolean trim)
+    {
+        m_trim = trim;
+    }
+	
     /**
      * Return a RangeSubAggregator that will be used to aggregate data over a
      * discrete range of data points.  This is called once per grouped data series.
@@ -428,7 +441,10 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
         public ExhaustiveRangeDataPointAggregator(DataPointGroup innerDataPointGroup, RangeSubAggregator subAggregator)
         {
             super(innerDataPointGroup, subAggregator);
-            m_nextExpectedRangeStartTime = m_queryStartTime;
+            if(m_trim)
+            	m_nextExpectedRangeStartTime = m_startTime;
+            else
+            	m_nextExpectedRangeStartTime = m_queryStartTime;
         }
 
         private void setNextStartTime(long timeStamp)
@@ -439,7 +455,10 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
         @Override
         public boolean hasNext()
         {
-            return (super.hasNext() || m_nextExpectedRangeStartTime < m_queryEndTime);
+        	if(m_trim)
+        		return super.hasNext();
+            else
+            	return (super.hasNext() || m_nextExpectedRangeStartTime < m_queryEndTime);
         }
 
         @Override
@@ -450,11 +469,12 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
                 //We calculate start and end ranges as the ranges may not be
                 //consecutive if data does not show up in each range.
                 long startTime = m_nextExpectedRangeStartTime;
-                /*if (!m_started)
+                
+                if (m_trim && !m_started)
                 {
 					m_started = true;
 					startTime = currentDataPoint.getTimestamp();
-				}*/
+				}
                 long startRange = getStartRange(startTime);
                 long endRange = getEndRange(startTime);
 

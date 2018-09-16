@@ -79,7 +79,7 @@ public class DataPointEventSerializer
 			ret = new DataPointEvent(metricName, builder.build(), dataPoint, ttl);
 
 		}
-        catch (IOException | IllegalStateException e)
+		catch (IOException | IllegalStateException e)
 		{
 			logger.error("Unable to deserialize event", e);
 		}

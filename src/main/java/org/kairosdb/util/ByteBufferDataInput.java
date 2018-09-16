@@ -1,5 +1,7 @@
 package org.kairosdb.util;
 
+import org.xerial.snappy.Snappy;
+
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -113,9 +115,20 @@ public class ByteBufferDataInput implements DataInput
 		return null;
 	}
 
+	/**
+	 * 将读取出来的字节解压
+	 * @return
+	 * @throws IOException
+	 */
 	@Override
 	public String readUTF() throws IOException
 	{
-		return DataInputStream.readUTF(this);
+		String result;
+		if (Snappy.isValidCompressedBuffer(m_buffer.array())) {
+			result = new String(Snappy.uncompress(m_buffer.array()));
+		} else {
+			result = DataInputStream.readUTF(this);
+		}
+		return result;
 	}
 }

@@ -1,5 +1,7 @@
 package org.kairosdb.util;
 
+import org.xerial.snappy.Snappy;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
@@ -103,9 +105,14 @@ public class KDataOutput implements DataOutput
 		m_dataOutputStream.writeChars(s);
 	}
 
+	/**
+	 * 重写字符串写入的算法，增加压缩
+	 * @param s
+	 * @throws IOException
+	 */
 	@Override
 	public void writeUTF(String s) throws IOException
 	{
-		m_dataOutputStream.writeUTF(s);
+		m_dataOutputStream.write(Snappy.compress(s));
 	}
 }

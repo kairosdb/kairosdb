@@ -2,21 +2,22 @@ package org.kairosdb.core.datapoints;
 
 import org.json.JSONException;
 import org.json.JSONWriter;
+import org.xerial.snappy.Snappy;
 
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Objects;
 
 /**
- Created by bhawkins on 12/14/13.
+ Created by bhawkins on 09/15/2018
  */
-public class StringDataPoint extends DataPointHelper
+public class SnappyStringDataPoint extends DataPointHelper
 {
 	public static final String API_TYPE = "string";
 
 	private final String m_value;
 
-	public StringDataPoint(long timestamp, String value)
+	public SnappyStringDataPoint(long timestamp, String value)
 	{
 		super(timestamp);
 		m_value = value;
@@ -25,7 +26,9 @@ public class StringDataPoint extends DataPointHelper
 	@Override
 	public void writeValueToBuffer(DataOutput buffer) throws IOException
 	{
-		buffer.writeUTF(m_value);
+		byte[] compressedBytes = Snappy.compress(m_value);
+		buffer.writeShort(compressedBytes.length);
+		buffer.write(compressedBytes);
 	}
 
 	@Override
@@ -81,7 +84,7 @@ public class StringDataPoint extends DataPointHelper
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		if (!super.equals(o)) return false;
-		StringDataPoint that = (StringDataPoint) o;
+		SnappyStringDataPoint that = (SnappyStringDataPoint) o;
 		return Objects.equals(m_value, that.m_value);
 	}
 

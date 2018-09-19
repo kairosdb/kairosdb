@@ -2,10 +2,9 @@ package org.kairosdb.core.datapoints;
 
 import com.google.gson.JsonElement;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.util.KDataInput;
 
-import java.io.DataInput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  Implmementation must be thread safe.
@@ -44,5 +43,5 @@ public interface DataPointFactory
 	//public String getAPIType();
 
 	public DataPoint getDataPoint(long timestamp, JsonElement json) throws IOException;
-	public DataPoint getDataPoint(long timestamp, DataInput buffer) throws IOException;
+	public DataPoint getDataPoint(long timestamp, KDataInput buffer) throws IOException;
 }

@@ -22,6 +22,8 @@
 		            conf="test->default"/>
 		<!--<dependency org="org.mockito" name="mockito-all" rev="1.9.5" />-->
 		<dependency org="org.mockito" name="mockito-core" rev="2.13.0" conf="test->default"/>
+		<dependency org="org.assertj" name="assertj-core" rev="3.11.1"
+					conf="test->default"/>
 		<!--<dependency org="io.netty" name="netty" rev="3.5.11.Final" />-->
 		<dependency org="io.netty" name="netty" rev="3.10.6.Final" />
 		<!--<dependency org="org.powermock" name="powermock-api-mockito" rev="1.4.12" />

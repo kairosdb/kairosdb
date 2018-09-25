@@ -49,7 +49,6 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 	private final Publisher<DataPointEvent> m_publisher;
 
 	@Inject
-    
 	public PutMillisecondCommand(FilterEventBus eventBus, @Named("HOSTNAME") String hostname,
 			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
@@ -62,38 +61,45 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 	}
 
 	@Override
-	public void execute(Channel chan, String[] command) throws DatastoreException, ValidationException
+	public void execute(Channel chan, List<String> command) throws DatastoreException, ValidationException
 	{
-		long timestamp = Util.parseLong(command[2]);
+		long timestamp = Util.parseLong(command.get(2));
 		execute(command, timestamp);
 	}
 
-	protected void execute(String[] command, long timestamp) throws ValidationException, DatastoreException
+	protected DataPoint createDataPoint(long timestamp, String value) throws ValidationException
 	{
-		Validator.validateNotNullOrEmpty("metricName", command[1]);
-
-		String metricName = command[1];
-		int ttl = 0;
-
 		DataPoint dp;
 		try
 		{
-			if (command[3].contains("."))
-				dp = m_doubleFactory.createDataPoint(timestamp, Double.parseDouble(command[3]));
+			if (value.contains("."))
+				dp = m_doubleFactory.createDataPoint(timestamp, Double.parseDouble(value));
 			else
-				dp = m_longFactory.createDataPoint(timestamp, Util.parseLong(command[3]));
+				dp = m_longFactory.createDataPoint(timestamp, Util.parseLong(value));
 		}
 		catch (NumberFormatException e)
 		{
 			throw new ValidationException(e.getMessage());
 		}
 
+		return dp;
+	}
+
+	protected void execute(List<String> command, long timestamp) throws ValidationException, DatastoreException
+	{
+		Validator.validateNotNullOrEmpty("metricName", command.get(1));
+
+		String metricName = command.get(1);
+		int ttl = 0;
+
+		DataPoint dp = createDataPoint(timestamp, command.get(3));
+
 		ImmutableSortedMap.Builder<String, String> tags = Tags.create();
 
 		int tagCount = 0;
-		for (int i = 4; i < command.length; i++)
+		for (int i = 4; i < command.size(); i++)
 		{
-			String[] tag = command[i].split("=");
+			String[] tag = command.get(i).split("=");
 			validateTag(tagCount, tag);
 
 			if ("kairos_opt.ttl".equals(tag[0]))

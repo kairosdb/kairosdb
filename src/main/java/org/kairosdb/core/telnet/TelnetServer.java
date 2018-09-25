@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -91,7 +92,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 		return pipeline;
 	}
 
-	private String formatMessage(String[] msg)
+	private String formatMessage(List<String> msg)
 	{
 		StringBuilder sb = new StringBuilder();
 		for (String s : msg)
@@ -105,13 +106,13 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 	                            final MessageEvent msgevent)
 	{
 		final Object message = msgevent.getMessage();
-		if (message instanceof String[])
+		if (message instanceof List)
 		{
-			String[] command = (String[]) message;
+			List<String> command = (List<String>) message;
 
 			String cmd = "";
-			if (command.length >= 1)
-				cmd = command[0];
+			if (command.size() >= 1)
+				cmd = command.get(0);
 
 			TelnetCommand telnetCommand = commandProvider.getCommand(cmd);
 			if (telnetCommand != null)
@@ -123,7 +124,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 				catch (Exception e)
 				{
 					log("Message: '" + formatMessage(command) + "'", ctx);
-					log("Failed to execute command: " + formatCommand(command) + " Reason: " + e.getMessage(), ctx, e);
+					log("Failed to execute command: " + formatMessage(command) + " Reason: " + e.getMessage(), ctx, e);
 				}
 			}
 			else
@@ -187,17 +188,6 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 	{
 		if (serverBootstrap != null)
 			serverBootstrap.shutdown();
-	}
-
-	private static String formatCommand(String[] command)
-	{
-		StringBuilder builder = new StringBuilder();
-		for (String s : command)
-		{
-			builder.append(s).append(" ");
-		}
-
-		return builder.toString();
 	}
 
 	@Override

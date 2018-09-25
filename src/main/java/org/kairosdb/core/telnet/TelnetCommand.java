@@ -20,11 +20,13 @@ import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.util.ValidationException;
 
+import java.util.List;
+
 public interface TelnetCommand
 {
 	public static final String REPORTING_METRIC_NAME = "kairosdb.protocol.telnet_request_count";
 
-	public void execute(Channel chan, String[] command) throws DatastoreException, ValidationException;
+	public void execute(Channel chan, List<String> command) throws DatastoreException, ValidationException;
 
 	/**
 	 Returns the telnet command this class repsonds to (ie put, version)

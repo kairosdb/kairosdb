@@ -2,7 +2,10 @@ package org.kairosdb.core.telnet;
 
 import com.google.inject.Inject;
 import org.jboss.netty.channel.Channel;
+import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
+import org.kairosdb.core.datapoints.DoubleDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
@@ -16,31 +19,22 @@ import java.util.List;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
-public class PutStringCommand implements TelnetCommand, KairosMetricReporter
+public class PutStringCommand extends PutMillisecondCommand implements TelnetCommand, KairosMetricReporter
 {
-	private final String m_hostName;
 	private final StringDataPointFactory m_stringFactory;
-	private final Publisher<DataPointEvent> m_publisher;
 
 	@Inject
 	public PutStringCommand(FilterEventBus eventBus, @Named("HOSTNAME") String hostname,
-			StringDataPointFactory stringFactory)
+			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory, StringDataPointFactory stringFactory)
 	{
-		m_hostName = checkNotNullOrEmpty(hostname);
+		super(eventBus, hostname, longFactory, doubleFactory);
 		m_stringFactory = stringFactory;
-		m_publisher = eventBus.createPublisher(DataPointEvent.class);
 	}
 
 	@Override
-	public List<DataPointSet> getMetrics(long now)
+	protected DataPoint createDataPoint(long timestamp, String value)
 	{
-		return null;
-	}
-
-	@Override
-	public void execute(Channel chan, String[] command) throws DatastoreException, ValidationException
-	{
-
+		return m_stringFactory.createDataPoint(timestamp, value);
 	}
 
 	@Override

@@ -13,9 +13,15 @@
                         <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level [%file:%line] - %msg%n</pattern>
                 </encoder>
         </appender>
+        <appender name="Sentry" class="io.sentry.logback.SentryAppender">
+                <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                        <level>WARN</level>
+                </filter>
+        </appender>
 
         <root level="WARN">
                 <appender-ref ref="stdout"/>
+                <appender-ref ref="Sentry" />
         </root>
 </configuration>
 

@@ -40,7 +40,9 @@ import org.kairosdb.util.ValidationException;
 
 import javax.annotation.Nullable;
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -65,7 +67,7 @@ public class PutCommandTest
 	@Test
 	public void test() throws DatastoreException, ValidationException
 	{
-		m_command.execute(new FakeChannel(), new String[]{"telnet", "MetricName", "12345678999", "789", "foo=bar", "fum=barfum"});
+		m_command.execute(new FakeChannel(), Arrays.asList("telnet", "MetricName", "12345678999", "789", "foo=bar", "fum=barfum"));
 
 		assertThat(m_datastore.getSet().getName(), equalTo("MetricName"));
 		assertThat(m_datastore.getSet().getTags().size(), equalTo(2));
@@ -80,7 +82,7 @@ public class PutCommandTest
 	{
 		try
 		{
-			m_command.execute(new FakeChannel(), new String[]{"telnet", "", "12345678999", "789", "foo=bar", "fum=barfum"});
+			m_command.execute(new FakeChannel(), Arrays.asList("telnet", "", "12345678999", "789", "foo=bar", "fum=barfum"));
 			fail("ValidationException expected");
 		}
 		catch (DatastoreException e)
@@ -96,7 +98,7 @@ public class PutCommandTest
 	@Test
 	public void test_metricName_characters_valid() throws DatastoreException, ValidationException
 	{
-		m_command.execute(new FakeChannel(), new String[]{"telnet", "你好", "12345678999", "789", "foo=bar", "fum=barfum"});
+		m_command.execute(new FakeChannel(), Arrays.asList("telnet", "你好", "12345678999", "789", "foo=bar", "fum=barfum"));
 	}
 
 	@Test
@@ -104,7 +106,7 @@ public class PutCommandTest
 	{
 		try
 		{
-			m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "=barfum"});
+			m_command.execute(new FakeChannel(), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "=barfum"));
 			fail("ValidationException expected");
 		}
 		catch (DatastoreException e)
@@ -120,7 +122,7 @@ public class PutCommandTest
 	@Test
 	public void test_tagName_characters_validColonTagName() throws DatastoreException, ValidationException
 	{
-		m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum:fi=barfum"});
+		m_command.execute(new FakeChannel(), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "fum:fi=barfum"));
 	}
 
 	@Test
@@ -128,7 +130,7 @@ public class PutCommandTest
 	{
 		try
 		{
-			m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum="});
+			m_command.execute(new FakeChannel(), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "fum="));
 			fail("ValidationException expected");
 		}
 		catch (DatastoreException e)
@@ -144,7 +146,7 @@ public class PutCommandTest
 	@Test
 	public void test_tagValue_characters_validColonTagValue() throws DatastoreException, ValidationException
 	{
-		m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum=bar:fum"});
+		m_command.execute(new FakeChannel(), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "fum=bar:fum"));
 	}
 
 	@Test
@@ -152,7 +154,7 @@ public class PutCommandTest
 	{
 		try
 		{
-			m_command.execute(new FakeChannel(), new String[]{"telnet", "metricName", "12345678999", "789", "foo=bar", "fum-barfum"});
+			m_command.execute(new FakeChannel(), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "fum-barfum"));
 			fail("ValidationException expected");
 		}
 		catch (DatastoreException e)

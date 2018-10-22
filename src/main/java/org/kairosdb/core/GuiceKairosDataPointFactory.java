@@ -21,11 +21,11 @@ import com.google.inject.Binding;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import org.kairosdb.core.datapoints.DataPointFactory;
+import org.kairosdb.util.KDataInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.io.DataInput;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -113,13 +113,13 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 
 	/**
 	 Creates a DataPoint using the data store type.
+	 @return
 	 @param dataStoreType Internal data store type.
 	 @param timestamp
 	 @param buffer
-	 @return
 	 */
 	@Override
-	public DataPoint createDataPoint(String dataStoreType, long timestamp, DataInput buffer) throws IOException
+	public DataPoint createDataPoint(String dataStoreType, long timestamp, KDataInput buffer) throws IOException
 	{
 		DataPointFactory factory = m_factoryMapDataStore.get(dataStoreType);
 

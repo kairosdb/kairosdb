@@ -31,7 +31,7 @@ for %%j in ("%KAIROSDB_LIB_DIR%\*.jar") do set CLASSPATH=!CLASSPATH!;%%j
 
 
 if /i "%1" == "run" (
-    "%JAVA%" %JAVA_OPTS% -cp %CLASSPATH% org.kairosdb.core.Main -c run -p conf\kairosdb.properties
+    "%JAVA%" %JAVA_OPTS% -cp %CLASSPATH% org.kairosdb.core.Main -c run -p conf\kairosdb.conf
 ) else (
     echo Unrecognized command.
 )

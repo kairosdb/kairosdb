@@ -26,6 +26,8 @@ import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.util.Util;
 import org.kairosdb.util.ValidationException;
 
+import java.util.List;
+
 public class PutCommand extends PutMillisecondCommand
 {
 	@Inject
@@ -36,9 +38,9 @@ public class PutCommand extends PutMillisecondCommand
 	}
 
 	@Override
-	public void execute(Channel chan, String[] command) throws DatastoreException, ValidationException
+	public void execute(Channel chan, List<String> command) throws DatastoreException, ValidationException
 	{
-		long timestamp = Util.parseLong(command[2]);
+		long timestamp = Util.parseLong(command.get(2));
 		//Backwards compatible hack for the next 30 years
 		//This allows clients to send seconds to us
 		if (timestamp < 3000000000L)

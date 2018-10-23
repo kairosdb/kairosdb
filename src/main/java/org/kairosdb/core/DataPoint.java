@@ -18,6 +18,7 @@ public interface DataPoint
 
 	public long getTimestamp();
 
+	public void setTimestamp(long timestamp);
 
 	public void writeValueToBuffer(DataOutput buffer) throws IOException;
 

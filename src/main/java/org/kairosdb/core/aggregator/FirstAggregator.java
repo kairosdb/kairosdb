@@ -43,7 +43,7 @@ public class FirstAggregator extends RangeAggregator
 	@Override
 	public boolean canAggregate(String groupType)
 	{
-		return DataPoint.GROUP_NUMBER.equals(groupType);
+		return true;
 	}
 
 	@Override
@@ -65,7 +65,11 @@ public class FirstAggregator extends RangeAggregator
 		{
 			Iterable<DataPoint> ret;
 			if (dataPointRange.hasNext())
-				ret = Collections.singletonList(m_dataPointFactory.createDataPoint(returnTime, dataPointRange.next().getDoubleValue()));
+			{
+				DataPoint next = dataPointRange.next();
+				next.setTimestamp(returnTime);
+				ret = Collections.singletonList(next);
+			}
 			else
 				ret = Collections.emptyList();
 

@@ -71,3 +71,8 @@ Metrics Reported
 * *kairosdb.queue.file_queue.size* - Number of data points in the file queue.
 * *kairosdb.queue.process_count* - The number of data points read from the queue since last reported.
 * *kairosdb.queue.read_from_file* - The number of data points read from the file.
+* *kairosdb.datastore.remote.file_size* - The size of the data file (prior to zipping it) sent to the remote host.
+* *kairosdb.datastore.remote.zip_file_size* - The size of the zipped file sent to the remote host.
+* *kairosdb.datastore.remote.write_size* - The number of data points send in the file to the remote host.
+* *kairosdb.datastore.remote.time_to_send* -The amount of time in milliseconds it took to send a batch of zipped files to the remote host.
+* *kairosdb.datastore.remote.deleted_zipFile_size* - The size of the zip file deleted (not sent) because the disk size exceeded the percentage specified in drop_on_used_disk_space_threshold_percent property.

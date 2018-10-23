@@ -39,6 +39,7 @@ public class TelnetServerModule extends AbstractModule
 		bind(TelnetServer.class).in(Singleton.class);
 		bind(PutCommand.class).in(Singleton.class);
 		bind(PutMillisecondCommand.class).in(Singleton.class);
+		bind(PutStringCommand.class).in(Singleton.class);
 		bind(VersionCommand.class).in(Singleton.class);
 
 		bind(CommandProvider.class).to(GuiceCommandProvider.class);

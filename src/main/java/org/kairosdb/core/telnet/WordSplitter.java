@@ -47,7 +47,73 @@ public class WordSplitter extends OneToOneDecoder
 	}
 
 
-	protected static String[] splitString(final String s)
+	private static String[] arrayType = new String[0];
+
+	protected static List<String> splitString(final String s)
+	{
+		List<String> ret = new ArrayList<String>();
+		int len = s.length();
+		boolean quoted = false;
+		int start = 0;
+		char prev = ' ';
+		char c = ' ';
+
+		for (int i = 0; i < len; i++)
+		{
+			c = s.charAt(i);
+
+			//Normal word break
+			if (c <= ' ' && !quoted)
+			{
+				if (i > start)
+				{
+					ret.add(s.substring(start, i));
+				}
+
+				start = i+1;
+				prev = c;
+				continue;
+			}
+
+			//Start of quoted section
+			if ((c == '"') && (prev <= ' ') && !quoted)
+			{
+				quoted = true;
+				start = i+1;
+				prev = c;
+				continue;
+			}
+
+			//End of quoted section
+			if (quoted && prev == '"' && c <= ' ')
+			{
+				if (i > start)
+				{
+					ret.add(s.substring(start, i-1));
+				}
+
+				quoted = false;
+				start = i+1;
+				prev = c;
+				continue;
+			}
+
+			prev = c;
+
+		}
+
+		if (start != s.length())
+		{
+			if (quoted && c == '"')
+				ret.add(s.substring(start, s.length()-1));
+			else
+				ret.add(s.substring(start, s.length()));
+		}
+
+		return ret;
+	}
+
+	protected static String[] oldsplitString(final String s)
 	{
 		final char[] chars = s.trim().toCharArray();
 		int num_substrings = 0;

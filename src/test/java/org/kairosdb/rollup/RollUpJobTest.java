@@ -42,9 +42,11 @@ public class RollUpJobTest
 		lastTimeStamp = dateFormat.parse("2013-JAN-18 4:55:12.22").getTime();
 
 		testDataStore = new TestDatastore();
+		TestDataPointFactory dataPointFactory = new TestDataPointFactory();
+		CachingSearchResultFactory searchResultFactory = new CachingSearchResultFactory(dataPointFactory, testDataStore, false);
+		searchResultFactory.init();
 		datastore = new KairosDatastore(testDataStore, new QueryQueuingManager(1, "hostname"),
-				new TestDataPointFactory(), false);
-		datastore.init();
+				dataPointFactory, searchResultFactory);
 	}
 
 	@Test

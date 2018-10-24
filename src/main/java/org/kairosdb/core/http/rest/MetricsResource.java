@@ -350,7 +350,7 @@ public class MetricsResource implements KairosMetricReporter
 
 		try
 		{
-			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
+			File respFile = File.createTempFile("kairos", ".json");
 			BufferedWriter writer = new BufferedWriter(new FileWriter(respFile));
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
@@ -463,7 +463,7 @@ public class MetricsResource implements KairosMetricReporter
 			if (json == null)
 				throw new BeanValidationException(new QueryParser.SimpleConstraintViolation("query json", "must not be null or empty"), "");
 
-			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
+			File respFile = File.createTempFile("kairos", ".json");
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(respFile), "UTF-8"));
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
@@ -474,28 +474,35 @@ public class MetricsResource implements KairosMetricReporter
 			mainQuery = m_queryPreProcessor.preProcess(mainQuery);
 
 			List<QueryMetric> queries = mainQuery.getQueryMetrics();
+			DatastoreQueryContext queryContext = DatastoreQueryContext.create(json);
 
-			int queryCount = 0;
-			for (QueryMetric query : queries)
+			try
 			{
-				queryCount++;
-				ThreadReporter.addTag("metric_name", query.getName());
-				ThreadReporter.addTag("query_index", String.valueOf(queryCount));
+				int queryCount = 0;
+				for (QueryMetric query : queries) {
+					queryCount++;
+					ThreadReporter.addTag("metric_name", query.getName());
+					ThreadReporter.addTag("query_index", String.valueOf(queryCount));
 
-				DatastoreQuery dq = datastore.createQuery(query);
-				long startQuery = System.currentTimeMillis();
+					DatastoreQuery dq = datastore.createQuery(query, queryContext);
+					long startQuery = System.currentTimeMillis();
 
-				try
-				{
-					List<DataPointGroup> results = dq.execute();
-					jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
+					try
+					{
+						List<DataPointGroup> results = dq.execute();
+						jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
 
-					ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
+						ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
+					}
+					finally
+					{
+						dq.close();
+					}
 				}
-				finally
-				{
-					dq.close();
-				}
+			}
+			finally
+			{
+				queryContext.close();
 			}
 
 			jsonResponse.end();
@@ -537,12 +544,6 @@ public class MetricsResource implements KairosMetricReporter
 			logger.error("Query failed.", e);
 			Thread.sleep(1000);
 			System.gc();
-			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
-		}
-		catch (IOException e)
-		{
-			queryFailed = true;
-			logger.error("Failed to open temp folder " + datastore.getCacheDir(), e);
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}
 		catch (Exception e)

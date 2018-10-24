@@ -306,11 +306,13 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 					}
 				});
 
+		CachingSearchResultFactory searchResultFactory = new CachingSearchResultFactory(dataPointFactory, s_datastore, false);
+		searchResultFactory.init();
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
 				new QueryQueuingManager(1, "hostname"),
-				dataPointFactory, false);
+				dataPointFactory,
+				searchResultFactory);
 
-		DatastoreTestHelper.s_datastore.init();
 		s_eventBus.register(s_datastore);
 
 		loadCassandraData();

@@ -19,10 +19,8 @@ package org.kairosdb.core.datastore;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.KairosPostConstructInit;
 import org.kairosdb.core.aggregator.LimitAggregator;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupByResult;
@@ -37,12 +35,7 @@ import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,13 +46,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
-public class KairosDatastore implements KairosPostConstructInit
+public class KairosDatastore
 {
 	public static final Logger logger = LoggerFactory.getLogger(KairosDatastore.class);
-	public static final String QUERY_CACHE_DIR = "kairosdb.query_cache.cache_dir";
-	public static final String KEEP_CACHE_FILES = "kairosdb.query_cache.keep_cache_files";
+
 	public static final String QUERY_METRIC_TIME = "kairosdb.datastore.query_time";
 	public static final String QUERIES_WAITING_METRIC_NAME = "kairosdb.datastore.queries_waiting";
 	public static final String QUERY_SAMPLE_SIZE = "kairosdb.datastore.query_sample_size";
@@ -68,121 +59,18 @@ public class KairosDatastore implements KairosPostConstructInit
 	private final Datastore m_datastore;
 	private final QueryQueuingManager m_queuingManager;
 	private final KairosDataPointFactory m_dataPointFactory;
-
-	private String m_baseCacheDir;
-	private volatile String m_cacheDir;
-	private final boolean m_keepCacheFiles;
+	private final SearchResultFactory m_searchResultFactory;
 
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Inject
 	public KairosDatastore(Datastore datastore, QueryQueuingManager queuingManager,
 			KairosDataPointFactory dataPointFactory,
-			@Named(KEEP_CACHE_FILES) boolean keepCacheFiles)
-			throws DatastoreException
+			SearchResultFactory searchResultFactory)
 	{
 		m_datastore = checkNotNull(datastore);
 		m_queuingManager = checkNotNull(queuingManager);
 		m_dataPointFactory = dataPointFactory;
-
-		m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
-		m_keepCacheFiles = keepCacheFiles;
-	}
-
-	@Override
-	public void init()
-	{
-		setupCacheDirectory();
-	}
-
-	@SuppressWarnings("UnusedDeclaration")
-	@Inject(optional = true)
-	public void setBaseCacheDir(@Named(QUERY_CACHE_DIR) String cacheTempDir)
-	{
-		if (cacheTempDir != null && !cacheTempDir.equals(""))
-		{
-			m_baseCacheDir = cacheTempDir;
-		}
-	}
-
-	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private void setupCacheDirectory()
-	{
-		cleanDirectory(new File(m_baseCacheDir));
-		newCacheDirectory();
-		File cacheDirectory = new File(m_cacheDir);
-		cacheDirectory.mkdirs();
-		checkState(cacheDirectory.exists(), "Unable to create Cache directory '" + m_cacheDir + "'");
-	}
-
-	/**
-	 Make sure the folder exists
-
-	 @param path
-	 */
-	private static void ensureFolder(String path)
-	{
-		File fPath = new File(path);
-		if (!fPath.exists())
-			fPath.mkdirs();
-	}
-
-	public String getCacheDir()
-	{
-		ensureFolder(m_cacheDir);
-		return (m_cacheDir);
-	}
-
-	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private void newCacheDirectory()
-	{
-		String newCacheDir = m_baseCacheDir + "/" + System.currentTimeMillis() + "/";
-		ensureFolder(newCacheDir);
-		m_cacheDir = newCacheDir;
-	}
-
-	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private void cleanDirectory(File directory)
-	{
-		if (!directory.exists())
-			return;
-		File[] list = directory.listFiles();
-
-		if (list != null && list.length > 0)
-		{
-			for (File aList : list)
-			{
-				if (aList.isDirectory())
-					cleanDirectory(aList);
-
-				aList.delete();
-			}
-		}
-
-		directory.delete();
-	}
-
-	public void cleanCacheDir(boolean wait)
-	{
-		String oldCacheDir = m_cacheDir;
-		newCacheDirectory();
-
-		if (wait)
-		{
-			try
-			{
-				Thread.sleep(60000);
-			}
-			catch (InterruptedException e)
-			{
-				logger.error("Sleep interrupted:", e);
-			}
-		}
-
-		logger.debug("Executing job...");
-		File dir = new File(oldCacheDir);
-		logger.debug("Deleting cache files in " + dir.getAbsolutePath());
-
-		cleanDirectory(dir);
+		m_searchResultFactory = searchResultFactory;
 	}
 
 	public Datastore getDatastore()
@@ -253,28 +141,22 @@ public class KairosDatastore implements KairosPostConstructInit
 
 	public DatastoreQuery createQuery(QueryMetric metric) throws DatastoreException
 	{
-		checkNotNull(metric);
+		return createQuery(metric, DatastoreQueryContext.createAtomic());
+	}
 
-		DatastoreQuery dq;
+	public DatastoreQuery createQuery(QueryMetric metric, DatastoreQueryContext datastoreQueryContext) throws DatastoreException
+	{
+		checkNotNull(metric);
 
 		try
 		{
-			dq = new DatastoreQueryImpl(metric);
-		}
-		catch (UnsupportedEncodingException e)
-		{
-			throw new DatastoreException(e);
-		}
-		catch (NoSuchAlgorithmException e)
-		{
-			throw new DatastoreException(e);
+			return new DatastoreQueryImpl(metric, datastoreQueryContext);
 		}
 		catch (InterruptedException e)
 		{
+			Thread.currentThread().interrupt();
 			throw new DatastoreException(e);
 		}
-
-		return (dq);
 	}
 
 
@@ -417,31 +299,15 @@ public class KairosDatastore implements KairosPostConstructInit
 		return matchingTags;
 	}
 
-
-	private static String calculateFilenameHash(QueryMetric metric) throws NoSuchAlgorithmException, UnsupportedEncodingException
-	{
-		String hashString = metric.getCacheString();
-		if (hashString == null)
-			hashString = String.valueOf(System.currentTimeMillis());
-
-		MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-		byte[] digest = messageDigest.digest(hashString.getBytes("UTF-8"));
-
-		return new BigInteger(1, digest).toString(16);
-	}
-
-
 	private class DatastoreQueryImpl implements DatastoreQuery
 	{
-		private String m_cacheFilename;
 		private QueryMetric m_metric;
+		private final DatastoreQueryContext m_datastoreQueryContext;
 		private List<DataPointGroup> m_results;
 		private int m_dataPointCount;
 		private int m_rowCount;
 		
-		public DatastoreQueryImpl(QueryMetric metric)
-				throws UnsupportedEncodingException, NoSuchAlgorithmException,
-				InterruptedException, DatastoreException
+		public DatastoreQueryImpl(QueryMetric metric, DatastoreQueryContext datastoreQueryContext) throws InterruptedException
 		{
 			//Report number of queries waiting
 			int waitingCount = m_queuingManager.getQueryWaitingCount();
@@ -451,8 +317,8 @@ public class KairosDatastore implements KairosPostConstructInit
 			}
 
 			m_metric = metric;
-			m_cacheFilename = calculateFilenameHash(metric);
-			m_queuingManager.waitForTimeToRun(m_cacheFilename);
+			m_datastoreQueryContext = datastoreQueryContext;
+			m_queuingManager.waitForTimeToRun(metric.getCacheString());
 		}
 
 		public int getSampleSize()
@@ -472,31 +338,8 @@ public class KairosDatastore implements KairosPostConstructInit
 
 			try
 			{
-				String tempFile = m_cacheDir + m_cacheFilename;
-
-				/*searchResult = new MemorySearchResult(m_metric.getName());
-				m_datastore.queryDatabase(m_metric, searchResult);
-				returnedRows = searchResult.getRows();*/
-
-				if (m_metric.getCacheTime() > 0)
-				{
-					searchResult = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
-							tempFile, m_metric.getCacheTime(), m_dataPointFactory, m_keepCacheFiles);
-					if (searchResult != null)
-					{
-						returnedRows = searchResult.getRows();
-						logger.debug("Cache HIT!");
-					}
-				}
-
-				if (searchResult == null)
-				{
-					logger.debug("Cache MISS!");
-					searchResult = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
-							tempFile, m_dataPointFactory, m_keepCacheFiles);
-					m_datastore.queryDatabase(m_metric, searchResult);
-					returnedRows = searchResult.getRows();
-				}
+				searchResult = m_searchResultFactory.createSearchResult(m_metric, m_datastoreQueryContext);
+				returnedRows = searchResult.getRows();
 			}
 			catch (Exception e)
 			{
@@ -587,7 +430,10 @@ public class KairosDatastore implements KairosPostConstructInit
 			}
 			finally
 			{  //This must get done
-				m_queuingManager.done(m_cacheFilename);
+				m_queuingManager.done(m_metric.getCacheString());
+				if (m_datastoreQueryContext.isAtomic()) {
+					m_datastoreQueryContext.close();
+				}
 			}
 		}
 	}

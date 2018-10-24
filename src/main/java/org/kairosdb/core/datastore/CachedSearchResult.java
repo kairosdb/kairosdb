@@ -26,7 +26,6 @@ import org.kairosdb.util.StringPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataInputStream;
 import java.io.Externalizable;
 import java.io.File;
 import java.io.FileInputStream;

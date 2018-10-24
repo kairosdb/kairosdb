@@ -21,10 +21,7 @@ import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.util.Preconditions;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -38,7 +35,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	private SetMultimap<String, String> tags = HashMultimap.create();
 	private List<GroupBy> groupBys = new ArrayList<GroupBy>();
 	private List<Aggregator> aggregators;
-	private String cacheString;
+	private String cacheString = UUID.randomUUID().toString();
 	private boolean excludeTags = false;
 	private int limit;
 	private Order order = Order.ASC;
@@ -167,14 +164,14 @@ public class QueryMetric implements DatastoreMetricQuery
 		this.groupBys.add(groupBy);
 	}
 
-	public void setCacheString(String cacheString)
+	public void setCacheString(String identifier)
 	{
-		this.cacheString = cacheString;
+		this.cacheString = checkNotNull(identifier);
 	}
 
 	public String getCacheString()
 	{
-		return (cacheString);
+		return cacheString;
 	}
 
 	public boolean isExcludeTags()

@@ -17,7 +17,7 @@ package org.kairosdb.core.jobs;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.CachingSearchResultFactory;
 import org.kairosdb.core.scheduler.KairosDBJob;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobExecutionContext;
@@ -33,13 +33,13 @@ public class CacheFileCleaner implements KairosDBJob
 	public static final Logger logger = LoggerFactory.getLogger(CacheFileCleaner.class);
 	public static final String CLEANING_SCHEDULE = "kairosdb.query_cache.cache_file_cleaner_schedule";
 
-	private final KairosDatastore datastore;
+	private final CachingSearchResultFactory cachingSearchResultFactory;
 	private String schedule;
 
 	@Inject
-	public CacheFileCleaner(@Named(CLEANING_SCHEDULE) String schedule, KairosDatastore datastore)
+	public CacheFileCleaner(@Named(CLEANING_SCHEDULE) String schedule, CachingSearchResultFactory cachingSearchResultFactory)
 	{
-		this.datastore = datastore;
+		this.cachingSearchResultFactory = cachingSearchResultFactory;
 		this.schedule = schedule;
 	}
 
@@ -47,7 +47,7 @@ public class CacheFileCleaner implements KairosDBJob
 	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
 	{
 		logger.debug("Executing job...");
-		datastore.cleanCacheDir(true);
+		cachingSearchResultFactory.cleanCacheDir(true);
 		logger.debug("Job Completed");
 	}
 

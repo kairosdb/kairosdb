@@ -76,6 +76,7 @@ public abstract class ResourceBase
                 bind(Boolean.class).annotatedWith(Names.named(WebServer.JETTY_SHOW_STACKTRACE)).toInstance(Boolean.FALSE);
                 bind(Datastore.class).toInstance(datastore);
                 bind(ServiceKeyStore.class).toInstance(datastore);
+                bind(SearchResultFactory.class).to(CachingSearchResultFactory.class).in(Singleton.class);
                 bind(KairosDatastore.class).in(Singleton.class);
                 bind(FeaturesResource.class).in(Singleton.class);
                 bind(FeatureProcessor.class).to(KairosFeatureProcessor.class);
@@ -120,8 +121,6 @@ public abstract class ResourceBase
                 bind(QueryPreProcessorContainer.class).to(GuiceQueryPreProcessor.class).in(javax.inject.Singleton.class);
             }
         });
-        KairosDatastore kairosDatastore = injector.getInstance(KairosDatastore.class);
-        kairosDatastore.init();
 
         server = injector.getInstance(WebServer.class);
         server.start();

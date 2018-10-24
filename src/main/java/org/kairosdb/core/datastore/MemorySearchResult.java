@@ -44,7 +44,6 @@ public class MemorySearchResult implements SearchResult
 		return new MemoryDataPointWriter(currentRow);
 	}
 
-
 	private class MemoryDataPointWriter implements DataPointWriter
 	{
 		private MemoryDataPointRow m_currentRow;

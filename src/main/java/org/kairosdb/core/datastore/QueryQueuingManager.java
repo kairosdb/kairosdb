@@ -24,10 +24,7 @@ import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
@@ -40,6 +37,8 @@ public class QueryQueuingManager implements KairosMetricReporter
 	public static final Logger logger = LoggerFactory.getLogger(QueryQueuingManager.class);
 	public static final String CONCURRENT_QUERY_THREAD = "kairosdb.datastore.concurrentQueryThreads";
 	public static final String QUERY_COLLISIONS_METRIC_NAME = "kairosdb.datastore.query_collisions";
+	public static final String QUERY_AVAILABLE_PERMITS = "kairosdb.datastore.available_permits";
+	public static final String QUERY_QUEUE_LENGTH = "kairosdb.datastore.query_queue_length";
 
 	private final Map<String, Thread> runningQueries = new HashMap<String, Thread>();
 	private final ReentrantLock lock = new ReentrantLock();
@@ -126,9 +125,23 @@ public class QueryQueuingManager implements KairosMetricReporter
 	public List<DataPointSet> getMetrics(long now)
 	{
 		DataPointSet collisionSet = new DataPointSet(QUERY_COLLISIONS_METRIC_NAME);
+		DataPointSet permitSet = new DataPointSet(QUERY_AVAILABLE_PERMITS);
+		DataPointSet queueLengthSet = new DataPointSet(QUERY_QUEUE_LENGTH);
+
 		collisionSet.addTag("host", hostname);
 		collisionSet.addDataPoint(new LongDataPoint(System.currentTimeMillis(), collisions.getAndSet(0)));
 
-		return Collections.singletonList(collisionSet);
+		permitSet.addTag("host", hostname);
+		permitSet.addDataPoint(new LongDataPoint(System.currentTimeMillis(), this.getAvailableThreads()));
+
+		queueLengthSet.addTag("host", hostname);
+		queueLengthSet.addDataPoint(new LongDataPoint(System.currentTimeMillis(), this.getQueryWaitingCount()));
+
+		List<DataPointSet> ret = new ArrayList<>();
+		ret.add(collisionSet);
+		ret.add(permitSet);
+		ret.add(queueLengthSet);
+
+		return ret;
 	}
 }

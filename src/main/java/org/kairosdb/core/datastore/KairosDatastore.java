@@ -228,6 +228,7 @@ public class KairosDatastore {
 
 			if (span != null) {
 				span.setTag("query_waiting_count", m_queuingManager.getQueryWaitingCount());
+				span.setTag("available_threads", m_queuingManager.getAvailableThreads());
 			}
 		} catch (UnsupportedEncodingException e) {
 			throw new DatastoreException(e);

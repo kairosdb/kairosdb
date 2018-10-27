@@ -4,7 +4,6 @@ import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Host;
-import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.kairosdb.core.DataPoint;
@@ -35,6 +34,7 @@ public class CQLBatch
 	private final ConsistencyLevel m_consistencyLevel;
 	private final long m_now;
 	private final LoadBalancingPolicy m_loadBalancingPolicy;
+	private final RowKeyLookupProvider m_rowKeyLookupProvider;
 
 	private Map<Host, BatchStatement> m_batchMap = new HashMap<>();
 
@@ -48,13 +48,15 @@ public class CQLBatch
 			ConsistencyLevel consistencyLevel,
 			@Named("write_cluster")ClusterConnection clusterConnection,
 			BatchStats batchStats,
-			LoadBalancingPolicy loadBalancingPolicy)
+			LoadBalancingPolicy loadBalancingPolicy,
+			RowKeyLookupProvider rowKeyLookupProvider)
 	{
 		m_consistencyLevel = consistencyLevel;
 		m_clusterConnection = clusterConnection;
 		m_batchStats = batchStats;
 		m_now = System.currentTimeMillis();
 		m_loadBalancingPolicy = loadBalancingPolicy;
+		m_rowKeyLookupProvider = rowKeyLookupProvider;
 	}
 
 	public void addRowKey(String metricName, DataPointsRowKey rowKey, int rowKeyTtl)
@@ -73,18 +75,12 @@ public class CQLBatch
 
 		rowKeyBatch.add(bs);
 
-		bs = m_clusterConnection.psRowKeyInsert.bind()
-				.setString(0, metricName)
-				.setTimestamp(1, new Date(rowKey.getTimestamp()))
-				//.setBytesUnsafe(1, bb)  //Setting timestamp in a more optimal way
-				.setString(2, rowKey.getDataType())
-				.setMap(3, rowKey.getTags())
-				.setInt(4, rowKeyTtl)
-				.setIdempotent(true);
-
-		bs.setConsistencyLevel(m_consistencyLevel);
-
-		rowKeyBatch.add(bs);
+		RowKeyLookup rowKeyLookup = m_rowKeyLookupProvider.getRowKeyLookupForMetric(rowKey.getMetricName());
+		for (Statement rowKeyInsertStmt : rowKeyLookup.createInsertStatements(rowKey, rowKeyTtl))
+		{
+			rowKeyInsertStmt.setConsistencyLevel(m_consistencyLevel);
+			rowKeyBatch.add(rowKeyInsertStmt);
+		}
 	}
 
 	public void addMetricName(String metricName)

@@ -4,6 +4,7 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Statement;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.util.concurrent.Futures;
@@ -40,6 +41,7 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 			@Assisted String metricName,
 			@Assisted("startTime") long startTime,
 			@Assisted("endTime") long endTime,
+			RowKeyLookupProvider rowKeyLookupProvider,
 			@Assisted SetMultimap<String, String> filterTags,
 			@Named(QUERIES_REGEX_PREFIX) String regexPrefix) throws DatastoreException
 	{
@@ -108,18 +110,15 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 
 		//System.out.println();
 		//New index query index is broken up by time tier
+		RowKeyLookup rowKeyLookup = rowKeyLookupProvider.getRowKeyLookupForMetric(metricName);
 		List<Long> queryKeyList = createQueryKeyList(cluster, metricName, startTime, endTime);
 		for (Long keyTime : queryKeyList)
 		{
-
-			BoundStatement statement = new BoundStatement(cluster.psRowKeyQuery);
-			statement.setString(0, metricName);
-			statement.setTimestamp(1, new Date(keyTime));
-			statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
-
-			//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
-
-			futures.add(cluster.executeAsync(statement));
+			for (Statement rowKeyQueryStmt : rowKeyLookup.createQueryStatements(metricName, keyTime, filterTags))
+			{
+				rowKeyQueryStmt.setConsistencyLevel(cluster.getReadConsistencyLevel());
+				futures.add(cluster.executeAsync(rowKeyQueryStmt));
+			}
 		}
 
 		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);

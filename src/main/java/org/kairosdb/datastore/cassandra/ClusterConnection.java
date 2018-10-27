@@ -75,6 +75,23 @@ public class ClusterConnection
 			"  PRIMARY KEY ((metric, table_name, row_time), data_type, tags)\n" +
 			")";
 
+	/**
+	 * Alternate form of the row_keys table which includes a hash of each tag key:value pair in the
+	 * partion key. This is used to improve lookups for high tag cardinality.
+	 */
+	public static final String TAG_INDEXED_ROW_KEYS = "" +
+			"CREATE TABLE IF NOT EXISTS tag_indexed_row_keys (\n" +
+			"  metric text,\n" +
+			"  table_name text, \n" +
+			"  row_time timestamp,\n" +
+			"  single_tag_pair_hash int,\n" +
+			"  data_type text,\n" +
+			"  tags frozen<map<text, text>>,\n" +
+			"  mtime timeuuid static,\n" +
+			"  value text,\n" +
+			"  PRIMARY KEY ((metric, table_name, row_time, single_tag_pair_hash), data_type, tags)\n" +
+			")";
+
 	public static final String STRING_INDEX_TABLE = "" +
 			"CREATE TABLE IF NOT EXISTS string_index (\n" +
 			"  key blob,\n" +
@@ -104,6 +121,9 @@ public class ClusterConnection
 
 	public static final String ROW_KEY_INSERT = "INSERT INTO row_keys " +
 			"(metric, table_name, row_time, data_type, tags, mtime) VALUES (?, 'data_points', ?, ?, ?, now()) USING TTL ?"; // AND TIMESTAMP ?";
+
+	public static final String TAG_INDEXED_ROW_KEY_INSERT = "INSERT INTO tag_indexed_row_keys " +
+			"(metric, table_name, row_time, data_type, single_tag_pair_hash, tags, mtime) VALUES (?, 'data_points', ?, ?, ?, ?, now()) USING TTL ?";
 
 	public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
 			"(key, column1, value) VALUES (?, ?, 0x00)";
@@ -155,6 +175,9 @@ public class ClusterConnection
 	public static final String ROW_KEY_QUERY = "SELECT row_time, data_type, tags " +
 			"FROM row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ?";
 
+	public static final String TAG_INDEXED_ROW_KEY_QUERY = "SELECT row_time, data_type, tags " +
+			"FROM tag_indexed_row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ? and single_tag_pair_hash = ?";
+
 	public static final String ROW_KEY_TAG_QUERY_WITH_TYPE = "SELECT row_time, data_type, tags " +
 			"FROM row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ? AND data_type IN %s"; //Use ValueSequence when setting this
 
@@ -164,6 +187,10 @@ public class ClusterConnection
 	public static final String ROW_KEY_DELETE = "DELETE FROM row_keys WHERE metric = ? " +
 			"AND table_name = 'data_points' AND row_time = ? AND data_type = ? " +
 			"AND tags = ?";
+
+	public static final String TAG_INDEXED_ROW_KEY_DELETE = "DELETE FROM tag_indexed_row_keys WHERE metric = ? " +
+			"AND table_name = 'data_points' AND row_time = ? AND data_type = ? " +
+			"AND single_tag_pair_hash = ? AND tags = ?";
 
 	//Service index queries
 	public static final String SERVICE_INDEX_INSERT = "INSERT INTO service_index " +
@@ -203,6 +230,7 @@ public class ClusterConnection
 	public PreparedStatement psStringIndexDelete;
 	public PreparedStatement psRowKeyIndexQuery;
 	public PreparedStatement psRowKeyQuery;
+	public PreparedStatement psTagIndexedRowKeyQuery;
 	public PreparedStatement psRowKeyTimeQuery;
 	public PreparedStatement psDataPointsDeleteRow;
 	public PreparedStatement psDataPointsDeleteRange;
@@ -211,6 +239,7 @@ public class ClusterConnection
 	public PreparedStatement psDataPointsQueryDesc;
 	public PreparedStatement psRowKeyTimeInsert;
 	public PreparedStatement psRowKeyInsert;
+	public PreparedStatement psTagIndexedRowKeyInsert;
 	public PreparedStatement psDataPointsQueryAscLimit;
 	public PreparedStatement psDataPointsQueryDescLimit;
 	public PreparedStatement psServiceIndexInsert;
@@ -221,6 +250,7 @@ public class ClusterConnection
 	public PreparedStatement psServiceIndexDeleteKey;
 	public PreparedStatement psRowKeyTimeDelete;
 	public PreparedStatement psRowKeyDelete;
+	public PreparedStatement psTagIndexedRowKeyDelete;
 	public PreparedStatement psServiceIndexModificationTime;
 	public PreparedStatement psServiceIndexInsertModifiedTime;
 	public PreparedStatement psServiceIndexGetEntries;
@@ -265,6 +295,7 @@ public class ClusterConnection
 			try
 			{
 				psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
+				psTagIndexedRowKeyQuery = m_session.prepare(TAG_INDEXED_ROW_KEY_QUERY);
 				psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);
 			}
 			catch (InvalidQueryException e)
@@ -286,7 +317,9 @@ public class ClusterConnection
 		if ((!m_readonlyMode)&&(clusterType.contains(Type.WRITE)))
 		{
 			psRowKeyInsert = m_session.prepare(ROW_KEY_INSERT);
+			psTagIndexedRowKeyInsert = m_session.prepare(TAG_INDEXED_ROW_KEY_INSERT);
 			psRowKeyDelete = m_session.prepare(ROW_KEY_DELETE);
+			psTagIndexedRowKeyDelete = m_session.prepare(TAG_INDEXED_ROW_KEY_DELETE);
 			psRowKeyTimeDelete = m_session.prepare(ROW_KEY_TIME_DELETE);
 			psRowKeyTimeInsert = m_session.prepare(ROW_KEY_TIME_INSERT);
 		}
@@ -378,6 +411,7 @@ public class ClusterConnection
 					session.execute(STRING_INDEX_TABLE);
 
 					session.execute(ROW_KEYS);
+					session.execute(TAG_INDEXED_ROW_KEYS);
 					session.execute(ROW_KEY_TIME_INDEX);
 				}
 				catch (Exception e)

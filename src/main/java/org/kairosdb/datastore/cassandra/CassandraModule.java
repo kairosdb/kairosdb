@@ -82,6 +82,7 @@ public class CassandraModule extends AbstractModule
 		bind(CassandraDatastore.class).in(Scopes.SINGLETON);
 		bind(CleanRowKeyCache.class).in(Scopes.SINGLETON);
 		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);
+		bind(RowKeyLookupProvider.class).in(Scopes.SINGLETON);
 		//bind(CassandraClient.class).to(CassandraClientImpl.class);
 		//bind(CassandraClientImpl.class).in(Scopes.SINGLETON);
 		bind(BatchStats.class).in(Scopes.SINGLETON);

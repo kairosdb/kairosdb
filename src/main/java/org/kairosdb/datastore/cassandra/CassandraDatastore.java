@@ -20,9 +20,10 @@ import com.datastax.driver.core.Host;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterators;
-import com.datastax.driver.core.utils.UUIDs;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -125,6 +126,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	private final CassandraModule.BatchHandlerFactory m_batchHandlerFactory;
 	private final CassandraModule.DeleteBatchHandlerFactory m_deleteBatchHandlerFactory;
 	private final CassandraModule.CQLFilteredRowKeyIteratorFactory m_rowKeyFilterFactory;
+	private final RowKeyLookupProvider m_rowKeyLookupProvider;
 
 	private CassandraConfiguration m_cassandraConfiguration;
 
@@ -147,7 +149,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			IngestExecutorService congestionExecutor,
 			CassandraModule.BatchHandlerFactory batchHandlerFactory,
 			CassandraModule.DeleteBatchHandlerFactory deleteBatchHandlerFactory,
-			CassandraModule.CQLFilteredRowKeyIteratorFactory rowKeyFilterFactory) throws DatastoreException
+			CassandraModule.CQLFilteredRowKeyIteratorFactory rowKeyFilterFactory,
+			RowKeyLookupProvider rowKeyLookupProvider) throws DatastoreException
 	{
 		//m_astyanaxClient = astyanaxClient;
 		m_kairosDataPointFactory = kairosDataPointFactory;
@@ -161,6 +164,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_writeCluster = writeCluster;
 		m_metaCluster = metaCluster;
 		m_readClusters = readClusters;
+
+		m_rowKeyLookupProvider = rowKeyLookupProvider;
 
 		ImmutableMap.Builder<String, ClusterConnection> builder = ImmutableMap.builder();
 		builder.put(m_writeCluster.getClusterName(), m_writeCluster);
@@ -841,13 +846,12 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 							statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
 							cluster.execute(statement);
 
-							statement = new BoundStatement(cluster.psRowKeyDelete);
-							statement.setString(0, rowKey.getMetricName());
-							statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
-							statement.setString(2, rowKey.getDataType());
-							statement.setMap(3, rowKey.getTags());
-							statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
-							cluster.execute(statement);
+							RowKeyLookup rowKeyLookup = m_rowKeyLookupProvider.getRowKeyLookupForMetric(rowKey.getMetricName());
+							for (Statement rowKeyDeleteStmt : rowKeyLookup.createDeleteStatements(rowKey))
+							{
+								rowKeyDeleteStmt.setConsistencyLevel(cluster.getReadConsistencyLevel());
+								cluster.execute(rowKeyDeleteStmt);
+							}
 
 							//Should only remove if the entire time window goes away and no tags are specified in query
 							//todo if we allow deletes for specific types this needs to change

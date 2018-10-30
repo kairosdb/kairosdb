@@ -439,7 +439,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
         @Override
         public boolean hasNext()
         {
-            return (super.hasNext() || m_nextExpectedRangeStartTime < m_queryEndTime);
+            return (super.hasNext() || m_nextExpectedRangeStartTime <= m_queryEndTime);
         }
 
         @Override

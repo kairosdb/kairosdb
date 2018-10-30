@@ -16,8 +16,12 @@
 
 package org.kairosdb.datastore.cassandra;
 
+import com.google.common.collect.ImmutableSet;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  This cache serves two purposes.
@@ -33,38 +37,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DataCache<T>
 {
-	private final Object m_lock = new Object();
+	private Map<T, T> m_internalMap;
 
-	private final LinkItem<T> m_front = new LinkItem<T>(null);
-	private final LinkItem<T> m_back = new LinkItem<T>(null);
-
-	private int m_maxSize;
-
-
-	private class LinkItem<T>
+	public DataCache(final int cacheSize)
 	{
-		private LinkItem<T> m_prev;
-		private LinkItem<T> m_next;
-
-		private final T m_data;
-
-		public LinkItem(T data)
-		{
-			m_data = data;
-		}
-	}
-
-	//Using a ConcurrentHashMap so we can use the putIfAbsent method.
-	private ConcurrentHashMap<T, LinkItem<T>> m_hashMap;
-
-	public DataCache(int cacheSize)
-	{
-		//m_cache = new InternalCache(cacheSize);
-		m_hashMap = new ConcurrentHashMap<>();
-		m_maxSize = cacheSize;
-
-		m_front.m_next = m_back;
-		m_back.m_prev = m_front;
+		m_internalMap = Collections.synchronizedMap(new LinkedHashMap<T, T>(cacheSize, 1f, true) {
+					@Override
+					protected boolean removeEldestEntry(Map.Entry<T, T> eldest)
+					{
+						return size() > cacheSize;
+					}
+				});
 	}
 
 	/**
@@ -76,72 +59,25 @@ public class DataCache<T>
 	 */
 	public T cacheItem(T cacheData)
 	{
-		LinkItem<T> mappedItem = null;
-
-		synchronized (m_lock)
-		{
-			LinkItem<T> li = new LinkItem<T>(cacheData);
-			mappedItem = m_hashMap.putIfAbsent(cacheData, li);
-
-			if (mappedItem != null)
-			{
-				//moves item to top of list
-				remove(mappedItem);
-				addItem(mappedItem);
-			}
-			else
-				addItem(li);
-
-			if (m_hashMap.size() > m_maxSize)
-			{
-				LinkItem<T> last = m_back.m_prev;
-				remove(last);
-
-				m_hashMap.remove(last.m_data);
-			}
-		}
-
-		return (mappedItem == null ? null : mappedItem.m_data);
+		return m_internalMap.put(cacheData, cacheData);
 	}
 
-	private void remove(LinkItem<T> li)
-	{
-		li.m_prev.m_next = li.m_next;
-		li.m_next.m_prev = li.m_prev;
-	}
-
-	private void addItem(LinkItem<T> li)
-	{
-		li.m_prev = m_front;
-		li.m_next = m_front.m_next;
-
-		m_front.m_next = li;
-		li.m_next.m_prev = li;
-	}
 
 	public Set<T> getCachedKeys()
 	{
-		return (m_hashMap.keySet());
+		synchronized (m_internalMap)
+		{
+			return ImmutableSet.copyOf(m_internalMap.keySet());
+		}
 	}
 
 	public void removeKey(T key)
 	{
-		synchronized (m_lock)
-		{
-			LinkItem<T> li = m_hashMap.remove(key);
-			if (li != null)
-				remove(li);
-		}
+		m_internalMap.remove(key);
 	}
 
 	public void clear()
 	{
-		synchronized (m_lock)
-		{
-			m_front.m_next = m_back;
-			m_back.m_prev = m_front;
-
-			m_hashMap.clear();
-		}
+		m_internalMap.clear();
 	}
 }

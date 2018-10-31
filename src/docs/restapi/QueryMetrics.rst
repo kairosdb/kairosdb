@@ -128,7 +128,7 @@ Body
 Query Properties
 ----------------
 
-You must specify either *start_absolute* or *start_relative* but not both. Similarly, you may specify either *end_absolute* or *end_relative* but not both. If either end time is not specified the current date and time is assumed.
+You must specify either *start_absolute* or *start_relative* but not both. Similarly, you may specify either *end_absolute* or *end_relative* but not both. If either end time is not specified the current date and time is assumed. Both the start and end timestamps are inclusive, meaning that data points falling on either the start or end timestamp will be included in the query response.
 
 *start_absolute* 
 The time in milliseconds.

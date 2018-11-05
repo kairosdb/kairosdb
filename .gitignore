@@ -17,3 +17,6 @@ lib/ivy/test/*
 .DS_Store
 myivysettings.xml
 tablesaw.properties
+queue
+big_array
+kairosdb_guid.properties

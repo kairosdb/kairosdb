@@ -4,9 +4,12 @@ import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Host;
+import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.util.KDataOutput;
 
@@ -15,9 +18,11 @@ import javax.inject.Named;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER;
@@ -154,16 +159,17 @@ public class CQLBatch
 
 	public void submitBatch()
 	{
+		List<ResultSetFuture> asyncResultSetFutures = new ArrayList<>();
 		if (metricNamesBatch.size() != 0)
 		{
-			m_clusterConnection.executeAsync(metricNamesBatch);
+			asyncResultSetFutures.add(m_clusterConnection.executeAsync(metricNamesBatch));
 			m_batchStats.addNameBatch(metricNamesBatch.size());
 		}
 
 		if (rowKeyBatch.size() != 0)
 		{
 			//rowKeyBatch.enableTracing();
-			m_clusterConnection.executeAsync(rowKeyBatch);
+			asyncResultSetFutures.add(m_clusterConnection.executeAsync(rowKeyBatch));
 			m_batchStats.addRowKeyBatch(rowKeyBatch.size());
 		}
 
@@ -178,11 +184,29 @@ public class CQLBatch
 			}
 		}
 
+		try
+		{
+			Futures.getUnchecked(Futures.allAsList(asyncResultSetFutures));
+		}
+		catch (UncheckedExecutionException e)
+		{
+			if (e.getCause() instanceof RuntimeException)
+			{
+				throw (RuntimeException)e.getCause();
+			}
+			else
+			{
+				throw e;
+			}
+		}
+
 		//Catch all in case of a load balancing problem
 		if (dataPointBatch.size() != 0)
 		{
 			m_clusterConnection.execute(dataPointBatch);
 			m_batchStats.addDatapointsBatch(dataPointBatch.size());
 		}
+
+
 	}
 }

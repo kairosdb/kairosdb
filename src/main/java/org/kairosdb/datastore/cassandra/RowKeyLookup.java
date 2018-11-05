@@ -1,6 +1,9 @@
 package org.kairosdb.datastore.cassandra;
 
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Statement;
+import com.google.common.base.Function;
 import com.google.common.collect.SetMultimap;
 
 import java.util.List;
@@ -21,7 +24,27 @@ interface RowKeyLookup
 	List<Statement> createDeleteStatements(DataPointsRowKey rowKey);
 
 	/**
-	 * Create the statements to retrieve all row key entries for the given metric name, timestamp, and tags.
+	 * Create the processor to provide the statements for row keys and transform the resulting ResultSets into a single
+	 * ResultSet for the given metric name, row key timestamp, and tag filter.
 	 */
-	List<Statement> createQueryStatements(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags);
+	RowKeyResultSetProcessor createRowKeyQueryProcessor(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags);
+
+	/**
+	 * Provides Statements for querying row keys for a given metric, timestamp, and tag filter, and a processor
+	 * to convert the returned list of ResultSet futures into a single ResultSet future.
+	 *
+	 * Applying this processor as a function converts a list of ResultSets as returned from executing the Statements
+	 * from {@link #getQueryStatements()} into a single ResultSet. Note that the List of ResultSets passed into
+	 * the {@link #apply} method should be passed in in the same order as the Statements used to create them from
+	 * the {@link #getQueryStatements()} method.
+	 */
+	interface RowKeyResultSetProcessor extends Function<List<ResultSet>, ResultSet>
+	{
+
+		/**
+		 * Returns the statements to retrieve all row key entries for the given metric name, timestamp, and tags.
+		 */
+		List<Statement> getQueryStatements();
+
+	}
 }

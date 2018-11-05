@@ -85,11 +85,12 @@ public class ClusterConnection
 			"  table_name text, \n" +
 			"  row_time timestamp,\n" +
 			"  single_tag_pair_hash int,\n" +
+			"  tag_collection_hash int,\n" +
 			"  data_type text,\n" +
 			"  tags frozen<map<text, text>>,\n" +
 			"  mtime timeuuid static,\n" +
 			"  value text,\n" +
-			"  PRIMARY KEY ((metric, table_name, row_time, single_tag_pair_hash), data_type, tags)\n" +
+			"  PRIMARY KEY ((metric, table_name, row_time, single_tag_pair_hash), data_type, tag_collection_hash, tags)\n" +
 			")";
 
 	public static final String STRING_INDEX_TABLE = "" +
@@ -123,7 +124,7 @@ public class ClusterConnection
 			"(metric, table_name, row_time, data_type, tags, mtime) VALUES (?, 'data_points', ?, ?, ?, now()) USING TTL ?"; // AND TIMESTAMP ?";
 
 	public static final String TAG_INDEXED_ROW_KEY_INSERT = "INSERT INTO tag_indexed_row_keys " +
-			"(metric, table_name, row_time, data_type, single_tag_pair_hash, tags, mtime) VALUES (?, 'data_points', ?, ?, ?, ?, now()) USING TTL ?";
+			"(metric, table_name, row_time, data_type, single_tag_pair_hash, tag_collection_hash, tags, mtime) VALUES (?, 'data_points', ?, ?, ?, ?, ?, now()) USING TTL ?";
 
 	public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
 			"(key, column1, value) VALUES (?, ?, 0x00)";
@@ -175,8 +176,9 @@ public class ClusterConnection
 	public static final String ROW_KEY_QUERY = "SELECT row_time, data_type, tags " +
 			"FROM row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ?";
 
-	public static final String TAG_INDEXED_ROW_KEY_QUERY = "SELECT row_time, data_type, tags " +
-			"FROM tag_indexed_row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ? and single_tag_pair_hash = ?";
+	public static final String TAG_INDEXED_ROW_KEY_QUERY = "SELECT row_time, data_type, tags, tag_collection_hash " +
+			"FROM tag_indexed_row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ? and single_tag_pair_hash = ? " +
+			"ORDER BY data_type, tag_collection_hash";
 
 	public static final String ROW_KEY_TAG_QUERY_WITH_TYPE = "SELECT row_time, data_type, tags " +
 			"FROM row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ? AND data_type IN %s"; //Use ValueSequence when setting this
@@ -190,7 +192,7 @@ public class ClusterConnection
 
 	public static final String TAG_INDEXED_ROW_KEY_DELETE = "DELETE FROM tag_indexed_row_keys WHERE metric = ? " +
 			"AND table_name = 'data_points' AND row_time = ? AND data_type = ? " +
-			"AND single_tag_pair_hash = ? AND tags = ?";
+			"AND single_tag_pair_hash = ? AND tag_collection_hash = ? AND tags = ?";
 
 	//Service index queries
 	public static final String SERVICE_INDEX_INSERT = "INSERT INTO service_index " +

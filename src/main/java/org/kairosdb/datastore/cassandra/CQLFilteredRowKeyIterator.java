@@ -70,7 +70,7 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 
 		m_metricName = metricName;
 		m_clusterName = cluster.getClusterName();
-		List<ResultSetFuture> futures = new ArrayList<>();
+		List<ListenableFuture<ResultSet>> futures = new ArrayList<>();
 		m_returnedKeys = new HashSet<>();
 		long timerStart = System.currentTimeMillis();
 
@@ -114,11 +114,17 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 		List<Long> queryKeyList = createQueryKeyList(cluster, metricName, startTime, endTime);
 		for (Long keyTime : queryKeyList)
 		{
-			for (Statement rowKeyQueryStmt : rowKeyLookup.createQueryStatements(metricName, keyTime, filterTags))
+			RowKeyLookup.RowKeyResultSetProcessor rowKeyResultSetProcessor = rowKeyLookup.createRowKeyQueryProcessor(metricName, keyTime, filterTags);
+			List<Statement> queryStatements = rowKeyResultSetProcessor.getQueryStatements();
+			List<ListenableFuture<ResultSet>> resultSetForKeyTimeFutures = new ArrayList<>(queryStatements.size());
+			for (Statement rowKeyQueryStmt : queryStatements)
 			{
 				rowKeyQueryStmt.setConsistencyLevel(cluster.getReadConsistencyLevel());
-				futures.add(cluster.executeAsync(rowKeyQueryStmt));
+				resultSetForKeyTimeFutures.add(cluster.executeAsync(rowKeyQueryStmt));
 			}
+			ListenableFuture<ResultSet> keyTimeQueryResultSetFuture =
+					Futures.transform(Futures.allAsList(resultSetForKeyTimeFutures), rowKeyResultSetProcessor);
+			futures.add(keyTimeQueryResultSetFuture);
 		}
 
 		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);

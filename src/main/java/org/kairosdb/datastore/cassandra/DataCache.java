@@ -59,7 +59,6 @@ public class DataCache<T>
 
 	public DataCache(int cacheSize)
 	{
-		//m_cache = new InternalCache(cacheSize);
 		m_hashMap = new ConcurrentHashMap<>();
 		m_maxSize = cacheSize;
 
@@ -69,7 +68,13 @@ public class DataCache<T>
 
 	/**
 	 returns null if item was not in cache.  If the return is not null the item
-	 from the cache is returned.
+	 from the cache is returned, this does not remove the item from cache
+
+	 For example I have two copies of the string "Bob" that are different objects
+	 in variables b1 and b2.  If I stick b1 into the cache I'll get a null back as
+	 b1 was the first one in.  Then if I stick b2 into the cache I'll get b1 back -
+	 but this is the important bit b1 is still the one in the cache but it got bumped
+	 up in the usages so it wont age out.
 
 	 @param cacheData
 	 @return

@@ -1,0 +1,24 @@
+{
+	"start_absolute": 784041330,
+	"end_absolute": 788879730,
+	"metrics": [
+		{
+			"name": "abc.123",
+			"start_absolute": 784041331,
+			"end_absolute": 788879731,
+			"aggregators":[
+				{
+					"name":"sum",
+					"sampling": {
+						"value": 1,
+						"unit": "milliseconds"
+					}
+				}
+			],
+			"tags": {
+				"host": "foo",
+				"type": "bar"
+			}
+		}
+	]
+}

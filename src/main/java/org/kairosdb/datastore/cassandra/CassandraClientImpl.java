@@ -3,11 +3,14 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.EC2AwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.EC2MultiRegionAddressTranslator;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+
 /**
  Created by bhawkins on 3/4/15.
  */
@@ -16,10 +19,20 @@ public class CassandraClientImpl implements CassandraClient
 	private final Cluster m_cluster;
 	private String m_keyspace;
 
+	public static final String CASSANDRA_READ_TIMEOUT = "kairosdb.datastore.cassandra.read.timeout";
+
+	@javax.inject.Inject
+	@Named(CASSANDRA_READ_TIMEOUT)
+	// We set the default timeout as configured by the upstream driver.
+	private int m_cassandraReadTimeout = 12000;
+
+
 	@Inject
 	public CassandraClientImpl(CassandraConfiguration config)
 	{
-		final Cluster.Builder builder = new Cluster.Builder();
+		final Cluster.Builder builder = new Cluster.Builder().withSocketOptions(
+				new SocketOptions().setReadTimeoutMillis(m_cassandraReadTimeout));
+
 		if(config.getAddressTranslator().equals(CassandraConfiguration.ADDRESS_TRANSLATOR_TYPE.EC2)) {
 			builder.withAddressTranslator(new EC2MultiRegionAddressTranslator());
 			// This should work, seems the EC2AwareRoundRobinPolicy uses REMOTE for not being in the SAME az

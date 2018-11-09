@@ -660,7 +660,7 @@ public class CassandraDatastore implements Datastore {
                     span.setTag("max_row_keys", Boolean.TRUE);
                 }
 
-                throw new MaxRowKeysForQueryExceededException(String.format("Too many rows too scan: metric=%s limit=%d", metricName, limit));
+                throw new MaxRowKeysForQueryExceededException(String.format("Too many rows to scan: metric=%s limit=%d", metricName, limit));
             }
 
             DataPointsRowKey key = keySerializer.fromByteBuffer(r.getBytes("column1"));
@@ -826,6 +826,11 @@ public class CassandraDatastore implements Datastore {
                                              final long endTime,
                                              final SetMultimap<String, String> filterTags,
                                              final int limit) {
+        Span span = GlobalTracer.get().activeSpan();
+        if (span != null) {
+            span.setTag("index_name", "row_key_split_index");
+        }
+
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 
         final BoundStatement bs = statement.bind();
@@ -881,6 +886,11 @@ public class CassandraDatastore implements Datastore {
                                         final long endTime,
                                         final SetMultimap<String, String> filterTags,
                                         final int limit) {
+        Span span = GlobalTracer.get().activeSpan();
+        if (span != null) {
+            span.setTag("index_name", "row_key_index");
+        }
+
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 
         final BoundStatement bs = statement.bind();

@@ -82,20 +82,30 @@ public class MetricsResource implements KairosMetricReporter {
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
 	private final QueryParser queryParser;
 
-	//Used for parsing incomming metrices
+	// Used for parsing incoming metrices
 	private final Gson gson;
 
-	//These two are used to track rate of ingestion
+	// These two are used to track rate of ingestion
 	private final AtomicInteger m_ingestedDataPoints = new AtomicInteger();
 	private final AtomicInteger m_ingestTime = new AtomicInteger();
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
 	public static final String READ_TIMEOUT = "kairosdb.datastore.datapoints.read.timeout";
+	public static final String ARTIFACT_VERSION = "kairosdb.datastore.artifact.version";
+	public static final String DEPLOYMENT_ID = "kairosdb.datastore.deployment.id";
 
 	@Inject
 	@Named(READ_TIMEOUT)
 	private int m_readTimeout = 30000;
+
+	@Inject
+	@Named(ARTIFACT_VERSION)
+	private String m_artifactVersion = "2.0-z";
+
+	@Inject
+	@Named(DEPLOYMENT_ID)
+	private String m_deploymentId = "2.0-z-d1";
 
 	@Inject
 	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
@@ -491,6 +501,7 @@ public class MetricsResource implements KairosMetricReporter {
 		} catch (UncheckedTimeoutException e) {
 			logger.error("Request to read datapoints timed out at " + m_readTimeout + " milli seconds", e);
 			Tags.ERROR.set(span, Boolean.TRUE);
+			span.setTag("query_timeout", true);
 			span.log(e.getMessage());
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		} catch (Exception e) {
@@ -724,6 +735,8 @@ public class MetricsResource implements KairosMetricReporter {
 			spanBuild.asChildOf(spanContext);
 
 		Span span = spanBuild.start();
+		span.setTag("artifact_version", m_artifactVersion);
+		span.setTag("deployment_id", m_deploymentId);
 		return span;
 	}
 }

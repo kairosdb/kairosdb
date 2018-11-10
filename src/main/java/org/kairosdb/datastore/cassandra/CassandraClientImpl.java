@@ -9,6 +9,7 @@ import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.ProtocolOptions;
 import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SocketOptions;
 import com.datastax.driver.core.TimestampGenerator;
 import com.datastax.driver.core.policies.*;
 import com.google.inject.Inject;
@@ -72,7 +73,8 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		m_writeLoadBalancingPolicy = new TokenAwarePolicy((m_configuration.getLocalDatacenter() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_configuration.getLocalDatacenter()).build(), false);
 		TokenAwarePolicy readLoadBalancePolicy = new TokenAwarePolicy((m_configuration.getLocalDatacenter() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_configuration.getLocalDatacenter()).build(), true);
 		final Cluster.Builder builder = new Cluster.Builder()
-				//.withProtocolVersion(ProtocolVersion.V3)
+				.withSocketOptions(new SocketOptions().setConnectTimeoutMillis(m_configuration.getConnectionTimeout())
+						.setReadTimeoutMillis(m_configuration.getReadTimeout()))
 				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL,
 						m_configuration.getLocalCoreConnections(), m_configuration.getLocalMaxConnections())
 						.setConnectionsPerHost(HostDistance.REMOTE,

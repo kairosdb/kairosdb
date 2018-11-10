@@ -53,6 +53,9 @@ public class CassandraConfiguration
 
 	public static final String CREATE_SCHEMA_PROPERTY = "kairosdb.datastore.cassandra.create_schema";
 
+	public static final String CONNECTION_TIMEOUT_PROPERTY = "kairosdb.datastore.cassandra.connection_timeout";
+	public static final String READ_TIMEOUT_PROPERTY = "kairosdb.datastore.cassandra.read_timeout";
+
 
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
@@ -155,6 +158,14 @@ public class CassandraConfiguration
 	@Inject
 	@Named(CREATE_SCHEMA_PROPERTY)
 	private boolean m_createSchema;
+
+	@Inject
+	@Named(CONNECTION_TIMEOUT_PROPERTY)
+	private int m_connectionTimeout = 5000;
+
+	@Inject
+	@Named(READ_TIMEOUT_PROPERTY)
+	private int m_readTimeout = 12000;
 
 	public CassandraConfiguration()
 	{
@@ -318,5 +329,15 @@ public class CassandraConfiguration
 	public boolean isCreateSchema()
 	{
 		return m_createSchema;
+	}
+
+	public int getConnectionTimeout()
+	{
+		return m_connectionTimeout;
+	}
+
+	public int getReadTimeout()
+	{
+		return m_readTimeout;
 	}
 }

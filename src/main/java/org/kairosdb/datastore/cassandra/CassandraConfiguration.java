@@ -51,6 +51,9 @@ public class CassandraConfiguration
 	
 	public static final String LOCAL_DATACENTER = "kairosdb.datastore.cassandra.local_datacenter";
 
+	public static final String CREATE_SCHEMA_PROPERTY = "kairosdb.datastore.cassandra.create_schema";
+
+
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL)
 	private ConsistencyLevel m_dataWriteLevel = ConsistencyLevel.QUORUM;
@@ -148,6 +151,10 @@ public class CassandraConfiguration
 	@Inject(optional = true)
 	@Named(LOCAL_DATACENTER)
 	private String m_localDatacenter;
+
+	@Inject
+	@Named(CREATE_SCHEMA_PROPERTY)
+	private boolean m_createSchema;
 
 	public CassandraConfiguration()
 	{
@@ -306,5 +313,10 @@ public class CassandraConfiguration
 	public String getReplication()
 	{
 		return m_replication;
+	}
+
+	public boolean isCreateSchema()
+	{
+		return m_createSchema;
 	}
 }

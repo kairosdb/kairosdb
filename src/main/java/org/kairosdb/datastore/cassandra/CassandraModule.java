@@ -125,11 +125,11 @@ public class CassandraModule extends AbstractModule
 
 	@Provides
 	@Singleton
-	Schema getCassandraSchema(CassandraClient cassandraClient)
+	Schema getCassandraSchema(CassandraClient cassandraClient, CassandraConfiguration configuration)
 	{
 		try
 		{
-			return new Schema(cassandraClient);
+			return new Schema(cassandraClient, configuration.isCreateSchema());
 		}
 		catch (Exception e)
 		{

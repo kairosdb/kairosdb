@@ -219,9 +219,10 @@ public class Schema
 	private final Session m_session;
 
 
-	public Schema(CassandraClient cassandraClient)
+	public Schema(CassandraClient cassandraClient, boolean createSchema)
 	{
-		setupSchema(cassandraClient);
+		if (createSchema)
+			setupSchema(cassandraClient);
 
 		m_session = cassandraClient.getKeyspaceSession();
 

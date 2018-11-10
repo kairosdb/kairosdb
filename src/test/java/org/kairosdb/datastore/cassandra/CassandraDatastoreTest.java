@@ -264,7 +264,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		configuration.setHostList(cassandraHost);
 		CassandraClient client = new CassandraClientImpl(configuration);
 		((CassandraClientImpl) client).init();
-		m_schema = new Schema(client);
+		m_schema = new Schema(client, true);
 		Session session = m_schema.getSession();
 		BatchStats batchStats = new BatchStats();
 		DataCache<DataPointsRowKey> rowKeyCache = new DataCache<>(1024);

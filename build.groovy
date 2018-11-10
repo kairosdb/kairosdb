@@ -82,8 +82,8 @@ jc = jp.getCompileRule()
 ivyDefaultResolve = ivy.getResolveRule("default")
 jc.addDepend(ivyDefaultResolve)
 
-jc.getDefinition().set("target", "1.8")
-jc.getDefinition().set("source", "1.8")
+jc.getDefinition().set("target", "11")
+jc.getDefinition().set("source", "11")
 jc.getDefinition().set("encoding", "UTF8")
 jc.getDefinition().set("deprecation")
 jc.getDefinition().set("unchecked")
@@ -95,7 +95,7 @@ def configurePomRule(PomRule pomRule)
 {
 	pomRule.addDepend("ivy.xml")
 			.addDepend("ivysettings.xml")
-			.setJavaVersion("1.8")
+			.setJavaVersion("11")
 			.addLicense("The Apache Software License, Version 2.0", "http://www.apache.org/licenses/LICENSE-2.0.txt", "repo")
 			.addDeveloper("brianhks", "Brian", "brianhks1+kairos@gmail.com")
 			.addDeveloper("jeff", "Jeff", "jeff.sabin+kairos@gmail.com")
@@ -304,7 +304,7 @@ def doRPM(Rule rule)
 			}
 
 	if ("on".equals(rule.getProperty("dependency")))
-		rpmBuilder.addDependencyMore("jre", "1.8")
+		rpmBuilder.addDependencyMore("jre", "11")
 
 	rpmBuilder.setPostInstallScript(new File("src/scripts/install/post_install.sh"))
 	rpmBuilder.setPreUninstallScript(new File("src/scripts/install/pre_uninstall.sh"))

@@ -108,6 +108,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 		final Object message = msgevent.getMessage();
 		if (message instanceof List)
 		{
+			@SuppressWarnings("unchecked")
 			List<String> command = (List<String>) message;
 
 			String cmd = "";

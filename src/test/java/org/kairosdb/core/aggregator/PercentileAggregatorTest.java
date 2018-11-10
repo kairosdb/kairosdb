@@ -88,7 +88,7 @@ public class PercentileAggregatorTest
 		double[] doubleValues = new double[values.length];
 		for (int i = 0; i < values.length; i++)
 		{
-			doubleValues[i] = new Double(values[i].toString());
+			doubleValues[i] = Double.parseDouble(values[i].toString());
 		}
 		return getActualPercentile(percentile, doubleValues);
 	}

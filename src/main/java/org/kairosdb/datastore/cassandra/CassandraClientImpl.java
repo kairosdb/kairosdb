@@ -10,11 +10,7 @@ import com.datastax.driver.core.ProtocolOptions;
 import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.TimestampGenerator;
-import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
-import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
-import com.datastax.driver.core.policies.RoundRobinPolicy;
-import com.datastax.driver.core.policies.TokenAwarePolicy;
+import com.datastax.driver.core.policies.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPointSet;
@@ -37,10 +33,11 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraClientImpl.class);
 
-	private final Cluster m_cluster;
+	private Cluster m_cluster;
 	private final String m_keyspace;
 	private final String m_replication;
-	private LoadBalancingPolicy m_loadBalancingPolicy;
+	private LoadBalancingPolicy m_writeLoadBalancingPolicy;
+	private final CassandraConfiguration m_configuration;
 
 	@Inject
 	@Named("HOSTNAME")
@@ -52,31 +49,42 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 	@Inject
 	private DoubleDataPointFactory m_doubleDataPointFactory = new DoubleDataPointFactoryImpl();
 
+	@Inject
+	private RetryPolicy m_retryPolicy = new KairosRetryPolicy(1);
+
 	@Inject(optional=true)
 	private AuthProvider m_authProvider = null;
 
 	@Inject
 	public CassandraClientImpl(CassandraConfiguration configuration)
 	{
+		m_configuration = configuration;
+		m_keyspace = configuration.getKeyspaceName();
+		m_replication = configuration.getReplication();
+	}
+
+	public void init()
+	{
 		//Passing shuffleReplicas = false so we can properly batch data to
 		//instances.
 		// When connecting to Cassandra notes in different datacenters, the local datacenter should be provided.
 		// Not doing this will select the datacenter from the first connected Cassandra node, which is not guaranteed to be the correct one.
-		m_loadBalancingPolicy = new TokenAwarePolicy((configuration.getLocalDatacenter() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(configuration.getLocalDatacenter()).build(), false);
+		m_writeLoadBalancingPolicy = new TokenAwarePolicy((m_configuration.getLocalDatacenter() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_configuration.getLocalDatacenter()).build(), false);
+		TokenAwarePolicy readLoadBalancePolicy = new TokenAwarePolicy((m_configuration.getLocalDatacenter() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_configuration.getLocalDatacenter()).build(), true);
 		final Cluster.Builder builder = new Cluster.Builder()
 				//.withProtocolVersion(ProtocolVersion.V3)
 				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL,
-						configuration.getLocalCoreConnections(), configuration.getLocalMaxConnections())
+						m_configuration.getLocalCoreConnections(), m_configuration.getLocalMaxConnections())
 						.setConnectionsPerHost(HostDistance.REMOTE,
-						configuration.getRemoteCoreConnections(), configuration.getRemoteMaxConnections())
-					.setMaxRequestsPerConnection(HostDistance.LOCAL, configuration.getLocalMaxReqPerConn())
-					.setMaxRequestsPerConnection(HostDistance.REMOTE, configuration.getRemoteMaxReqPerConn())
-					.setMaxQueueSize(configuration.getMaxQueueSize()))
+								m_configuration.getRemoteCoreConnections(), m_configuration.getRemoteMaxConnections())
+					.setMaxRequestsPerConnection(HostDistance.LOCAL, m_configuration.getLocalMaxReqPerConn())
+					.setMaxRequestsPerConnection(HostDistance.REMOTE, m_configuration.getRemoteMaxReqPerConn())
+					.setMaxQueueSize(m_configuration.getMaxQueueSize()))
 				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 5 * 1000))
-				.withLoadBalancingPolicy(m_loadBalancingPolicy)
+				.withLoadBalancingPolicy(new SelectiveLoadBalancingPolicy(readLoadBalancePolicy, m_writeLoadBalancingPolicy))
 				.withCompression(ProtocolOptions.Compression.LZ4)
 				.withoutJMXReporting()
-				.withQueryOptions(new QueryOptions().setConsistencyLevel(configuration.getDataReadLevel()))
+				.withQueryOptions(new QueryOptions().setConsistencyLevel(m_configuration.getDataReadLevel()))
 				.withTimestampGenerator(new TimestampGenerator() //todo need to remove this and put it only on the datapoints call
 				{
 					@Override
@@ -84,37 +92,37 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 					{
 						return System.currentTimeMillis();
 					}
-				});
+				})
+				.withRetryPolicy(m_retryPolicy);
 
 		if (m_authProvider != null)
 		{
 			builder.withAuthProvider(m_authProvider);
 		}
-		else if (configuration.getAuthUserName() != null && configuration.getAuthPassword() != null)
+		else if (m_configuration.getAuthUserName() != null && m_configuration.getAuthPassword() != null)
 		{
-			builder.withCredentials(configuration.getAuthUserName(),
-					configuration.getAuthPassword());
+			builder.withCredentials(m_configuration.getAuthUserName(),
+					m_configuration.getAuthPassword());
 		}
 
 
-		for (Map.Entry<String, Integer> hostPort : configuration.getHostList().entrySet())
+		for (Map.Entry<String, Integer> hostPort : m_configuration.getHostList().entrySet())
 		{
 			logger.info("Connecting to "+hostPort.getKey()+":"+hostPort.getValue());
 			builder.addContactPoint(hostPort.getKey())
 					.withPort(hostPort.getValue());
 		}
 
-		if (configuration.isUseSsl())
+		if (m_configuration.isUseSsl())
 			builder.withSSL();
 
 		m_cluster = builder.build();
-		m_keyspace = configuration.getKeyspaceName();
-		m_replication = configuration.getReplication();
+
 	}
 
-	public LoadBalancingPolicy getLoadBalancingPolicy()
+	public LoadBalancingPolicy getWriteLoadBalancingPolicy()
 	{
-		return m_loadBalancingPolicy;
+		return m_writeLoadBalancingPolicy;
 	}
 
 	@Override
@@ -171,6 +179,9 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		String prefix = "kairosdb.datastore.cassandra.client";
 		List<DataPointSet> ret = new ArrayList<>();
 		Metrics metrics = m_cluster.getMetrics();
+
+		ret.add(newDataPointSet(prefix, "connection_errors", now,
+				metrics.getErrorMetrics().getConnectionErrors().getCount()));
 
 		ret.add(newDataPointSet(prefix, "blocking_executor_queue_depth", now,
 				metrics.getBlockingExecutorQueueDepth().getValue()));

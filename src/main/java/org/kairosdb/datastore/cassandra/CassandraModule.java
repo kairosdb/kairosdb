@@ -19,11 +19,8 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Scopes;
-import com.google.inject.Singleton;
-import com.google.inject.TypeLiteral;
+import com.datastax.driver.core.policies.RetryPolicy;
+import com.google.inject.*;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
 import org.kairosdb.core.DataPoint;
@@ -86,6 +83,7 @@ public class CassandraModule extends AbstractModule
 		//bind(CassandraClient.class).to(CassandraClientImpl.class);
 		bind(CassandraClientImpl.class).in(Scopes.SINGLETON);
 		bind(BatchStats.class).in(Scopes.SINGLETON);
+		bind(RetryPolicy.class).to(KairosRetryPolicy.class);
 
 		bind(new TypeLiteral<Map<String, String>>(){}).annotatedWith(Names.named(CASSANDRA_AUTH_MAP))
 				.toInstance(m_authMap);
@@ -110,11 +108,13 @@ public class CassandraModule extends AbstractModule
 
 	@Provides
 	@Singleton
-	CassandraClient getCassandraClient(CassandraConfiguration configuration)
+	CassandraClient getCassandraClient(CassandraConfiguration configuration, Injector injector)
 	{
 		try
 		{
-			return new CassandraClientImpl(configuration);
+			CassandraClientImpl client = injector.getInstance(CassandraClientImpl.class);
+			client.init();
+			return client;
 		}
 		catch (Exception e)
 		{
@@ -142,7 +142,7 @@ public class CassandraModule extends AbstractModule
 	@Singleton
 	LoadBalancingPolicy getLoadBalancingPolicy(CassandraClient cassandraClient)
 	{
-		return cassandraClient.getLoadBalancingPolicy();
+		return cassandraClient.getWriteLoadBalancingPolicy();
 	}
 
 	@Provides

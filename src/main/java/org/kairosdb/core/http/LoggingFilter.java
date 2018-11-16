@@ -16,11 +16,13 @@
 
 package org.kairosdb.core.http;
 
+import org.eclipse.jetty.http.gzip.CompressedResponseWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 
 
@@ -46,6 +48,17 @@ public class LoggingFilter implements Filter
 		}
 
 		filterChain.doFilter(servletRequest, servletResponse);
+		if (((CompressedResponseWrapper) servletResponse).getStatus() ==
+				Response.Status.SERVICE_UNAVAILABLE.getStatusCode())
+			log.warn("Rejected response for Request" + getRequestString(servletRequest));
+	}
+
+	private String getRequestString(ServletRequest servletRequest)
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append(servletRequest.getRemoteAddr()).append(" - ");
+		sb.append(((HttpServletRequest)servletRequest).getRequestURI());
+		return sb.toString();
 	}
 
 	@Override

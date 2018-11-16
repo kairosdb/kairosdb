@@ -39,6 +39,16 @@ public class QueryQueuingManager implements KairosMetricReporter
 	public static final String QUERY_COLLISIONS_METRIC_NAME = "kairosdb.datastore.query_collisions";
 	public static final String QUERY_AVAILABLE_PERMITS = "kairosdb.datastore.available_permits";
 	public static final String QUERY_QUEUE_LENGTH = "kairosdb.datastore.query_queue_length";
+	public static final String ARTIFACT_VERSION = "kairosdb.datastore.artifact.version";
+	public static final String DEPLOYMENT_ID = "kairosdb.datastore.deployment.id";
+
+	@javax.inject.Inject
+	@Named(ARTIFACT_VERSION)
+	private String m_artifactVersion = "2.0-z";
+
+	@javax.inject.Inject
+	@Named(DEPLOYMENT_ID)
+	private String m_deploymentId = "2.0-z-d1";
 
 	private final Map<String, Thread> runningQueries = new HashMap<String, Thread>();
 	private final ReentrantLock lock = new ReentrantLock();
@@ -129,11 +139,17 @@ public class QueryQueuingManager implements KairosMetricReporter
 		DataPointSet queueLengthSet = new DataPointSet(QUERY_QUEUE_LENGTH);
 
 		collisionSet.addTag("host", hostname);
+		collisionSet.addTag("artifact_version", m_artifactVersion);
+		collisionSet.addTag("deployment_id", m_deploymentId);
 		collisionSet.addDataPoint(new LongDataPoint(System.currentTimeMillis(), collisions.getAndSet(0)));
 
+		permitSet.addTag("artifact_version", m_artifactVersion);
+		permitSet.addTag("deployment_id", m_deploymentId);
 		permitSet.addTag("host", hostname);
 		permitSet.addDataPoint(new LongDataPoint(System.currentTimeMillis(), this.getAvailableThreads()));
 
+		queueLengthSet.addTag("artifact_version", m_artifactVersion);
+		queueLengthSet.addTag("deployment_id", m_deploymentId);
 		queueLengthSet.addTag("host", hostname);
 		queueLengthSet.addDataPoint(new LongDataPoint(System.currentTimeMillis(), this.getQueryWaitingCount()));
 

@@ -19,6 +19,7 @@ package org.kairosdb.core.http;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.inject.servlet.GuiceFilter;
+import org.eclipse.jetty.jaas.JAASLoginService;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.HashLoginService;
@@ -273,4 +274,12 @@ public class WebServer implements KairosDBService
 		return csh;
 
 	}
+
+	private static SecurityHandler ldapAuth(String username, String password, String realm)
+    {
+        JAASLoginService l = new JAASLoginService();
+
+        ConstraintSecurityHandler csh = new ConstraintSecurityHandler();
+        return csh;
+    }
 }

@@ -197,14 +197,11 @@ public class MetricsResource implements KairosMetricReporter
 	static void checkServerTypeStatic(EnumSet<ServerType> serverType, ServerType methodServerType, String methodName, String requestType) throws InvalidServerTypeException
 	{
 		logger.debug("checkServerType() - KairosDB ServerType set to " + serverType.toString());
-
 		if (!serverType.contains(methodServerType))
 		{
 			String logtext = "Disabled request type: " + methodServerType.name() + ", " + requestType + " request via URI \"" +  methodName + "\"";
 			logger.info(logtext);
-
-			String exceptionMessage = "[{\"Forbidden\": \"" + methodServerType.toString() + " API methods are disabled on this KairosDB instance.\"}]\n";
-
+			String exceptionMessage = "{\"errors\": [\"Forbidden: " + methodServerType.toString() + " API methods are disabled on this KairosDB instance.\"]}";
 			throw new InvalidServerTypeException(exceptionMessage);
 		}
 	}

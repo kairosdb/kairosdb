@@ -960,6 +960,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		//Default to query index if no plugin was provided
 		if (ret == null)
 		{
+			List<Iterator<DataPointsRowKey>> retList = new ArrayList<>();
+
 			//todo use Iterable.concat to query multiple metrics at the same time.
 			//each filtered iterator will be combined into one and returned.
 			//one issue is that the queries are done in the constructor
@@ -967,18 +969,20 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			//hasNext call, ick
 			if (m_writeCluster.containRange(query.getStartTime(), query.getEndTime()))
 			{
-				ret = m_rowKeyFilterFactory.create(m_writeCluster, query.getName(), query.getStartTime(),
-						query.getEndTime(), query.getTags());
+				retList.add(m_rowKeyFilterFactory.create(m_writeCluster, query.getName(), query.getStartTime(),
+						query.getEndTime(), query.getTags()));
 			}
 
 			for (ClusterConnection cluster : m_readClusters)
 			{
 				if (cluster.containRange(query.getStartTime(), query.getEndTime()))
 				{
-					ret = Iterators.concat(ret, m_rowKeyFilterFactory.create(cluster, query.getName(), query.getStartTime(),
+					retList.add(m_rowKeyFilterFactory.create(cluster, query.getName(), query.getStartTime(),
 							query.getEndTime(), query.getTags()));
 				}
 			}
+
+			ret = Iterators.concat(retList.iterator());
 		}
 
 		return (ret);

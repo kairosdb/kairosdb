@@ -17,17 +17,22 @@ package org.kairosdb.core.http.rest;
 
 import ch.qos.logback.classic.Level;
 import com.google.common.base.Charsets;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.Resources;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.InvalidServerTypeException;
+import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.util.LoggingUtils;
 
+import javax.ws.rs.core.HttpHeaders;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.EnumSet;
+import java.util.zip.GZIPInputStream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -39,10 +44,9 @@ public class MetricsResourceTest extends ResourceBase
 	private static final String ADD_METRIC_URL = "http://localhost:9001/api/v1/datapoints";
 	private static final String GET_METRIC_URL = "http://localhost:9001/api/v1/datapoints/query";
 	private static final String METRIC_NAMES_URL = "http://localhost:9001/api/v1/metricnames";
-	private static final String TAG_NAMES_URL = "http://localhost:9001/api/v1/tagnames";
-	private static final String TAG_VALUES_URL = "http://localhost:9001/api/v1/tagvalues";
 	private static final String DELETE_DATAPOINTS_URL = "http://localhost:9001/api/v1/datapoints/delete";
 	private static final String DELETE_METRIC_URL = "http://localhost:9001/api/v1/metric/";
+	private static final String VERSION_URL = "http://localhost:9001/api/v1/version";
 
     @Test
 	public void testAddEmptyBody() throws Exception
@@ -153,6 +157,19 @@ public class MetricsResourceTest extends ResourceBase
 		JsonResponse response = client.get(METRIC_NAMES_URL);
 
 		assertResponse(response, 200, "{\"results\":[\"cpu\",\"memory\",\"disk\",\"network\"]}");
+	}
+
+	/**
+	 Verify that the web server will gzip the response if the Accept-Encoding header is set to "gzip".
+	 */
+	@Test
+	public void testGzippedResponse() throws IOException
+	{
+		Client client = new Client(true);
+		client.addHeader(HttpHeaders.ACCEPT_ENCODING, "gzip");
+		byte[] response = client.getAsBytes(VERSION_URL);
+
+		assertThat(decompress(response), equalTo("{\"version\": \"null null\"}\n"));
 	}
 
 	@Test
@@ -290,6 +307,14 @@ public class MetricsResourceTest extends ResourceBase
 		JsonResponse response = client.delete(DELETE_METRIC_URL + metricName);
 
 		assertResponse(response, 403, "{\"errors\": [\"Forbidden: DELETE API methods are disabled on this KairosDB instance.\"]}");
+	}
+
+	private String decompress(byte[] data) throws IOException
+	{
+		GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(data));
+		byte[] decompressedBytes = ByteStreams.toByteArray(gzipInputStream);
+		gzipInputStream.close();
+		return new String(decompressedBytes);
 	}
 
 	static void assertResponse(JsonResponse response, int expectedCode, String expectedContent)

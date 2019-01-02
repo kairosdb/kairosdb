@@ -679,10 +679,9 @@ public class MetricsResource implements KairosMetricReporter {
 		dpsRequestedCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, m_datapointsCount));
 		List<DataPointSet> ret = new ArrayList<DataPointSet>();
 
-		if (count == 0){
-			ret.add(dpsRequestedCount);
-		}else{
-			ret.add(dpsRequestedCount);
+		ret.add(dpsRequestedCount);
+
+		if (count != 0){
 			ret.add(dpsCount);
 			ret.add(dpsTime);
 		}

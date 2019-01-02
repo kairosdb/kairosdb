@@ -75,7 +75,7 @@ public class MetricsResource implements KairosMetricReporter {
 	public static final String REQUEST_TIME = "kairosdb.http.request_time";
 	public static final String INGEST_COUNT = "kairosdb.http.ingest_count";
 	public static final String INGEST_TIME = "kairosdb.http.ingest_time";
-
+	public static final String QUERY_DATAPOINTS_REQUESTED = "kairosdb.http.datapoints_requested";
 	public static final String QUERY_URL = "/datapoints/query";
 
 	private final KairosDatastore datastore;
@@ -88,6 +88,7 @@ public class MetricsResource implements KairosMetricReporter {
 	// These two are used to track rate of ingestion
 	private final AtomicInteger m_ingestedDataPoints = new AtomicInteger();
 	private final AtomicInteger m_ingestTime = new AtomicInteger();
+	private int m_datapointsCount;
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
@@ -134,6 +135,7 @@ public class MetricsResource implements KairosMetricReporter {
 
 		this.tracer = tracer;
 		limiter = new SimpleTimeLimiter(Executors.newCachedThreadPool());
+		m_datapointsCount = 0;
 	}
 
 	private ResponseBuilder setHeaders(ResponseBuilder responseBuilder) {
@@ -447,6 +449,7 @@ public class MetricsResource implements KairosMetricReporter {
 							queryMeasurementProvider.measureDistanceError(query);
 							throw e;
 						} finally {
+							m_datapointsCount = dq.getSampleSize();
 							queryMeasurementProvider.measureSpanSuccess(query);
 							queryMeasurementProvider.measureDistanceSuccess(query);
 							dq.close();
@@ -661,20 +664,27 @@ public class MetricsResource implements KairosMetricReporter {
 		int time = m_ingestTime.getAndSet(0);
 		int count = m_ingestedDataPoints.getAndSet(0);
 
-		if (count == 0)
-			return Collections.emptyList();
-
 		DataPointSet dpsCount = new DataPointSet(INGEST_COUNT);
 		DataPointSet dpsTime = new DataPointSet(INGEST_TIME);
+		DataPointSet dpsRequestedCount = new DataPointSet(QUERY_DATAPOINTS_REQUESTED);
 
 		dpsCount.addTag("host", hostName);
 		dpsTime.addTag("host", hostName);
+		dpsRequestedCount.addTag("host", hostName);
+		dpsRequestedCount.addTag("artifact_version", m_artifactVersion);
+		dpsRequestedCount.addTag("deployment_id", m_deploymentId);
 
 		dpsCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, count));
 		dpsTime.addDataPoint(m_longDataPointFactory.createDataPoint(now, time));
+		dpsRequestedCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, m_datapointsCount));
 		List<DataPointSet> ret = new ArrayList<DataPointSet>();
-		ret.add(dpsCount);
-		ret.add(dpsTime);
+
+		ret.add(dpsRequestedCount);
+
+		if (count != 0){
+			ret.add(dpsCount);
+			ret.add(dpsTime);
+		}
 
 		return ret;
 	}

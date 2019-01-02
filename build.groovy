@@ -314,7 +314,8 @@ def doRPM(Rule rule)
 
 	addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/bin", scriptsFileSet)
 
-	rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
+	//rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
+	rpmBuilder.addFile("/lib/systemd/system/kairosdb.service", new File("src/scripts/kairosdb.service"), 0644)
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.conf",
 			new File("src/main/resources/kairosdb.conf"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/logging/logback.xml",

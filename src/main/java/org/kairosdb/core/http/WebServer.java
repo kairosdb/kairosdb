@@ -202,9 +202,13 @@ public class WebServer implements KairosDBService
 			//Turn on basic auth if the user was specified
 			if (m_authUser != null)
 			{
-				servletContextHandler.setSecurityHandler(basicAuth(m_authUser, m_authPassword, "kairos"));
-				servletContextHandler.setContextPath("/");
+//				servletContextHandler.setSecurityHandler(basicAuth(m_authUser, m_authPassword, "kairos"));
+//				servletContextHandler.setContextPath("/");
 			}
+
+			servletContextHandler.setSecurityHandler(ldapAuth());
+			servletContextHandler.setContextPath("/");
+
 
 			servletContextHandler.addFilter(GuiceFilter.class, "/api/*", null);
 			servletContextHandler.addServlet(DefaultServlet.class, "/api/*");
@@ -227,10 +231,16 @@ public class WebServer implements KairosDBService
 			handlers.setHandlers(new Handler[]{gzipHandler, new DefaultHandler()}); //DefaultHandler only called if other handlers aren't called.
 			m_server.setHandler(handlers);
 
+
+			//some code for logging
+			initializeJettyRequestLogging();
+
+
 			m_server.start();
 		}
 		catch (Exception e)
 		{
+		    System.out.println(e.getMessage());
 			throw new KairosDBException(e);
 		}
 	}
@@ -292,11 +302,35 @@ public class WebServer implements KairosDBService
 
 	}
 
-	private static SecurityHandler ldapAuth(String username, String password, String realm)
-    {
-        JAASLoginService l = new JAASLoginService();
+	private static SecurityHandler ldapAuth() throws Exception
+	{
+		Constraint constraint = new Constraint();
+		constraint.setName(Constraint.__BASIC_AUTH);
+		constraint.setRoles(new String[]{Constraint.ANY_AUTH}); //authentication is all that's supported so this allows any role.
+		constraint.setAuthenticate(true);
 
-        ConstraintSecurityHandler csh = new ConstraintSecurityHandler();
+		ConstraintMapping cm = new ConstraintMapping();
+		cm.setConstraint(constraint);
+		cm.setPathSpec("/*");
+
+		ConstraintSecurityHandler csh = new ConstraintSecurityHandler();
+        JAASLoginService l = new JAASLoginService();
+        l.setLoginModuleName("ldaploginmodule");
+//		l.setLoginModuleName("basicAuth");
+        csh.setLoginService(l);
+        csh.addConstraintMapping(cm);
+        l.start();
         return csh;
     }
+
+    private void initializeJettyRequestLogging()
+	{
+		NCSARequestLog requestLog = new NCSARequestLog("log/jetty.yyyy-mm-dd.request.log");
+		requestLog.setAppend(true);
+		requestLog.setExtended(false);
+		requestLog.setLogTimeZone("GMT");
+		requestLog.setLogLatency(true);
+		requestLog.setRetainDays(90);
+		m_server.setRequestLog(requestLog);
+	}
 }

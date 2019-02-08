@@ -352,7 +352,7 @@ public class MetricsResource implements KairosMetricReporter
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
 
-			jsonResponse.begin();
+			jsonResponse.begin(null);
 
 			List<QueryMetric> queries = queryParser.parseQueryMetric(json).getQueryMetrics();
 
@@ -465,10 +465,12 @@ public class MetricsResource implements KairosMetricReporter
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
 
-			jsonResponse.begin();
+			jsonResponse.begin(json);
 
 			Query mainQuery = queryParser.parseQueryMetric(json);
 			mainQuery = m_queryPreProcessor.preProcess(mainQuery);
+
+			mainQuery.getEndAbsolute();
 
 			List<QueryMetric> queries = mainQuery.getQueryMetrics();
 

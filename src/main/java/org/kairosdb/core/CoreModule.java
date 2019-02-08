@@ -108,12 +108,12 @@ public class CoreModule extends AbstractModule
 		return (klass);
 	}
 
-	public void bindConfiguration(Binder binder)
+	public static void bindConfiguration(KairosRootConfig rootConfig, Binder binder)
 	{
 		binder = binder.skipSources(Names.class);
 
-		Config config = m_config.getRawConfig();
-		for (String propertyName : m_config)
+		Config config = rootConfig.getRawConfig();
+		for (String propertyName : rootConfig)
 		{
 			ConfigValue value = config.getValue(propertyName);
 
@@ -121,24 +121,11 @@ public class CoreModule extends AbstractModule
 
 			try
 			{
-				//type binding didn't work well for numbers, guice will not convert double to int
-				/*switch (configValueType)
-				{
-					case STRING:
-						binder.bindConstant().annotatedWith(Names.named(propertyName)).to((String) value.unwrapped());
-						break;
-					case BOOLEAN:
-						binder.bindConstant().annotatedWith(Names.named(propertyName)).to((Boolean) value.unwrapped());
-						break;
-					case NUMBER:
-						Number number = (Number) value.unwrapped();
-						binder.bindConstant().annotatedWith(Names.named(propertyName)).to(number.doubleValue());
-				}*/
-
-				//binder.bind(Key.get(String.class, Names.named(propertyName))).toInstance(value);
 				logger.debug(String.format("%s = %s", propertyName, value.unwrapped().toString()));
 
-				bindConstant().annotatedWith(Names.named(propertyName)).to(value.unwrapped().toString());
+				//type binding didn't work well for numbers, guice will not convert double to int
+				//So we bind everything as a string and let guice convert - which it does well
+				binder.bindConstant().annotatedWith(Names.named(propertyName)).to(value.unwrapped().toString());
 			}
 			catch (Exception e)
 			{
@@ -147,7 +134,7 @@ public class CoreModule extends AbstractModule
 			}
 		}
 
-		binder.bindListener(Matchers.any(), new ConfigurationTypeListener(m_config));
+		binder.bindListener(Matchers.any(), new ConfigurationTypeListener(rootConfig));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -180,7 +167,7 @@ public class CoreModule extends AbstractModule
 		});
 
 		//Names.bindProperties(binder(), m_config);
-		bindConfiguration(binder());
+		bindConfiguration(m_config, binder());
 		bind(KairosRootConfig.class).toInstance(m_config);
 
 		bind(QueryQueuingManager.class).in(Singleton.class);

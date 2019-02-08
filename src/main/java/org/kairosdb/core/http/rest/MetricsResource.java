@@ -139,6 +139,10 @@ public class MetricsResource implements KairosMetricReporter
 	@Named("HOSTNAME")
 	private String hostName = "localhost";
 
+	@Inject
+	@Named("kairosdb.queries.return_query_in_response")
+	private boolean m_returnQueryInResponse = false;
+
 	//Used for setting which API methods are enabled
 	private EnumSet<ServerType> m_serverType = EnumSet.of(ServerType.INGEST, ServerType.QUERY, ServerType.DELETE);
 
@@ -465,7 +469,10 @@ public class MetricsResource implements KairosMetricReporter
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
 
-			jsonResponse.begin(json);
+			String originalQuery = null;
+			if (m_returnQueryInResponse)
+				originalQuery = json;
+			jsonResponse.begin(originalQuery);
 
 			Query mainQuery = queryParser.parseQueryMetric(json);
 			mainQuery = m_queryPreProcessor.preProcess(mainQuery);

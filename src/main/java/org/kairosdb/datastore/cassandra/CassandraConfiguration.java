@@ -10,6 +10,7 @@ import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  Created by bhawkins on 10/13/14.
@@ -49,6 +50,8 @@ public class CassandraConfiguration
 	public static final String LOCAL_DATACENTER = "kairosdb.datastore.cassandra.local_datacenter";
 
 	public static final String START_ASYNC = "kairosdb.datastore.cassandra.start_async";
+
+	public static final String TAG_INDEXED_ROW_KEY_LOOKUP_METRICS = "kairosdb.datastore.cassandra.tag_indexed_row_key_lookup_metrics";
 
 
 	@Inject(optional = true)
@@ -136,7 +139,6 @@ public class CassandraConfiguration
 			m_readClusters = ImmutableList.of();
 	}
 
-
 	public int getDatapointTtl()
 	{
 		return m_datapointTtl;
@@ -176,7 +178,7 @@ public class CassandraConfiguration
 	{
 		return m_queryLimit;
 	}
-	
+
 	public String getLocalDatacenter()
 	{
 		return m_localDatacenter;

@@ -4,6 +4,7 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Statement;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.util.concurrent.Futures;
@@ -68,7 +69,7 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 
 		m_metricName = metricName;
 		m_clusterName = cluster.getClusterName();
-		List<ResultSetFuture> futures = new ArrayList<>();
+		List<ListenableFuture<ResultSet>> futures = new ArrayList<>();
 		m_returnedKeys = new HashSet<>();
 		long timerStart = System.currentTimeMillis();
 
@@ -108,18 +109,21 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 
 		//System.out.println();
 		//New index query index is broken up by time tier
+		RowKeyLookup rowKeyLookup = cluster.getRowKeyLookupForMetric(metricName);
 		List<Long> queryKeyList = createQueryKeyList(cluster, metricName, startTime, endTime);
 		for (Long keyTime : queryKeyList)
 		{
-
-			BoundStatement statement = new BoundStatement(cluster.psRowKeyQuery);
-			statement.setString(0, metricName);
-			statement.setTimestamp(1, new Date(keyTime));
-			statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
-
-			//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
-
-			futures.add(cluster.executeAsync(statement));
+			RowKeyLookup.RowKeyResultSetProcessor rowKeyResultSetProcessor = rowKeyLookup.createRowKeyQueryProcessor(metricName, keyTime, filterTags);
+			List<Statement> queryStatements = rowKeyResultSetProcessor.getQueryStatements();
+			List<ListenableFuture<ResultSet>> resultSetForKeyTimeFutures = new ArrayList<>(queryStatements.size());
+			for (Statement rowKeyQueryStmt : queryStatements)
+			{
+				rowKeyQueryStmt.setConsistencyLevel(cluster.getReadConsistencyLevel());
+				resultSetForKeyTimeFutures.add(cluster.executeAsync(rowKeyQueryStmt));
+			}
+			ListenableFuture<ResultSet> keyTimeQueryResultSetFuture =
+					Futures.transform(Futures.allAsList(resultSetForKeyTimeFutures), rowKeyResultSetProcessor);
+			futures.add(keyTimeQueryResultSetFuture);
 		}
 
 		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);

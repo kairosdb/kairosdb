@@ -18,5 +18,6 @@ lib/ivy/test/*
 myivysettings.xml
 tablesaw.properties
 kairosdb.conf
-big_array/*
+queue
+big_array
 kairosdb_guid.properties

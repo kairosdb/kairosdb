@@ -142,11 +142,13 @@ public class CassandraModule extends AbstractModule
 		{
 			m_metaCluster = m_writeCluster = new ClusterConnection(writeClient, EnumSet.of(
 					ClusterConnection.Type.WRITE, ClusterConnection.Type.META));
+			m_metaCluster.startup(configuration.isStartAsync());
 		}
 		else
 		{
 			m_writeCluster = new ClusterConnection(writeClient, EnumSet.of(
 					ClusterConnection.Type.WRITE));
+			m_writeCluster.startup(configuration.isStartAsync());
 
 			Injector metaInjector = injector.createChildInjector((Module) binder -> bindCassandraClient(binder, metaConfig) );
 
@@ -154,6 +156,7 @@ public class CassandraModule extends AbstractModule
 
 			m_metaCluster = new ClusterConnection(metaClient, EnumSet.of(
 					ClusterConnection.Type.META));
+			m_metaCluster.startup(configuration.isStartAsync());
 		}
 	}
 
@@ -208,7 +211,7 @@ public class CassandraModule extends AbstractModule
 
 				CassandraClient client = readInjector.getInstance(CassandraClient.class);
 
-				clusters.add(new ClusterConnection(client, EnumSet.of(ClusterConnection.Type.READ)));
+				clusters.add(new ClusterConnection(client, EnumSet.of(ClusterConnection.Type.READ)).startup(configuration.isStartAsync()));
 			}
 		}
 		catch (Exception e)

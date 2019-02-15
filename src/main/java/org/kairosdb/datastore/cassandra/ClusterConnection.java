@@ -226,21 +226,72 @@ public class ClusterConnection
 	public PreparedStatement psServiceIndexGetEntries;
 	public PreparedStatement psDataPointsDelete;
 
-	private final Session m_session;
+	private Session m_session;
 	private final CassandraClient m_cassandraClient;
 	private boolean m_readonlyMode;
+	private final EnumSet<Type> m_clusterType;
+	private volatile boolean m_shuttingDown = false;
 
 
 	public ClusterConnection(CassandraClient cassandraClient, EnumSet<Type> clusterType)
 	{
-		setupSchema(cassandraClient, clusterType);
-
-		m_session = cassandraClient.getKeyspaceSession();
-
 		m_cassandraClient = cassandraClient;
+		m_clusterType = clusterType;
+	}
+
+	/**
+	 Startup the client connection to cassandra and try to set schema
+	 @param async if set to true the connection is established in a background
+	 thread that continues to connect if C* is not available
+	 */
+	public ClusterConnection startup(boolean async)
+	{
+		if (async)
+		{
+			new Thread(() -> {
+				boolean connected = false;
+				while (!connected && !m_shuttingDown)
+				{
+					try
+					{
+						tryToConnect();
+						connected = true;
+					}
+					catch (Exception e)
+					{
+						logger.error("Unable to connect to Cassandra", e);
+						m_cassandraClient.close();
+						m_cassandraClient.init();
+					}
+
+					try
+					{
+						Thread.sleep(1000);
+					}
+					catch (InterruptedException e)
+					{
+						//nothing to do here
+					}
+				}
+			}).start();
+		}
+		else
+		{
+			tryToConnect();
+		}
+
+		return this;
+	}
+
+	private void tryToConnect()
+	{
+		setupSchema(m_cassandraClient, m_clusterType);
+
+		m_session = m_cassandraClient.getKeyspaceSession();
+
 		//m_psInsertRowKey      = m_session.prepare(ROW_KEY_INDEX_INSERT);
 
-		if (clusterType.contains(Type.READ) || clusterType.contains(Type.WRITE))
+		if (m_clusterType.contains(Type.READ) || m_clusterType.contains(Type.WRITE))
 		{
 			psDataPointsInsert = m_session.prepare(DATA_POINTS_INSERT);
 			psDataPointsDelete = m_session.prepare(DATA_POINTS_DELETE);
@@ -283,7 +334,7 @@ public class ClusterConnection
 		}
 
 
-		if ((!m_readonlyMode)&&(clusterType.contains(Type.WRITE)))
+		if ((!m_readonlyMode)&&(m_clusterType.contains(Type.WRITE)))
 		{
 			psRowKeyInsert = m_session.prepare(ROW_KEY_INSERT);
 			psRowKeyDelete = m_session.prepare(ROW_KEY_DELETE);
@@ -291,7 +342,7 @@ public class ClusterConnection
 			psRowKeyTimeInsert = m_session.prepare(ROW_KEY_TIME_INSERT);
 		}
 
-		if (clusterType.contains(Type.META))
+		if (m_clusterType.contains(Type.META))
 		{
 			psServiceIndexInsert = m_session.prepare(SERVICE_INDEX_INSERT);
 			psServiceIndexGet = m_session.prepare(SERVICE_INDEX_GET);
@@ -310,11 +361,11 @@ public class ClusterConnection
 			psServiceIndexGetEntries = m_session.prepare(SERVICE_INDEX_GET_ENTRIES);
 			psServiceIndexInsertModifiedTime = m_session.prepare(SERVICE_INDEX_INSERT_MODIFIED_TIME);
 		}
-
 	}
 
 	public void close()
 	{
+		m_shuttingDown = true;
 		m_session.close();
 		m_cassandraClient.close();
 	}

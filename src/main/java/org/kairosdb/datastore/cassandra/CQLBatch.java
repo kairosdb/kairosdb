@@ -4,7 +4,6 @@ import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Host;
-import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.kairosdb.core.DataPoint;
@@ -80,18 +79,12 @@ public class CQLBatch
 
 		rowKeyBatch.add(bs);
 
-		bs = m_clusterConnection.psRowKeyInsert.bind()
-				.setString(0, metricName)
-				.setTimestamp(1, new Date(rowKey.getTimestamp()))
-				//.setBytesUnsafe(1, bb)  //Setting timestamp in a more optimal way
-				.setString(2, rowKey.getDataType())
-				.setMap(3, rowKey.getTags())
-				.setInt(4, rowKeyTtl)
-				.setIdempotent(true);
-
-		bs.setConsistencyLevel(m_consistencyLevel);
-
-		rowKeyBatch.add(bs);
+		RowKeyLookup rowKeyLookup = m_clusterConnection.getRowKeyLookupForMetric(rowKey.getMetricName());
+		for (Statement rowKeyInsertStmt : rowKeyLookup.createInsertStatements(rowKey, rowKeyTtl))
+		{
+			rowKeyInsertStmt.setConsistencyLevel(m_consistencyLevel);
+			rowKeyBatch.add(rowKeyInsertStmt);
+		}
 	}
 
 	public void addMetricName(String metricName)

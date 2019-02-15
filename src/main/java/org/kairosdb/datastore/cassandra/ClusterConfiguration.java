@@ -6,11 +6,14 @@ import com.google.common.collect.ImmutableMap;
 import org.kairosdb.core.KairosConfig;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -33,6 +36,7 @@ public class ClusterConfiguration
 	private final int m_requestRetryCount;
 	private final Map<String, Integer> m_hostList;
 	private final String m_clusterName;
+	private final Set<String> m_tagIndexedMetrics;
 	private String m_authPassword;
 	private String m_authUser;
 	private String m_localDCName;
@@ -105,6 +109,8 @@ public class ClusterConfiguration
 			m_endTime = Long.MAX_VALUE;
 
 		checkState(m_startTime < m_endTime, "Cluster start time must be before end time");
+
+		m_tagIndexedMetrics = new HashSet<>(config.getStringList("tag_indexed_row_key_lookup_metrics", new ArrayList<String>()));
 	}
 
 	public String getKeyspace()
@@ -210,6 +216,11 @@ public class ClusterConfiguration
 	public boolean containRange(long queryStartTime, long queryEndTime)
 	{
 		return (!(queryEndTime < m_startTime || queryStartTime > m_endTime));
+	}
+
+	public Set<String> getTagIndexedMetrics()
+	{
+		return m_tagIndexedMetrics;
 	}
 }
 

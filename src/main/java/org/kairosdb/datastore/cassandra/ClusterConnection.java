@@ -3,10 +3,29 @@ package org.kairosdb.datastore.cassandra;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.exceptions.InvalidQueryException;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.google.common.base.Charsets;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  Created by bhawkins on 4/29/17.
@@ -75,6 +94,24 @@ public class ClusterConnection
 			"  PRIMARY KEY ((metric, table_name, row_time), data_type, tags)\n" +
 			")";
 
+	/**
+	 * Alternate form of the row_keys table which includes a hash of each tag key:value pair in the
+	 * partion key. This is used to improve lookups for high tag cardinality.
+	 */
+	public static final String TAG_INDEXED_ROW_KEYS = "" +
+			"CREATE TABLE IF NOT EXISTS tag_indexed_row_keys (\n" +
+			"  metric text,\n" +
+			"  table_name text, \n" +
+			"  row_time timestamp,\n" +
+			"  single_tag_pair_hash int,\n" +
+			"  tag_collection_hash int,\n" +
+			"  data_type text,\n" +
+			"  tags frozen<map<text, text>>,\n" +
+			"  mtime timeuuid static,\n" +
+			"  value text,\n" +
+			"  PRIMARY KEY ((metric, table_name, row_time, single_tag_pair_hash), data_type, tag_collection_hash, tags)\n" +
+			")";
+
 	public static final String STRING_INDEX_TABLE = "" +
 			"CREATE TABLE IF NOT EXISTS string_index (\n" +
 			"  key blob,\n" +
@@ -104,6 +141,9 @@ public class ClusterConnection
 
 	public static final String ROW_KEY_INSERT = "INSERT INTO row_keys " +
 			"(metric, table_name, row_time, data_type, tags, mtime) VALUES (?, 'data_points', ?, ?, ?, now()) USING TTL ?"; // AND TIMESTAMP ?";
+
+	public static final String TAG_INDEXED_ROW_KEY_INSERT = "INSERT INTO tag_indexed_row_keys " +
+			"(metric, table_name, row_time, data_type, single_tag_pair_hash, tag_collection_hash, tags, mtime) VALUES (?, 'data_points', ?, ?, ?, ?, ?, now()) USING TTL ?";
 
 	public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
 			"(key, column1, value) VALUES (?, ?, 0x00)";
@@ -155,6 +195,10 @@ public class ClusterConnection
 	public static final String ROW_KEY_QUERY = "SELECT row_time, data_type, tags " +
 			"FROM row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ?";
 
+	public static final String TAG_INDEXED_ROW_KEY_QUERY = "SELECT row_time, data_type, tags, tag_collection_hash " +
+			"FROM tag_indexed_row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ? and single_tag_pair_hash = ? " +
+			"ORDER BY data_type, tag_collection_hash";
+
 	public static final String ROW_KEY_TAG_QUERY_WITH_TYPE = "SELECT row_time, data_type, tags " +
 			"FROM row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ? AND data_type IN %s"; //Use ValueSequence when setting this
 
@@ -164,6 +208,10 @@ public class ClusterConnection
 	public static final String ROW_KEY_DELETE = "DELETE FROM row_keys WHERE metric = ? " +
 			"AND table_name = 'data_points' AND row_time = ? AND data_type = ? " +
 			"AND tags = ?";
+
+	public static final String TAG_INDEXED_ROW_KEY_DELETE = "DELETE FROM tag_indexed_row_keys WHERE metric = ? " +
+			"AND table_name = 'data_points' AND row_time = ? AND data_type = ? " +
+			"AND single_tag_pair_hash = ? AND tag_collection_hash = ? AND tags = ?";
 
 	//Service index queries
 	public static final String SERVICE_INDEX_INSERT = "INSERT INTO service_index " +
@@ -203,6 +251,7 @@ public class ClusterConnection
 	public PreparedStatement psStringIndexDelete;
 	public PreparedStatement psRowKeyIndexQuery;
 	public PreparedStatement psRowKeyQuery;
+	public PreparedStatement psTagIndexedRowKeyQuery;
 	public PreparedStatement psRowKeyTimeQuery;
 	public PreparedStatement psDataPointsDeleteRow;
 	public PreparedStatement psDataPointsDeleteRange;
@@ -211,6 +260,7 @@ public class ClusterConnection
 	public PreparedStatement psDataPointsQueryDesc;
 	public PreparedStatement psRowKeyTimeInsert;
 	public PreparedStatement psRowKeyInsert;
+	public PreparedStatement psTagIndexedRowKeyInsert;
 	public PreparedStatement psDataPointsQueryAscLimit;
 	public PreparedStatement psDataPointsQueryDescLimit;
 	public PreparedStatement psServiceIndexInsert;
@@ -221,6 +271,7 @@ public class ClusterConnection
 	public PreparedStatement psServiceIndexDeleteKey;
 	public PreparedStatement psRowKeyTimeDelete;
 	public PreparedStatement psRowKeyDelete;
+	public PreparedStatement psTagIndexedRowKeyDelete;
 	public PreparedStatement psServiceIndexModificationTime;
 	public PreparedStatement psServiceIndexInsertModifiedTime;
 	public PreparedStatement psServiceIndexGetEntries;
@@ -232,11 +283,34 @@ public class ClusterConnection
 	private final EnumSet<Type> m_clusterType;
 	private volatile boolean m_shuttingDown = false;
 
+	private final boolean m_alwaysUseTagIndexedLookup;
+	private final Set<String> m_tagIndexMetricNames;
 
-	public ClusterConnection(CassandraClient cassandraClient, EnumSet<Type> clusterType)
+
+	public ClusterConnection(CassandraClient cassandraClient, EnumSet<Type> clusterType,
+			Set<String> tagIndexMetricNames)
 	{
 		m_cassandraClient = cassandraClient;
 		m_clusterType = clusterType;
+
+		m_alwaysUseTagIndexedLookup = tagIndexMetricNames.equals(ImmutableSet.of("*"));
+		m_tagIndexMetricNames = tagIndexMetricNames;
+
+		if (m_alwaysUseTagIndexedLookup)
+		{
+			logger.info("Using tag-indexed row key lookup for all metrics for cluster {}",
+					cassandraClient.getClusterConfiguration().getClusterName());
+		}
+		else if (m_tagIndexMetricNames.isEmpty())
+		{
+			logger.info("Indexed tag-indexed row key lookup is disabled for cluster {}",
+					cassandraClient.getClusterConfiguration().getClusterName());
+		}
+		else
+		{
+			logger.info("Using tag-indexed row key lookup for {} for cluster {}", m_tagIndexMetricNames,
+					cassandraClient.getClusterConfiguration().getClusterName());
+		}
 	}
 
 	/**
@@ -316,6 +390,7 @@ public class ClusterConnection
 			try
 			{
 				psRowKeyQuery = m_session.prepare(ROW_KEY_QUERY);
+				psTagIndexedRowKeyQuery = m_session.prepare(TAG_INDEXED_ROW_KEY_QUERY);
 				psRowKeyTimeQuery = m_session.prepare(ROW_KEY_TIME_QUERY);
 			}
 			catch (InvalidQueryException e)
@@ -337,7 +412,9 @@ public class ClusterConnection
 		if ((!m_readonlyMode)&&(m_clusterType.contains(Type.WRITE)))
 		{
 			psRowKeyInsert = m_session.prepare(ROW_KEY_INSERT);
+			psTagIndexedRowKeyInsert = m_session.prepare(TAG_INDEXED_ROW_KEY_INSERT);
 			psRowKeyDelete = m_session.prepare(ROW_KEY_DELETE);
+			psTagIndexedRowKeyDelete = m_session.prepare(TAG_INDEXED_ROW_KEY_DELETE);
 			psRowKeyTimeDelete = m_session.prepare(ROW_KEY_TIME_DELETE);
 			psRowKeyTimeInsert = m_session.prepare(ROW_KEY_TIME_INSERT);
 		}
@@ -429,6 +506,7 @@ public class ClusterConnection
 					session.execute(STRING_INDEX_TABLE);
 
 					session.execute(ROW_KEYS);
+					session.execute(TAG_INDEXED_ROW_KEYS);
 					session.execute(ROW_KEY_TIME_INDEX);
 				}
 				catch (Exception e)
@@ -456,5 +534,257 @@ public class ClusterConnection
 	public boolean containRange(long queryStartTime, long queryEndTime)
 	{
 		return m_cassandraClient.getClusterConfiguration().containRange(queryStartTime, queryEndTime);
+	}
+
+	public RowKeyLookup getRowKeyLookupForMetric(String metricName)
+	{
+		if (m_alwaysUseTagIndexedLookup || m_tagIndexMetricNames.contains(metricName))
+		{
+			logger.debug("Using tag-indexed row key lookup for {}", metricName);
+			return new TagIndexedRowKeysTableLookup();
+		}
+		else
+		{
+			logger.debug("Using standard row key lookup for {}", metricName);
+			return new RowKeysTableLookup();
+		}
+	}
+
+	class RowKeysTableLookup implements RowKeyLookup
+	{
+		public RowKeysTableLookup()
+		{
+		}
+
+		@Override
+		public List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
+		{
+			return ImmutableList.of(
+					psRowKeyInsert.bind()
+							.setString(0, rowKey.getMetricName())
+							.setTimestamp(1, new Date(rowKey.getTimestamp()))
+							.setString(2, rowKey.getDataType())
+							.setMap(3, rowKey.getTags())
+							.setInt(4, rowKeyTtl)
+							.setIdempotent(true));
+		}
+
+		@Override
+		public List<Statement> createDeleteStatements(DataPointsRowKey rowKey)
+		{
+			return ImmutableList.of(
+					psRowKeyDelete.bind()
+							.setString(0, rowKey.getMetricName())
+							.setTimestamp(1, new Date(rowKey.getTimestamp()))
+							.setString(2, rowKey.getDataType())
+							.setMap(3, rowKey.getTags()));
+		}
+
+		@Override
+		public RowKeyResultSetProcessor createRowKeyQueryProcessor(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
+		{
+			return new RowKeyResultSetProcessor()
+			{
+				@Override
+				public List<Statement> getQueryStatements()
+				{
+					return ImmutableList.of(
+							psRowKeyQuery.bind()
+									.setString(0, metricName)
+									.setTimestamp(1, new Date(rowKeyTimestamp)));
+				}
+
+				@Override
+				public ResultSet apply(List<ResultSet> input)
+				{
+					if (input.size() != 1)
+					{
+						throw new IllegalStateException("Expected exactly 1 result set, got " + input);
+					}
+					return input.get(0);
+				}
+			};
+		}
+
+	}
+
+	class TagIndexedRowKeysTableLookup implements RowKeyLookup
+	{
+
+		private static final int WILDCARD_TAG_HASH_VALUE = 0;
+
+		public TagIndexedRowKeysTableLookup()
+		{
+		}
+
+		@Override
+		public List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
+		{
+			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
+			List<Statement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
+			Date rowKeyTimestamp = new Date(rowKey.getTimestamp());
+			for (Integer tagPairHash : tagSetHash.getTagPairHashes())
+			{
+				insertStatements.add(
+						psTagIndexedRowKeyInsert.bind()
+								.setString(0, rowKey.getMetricName())
+								.setTimestamp(1, rowKeyTimestamp)
+								.setString(2, rowKey.getDataType())
+								.setInt(3, tagPairHash)
+								.setInt(4, tagSetHash.getTagCollectionHash())
+								.setMap(5, rowKey.getTags())
+								.setInt(6, rowKeyTtl)
+								.setIdempotent(true));
+			}
+			return insertStatements;
+		}
+
+		@Override
+		public List<Statement> createDeleteStatements(DataPointsRowKey rowKey)
+		{
+			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
+			List<Statement> deleteStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
+			Date rowKeyTimestamp = new Date(rowKey.getTimestamp());
+			for (Integer tagPairHash : tagSetHash.getTagPairHashes()) {
+				deleteStatements.add(
+						psTagIndexedRowKeyDelete.bind()
+								.setString(0, rowKey.getMetricName())
+								.setTimestamp(1, rowKeyTimestamp)
+								.setString(2, rowKey.getDataType())
+								.setInt(3, tagPairHash)
+								.setInt(4, tagSetHash.getTagCollectionHash())
+								.setMap(5, rowKey.getTags()));
+			}
+			return deleteStatements;
+		}
+
+		@Override
+		public RowKeyResultSetProcessor createRowKeyQueryProcessor(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
+		{
+
+			ListMultimap<String, Statement> queryStatementByTagName = createQueryStatementsByTagName(metricName, rowKeyTimestamp, tags);
+			List<Statement> queryStatements = new ArrayList<>(queryStatementByTagName.size());
+			Multimap<String, Integer> tagNameToStatementIndexes = ArrayListMultimap.create();
+
+			for (Map.Entry<String, Statement> tagNameAndStatementEntry : queryStatementByTagName.entries())
+			{
+				String tagName = tagNameAndStatementEntry.getKey();
+				Statement queryStatement = tagNameAndStatementEntry.getValue();
+				tagNameToStatementIndexes.put(tagName, queryStatements.size());
+				queryStatements.add(queryStatement);
+			}
+
+			return new RowKeyResultSetProcessor()
+			{
+				@Override
+				public List<Statement> getQueryStatements()
+				{
+					return queryStatements;
+				}
+
+				@Override
+				public ResultSet apply(List<ResultSet> input)
+				{
+					if (input.size() == 1)
+					{
+						// No need to find the most selective ResultSet if we've only got 1
+						return input.get(0);
+					}
+					List<List<ResultSet>> resultSetsGroupedByTagName = new ArrayList<>(tagNameToStatementIndexes.size());
+					for (Collection<Integer> indexCollection : tagNameToStatementIndexes.asMap().values())
+					{
+						List<ResultSet> resultSetsForTag = new ArrayList<>(indexCollection.size());
+						for (Integer resultSetIndex : indexCollection)
+						{
+							resultSetsForTag.add(input.get(resultSetIndex));
+						}
+						resultSetsGroupedByTagName.add(resultSetsForTag);
+					}
+					Comparator<RowCountEstimatingRowKeyResultSet> comparator =
+							Comparator
+									.<RowCountEstimatingRowKeyResultSet>comparingInt(r -> r.isEstimated() ? 1 : 0)
+									.thenComparing(RowCountEstimatingRowKeyResultSet::getRowCount);
+					return resultSetsGroupedByTagName.stream().map(RowCountEstimatingRowKeyResultSet::create).min(comparator)
+							.orElseThrow(() -> new IllegalStateException("No minimal ResultSet found"));
+				}
+			};
+		}
+
+		private ListMultimap<String, Statement> createQueryStatementsByTagName(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
+		{
+			// Using tag pair hashes as the key in this map can lead to collisions, but that's not a problem
+			// because we're simply using the tag pair hashes as an initial AND filter, and further filtering is
+			// done on the incoming ResultSets
+			Map<Integer, String> tagPairHashToTagName = new HashMap<>();
+			for (Map.Entry<String, String> tagPairEntry : tags.entries())
+			{
+				tagPairHashToTagName.put(
+						hashForTagPair(tagPairEntry.getKey(), tagPairEntry.getValue()),
+						tagPairEntry.getKey());
+			}
+			if (tagPairHashToTagName.isEmpty())
+			{
+				tagPairHashToTagName.put(WILDCARD_TAG_HASH_VALUE, "");
+			}
+			Date timestamp = new Date(rowKeyTimestamp);
+			ListMultimap<String, Statement> queryStatementsByTagName = ArrayListMultimap.create(tagPairHashToTagName.size(), 1);
+			for (Map.Entry<Integer, String> tagPairHashAndTagNameEntry : tagPairHashToTagName.entrySet())
+			{
+				int tagPairHash = tagPairHashAndTagNameEntry.getKey();
+				String tagName = tagPairHashAndTagNameEntry.getValue();
+				queryStatementsByTagName.put(
+						tagName,
+						psTagIndexedRowKeyQuery.bind()
+								.setString(0, metricName)
+								.setTimestamp(1, timestamp)
+								.setInt(2, tagPairHash));
+			}
+			return queryStatementsByTagName;
+		}
+
+		private TagSetHash generateTagPairHashes(DataPointsRowKey rowKey)
+		{
+			Hasher tagCollectionHasher = Hashing.murmur3_32().newHasher();
+			Set<Integer> tagPairHashes = new HashSet<>(rowKey.getTags().size() + 1);
+			tagPairHashes.add(WILDCARD_TAG_HASH_VALUE);
+			for (Map.Entry<String, String> tagPairEntry : rowKey.getTags().entrySet())
+			{
+				int hashForTagPair = hashForTagPair(tagPairEntry.getKey(), tagPairEntry.getValue());
+				tagPairHashes.add(hashForTagPair);
+				tagCollectionHasher.putString(tagPairEntry.getKey(), Charsets.UTF_8);
+				tagCollectionHasher.putString(tagPairEntry.getValue(), Charsets.UTF_8);
+			}
+			return new TagSetHash(tagCollectionHasher.hash().asInt(), tagPairHashes);
+		}
+
+		private int hashForTagPair(String tagName, String tagValue)
+		{
+			return Objects.hash(tagName, tagValue);
+		}
+	}
+
+	/**
+	 * Holds a hash of a full set of tag pairs, as well as individual tag pair hashes.
+	 */
+	private static class TagSetHash {
+
+		private final int tagCollectionHash;
+		private final Set<Integer> tagPairHashes;
+
+		public TagSetHash(int tagCollectionHash, Set<Integer> tagPairHashes)
+		{
+			this.tagCollectionHash = tagCollectionHash;
+			this.tagPairHashes = tagPairHashes;
+		}
+
+		public int getTagCollectionHash()
+		{
+			return tagCollectionHash;
+		}
+
+		public Set<Integer> getTagPairHashes()
+		{
+			return tagPairHashes;
+		}
 	}
 }

@@ -51,10 +51,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -264,11 +261,14 @@ public class MetricsResource implements KairosMetricReporter
 		return (responseBuilder.build());
 	}
 
+	/**
+	 * @deprecated  As of release 1.3.0. Use /datapoints with "content-encoding: gzip".
+	 */
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Consumes("application/gzip")
 	@Path("/datapoints")
-	public Response addGzip(InputStream gzip) throws InvalidServerTypeException
+	@Deprecated public Response addGzip(InputStream gzip) throws InvalidServerTypeException
 	{
 		checkServerType(ServerType.INGEST, "gzip /datapoints", "POST");
 		GZIPInputStream gzipInputStream;
@@ -281,18 +281,24 @@ public class MetricsResource implements KairosMetricReporter
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
 		}
-		return (add(gzipInputStream));
+		return (add(null, gzipInputStream));
 	}
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints")
-	public Response add(InputStream json) throws InvalidServerTypeException
+	public Response add(@Context HttpHeaders httpheaders, InputStream stream) throws InvalidServerTypeException
 	{
 		checkServerType(ServerType.INGEST, "JSON /datapoints", "POST");
 		try
 		{
-			DataPointsParser parser = new DataPointsParser(m_publisher, new InputStreamReader(json, "UTF-8"),
+			List<String> requestHeader = httpheaders.getRequestHeader("Content-Encoding");
+			if (requestHeader != null && requestHeader.contains("gzip"))
+			{
+				stream = new GZIPInputStream(stream);
+			}
+
+			DataPointsParser parser = new DataPointsParser(m_publisher, new InputStreamReader(stream, "UTF-8"),
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 

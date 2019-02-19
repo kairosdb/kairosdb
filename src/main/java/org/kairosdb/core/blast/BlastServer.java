@@ -14,6 +14,7 @@ import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.metrics4j.ReporterFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,9 +26,10 @@ import java.util.concurrent.TimeUnit;
 /**
  Created by bhawkins on 5/16/14.
  */
-public class BlastServer implements KairosDBService, Runnable, KairosMetricReporter
+public class BlastServer implements KairosDBService, Runnable//, KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(BlastServer.class);
+	private static final BlastMetrics reporter = ReporterFactory.getReporter(BlastMetrics.class);
 
 	public static final String NUMBER_OF_ROWS = "kairosdb.blast.number_of_rows";
 	public static final String DURATION_SECONDS = "kairosdb.blast.duration_seconds";
@@ -42,7 +44,7 @@ public class BlastServer implements KairosDBService, Runnable, KairosMetricRepor
 	private final long m_durration;  //in seconds
 	private final String m_metricName;
 
-	private long m_counter = 0L;
+	//private long m_counter = 0L;
 
 	@Inject
 	@Named("HOSTNAME")
@@ -97,15 +99,16 @@ public class BlastServer implements KairosDBService, Runnable, KairosMetricRepor
 
 			DataPointEvent dataPointEvent = new DataPointEvent(m_metricName, tags, dataPoint, m_ttl);
 			m_publisher.post(dataPointEvent);
-			m_counter ++;
+			//m_counter ++;
+			long count = reporter.submissionCount(m_hostName).add(1);
 
-			if ((m_counter % 100000 == 0) && (timer.elapsed(TimeUnit.SECONDS) > m_durration))
+			if ((count % 100000 == 0) && (timer.elapsed(TimeUnit.SECONDS) > m_durration))
 				m_keepRunning = false;
 
 		}
 	}
 
-	@Override
+	/*@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
 		ImmutableList.Builder<DataPointSet> ret = ImmutableList.builder();
@@ -116,5 +119,5 @@ public class BlastServer implements KairosDBService, Runnable, KairosMetricRepor
 		ret.add(ds);
 
 		return ret.build();
-	}
+	}*/
 }

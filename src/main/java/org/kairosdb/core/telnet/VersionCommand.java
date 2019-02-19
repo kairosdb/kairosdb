@@ -22,7 +22,7 @@ import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.metrics4j.ReporterFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,8 +30,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
-public class VersionCommand implements TelnetCommand, KairosMetricReporter
+public class VersionCommand implements TelnetCommand//, KairosMetricReporter
 {
+	private static final TelnetMetrics Metrics = ReporterFactory.getReporter(TelnetMetrics.class);
+
 	private AtomicInteger m_counter = new AtomicInteger();
 	private final LongDataPointFactory m_dataPointFactory;
 	private String m_hostName;
@@ -47,6 +49,7 @@ public class VersionCommand implements TelnetCommand, KairosMetricReporter
 	@Override
 	public void execute(Channel chan, List<String> command) throws DatastoreException
 	{
+		Metrics.telnetRequestCount(m_hostName, getCommand()).add(1);
 		m_counter.incrementAndGet();
 		if (chan.isConnected())
 		{
@@ -62,7 +65,7 @@ public class VersionCommand implements TelnetCommand, KairosMetricReporter
 		return ("version");
 	}
 
-	@Override
+	/*@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
 		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
@@ -71,5 +74,5 @@ public class VersionCommand implements TelnetCommand, KairosMetricReporter
 		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, m_counter.getAndSet(0)));
 
 		return (Collections.singletonList(dps));
-	}
+	}*/
 }

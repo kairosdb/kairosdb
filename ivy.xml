@@ -115,5 +115,7 @@
 
 		<dependency org="org.testng" name="testng" rev="6.8.5" conf="integration->default"/>
 
+		<dependency org="org.kairosdb" name="metrics4j" rev="1.0-SNAPSHOT"/>
+
 	</dependencies>
 </ivy-module>

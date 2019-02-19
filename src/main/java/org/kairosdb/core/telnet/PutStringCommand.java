@@ -19,7 +19,7 @@ import java.util.List;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
-public class PutStringCommand extends PutMillisecondCommand implements TelnetCommand, KairosMetricReporter
+public class PutStringCommand extends PutMillisecondCommand implements TelnetCommand
 {
 	private final StringDataPointFactory m_stringFactory;
 

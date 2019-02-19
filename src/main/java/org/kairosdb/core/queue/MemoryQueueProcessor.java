@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  Created by bhawkins on 12/15/16.
  */
-public class MemoryQueueProcessor extends QueueProcessor implements KairosMetricReporter
+public class MemoryQueueProcessor extends QueueProcessor// implements KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(MemoryQueueProcessor.class);
 	private static final EventCompletionCallBack CALL_BACK = new VoidCompletionCallBack();

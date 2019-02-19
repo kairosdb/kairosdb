@@ -29,6 +29,7 @@ import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.metrics4j.ReporterFactory;
 import org.kairosdb.util.Tags;
 import org.kairosdb.util.Util;
 import org.kairosdb.util.ValidationException;
@@ -40,9 +41,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
-public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporter
+public class PutMillisecondCommand implements TelnetCommand//, KairosMetricReporter
 {
-	private AtomicInteger m_counter = new AtomicInteger();
+	private static TelnetMetrics reporter = ReporterFactory.getReporter(TelnetMetrics.class);
+	//private AtomicInteger m_counter = new AtomicInteger();
 	private String m_hostName;
 	private LongDataPointFactory m_longFactory;
 	private DoubleDataPointFactory m_doubleFactory;
@@ -124,7 +126,8 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 		if (tagCount == 0)
 			tags.put("add", "tag");
 
-		m_counter.incrementAndGet();
+		reporter.telnetRequestCount(m_hostName, getCommand()).add(1);
+		//m_counter.incrementAndGet();
 		m_publisher.post(new DataPointEvent(metricName, tags.build(), dp, ttl));
 	}
 
@@ -144,7 +147,7 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 		return ("putm");
 	}
 
-	@Override
+	/*@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
 		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
@@ -153,5 +156,5 @@ public class PutMillisecondCommand implements TelnetCommand, KairosMetricReporte
 		dps.addDataPoint(m_longFactory.createDataPoint(now, m_counter.getAndSet(0)));
 
 		return (Collections.singletonList(dps));
-	}
+	}*/
 }

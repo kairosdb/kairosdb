@@ -15,15 +15,17 @@ import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.metrics4j.ReporterFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
 import java.util.List;
 
-public class DemoServer implements KairosDBService, Runnable, KairosMetricReporter
+public class DemoServer implements KairosDBService, Runnable//, KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(DemoServer.class);
+	private static final DemoMetrics reporter = ReporterFactory.getReporter(DemoMetrics.class);
 
 	public static final String METRIC_NAME = "kairosdb.demo.metric_name";
 	public static final String NUMBER_OF_ROWS = "kairosdb.demo.number_of_rows";
@@ -37,7 +39,7 @@ public class DemoServer implements KairosDBService, Runnable, KairosMetricReport
 
 	private Thread m_serverThread;
 	private boolean m_keepRunning = true;
-	private long m_counter = 0L;
+	//private long m_counter = 0L;
 
 
 	@javax.inject.Inject
@@ -72,6 +74,7 @@ public class DemoServer implements KairosDBService, Runnable, KairosMetricReport
 		long startTime = insertTime;
 		double period = 86400000.0;
 
+		//todo report time as a metric
 		Stopwatch timer = Stopwatch.createStarted();
 
 		while (m_keepRunning && insertTime < now)
@@ -86,7 +89,7 @@ public class DemoServer implements KairosDBService, Runnable, KairosMetricReport
 				ImmutableSortedMap<String, String> tags = ImmutableSortedMap.of("host", "demo_server_"+I);
 				DataPointEvent dataPointEvent = new DataPointEvent(m_metricName, tags, dataPoint, m_ttl);
 				m_publisher.post(dataPointEvent);
-				m_counter++;
+				reporter.submissionCount(m_hostName).add(1);
 			}
 
 			insertTime += 60000; //Advance 1 minute
@@ -106,7 +109,7 @@ public class DemoServer implements KairosDBService, Runnable, KairosMetricReport
 		m_keepRunning = false;
 	}
 
-	@Override
+	/*@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
 		ImmutableList.Builder<DataPointSet> ret = ImmutableList.builder();
@@ -117,5 +120,5 @@ public class DemoServer implements KairosDBService, Runnable, KairosMetricReport
 		ret.add(ds);
 
 		return ret.build();
-	}
+	}*/
 }

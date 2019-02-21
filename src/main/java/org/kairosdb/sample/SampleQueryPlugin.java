@@ -30,7 +30,7 @@ public class SampleQueryPlugin implements QueryPlugin, CassandraRowKeyPlugin
 	public Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query)
 	{
 		logger.info("getKeysForQueryIterator was called");
-		return new ArrayList().iterator();
+		return new ArrayList<DataPointsRowKey>().iterator();
 	}
 
 	public void setMessage(String message)

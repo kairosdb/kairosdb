@@ -295,7 +295,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		client.init();
 		m_clusterConnection = new ClusterConnection(client,
 				EnumSet.of(ClusterConnection.Type.WRITE, ClusterConnection.Type.META),
-				new HashSet<>());
+				new HashSet<>()).startup(false);
 		BatchStats batchStats = new BatchStats();
 		DataCache<DataPointsRowKey> rowKeyCache = new DataCache<>(1024);
 		DataCache<String> metricNameCache = new DataCache<>(1024);

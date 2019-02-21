@@ -556,28 +556,38 @@ public class ClusterConnection
 		{
 		}
 
-		@Override
-		public List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
+		protected Statement createInsertStatement(DataPointsRowKey rowKey, int rowKeyTtl)
 		{
-			return ImmutableList.of(
+			return
 					psRowKeyInsert.bind()
 							.setString(0, rowKey.getMetricName())
 							.setTimestamp(1, new Date(rowKey.getTimestamp()))
 							.setString(2, rowKey.getDataType())
 							.setMap(3, rowKey.getTags())
 							.setInt(4, rowKeyTtl)
-							.setIdempotent(true));
+							.setIdempotent(true);
+		}
+
+		@Override
+		public List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
+		{
+			return ImmutableList.of(createInsertStatement(rowKey, rowKeyTtl));
+		}
+
+		protected Statement createDeleteStatement(DataPointsRowKey rowKey)
+		{
+			return
+					psRowKeyDelete.bind()
+							.setString(0, rowKey.getMetricName())
+							.setTimestamp(1, new Date(rowKey.getTimestamp()))
+							.setString(2, rowKey.getDataType())
+							.setMap(3, rowKey.getTags());
 		}
 
 		@Override
 		public List<Statement> createDeleteStatements(DataPointsRowKey rowKey)
 		{
-			return ImmutableList.of(
-					psRowKeyDelete.bind()
-							.setString(0, rowKey.getMetricName())
-							.setTimestamp(1, new Date(rowKey.getTimestamp()))
-							.setString(2, rowKey.getDataType())
-							.setMap(3, rowKey.getTags()));
+			return ImmutableList.of(createDeleteStatement(rowKey));
 		}
 
 		@Override
@@ -608,7 +618,7 @@ public class ClusterConnection
 
 	}
 
-	class TagIndexedRowKeysTableLookup implements RowKeyLookup
+	class TagIndexedRowKeysTableLookup extends RowKeysTableLookup
 	{
 
 		private static final int WILDCARD_TAG_HASH_VALUE = 0;
@@ -636,6 +646,9 @@ public class ClusterConnection
 								.setInt(6, rowKeyTtl)
 								.setIdempotent(true));
 			}
+
+			insertStatements.add(createInsertStatement(rowKey, rowKeyTtl));
+
 			return insertStatements;
 		}
 
@@ -655,12 +668,19 @@ public class ClusterConnection
 								.setInt(4, tagSetHash.getTagCollectionHash())
 								.setMap(5, rowKey.getTags()));
 			}
+
+			deleteStatements.add(createDeleteStatement(rowKey));
+
 			return deleteStatements;
 		}
 
 		@Override
 		public RowKeyResultSetProcessor createRowKeyQueryProcessor(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
 		{
+			if (tags.isEmpty())
+			{  //Unable to use tag indexes so defaulting to old behavior.
+				return super.createRowKeyQueryProcessor(metricName, rowKeyTimestamp, tags);
+			}
 
 			ListMultimap<String, Statement> queryStatementByTagName = createQueryStatementsByTagName(metricName, rowKeyTimestamp, tags);
 			List<Statement> queryStatements = new ArrayList<>(queryStatementByTagName.size());
@@ -722,10 +742,7 @@ public class ClusterConnection
 						hashForTagPair(tagPairEntry.getKey(), tagPairEntry.getValue()),
 						tagPairEntry.getKey());
 			}
-			if (tagPairHashToTagName.isEmpty())
-			{
-				tagPairHashToTagName.put(WILDCARD_TAG_HASH_VALUE, "");
-			}
+
 			Date timestamp = new Date(rowKeyTimestamp);
 			ListMultimap<String, Statement> queryStatementsByTagName = ArrayListMultimap.create(tagPairHashToTagName.size(), 1);
 			for (Map.Entry<Integer, String> tagPairHashAndTagNameEntry : tagPairHashToTagName.entrySet())
@@ -745,8 +762,7 @@ public class ClusterConnection
 		private TagSetHash generateTagPairHashes(DataPointsRowKey rowKey)
 		{
 			Hasher tagCollectionHasher = Hashing.murmur3_32().newHasher();
-			Set<Integer> tagPairHashes = new HashSet<>(rowKey.getTags().size() + 1);
-			tagPairHashes.add(WILDCARD_TAG_HASH_VALUE);
+			Set<Integer> tagPairHashes = new HashSet<>(rowKey.getTags().size());
 			for (Map.Entry<String, String> tagPairEntry : rowKey.getTags().entrySet())
 			{
 				int hashForTagPair = hashForTagPair(tagPairEntry.getKey(), tagPairEntry.getValue());

@@ -40,7 +40,7 @@ public class RowKeyLookupProviderTest
 	public void testWithWildcard()
 	{
 		ClusterConnection connection = new ClusterConnection(m_cassandraClient, m_clusterType,
-			Collections.singleton("*"));
+			Collections.singleton("*"), new HashSet<>());
 
 		RowKeyLookup rowKeyLookup = connection.getRowKeyLookupForMetric("someMetric");
 
@@ -51,7 +51,7 @@ public class RowKeyLookupProviderTest
 	public void testWithoutEmptyStringConfig()
 	{
 		ClusterConnection connection = new ClusterConnection(m_cassandraClient, m_clusterType,
-				Collections.singleton(""));
+				Collections.singleton(""), new HashSet<>());
 
 		RowKeyLookup rowKeyLookup = connection.getRowKeyLookupForMetric("someMetric");
 
@@ -62,6 +62,7 @@ public class RowKeyLookupProviderTest
 	public void testWithEmptySet()
 	{
 		ClusterConnection connection = new ClusterConnection(m_cassandraClient, m_clusterType,
+				new HashSet<>(),
 				new HashSet<>());
 
 		RowKeyLookup rowKeyLookup = connection.getRowKeyLookupForMetric("someMetric");
@@ -73,7 +74,7 @@ public class RowKeyLookupProviderTest
 	public void testWithMetricSetConfig()
 	{
 		ClusterConnection connection = new ClusterConnection(m_cassandraClient, m_clusterType,
-				ImmutableSet.of("metricA", "metricB"));
+				ImmutableSet.of("metricA", "metricB"), new HashSet<>());
 
 		RowKeyLookup rowKeyLookup = connection.getRowKeyLookupForMetric("someMetric");
 

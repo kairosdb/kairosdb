@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  Created by bhawkins on 4/29/17.
@@ -285,16 +286,18 @@ public class ClusterConnection
 
 	private final boolean m_alwaysUseTagIndexedLookup;
 	private final Set<String> m_tagIndexMetricNames;
+	private final Set<String> m_tagIndexedMetricTagNames;
 
 
 	public ClusterConnection(CassandraClient cassandraClient, EnumSet<Type> clusterType,
-			Set<String> tagIndexMetricNames)
+			Set<String> tagIndexMetricNames, Set<String> tagIndexedMetricTagNames)
 	{
 		m_cassandraClient = cassandraClient;
 		m_clusterType = clusterType;
 
 		m_alwaysUseTagIndexedLookup = tagIndexMetricNames.equals(ImmutableSet.of("*"));
 		m_tagIndexMetricNames = tagIndexMetricNames;
+		m_tagIndexedMetricTagNames = tagIndexedMetricTagNames;
 
 		if (m_alwaysUseTagIndexedLookup)
 		{
@@ -630,6 +633,7 @@ public class ClusterConnection
 		@Override
 		public List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
 		{
+			Map<String, String> tags = filterTags(rowKey.getTags());
 			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
 			List<Statement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
 			Date rowKeyTimestamp = new Date(rowKey.getTimestamp());
@@ -642,7 +646,7 @@ public class ClusterConnection
 								.setString(2, rowKey.getDataType())
 								.setInt(3, tagPairHash)
 								.setInt(4, tagSetHash.getTagCollectionHash())
-								.setMap(5, rowKey.getTags())
+								.setMap(5, tags)
 								.setInt(6, rowKeyTtl)
 								.setIdempotent(true));
 			}
@@ -666,7 +670,7 @@ public class ClusterConnection
 								.setString(2, rowKey.getDataType())
 								.setInt(3, tagPairHash)
 								.setInt(4, tagSetHash.getTagCollectionHash())
-								.setMap(5, rowKey.getTags()));
+								.setMap(5, filterTags(rowKey.getTags())));
 			}
 
 			deleteStatements.add(createDeleteStatement(rowKey));
@@ -761,9 +765,10 @@ public class ClusterConnection
 
 		private TagSetHash generateTagPairHashes(DataPointsRowKey rowKey)
 		{
+			Map<String, String> tags = filterTags(rowKey.getTags());
 			Hasher tagCollectionHasher = Hashing.murmur3_32().newHasher();
-			Set<Integer> tagPairHashes = new HashSet<>(rowKey.getTags().size());
-			for (Map.Entry<String, String> tagPairEntry : rowKey.getTags().entrySet())
+			Set<Integer> tagPairHashes = new HashSet<>(tags.size() + 1);
+			for (Map.Entry<String, String> tagPairEntry : tags.entrySet())
 			{
 				int hashForTagPair = hashForTagPair(tagPairEntry.getKey(), tagPairEntry.getValue());
 				tagPairHashes.add(hashForTagPair);
@@ -776,6 +781,12 @@ public class ClusterConnection
 		private int hashForTagPair(String tagName, String tagValue)
 		{
 			return Objects.hash(tagName, tagValue);
+		}
+
+		private Map<String, String> filterTags(Map<String, String> tags) {
+			return tags.entrySet().stream().filter(entry -> {
+				return m_tagIndexedMetricTagNames.size() == 0 || m_tagIndexedMetricTagNames.contains(entry.getKey());
+			}).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 		}
 	}
 

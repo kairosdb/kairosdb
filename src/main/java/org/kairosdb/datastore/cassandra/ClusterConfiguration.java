@@ -37,6 +37,7 @@ public class ClusterConfiguration
 	private final Map<String, Integer> m_hostList;
 	private final String m_clusterName;
 	private final Set<String> m_tagIndexedMetrics;
+	private final Set<String> m_tagIndexedMetricTagNames;
 	private String m_authPassword;
 	private String m_authUser;
 	private String m_localDCName;
@@ -111,6 +112,7 @@ public class ClusterConfiguration
 		checkState(m_startTime < m_endTime, "Cluster start time must be before end time");
 
 		m_tagIndexedMetrics = new HashSet<>(config.getStringList("tag_indexed_row_key_lookup_metrics", new ArrayList<String>()));
+		m_tagIndexedMetricTagNames = new HashSet<>(config.getStringList("tag_indexed_row_tag_filter", new ArrayList<String>()));
 	}
 
 	public String getKeyspace()
@@ -221,6 +223,11 @@ public class ClusterConfiguration
 	public Set<String> getTagIndexedMetrics()
 	{
 		return m_tagIndexedMetrics;
+	}
+
+	public Set<String> getTagIndexedMetricTagNames()
+	{
+		return m_tagIndexedMetricTagNames;
 	}
 }
 

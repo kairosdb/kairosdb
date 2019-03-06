@@ -19,6 +19,7 @@ import com.datastax.driver.core.ConsistencyLevel;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.SetMultimap;
 import org.hamcrest.CoreMatchers;
@@ -295,7 +296,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		client.init();
 		m_clusterConnection = new ClusterConnection(client,
 				EnumSet.of(ClusterConnection.Type.WRITE, ClusterConnection.Type.META),
-				new HashSet<>()).startup(false);
+				ImmutableMultimap.of()).startup(false);
 		BatchStats batchStats = new BatchStats();
 		DataCache<DataPointsRowKey> rowKeyCache = new DataCache<>(1024);
 		DataCache<String> metricNameCache = new DataCache<>(1024);

@@ -48,22 +48,28 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 		m_filterTagNames = new HashSet<>();
 		m_patternFilter = new HashMap<>();
 
+		//Set of tags to pass to the RowKeyResultSetProcessor, it cannot contain
+		//tags that are also specified as regex values
+		HashMultimap<String, String> processorTags = HashMultimap.create();
+
 		for (Map.Entry<String, String> entry : filterTags.entries())
 		{
+			String tag = entry.getKey();
 			if (regexPrefix.length() != 0 && entry.getValue().startsWith(regexPrefix))
 			{
 				String regex = entry.getValue().substring(regexPrefix.length());
 
 				Pattern pattern = Pattern.compile(regex);
 
-				m_patternFilter.put(entry.getKey(), pattern);
+				m_patternFilter.put(tag, pattern);
 			}
 			else
 			{
-				m_filterTags.put(entry.getKey(), entry.getValue());
+				m_filterTags.put(tag, entry.getValue());
+
 			}
 
-			m_filterTagNames.add(entry.getKey());
+			m_filterTagNames.add(tag);
 		}
 
 
@@ -113,17 +119,7 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 		List<Long> queryKeyList = createQueryKeyList(cluster, metricName, startTime, endTime);
 		for (Long keyTime : queryKeyList)
 		{
-			RowKeyLookup.RowKeyResultSetProcessor rowKeyResultSetProcessor = rowKeyLookup.createRowKeyQueryProcessor(metricName, keyTime, filterTags);
-			List<Statement> queryStatements = rowKeyResultSetProcessor.getQueryStatements();
-			List<ListenableFuture<ResultSet>> resultSetForKeyTimeFutures = new ArrayList<>(queryStatements.size());
-			for (Statement rowKeyQueryStmt : queryStatements)
-			{
-				rowKeyQueryStmt.setConsistencyLevel(cluster.getReadConsistencyLevel());
-				resultSetForKeyTimeFutures.add(cluster.executeAsync(rowKeyQueryStmt));
-			}
-			ListenableFuture<ResultSet> keyTimeQueryResultSetFuture =
-					Futures.transform(Futures.allAsList(resultSetForKeyTimeFutures), rowKeyResultSetProcessor);
-			futures.add(keyTimeQueryResultSetFuture);
+			futures.add(rowKeyLookup.queryRowKeys(metricName, keyTime, m_filterTags));
 		}
 
 		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);

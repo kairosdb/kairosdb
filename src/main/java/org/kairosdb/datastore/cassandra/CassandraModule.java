@@ -18,6 +18,7 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.AbstractModule;
@@ -159,7 +160,7 @@ public class CassandraModule extends AbstractModule
 			CassandraClient metaClient = metaInjector.getInstance(CassandraClient.class);
 
 			m_metaCluster = new ClusterConnection(metaClient, EnumSet.of(
-					ClusterConnection.Type.META), new HashSet<>());
+					ClusterConnection.Type.META), HashMultimap.create());
 			m_metaCluster.startup(configuration.isStartAsync());
 		}
 	}

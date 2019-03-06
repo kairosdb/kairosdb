@@ -292,10 +292,13 @@ public class MetricsResource implements KairosMetricReporter
 		checkServerType(ServerType.INGEST, "JSON /datapoints", "POST");
 		try
 		{
-			List<String> requestHeader = httpheaders.getRequestHeader("Content-Encoding");
-			if (requestHeader != null && requestHeader.contains("gzip"))
+			if (httpheaders != null)
 			{
-				stream = new GZIPInputStream(stream);
+				List<String> requestHeader = httpheaders.getRequestHeader("Content-Encoding");
+				if (requestHeader != null && requestHeader.contains("gzip"))
+				{
+					stream = new GZIPInputStream(stream);
+				}
 			}
 
 			DataPointsParser parser = new DataPointsParser(m_publisher, new InputStreamReader(stream, "UTF-8"),

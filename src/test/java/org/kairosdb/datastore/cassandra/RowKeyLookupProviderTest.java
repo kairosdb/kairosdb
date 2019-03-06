@@ -1,7 +1,9 @@
 package org.kairosdb.datastore.cassandra;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +42,7 @@ public class RowKeyLookupProviderTest
 	public void testWithWildcard()
 	{
 		ClusterConnection connection = new ClusterConnection(m_cassandraClient, m_clusterType,
-			Collections.singleton("*"));
+				ImmutableMultimap.of("*", "*"));
 
 		RowKeyLookup rowKeyLookup = connection.getRowKeyLookupForMetric("someMetric");
 
@@ -51,7 +53,7 @@ public class RowKeyLookupProviderTest
 	public void testWithoutEmptyStringConfig()
 	{
 		ClusterConnection connection = new ClusterConnection(m_cassandraClient, m_clusterType,
-				Collections.singleton(""));
+				ImmutableMultimap.of("", ""));
 
 		RowKeyLookup rowKeyLookup = connection.getRowKeyLookupForMetric("someMetric");
 
@@ -62,7 +64,7 @@ public class RowKeyLookupProviderTest
 	public void testWithEmptySet()
 	{
 		ClusterConnection connection = new ClusterConnection(m_cassandraClient, m_clusterType,
-				new HashSet<>());
+				ImmutableMultimap.of());
 
 		RowKeyLookup rowKeyLookup = connection.getRowKeyLookupForMetric("someMetric");
 
@@ -73,7 +75,7 @@ public class RowKeyLookupProviderTest
 	public void testWithMetricSetConfig()
 	{
 		ClusterConnection connection = new ClusterConnection(m_cassandraClient, m_clusterType,
-				ImmutableSet.of("metricA", "metricB"));
+				ImmutableMultimap.of("metricA", "*", "metricB", "*"));
 
 		RowKeyLookup rowKeyLookup = connection.getRowKeyLookupForMetric("someMetric");
 

@@ -4,17 +4,22 @@ import com.datastax.driver.core.*;
 import com.datastax.driver.core.exceptions.InvalidQueryException;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.base.Charsets;
+import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -103,13 +108,13 @@ public class ClusterConnection
 			"  metric text,\n" +
 			"  table_name text, \n" +
 			"  row_time timestamp,\n" +
-			"  single_tag_pair_hash int,\n" +
+			"  single_tag_pair text,\n" +
 			"  tag_collection_hash int,\n" +
 			"  data_type text,\n" +
 			"  tags frozen<map<text, text>>,\n" +
 			"  mtime timeuuid static,\n" +
 			"  value text,\n" +
-			"  PRIMARY KEY ((metric, table_name, row_time, single_tag_pair_hash), data_type, tag_collection_hash, tags)\n" +
+			"  PRIMARY KEY ((metric, table_name, row_time, single_tag_pair), data_type, tag_collection_hash, tags)\n" +
 			")";
 
 	public static final String STRING_INDEX_TABLE = "" +
@@ -143,7 +148,7 @@ public class ClusterConnection
 			"(metric, table_name, row_time, data_type, tags, mtime) VALUES (?, 'data_points', ?, ?, ?, now()) USING TTL ?"; // AND TIMESTAMP ?";
 
 	public static final String TAG_INDEXED_ROW_KEY_INSERT = "INSERT INTO tag_indexed_row_keys " +
-			"(metric, table_name, row_time, data_type, single_tag_pair_hash, tag_collection_hash, tags, mtime) VALUES (?, 'data_points', ?, ?, ?, ?, ?, now()) USING TTL ?";
+			"(metric, table_name, row_time, data_type, single_tag_pair, tag_collection_hash, tags, mtime) VALUES (?, 'data_points', ?, ?, ?, ?, ?, now()) USING TTL ?";
 
 	public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
 			"(key, column1, value) VALUES (?, ?, 0x00)";
@@ -196,7 +201,7 @@ public class ClusterConnection
 			"FROM row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ?";
 
 	public static final String TAG_INDEXED_ROW_KEY_QUERY = "SELECT row_time, data_type, tags, tag_collection_hash " +
-			"FROM tag_indexed_row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ? and single_tag_pair_hash = ? " +
+			"FROM tag_indexed_row_keys WHERE metric = ? AND table_name = 'data_points' AND row_time = ? and single_tag_pair = ? " +
 			"ORDER BY data_type, tag_collection_hash";
 
 	public static final String ROW_KEY_TAG_QUERY_WITH_TYPE = "SELECT row_time, data_type, tags " +
@@ -211,7 +216,7 @@ public class ClusterConnection
 
 	public static final String TAG_INDEXED_ROW_KEY_DELETE = "DELETE FROM tag_indexed_row_keys WHERE metric = ? " +
 			"AND table_name = 'data_points' AND row_time = ? AND data_type = ? " +
-			"AND single_tag_pair_hash = ? AND tag_collection_hash = ? AND tags = ?";
+			"AND single_tag_pair = ? AND tag_collection_hash = ? AND tags = ?";
 
 	//Service index queries
 	public static final String SERVICE_INDEX_INSERT = "INSERT INTO service_index " +
@@ -284,16 +289,19 @@ public class ClusterConnection
 	private volatile boolean m_shuttingDown = false;
 
 	private final boolean m_alwaysUseTagIndexedLookup;
-	private final Set<String> m_tagIndexMetricNames;
+	private final Multimap<String, String> m_tagIndexMetricNames;
+
+	private final RowKeysTableLookup m_indexedRowKeyLookup = new TagIndexedRowKeysTableLookup();
+	private final RowKeysTableLookup m_rowKeyLookup = new RowKeysTableLookup();
 
 
 	public ClusterConnection(CassandraClient cassandraClient, EnumSet<Type> clusterType,
-			Set<String> tagIndexMetricNames)
+			Multimap<String, String> tagIndexMetricNames)
 	{
 		m_cassandraClient = cassandraClient;
 		m_clusterType = clusterType;
 
-		m_alwaysUseTagIndexedLookup = tagIndexMetricNames.equals(ImmutableSet.of("*"));
+		m_alwaysUseTagIndexedLookup = tagIndexMetricNames.equals(ImmutableMultimap.of("*", "*"));
 		m_tagIndexMetricNames = tagIndexMetricNames;
 
 		if (m_alwaysUseTagIndexedLookup)
@@ -538,15 +546,15 @@ public class ClusterConnection
 
 	public RowKeyLookup getRowKeyLookupForMetric(String metricName)
 	{
-		if (m_alwaysUseTagIndexedLookup || m_tagIndexMetricNames.contains(metricName))
+		if (m_alwaysUseTagIndexedLookup || m_tagIndexMetricNames.containsKey(metricName))
 		{
 			logger.debug("Using tag-indexed row key lookup for {}", metricName);
-			return new TagIndexedRowKeysTableLookup();
+			return m_indexedRowKeyLookup;
 		}
 		else
 		{
 			logger.debug("Using standard row key lookup for {}", metricName);
-			return new RowKeysTableLookup();
+			return m_rowKeyLookup;
 		}
 	}
 
@@ -568,6 +576,9 @@ public class ClusterConnection
 							.setIdempotent(true);
 		}
 
+		/*
+		 This we want to return as it is added to a batch for insert
+		 */
 		@Override
 		public List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
 		{
@@ -584,13 +595,29 @@ public class ClusterConnection
 							.setMap(3, rowKey.getTags());
 		}
 
+		/*
+			This can be done here
+		 */
 		@Override
 		public List<Statement> createDeleteStatements(DataPointsRowKey rowKey)
 		{
 			return ImmutableList.of(createDeleteStatement(rowKey));
 		}
 
+
 		@Override
+		public ListenableFuture<ResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
+		{
+			BoundStatement statement = psRowKeyQuery.bind()
+					.setString(0, metricName)
+					.setTimestamp(1, new Date(rowKeyTimestamp));
+
+			statement.setConsistencyLevel(getReadConsistencyLevel());
+			ResultSetFuture resultSetFuture = executeAsync(statement);
+			return resultSetFuture;
+		}
+
+		/*@Override
 		public RowKeyResultSetProcessor createRowKeyQueryProcessor(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
 		{
 			return new RowKeyResultSetProcessor()
@@ -613,16 +640,15 @@ public class ClusterConnection
 					}
 					return input.get(0);
 				}
+
+
 			};
-		}
+		}*/
 
 	}
 
 	class TagIndexedRowKeysTableLookup extends RowKeysTableLookup
 	{
-
-		private static final int WILDCARD_TAG_HASH_VALUE = 0;
-
 		public TagIndexedRowKeysTableLookup()
 		{
 		}
@@ -633,20 +659,21 @@ public class ClusterConnection
 			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
 			List<Statement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
 			Date rowKeyTimestamp = new Date(rowKey.getTimestamp());
-			for (Integer tagPairHash : tagSetHash.getTagPairHashes())
+			for (String tagPair : tagSetHash.getTagPairHashes())
 			{
 				insertStatements.add(
 						psTagIndexedRowKeyInsert.bind()
 								.setString(0, rowKey.getMetricName())
 								.setTimestamp(1, rowKeyTimestamp)
 								.setString(2, rowKey.getDataType())
-								.setInt(3, tagPairHash)
+								.setString(3, tagPair)
 								.setInt(4, tagSetHash.getTagCollectionHash())
 								.setMap(5, rowKey.getTags())
 								.setInt(6, rowKeyTtl)
 								.setIdempotent(true));
 			}
 
+			//Always insert into row keys table
 			insertStatements.add(createInsertStatement(rowKey, rowKeyTtl));
 
 			return insertStatements;
@@ -658,76 +685,94 @@ public class ClusterConnection
 			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
 			List<Statement> deleteStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
 			Date rowKeyTimestamp = new Date(rowKey.getTimestamp());
-			for (Integer tagPairHash : tagSetHash.getTagPairHashes()) {
+			for (String tagPair : tagSetHash.getTagPairHashes()) {
 				deleteStatements.add(
 						psTagIndexedRowKeyDelete.bind()
 								.setString(0, rowKey.getMetricName())
 								.setTimestamp(1, rowKeyTimestamp)
 								.setString(2, rowKey.getDataType())
-								.setInt(3, tagPairHash)
+								.setString(3, tagPair)
 								.setInt(4, tagSetHash.getTagCollectionHash())
 								.setMap(5, rowKey.getTags()));
 			}
 
+			//Need to delete from row keys table as well
 			deleteStatements.add(createDeleteStatement(rowKey));
 
 			return deleteStatements;
 		}
 
 		@Override
-		public RowKeyResultSetProcessor createRowKeyQueryProcessor(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
+		public ListenableFuture<ResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
 		{
+			//Todo: there is probably still to much going on in this method and can likely be simplified
 			if (tags.isEmpty())
 			{  //Unable to use tag indexes so defaulting to old behavior.
-				return super.createRowKeyQueryProcessor(metricName, rowKeyTimestamp, tags);
+				return super.queryRowKeys(metricName, rowKeyTimestamp, tags);
 			}
 
 			ListMultimap<String, Statement> queryStatementByTagName = createQueryStatementsByTagName(metricName, rowKeyTimestamp, tags);
-			List<Statement> queryStatements = new ArrayList<>(queryStatementByTagName.size());
-			Multimap<String, Integer> tagNameToStatementIndexes = ArrayListMultimap.create();
 
-			for (Map.Entry<String, Statement> tagNameAndStatementEntry : queryStatementByTagName.entries())
+			//we will always get at least 1 because of the above tags.isEmpty check
+			if (queryStatementByTagName.size() == 1)
 			{
-				String tagName = tagNameAndStatementEntry.getKey();
-				Statement queryStatement = tagNameAndStatementEntry.getValue();
-				tagNameToStatementIndexes.put(tagName, queryStatements.size());
-				queryStatements.add(queryStatement);
+				Statement rowKeyQueryStmt = queryStatementByTagName.values().iterator().next();
+				rowKeyQueryStmt.setConsistencyLevel(getReadConsistencyLevel());
+				ResultSetFuture resultSetFuture = executeAsync(rowKeyQueryStmt);
+
+				return resultSetFuture;
 			}
-
-			return new RowKeyResultSetProcessor()
+			else
 			{
-				@Override
-				public List<Statement> getQueryStatements()
+				List<Statement> queryStatements = new ArrayList<>(queryStatementByTagName.size());
+				Multimap<String, Integer> tagNameToStatementIndexes = ArrayListMultimap.create();
+
+				for (Map.Entry<String, Statement> tagNameAndStatementEntry : queryStatementByTagName.entries())
 				{
-					return queryStatements;
+					String tagName = tagNameAndStatementEntry.getKey();
+					Statement queryStatement = tagNameAndStatementEntry.getValue();
+					tagNameToStatementIndexes.put(tagName, queryStatements.size());
+					queryStatements.add(queryStatement);
 				}
 
-				@Override
-				public ResultSet apply(List<ResultSet> input)
+
+				List<ListenableFuture<ResultSet>> resultSetForKeyTimeFutures = new ArrayList<>(queryStatements.size());
+				for (Statement rowKeyQueryStmt : queryStatements)
 				{
-					if (input.size() == 1)
-					{
-						// No need to find the most selective ResultSet if we've only got 1
-						return input.get(0);
-					}
-					List<List<ResultSet>> resultSetsGroupedByTagName = new ArrayList<>(tagNameToStatementIndexes.size());
-					for (Collection<Integer> indexCollection : tagNameToStatementIndexes.asMap().values())
-					{
-						List<ResultSet> resultSetsForTag = new ArrayList<>(indexCollection.size());
-						for (Integer resultSetIndex : indexCollection)
-						{
-							resultSetsForTag.add(input.get(resultSetIndex));
-						}
-						resultSetsGroupedByTagName.add(resultSetsForTag);
-					}
-					Comparator<RowCountEstimatingRowKeyResultSet> comparator =
-							Comparator
-									.<RowCountEstimatingRowKeyResultSet>comparingInt(r -> r.isEstimated() ? 1 : 0)
-									.thenComparing(RowCountEstimatingRowKeyResultSet::getRowCount);
-					return resultSetsGroupedByTagName.stream().map(RowCountEstimatingRowKeyResultSet::create).min(comparator)
-							.orElseThrow(() -> new IllegalStateException("No minimal ResultSet found"));
+					rowKeyQueryStmt.setConsistencyLevel(getReadConsistencyLevel());
+					ResultSetFuture resultSetFuture = executeAsync(rowKeyQueryStmt);
+					resultSetForKeyTimeFutures.add(resultSetFuture);
 				}
-			};
+
+
+				ListenableFuture<ResultSet> keyTimeQueryResultSetFuture =
+						Futures.transform(Futures.allAsList(resultSetForKeyTimeFutures), new Function<List<ResultSet>, ResultSet>()
+						{
+							@Nullable
+							@Override
+							public ResultSet apply(@Nullable List<ResultSet> input)
+							{
+								List<List<ResultSet>> resultSetsGroupedByTagName = new ArrayList<>(tagNameToStatementIndexes.size());
+								for (Collection<Integer> indexCollection : tagNameToStatementIndexes.asMap().values())
+								{
+									List<ResultSet> resultSetsForTag = new ArrayList<>(indexCollection.size());
+									for (Integer resultSetIndex : indexCollection)
+									{
+										resultSetsForTag.add(input.get(resultSetIndex));
+									}
+									resultSetsGroupedByTagName.add(resultSetsForTag);
+								}
+								Comparator<RowCountEstimatingRowKeyResultSet> comparator =
+										Comparator
+												.<RowCountEstimatingRowKeyResultSet>comparingInt(r -> r.isEstimated() ? 1 : 0)
+												.thenComparing(RowCountEstimatingRowKeyResultSet::getRowCount);
+								return resultSetsGroupedByTagName.stream().map(RowCountEstimatingRowKeyResultSet::create).min(comparator)
+										.orElseThrow(() -> new IllegalStateException("No minimal ResultSet found"));
+							}
+						});
+
+				return keyTimeQueryResultSetFuture;
+			}
 		}
 
 		private ListMultimap<String, Statement> createQueryStatementsByTagName(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
@@ -735,7 +780,7 @@ public class ClusterConnection
 			// Using tag pair hashes as the key in this map can lead to collisions, but that's not a problem
 			// because we're simply using the tag pair hashes as an initial AND filter, and further filtering is
 			// done on the incoming ResultSets
-			Map<Integer, String> tagPairHashToTagName = new HashMap<>();
+			Map<String, String> tagPairHashToTagName = new HashMap<>();
 			for (Map.Entry<String, String> tagPairEntry : tags.entries())
 			{
 				tagPairHashToTagName.put(
@@ -745,37 +790,44 @@ public class ClusterConnection
 
 			Date timestamp = new Date(rowKeyTimestamp);
 			ListMultimap<String, Statement> queryStatementsByTagName = ArrayListMultimap.create(tagPairHashToTagName.size(), 1);
-			for (Map.Entry<Integer, String> tagPairHashAndTagNameEntry : tagPairHashToTagName.entrySet())
+			for (Map.Entry<String, String> tagPairHashAndTagNameEntry : tagPairHashToTagName.entrySet())
 			{
-				int tagPairHash = tagPairHashAndTagNameEntry.getKey();
+				String tagPair = tagPairHashAndTagNameEntry.getKey();
 				String tagName = tagPairHashAndTagNameEntry.getValue();
 				queryStatementsByTagName.put(
 						tagName,
 						psTagIndexedRowKeyQuery.bind()
 								.setString(0, metricName)
 								.setTimestamp(1, timestamp)
-								.setInt(2, tagPairHash));
+								.setString(2, tagPair));
 			}
 			return queryStatementsByTagName;
 		}
 
 		private TagSetHash generateTagPairHashes(DataPointsRowKey rowKey)
 		{
+			//identify which tags we are indexing on
+			Collection<String> indexedTags = m_tagIndexMetricNames.get(rowKey.getMetricName());
+			boolean allTags = indexedTags.contains("*");
+
+			//todo add filter on rowKey.getTags().entrySet to limit what tags are indexed based on config
 			Hasher tagCollectionHasher = Hashing.murmur3_32().newHasher();
-			Set<Integer> tagPairHashes = new HashSet<>(rowKey.getTags().size());
+			Set<String> tagPairHashes = new HashSet<>(rowKey.getTags().size());
 			for (Map.Entry<String, String> tagPairEntry : rowKey.getTags().entrySet())
 			{
-				int hashForTagPair = hashForTagPair(tagPairEntry.getKey(), tagPairEntry.getValue());
-				tagPairHashes.add(hashForTagPair);
-				tagCollectionHasher.putString(tagPairEntry.getKey(), Charsets.UTF_8);
-				tagCollectionHasher.putString(tagPairEntry.getValue(), Charsets.UTF_8);
+				if (m_alwaysUseTagIndexedLookup || allTags || indexedTags.contains(tagPairEntry.getKey()))
+				{
+					tagPairHashes.add(hashForTagPair(tagPairEntry.getKey(), tagPairEntry.getValue()));
+					tagCollectionHasher.putString(tagPairEntry.getKey(), Charsets.UTF_8);
+					tagCollectionHasher.putString(tagPairEntry.getValue(), Charsets.UTF_8);
+				}
 			}
 			return new TagSetHash(tagCollectionHasher.hash().asInt(), tagPairHashes);
 		}
 
-		private int hashForTagPair(String tagName, String tagValue)
+		private String hashForTagPair(String tagName, String tagValue)
 		{
-			return Objects.hash(tagName, tagValue);
+			return new StringBuilder().append(tagName).append('=').append(tagValue).toString();
 		}
 	}
 
@@ -785,12 +837,12 @@ public class ClusterConnection
 	private static class TagSetHash {
 
 		private final int tagCollectionHash;
-		private final Set<Integer> tagPairHashes;
+		private final Set<String> tagPairHashes;
 
-		public TagSetHash(int tagCollectionHash, Set<Integer> tagPairHashes)
+		public TagSetHash(int tagCollectionHash, Set<String> tagPairs)
 		{
 			this.tagCollectionHash = tagCollectionHash;
-			this.tagPairHashes = tagPairHashes;
+			this.tagPairHashes = tagPairs;
 		}
 
 		public int getTagCollectionHash()
@@ -798,7 +850,7 @@ public class ClusterConnection
 			return tagCollectionHash;
 		}
 
-		public Set<Integer> getTagPairHashes()
+		public Set<String> getTagPairHashes()
 		{
 			return tagPairHashes;
 		}

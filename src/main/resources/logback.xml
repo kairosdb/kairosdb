@@ -68,6 +68,8 @@
 	<logger name="org.kairosdb.datastore.h2.orm" level="WARN"/>
 
 	<logger name="org.apache.kafka.streams.processor.internals" level="WARN"/>
+
+	<!--Line below suppresses large amounts of info when users authenticate, comment to get it back -->
 	<logger name="org.eclipse.jetty.jaas.spi.LdapLoginModule" level="WARN"/>
 
 

@@ -53,6 +53,7 @@ import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 public class WebServer implements KairosDBService
 {
 	public static final Logger logger = LoggerFactory.getLogger(WebServer.class);
+	public static final int LOG_RETAIN_DAYS = 30;
 
 	public static final String JETTY_ADDRESS_PROPERTY = "kairosdb.jetty.address";
 	public static final String JETTY_PORT_PROPERTY = "kairosdb.jetty.port";
@@ -87,7 +88,7 @@ public class WebServer implements KairosDBService
 	private ExecutorThreadPool m_pool;
 	private boolean m_showStacktrace;
 	private String m_authModuleName = null;
-	private int m_requestLoggingRetainDays = 30;
+	private int m_requestLoggingRetainDays = LOG_RETAIN_DAYS;
 	private boolean m_requestLoggingEnabled;
 	private String[] m_loggingIgnorePaths;
 

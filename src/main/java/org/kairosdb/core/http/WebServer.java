@@ -16,12 +16,13 @@
 
 package org.kairosdb.core.http;
 
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Splitter;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.inject.servlet.GuiceFilter;
 import org.eclipse.jetty.jaas.JAASLoginService;
 import org.eclipse.jetty.security.*;
-import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.ErrorHandler;
@@ -31,7 +32,6 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.security.Constraint;
-import org.eclipse.jetty.util.security.Credential;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.ExecutorThreadPool;
 import org.kairosdb.core.KairosDBService;
@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -56,32 +57,39 @@ public class WebServer implements KairosDBService
 	public static final String JETTY_ADDRESS_PROPERTY = "kairosdb.jetty.address";
 	public static final String JETTY_PORT_PROPERTY = "kairosdb.jetty.port";
 	public static final String JETTY_WEB_ROOT_PROPERTY = "kairosdb.jetty.static_web_root";
-	public static final String JETTY_AUTH_USER_PROPERTY = "kairosdb.jetty.basic_auth.user";
-	public static final String JETTY_AUTH_PASSWORD_PROPERTY = "kairosdb.jetty.basic_auth.password";
 	public static final String JETTY_SSL_PORT = "kairosdb.jetty.ssl.port";
 	public static final String JETTY_SSL_PROTOCOLS = "kairosdb.jetty.ssl.protocols";
 	public static final String JETTY_SSL_CIPHER_SUITES = "kairosdb.jetty.ssl.cipherSuites";
 	public static final String JETTY_SSL_KEYSTORE_PATH = "kairosdb.jetty.ssl.keystore.path";
 	public static final String JETTY_SSL_KEYSTORE_PASSWORD = "kairosdb.jetty.ssl.keystore.password";
+	public static final String JETTY_SSL_TRUSTSTORE_PATH = "kairosdb.jetty.ssl.truststore.path";
 	public static final String JETTY_THREADS_QUEUE_SIZE_PROPERTY = "kairosdb.jetty.threads.queue_size";
 	public static final String JETTY_THREADS_MIN_PROPERTY = "kairosdb.jetty.threads.min";
 	public static final String JETTY_THREADS_MAX_PROPERTY = "kairosdb.jetty.threads.max";
 	public static final String JETTY_THREADS_KEEP_ALIVE_MS_PROPERTY = "kairosdb.jetty.threads.keep_alive_ms";
 	public static final String JETTY_SHOW_STACKTRACE = "kairosdb.jetty.show_stacktrace";
+	public static final String JETTY_AUTH_MODULE_NAME = "kairosdb.jetty.auth_module_name";
+	public static final String JETTY_REQUEST_LOGGING_ENABLED = "kairosdb.jetty.request_logging.enabled";
+	public static final String JETTY_REQUEST_LOGGING_RETAIN_DAYS = "kairosdb.jetty.request_logging.retain_days";
+	public static final String JETTY_REQUEST_LOGGING_IGNORE_PATHS = "kairosdb.jetty.request_logging.ignore_paths";
+
 
 	private InetAddress m_address;
 	private int m_port;
 	private String m_webRoot;
 	private Server m_server;
-	private String m_authUser = null;
-	private String m_authPassword = null;
 	private int m_sslPort;
 	private String[] m_cipherSuites;
 	private String[] m_protocols;
 	private String m_keyStorePath;
 	private String m_keyStorePassword;
+	private String m_trustStorePath = null;
 	private ExecutorThreadPool m_pool;
 	private boolean m_showStacktrace;
+	private String m_authModuleName = null;
+	private int m_requestLoggingRetainDays = 30;
+	private boolean m_requestLoggingEnabled;
+	private String[] m_loggingIgnorePaths;
 
 
 	public WebServer(int port, String webRoot)
@@ -104,14 +112,6 @@ public class WebServer implements KairosDBService
 	}
 
 	@Inject(optional = true)
-	public void setAuthCredentials(@Named(JETTY_AUTH_USER_PROPERTY) String user,
-	                               @Named(JETTY_AUTH_PASSWORD_PROPERTY) String password)
-	{
-		m_authUser = user;
-		m_authPassword = password;
-	}
-
-	@Inject(optional = true)
 	public void setSSLSettings(@Named(JETTY_SSL_PORT) int sslPort,
 	                           @Named(JETTY_SSL_KEYSTORE_PATH) String keyStorePath,
 	                           @Named(JETTY_SSL_KEYSTORE_PASSWORD) String keyStorePassword)
@@ -119,6 +119,12 @@ public class WebServer implements KairosDBService
 		m_sslPort = sslPort;
 		m_keyStorePath = checkNotNullOrEmpty(keyStorePath);
 		m_keyStorePassword = checkNotNullOrEmpty(keyStorePassword);
+	}
+
+	@Inject(optional = true)
+	public void setSSLSettings(@Named(JETTY_SSL_TRUSTSTORE_PATH) String truststorePath)
+	{
+		m_trustStorePath = checkNotNullOrEmpty(truststorePath);
 	}
 
 	@Inject(optional = true)
@@ -150,6 +156,34 @@ public class WebServer implements KairosDBService
 		m_showStacktrace = showStacktrace;
 	}
 
+	@Inject(optional = true)
+	public void setJettyAuthModuleName(@Named(JETTY_AUTH_MODULE_NAME) String moduleName)
+	{
+		m_authModuleName = moduleName;
+	}
+
+	@Inject(optional = true)
+	public void setJettyRequestLoggingEnabled(@Named(JETTY_REQUEST_LOGGING_ENABLED) String loggingEnabled)
+	{
+		m_requestLoggingEnabled = Boolean.parseBoolean(loggingEnabled);
+	}
+
+	@Inject(optional = true)
+	public void setJettyRequestLoggingRetainDays(@Named(JETTY_REQUEST_LOGGING_RETAIN_DAYS) String retainDays)
+	{
+		m_requestLoggingRetainDays = Integer.parseInt(retainDays);
+	}
+
+	@Inject(optional = true)
+	void setJettyRequestLoggingIgnorePaths(@Named(JETTY_REQUEST_LOGGING_IGNORE_PATHS) String ignorePaths)
+	{
+		Splitter splitter = Splitter.on(",");
+		CharMatcher cm =  CharMatcher.anyOf("[]").or(CharMatcher.whitespace());
+		splitter = splitter.trimResults(cm);
+		List<String> ignorePathsList = splitter.splitToList(ignorePaths);
+		m_loggingIgnorePaths = ignorePathsList.toArray(new String[ignorePathsList.size()]);
+	}
+
 	@Override
 	public void start() throws KairosDBException
 	{
@@ -174,41 +208,15 @@ public class WebServer implements KairosDBService
 			}
 
 			if (m_keyStorePath != null && !m_keyStorePath.isEmpty())
-			{
-				logger.info("Using SSL");
-				HttpConfiguration httpConfig = new HttpConfiguration();
-				httpConfig.setSecureScheme("https");
-				httpConfig.setSecurePort(m_sslPort);
-				httpConfig.addCustomizer(new SecureRequestCustomizer());
-				SslContextFactory sslContextFactory = new SslContextFactory();
-				sslContextFactory.setKeyStorePath(m_keyStorePath);
-				sslContextFactory.setKeyStorePassword(m_keyStorePassword);
-
-				if (m_cipherSuites != null && m_cipherSuites.length > 0)
-					sslContextFactory.setIncludeCipherSuites(m_cipherSuites);
-
-				if (m_protocols != null && m_protocols.length > 0)
-					sslContextFactory.setIncludeProtocols(m_protocols);
-
-				ServerConnector https = new ServerConnector(m_server, new SslConnectionFactory(sslContextFactory,"http/1.1"), new HttpConnectionFactory(httpConfig));
-
-				https.setPort(m_sslPort);
-				m_server.addConnector(https);
-			}
-
+				initializeSSL();
 			ServletContextHandler servletContextHandler = new ServletContextHandler();
 			//As of Jetty 9.4 the default alias checker allows symbolic links
 
-			//Turn on basic auth if the user was specified
-			if (m_authUser != null)
+			if (m_authModuleName != null)
 			{
-//				servletContextHandler.setSecurityHandler(basicAuth(m_authUser, m_authPassword, "kairos"));
-//				servletContextHandler.setContextPath("/");
+				servletContextHandler.setSecurityHandler(initializeAuth());
+				servletContextHandler.setContextPath("/");
 			}
-
-			servletContextHandler.setSecurityHandler(ldapAuth());
-			servletContextHandler.setContextPath("/");
-
 
 			servletContextHandler.addFilter(GuiceFilter.class, "/api/*", null);
 			servletContextHandler.addServlet(DefaultServlet.class, "/api/*");
@@ -233,8 +241,8 @@ public class WebServer implements KairosDBService
 
 
 			//some code for logging
-			initializeJettyRequestLogging();
-
+			if(m_requestLoggingEnabled)
+				initializeJettyRequestLogging();
 
 			m_server.start();
 		}
@@ -262,47 +270,34 @@ public class WebServer implements KairosDBService
 		}
 	}
 
-	public InetAddress getAddress()
+	public InetAddress getAddress() { return m_address; }
+
+	private void initializeSSL()
 	{
-		return m_address;
+		logger.info("Using SSL");
+		HttpConfiguration httpConfig = new HttpConfiguration();
+		httpConfig.setSecureScheme("https");
+		httpConfig.setSecurePort(m_sslPort);
+		httpConfig.addCustomizer(new SecureRequestCustomizer());
+
+		SslContextFactory sslContextFactory = new SslContextFactory();
+		sslContextFactory.setKeyStorePath(m_keyStorePath);
+		sslContextFactory.setKeyStorePassword(m_keyStorePassword);
+		if (m_trustStorePath != null && !m_trustStorePath.isEmpty())
+			sslContextFactory.setTrustStorePath(m_trustStorePath);
+
+		if (m_cipherSuites != null && m_cipherSuites.length > 0)
+			sslContextFactory.setIncludeCipherSuites(m_cipherSuites);
+
+		if (m_protocols != null && m_protocols.length > 0)
+			sslContextFactory.setIncludeProtocols(m_protocols);
+
+		ServerConnector https = new ServerConnector(m_server, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(httpConfig));
+		https.setPort(m_sslPort);
+		m_server.addConnector(https);
 	}
 
-	private static SecurityHandler basicAuth(String username, String password, String realm)
-	{
-
-		UserStore userStore = new UserStore();
-		userStore.addUser(username, Credential.getCredential(password), new String[]{"user"});
-		HashLoginService l = new HashLoginService();
-		l.setUserStore(userStore);
-		l.setName(realm);
-
-		Constraint constraint = new Constraint();
-		constraint.setName(Constraint.__BASIC_AUTH);
-		constraint.setRoles(new String[]{"user"});
-		constraint.setAuthenticate(true);
-
-		Constraint noConstraint = new Constraint();
-
-		ConstraintMapping healthcheckConstraintMapping = new ConstraintMapping();
-		healthcheckConstraintMapping.setConstraint(noConstraint);
-		healthcheckConstraintMapping.setPathSpec("/api/v1/health/check");
-
-		ConstraintMapping cm = new ConstraintMapping();
-		cm.setConstraint(constraint);
-		cm.setPathSpec("/*");
-
-		ConstraintSecurityHandler csh = new ConstraintSecurityHandler();
-		csh.setAuthenticator(new BasicAuthenticator());
-		csh.setRealmName("myrealm");
-		csh.addConstraintMapping(healthcheckConstraintMapping);
-		csh.addConstraintMapping(cm);
-		csh.setLoginService(l);
-
-		return csh;
-
-	}
-
-	private static SecurityHandler ldapAuth() throws Exception
+	private SecurityHandler initializeAuth() throws Exception
 	{
 		Constraint constraint = new Constraint();
 		constraint.setName(Constraint.__BASIC_AUTH);
@@ -315,8 +310,7 @@ public class WebServer implements KairosDBService
 
 		ConstraintSecurityHandler csh = new ConstraintSecurityHandler();
         JAASLoginService l = new JAASLoginService();
-        l.setLoginModuleName("ldaploginmodule");
-//		l.setLoginModuleName("basicAuth");
+        l.setLoginModuleName(m_authModuleName);
         csh.setLoginService(l);
         csh.addConstraintMapping(cm);
         l.start();
@@ -325,12 +319,14 @@ public class WebServer implements KairosDBService
 
     private void initializeJettyRequestLogging()
 	{
-		NCSARequestLog requestLog = new NCSARequestLog("log/jetty.yyyy-mm-dd.request.log");
+		NCSARequestLog requestLog = new NCSARequestLog("log/jetty-yyyy_mm_dd.request.log");
 		requestLog.setAppend(true);
 		requestLog.setExtended(false);
-		requestLog.setLogTimeZone("GMT");
+		requestLog.setLogTimeZone("UTC");
 		requestLog.setLogLatency(true);
-		requestLog.setRetainDays(90);
+		requestLog.setRetainDays(m_requestLoggingRetainDays);
+		if(m_loggingIgnorePaths != null)
+			requestLog.setIgnorePaths(m_loggingIgnorePaths);
 		m_server.setRequestLog(requestLog);
 	}
 }

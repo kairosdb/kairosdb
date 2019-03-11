@@ -203,34 +203,6 @@ public class WebServerTest
 	}
 
 	@Test
-	public void test_basicAuth_unauthorized() throws KairosDBException, IOException, InterruptedException
-	{
-		server = new WebServer(9001, ".");
-		server.setAuthCredentials("bob", "bobPassword");
-		server.start();
-
-		client = new Client();
-
-		JsonResponse response = client.get("http://localhost:9001/");
-		assertThat(response.getStatusCode(), equalTo(401));
-	}
-
-	@Test
-	public void test_basicAuth_authorized() throws KairosDBException, IOException, InterruptedException
-	{
-		server = new WebServer(9001, ".");
-		server.setAuthCredentials("bob", "bobPassword");
-		server.start();
-
-		client = new Client();
-		client.setAuthentication("bob", "bobPassword");
-
-		JsonResponse response = client.get("http://localhost:9001/");
-		assertThat(response.getStatusCode(), equalTo(200));
-		assertThat(response.getJson().length(), greaterThan(0));
-	}
-
-	@Test
 	public void test_success() throws KairosDBException, IOException, InterruptedException
 	{
 		server = new WebServer(9001, ".");

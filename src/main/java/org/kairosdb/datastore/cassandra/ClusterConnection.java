@@ -658,6 +658,21 @@ public class ClusterConnection
 		{
 			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
 			List<Statement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
+
+			//Insert index statements
+			insertStatements.addAll(createIndexStatements(rowKey, rowKeyTtl));
+
+			//Always insert into row keys table
+			insertStatements.add(createInsertStatement(rowKey, rowKeyTtl));
+
+			return insertStatements;
+		}
+
+		@Override
+		public List<Statement> createIndexStatements(DataPointsRowKey rowKey, int rowKeyTtl)
+		{
+			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
+			List<Statement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
 			Date rowKeyTimestamp = new Date(rowKey.getTimestamp());
 			for (String tagPair : tagSetHash.getTagPairHashes())
 			{
@@ -672,9 +687,6 @@ public class ClusterConnection
 								.setInt(6, rowKeyTtl)
 								.setIdempotent(true));
 			}
-
-			//Always insert into row keys table
-			insertStatements.add(createInsertStatement(rowKey, rowKeyTtl));
 
 			return insertStatements;
 		}

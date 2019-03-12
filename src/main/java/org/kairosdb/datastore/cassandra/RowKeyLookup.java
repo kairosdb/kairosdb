@@ -1,12 +1,12 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Statement;
 import com.google.common.base.Function;
 import com.google.common.collect.SetMultimap;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -18,6 +18,13 @@ interface RowKeyLookup
 	 * Create the statements to add new entries for the given row key.
 	 */
 	List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl);
+
+	/**
+	 * Create the statements to index references to the given row key.
+	 */
+	default List<Statement> createIndexStatements(DataPointsRowKey rowKey, int rowKeyTtl) {
+		return new ArrayList<>();
+	}
 
 	/**
 	 * Create the statements to delete references to the given row key.

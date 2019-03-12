@@ -239,17 +239,20 @@ libFileSets = [
 
 scriptsFileSet = new RegExFileSet("src/scripts", ".*").addExcludeFile("kairosdb-env.sh")
 webrootFileSet = new RegExFileSet("webroot", ".*").recurse()
+authFileSet = new RegExFileSet("auth", ".*")
 
 zipLibDir = "$programName/lib"
 zipBinDir = "$programName/bin"
 zipConfDir = "$programName/conf"
 zipConfLoggingDir = "$zipConfDir/logging"
 zipWebRootDir = "$programName/webroot"
+zipAuthDir = "$programName/auth"
 tarRule = new TarRule("build/${programName}-${version}-${release}.tar")
 		.addDepend(jp.getJarRule())
 		.addDepend(resolveIvyFileSetRule)
 		.addFileSetTo(zipBinDir, scriptsFileSet)
 		.addFileSetTo(zipWebRootDir, webrootFileSet)
+		.addFileSetTo(zipAuthDir, authFileSet)
 		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.conf")
 		.addFileTo(zipConfLoggingDir, "src/main/resources", "logback.xml")
 		.setFilePermission(".*\\.sh", 0755)

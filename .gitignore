@@ -20,4 +20,3 @@ tablesaw.properties
 kairosdb.conf
 big_array/*
 kairosdb_guid.properties
-auth/*

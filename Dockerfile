@@ -2,13 +2,15 @@
 ## USE 'java -cp tools/tablesaw-1.2.6.jar  make docker-image'
 ## TO BUILD.
 
-FROM azul/zulu-openjdk-debian:8u181
+FROM azul/zulu-openjdk-debian:8u202
 
 ARG VERSION
 
 RUN adduser --no-create-home --disabled-password kairosdb
 
 ADD build/kairosdb-${VERSION}.tar /opt/
+
+ADD ["https://hq-stash.corp.proofpoint.com/projects/PULSE/repos/pulse-kairosdb-plugins/raw/prometheus-adapter/prometheus-adapter-1.0.jar?at=refs%2Fheads%2Fmaster", "/opt/kairosdb/lib/prometheus-adapter/"]
 
 RUN chown -R kairosdb /opt/kairosdb
 

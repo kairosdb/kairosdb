@@ -10,8 +10,6 @@ RUN adduser --no-create-home --disabled-password kairosdb
 
 ADD build/kairosdb-${VERSION}.tar /opt/
 
-ADD ["https://hq-stash.corp.proofpoint.com/projects/PULSE/repos/pulse-kairosdb-plugins/raw/prometheus-adapter/prometheus-adapter-1.0.jar?at=refs%2Fheads%2Fmaster", "/opt/kairosdb/lib/prometheus-adapter/"]
-
 RUN chown -R kairosdb /opt/kairosdb
 
 WORKDIR /opt/kairosdb

@@ -48,6 +48,8 @@ public class CassandraConfiguration
 	
 	public static final String LOCAL_DATACENTER = "kairosdb.datastore.cassandra.local_datacenter";
 
+	public static final String START_ASYNC = "kairosdb.datastore.cassandra.start_async";
+
 
 	@Inject(optional = true)
 	@Named(DATAPOINT_TTL)
@@ -98,6 +100,10 @@ public class CassandraConfiguration
 	@Inject(optional = true)
 	@Named(LOCAL_DATACENTER)
 	private String m_localDatacenter;
+
+	@Inject
+	@Named(START_ASYNC)
+	private boolean m_startAsync = false;
 
 	@Inject
 	public CassandraConfiguration(KairosRootConfig config) throws ParseException
@@ -189,5 +195,10 @@ public class CassandraConfiguration
 	public List<ClusterConfiguration> getReadClusters()
 	{
 		return m_readClusters;
+	}
+
+	public boolean isStartAsync()
+	{
+		return m_startAsync;
 	}
 }

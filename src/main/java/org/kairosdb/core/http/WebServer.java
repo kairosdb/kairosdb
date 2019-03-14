@@ -58,6 +58,8 @@ public class WebServer implements KairosDBService
 	public static final String JETTY_ADDRESS_PROPERTY = "kairosdb.jetty.address";
 	public static final String JETTY_PORT_PROPERTY = "kairosdb.jetty.port";
 	public static final String JETTY_WEB_ROOT_PROPERTY = "kairosdb.jetty.static_web_root";
+	public static final String JETTY_AUTH_USER_PROPERTY = "kairosdb.jetty.basic_auth.user";
+	public static final String JETTY_AUTH_PASSWORD_PROPERTY = "kairosdb.jetty.basic_auth.password";
 	public static final String JETTY_SSL_PORT = "kairosdb.jetty.ssl.port";
 	public static final String JETTY_SSL_PROTOCOLS = "kairosdb.jetty.ssl.protocols";
 	public static final String JETTY_SSL_CIPHER_SUITES = "kairosdb.jetty.ssl.cipherSuites";
@@ -249,7 +251,6 @@ public class WebServer implements KairosDBService
 		}
 		catch (Exception e)
 		{
-		    System.out.println(e.getMessage());
 			throw new KairosDBException(e);
 		}
 	}
@@ -271,7 +272,10 @@ public class WebServer implements KairosDBService
 		}
 	}
 
-	public InetAddress getAddress() { return m_address; }
+	public InetAddress getAddress()
+    {
+        return m_address;
+    }
 
 	private void initializeSSL()
 	{
@@ -305,6 +309,12 @@ public class WebServer implements KairosDBService
 		constraint.setRoles(new String[]{Constraint.ANY_AUTH}); //authentication is all that's supported so this allows any role.
 		constraint.setAuthenticate(true);
 
+		Constraint noConstraint = new Constraint();
+
+		ConstraintMapping healthcheckConstraintMapping = new ConstraintMapping();
+		healthcheckConstraintMapping.setConstraint(noConstraint);
+		healthcheckConstraintMapping.setPathSpec("/api/v1/health/*");
+
 		ConstraintMapping cm = new ConstraintMapping();
 		cm.setConstraint(constraint);
 		cm.setPathSpec("/*");
@@ -312,8 +322,9 @@ public class WebServer implements KairosDBService
 		ConstraintSecurityHandler csh = new ConstraintSecurityHandler();
         JAASLoginService l = new JAASLoginService();
         l.setLoginModuleName(m_authModuleName);
-        csh.setLoginService(l);
+        csh.addConstraintMapping(healthcheckConstraintMapping);
         csh.addConstraintMapping(cm);
+        csh.setLoginService(l);
         l.start();
         return csh;
     }

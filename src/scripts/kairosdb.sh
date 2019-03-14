@@ -42,6 +42,11 @@ done
 if [ "$1" = "run" ] ; then
 	shift
 	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main -c run -p conf/kairosdb.conf
+elif [ "$1" = "start-systemd" ] ; then
+	shift
+	echo "Starting KairosDB"
+	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main \
+		-c start -p conf/kairosdb.conf
 elif [ "$1" = "start" ] ; then
 	shift
 	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main \

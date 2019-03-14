@@ -4,6 +4,7 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Statement;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.util.concurrent.Futures;
@@ -47,28 +48,34 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 		m_filterTagNames = new HashSet<>();
 		m_patternFilter = new HashMap<>();
 
+		//Set of tags to pass to the RowKeyResultSetProcessor, it cannot contain
+		//tags that are also specified as regex values
+		HashMultimap<String, String> processorTags = HashMultimap.create();
+
 		for (Map.Entry<String, String> entry : filterTags.entries())
 		{
+			String tag = entry.getKey();
 			if (regexPrefix.length() != 0 && entry.getValue().startsWith(regexPrefix))
 			{
 				String regex = entry.getValue().substring(regexPrefix.length());
 
 				Pattern pattern = Pattern.compile(regex);
 
-				m_patternFilter.put(entry.getKey(), pattern);
+				m_patternFilter.put(tag, pattern);
 			}
 			else
 			{
-				m_filterTags.put(entry.getKey(), entry.getValue());
+				m_filterTags.put(tag, entry.getValue());
+
 			}
 
-			m_filterTagNames.add(entry.getKey());
+			m_filterTagNames.add(tag);
 		}
 
 
 		m_metricName = metricName;
 		m_clusterName = cluster.getClusterName();
-		List<ResultSetFuture> futures = new ArrayList<>();
+		List<ListenableFuture<ResultSet>> futures = new ArrayList<>();
 		m_returnedKeys = new HashSet<>();
 		long timerStart = System.currentTimeMillis();
 
@@ -108,18 +115,11 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 
 		//System.out.println();
 		//New index query index is broken up by time tier
+		RowKeyLookup rowKeyLookup = cluster.getRowKeyLookupForMetric(metricName);
 		List<Long> queryKeyList = createQueryKeyList(cluster, metricName, startTime, endTime);
 		for (Long keyTime : queryKeyList)
 		{
-
-			BoundStatement statement = new BoundStatement(cluster.psRowKeyQuery);
-			statement.setString(0, metricName);
-			statement.setTimestamp(1, new Date(keyTime));
-			statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
-
-			//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
-
-			futures.add(cluster.executeAsync(statement));
+			futures.add(rowKeyLookup.queryRowKeys(metricName, keyTime, m_filterTags));
 		}
 
 		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);

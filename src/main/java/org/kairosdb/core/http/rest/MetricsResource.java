@@ -51,10 +51,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -139,6 +136,10 @@ public class MetricsResource implements KairosMetricReporter
 	@Named("HOSTNAME")
 	private String hostName = "localhost";
 
+	@Inject
+	@Named("kairosdb.queries.return_query_in_response")
+	private boolean m_returnQueryInResponse = false;
+
 	//Used for setting which API methods are enabled
 	private EnumSet<ServerType> m_serverType = EnumSet.of(ServerType.INGEST, ServerType.QUERY, ServerType.DELETE);
 
@@ -197,14 +198,11 @@ public class MetricsResource implements KairosMetricReporter
 	static void checkServerTypeStatic(EnumSet<ServerType> serverType, ServerType methodServerType, String methodName, String requestType) throws InvalidServerTypeException
 	{
 		logger.debug("checkServerType() - KairosDB ServerType set to " + serverType.toString());
-
 		if (!serverType.contains(methodServerType))
 		{
 			String logtext = "Disabled request type: " + methodServerType.name() + ", " + requestType + " request via URI \"" +  methodName + "\"";
 			logger.info(logtext);
-
 			String exceptionMessage = "{\"errors\": [\"Forbidden: " + methodServerType.toString() + " API methods are disabled on this KairosDB instance.\"]}";
-
 			throw new InvalidServerTypeException(exceptionMessage);
 		}
 	}
@@ -263,11 +261,14 @@ public class MetricsResource implements KairosMetricReporter
 		return (responseBuilder.build());
 	}
 
+	/**
+	 * @deprecated  As of release 1.3.0. Use /datapoints with "content-encoding: gzip".
+	 */
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Consumes("application/gzip")
 	@Path("/datapoints")
-	public Response addGzip(InputStream gzip) throws InvalidServerTypeException
+	@Deprecated public Response addGzip(InputStream gzip) throws InvalidServerTypeException
 	{
 		checkServerType(ServerType.INGEST, "gzip /datapoints", "POST");
 		GZIPInputStream gzipInputStream;
@@ -280,18 +281,27 @@ public class MetricsResource implements KairosMetricReporter
 			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
 			return builder.addError(e.getMessage()).build();
 		}
-		return (add(gzipInputStream));
+		return (add(null, gzipInputStream));
 	}
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints")
-	public Response add(InputStream json) throws InvalidServerTypeException
+	public Response add(@Context HttpHeaders httpheaders, InputStream stream) throws InvalidServerTypeException
 	{
 		checkServerType(ServerType.INGEST, "JSON /datapoints", "POST");
 		try
 		{
-			DataPointsParser parser = new DataPointsParser(m_publisher, new InputStreamReader(json, "UTF-8"),
+			if (httpheaders != null)
+			{
+				List<String> requestHeader = httpheaders.getRequestHeader("Content-Encoding");
+				if (requestHeader != null && requestHeader.contains("gzip"))
+				{
+					stream = new GZIPInputStream(stream);
+				}
+			}
+
+			DataPointsParser parser = new DataPointsParser(m_publisher, new InputStreamReader(stream, "UTF-8"),
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 
@@ -355,7 +365,7 @@ public class MetricsResource implements KairosMetricReporter
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
 
-			jsonResponse.begin();
+			jsonResponse.begin(null);
 
 			List<QueryMetric> queries = queryParser.parseQueryMetric(json).getQueryMetrics();
 
@@ -468,10 +478,15 @@ public class MetricsResource implements KairosMetricReporter
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
 
-			jsonResponse.begin();
+			String originalQuery = null;
+			if (m_returnQueryInResponse)
+				originalQuery = json;
+			jsonResponse.begin(originalQuery);
 
 			Query mainQuery = queryParser.parseQueryMetric(json);
 			mainQuery = m_queryPreProcessor.preProcess(mainQuery);
+
+			mainQuery.getEndAbsolute();
 
 			List<QueryMetric> queries = mainQuery.getQueryMetrics();
 

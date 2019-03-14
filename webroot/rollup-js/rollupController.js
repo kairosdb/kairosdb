@@ -76,7 +76,13 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
                             })
                             .error(function (data, status, headers, config)
                             {
-                                $scope.alert("Could not read list of roll-ups from server.", status, data);
+                                if (status === 404)
+                                {
+									$scope.alert("Roll-ups are not configured on this KariosDB node. You must include the RollupModule in your configuration.");
+                                }
+                                else{
+									$scope.alert("Could not read list of roll-ups from server.", status, data);
+								}
                             });
                 })
                 .error(function (data, status, headers, config)

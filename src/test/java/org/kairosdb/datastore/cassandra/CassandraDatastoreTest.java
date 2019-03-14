@@ -17,12 +17,17 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.SetMultimap;
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.kairosdb.core.*;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.*;
@@ -53,6 +58,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 {
 	private static final String ROW_KEY_TEST_METRIC = "row_key_test_metric";
 	private static final String ROW_KEY_BIG_METRIC = "row_key_big_metric";
+	private static final String TAG_INDEXED_ROW_KEY_METRIC = "tag_indexed_row_key_metric";
 
 	private static final int MAX_ROW_READ_SIZE = 1024;
 	private static final int OVERFLOW_SIZE = MAX_ROW_READ_SIZE * 2 + 10;
@@ -122,6 +128,43 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		{
 			dpSet.addDataPoint(new LongDataPoint(s_dataPointTime - (long) i, 42));
 		}
+
+		putDataPoints(dpSet);
+
+		metricNames.add(TAG_INDEXED_ROW_KEY_METRIC);
+
+		dpSet = new DataPointSet(TAG_INDEXED_ROW_KEY_METRIC);
+		dpSet.addTag("host", "A");
+		dpSet.addTag("client", "foo");
+
+		dpSet.addDataPoint(new LongDataPoint(s_dataPointTime, 42));
+
+		putDataPoints(dpSet);
+
+
+		dpSet = new DataPointSet(TAG_INDEXED_ROW_KEY_METRIC);
+		dpSet.addTag("host", "B");
+		dpSet.addTag("client", "foo");
+
+		dpSet.addDataPoint(new LongDataPoint(s_dataPointTime, 42));
+
+		putDataPoints(dpSet);
+
+
+		dpSet = new DataPointSet(TAG_INDEXED_ROW_KEY_METRIC);
+		dpSet.addTag("host", "C");
+		dpSet.addTag("client", "bar");
+
+		dpSet.addDataPoint(new LongDataPoint(s_dataPointTime, 42));
+
+		putDataPoints(dpSet);
+
+
+		dpSet = new DataPointSet(TAG_INDEXED_ROW_KEY_METRIC);
+		dpSet.addTag("host", "D");
+		dpSet.addTag("client", "bar");
+
+		dpSet.addDataPoint(new LongDataPoint(s_dataPointTime, 42));
 
 		putDataPoints(dpSet);
 
@@ -251,7 +294,9 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		CassandraConfiguration configuration = new CassandraConfiguration(config);
 		CassandraClientImpl client = new CassandraClientImpl(configuration.getWriteCluster());
 		client.init();
-		m_clusterConnection = new ClusterConnection(client, EnumSet.of(ClusterConnection.Type.WRITE, ClusterConnection.Type.META));
+		m_clusterConnection = new ClusterConnection(client,
+				EnumSet.of(ClusterConnection.Type.WRITE, ClusterConnection.Type.META),
+				ImmutableMultimap.of()).startup(false);
 		BatchStats batchStats = new BatchStats();
 		DataCache<DataPointsRowKey> rowKeyCache = new DataCache<>(1024);
 		DataCache<String> metricNameCache = new DataCache<>(1024);
@@ -368,6 +413,63 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
 
 		assertEquals(2, keys.size());
+	}
+
+	@Test
+	public void test_getKeysForQuery_TagIndexedRowKeys() throws DatastoreException
+	{
+		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(TAG_INDEXED_ROW_KEY_METRIC,
+				HashMultimap.create(), s_dataPointTime, s_dataPointTime);
+
+		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
+
+		assertEquals(4, keys.size());
+	}
+
+	@Test
+	public void test_getKeysForQuery_withFilter_TagIndexedRowKeys() throws DatastoreException
+	{
+		SetMultimap<String, String> tagFilter = HashMultimap.create();
+		tagFilter.put("client", "bar");
+
+		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(TAG_INDEXED_ROW_KEY_METRIC,
+				tagFilter, s_dataPointTime, s_dataPointTime);
+
+		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
+
+		assertEquals(2, keys.size());
+	}
+
+	@Test
+	public void testQueryTagIndexedRowKeyMetric() throws DatastoreException
+	{
+		Map<String, String> tags = new TreeMap<>();
+		tags.put("client", "foo");
+		QueryMetric tagFilteredQueryMetric = new QueryMetric(0, 0, TAG_INDEXED_ROW_KEY_METRIC);
+		tagFilteredQueryMetric.setTags(tags);
+
+		DatastoreQuery tagFilteredQuery = DatastoreTestHelper.s_datastore.createQuery(tagFilteredQueryMetric);
+
+		List<DataPointGroup> results = tagFilteredQuery.execute();
+
+		assertThat(results.size(), CoreMatchers.equalTo(1));
+		DataPointGroup dpg = results.get(0);
+		assertThat(dpg.getName(), is(TAG_INDEXED_ROW_KEY_METRIC));
+		assertThat(Iterators.size(dpg), is(2));
+
+		tagFilteredQuery.close();
+
+		QueryMetric unfilteredQueryMetric = new QueryMetric(0, 0, TAG_INDEXED_ROW_KEY_METRIC);
+		DatastoreQuery unfilteredQuery = DatastoreTestHelper.s_datastore.createQuery(unfilteredQueryMetric);
+
+		results = unfilteredQuery.execute();
+
+		assertThat(results.size(), CoreMatchers.equalTo(1));
+		dpg = results.get(0);
+		assertThat(dpg.getName(), is(TAG_INDEXED_ROW_KEY_METRIC));
+		assertThat(Iterators.size(dpg), is(4));
+
+		unfilteredQuery.close();
 	}
 
 	@Test

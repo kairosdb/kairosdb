@@ -79,8 +79,8 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		//instances.  A load balancing policy for reads will set shuffle to true
 		// When connecting to Cassandra notes in different datacenters, the local datacenter should be provided.
 		// Not doing this will select the datacenter from the first connected Cassandra node, which is not guaranteed to be the correct one.
-		m_writeLoadBalancingPolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), false);
-		TokenAwarePolicy readLoadBalancePolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), true);
+		m_writeLoadBalancingPolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), TokenAwarePolicy.ReplicaOrdering.TOPOLOGICAL);
+		TokenAwarePolicy readLoadBalancePolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), TokenAwarePolicy.ReplicaOrdering.RANDOM);
 
 		final Cluster.Builder builder = new Cluster.Builder()
 				//.withProtocolVersion(ProtocolVersion.V3)

@@ -252,6 +252,11 @@ public class KairosDatastore implements KairosPostConstructInit
 
 	}
 
+	public void indexTags(QueryMetric queryMetric) throws DatastoreException
+	{
+		m_datastore.indexMetricTags(queryMetric);
+	}
+
 	public DatastoreQuery createQuery(QueryMetric metric) throws DatastoreException
 	{
 		checkNotNull(metric);

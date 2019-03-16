@@ -31,6 +31,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.InvalidServerTypeException;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
@@ -330,6 +331,27 @@ public class MetricsResource implements KairosMetricReporter
 			logger.error("Failed to add metric.", e);
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 
+		}
+		catch (OutOfMemoryError e)
+		{
+			logger.error("Out of memory error.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+	}
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/index")
+	public Response index(@QueryParam("start_absolute") Long startTime, @QueryParam("end_absolute") Long endTime, @QueryParam("metric") String metric) throws InvalidServerTypeException
+	{
+		checkServerType(ServerType.INGEST, "JSON /datapoints/index", "POST");
+
+		try {
+			datastore.indexTags(new QueryMetric(startTime, endTime, 0, "metric"));
+			return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
+		}
+		catch (DatastoreException e) {
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
 		}
 		catch (OutOfMemoryError e)
 		{

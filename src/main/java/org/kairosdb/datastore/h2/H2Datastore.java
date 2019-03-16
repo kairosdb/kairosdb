@@ -519,6 +519,12 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	}
 
 	@Override
+	public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
+	{
+		// H2 does not have an index
+	}
+
+	@Override
 	public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
 	{
 		GenOrmDataSource.attachAndBegin();

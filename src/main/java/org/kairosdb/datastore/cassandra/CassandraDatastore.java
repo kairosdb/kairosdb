@@ -110,6 +110,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	private final ClusterConnection m_writeCluster;
 	private final ClusterConnection m_metaCluster;
 	private final List<ClusterConnection> m_readClusters;
+	private final CassandraModule.CQLBatchFactory m_cqlBatchFactory;
 	private final Map<String, ClusterConnection> m_clusterMap;
 
 	@Inject
@@ -148,7 +149,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			IngestExecutorService congestionExecutor,
 			CassandraModule.BatchHandlerFactory batchHandlerFactory,
 			CassandraModule.DeleteBatchHandlerFactory deleteBatchHandlerFactory,
-			CassandraModule.CQLFilteredRowKeyIteratorFactory rowKeyFilterFactory
+			CassandraModule.CQLFilteredRowKeyIteratorFactory rowKeyFilterFactory,
+			CassandraModule.CQLBatchFactory cqlBatchFactory
 			) throws DatastoreException
 	{
 		//m_astyanaxClient = astyanaxClient;
@@ -163,6 +165,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_writeCluster = writeCluster;
 		m_metaCluster = metaCluster;
 		m_readClusters = readClusters;
+
+		m_cqlBatchFactory = cqlBatchFactory;
 
 		ImmutableMap.Builder<String, ClusterConnection> builder = ImmutableMap.builder();
 		builder.put(m_writeCluster.getClusterName(), m_writeCluster);
@@ -395,6 +399,22 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		}
 
 		return (tagSet);
+	}
+
+	@Override
+	public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
+	{
+		CQLBatch batch = m_cqlBatchFactory.create();
+		Iterator<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query);
+
+		MemoryMonitor mm = new MemoryMonitor(20);
+		while (rowKeys.hasNext())
+		{
+			DataPointsRowKey dataPointsRowKey = rowKeys.next();
+			batch.indexRowKey(query.getName(), dataPointsRowKey, 0);
+			mm.checkMemoryAndThrowException();
+		}
+		batch.submitBatch();
 	}
 
 	@Override

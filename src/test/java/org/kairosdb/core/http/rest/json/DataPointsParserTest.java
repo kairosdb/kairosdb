@@ -774,6 +774,11 @@ public class DataPointsParserTest
 		}
 
 		@Override
+		public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
+		{
+		}
+
+		@Override
 		public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
 		{
 

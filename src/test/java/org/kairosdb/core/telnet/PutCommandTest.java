@@ -399,5 +399,10 @@ public class PutCommandTest
 		{
 			return null;
 		}
+
+		@Override
+		public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
+		{
+		}
 	}
 }

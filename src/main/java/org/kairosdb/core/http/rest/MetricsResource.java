@@ -347,7 +347,7 @@ public class MetricsResource implements KairosMetricReporter
 		checkServerType(ServerType.INGEST, "JSON /datapoints/index", "POST");
 
 		try {
-			datastore.indexTags(new QueryMetric(startTime, endTime, 0, "metric"));
+			datastore.indexTags(new QueryMetric(startTime, endTime, 0, metric));
 			return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
 		}
 		catch (DatastoreException e) {

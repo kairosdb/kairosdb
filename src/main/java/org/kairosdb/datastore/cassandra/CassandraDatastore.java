@@ -95,6 +95,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 
 
 	public static final long ROW_WIDTH = 1814400000L; //3 Weeks wide
+	public static final long MAX_CQL_BATCH_SIZE = 10000;
 
 	public static final String KEY_QUERY_TIME = "kairosdb.datastore.cassandra.key_query_time";
 	public static final String ROW_KEY_COUNT = "kairosdb.datastore.cassandra.row_key_count";
@@ -408,11 +409,17 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		Iterator<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query);
 
 		MemoryMonitor mm = new MemoryMonitor(20);
+		long indexStatementCount = 0;
 		while (rowKeys.hasNext())
 		{
 			DataPointsRowKey dataPointsRowKey = rowKeys.next();
 			batch.indexRowKey(dataPointsRowKey, 0);
 			mm.checkMemoryAndThrowException();
+			indexStatementCount++;
+			if (indexStatementCount % MAX_CQL_BATCH_SIZE == 0) {
+				batch.submitBatch();
+				batch = m_cqlBatchFactory.create();
+			}
 		}
 		batch.submitBatch();
 	}

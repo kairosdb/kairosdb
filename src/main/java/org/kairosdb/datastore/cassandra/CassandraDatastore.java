@@ -411,7 +411,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		while (rowKeys.hasNext())
 		{
 			DataPointsRowKey dataPointsRowKey = rowKeys.next();
-			batch.indexRowKey(query.getName(), dataPointsRowKey, 0);
+			batch.indexRowKey(dataPointsRowKey, 0);
 			mm.checkMemoryAndThrowException();
 		}
 		batch.submitBatch();

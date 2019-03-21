@@ -87,23 +87,8 @@ public class CQLBatch
 		}
 	}
 
-	public void indexRowKey(String metricName, DataPointsRowKey rowKey, int rowKeyTtl)
+	public void indexRowKey(DataPointsRowKey rowKey, int rowKeyTtl)
 	{
-		m_newRowKeys.add(rowKey);
-		ByteBuffer bb = ByteBuffer.allocate(8);
-		bb.putLong(0, rowKey.getTimestamp());
-
-		Statement bs = m_clusterConnection.psRowKeyTimeInsert.bind()
-				.setString(0, metricName)
-				.setTimestamp(1, new Date(rowKey.getTimestamp()))
-				//.setBytesUnsafe(1, bb) //Setting timestamp in a more optimal way
-				.setInt(2, rowKeyTtl)
-				.setIdempotent(true);
-
-		bs.setConsistencyLevel(m_consistencyLevel);
-
-		rowKeyBatch.add(bs);
-
 		RowKeyLookup rowKeyLookup = m_clusterConnection.getRowKeyLookupForMetric(rowKey.getMetricName());
 		for (Statement rowKeyInsertStmt : rowKeyLookup.createIndexStatements(rowKey, rowKeyTtl))
 		{

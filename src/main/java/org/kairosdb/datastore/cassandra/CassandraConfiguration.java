@@ -30,6 +30,7 @@ public class CassandraConfiguration
 	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
 	public static final String SIMULTANEOUS_QUERIES = "kairosdb.datastore.cassandra.simultaneous_cql_queries";
 	public static final String QUERY_LIMIT = "kairosdb.datastore.cassandra.query_limit";
+	public static final String QUERY_TIME_LIMIT = "kairosdb.datastore.cassandra.query_time_limit_sec";
 	public static final String QUERY_READER_THREADS = "kairosdb.datastore.cassandra.query_reader_threads";
 
 	public static final String AUTH_USER_NAME = "kairosdb.datastore.cassandra.auth.user_name";
@@ -86,7 +87,11 @@ public class CassandraConfiguration
 
 	@Inject(optional = true)
 	@Named(QUERY_LIMIT)
-	private int m_queryLimit = 0;
+	private long m_queryLimit = 0;
+
+	@Inject(optional = true)
+	@Named(QUERY_TIME_LIMIT)
+	private long m_queryTimeLimit = 0;
 
 	private Map<String, Integer> m_hostList = new HashMap<>();
 
@@ -185,9 +190,14 @@ public class CassandraConfiguration
 		return m_queryReaderThreads;
 	}
 
-	public int getQueryLimit()
+	public long getQueryLimit()
 	{
 		return m_queryLimit;
+	}
+
+	public long getQueryTimeLimit()
+	{
+		return m_queryTimeLimit;
 	}
 	
 	public String getLocalDatacenter()

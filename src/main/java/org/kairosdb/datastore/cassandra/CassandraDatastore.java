@@ -659,7 +659,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		long queryStartTime = query.getStartTime();
 		long queryEndTime = query.getEndTime();
 		boolean useLimit = query.getLimit() != 0;
-		QueryMonitor queryMonitor = new QueryMonitor(m_cassandraConfiguration.getQueryLimit());
+		QueryMonitor queryMonitor = new QueryMonitor(m_cassandraConfiguration.getQueryLimit(),
+				m_cassandraConfiguration.getQueryTimeLimit());
 
 		ExecutorService resultsExecutor = Executors.newFixedThreadPool(m_cassandraConfiguration.getQueryReaderThreads(),
 				new ThreadFactory()

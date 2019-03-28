@@ -19,29 +19,33 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class RowKeyLookupProviderTest
 {
+	private CassandraConfiguration m_cassandraConfiguration;
 	private CassandraClient m_cassandraClient;
 	private EnumSet<ClusterConnection.Type> m_clusterType;
 
 	@Before
 	public void setUp() throws Exception
 	{
-		ClusterConfiguration clusterConfiguration = Mockito.mock(ClusterConfiguration.class);
+		ClusterConfiguration clusterConfiguration = mock(ClusterConfiguration.class);
 		when(clusterConfiguration.getClusterName()).thenReturn("TestCluster");
 
-		m_cassandraClient = Mockito.mock(CassandraClient.class);
+		m_cassandraClient = mock(CassandraClient.class);
 		when(m_cassandraClient.getClusterConfiguration()).thenReturn(clusterConfiguration);
 
 		m_clusterType = EnumSet.of(ClusterConnection.Type.WRITE, ClusterConnection.Type.META);
+
+		m_cassandraConfiguration = mock(CassandraConfiguration.class);
 	}
 
 	@Test
 	public void testWithWildcard()
 	{
-		ClusterConnection connection = new ClusterConnection(m_cassandraClient, m_clusterType,
+		ClusterConnection connection = new ClusterConnection(m_cassandraConfiguration, m_cassandraClient, m_clusterType,
 				ImmutableMultimap.of("*", "*"));
 
 		RowKeyLookup rowKeyLookup = connection.getRowKeyLookupForMetric("someMetric");
@@ -52,7 +56,7 @@ public class RowKeyLookupProviderTest
 	@Test
 	public void testWithoutEmptyStringConfig()
 	{
-		ClusterConnection connection = new ClusterConnection(m_cassandraClient, m_clusterType,
+		ClusterConnection connection = new ClusterConnection(m_cassandraConfiguration, m_cassandraClient, m_clusterType,
 				ImmutableMultimap.of("", ""));
 
 		RowKeyLookup rowKeyLookup = connection.getRowKeyLookupForMetric("someMetric");
@@ -63,7 +67,7 @@ public class RowKeyLookupProviderTest
 	@Test
 	public void testWithEmptySet()
 	{
-		ClusterConnection connection = new ClusterConnection(m_cassandraClient, m_clusterType,
+		ClusterConnection connection = new ClusterConnection(m_cassandraConfiguration, m_cassandraClient, m_clusterType,
 				ImmutableMultimap.of());
 
 		RowKeyLookup rowKeyLookup = connection.getRowKeyLookupForMetric("someMetric");
@@ -74,7 +78,7 @@ public class RowKeyLookupProviderTest
 	@Test
 	public void testWithMetricSetConfig()
 	{
-		ClusterConnection connection = new ClusterConnection(m_cassandraClient, m_clusterType,
+		ClusterConnection connection = new ClusterConnection(m_cassandraConfiguration, m_cassandraClient, m_clusterType,
 				ImmutableMultimap.of("metricA", "*", "metricB", "*"));
 
 		RowKeyLookup rowKeyLookup = connection.getRowKeyLookupForMetric("someMetric");

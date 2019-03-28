@@ -294,7 +294,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		CassandraConfiguration configuration = new CassandraConfiguration(config);
 		CassandraClientImpl client = new CassandraClientImpl(configuration.getWriteCluster());
 		client.init();
-		m_clusterConnection = new ClusterConnection(client,
+		m_clusterConnection = new ClusterConnection(configuration, client,
 				EnumSet.of(ClusterConnection.Type.WRITE, ClusterConnection.Type.META),
 				ImmutableMultimap.of()).startup(false);
 		BatchStats batchStats = new BatchStats();

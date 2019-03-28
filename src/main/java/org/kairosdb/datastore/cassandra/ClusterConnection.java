@@ -39,7 +39,7 @@ public class ClusterConnection
 {
 	public static final Logger logger = LoggerFactory.getLogger(ClusterConnection.class);
 
-	public static final String DATA_POINTS_TABLE_NAME = "data_points";
+
 
 	public enum Type
 	{
@@ -52,13 +52,14 @@ public class ClusterConnection
 			"CREATE KEYSPACE IF NOT EXISTS %s" +
 			"  WITH REPLICATION = %s";
 
+	public static final String DATA_POINTS_TABLE_NAME = "data_points";
 	public static final String DATA_POINTS_TABLE = "" +
-			"CREATE TABLE IF NOT EXISTS data_points (\n" +
+			"CREATE TABLE IF NOT EXISTS "+DATA_POINTS_TABLE_NAME+" (\n" +
 			"  key blob,\n" +
 			"  column1 blob,\n" +
 			"  value blob,\n" +
 			"  PRIMARY KEY ((key), column1)\n" +
-			") WITH COMPACT STORAGE";
+			")";
 
 	//This is effectively what the above table is
 	/*public static final String DATA_POINTS_TABLE = "" +
@@ -72,16 +73,18 @@ public class ClusterConnection
 			"  PRIMARY KEY ((metric, row_time, data_type, tags), offset)" +
 			")";*/
 
+	public static final String ROW_KEY_INDEX_TABLE_NAME = "row_key_index";
 	public static final String ROW_KEY_INDEX_TABLE = "" +
-			"CREATE TABLE IF NOT EXISTS row_key_index (\n" +
+			"CREATE TABLE IF NOT EXISTS "+ROW_KEY_INDEX_TABLE_NAME+" (\n" +
 			"  key blob,\n" +
 			"  column1 blob,\n" +
 			"  value blob,\n" +
 			"  PRIMARY KEY ((key), column1)\n" +
 			")";
 
+	public static final String ROW_KEY_TIME_INDEX_NAME = "row_key_time_index";
 	public static final String ROW_KEY_TIME_INDEX = "" +
-			"CREATE TABLE IF NOT EXISTS row_key_time_index (\n" +
+			"CREATE TABLE IF NOT EXISTS "+ROW_KEY_TIME_INDEX_NAME+" (\n" +
 			"  metric text,\n" +
 			"  table_name text,\n" +
 			"  row_time timestamp,\n" +
@@ -89,8 +92,9 @@ public class ClusterConnection
 			"  PRIMARY KEY ((metric), table_name, row_time)\n" +
 			")";
 
+	public static final String ROW_KEYS_NAME = "row_keys";
 	public static final String ROW_KEYS = "" +
-			"CREATE TABLE IF NOT EXISTS row_keys (\n" +
+			"CREATE TABLE IF NOT EXISTS "+ROW_KEYS_NAME+" (\n" +
 			"  metric text,\n" +
 			"  table_name text, \n" +
 			"  row_time timestamp,\n" +
@@ -105,8 +109,9 @@ public class ClusterConnection
 	 * Alternate form of the row_keys table which includes a hash of each tag key:value pair in the
 	 * partion key. This is used to improve lookups for high tag cardinality.
 	 */
+	public static final String TAG_INDEXED_ROW_KEYS_NAME = "tag_indexed_row_keys";
 	public static final String TAG_INDEXED_ROW_KEYS = "" +
-			"CREATE TABLE IF NOT EXISTS tag_indexed_row_keys (\n" +
+			"CREATE TABLE IF NOT EXISTS "+TAG_INDEXED_ROW_KEYS_NAME+" (\n" +
 			"  metric text,\n" +
 			"  table_name text, \n" +
 			"  row_time timestamp,\n" +
@@ -119,16 +124,18 @@ public class ClusterConnection
 			"  PRIMARY KEY ((metric, table_name, row_time, single_tag_pair), data_type, tag_collection_hash, tags)\n" +
 			")";
 
+	public static final String STRING_INDEX_TABLE_NAME = "string_index";
 	public static final String STRING_INDEX_TABLE = "" +
-			"CREATE TABLE IF NOT EXISTS string_index (\n" +
+			"CREATE TABLE IF NOT EXISTS "+STRING_INDEX_TABLE_NAME+" (\n" +
 			"  key blob,\n" +
 			"  column1 text,\n" +
 			"  value blob,\n" +
 			"  PRIMARY KEY ((key), column1)\n" +
 			")";
 
+	public static final String SERVICE_INDEX_NAME = "service_index";
 	public static final String SERVICE_INDEX = "" +
-			"CREATE TABLE IF NOT EXISTS service_index (" +
+			"CREATE TABLE IF NOT EXISTS "+SERVICE_INDEX_NAME+" (" +
 			" service text," +
 			" service_key text," +
 			" key text," +
@@ -296,10 +303,13 @@ public class ClusterConnection
 	private final RowKeysTableLookup m_indexedRowKeyLookup = new TagIndexedRowKeysTableLookup();
 	private final RowKeysTableLookup m_rowKeyLookup = new RowKeysTableLookup();
 
+	private final CassandraConfiguration m_cassandraConfiguration;
 
-	public ClusterConnection(CassandraClient cassandraClient, EnumSet<Type> clusterType,
+
+	public ClusterConnection(CassandraConfiguration cassandraConfig, CassandraClient cassandraClient, EnumSet<Type> clusterType,
 			Multimap<String, String> tagIndexMetricNames)
 	{
+		m_cassandraConfiguration = cassandraConfig;
 		m_cassandraClient = cassandraClient;
 		m_clusterType = clusterType;
 
@@ -511,13 +521,13 @@ public class ClusterConnection
 			{
 				try
 				{
-					session.execute(DATA_POINTS_TABLE);
-					session.execute(ROW_KEY_INDEX_TABLE);
-					session.execute(STRING_INDEX_TABLE);
+					session.execute(DATA_POINTS_TABLE+" "+m_cassandraConfiguration.getCreateWithConfig(DATA_POINTS_TABLE_NAME));
+					session.execute(ROW_KEY_INDEX_TABLE+" "+m_cassandraConfiguration.getCreateWithConfig(ROW_KEY_INDEX_TABLE_NAME));
+					session.execute(STRING_INDEX_TABLE+" "+m_cassandraConfiguration.getCreateWithConfig(STRING_INDEX_TABLE_NAME));
 
-					session.execute(ROW_KEYS);
-					session.execute(TAG_INDEXED_ROW_KEYS);
-					session.execute(ROW_KEY_TIME_INDEX);
+					session.execute(ROW_KEYS+" "+m_cassandraConfiguration.getCreateWithConfig(ROW_KEYS_NAME));
+					session.execute(TAG_INDEXED_ROW_KEYS+" "+m_cassandraConfiguration.getCreateWithConfig(TAG_INDEXED_ROW_KEYS_NAME));
+					session.execute(ROW_KEY_TIME_INDEX+" "+m_cassandraConfiguration.getCreateWithConfig(ROW_KEY_TIME_INDEX_NAME));
 				}
 				catch (Exception e)
 				{
@@ -530,7 +540,7 @@ public class ClusterConnection
 			{
 				try
 				{
-					session.execute(SERVICE_INDEX);
+					session.execute(SERVICE_INDEX+" "+m_cassandraConfiguration.getCreateWithConfig(SERVICE_INDEX_NAME));
 				}
 				catch (Exception e)
 				{

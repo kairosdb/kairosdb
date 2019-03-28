@@ -3,6 +3,7 @@ package org.kairosdb.datastore.cassandra;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.typesafe.config.ConfigValue;
 import org.kairosdb.core.KairosConfig;
 import org.kairosdb.core.KairosRootConfig;
 
@@ -105,6 +106,8 @@ public class CassandraConfiguration
 	@Named(START_ASYNC)
 	private boolean m_startAsync = false;
 
+	private final Map<String, String> m_createWithConfig;
+
 	@Inject
 	public CassandraConfiguration(KairosRootConfig config) throws ParseException
 	{
@@ -134,6 +137,16 @@ public class CassandraConfiguration
 		}
 		else
 			m_readClusters = ImmutableList.of();
+
+		m_createWithConfig = new HashMap<>();
+		if (config.hasPath("kairosdb.datastore.cassandra.table_create_with"))
+		{
+			config.getRawConfig().getConfig("kairosdb.datastore.cassandra.table_create_with").entrySet();
+			for (Map.Entry<String, ConfigValue> configValueEntry : config.getRawConfig().getConfig("kairosdb.datastore.cassandra.table_create_with").entrySet())
+			{
+				m_createWithConfig.put(configValueEntry.getKey(), (String)configValueEntry.getValue().unwrapped());
+			}
+		}
 	}
 
 
@@ -200,5 +213,10 @@ public class CassandraConfiguration
 	public boolean isStartAsync()
 	{
 		return m_startAsync;
+	}
+
+	public String getCreateWithConfig(String tableName)
+	{
+		return m_createWithConfig.getOrDefault(tableName, "");
 	}
 }

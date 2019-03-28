@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
 import static org.kairosdb.core.KairosConfigProperties.QUERIES_REGEX_PREFIX;
+import static org.kairosdb.datastore.cassandra.ClusterConnection.DATA_POINTS_TABLE_NAME;
 
 public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 {
@@ -209,8 +210,9 @@ outer:
 		{
 			BoundStatement statement = new BoundStatement(cluster.psRowKeyTimeQuery);
 			statement.setString(0, metricName);
-			statement.setTimestamp(1, new Date(CassandraDatastore.calculateRowTime(startTime)));
-			statement.setTimestamp(2, new Date(endTime));
+			statement.setString(1, DATA_POINTS_TABLE_NAME);
+			statement.setTimestamp(2, new Date(CassandraDatastore.calculateRowTime(startTime)));
+			statement.setTimestamp(3, new Date(endTime));
 			statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
 
 			//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));

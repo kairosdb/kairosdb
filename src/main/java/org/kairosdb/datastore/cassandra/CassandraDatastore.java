@@ -82,6 +82,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.datastore.cassandra.ClusterConnection.DATA_POINTS_TABLE_NAME;
 
 public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMetricReporter,
 		ServiceKeyStore
@@ -831,16 +832,16 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				queryClusters((cluster) ->
 						{
 							//System.out.println("Delete entire row");
-							BoundStatement statement = new BoundStatement(cluster.psDataPointsDeleteRow);
-							statement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
-							statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
+							Statement statement = new BoundStatement(cluster.psDataPointsDeleteRow)
+									.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey))
+									.setConsistencyLevel(cluster.getReadConsistencyLevel());
 							cluster.execute(statement);
 
 							//Delete from old row keys
-							statement = new BoundStatement(cluster.psRowKeyIndexDelete);
-							statement.setBytesUnsafe(0, serializeString(rowKey.getMetricName()));
-							statement.setBytesUnsafe(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
-							statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
+							statement = new BoundStatement(cluster.psRowKeyIndexDelete)
+									.setBytesUnsafe(0, serializeString(rowKey.getMetricName()))
+									.setBytesUnsafe(1, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey))
+									.setConsistencyLevel(cluster.getReadConsistencyLevel());
 							cluster.execute(statement);
 
 							RowKeyLookup rowKeyLookup = cluster.getRowKeyLookupForMetric(rowKey.getMetricName());
@@ -854,10 +855,11 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 							//todo if we allow deletes for specific types this needs to change
 							if (deleteQuery.getTags().isEmpty())
 							{
-								statement = new BoundStatement(cluster.psRowKeyTimeDelete);
-								statement.setString(0, rowKey.getMetricName());
-								statement.setTimestamp(1, new Date(rowKey.getTimestamp()));
-								statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
+								statement = new BoundStatement(cluster.psRowKeyTimeDelete)
+										.setString(0, rowKey.getMetricName())
+										.setString(1, DATA_POINTS_TABLE_NAME)
+										.setTimestamp(2, new Date(rowKey.getTimestamp()))
+										.setConsistencyLevel(cluster.getReadConsistencyLevel());
 								cluster.execute(statement);
 							}
 							return null;

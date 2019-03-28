@@ -23,6 +23,7 @@ import java.util.Map;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER;
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.ROW_KEY_METRIC_NAMES;
+import static org.kairosdb.datastore.cassandra.ClusterConnection.DATA_POINTS_TABLE_NAME;
 
 /**
  Created by bhawkins on 1/11/17.
@@ -70,9 +71,10 @@ public class CQLBatch
 
 		Statement bs = m_clusterConnection.psRowKeyTimeInsert.bind()
 				.setString(0, metricName)
-				.setTimestamp(1, new Date(rowKey.getTimestamp()))
+				.setString(1, DATA_POINTS_TABLE_NAME)
+				.setTimestamp(2, new Date(rowKey.getTimestamp()))
 				//.setBytesUnsafe(1, bb) //Setting timestamp in a more optimal way
-				.setInt(2, rowKeyTtl)
+				.setInt(3, rowKeyTtl)
 				.setIdempotent(true);
 
 		bs.setConsistencyLevel(m_consistencyLevel);

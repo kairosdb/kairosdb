@@ -363,7 +363,7 @@ public class RollUpJobTest
 		}
 
 		@Override
-		public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
+		public void indexMetricTags(DatastoreMetricQuery query, int indexTtl) throws DatastoreException
 		{
 		}
 	}

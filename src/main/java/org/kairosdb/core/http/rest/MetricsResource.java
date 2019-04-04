@@ -342,12 +342,12 @@ public class MetricsResource implements KairosMetricReporter
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/index")
-	public Response index(@QueryParam("start_absolute") Long startTime, @QueryParam("end_absolute") Long endTime, @QueryParam("metric") String metric) throws InvalidServerTypeException
+	public Response index(@QueryParam("start_absolute") Long startTime, @QueryParam("end_absolute") Long endTime, @QueryParam("metric") String metric, @QueryParam("index_ttl") Integer indexTtl) throws InvalidServerTypeException
 	{
 		checkServerType(ServerType.INGEST, "JSON /datapoints/index", "POST");
 
 		try {
-			datastore.indexTags(new QueryMetric(startTime, endTime, 0, metric));
+			datastore.indexTags(new QueryMetric(startTime, endTime, 0, metric), indexTtl);
 			return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
 		}
 		catch (DatastoreException e) {

@@ -395,6 +395,11 @@ public class KairosDatastoreTest
 		}
 
 		@Override
+		public void indexMetricTags(DatastoreMetricQuery query, int indexTtl)
+		{
+		}
+
+		@Override
 		public void setValue(String service, String serviceKey, String key, String value)
 		{
 

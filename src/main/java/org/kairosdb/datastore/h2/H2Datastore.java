@@ -22,7 +22,6 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mchange.v2.c3p0.DataSources;
 import org.agileclick.genorm.runtime.GenOrmQueryResultSet;
-import org.agileclick.genorm.runtime.LeakDetectorDataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.Datastore;
@@ -48,7 +47,6 @@ import org.kairosdb.datastore.h2.orm.MetricNamesQuery;
 import org.kairosdb.datastore.h2.orm.MetricTag;
 import org.kairosdb.datastore.h2.orm.MetricTagValuesQuery;
 import org.kairosdb.datastore.h2.orm.ServiceIndex;
-import org.kairosdb.datastore.h2.orm.ServiceIndex_base;
 import org.kairosdb.datastore.h2.orm.ServiceModification;
 import org.kairosdb.datastore.h2.orm.Tag;
 import org.kairosdb.datastore.h2.orm.TagNamesQuery;
@@ -516,6 +514,12 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 		}
 
 		return tagSet;
+	}
+
+	@Override
+	public void indexMetricTags(DatastoreMetricQuery query, int indexTtl) throws DatastoreException
+	{
+		// H2 does not have an index
 	}
 
 	@Override

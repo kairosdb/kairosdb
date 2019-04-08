@@ -349,6 +349,12 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 						return new CQLFilteredRowKeyIterator(cluster, metricName,
 								startTime, endTime, filterTags, "");
 					}
+				},
+				new CassandraModule.CQLBatchFactory() {
+					@Override
+					public CQLBatch create() {
+						return null;
+					}
 				});
 
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,

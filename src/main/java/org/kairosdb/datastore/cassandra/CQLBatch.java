@@ -89,6 +89,16 @@ public class CQLBatch
 		}
 	}
 
+	public void indexRowKey(DataPointsRowKey rowKey, int rowKeyTtl)
+	{
+		RowKeyLookup rowKeyLookup = m_clusterConnection.getRowKeyLookupForMetric(rowKey.getMetricName());
+		for (Statement rowKeyInsertStmt : rowKeyLookup.createIndexStatements(rowKey, rowKeyTtl))
+		{
+			rowKeyInsertStmt.setConsistencyLevel(m_consistencyLevel);
+			rowKeyBatch.add(rowKeyInsertStmt);
+		}
+	}
+
 	public void addMetricName(String metricName)
 	{
 		m_newMetrics.add(metricName);

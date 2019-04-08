@@ -361,5 +361,10 @@ public class RollUpJobTest
 		{
 			throw new UnsupportedOperationException();
 		}
+
+		@Override
+		public void indexMetricTags(DatastoreMetricQuery query, int indexTtl) throws DatastoreException
+		{
+		}
 	}
 }

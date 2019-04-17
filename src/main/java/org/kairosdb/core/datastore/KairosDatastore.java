@@ -397,96 +397,97 @@ public class KairosDatastore {
 			return m_rowCount;
 		}
 
-		@Override
-		public List<DataPointGroup> execute() throws DatastoreException {
-			Span span = tracer.buildSpan("query_database_datapoints_count").start();
+        @Override
+        public List<DataPointGroup> execute() throws DatastoreException {
+            Span span = tracer.buildSpan("query_database_datapoints_count").start();
 
-			try (Scope scope = tracer.scopeManager().activate(span, false)) {
-				long queryStartTime = System.currentTimeMillis();
+            try (Scope scope = tracer.scopeManager().activate(span, false)) {
+                CachedSearchResult cachedResults = null;
 
-				CachedSearchResult cachedResults = null;
+                List<DataPointRow> returnedRows = null;
 
-				List<DataPointRow> returnedRows = null;
+                try {
+                    String tempFile = m_cacheDir + m_cacheFilename;
 
-				try {
-					String tempFile = m_cacheDir + m_cacheFilename;
+                    if (m_metric.getCacheTime() > 0) {
+                        cachedResults = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
+                                tempFile, m_metric.getCacheTime(), m_dataPointFactory);
+                        if (cachedResults != null) {
+                            returnedRows = cachedResults.getRows();
+                        }
+                    }
 
-					if (m_metric.getCacheTime() > 0) {
-						cachedResults = CachedSearchResult.openCachedSearchResult(m_metric.getName(),
-								tempFile, m_metric.getCacheTime(), m_dataPointFactory);
-						if (cachedResults != null) {
-							returnedRows = cachedResults.getRows();
-						}
-					}
+                    if (cachedResults == null) {
+                        cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
+                                tempFile, m_dataPointFactory);
+                        m_datastore.queryDatabase(m_metric, cachedResults);
+                        returnedRows = cachedResults.getRows();
+                    }
+                } catch (Exception e) {
+                    throw new DatastoreException(e);
+                }
 
-					if (cachedResults == null) {
-						cachedResults = CachedSearchResult.createCachedSearchResult(m_metric.getName(),
-								tempFile, m_dataPointFactory);
-						m_datastore.queryDatabase(m_metric, cachedResults);
-						returnedRows = cachedResults.getRows();
-					}
-				} catch (Exception e) {
-					throw new DatastoreException(e);
-				}
+                //Get data point count
+                for (DataPointRow returnedRow : returnedRows) {
+                    m_dataPointCount += returnedRow.getDataPointCount();
+                }
 
-				//Get data point count
-				for (DataPointRow returnedRow : returnedRows) {
-					m_dataPointCount += returnedRow.getDataPointCount();
-				}
+                m_rowCount = returnedRows.size();
 
-				span.setTag("datapoint_count", m_dataPointCount);
+                span.setTag("datapoint_count", m_dataPointCount);
+                span.setTag("row_count", m_rowCount);
 
-				m_rowCount = returnedRows.size();
+                logger.info("metric=" + m_metric.getName() +
+                        " datapoint_count=" + m_dataPointCount +
+                        " row_count=" + m_rowCount);
 
-				span.setTag("row_count", m_rowCount);
+                List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
+                        returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
 
-				List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
-						returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
+                // Now group for all other types of group bys.
+                Grouper grouper = new Grouper(m_dataPointFactory);
+                try {
+                    queryResults = grouper.group(removeTagGroupBy(m_metric.getGroupBys()), queryResults);
+                } catch (IOException e) {
+                    throw new DatastoreException(e);
+                }
 
-				// Now group for all other types of group bys.
-				Grouper grouper = new Grouper(m_dataPointFactory);
-				try {
-					queryResults = grouper.group(removeTagGroupBy(m_metric.getGroupBys()), queryResults);
-				} catch (IOException e) {
-					throw new DatastoreException(e);
-				}
+                m_results = new ArrayList<>();
+                for (DataPointGroup queryResult : queryResults) {
+                    String groupType = DataPoint.GROUP_NUMBER;
+                    //todo May want to make group type a first class citizen in DataPointGroup
+                    for (GroupByResult groupByResult : queryResult.getGroupByResult()) {
+                        if (groupByResult instanceof TypeGroupByResult) {
+                            groupType = ((TypeGroupByResult) groupByResult).getType();
+                        }
+                    }
 
-				m_results = new ArrayList<DataPointGroup>();
-				for (DataPointGroup queryResult : queryResults) {
-					String groupType = DataPoint.GROUP_NUMBER;
-					//todo May want to make group type a first class citizen in DataPointGroup
-					for (GroupByResult groupByResult : queryResult.getGroupByResult()) {
-						if (groupByResult instanceof TypeGroupByResult) {
-							groupType = ((TypeGroupByResult) groupByResult).getType();
-						}
-					}
+                    DataPointGroup aggregatedGroup = queryResult;
 
-					DataPointGroup aggregatedGroup = queryResult;
+                    List<Aggregator> aggregators = m_metric.getAggregators();
 
-					List<Aggregator> aggregators = m_metric.getAggregators();
+                    if (m_metric.getLimit() != 0) {
+                        aggregatedGroup = new LimitAggregator(m_metric.getLimit()).aggregate(aggregatedGroup);
+                    }
 
-					if (m_metric.getLimit() != 0) {
-						aggregatedGroup = new LimitAggregator(m_metric.getLimit()).aggregate(aggregatedGroup);
-					}
+                    //This will pipe the aggregators together.
+                    for (Aggregator aggregator : aggregators) {
+                        //Make sure the aggregator can handle this type of data.
+                        if (aggregator.canAggregate(groupType))
+                            aggregatedGroup = aggregator.aggregate(aggregatedGroup);
+                    }
 
-					//This will pipe the aggregators together.
-					for (Aggregator aggregator : aggregators) {
-						//Make sure the aggregator can handle this type of data.
-						if (aggregator.canAggregate(groupType))
-							aggregatedGroup = aggregator.aggregate(aggregatedGroup);
-					}
-
-					m_results.add(aggregatedGroup);
-				}
-			} catch (Exception e) {
-				Tags.ERROR.set(span, Boolean.TRUE);
-				span.log(e.getMessage());
-				throw e;
-			} finally {
-				span.finish();
-			}
-			return (m_results);
-		}
+                    m_results.add(aggregatedGroup);
+                }
+            } catch (Exception e) {
+                Tags.ERROR.set(span, Boolean.TRUE);
+                span.log(e.getMessage());
+                throw e;
+            } finally {
+                span.finish();
+            }
+            return (m_results);
+        }
 
 		@Override
 		public void close() {

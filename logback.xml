@@ -19,9 +19,12 @@
                 </filter>
         </appender>
 
-        <root level="WARN">
+        <root level="WARN" >
                 <appender-ref ref="stdout"/>
                 <appender-ref ref="Sentry" />
         </root>
+        <logger name="org.kairosdb.core.datastore.KairosDatastore" level="INFO">
+                <appender-ref ref="stdout"/>
+        </logger>
 </configuration>
 

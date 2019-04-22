@@ -7,8 +7,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
@@ -29,7 +27,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -313,7 +310,7 @@ public class ClusterConnection
 		m_cassandraClient = cassandraClient;
 		m_clusterType = clusterType;
 
-		m_alwaysUseTagIndexedLookup = tagIndexMetricNames.equals(ImmutableMultimap.of("*", "*"));
+		m_alwaysUseTagIndexedLookup = tagIndexMetricNames.containsKey("\"*\"");
 		m_tagIndexMetricNames = tagIndexMetricNames;
 
 		if (m_alwaysUseTagIndexedLookup)

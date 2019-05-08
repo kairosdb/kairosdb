@@ -437,9 +437,10 @@ public class KairosDatastore {
                 span.setTag("datapoint_count", m_dataPointCount);
                 span.setTag("row_count", m_rowCount);
 
-                logger.info("metric=" + m_metric.getName() +
-                        " datapoint_count=" + m_dataPointCount +
-                        " row_count=" + m_rowCount);
+				if (m_metric.getCriticalQueryUUID() != null) {
+					logger.info("uuid={} metric={} datapoint_count={} row_count={}",
+							m_metric.getCriticalQueryUUID(), m_metric.getName(), m_dataPointCount, m_rowCount);
+				}
 
                 List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
                         returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());

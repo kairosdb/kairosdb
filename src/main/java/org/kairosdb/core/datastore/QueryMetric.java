@@ -21,10 +21,7 @@ import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.groupby.GroupBy;
 import org.kairosdb.util.Preconditions;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -43,6 +40,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	private int limit;
 	private Order order = Order.ASC;
 	private List<QueryPlugin> plugins;
+	private UUID uuid;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
@@ -193,6 +191,16 @@ public class QueryMetric implements DatastoreMetricQuery
 	public List<QueryPlugin> getPlugins()
 	{
 		return Collections.unmodifiableList(plugins);
+	}
+
+	@Override
+	public void setCriticalQueryUUID(UUID uuid) {
+		this.uuid = uuid;
+	}
+
+	@Override
+	public UUID getCriticalQueryUUID() {
+		return uuid;
 	}
 
 	public QueryMetric addPlugin(QueryPlugin plugin)

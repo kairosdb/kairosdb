@@ -18,7 +18,7 @@ package org.kairosdb.core.datastore;
 import com.google.common.collect.SetMultimap;
 
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
 public interface DatastoreMetricQuery
 {
@@ -35,4 +35,8 @@ public interface DatastoreMetricQuery
 	Order getOrder();
 
 	List<QueryPlugin> getPlugins();
+
+	void setCriticalQueryUUID(UUID uuid);
+
+	UUID getCriticalQueryUUID();
 }

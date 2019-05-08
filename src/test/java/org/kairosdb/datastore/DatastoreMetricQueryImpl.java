@@ -23,6 +23,7 @@ import org.kairosdb.core.datastore.QueryPlugin;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
@@ -33,6 +34,7 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 	private SetMultimap<String, String> m_tags;
 	private long m_startTime;
 	private long m_endTime;
+	private UUID uuid;
 
 
 	public DatastoreMetricQueryImpl(String name, SetMultimap<String, String> tags,
@@ -84,6 +86,16 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 	public List<QueryPlugin> getPlugins()
 	{
 		return Collections.EMPTY_LIST;
+	}
+
+	@Override
+	public void setCriticalQueryUUID(UUID uuid) {
+		this.uuid = uuid;
+	}
+
+	@Override
+	public UUID getCriticalQueryUUID() {
+		return uuid;
 	}
 
 }

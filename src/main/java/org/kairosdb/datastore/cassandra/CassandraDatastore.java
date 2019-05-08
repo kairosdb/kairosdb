@@ -402,7 +402,7 @@ public class CassandraDatastore implements Datastore {
 
         List<DataPointsRowKey> sorted = new ArrayList<>();
         sorted.addAll(rowKeys);
-        sorted.sort((t1, t2) -> Long.compare(t1.getTimestamp(), t2.getTimestamp()));
+        sorted.sort(Comparator.comparingLong(DataPointsRowKey::getTimestamp));
         rowKeys = sorted;
 
         if (rowKeys.size() < 64) {
@@ -534,8 +534,7 @@ public class CassandraDatastore implements Datastore {
 
         //Default to old behavior if no plugin was provided
         if (ret == null) {
-            ret = getMatchingRowKeys(query.getName(), query.getStartTime(),
-                    query.getEndTime(), query.getTags(), limit);
+            ret = getMatchingRowKeys(query, limit);
         }
 
         if (ret.size() > m_cassandraConfiguration.getMaxRowKeysForQuery()) {
@@ -642,10 +641,11 @@ public class CassandraDatastore implements Datastore {
         return false;
     }
 
-    private static void filterAndAddKeys(String metricName, SetMultimap<String, String> filterTags, ResultSet rs, List<DataPointsRowKey> targetList, int limit) {
+    private static void filterAndAddKeys(DatastoreMetricQuery query, ResultSet rs, List<DataPointsRowKey> targetList, int limit) {
         Span span = GlobalTracer.get().activeSpan();
         long startTime = System.currentTimeMillis();
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
+        final SetMultimap<String, String> filterTags = query.getTags();
         final SetMultimap<String, Pattern> tagPatterns = MultimapBuilder.hashKeys(filterTags.size()).hashSetValues().build();
         for (Map.Entry<String, String> entry : filterTags.entries()) {
             tagPatterns.put(entry.getKey(), convertGlobToPattern(entry.getValue()));
@@ -660,7 +660,8 @@ public class CassandraDatastore implements Datastore {
                     span.setTag("max_row_keys", Boolean.TRUE);
                 }
 
-                throw new MaxRowKeysForQueryExceededException(String.format("Too many rows to scan: metric=%s limit=%d", metricName, limit));
+                throw new MaxRowKeysForQueryExceededException(
+                        String.format("Too many rows to scan: metric=%s limit=%d", query.getName(), limit));
             }
 
             DataPointsRowKey key = keySerializer.fromByteBuffer(r.getBytes("column1"));
@@ -678,19 +679,22 @@ public class CassandraDatastore implements Datastore {
                 targetList.add(key);
             }
         }
-        if (i > 5000 || targetList.size() > 100) {
+        final boolean isCriticalQuery = i > 5000 || targetList.size() > 100;
+        if (isCriticalQuery) {
+            query.setCriticalQueryUUID(UUID.randomUUID());
             final long endTime = System.currentTimeMillis();
-            logger.warn("metric={} query={}", metricName, filterTags);
-            logger.warn("filterAndAddKeys: metric={} read={} filtered={} time={}", metricName, i, targetList.size(), (endTime - startTime));
+            logger.warn("critical_query: uuid={} metric={} query={} read={} filtered={} time={}",
+                    query.getCriticalQueryUUID(), query.getName(), filterTags, i, targetList.size(), (endTime - startTime));
         }
     }
 
     // TODO remove when old getMatchingRowKeys is uncommented
-    private List<DataPointsRowKey> getMatchingRowKeys(String metricName, long startTime, long endTime, SetMultimap<String, String> filterTags, int limit) {
+    private List<DataPointsRowKey> getMatchingRowKeys(DatastoreMetricQuery query, int limit) {
         // determine whether to use split index or not
         String useSplitField = null;
         Set<String> useSplitSet = new HashSet<>();
 
+        SetMultimap<String, String> filterTags = query.getTags();
         for (String split : m_indexTagList) {
             if (filterTags.containsKey(split)) {
                 Set<String> vs = filterTags.get(split);
@@ -704,37 +708,25 @@ public class CassandraDatastore implements Datastore {
         List<String> useSplit = new ArrayList<>(useSplitSet);
 
         if (useSplitField != null && !"".equals(useSplitField) && useSplitSet.size() > 0) {
-            return getMatchingRowKeysFromSplitIndex(metricName, useSplitField, useSplit, startTime, endTime, filterTags, limit);
+            return getMatchingRowKeysFromSplitIndex(query, useSplitField, useSplit, limit);
         } else {
-            return getMatchingRowKeysFromRegularIndex(metricName, startTime, endTime, filterTags, limit);
+            return getMatchingRowKeysFromRegularIndex(query, limit);
         }
     }
 
-    private List<DataPointsRowKey> getMatchingRowKeysFromRegularIndex(String metricName,
-                                                                      long startTime,
-                                                                      long endTime,
-                                                                      SetMultimap<String, String> filterTags,
+    private List<DataPointsRowKey> getMatchingRowKeysFromRegularIndex(DatastoreMetricQuery query,
                                                                       int limit) {
         final List<DataPointsRowKey> rowKeys = new LinkedList<>();
-        collectFromRowKeyIndex(rowKeys,
-                m_psQueryRowKeyIndex,
-                metricName,
-                startTime,
-                endTime,
-                filterTags,
-                limit);
+        collectFromRowKeyIndex(rowKeys, m_psQueryRowKeyIndex, query, limit);
         return rowKeys;
     }
 
-    private List<DataPointsRowKey> getMatchingRowKeysFromSplitIndex(String metricName,
+    private List<DataPointsRowKey> getMatchingRowKeysFromSplitIndex(DatastoreMetricQuery query,
                                                                     String useSplitField,
                                                                     List<String> useSplit,
-                                                                    long startTime,
-                                                                    long endTime,
-                                                                    SetMultimap<String, String> filterTags,
                                                                     int limit) {
         final List<DataPointsRowKey> rowKeys = new LinkedList<>();
-        if (m_cassandraConfiguration.isUseNewSplitIndexRead() && endTime >= m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
+        if (m_cassandraConfiguration.isUseNewSplitIndexRead() && query.getEndTime() >= m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
             // Allowed cases for this branch (* - a point defined by m_cassandraConfiguration.getNewSplitIndexStartTimeMs())
             //  --|-------*------|--
             // startTime     endTime
@@ -748,7 +740,7 @@ public class CassandraDatastore implements Datastore {
             //  --*--------------|--
             //  startTime     endTime
 
-            if (startTime < m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
+            if (query.getStartTime() < m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
                 // cases
                 //  --|-------*------|--
                 // startTime     endTime
@@ -760,24 +752,22 @@ public class CassandraDatastore implements Datastore {
                 // the second round will fetch all the data until 'endTime' (exclusively)
                 collectFromRowKeySplitIndex(rowKeys,
                         m_psQueryRowKeySplitIndex2,
-                        metricName,
+                        query,
                         useSplitField,
                         useSplit,
                         m_cassandraConfiguration.getNewSplitIndexStartTimeMs(),
-                        endTime,
-                        filterTags,
+                        query.getEndTime(),
                         limit);
 
                 limit -= rowKeys.size();
                 if (limit > 0) {
                     collectFromRowKeySplitIndex(rowKeys,
                             m_psQueryRowKeySplitIndex,
-                            metricName,
+                            query,
                             useSplitField,
                             useSplit,
-                            startTime,
+                            query.getStartTime(),
                             m_cassandraConfiguration.getNewSplitIndexStartTimeMs() - m_rowWidthRead,
-                            filterTags,
                             limit);
                 }
             } else {
@@ -789,12 +779,11 @@ public class CassandraDatastore implements Datastore {
                 //  startTime     endTime
                 collectFromRowKeySplitIndex(rowKeys,
                         m_psQueryRowKeySplitIndex2,
-                        metricName,
+                        query,
                         useSplitField,
                         useSplit,
-                        startTime,
-                        endTime,
-                        filterTags,
+                        query.getStartTime(),
+                        query.getEndTime(),
                         limit);
             }
         } else {
@@ -804,12 +793,11 @@ public class CassandraDatastore implements Datastore {
 
             collectFromRowKeySplitIndex(rowKeys,
                     m_psQueryRowKeySplitIndex,
-                    metricName,
+                    query,
                     useSplitField,
                     useSplit,
-                    startTime,
-                    endTime,
-                    filterTags,
+                    query.getStartTime(),
+                    query.getEndTime(),
                     limit);
         }
 
@@ -819,12 +807,11 @@ public class CassandraDatastore implements Datastore {
     // TODO remove when old getMatchingRowKeys is uncommented
     private void collectFromRowKeySplitIndex(List<DataPointsRowKey> collector,
                                              final PreparedStatement statement,
-                                             final String metricName,
+                                             final DatastoreMetricQuery query,
                                              final String useSplitField,
                                              final List<String> useSplit,
                                              final long startTime,
                                              final long endTime,
-                                             final SetMultimap<String, String> filterTags,
                                              final int limit) {
         Span span = GlobalTracer.get().activeSpan();
         if (span != null) {
@@ -832,6 +819,9 @@ public class CassandraDatastore implements Datastore {
         }
 
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
+
+        final String metricName = query.getName();
+        final SetMultimap<String, String> filterTags = query.getTags();
 
         final BoundStatement bs = statement.bind();
         bs.setString(0, metricName);
@@ -850,16 +840,16 @@ public class CassandraDatastore implements Datastore {
 
             ResultSet rs = m_session.execute(bs);
 
-            filterAndAddKeys(metricName, filterTags, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
+            filterAndAddKeys(query, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
 
             startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(0), "");
             endKey = new DataPointsRowKey(metricName, calculateRowTimeRead(endTime), "");
 
-            bs.setBytes(1, keySerializer.toByteBuffer(startKey));
-            bs.setBytes(2, keySerializer.toByteBuffer(endKey));
+            bs.setBytes(3, keySerializer.toByteBuffer(startKey));
+            bs.setBytes(4, keySerializer.toByteBuffer(endKey));
 
             rs = m_session.execute(bs);
-            filterAndAddKeys(metricName, filterTags, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
+            filterAndAddKeys(query, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
         } else {
             long calculatedStartTime = calculateRowTimeRead(startTime);
             // Use write width here, as END time is upper bound for query and end with produces the bigger timestamp
@@ -874,17 +864,14 @@ public class CassandraDatastore implements Datastore {
             bs.setBytes(4, keySerializer.toByteBuffer(endKey));
 
             ResultSet rs = m_session.execute(bs);
-            filterAndAddKeys(metricName, filterTags, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
+            filterAndAddKeys(query, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
         }
     }
 
     // TODO remove when old getMatchingRowKeys is uncommented
     private void collectFromRowKeyIndex(List<DataPointsRowKey> collector,
                                         final PreparedStatement statement,
-                                        final String metricName,
-                                        final long startTime,
-                                        final long endTime,
-                                        final SetMultimap<String, String> filterTags,
+                                        DatastoreMetricQuery query,
                                         final int limit) {
         Span span = GlobalTracer.get().activeSpan();
         if (span != null) {
@@ -894,6 +881,7 @@ public class CassandraDatastore implements Datastore {
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 
         final BoundStatement bs = statement.bind();
+        final String metricName = query.getName();
         ByteBuffer bMetricName;
         try {
             bMetricName = ByteBuffer.wrap(metricName.getBytes("UTF-8"));
@@ -904,7 +892,8 @@ public class CassandraDatastore implements Datastore {
         bs.setBytes(0, bMetricName);
         bs.setInt(3, limit);
 
-
+        final long startTime = query.getStartTime();
+        final long endTime = query.getEndTime();
         if ((startTime < 0) && (endTime >= 0)) {
             DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(startTime), "");
             DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTimeRead(endTime), "");
@@ -915,7 +904,7 @@ public class CassandraDatastore implements Datastore {
 
             ResultSet rs = m_session.execute(bs);
 
-            filterAndAddKeys(metricName, filterTags, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
+            filterAndAddKeys(query, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
 
             startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(0), "");
             endKey = new DataPointsRowKey(metricName, calculateRowTimeRead(endTime), "");
@@ -924,7 +913,7 @@ public class CassandraDatastore implements Datastore {
             bs.setBytes(2, keySerializer.toByteBuffer(endKey));
 
             rs = m_session.execute(bs);
-            filterAndAddKeys(metricName, filterTags, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
+            filterAndAddKeys(query, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
         } else {
             long calculatedStartTime = calculateRowTimeRead(startTime);
             // Use write width here, as END time is upper bound for query and end with produces the bigger timestamp
@@ -939,7 +928,7 @@ public class CassandraDatastore implements Datastore {
             bs.setBytes(2, keySerializer.toByteBuffer(endKey));
 
             ResultSet rs = m_session.execute(bs);
-            filterAndAddKeys(metricName, filterTags, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
+            filterAndAddKeys(query, rs, collector, m_cassandraConfiguration.getMaxRowsForKeysQuery());
         }
     }
 

@@ -32,6 +32,7 @@ import org.kairosdb.core.aggregator.Aggregator;
 import org.kairosdb.core.aggregator.LimitAggregator;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.*;
+import org.kairosdb.datastore.cassandra.MaxRowKeysForQueryExceededException;
 import org.kairosdb.util.MemoryMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -423,6 +424,8 @@ public class KairosDatastore {
                         m_datastore.queryDatabase(m_metric, cachedResults);
                         returnedRows = cachedResults.getRows();
                     }
+                } catch (MaxRowKeysForQueryExceededException e) {
+                    throw e;
                 } catch (Exception e) {
                     throw new DatastoreException(e);
                 }

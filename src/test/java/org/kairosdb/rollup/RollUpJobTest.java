@@ -166,11 +166,6 @@ public class RollUpJobTest
 			}
 			return "";
 		}
-
-		@Override
-		public void indexMetricTags(DatastoreMetricQuery query, int indexTtl) throws DatastoreException
-		{
-		}
 	}
 }
 

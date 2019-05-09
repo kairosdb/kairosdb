@@ -40,20 +40,10 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
     private long m_startTime = 0L;
     private long m_queryStartTime = 0L;
     private long m_queryEndTime = 0L;
-    //	private boolean m_started = false;
     private boolean m_exhaustive;
     private DateTimeZone m_timeZone = DateTimeZone.UTC;
 
-    @FeatureProperty(
-            name = "align_sampling",
-            label = "Align sampling",
-            description = "When set to true the time for the aggregated data point for each range will fall on the start"
-                    + " of the range instead of being the value for the first data point within that range. Note that"
-                    + " align_sampling, align_start_time, and align_end_time are mutually exclusive. If more than one"
-                    + " are set, unexpected results will occur.",
-            default_value = "true"
-    )
-    private boolean m_alignSampling;
+    private boolean m_alignSampling = true;
 
 
     @NotNull

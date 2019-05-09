@@ -1,365 +1,171 @@
 package org.kairosdb.rollup;
 
-import com.google.common.collect.ImmutableSortedMap;
+import ch.qos.logback.classic.Level;
+import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Resources;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.TestDataPointFactory;
-import org.kairosdb.core.aggregator.*;
-import org.kairosdb.core.datapoints.DoubleDataPoint;
-import org.kairosdb.core.datapoints.DoubleDataPointFactory;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.KairosFeatureProcessor;
+import org.kairosdb.core.aggregator.TestAggregatorFactory;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.eventbus.Subscribe;
-import org.kairosdb.plugin.Aggregator;
-import org.kairosdb.testing.ListDataPointGroup;
+import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.core.groupby.TestGroupByFactory;
+import org.kairosdb.core.http.rest.QueryException;
+import org.kairosdb.core.http.rest.json.QueryParser;
+import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
+import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.util.LoggingUtils;
+import org.mockito.ArgumentMatcher;
+import org.quartz.*;
 
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 public class RollUpJobTest
 {
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MMM-dd HH:mm:ss.SS", Locale.ENGLISH);
+	private JobExecutionContext mockJobExecutionContext;
+	private RollupTaskStatusStore mockStatusStore;
+	private KairosDatastore mockDatastore;
+	private RollUpJob job;
+	private RollupTask task;
+	private Level previousLogLevel;
 
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
-
-	private long lastTimeStamp;
-	private KairosDatastore datastore;
-	private TestDatastore testDataStore;
-
+	@SuppressWarnings("unchecked")
 	@Before
-	public void setup() throws ParseException, DatastoreException
+	public void setup() throws KairosDBException, IOException, QueryException, SchedulerException
 	{
-		lastTimeStamp = dateFormat.parse("2013-JAN-18 4:55:12.22").getTime();
+		previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);
+		Publisher<DataPointEvent> mockPublisher = mock(Publisher.class);
+		mockStatusStore = mock(RollupTaskStatusStore.class);
+		FilterEventBus mockEventBus = mock(FilterEventBus.class);
+		when(mockEventBus.createPublisher(DataPointEvent.class)).thenReturn(mockPublisher);
+		mockDatastore = mock(KairosDatastore.class);
 
-		testDataStore = new TestDatastore();
-		datastore = new KairosDatastore(testDataStore, new QueryQueuingManager(1, "hostname"),
-				new TestDataPointFactory(), false);
-		datastore.init();
+		QueryParser queryParser = new QueryParser(new KairosFeatureProcessor(
+				new TestAggregatorFactory(mockEventBus), new TestGroupByFactory()),
+				new TestQueryPluginFactory());
+
+		String json = Resources.toString(Resources.getResource("rolluptask1.json"), Charsets.UTF_8);
+		task = queryParser.parseRollupTask(json);
+		ImmutableMap<Object, Object> map = ImmutableMap.of(
+				"task", task,
+				"eventBus", mockEventBus,
+				"datastore", mockDatastore,
+				"hostName", "localhost",
+				"statusStore", mockStatusStore
+		);
+		JobDataMap jobDataMap = new JobDataMap(map);
+
+		Scheduler mockScheduler = mock(Scheduler.class);
+		when(mockScheduler.getCurrentlyExecutingJobs()).thenReturn(Collections.emptyList());
+
+		mockJobExecutionContext = mock(JobExecutionContext.class);
+		when(mockJobExecutionContext.getMergedJobDataMap()).thenReturn(jobDataMap);
+		when(mockJobExecutionContext.getScheduler()).thenReturn(mockScheduler);
+
+		job = new RollUpJob();
+	}
+
+	@After
+	public void tearDown()
+	{
+		LoggingUtils.setLogLevel(previousLogLevel);
 	}
 
 	@Test
-	public void test_getLastSampling()
+	public void testDatastoreException() throws JobExecutionException, DatastoreException, RollUpException
 	{
-		Sampling sampling1 = new Sampling(1, TimeUnit.DAYS);
-		Sampling sampling2 = new Sampling(2, TimeUnit.MINUTES);
+		when(mockDatastore.createQuery(any())).thenThrow(new DatastoreException("ExpectedException"));
 
-		DoubleDataPointFactory dataPointFactory = mock(DoubleDataPointFactory.class);
+		job.execute(mockJobExecutionContext);
 
-		MinAggregator minAggregator = new MinAggregator(dataPointFactory);
-		minAggregator.setSampling(sampling1);
-		MaxAggregator maxAggregator = new MaxAggregator(dataPointFactory);
-		maxAggregator.setSampling(sampling2);
-
-		List<Aggregator> aggregators = new ArrayList<>();
-		aggregators.add(minAggregator);
-		aggregators.add(maxAggregator);
-		aggregators.add(new DivideAggregator(dataPointFactory));
-		aggregators.add(new DiffAggregator(dataPointFactory));
-
-		Sampling lastSampling = RollUpJob.getLastSampling(aggregators);
-
-		assertThat(lastSampling, equalTo(sampling2));
-
-		aggregators = new ArrayList<>();
-		aggregators.add(maxAggregator);
-		aggregators.add(new DivideAggregator(dataPointFactory));
-		aggregators.add(new DiffAggregator(dataPointFactory));
-		aggregators.add(minAggregator);
-
-		lastSampling = RollUpJob.getLastSampling(aggregators);
-
-		assertThat(lastSampling, equalTo(sampling1));
+		RollupTaskStatus expected = new RollupTaskStatus(new Date(), "localhost");
+		RollupQueryMetricStatus foo = new RollupQueryMetricStatus("any",
+				"any", 1L, 1L,
+				"org.kairosdb.core.exception.DatastoreException: ExpectedException");
+		expected.addStatus(foo);
+		verify(mockStatusStore).write(eq(task.getId()), argThat(new RollupStatusMatcher(expected)));
 	}
 
 	@Test
-	public void test_getLastSampling_no_sampling()
+	public void testRuntimeException() throws JobExecutionException, DatastoreException, RollUpException
 	{
-		DoubleDataPointFactory dataPointFactory = mock(DoubleDataPointFactory.class);
-		List<Aggregator> aggregators = new ArrayList<>();
-		aggregators.add(new DivideAggregator(dataPointFactory));
-		aggregators.add(new DiffAggregator(dataPointFactory));
+		when(mockDatastore.createQuery(any())).thenThrow(new RuntimeException("ExpectedException"));
 
-		Sampling lastSampling = RollUpJob.getLastSampling(aggregators);
+		job.execute(mockJobExecutionContext);
 
-		assertThat(lastSampling, equalTo(null));
+		RollupTaskStatus expected = new RollupTaskStatus(new Date(), "localhost");
+		RollupQueryMetricStatus foo = new RollupQueryMetricStatus("any",
+				"any", 1L, 1L,
+				"java.lang.RuntimeException: ExpectedException\n");
+		expected.addStatus(foo);
+		verify(mockStatusStore).write(eq(task.getId()), argThat(new RollupStatusMatcher(expected)));
 	}
 
-	@Test
-	public void test_getLastRollupDataPoint() throws ParseException, DatastoreException
+	private class RollupStatusMatcher implements ArgumentMatcher<RollupTaskStatus>
 	{
-		long now = dateFormat.parse("2013-Jan-18 4:59:12.22").getTime();
-		String metricName = "foo";
+		private String errorMessage;
+		private RollupTaskStatus expected;
 
-		ImmutableSortedMap<String, String> localHostTags = ImmutableSortedMap.of("host", "localhost");
-		List<DataPoint> localhostDataPoints = new ArrayList<>();
-		localhostDataPoints.add(new DoubleDataPoint(lastTimeStamp + 1, 10));
-		localhostDataPoints.add(new DoubleDataPoint(lastTimeStamp + 2, 11));
-		localhostDataPoints.add(new DoubleDataPoint(lastTimeStamp + 3, 12));
-		localhostDataPoints.add(new DoubleDataPoint(lastTimeStamp + 4, 13));
-		localhostDataPoints.add(new DoubleDataPoint(lastTimeStamp + 5, 14));
-
-		ImmutableSortedMap<String, String> remoteTags = ImmutableSortedMap.of("host", "remote");
-		List<DataPoint> remoteDataPoints = new ArrayList<>();
-		remoteDataPoints.add(new DoubleDataPoint(lastTimeStamp + 1, 10));
-		remoteDataPoints.add(new DoubleDataPoint(lastTimeStamp + 2, 11));
-
-		testDataStore.clear();
-		testDataStore.putDataPoints(metricName, localHostTags, localhostDataPoints);
-		testDataStore.putDataPoints(metricName, remoteTags, remoteDataPoints);
-
-		DataPoint lastDataPoint = RollUpJob.getLastRollupDataPoint(datastore, metricName, now);
-
-		// Look back from now and find last data point [4]
-		assertThat(lastDataPoint, equalTo(localhostDataPoints.get(4)));
-	}
-
-	@Test
-	public void test_getLastRollupDataPoint_noDataPoints() throws ParseException, DatastoreException
-	{
-		long now = dateFormat.parse("2013-Jan-18 4:59:12.22").getTime();
-		String metricName = "foo";
-
-		testDataStore.clear();
-
-		DataPoint lastDataPoint = RollUpJob.getLastRollupDataPoint(datastore, metricName, now);
-
-		assertThat(lastDataPoint, equalTo(null));
-	}
-
-	@Test
-	public void test_getgetFutureDataPoint() throws ParseException, DatastoreException
-	{
-		long now = dateFormat.parse("2013-Jan-18 4:59:12.22").getTime();
-		String metricName = "foo";
-
-		ImmutableSortedMap<String, String> localHostTags = ImmutableSortedMap.of("host", "localhost");
-		List<DataPoint> localhostDataPoints = new ArrayList<>();
-		localhostDataPoints.add(new DoubleDataPoint(lastTimeStamp + 1, 10));
-		localhostDataPoints.add(new DoubleDataPoint(lastTimeStamp + 2, 11));
-		localhostDataPoints.add(new DoubleDataPoint(lastTimeStamp + 3, 12));
-		localhostDataPoints.add(new DoubleDataPoint(lastTimeStamp + 4, 13));
-		localhostDataPoints.add(new DoubleDataPoint(lastTimeStamp + 5, 14));
-
-		ImmutableSortedMap<String, String> remoteTags = ImmutableSortedMap.of("host", "remote");
-		List<DataPoint> remoteDataPoints = new ArrayList<>();
-		remoteDataPoints.add(new DoubleDataPoint(lastTimeStamp + 1, 10));
-		remoteDataPoints.add(new DoubleDataPoint(lastTimeStamp + 2, 11));
-
-		testDataStore.clear();
-		testDataStore.putDataPoints(metricName, localHostTags, localhostDataPoints);
-		testDataStore.putDataPoints(metricName, remoteTags, remoteDataPoints);
-
-		// Look from data point [1] forward and return [2]
-		DataPoint futureDataPoint = RollUpJob.getFutureDataPoint(datastore, metricName, now, localhostDataPoints.get(1));
-
-		assertThat(futureDataPoint, equalTo(localhostDataPoints.get(2)));
-	}
-
-	@Test
-	public void test_calculatStartTime_datapointTime()
-	{
-		Sampling sampling = new Sampling();
-		DoubleDataPoint dataPoint = new DoubleDataPoint(123456L, 10);
-
-		long time = RollUpJob.calculateStartTime(dataPoint, sampling, System.currentTimeMillis());
-
-		assertThat(time, equalTo(123456L));
-	}
-
-	@Test
-	public void test_calculatStartTime_samplingTime() throws ParseException
-	{
-		long now = dateFormat.parse("2013-Jan-18 4:59:12.22").getTime();
-		Sampling sampling = new Sampling(1, TimeUnit.HOURS);
-
-		long time = RollUpJob.calculateStartTime(null, sampling, now);
-
-		assertThat(time, equalTo(dateFormat.parse("2013-Jan-18 3:59:12.22").getTime()));
-	}
-
-	@Test(expected = NullPointerException.class)
-	public void test_calculatStartTime_samplingNull_invalid()
-	{
-		DoubleDataPoint dataPoint = new DoubleDataPoint(123456L, 10);
-
-		RollUpJob.calculateStartTime(dataPoint, null, System.currentTimeMillis());
-	}
-
-	@Test
-	public void test_calculatEndTime_datapoint_null()
-	{
-		long now = System.currentTimeMillis();
-		Duration executionInterval = new Duration();
-
-		long time = RollUpJob.calculateEndTime(null, executionInterval, now);
-
-		assertThat(time, equalTo(now));
-	}
-
-	@Test
-	public void test_calculatEndTime_datapointNotNull_recentTime()
-	{
-		long now = System.currentTimeMillis();
-		Duration executionInterval = new Duration();
-		DoubleDataPoint dataPoint = new DoubleDataPoint(now - 2000, 10);
-
-		long time = RollUpJob.calculateEndTime(dataPoint, executionInterval, now);
-
-		assertThat(time, equalTo(dataPoint.getTimestamp()));
-	}
-
-	@Test
-	public void test_calculatEndTime_datapointNotNull_tooOld() throws ParseException
-	{
-		long datapointTime = dateFormat.parse("2013-Jan-18 4:59:12.22").getTime();
-		long now = System.currentTimeMillis();
-		Duration executionInterval = new Duration(1, TimeUnit.DAYS);
-		DoubleDataPoint dataPoint = new DoubleDataPoint(datapointTime, 10);
-
-		long time = RollUpJob.calculateEndTime(dataPoint, executionInterval, now);
-
-		assertThat(time, equalTo(dateFormat.parse("2013-Jan-22 4:59:12.22").getTime()));
-	}
-
-	public static class TestDatastore implements Datastore
-	{
-		List<ListDataPointGroup> dataPointGroups = new ArrayList<>();
-
-		void clear()
+		RollupStatusMatcher(RollupTaskStatus expected)
 		{
-			dataPointGroups = new ArrayList<>();
+			this.expected = expected;
 		}
 
 		@Override
-		public void close()
+		public boolean matches(RollupTaskStatus rollupTaskStatus)
 		{
-		}
+			List<RollupQueryMetricStatus> expectedStatuses = expected.getStatuses();
+			List<RollupQueryMetricStatus> statuses = rollupTaskStatus.getStatuses();
 
-		void putDataPoints(String metricName, ImmutableSortedMap<String, String> tags, List<DataPoint> dataPoints)
-		{
-			ListDataPointGroup dataPointGroup = new ListDataPointGroup(metricName);
-
-			for (Map.Entry<String, String> tag : tags.entrySet())
+			if (expectedStatuses.size() != statuses.size())
 			{
-				dataPointGroup.addTag(tag.getKey(), tag.getValue());
+				errorMessage = "Number of RollupQueryMetricStatuses do not match. Expected "
+						+ expectedStatuses.size() + " but was " + statuses.size();
+				return false;
 			}
 
-			for (DataPoint dataPoint : dataPoints)
+			for (RollupQueryMetricStatus expectedStatus : expectedStatuses)
 			{
-				dataPointGroup.addDataPoint(dataPoint);
-			}
-
-			dataPointGroups.add(dataPointGroup);
-		}
-
-		@Subscribe
-		public void putDataPoint(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint, int ttl)
-		{
-			ListDataPointGroup dataPointGroup = new ListDataPointGroup(metricName);
-			dataPointGroup.addDataPoint(dataPoint);
-
-			for (Map.Entry<String, String> tag : tags.entrySet())
-			{
-				dataPointGroup.addTag(tag.getKey(), tag.getValue());
-			}
-
-			dataPointGroups.add(dataPointGroup);
-		}
-
-		@Override
-		public Iterable<String> getMetricNames(String prefix)
-		{
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public Iterable<String> getTagNames()
-		{
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public Iterable<String> getTagValues()
-		{
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
-		{
-			for (ListDataPointGroup dataPointGroup : dataPointGroups)
-			{
-				try
+				boolean found = false;
+				for (RollupQueryMetricStatus status : statuses)
 				{
-					dataPointGroup.sort(query.getOrder());
-
-					SortedMap<String, String> tags = new TreeMap<>();
-					for (String tagName : dataPointGroup.getTagNames())
+					if (status.getErrorMessage().startsWith(expectedStatus.getErrorMessage()))
 					{
-						tags.put(tagName, dataPointGroup.getTagValues(tagName).iterator().next());
-					}
-
-					DataPoint dataPoint = getNext(dataPointGroup, query);
-					if (dataPoint != null)
-					{
-						try (QueryCallback.DataPointWriter dataPointWriter = queryCallback.startDataPointSet(dataPoint.getDataStoreDataType(), tags))
-						{
-							dataPointWriter.addDataPoint(dataPoint);
-
-							while (dataPointGroup.hasNext())
-							{
-								DataPoint next = getNext(dataPointGroup, query);
-								if (next != null)
-								{
-									dataPointWriter.addDataPoint(next);
-								}
-							}
-						}
+						found = true;
 					}
 				}
-				catch (IOException e)
+				if (!found)
 				{
-					throw new DatastoreException(e);
+					errorMessage = "Error messages do no match. Expected " + expectedStatus.getErrorMessage();
+					return false;
 				}
 			}
+
+			return true;
 		}
 
-		private DataPoint getNext(DataPointGroup group, DatastoreMetricQuery query)
+		@Override
+		public String toString()
 		{
-			DataPoint dataPoint = null;
-			while (group.hasNext())
+			if (errorMessage != null)
 			{
-				DataPoint dp = group.next();
-				if (dp.getTimestamp() >= query.getStartTime())
-				{
-					dataPoint = dp;
-					break;
-				}
+				return errorMessage;
 			}
-
-			return dataPoint;
-		}
-
-		@Override
-		public void deleteDataPoints(DatastoreMetricQuery deleteQuery)
-		{
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public TagSet queryMetricTags(DatastoreMetricQuery query)
-		{
-			throw new UnsupportedOperationException();
+			return "";
 		}
 	}
 }
+

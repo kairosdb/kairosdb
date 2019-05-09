@@ -100,7 +100,7 @@ public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
 		}
 		catch (SchedulerException e)
 		{
-			log.error("Failed to start " + getClass().getName(), e);
+			log.error("Failed to stop " + getClass().getName(), e);
 		}
 	}
 

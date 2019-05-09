@@ -46,6 +46,11 @@ public class TestAggregatorFactory implements FeatureProcessingFactory<Aggregato
 
 	public TestAggregatorFactory() throws KairosDBException
 	{
+		this(null);
+	}
+
+	public TestAggregatorFactory(final FilterEventBus eventBus) throws KairosDBException
+	{
 		addAggregator(SumAggregator.class);
 		addAggregator(MinAggregator.class);
 		addAggregator(MaxAggregator.class);
@@ -64,7 +69,7 @@ public class TestAggregatorFactory implements FeatureProcessingFactory<Aggregato
 			protected void configure()
 			{
 				bind(DoubleDataPointFactory.class).to(DoubleDataPointFactoryImpl.class);
-				bind(FilterEventBus.class).toInstance(new FilterEventBus(new EventBusConfiguration(new KairosRootConfig())));
+				bind(FilterEventBus.class).toInstance(eventBus == null ? new FilterEventBus(new EventBusConfiguration(new KairosRootConfig())) : eventBus);
 
 				for (Class<?> aggregator : aggregators.values())
 				{

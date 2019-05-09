@@ -24,12 +24,12 @@ public class RollupTaskStatus
 
     public static RollupQueryMetricStatus createQueryMetricStatus(String metricName, long lastExecuted, long dataPointCount, long executionLength)
     {
-        return new RollupQueryMetricStatus(metricName, getLastExecutedTime(lastExecuted), dataPointCount, executionLength);
+        return new RollupQueryMetricStatus(metricName, getLastExecutedTime(lastExecuted), dataPointCount, executionLength, lastExecuted);
     }
 
     public static RollupQueryMetricStatus createErrorQueryMetricStatus(String metricName, long lastExecuted, String errorMessage, long executionLength)
     {
-        return new RollupQueryMetricStatus(metricName, getLastExecutedTime(lastExecuted), executionLength, errorMessage);
+        return new RollupQueryMetricStatus(metricName, getLastExecutedTime(lastExecuted), executionLength, lastExecuted, errorMessage);
     }
 
     public String getNextScheduled()

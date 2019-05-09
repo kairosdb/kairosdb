@@ -34,7 +34,8 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
 	$scope.DEFAULT_EXECUTE = $scope.EXECUTION_TYPES[2];
 	$scope.METRIC_NAME_LIST_MAX_LENGTH = 20;
 	$scope.DEFAULT_GROUP_BY_TYPE = "tag";
-	$scope.DEFAULT_SAMPLING = {"value": 1, "unit": "hours"};$scope.DEFAULT_ALIGNMENT = "'align_sampling': true";
+	$scope.DEFAULT_SAMPLING = {"value": 1, "unit": "hours"};
+	$scope.DEFAULT_ALIGNMENT = "'align_sampling': true";
 
     $scope.AGGREGATORS = [
         {'name': 'avg', 'align_sampling': true, 'sampling': $scope.DEFAULT_SAMPLING},
@@ -457,6 +458,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
     $scope.suggestSaveAs = function (task) {
         if (!$scope.isMetricOrDefault(task) && $scope.isSaveAsEmptyOrDefault(task)) {
             task.save_as = task.metric_name + "_rollup";
+            task.name = task.metric_name + "_rollup";
         }
         $scope.onBlur(task);
     };

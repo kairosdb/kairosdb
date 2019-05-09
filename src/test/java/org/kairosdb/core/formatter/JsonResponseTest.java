@@ -76,7 +76,7 @@ public class JsonResponseTest
 		groups.add(group1);
 		groups.add(group2);
 
-		response.begin();
+		response.begin(null);
 		response.formatQuery(groups, false, 10);
 		response.end();
 
@@ -110,7 +110,7 @@ public class JsonResponseTest
 		groups.add(group1);
 		groups.add(group2);
 
-		response.begin();
+		response.begin(null);
 		response.formatQuery(groups, true, 10);
 		response.end();
 
@@ -133,7 +133,7 @@ public class JsonResponseTest
 
 		groups.add(group1);
 
-		response.begin();
+		response.begin(null);
 		response.formatQuery(groups, false, 10);
 		response.end();
 	}

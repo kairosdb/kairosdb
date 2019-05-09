@@ -1,12 +1,19 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import org.apache.commons.io.IOUtils;
+import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.Test;
+import org.kairosdb.core.KairosConfig;
 import org.kairosdb.core.KairosRootConfig;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.ParseException;
 import java.util.Map;
 
+import static org.assertj.guava.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.kairosdb.core.KairosConfig.DATE_TIME_FORMAT;
@@ -17,6 +24,20 @@ public class ClusterConfigurationTest
 	{
 		KairosRootConfig rootConfig = new KairosRootConfig();
 		rootConfig.load(data);
+
+		ClusterConfiguration config = new ClusterConfiguration(rootConfig);
+
+		return config;
+	}
+
+	private ClusterConfiguration setupCluster(String data) throws ParseException, IOException
+	{
+		KairosRootConfig rootConfig = new KairosRootConfig();
+
+		try (InputStream is = IOUtils.toInputStream(data, "UTF-8"))
+		{
+			rootConfig.load(is, KairosConfig.ConfigFormat.HOCON);
+		}
 
 		ClusterConfiguration config = new ClusterConfiguration(rootConfig);
 
@@ -84,5 +105,28 @@ public class ClusterConfigurationTest
 
 		assertTrue(cluster.containRange(DATE_TIME_FORMAT.parse("2002-02-01T12:00-0700").getTime(),
 				DATE_TIME_FORMAT.parse("2002-03-01T12:00-0700").getTime()));
+	}
+
+
+	@Test
+	public void test_tagIndex_list() throws IOException, ParseException
+	{
+		String config = "tag_indexed_row_key_lookup_metrics: [key1, key2]";
+
+		ClusterConfiguration clusterConfiguration = setupCluster(config);
+
+		assertThat(clusterConfiguration.getTagIndexedMetrics()).containsAllEntriesOf(ImmutableMultimap.of(
+				"key1", "*", "key2", "*"));
+	}
+
+	@Test
+	public void test_discoverConfigLoading() throws IOException, ParseException
+	{
+		String config = "tag_indexed_row_key_lookup_metrics: {key1: [], key2: [value1, value2]}";
+
+		ClusterConfiguration clusterConfiguration = setupCluster(config);
+
+		assertThat(clusterConfiguration.getTagIndexedMetrics()).containsAllEntriesOf(ImmutableMultimap.of(
+				"key1", "*", "key2", "value1", "key2", "value2"));
 	}
 }

@@ -1,0 +1,19 @@
+#sudo systemctl enable kairosdb
+#sudo systemctl daemon-reload
+
+[Unit]
+Description=KairosDB fast time-series database
+Documentation=http://www.kairosdb.org
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/kairosdb/bin/kairosdb.sh start-systemd
+WorkingDirectory=/opt/kairosdb
+Restart=always
+TimeoutStopSec=1min
+
+[Install]
+Alias=kairos
+WantedBy=multi-user.target
+

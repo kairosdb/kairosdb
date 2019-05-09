@@ -16,6 +16,7 @@
 package org.kairosdb.core.datastore;
 
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
@@ -251,6 +252,11 @@ public class KairosDatastore implements KairosPostConstructInit
 
 	}
 
+	public void indexTags(QueryMetric queryMetric, int indexTtl) throws DatastoreException
+	{
+		m_datastore.indexMetricTags(queryMetric, indexTtl);
+	}
+
 	public DatastoreQuery createQuery(QueryMetric metric) throws DatastoreException
 	{
 		checkNotNull(metric);
@@ -464,8 +470,8 @@ public class KairosDatastore implements KairosPostConstructInit
 		@Override
 		public List<DataPointGroup> execute() throws DatastoreException
 		{
-			long queryStartTime = System.currentTimeMillis();
-			
+			Stopwatch stopwatch = Stopwatch.createStarted();
+
 			SearchResult searchResult = null;
 
 			List<DataPointRow> returnedRows = null;
@@ -567,7 +573,7 @@ public class KairosDatastore implements KairosPostConstructInit
 
 
 			//Report how long query took
-			ThreadReporter.addDataPoint(QUERY_METRIC_TIME, System.currentTimeMillis() - queryStartTime);
+			ThreadReporter.addDataPoint(QUERY_METRIC_TIME, stopwatch.elapsed(java.util.concurrent.TimeUnit.MILLISECONDS));
 
 			return (m_results);
 		}

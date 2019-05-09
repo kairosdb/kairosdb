@@ -57,6 +57,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -88,7 +89,7 @@ public class MetricsResource implements KairosMetricReporter {
 	// These two are used to track rate of ingestion
 	private final AtomicInteger m_ingestedDataPoints = new AtomicInteger();
 	private final AtomicInteger m_ingestTime = new AtomicInteger();
-	private int m_datapointsCount;
+	private final AtomicLong m_datapointsCount = new AtomicLong();
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
@@ -135,7 +136,6 @@ public class MetricsResource implements KairosMetricReporter {
 
 		this.tracer = tracer;
 		limiter = new SimpleTimeLimiter(Executors.newCachedThreadPool());
-		m_datapointsCount = 0;
 	}
 
 	private ResponseBuilder setHeaders(ResponseBuilder responseBuilder) {
@@ -449,7 +449,7 @@ public class MetricsResource implements KairosMetricReporter {
 							queryMeasurementProvider.measureDistanceError(query);
 							throw e;
 						} finally {
-							m_datapointsCount = dq.getSampleSize();
+							m_datapointsCount.addAndGet(dq.getSampleSize());
 							queryMeasurementProvider.measureSpanSuccess(query);
 							queryMeasurementProvider.measureDistanceSuccess(query);
 							dq.close();
@@ -663,6 +663,7 @@ public class MetricsResource implements KairosMetricReporter {
 	public List<DataPointSet> getMetrics(long now) {
 		int time = m_ingestTime.getAndSet(0);
 		int count = m_ingestedDataPoints.getAndSet(0);
+		long requestedCount = m_datapointsCount.getAndSet(0);
 
 		DataPointSet dpsCount = new DataPointSet(INGEST_COUNT);
 		DataPointSet dpsTime = new DataPointSet(INGEST_TIME);
@@ -676,8 +677,8 @@ public class MetricsResource implements KairosMetricReporter {
 
 		dpsCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, count));
 		dpsTime.addDataPoint(m_longDataPointFactory.createDataPoint(now, time));
-		dpsRequestedCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, m_datapointsCount));
-		List<DataPointSet> ret = new ArrayList<DataPointSet>();
+		dpsRequestedCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, requestedCount));
+		List<DataPointSet> ret = new ArrayList<>();
 
 		ret.add(dpsRequestedCount);
 

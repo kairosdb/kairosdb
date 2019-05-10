@@ -441,8 +441,9 @@ public class KairosDatastore {
                 span.setTag("row_count", m_rowCount);
 
 				if (m_metric.getCriticalQueryUUID() != null) {
-					logger.info("uuid={} metric={} datapoint_count={} row_count={}",
-							m_metric.getCriticalQueryUUID(), m_metric.getName(), m_dataPointCount, m_rowCount);
+					logger.info("critical_query_finished: uuid={} metric={} datapoint_count={} row_count={} time={}",
+							m_metric.getCriticalQueryUUID(), m_metric.getName(), m_dataPointCount, m_rowCount,
+							m_metric.getEndTime() - m_metric.getStartTime());
 				}
 
                 List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),

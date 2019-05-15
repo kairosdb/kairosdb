@@ -258,7 +258,7 @@ public class RollUpResource
 					}
 				}
 
-				responseBuilder = Response.status(Status.OK);
+				responseBuilder = Response.status(Status.NO_CONTENT);
 			}
 			setHeaders(responseBuilder);
 			return responseBuilder.build();

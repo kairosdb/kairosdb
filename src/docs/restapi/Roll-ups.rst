@@ -43,10 +43,6 @@ Body
  		"save_as": "kairosdb.http.query_time_rollup",
  		"query": {
  			"cache_time": 0,
- 			"start_relative": {
- 				"value": "1",
- 				"unit": "hours"
- 			},
  			"metrics": [{
  				"name": "kairosdb.http.query_time",
  				"limit": 10000,
@@ -164,10 +160,6 @@ Response
     		"save_as": "kairosdb.http.query_time_rollup",
     		"query": {
     			"cache_time": 0,
-    			"start_relative": {
-    				"value": "1",
-    				"unit": "hours"
-    			},
     			"metrics": [{
     				"name": "kairosdb.http.query_time",
     				"limit": 10000,
@@ -241,10 +233,6 @@ Response
     		"save_as": "kairosdb.http.query_time_rollup",
     		"query": {
     			"cache_time": 0,
-    			"start_relative": {
-    				"value": "1",
-    				"unit": "hours"
-    			},
     			"metrics": [{
     				"name": "kairosdb.http.query_time",
     				"limit": 10000,
@@ -345,10 +333,6 @@ Body
 		    "save_as": "kairosdb.http.query_time_rollup",
 		    "query": {
 			    "cache_time": 0,
-			    "start_relative": {
-				    "value": "1",
-				    "unit": "hours"
-			    },
 			    "metrics": [{
 				    "name": "kairosdb.http.query_time",
 				    "limit": 10000,
@@ -394,10 +378,6 @@ Response
     		"save_as": "kairosdb.http.query_time_rollup",
     		"query": {
     			"cache_time": 0,
-    			"start_relative": {
-    				"value": "1",
-    				"unit": "hours"
-    			},
     			"metrics": [{
     				"name": "kairosdb.http.query_time",
     				"limit": 10000,
@@ -422,6 +402,55 @@ Response
     		}
     	}]
     }
+
+*Failure*
+
+  The response will be 400 Bad Request if the request is invalid.
+
+  The response will be 404 if the roll-up resource specified does not exist.
+
+  The response will be 500 Internal Server Error if an error occurs retrieving data.
+
+=====================
+Backfill Roll-up Task
+=====================
+Executes a roll-up task for the given time range. This allows you to back fill a roll-up.
+This is a one time operation.
+
+------
+Method
+------
+
+  GET
+
+-------
+Request
+-------
+
+  http://[host]:[port]/api/v1/rollups/backfill/{id}?startTime=<time>&endTime=<time>
+
+----------
+Parameters
+----------
+
+**startTime** - (Required) The start time to execute the roll-up. The format is yyyy-MM-dd-HH-mm-ss-SSS.
+That is year-month-day-hour-minute-seconds-milliseconds.
+
+**endTime** - (Optional). The end time for the roll-up execution. If not specified the current time is used.
+The format is yyyy-MM-dd-HH-mm-ss-SSS. That is year-month-day-hour-minute-seconds-milliseconds.
+
+----
+Body
+----
+
+  none
+
+--------
+Response
+--------
+*Success*
+
+  204 - no content
 
 *Failure*
 

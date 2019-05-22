@@ -10,7 +10,7 @@
 <configuration>
         <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
                 <encoder>
-                        <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level [%file:%line] - %msg%n</pattern>
+                        <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%file:%line] - %msg%n</pattern>
                 </encoder>
         </appender>
         <appender name="Sentry" class="io.sentry.logback.SentryAppender">
@@ -23,7 +23,7 @@
                 <appender-ref ref="stdout"/>
                 <appender-ref ref="Sentry" />
         </root>
-        <logger name="org.kairosdb.core.datastore.KairosDatastore" level="INFO">
+        <logger name="org.kairosdb.core.datastore.KairosDatastore" level="INFO" additivity="false">
                 <appender-ref ref="stdout"/>
         </logger>
 </configuration>

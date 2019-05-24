@@ -1,12 +1,8 @@
 package org.kairosdb.rollup;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.MapDifference;
+import com.google.common.collect.*;
 import com.google.common.collect.MapDifference.ValueDifference;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -20,12 +16,8 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -93,7 +85,7 @@ public class AssignmentManager implements KairosDBService
             long assignmentTime = assignmentStore.getLastModifiedTime();
             long taskStoreTime = taskStore.getLastModifiedTime();
 
-            if (haveRollupsOrAssignmentsChanged(assignmentTime, taskStoreTime)) {
+            if (haveRollupsOrAssignmentsOrHostsChanged(assignmentTime, taskStoreTime)) {
                 Map<String, String> previousAssignments = getAssignmentsCache();
                 Map<String, String> assignments = assignmentStore.getAssignments();
                 Map<String, String> newAssignments = new HashMap<>(assignments);
@@ -101,7 +93,7 @@ public class AssignmentManager implements KairosDBService
                 Map<String, ServiceKeyValue> hosts = hostManager.getActiveKairosHosts();
 
                 if (getMyAssignmentIds(guid, newAssignments).isEmpty() && tasks.size() > hosts.size()) {
-                    logger.info("Server starting up. Reblanacing roll-up assignments");
+                    logger.info("Server starting up. Re-balancing roll-up assignments");
                     newAssignments = balancing.rebalance(hosts.keySet(), getScores(tasks));
                 }
                 else {
@@ -191,12 +183,12 @@ public class AssignmentManager implements KairosDBService
         }
     }
 
-    private boolean haveRollupsOrAssignmentsChanged(long assignmentTime, long taskStoreTime)
-            throws RollUpException
+    private boolean haveRollupsOrAssignmentsOrHostsChanged(long assignmentTime, long taskStoreTime)
     {
         lock.lock();
         try {
-            return assignmentsLastModified == 0 ||
+            return  hostManager.acknowledgeHostListChanged() ||
+                    assignmentsLastModified == 0 ||
                     rollupsLastModified == 0 ||
                     assignmentsLastModified != assignmentTime ||
                     rollupsLastModified != taskStoreTime;
@@ -250,7 +242,6 @@ public class AssignmentManager implements KairosDBService
             return 121 - executionInterval.getValue();
         }
         else {
-            //noinspection ConstantConditions
             throw new IllegalArgumentException("Invalid time unit " + executionInterval.getUnit());
         }
     }

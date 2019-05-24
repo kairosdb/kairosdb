@@ -250,7 +250,7 @@
         <dependency>
             <groupId>io.opentracing.contrib</groupId>
             <artifactId>opentracing-web-servlet-filter</artifactId>
-            <version>0.1.0</version>
+            <version>0.3.0</version>
         </dependency>
         <dependency>
             <groupId>io.sentry</groupId>
@@ -260,7 +260,7 @@
         <dependency>
             <groupId>io.opentracing</groupId>
             <artifactId>opentracing-mock</artifactId>
-            <version>0.31.0</version>
+            <version>0.32.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>

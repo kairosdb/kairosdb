@@ -371,7 +371,8 @@ public class CassandraDatastore implements Datastore {
     @Override
     public TagSet queryMetricTags(DatastoreMetricQuery query) {
         TagSetImpl tagSet = new TagSetImpl();
-        Collection<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query, 9999);
+        Collection<DataPointsRowKey> rowKeys =
+                getKeysForQueryIterator(query, m_cassandraConfiguration.getMaxRowsForKeysQuery() + 1);
 
         MemoryMonitor mm = new MemoryMonitor(20);
         for (DataPointsRowKey key : rowKeys) {

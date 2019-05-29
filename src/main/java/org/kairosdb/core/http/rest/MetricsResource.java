@@ -359,6 +359,12 @@ public class MetricsResource implements KairosMetricReporter {
 			Tags.ERROR.set(span, Boolean.TRUE);
 			span.log(e.getMessage());
 			return builder.addErrors(e.getErrorMessages()).build();
+		} catch (MaxRowKeysForQueryExceededException e) {
+			logger.error("Query failed with too many rows", e);
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			Tags.ERROR.set(span, Boolean.TRUE);
+			span.log(e.getMessage());
+			return builder.addError(e.getMessage()).build();
 		} catch (MemoryMonitorException e) {
 			logger.error("Query failed.", e);
 			Tags.ERROR.set(span, Boolean.TRUE);

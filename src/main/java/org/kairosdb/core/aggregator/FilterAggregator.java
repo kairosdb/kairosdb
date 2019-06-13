@@ -31,7 +31,42 @@ public class FilterAggregator implements Aggregator
 {
 	public enum FilterOperation
 	{
-		LTE, LT, GTE, GT, EQUAL
+		LTE {
+			@Override
+			boolean compare(double a, double b) {
+				return a <= b;
+			}
+		},
+
+		LT {
+			@Override
+			boolean compare(double a, double b) {
+				return a < b;
+			}
+		},
+
+		GTE {
+			@Override
+			boolean compare(double a, double b) {
+				return a >= b;
+			}
+		},
+
+		GT {
+			@Override
+			boolean compare(double a, double b) {
+				return a > b;
+			}
+		},
+
+		EQUAL {
+			@Override
+			boolean compare(double a, double b) {
+				return a == b;
+			}
+		};
+
+		abstract boolean compare(double a, double b);
 	}
 
     public FilterAggregator()
@@ -104,15 +139,7 @@ public class FilterAggregator implements Aggregator
 			while (!foundValidDp && currentDataPoint != null)
 			{
 				double x0 = currentDataPoint.getDoubleValue();
-				if (m_filterop == FilterOperation.LTE && x0 <= m_threshold)
-					moveCurrentDataPoint();
-				else if (m_filterop == FilterOperation.LT && x0 < m_threshold)
-					moveCurrentDataPoint();
-				else if (m_filterop == FilterOperation.GTE && x0 >= m_threshold)
-					moveCurrentDataPoint();
-				else if (m_filterop == FilterOperation.GT && x0 > m_threshold)
-					moveCurrentDataPoint();
-				else if (m_filterop == FilterOperation.EQUAL && x0 == m_threshold)
+				if (m_filterop.compare(x0, m_threshold))
 					moveCurrentDataPoint();
 				else
 					foundValidDp = true;

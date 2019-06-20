@@ -41,6 +41,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	private Order order = Order.ASC;
 	private List<QueryPlugin> plugins;
 	private UUID uuid;
+	private String loggingType;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
@@ -201,6 +202,14 @@ public class QueryMetric implements DatastoreMetricQuery
 	@Override
 	public UUID getQueryUUID() {
 		return uuid;
+	}
+
+	public void setQueryLoggingType(String type) {
+		this.loggingType = type;
+	}
+
+	public String getQueryLoggingType() {
+		return loggingType;
 	}
 
 	public QueryMetric addPlugin(QueryPlugin plugin)

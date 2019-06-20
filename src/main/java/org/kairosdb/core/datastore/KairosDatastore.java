@@ -442,9 +442,9 @@ public class KairosDatastore {
 
 				if (m_metric.getQueryUUID() != null) {
 					final long endTime = Long.MAX_VALUE == m_metric.getEndTime() ? System.currentTimeMillis() : m_metric.getEndTime();
-					logger.info("critical_query_finished: uuid={} metric={} datapoint_count={} row_count={} start_time={} end_time={} duration={}",
-							m_metric.getQueryUUID(), m_metric.getName(), m_dataPointCount, m_rowCount,
-							m_metric.getStartTime(), endTime, endTime - m_metric.getStartTime());
+					logger.info("{}_query_finished: uuid={} metric={} datapoint_count={} row_count={} start_time={} end_time={} duration={}",
+							m_metric.getQueryLoggingType(), m_metric.getQueryUUID(), m_metric.getName(), m_dataPointCount,
+							m_rowCount, m_metric.getStartTime(), endTime, endTime - m_metric.getStartTime());
 				}
 
                 List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),

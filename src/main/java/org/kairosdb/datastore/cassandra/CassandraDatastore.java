@@ -118,6 +118,8 @@ public class CassandraDatastore implements Datastore {
 
     private CassandraConfiguration m_cassandraConfiguration;
 
+    private final Random randomToLogQueriesOrNot = new Random();
+
     @Inject
     public CassandraDatastore(CassandraClient cassandraClient, CassandraConfiguration cassandraConfiguration,
                               KairosDataPointFactory kairosDataPointFactory, RowKeyCache rowKeyCache,
@@ -673,8 +675,9 @@ public class CassandraDatastore implements Datastore {
         }
 
         final boolean isCriticalQuery = rowReadCount > 5000 || filteredRowKeys.size() > 100;
-        if (isCriticalQuery) {
+        if (isCriticalQuery || randomToLogQueriesOrNot.nextInt(100) < 10) {
             query.setQueryUUID(UUID.randomUUID());
+            query.setQueryLoggingType(isCriticalQuery ? "critical" : "simple");
             logQuery(query, filteredRowKeys, rowReadCount, false, readRowsLimit, index);
         }
     }
@@ -700,8 +703,8 @@ public class CassandraDatastore implements Datastore {
                                  int limit,
                                  String index) {
         final long endTime = Long.MAX_VALUE == query.getEndTime() ? System.currentTimeMillis() : query.getEndTime();
-        logger.warn("critical_query: uuid={} metric={} query={} read={} filtered={} start_time={} end_time={} duration={} exceeded={} limit={} index={}",
-                query.getQueryUUID(), query.getName(), query.getTags(), rowReadCount, filteredRowKeys.size(),
+        logger.warn("{}_query: uuid={} metric={} query={} read={} filtered={} start_time={} end_time={} duration={} exceeded={} limit={} index={}",
+                query.getQueryLoggingType(), query.getQueryUUID(), query.getName(), query.getTags(), rowReadCount, filteredRowKeys.size(),
                 query.getStartTime(), endTime, endTime - query.getStartTime(), limitExceeded, limit, index);
     }
 

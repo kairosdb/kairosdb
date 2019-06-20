@@ -39,4 +39,8 @@ public interface DatastoreMetricQuery
 	void setQueryUUID(UUID uuid);
 
 	UUID getQueryUUID();
+
+	void setQueryLoggingType(String type);
+
+	String getQueryLoggingType();
 }

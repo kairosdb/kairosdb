@@ -15,6 +15,7 @@
  */
 package org.kairosdb.datastore.cassandra;
 
+import com.datastax.driver.core.*;
 import com.google.common.collect.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;

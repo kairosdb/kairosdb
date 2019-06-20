@@ -2,6 +2,9 @@ version: "2017-09-20"
 pipeline:
   - id: build
     type: script
+    cache:
+      paths:
+        - ~/.m2
     commands:
       - desc: "Install Java, Maven and Docker"
         cmd: |

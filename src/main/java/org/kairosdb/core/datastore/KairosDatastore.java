@@ -440,10 +440,10 @@ public class KairosDatastore {
                 span.setTag("datapoint_count", m_dataPointCount);
                 span.setTag("row_count", m_rowCount);
 
-				if (m_metric.getCriticalQueryUUID() != null) {
+				if (m_metric.getQueryUUID() != null) {
 					final long endTime = Long.MAX_VALUE == m_metric.getEndTime() ? System.currentTimeMillis() : m_metric.getEndTime();
 					logger.info("critical_query_finished: uuid={} metric={} datapoint_count={} row_count={} start_time={} end_time={} duration={}",
-							m_metric.getCriticalQueryUUID(), m_metric.getName(), m_dataPointCount, m_rowCount,
+							m_metric.getQueryUUID(), m_metric.getName(), m_dataPointCount, m_rowCount,
 							m_metric.getStartTime(), endTime, endTime - m_metric.getStartTime());
 				}
 

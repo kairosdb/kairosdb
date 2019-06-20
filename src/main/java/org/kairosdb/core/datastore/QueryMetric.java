@@ -194,12 +194,12 @@ public class QueryMetric implements DatastoreMetricQuery
 	}
 
 	@Override
-	public void setCriticalQueryUUID(UUID uuid) {
+	public void setQueryUUID(UUID uuid) {
 		this.uuid = uuid;
 	}
 
 	@Override
-	public UUID getCriticalQueryUUID() {
+	public UUID getQueryUUID() {
 		return uuid;
 	}
 

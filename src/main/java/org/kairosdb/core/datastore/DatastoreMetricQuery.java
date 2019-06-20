@@ -36,7 +36,7 @@ public interface DatastoreMetricQuery
 
 	List<QueryPlugin> getPlugins();
 
-	void setCriticalQueryUUID(UUID uuid);
+	void setQueryUUID(UUID uuid);
 
-	UUID getCriticalQueryUUID();
+	UUID getQueryUUID();
 }

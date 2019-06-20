@@ -119,7 +119,8 @@ public class CassandraDatastore implements Datastore {
 
     private CassandraConfiguration m_cassandraConfiguration;
 
-    private final Random randomToLogQueriesOrNot = new Random();
+    private final Random random = new Random();
+    private final int PERCENTAGE_OF_SIMPLE_QUERIES_LOGGED = 10;
 
     @Inject
     public CassandraDatastore(CassandraClient cassandraClient, CassandraConfiguration cassandraConfiguration,
@@ -676,7 +677,7 @@ public class CassandraDatastore implements Datastore {
         }
 
         final boolean isCriticalQuery = rowReadCount > 5000 || filteredRowKeys.size() > 100;
-        if (isCriticalQuery || randomToLogQueriesOrNot.nextInt(100) < 10) {
+        if (isCriticalQuery || random.nextInt(100) < PERCENTAGE_OF_SIMPLE_QUERIES_LOGGED) {
             query.setQueryUUID(UUID.randomUUID());
             query.setQueryLoggingType(isCriticalQuery ? "critical" : "simple");
             logQuery(query, filteredRowKeys, rowReadCount, false, readRowsLimit, index);

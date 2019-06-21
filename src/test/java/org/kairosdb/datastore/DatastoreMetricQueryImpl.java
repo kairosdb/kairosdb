@@ -35,6 +35,7 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 	private long m_startTime;
 	private long m_endTime;
 	private UUID uuid;
+	private String loggingType;
 
 
 	public DatastoreMetricQueryImpl(String name, SetMultimap<String, String> tags,
@@ -89,13 +90,21 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 	}
 
 	@Override
-	public void setCriticalQueryUUID(UUID uuid) {
+	public void setQueryUUID(UUID uuid) {
 		this.uuid = uuid;
 	}
 
 	@Override
-	public UUID getCriticalQueryUUID() {
+	public UUID getQueryUUID() {
 		return uuid;
+	}
+
+	public void setQueryLoggingType(String type) {
+		this.loggingType = type;
+	}
+
+	public String getQueryLoggingType() {
+		return loggingType;
 	}
 
 }

@@ -119,6 +119,9 @@ public class CassandraDatastore implements Datastore {
 
     private CassandraConfiguration m_cassandraConfiguration;
 
+    private final Random random = new Random();
+    private final int PERCENTAGE_OF_SIMPLE_QUERIES_LOGGED = 10;
+
     @Inject
     public CassandraDatastore(CassandraClient cassandraClient, CassandraConfiguration cassandraConfiguration,
                               KairosDataPointFactory kairosDataPointFactory, RowKeyCache rowKeyCache,
@@ -674,9 +677,10 @@ public class CassandraDatastore implements Datastore {
         }
 
         final boolean isCriticalQuery = rowReadCount > 5000 || filteredRowKeys.size() > 100;
-        if (isCriticalQuery) {
-            query.setCriticalQueryUUID(UUID.randomUUID());
-            logCriticalQuery(query, filteredRowKeys, rowReadCount, false, readRowsLimit, index);
+        if (isCriticalQuery || random.nextInt(100) < PERCENTAGE_OF_SIMPLE_QUERIES_LOGGED) {
+            query.setQueryUUID(UUID.randomUUID());
+            query.setQueryLoggingType(isCriticalQuery ? "critical" : "simple");
+            logQuery(query, filteredRowKeys, rowReadCount, false, readRowsLimit, index);
         }
     }
 
@@ -689,20 +693,20 @@ public class CassandraDatastore implements Datastore {
                 span.setTag("max_row_keys", Boolean.TRUE);
             }
 
-            logCriticalQuery(query, filteredRowKeys, rowReadCount, true, limit, index);
+            logQuery(query, filteredRowKeys, rowReadCount, true, limit, index);
             throw new MaxRowKeysForQueryExceededException(errorMessage);
         }
     }
 
-    private static void logCriticalQuery(DatastoreMetricQuery query,
-                                         Collection<DataPointsRowKey> filteredRowKeys,
-                                         int rowReadCount,
-                                         boolean limitExceeded,
-                                         int limit,
-                                         String index) {
+    private static void logQuery(DatastoreMetricQuery query,
+                                 Collection<DataPointsRowKey> filteredRowKeys,
+                                 int rowReadCount,
+                                 boolean limitExceeded,
+                                 int limit,
+                                 String index) {
         final long endTime = Long.MAX_VALUE == query.getEndTime() ? System.currentTimeMillis() : query.getEndTime();
-        logger.warn("critical_query: uuid={} metric={} query={} read={} filtered={} start_time={} end_time={} duration={} exceeded={} limit={} index={}",
-                query.getCriticalQueryUUID(), query.getName(), query.getTags(), rowReadCount, filteredRowKeys.size(),
+        logger.warn("{}_query: uuid={} metric={} query={} read={} filtered={} start_time={} end_time={} duration={} exceeded={} limit={} index={}",
+                query.getQueryLoggingType(), query.getQueryUUID(), query.getName(), query.getTags(), rowReadCount, filteredRowKeys.size(),
                 query.getStartTime(), endTime, endTime - query.getStartTime(), limitExceeded, limit, index);
     }
 

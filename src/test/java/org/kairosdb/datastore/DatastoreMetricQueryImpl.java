@@ -36,6 +36,7 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 	private long m_endTime;
 	private UUID uuid;
 	private String loggingType;
+	private boolean loggable;
 
 
 	public DatastoreMetricQueryImpl(String name, SetMultimap<String, String> tags,
@@ -105,6 +106,16 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 
 	public String getQueryLoggingType() {
 		return loggingType;
+	}
+
+	@Override
+	public boolean isLoggable() {
+		return loggable;
+	}
+
+	@Override
+	public void setLoggable(boolean loggable) {
+		this.loggable = loggable;
 	}
 
 }

@@ -42,6 +42,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	private List<QueryPlugin> plugins;
 	private UUID uuid;
 	private String loggingType;
+	private boolean loggable;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
@@ -216,5 +217,13 @@ public class QueryMetric implements DatastoreMetricQuery
 	{
 		this.plugins.add(plugin);
 		return this;
+	}
+
+	public boolean isLoggable() {
+		return loggable;
+	}
+
+	public void setLoggable(boolean loggable) {
+		this.loggable = loggable;
 	}
 }

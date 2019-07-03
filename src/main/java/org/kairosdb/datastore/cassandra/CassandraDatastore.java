@@ -672,6 +672,7 @@ public class CassandraDatastore implements Datastore {
         final boolean isCriticalQuery = rowReadCount > 5000 || filteredRowKeys.size() > 100;
         query.setQueryUUID(UUID.randomUUID());
         query.setQueryLoggingType(isCriticalQuery ? "critical" : "simple");
+        query.setLoggable(isCriticalQuery || random.nextInt(100) < PERCENTAGE_OF_SIMPLE_QUERIES_LOGGED);
 
         if (last) {
             final int filteredRowsLimit = m_cassandraConfiguration.getMaxRowKeysForQuery();
@@ -680,7 +681,7 @@ public class CassandraDatastore implements Datastore {
                             filteredRowsLimit, query.getName()));
         }
 
-        if (isCriticalQuery || random.nextInt(100) < PERCENTAGE_OF_SIMPLE_QUERIES_LOGGED) {
+        if (query.isLoggable()) {
             logQuery(query, filteredRowKeys, rowReadCount, false, readRowsLimit, index);
         }
     }

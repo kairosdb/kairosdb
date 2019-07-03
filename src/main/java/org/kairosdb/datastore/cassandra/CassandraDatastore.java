@@ -669,6 +669,10 @@ public class CassandraDatastore implements Datastore {
             }
         }
 
+        final boolean isCriticalQuery = rowReadCount > 5000 || filteredRowKeys.size() > 100;
+        query.setQueryUUID(UUID.randomUUID());
+        query.setQueryLoggingType(isCriticalQuery ? "critical" : "simple");
+
         if (last) {
             final int filteredRowsLimit = m_cassandraConfiguration.getMaxRowKeysForQuery();
             checkMaxRowKeyLimit(filteredRowKeys.size(), filteredRowsLimit, query, filteredRowKeys, rowReadCount, index,
@@ -676,10 +680,7 @@ public class CassandraDatastore implements Datastore {
                             filteredRowsLimit, query.getName()));
         }
 
-        final boolean isCriticalQuery = rowReadCount > 5000 || filteredRowKeys.size() > 100;
         if (isCriticalQuery || random.nextInt(100) < PERCENTAGE_OF_SIMPLE_QUERIES_LOGGED) {
-            query.setQueryUUID(UUID.randomUUID());
-            query.setQueryLoggingType(isCriticalQuery ? "critical" : "simple");
             logQuery(query, filteredRowKeys, rowReadCount, false, readRowsLimit, index);
         }
     }

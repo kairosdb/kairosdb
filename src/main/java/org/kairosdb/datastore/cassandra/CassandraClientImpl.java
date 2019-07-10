@@ -59,32 +59,28 @@ public class CassandraClientImpl implements CassandraClient {
 		m_cluster = builder.build();
 		m_keyspace = config.getKeyspaceName();
 
-		final PoolingOptions poolOpts = m_cluster.getConfiguration().getPoolingOptions();
-        logConnectionPoolConfig(poolOpts);
-        logConnectionStats(builder, poolOpts);
+		logConnectionPoolConfig(m_cluster.getConfiguration().getPoolingOptions());
 	}
 
 	@Override
-	public Session getKeyspaceSession()
-	{
+	public Session getKeyspaceSession() {
 		return m_cluster.connect(m_keyspace);
 	}
 
 	@Override
-	public Session getSession()
-	{
-		return m_cluster.connect();
+	public Session getSession() {
+		final Session session = m_cluster.connect();
+		logConnectionStats(session);
+		return session;
 	}
 
 	@Override
-	public String getKeyspace()
-	{
+	public String getKeyspace() {
 		return m_keyspace;
 	}
 
 	@Override
-	public void close()
-	{
+	public void close() {
 		m_cluster.close();
 	}
 
@@ -105,20 +101,20 @@ public class CassandraClientImpl implements CassandraClient {
         }
     }
 
-    private void logConnectionStats(Cluster.Builder builder, PoolingOptions poolOpts) {
-        final Session session = m_cluster.newSession();
+	private void logConnectionStats(final Session session) {
         final ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1);
         scheduled.scheduleAtFixedRate(() -> {
             final Session.State state = session.getState();
-            for (Host host : state.getConnectedHosts()) {
-                final HostDistance distance = builder.getConfiguration().getPolicies().getLoadBalancingPolicy().distance(host);
+			final Configuration configuration = session.getCluster().getConfiguration();
+			final PoolingOptions poolingOptions = configuration.getPoolingOptions();
+			for (Host host : state.getConnectedHosts()) {
+				final HostDistance distance = configuration.getPolicies().getLoadBalancingPolicy().distance(host);
                 final int connections = state.getOpenConnections(host);
                 final int inFlightQueries = state.getInFlightQueries(host);
-                final int maxRequestsPerConnection = poolOpts.getMaxRequestsPerConnection(distance);
+				final int maxRequestsPerConnection = poolingOptions.getMaxRequestsPerConnection(distance);
                 logger.debug("connection_stats: host={} connections={}, current_load={}, max_load={}",
                         host, connections, inFlightQueries, connections * maxRequestsPerConnection);
             }
         }, 0, 1, TimeUnit.MINUTES);
     }
-
 }

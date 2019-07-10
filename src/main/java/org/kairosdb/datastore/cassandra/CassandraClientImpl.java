@@ -10,6 +10,10 @@ import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 /**
  Created by bhawkins on 3/4/15.
  */
@@ -56,22 +60,9 @@ public class CassandraClientImpl implements CassandraClient {
 		m_keyspace = config.getKeyspaceName();
 
 		final PoolingOptions poolOpts = m_cluster.getConfiguration().getPoolingOptions();
-		logger.info("Core connections per host (remote): " + poolOpts.getCoreConnectionsPerHost(HostDistance.REMOTE));
-		logger.info("Core connections per host (local): " + poolOpts.getCoreConnectionsPerHost(HostDistance.LOCAL));
-		logger.info("Max connections per host (remote): " + poolOpts.getMaxConnectionsPerHost(HostDistance.REMOTE));
-		logger.info("Max connections per host (local): " + poolOpts.getMaxConnectionsPerHost(HostDistance.LOCAL));
-		logger.info("Max requests per connection (remote): " + poolOpts.getMaxRequestsPerConnection(HostDistance.REMOTE));
-		logger.info("Max requests per connection (local): " + poolOpts.getMaxRequestsPerConnection(HostDistance.LOCAL));
-		logger.info("Max queue size: " + poolOpts.getMaxQueueSize());
-		logger.info("Pool timeout mills: " + poolOpts.getPoolTimeoutMillis());
-		logger.info("Idle timeout seconds: " + poolOpts.getIdleTimeoutSeconds());
-
-        final ProtocolOptions protocolOpts = m_cluster.getConfiguration().getProtocolOptions();
-        if (protocolOpts != null && protocolOpts.getProtocolVersion() != null) {
-            logger.info("Protocol version: " + protocolOpts.getProtocolVersion().toString());
-        }
+        logConnectionPoolConfig(poolOpts);
+        logConnectionStats(builder, poolOpts);
 	}
-
 
 	@Override
 	public Session getKeyspaceSession()
@@ -96,4 +87,38 @@ public class CassandraClientImpl implements CassandraClient {
 	{
 		m_cluster.close();
 	}
+
+    private void logConnectionPoolConfig(PoolingOptions poolOpts) {
+        logger.debug("Core connections per host (remote): " + poolOpts.getCoreConnectionsPerHost(HostDistance.REMOTE));
+        logger.debug("Core connections per host (local): " + poolOpts.getCoreConnectionsPerHost(HostDistance.LOCAL));
+        logger.debug("Max connections per host (remote): " + poolOpts.getMaxConnectionsPerHost(HostDistance.REMOTE));
+        logger.debug("Max connections per host (local): " + poolOpts.getMaxConnectionsPerHost(HostDistance.LOCAL));
+        logger.debug("Max requests per connection (remote): " + poolOpts.getMaxRequestsPerConnection(HostDistance.REMOTE));
+        logger.debug("Max requests per connection (local): " + poolOpts.getMaxRequestsPerConnection(HostDistance.LOCAL));
+        logger.debug("Max queue size: " + poolOpts.getMaxQueueSize());
+        logger.debug("Pool timeout mills: " + poolOpts.getPoolTimeoutMillis());
+        logger.debug("Idle timeout seconds: " + poolOpts.getIdleTimeoutSeconds());
+
+        final ProtocolOptions protocolOpts = m_cluster.getConfiguration().getProtocolOptions();
+        if (protocolOpts != null && protocolOpts.getProtocolVersion() != null) {
+            logger.debug("Protocol version: " + protocolOpts.getProtocolVersion().toString());
+        }
+    }
+
+    private void logConnectionStats(Cluster.Builder builder, PoolingOptions poolOpts) {
+        final Session session = m_cluster.newSession();
+        final ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1);
+        scheduled.scheduleAtFixedRate(() -> {
+            final Session.State state = session.getState();
+            for (Host host : state.getConnectedHosts()) {
+                final HostDistance distance = builder.getConfiguration().getPolicies().getLoadBalancingPolicy().distance(host);
+                final int connections = state.getOpenConnections(host);
+                final int inFlightQueries = state.getInFlightQueries(host);
+                final int maxRequestsPerConnection = poolOpts.getMaxRequestsPerConnection(distance);
+                logger.debug("connection_stats: host={} connections={}, current_load={}, max_load={}",
+                        host, connections, inFlightQueries, connections * maxRequestsPerConnection);
+            }
+        }, 0, 1, TimeUnit.MINUTES);
+    }
+
 }

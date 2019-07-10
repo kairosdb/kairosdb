@@ -210,7 +210,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	}
 
 	public String getQueryLoggingType() {
-		return loggingType;
+		return loggingType == null ? "simple" : loggingType;
 	}
 
 	public QueryMetric addPlugin(QueryPlugin plugin)

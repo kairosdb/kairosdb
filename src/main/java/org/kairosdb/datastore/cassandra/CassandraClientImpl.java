@@ -65,7 +65,11 @@ public class CassandraClientImpl implements CassandraClient {
 		logger.info("Max queue size: " + poolOpts.getMaxQueueSize());
 		logger.info("Pool timeout mills: " + poolOpts.getPoolTimeoutMillis());
 		logger.info("Idle timeout seconds: " + poolOpts.getIdleTimeoutSeconds());
-		logger.info("Protocol options: " + m_cluster.getConfiguration().getProtocolOptions().getProtocolVersion().toString());
+
+        final ProtocolOptions protocolOpts = m_cluster.getConfiguration().getProtocolOptions();
+        if (protocolOpts != null && protocolOpts.getProtocolVersion() != null) {
+            logger.info("Protocol version: " + protocolOpts.getProtocolVersion().toString());
+        }
 	}
 
 

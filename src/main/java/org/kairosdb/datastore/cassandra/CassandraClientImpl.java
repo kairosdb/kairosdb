@@ -65,14 +65,14 @@ public class CassandraClientImpl implements CassandraClient {
 
 	@Override
 	public Session getKeyspaceSession() {
-		return m_cluster.connect(m_keyspace);
+		final Session session = m_cluster.connect(m_keyspace);
+		logConnectionStats(session);
+		return session;
 	}
 
 	@Override
 	public Session getSession() {
-		final Session session = m_cluster.connect();
-		logConnectionStats(session);
-		return session;
+		return m_cluster.connect();
 	}
 
 	@Override

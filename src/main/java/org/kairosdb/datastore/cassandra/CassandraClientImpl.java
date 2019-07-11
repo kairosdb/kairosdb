@@ -10,6 +10,7 @@ import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -107,13 +108,14 @@ public class CassandraClientImpl implements CassandraClient {
             final Session.State state = session.getState();
 			final Configuration configuration = session.getCluster().getConfiguration();
 			final PoolingOptions poolingOptions = configuration.getPoolingOptions();
-			for (Host host : state.getConnectedHosts()) {
+			final Collection<Host> connectedHosts = state.getConnectedHosts();
+			for (Host host : connectedHosts) {
 				final HostDistance distance = configuration.getPolicies().getLoadBalancingPolicy().distance(host);
                 final int connections = state.getOpenConnections(host);
                 final int inFlightQueries = state.getInFlightQueries(host);
 				final int maxRequestsPerConnection = poolingOptions.getMaxRequestsPerConnection(distance);
-                logger.debug("connection_stats: host={} connections={}, current_load={}, max_load={}",
-                        host, connections, inFlightQueries, connections * maxRequestsPerConnection);
+                logger.debug("connection_stats: hosts_count={} host={} distance={} connections={}, current_load={}, max_load={}",
+						connectedHosts.size(), host, distance.name(), connections, inFlightQueries, connections * maxRequestsPerConnection);
             }
         }, 0, 1, TimeUnit.MINUTES);
     }

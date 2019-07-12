@@ -14,4 +14,6 @@ public interface CassandraClient
 	String getKeyspace();
 
 	void close();
+
+	void logConnectionStats(final Session session);
 }

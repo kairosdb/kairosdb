@@ -11,9 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  Created by bhawkins on 3/4/15.
@@ -65,9 +62,7 @@ public class CassandraClientImpl implements CassandraClient {
 
 	@Override
 	public Session getKeyspaceSession() {
-		final Session session = m_cluster.connect(m_keyspace);
-		logConnectionStats(session);
-		return session;
+		return m_cluster.connect(m_keyspace);
 	}
 
 	@Override
@@ -102,9 +97,7 @@ public class CassandraClientImpl implements CassandraClient {
         }
     }
 
-	private void logConnectionStats(final Session session) {
-        final ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1);
-        scheduled.scheduleAtFixedRate(() -> {
+	public void logConnectionStats(final Session session) {
             final Session.State state = session.getState();
 			final Configuration configuration = session.getCluster().getConfiguration();
 			final PoolingOptions poolingOptions = configuration.getPoolingOptions();
@@ -117,6 +110,5 @@ public class CassandraClientImpl implements CassandraClient {
                 logger.debug("connection_stats: hosts_count={} host={} distance={} connections={}, current_load={}, max_load={}",
 						connectedHosts.size(), host, distance.name(), connections, inFlightQueries, connections * maxRequestsPerConnection);
             }
-        }, 0, 1, TimeUnit.MINUTES);
     }
 }

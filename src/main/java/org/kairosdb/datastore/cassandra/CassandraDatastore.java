@@ -16,7 +16,9 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.*;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.SetMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.opentracing.Span;
@@ -438,6 +440,10 @@ public class CassandraDatastore implements Datastore {
                     currentType = rowKey.getDataType();
                 }
                 mm.checkMemoryAndThrowException();
+            }
+
+            if (random.nextInt(100) == 42) {
+                m_cassandraClient.logConnectionStats(m_session);
             }
         }
 

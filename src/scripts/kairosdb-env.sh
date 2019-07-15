@@ -8,4 +8,4 @@ fi
 MEM_TOTAL_KB=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')
 MEM_JAVA_KB=$(($MEM_TOTAL_KB * $MEM_JAVA_PERCENT / 100))
 
-JAVA_OPTS="$JAVA_OPTS -Xms${MEM_JAVA_KB}k -Xmx${MEM_JAVA_KB}k -javaagent:/app/lib/jolokia-jvm-1.6.0-agent.jar=port=8778,host=0.0.0.0"
+JAVA_OPTS="-Xms${MEM_JAVA_KB}k -Xmx${MEM_JAVA_KB}k $JAVA_OPTS -javaagent:/app/lib/jolokia-jvm-1.6.0-agent.jar=port=8778,host=0.0.0.0"

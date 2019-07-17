@@ -24,10 +24,13 @@ import com.google.inject.name.Named;
 import io.opentracing.Span;
 import io.opentracing.util.GlobalTracer;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
 import org.kairosdb.datastore.cassandra.cache.StringKeyCache;
 import org.kairosdb.util.KDataOutput;
@@ -40,6 +43,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -49,7 +53,7 @@ import static org.kairosdb.datastore.cassandra.cache.DefaultMetricNameCache.METR
 import static org.kairosdb.datastore.cassandra.cache.DefaultTagNameCache.TAG_NAME_CACHE;
 import static org.kairosdb.datastore.cassandra.cache.DefaultTagValueCache.TAG_VALUE_CACHE;
 
-public class CassandraDatastore implements Datastore {
+public class CassandraDatastore implements Datastore, KairosMetricReporter {
     public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
 
     public static final String DATA_POINTS_INSERT = "INSERT INTO data_points " +
@@ -116,6 +120,7 @@ public class CassandraDatastore implements Datastore {
     private final StringKeyCache tagValueCache;
 
     private final KairosDataPointFactory m_kairosDataPointFactory;
+    private final LongDataPointFactory m_longDataPointFactory;
 
     private final Set<String> m_indexTagList;
 
@@ -124,9 +129,18 @@ public class CassandraDatastore implements Datastore {
     private final Random random = new Random();
     private final int PERCENTAGE_OF_SIMPLE_QUERIES_LOGGED = 10;
 
+    private final AtomicLong m_rowKeyIndexRowsInserted = new AtomicLong();
+    private final AtomicLong m_rowKeySplitIndexRowsInserted = new AtomicLong();
+    @javax.inject.Inject
+    @Named("HOSTNAME")
+    private String hostName = "localhost";
+
     @Inject
-    public CassandraDatastore(CassandraClient cassandraClient, CassandraConfiguration cassandraConfiguration,
-                              KairosDataPointFactory kairosDataPointFactory, RowKeyCache rowKeyCache,
+    public CassandraDatastore(CassandraClient cassandraClient,
+                              CassandraConfiguration cassandraConfiguration,
+                              KairosDataPointFactory kairosDataPointFactory,
+                              LongDataPointFactory longDataPointFactory,
+                              RowKeyCache rowKeyCache,
                               @Named(METRIC_NAME_CACHE) StringKeyCache metricNameCache,
                               @Named(TAG_NAME_CACHE) StringKeyCache tagNameCache,
                               @Named(TAG_VALUE_CACHE) StringKeyCache tagValueCache
@@ -140,12 +154,12 @@ public class CassandraDatastore implements Datastore {
         logger.warn("Setting tag index: {}", cassandraConfiguration.getIndexTagList());
         m_indexTagList = Arrays.stream(cassandraConfiguration.getIndexTagList().split(","))
                 .map(String::trim)
-                .filter(Objects::nonNull)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toSet());
 
         m_cassandraClient = cassandraClient;
         m_kairosDataPointFactory = kairosDataPointFactory;
+        m_longDataPointFactory = longDataPointFactory;
 
         setupSchema();
 
@@ -311,6 +325,7 @@ public class CassandraDatastore implements Datastore {
         bs.setBytes(1, serializedKey);
         bs.setInt(2, rowKeyTtl);
         m_session.executeAsync(bs);
+        m_rowKeyIndexRowsInserted.incrementAndGet();
 
         for (String split : m_indexTagList) {
             String v = tags.get(split);
@@ -337,6 +352,7 @@ public class CassandraDatastore implements Datastore {
         bs.setInt(4, rowKeyTtl);
 
         m_session.executeAsync(bs);
+        m_rowKeySplitIndexRowsInserted.incrementAndGet();
     }
 
     private Iterable<String> queryStringIndex(final String key) {
@@ -506,6 +522,21 @@ public class CassandraDatastore implements Datastore {
             // m_rowKeyCache.clear();
             // m_metricNameCache.clear();
         }
+    }
+
+    @Override
+    public List<DataPointSet> getMetrics(long now) {
+        final long rowKeyIndexRowsInserted = m_rowKeyIndexRowsInserted.getAndSet(0);
+        final DataPointSet dpRowKeyIndex = new DataPointSet("kairosdb.inserted.row_key_index");
+        dpRowKeyIndex.addTag("host", hostName);
+        dpRowKeyIndex.addDataPoint(m_longDataPointFactory.createDataPoint(now, rowKeyIndexRowsInserted));
+
+        final long rowKeySplitIndexRowsInserted = m_rowKeySplitIndexRowsInserted.getAndSet(0);
+        final DataPointSet dpRowKeySplitIndex = new DataPointSet("kairosdb.inserted.row_key_split_index");
+        dpRowKeySplitIndex.addTag("host", hostName);
+        dpRowKeySplitIndex.addDataPoint(m_longDataPointFactory.createDataPoint(now, rowKeySplitIndexRowsInserted));
+
+        return Arrays.asList(dpRowKeyIndex, dpRowKeySplitIndex);
     }
 
     private SortedMap<String, String> getTags(DataPointRow row) {

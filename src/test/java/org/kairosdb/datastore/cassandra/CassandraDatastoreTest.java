@@ -25,6 +25,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.kairosdb.core.*;
 import org.kairosdb.core.datapoints.LongDataPoint;
+import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreMetricQueryImpl;
@@ -53,6 +55,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper {
     private static final int OVERFLOW_SIZE = MAX_ROW_READ_SIZE * 2 + 10;
 
     private static KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
+    private static LongDataPointFactory longDataPointFactory = new LongDataPointFactoryImpl();
     private static Random random = new Random();
     private static CassandraDatastore s_datastore;
     private static long s_dataPointTime;
@@ -185,7 +188,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper {
         // TODO: test the caches being hit
         final StringKeyCache stringCache = mock(StringKeyCache.class);
         s_datastore = new CassandraDatastore(new CassandraClientImpl(cassandraConfig), cassandraConfig,
-                dataPointFactory, mock(RowKeyCache.class), stringCache, stringCache, stringCache);
+                dataPointFactory, longDataPointFactory, mock(RowKeyCache.class), stringCache, stringCache, stringCache);
 
         System.out.println("Creating KairosDataStore");
         DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,

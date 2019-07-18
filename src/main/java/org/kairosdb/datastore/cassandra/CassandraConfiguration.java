@@ -10,8 +10,8 @@ import java.util.Map;
 /**
  Created by bhawkins on 10/13/14.
  */
-public class CassandraConfiguration
-{
+public class CassandraConfiguration {
+
 
 	public static enum ADDRESS_TRANSLATOR_TYPE {
 		NONE,
@@ -51,6 +51,8 @@ public class CassandraConfiguration
 	public static final String NEW_SPLIT_INDEX_START_TIME_MS = "kairosdb.datastore.cassandra.new_split_index_start_time_ms";
 	public static final String USE_NEW_SPLIT_INDEX_READ = "kairosdb.datastore.cassandra.use_new_split_index_read";
 	public static final String USE_NEW_SPLIT_INDEX_WRITE = "kairosdb.datastore.cassandra.use_new_split_index_write";
+
+	private static final String QUERY_SAMPLING_PERCENTAGE = "kairosdb.datastore.cassandra.query_sampling_percentage";
 
 	@Inject(optional = true)
 	@Named(USE_NEW_SPLIT_INDEX_READ)
@@ -168,6 +170,11 @@ public class CassandraConfiguration
 	@Named(CASSANDRA_PORT)
 	private int m_port = 9042;
 
+	@Inject(optional=true)
+	@Named(QUERY_SAMPLING_PERCENTAGE)
+	private int querySamplingPercentage = 20;
+
+
 	public CassandraConfiguration()
 	{
 	}
@@ -282,4 +289,13 @@ public class CassandraConfiguration
 	public int getMetricNameCacheSize() {
 		return m_metricNameCacheSize;
 	}
+
+	public int getQuerySamplingPercentage() {
+		return querySamplingPercentage;
+	}
+
+	public void setQuerySamplingPercentage(int querySamplingPercentage) {
+		this.querySamplingPercentage = querySamplingPercentage;
+	}
+
 }

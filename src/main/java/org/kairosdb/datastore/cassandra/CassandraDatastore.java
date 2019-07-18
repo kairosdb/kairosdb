@@ -127,7 +127,6 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
     private CassandraConfiguration m_cassandraConfiguration;
 
     private final Random random = new Random();
-    private final int PERCENTAGE_OF_SIMPLE_QUERIES_LOGGED = 10;
 
     private final AtomicLong m_rowKeyIndexRowsInserted = new AtomicLong();
     private final AtomicLong m_rowKeySplitIndexRowsInserted = new AtomicLong();
@@ -709,7 +708,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         final boolean isCriticalQuery = rowReadCount > 5000 || filteredRowKeys.size() > 100;
         query.setQueryUUID(UUID.randomUUID());
         query.setQueryLoggingType(isCriticalQuery ? "critical" : "simple");
-        query.setLoggable(isCriticalQuery || random.nextInt(100) < PERCENTAGE_OF_SIMPLE_QUERIES_LOGGED);
+        query.setLoggable(isCriticalQuery || random.nextInt(100) < m_cassandraConfiguration.getQuerySamplingPercentage());
 
         if (last) {
             final int filteredRowsLimit = m_cassandraConfiguration.getMaxRowKeysForQuery();

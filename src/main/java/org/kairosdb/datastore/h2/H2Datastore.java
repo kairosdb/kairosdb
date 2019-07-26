@@ -207,20 +207,6 @@ public class H2Datastore implements Datastore
 		return (tagNames);
 	}
 
-	@Override
-	public Iterable<String> getTagValues()
-	{
-		TagValuesQuery.ResultSet results = new TagValuesQuery().runQuery();
-
-		List<String> tagValues = new ArrayList<String>();
-		while (results.next())
-			tagValues.add(results.getRecord().getValue());
-
-		results.close();
-
-		return (tagValues);
-	}
-
 	private GenOrmQueryResultSet<? extends MetricIdResults> getMetricIdsForQuery(DatastoreMetricQuery query)
 	{
 		StringBuilder sb = new StringBuilder();

@@ -340,12 +340,6 @@ public class MetricsResourceTest
 		}
 
 		@Override
-		public Iterable<String> getTagValues()
-		{
-			return Arrays.asList("larry", "moe", "curly");
-		}
-
-		@Override
 		public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 		{
 			if (m_toThrow != null)

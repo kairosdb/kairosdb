@@ -424,12 +424,6 @@ public class RemoteDatastore implements Datastore
 	}
 
 	@Override
-	public Iterable<String> getTagValues() throws DatastoreException
-	{
-		throw new DatastoreException("Method not implemented.");
-	}
-
-	@Override
 	public void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException
 	{
 		throw new DatastoreException("Method not implemented.");

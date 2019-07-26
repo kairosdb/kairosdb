@@ -25,7 +25,10 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.name.Named;
-import io.opentracing.*;
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.SpanContext;
+import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
 import io.opentracing.tag.Tags;
 import org.kairosdb.core.DataPointSet;
@@ -55,7 +58,8 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
@@ -65,8 +69,7 @@ import static javax.ws.rs.core.Response.ResponseBuilder;
 
 enum NameType {
 	METRIC_NAMES,
-	TAG_KEYS,
-	TAG_VALUES
+	TAG_KEYS
 }
 
 @Path("/api/v1")
@@ -197,24 +200,6 @@ public class MetricsResource implements KairosMetricReporter {
 	@Path("/tagnames")
 	public Response getTagNames() {
 		return executeNameQuery(NameType.TAG_KEYS);
-	}
-
-
-	@OPTIONS
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/tagvalues")
-	public Response corsPreflightTagValues(@HeaderParam("Access-Control-Request-Headers") final String requestHeaders,
-										   @HeaderParam("Access-Control-Request-Method") final String requestMethod) {
-		ResponseBuilder responseBuilder = getCorsPreflightResponseBuilder(requestHeaders, requestMethod);
-		return (responseBuilder.build());
-	}
-
-	@GET
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/tagvalues")
-	public Response getTagValues() {
-		return
-				executeNameQuery(NameType.TAG_VALUES);
 	}
 
 	@OPTIONS
@@ -646,9 +631,6 @@ public class MetricsResource implements KairosMetricReporter {
 					break;
 				case TAG_KEYS:
 					values = datastore.getTagNames();
-					break;
-				case TAG_VALUES:
-					values = datastore.getTagValues();
 					break;
 			}
 

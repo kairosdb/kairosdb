@@ -20,8 +20,6 @@ public interface Datastore
 
 	Iterable<String> getTagNames() throws DatastoreException;
 
-	Iterable<String> getTagValues() throws DatastoreException;
-
 	void queryDatabase(DatastoreMetricQuery query, QueryCallback queryCallback) throws DatastoreException;
 
 	void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException;

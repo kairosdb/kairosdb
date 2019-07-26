@@ -273,20 +273,6 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                         storeStringIndex(tagName, m_psInsertString, ROW_KEY_TAG_NAMES_BYTE_BUFFER);
                         tagNameCache.put(tagName);
                     }
-
-                    final String value = tags.get(tagName);
-                    boolean isCachedValue = tagValueCache.isKnown(value);
-                    if (m_cassandraConfiguration.getTagValueCacheSize() > 0 && !isCachedValue) {
-                        if (span != null) {
-                            span.setTag("cache_miss_tag_value", Boolean.TRUE);
-                        }
-                        if (value.length() == 0) {
-                            logger.warn("Attempted to add empty tagValue (tag name {}) to string cache for metric: {}",
-                                    tagName, metricName);
-                        }
-                        storeStringIndex(value, m_psInsertString, ROW_KEY_TAG_VALUES_BYTE_BUFFER);
-                        tagValueCache.put(value);
-                    }
                 }
             }
 
@@ -381,11 +367,6 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
     @Override
     public Iterable<String> getTagNames() {
         return queryStringIndex(ROW_KEY_TAG_NAMES);
-    }
-
-    @Override
-    public Iterable<String> getTagValues() {
-        return queryStringIndex(ROW_KEY_TAG_VALUES);
     }
 
     @Override

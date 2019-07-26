@@ -201,18 +201,6 @@ public abstract class DatastoreTestHelper
 	}
 
 	@Test
-	public void test_getTagValues() throws DatastoreException
-	{
-		List<String> metrics = listFromIterable(s_datastore.getTagValues());
-
-		assertThat(metrics, hasItem("A"));
-		assertThat(metrics, hasItem("B"));
-		assertThat(metrics, hasItem("foo"));
-		assertThat(metrics, hasItem("bar"));
-		assertThat(metrics, hasItem("April"));
-	}
-
-	@Test
 	public void test_queryDatabase_noTags() throws DatastoreException
 	{
 

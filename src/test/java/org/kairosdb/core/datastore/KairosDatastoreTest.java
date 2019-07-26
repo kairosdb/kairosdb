@@ -358,12 +358,6 @@ public class KairosDatastoreTest
 			return null;
 		}
 
-		@Override
-		public Iterable<String> getTagValues()
-		{
-			return null;
-		}
-
 		public void throwQueryException(DatastoreException toThrow)
 		{
 			m_toThrow = toThrow;

@@ -130,6 +130,8 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
     private final AtomicLong m_rowKeyIndexRowsInserted = new AtomicLong();
     private final AtomicLong m_rowKeySplitIndexRowsInserted = new AtomicLong();
+    private final AtomicLong m_readRowLimitExceededCount = new AtomicLong();
+    private final AtomicLong m_filteredRowLimitExceededCount = new AtomicLong();
     @javax.inject.Inject
     @Named("HOSTNAME")
     private String hostName = "localhost";
@@ -516,7 +518,17 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         dpRowKeySplitIndex.addTag("host", hostName);
         dpRowKeySplitIndex.addDataPoint(m_longDataPointFactory.createDataPoint(now, rowKeySplitIndexRowsInserted));
 
-        return Arrays.asList(dpRowKeyIndex, dpRowKeySplitIndex);
+        final long readRowLimitExceededCount = m_readRowLimitExceededCount.getAndSet(0);
+        final DataPointSet dpReadRowLimit = new DataPointSet("kairosdb.limits.read_rows_exceeded");
+        dpReadRowLimit.addTag("host", hostName);
+        dpReadRowLimit.addDataPoint(m_longDataPointFactory.createDataPoint(now, readRowLimitExceededCount));
+
+        final long filteredRowLimitExceededCount = m_filteredRowLimitExceededCount.getAndSet(0);
+        final DataPointSet dpFilteredRowLimit = new DataPointSet("kairosdb.limits.filtered_rows_exceeded");
+        dpFilteredRowLimit.addTag("host", hostName);
+        dpFilteredRowLimit.addDataPoint(m_longDataPointFactory.createDataPoint(now, filteredRowLimitExceededCount));
+
+        return Arrays.asList(dpRowKeyIndex, dpRowKeySplitIndex, dpReadRowLimit, dpFilteredRowLimit);
     }
 
     private SortedMap<String, String> getTags(DataPointRow row) {
@@ -667,8 +679,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         for (Row r : rs) {
             rowReadCount++;
 
-            checkMaxRowKeyLimit(rowReadCount, readRowsLimit, query, filteredRowKeys, rowReadCount, index,
-                    String.format("Exceeded limit: %d key rows read by KDB. Metric: %s", readRowsLimit, query.getName()));
+            checkReadRowsLimit(rowReadCount, readRowsLimit, query, filteredRowKeys, rowReadCount, index);
 
             DataPointsRowKey key = keySerializer.fromByteBuffer(r.getBytes("column1"));
             Map<String, String> tags = key.getTags();
@@ -693,9 +704,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
         if (last) {
             final int filteredRowsLimit = m_cassandraConfiguration.getMaxRowKeysForQuery();
-            checkMaxRowKeyLimit(filteredRowKeys.size(), filteredRowsLimit, query, filteredRowKeys, rowReadCount, index,
-                    String.format("Exceeded limit: %d data point partitions read by KDB. Metric: %s",
-                            filteredRowsLimit, query.getName()));
+            checkFilteredRowsLimit(filteredRowKeys.size(), filteredRowsLimit, query, filteredRowKeys, rowReadCount, index);
         }
 
         if (query.isLoggable()) {
@@ -703,8 +712,8 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         }
     }
 
-    private void checkMaxRowKeyLimit(int size, int limit, DatastoreMetricQuery query,
-                                     List<DataPointsRowKey> filteredRowKeys, int rowReadCount, String index, String errorMessage) {
+    private void checkReadRowsLimit(int size, int limit, DatastoreMetricQuery query,
+                                    List<DataPointsRowKey> filteredRowKeys, int rowReadCount, String index) {
         if (size > limit) {
             Span span = GlobalTracer.get().activeSpan();
             if (span != null) {
@@ -713,7 +722,25 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
             }
 
             logQuery(query, filteredRowKeys, rowReadCount, true, limit, index);
-            throw new MaxRowKeysForQueryExceededException(errorMessage);
+            m_readRowLimitExceededCount.incrementAndGet();
+            throw new MaxRowKeysForQueryExceededException(
+                    String.format("Exceeded limit: %d key rows read by KDB. Metric: %s", limit, query.getName()));
+        }
+    }
+
+    private void checkFilteredRowsLimit(int size, int limit, DatastoreMetricQuery query,
+                                        List<DataPointsRowKey> filteredRowKeys, int rowReadCount, String index) {
+        if (size > limit) {
+            Span span = GlobalTracer.get().activeSpan();
+            if (span != null) {
+                span.setTag("row_count", size);
+                span.setTag("max_row_keys", Boolean.TRUE);
+            }
+
+            logQuery(query, filteredRowKeys, rowReadCount, true, limit, index);
+            m_filteredRowLimitExceededCount.incrementAndGet();
+            throw new MaxRowKeysForQueryExceededException(
+                    String.format("Exceeded limit: %d data point partitions read by KDB. Metric: %s", limit, query.getName()));
         }
     }
 

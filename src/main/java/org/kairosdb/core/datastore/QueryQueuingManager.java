@@ -42,11 +42,11 @@ public class QueryQueuingManager implements KairosMetricReporter
 	public static final String ARTIFACT_VERSION = "kairosdb.datastore.artifact.version";
 	public static final String DEPLOYMENT_ID = "kairosdb.datastore.deployment.id";
 
-	@javax.inject.Inject
+	@Inject(optional = true)
 	@Named(ARTIFACT_VERSION)
 	private String m_artifactVersion = "2.0-z";
 
-	@javax.inject.Inject
+	@Inject(optional = true)
 	@Named(DEPLOYMENT_ID)
 	private String m_deploymentId = "2.0-z-d1";
 

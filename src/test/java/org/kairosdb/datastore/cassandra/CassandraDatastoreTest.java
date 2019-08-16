@@ -31,8 +31,8 @@ import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreMetricQueryImpl;
 import org.kairosdb.datastore.DatastoreTestHelper;
-import org.kairosdb.datastore.cassandra.cache.StringKeyCache;
 import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
+import org.kairosdb.datastore.cassandra.cache.StringKeyCache;
 
 import java.io.IOException;
 import java.util.*;
@@ -47,6 +47,7 @@ import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.mock;
 
 
+@Ignore
 public class CassandraDatastoreTest extends DatastoreTestHelper {
     public static final String ROW_KEY_TEST_METRIC = "row_key_test_metric";
     public static final String ROW_KEY_BIG_METRIC = "row_key_big_metric";

@@ -30,13 +30,14 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 	private final Histogram spanHistogramError;
 	private final Histogram distanceHistogramError;
 
-	@Inject
 	Tracer tracer;
 
 	@Inject
-	public DefaultQueryMeasurementProvider(@Nonnull final MetricRegistry metricRegistry) {
+	public DefaultQueryMeasurementProvider(@Nonnull final MetricRegistry metricRegistry,
+										   @Nonnull final Tracer tracer) {
 		checkNotNull(metricRegistry, "metricRegistry can't be null");
 		this.metricRegistry = metricRegistry;
+		this.tracer = tracer;
 
 		spanHistogramSuccess = metricRegistry.histogram(MEASURES_PREFIX + "span.success");
 		distanceHistogramSuccess = metricRegistry.histogram(MEASURES_PREFIX + "distance.success");

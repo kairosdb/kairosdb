@@ -16,11 +16,14 @@
 package org.kairosdb.core.http.rest;
 
 import ch.qos.logback.classic.Level;
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.io.Resources;
 import com.google.inject.*;
 import com.google.inject.name.Names;
+import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,6 +39,7 @@ import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
+import org.kairosdb.datastore.h2.orm.MetricIdResults;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.util.LoggingUtils;
@@ -82,6 +86,8 @@ public class MetricsResourceTest
 				bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9001);
 				bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
 				bind(Datastore.class).toInstance(datastore);
+				bind(Tracer.class).toInstance(GlobalTracer.get());
+				bind(MetricRegistry.class).in(Singleton.class);
 				bind(KairosDatastore.class).in(Singleton.class);
 				bind(AggregatorFactory.class).to(TestAggregatorFactory.class);
 				bind(GroupByFactory.class).to(TestGroupByFactory.class);
@@ -236,7 +242,7 @@ public class MetricsResourceTest
 		JsonResponse response = client.post(json, GET_METRIC_URL);
 
 		assertResponse(response, 400,
-				"{\"errors\":[\"com.google.gson.stream.MalformedJsonException: Use JsonReader.setLenient(true) to accept malformed JSON at line 2 column 22\"]}");
+				"{\"errors\":[\"com.google.gson.stream.MalformedJsonException: Use JsonReader.setLenient(true) to accept malformed JSON at line 2 column 22 path $\"]}");
 	}
 
 	@Test
@@ -253,14 +259,6 @@ public class MetricsResourceTest
 		JsonResponse response = client.get(TAG_NAMES_URL);
 
 		assertResponse(response, 200, "{\"results\":[\"server1\",\"server2\",\"server3\"]}");
-	}
-
-	@Test
-	public void testTagValues() throws IOException
-	{
-		JsonResponse response = client.get(TAG_VALUES_URL);
-
-		assertResponse(response, 200, "{\"results\":[\"larry\",\"moe\",\"curly\"]}");
 	}
 
 	@Test

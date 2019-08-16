@@ -20,10 +20,7 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import org.json.JSONException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runners.MethodSorters;
 import org.kairosdb.core.aggregator.SumAggregator;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
@@ -40,6 +37,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 
+@Ignore
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ExportTest
 {

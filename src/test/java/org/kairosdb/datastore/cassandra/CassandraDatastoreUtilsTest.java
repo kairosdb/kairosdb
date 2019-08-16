@@ -1,11 +1,14 @@
 package org.kairosdb.datastore.cassandra;
 
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Sets;
 import org.junit.Test;
 
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.convertGlobToPattern;
@@ -59,6 +62,15 @@ public class CassandraDatastoreUtilsTest {
             }
         }
         System.out.println("2: " + matches + " matches in " + (System.currentTimeMillis() - start) + "ms");
+    }
+
+
+    @Test
+    public void test_parseMetricIndexTagMap() {
+        final String metricIndexTagList = "zmon.check.1=entity,key,application_id,stack_name;zmon.check.2=stack_name,application_id,key";
+        final ListMultimap<String, String> metricIndexTagMap = CassandraDatastore.parseMetricIndexTagMap(metricIndexTagList);
+        assertThat(metricIndexTagMap.get("zmon.check.1"), hasItems("entity", "key", "application_id", "stack_name"));
+        assertThat(metricIndexTagMap.get("zmon.check.2"), hasItems("stack_name", "application_id", "key"));
     }
 
 }

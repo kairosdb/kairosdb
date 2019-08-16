@@ -1,9 +1,13 @@
 package org.kairosdb.core.http.rest.metrics;
 
 import com.codahale.metrics.MetricRegistry;
+import com.google.inject.Guice;
+import io.opentracing.util.GlobalTracer;
 import org.junit.Test;
 import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.http.WebServletModule;
 
+import java.util.Properties;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -14,7 +18,7 @@ public class DefaultQueryMeasurementProviderTest {
     @Test
     public void testCreatesNecessaryHistograms() {
         final MetricRegistry registry = new MetricRegistry();
-        final DefaultQueryMeasurementProvider provider = new DefaultQueryMeasurementProvider(registry);
+        final DefaultQueryMeasurementProvider provider = new DefaultQueryMeasurementProvider(registry, GlobalTracer.get());
 
         Set<String> names = registry.getNames();
 
@@ -28,7 +32,7 @@ public class DefaultQueryMeasurementProviderTest {
     @Test
     public void testIgnoresMetricsStartingWithPrefix() {
         final MetricRegistry registry = new MetricRegistry();
-        final DefaultQueryMeasurementProvider provider = new DefaultQueryMeasurementProvider(registry);
+        final DefaultQueryMeasurementProvider provider = new DefaultQueryMeasurementProvider(registry, GlobalTracer.get());
         provider.measureSpanForMetric(new QueryMetric(0l, 0, "foo"));
         provider.measureSpanForMetric(new QueryMetric(0l, 0, "foo"));
         provider.measureSpanForMetric(new QueryMetric(0l, 0, "kairosdb.queries.foo"));

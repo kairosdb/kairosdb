@@ -24,6 +24,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.opentracing.Scope;
 import io.opentracing.Span;
@@ -53,7 +54,6 @@ import org.kairosdb.util.MemoryMonitorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.io.*;
@@ -100,15 +100,15 @@ public class MetricsResource implements KairosMetricReporter {
 	public static final String ARTIFACT_VERSION = "kairosdb.datastore.artifact.version";
 	public static final String DEPLOYMENT_ID = "kairosdb.datastore.deployment.id";
 
-	@Inject
+	@Inject(optional = true)
 	@Named(READ_TIMEOUT)
 	private int m_readTimeout = 30000;
 
-	@Inject
+	@Inject(optional = true)
 	@Named(ARTIFACT_VERSION)
 	private String m_artifactVersion = "2.0-z";
 
-	@Inject
+	@Inject(optional = true)
 	@Named(DEPLOYMENT_ID)
 	private String m_deploymentId = "2.0-z-d1";
 

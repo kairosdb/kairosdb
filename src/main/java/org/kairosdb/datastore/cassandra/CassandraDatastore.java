@@ -16,9 +16,7 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.*;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.MultimapBuilder;
-import com.google.common.collect.SetMultimap;
+import com.google.common.collect.*;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.opentracing.Span;
@@ -122,7 +120,8 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
     private final KairosDataPointFactory m_kairosDataPointFactory;
     private final LongDataPointFactory m_longDataPointFactory;
 
-    private final Set<String> m_indexTagList;
+    private final List<String> m_indexTagList;
+    private final ListMultimap<String, String> m_metricIndexTagMap;
 
     private CassandraConfiguration m_cassandraConfiguration;
 
@@ -153,11 +152,8 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         this.tagValueCache = tagValueCache;
 
         logger.warn("Setting tag index: {}", cassandraConfiguration.getIndexTagList());
-        m_indexTagList = Arrays.stream(cassandraConfiguration.getIndexTagList().split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toSet());
-
+        m_indexTagList = parseIndexTagList(cassandraConfiguration.getIndexTagList());
+        m_metricIndexTagMap = parseMetricIndexTagMap(cassandraConfiguration.getMetricIndexTagList());
         m_cassandraClient = cassandraClient;
         m_kairosDataPointFactory = kairosDataPointFactory;
         m_longDataPointFactory = longDataPointFactory;
@@ -210,6 +206,24 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         } else {
             logger.info("Cassandra Setup not performed");
         }
+    }
+
+    private List<String> parseIndexTagList(final String indexTagList) {
+        return Arrays.stream(indexTagList.split(",")).map(String::trim)
+                .filter(s -> !s.isEmpty()).collect(Collectors.toList());
+    }
+
+    static ListMultimap<String, String> parseMetricIndexTagMap(final String metricIndexTagList) {
+        final ImmutableListMultimap.Builder<String, String> mapBuilder = ImmutableListMultimap.builder();
+        for (final String metricsSetting : metricIndexTagList.split(";")) {
+            String[] kv = metricsSetting.trim().split("=");
+            if (kv.length != 2 || kv[0].isEmpty() || kv[1].isEmpty()) {
+                continue;
+            }
+            Arrays.stream(kv[1].split(",")).map(String::trim)
+                    .filter(s -> !s.isEmpty()).forEach(v -> mapBuilder.put(kv[0], v));
+        }
+        return mapBuilder.build();
     }
 
     @Override
@@ -314,7 +328,8 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         m_session.executeAsync(bs);
         m_rowKeyIndexRowsInserted.incrementAndGet();
 
-        for (String split : m_indexTagList) {
+        final List<String> indexTags = getIndexTags(metricName);
+        for (String split : indexTags) {
             String v = tags.get(split);
             if (null == v || "".equals(v)) {
                 continue;
@@ -508,27 +523,20 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
     @Override
     public List<DataPointSet> getMetrics(long now) {
-        final long rowKeyIndexRowsInserted = m_rowKeyIndexRowsInserted.getAndSet(0);
-        final DataPointSet dpRowKeyIndex = new DataPointSet("kairosdb.inserted.row_key_index");
-        dpRowKeyIndex.addTag("host", hostName);
-        dpRowKeyIndex.addDataPoint(m_longDataPointFactory.createDataPoint(now, rowKeyIndexRowsInserted));
+        return Arrays.asList(
+                getDataPointSet(now, m_rowKeyIndexRowsInserted, "kairosdb.inserted.row_key_index"),
+                getDataPointSet(now, m_rowKeySplitIndexRowsInserted, "kairosdb.inserted.row_key_split_index"),
+                getDataPointSet(now, m_readRowLimitExceededCount, "kairosdb.limits.read_rows_exceeded"),
+                getDataPointSet(now, m_filteredRowLimitExceededCount, "kairosdb.limits.filtered_rows_exceeded")
+        );
+    }
 
-        final long rowKeySplitIndexRowsInserted = m_rowKeySplitIndexRowsInserted.getAndSet(0);
-        final DataPointSet dpRowKeySplitIndex = new DataPointSet("kairosdb.inserted.row_key_split_index");
-        dpRowKeySplitIndex.addTag("host", hostName);
-        dpRowKeySplitIndex.addDataPoint(m_longDataPointFactory.createDataPoint(now, rowKeySplitIndexRowsInserted));
-
-        final long readRowLimitExceededCount = m_readRowLimitExceededCount.getAndSet(0);
-        final DataPointSet dpReadRowLimit = new DataPointSet("kairosdb.limits.read_rows_exceeded");
-        dpReadRowLimit.addTag("host", hostName);
-        dpReadRowLimit.addDataPoint(m_longDataPointFactory.createDataPoint(now, readRowLimitExceededCount));
-
-        final long filteredRowLimitExceededCount = m_filteredRowLimitExceededCount.getAndSet(0);
-        final DataPointSet dpFilteredRowLimit = new DataPointSet("kairosdb.limits.filtered_rows_exceeded");
-        dpFilteredRowLimit.addTag("host", hostName);
-        dpFilteredRowLimit.addDataPoint(m_longDataPointFactory.createDataPoint(now, filteredRowLimitExceededCount));
-
-        return Arrays.asList(dpRowKeyIndex, dpRowKeySplitIndex, dpReadRowLimit, dpFilteredRowLimit);
+    private DataPointSet getDataPointSet(long now, AtomicLong counter, String name) {
+        final long metric = counter.getAndSet(0);
+        final DataPointSet dataPointSet = new DataPointSet(name);
+        dataPointSet.addTag("host", hostName);
+        dataPointSet.addDataPoint(m_longDataPointFactory.createDataPoint(now, metric));
+        return dataPointSet;
     }
 
     private SortedMap<String, String> getTags(DataPointRow row) {
@@ -756,14 +764,19 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                 query.getStartTime(), endTime, endTime - query.getStartTime(), limitExceeded, limit, index);
     }
 
+    private List<String> getIndexTags(String metricName) {
+        return m_metricIndexTagMap.containsKey(metricName) ? m_metricIndexTagMap.get(metricName) : m_indexTagList;
+    }
+
     // TODO remove when old getMatchingRowKeys is uncommented
     private List<DataPointsRowKey> getMatchingRowKeys(DatastoreMetricQuery query, int limit) {
         // determine whether to use split index or not
         String useSplitField = null;
         Set<String> useSplitSet = new HashSet<>();
 
+        final List<String> indexTags = getIndexTags(query.getName());
         SetMultimap<String, String> filterTags = query.getTags();
-        for (String split : m_indexTagList) {
+        for (String split : indexTags) {
             if (filterTags.containsKey(split)) {
                 Set<String> currentSet = filterTags.get(split);
                 final boolean currentSetIsSmaller = currentSet.size() < useSplitSet.size();

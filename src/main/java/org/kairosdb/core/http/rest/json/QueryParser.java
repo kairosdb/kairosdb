@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Nullable;
 import javax.validation.ConstraintViolation;
 import javax.validation.Path;
 import javax.validation.Valid;
@@ -38,6 +39,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Null;
 import javax.validation.metadata.ConstraintDescriptor;
 
 import org.apache.bval.constraints.NotEmpty;
@@ -549,6 +551,7 @@ public class QueryParser
 		private RelativeTime end_relative;
 
 		@Valid
+		@Null
 		@SerializedName("time_zone")
 		private DateTimeZone m_timeZone;// = DateTimeZone.UTC;;
 

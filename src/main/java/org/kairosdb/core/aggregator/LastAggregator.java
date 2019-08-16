@@ -43,7 +43,7 @@ public class LastAggregator extends RangeAggregator
 	@Override
 	public boolean canAggregate(String groupType)
 	{
-		return DataPoint.GROUP_NUMBER.equals(groupType);
+		return true;
 	}
 
 	@Override
@@ -63,25 +63,19 @@ public class LastAggregator extends RangeAggregator
 		@Override
 		public Iterable<DataPoint> getNextDataPoints(long returnTime, Iterator<DataPoint> dataPointRange)
 		{
-			Double last = null;
+			DataPoint last = null;
 			Long lastTime = 0L;
 			while (dataPointRange.hasNext())
 			{
-				final DataPoint dp = dataPointRange.next();
-				if (dp.isDouble())
-				{
-					last = dp.getDoubleValue();
-					lastTime = dp.getTimestamp();
-				}
+				last = dataPointRange.next();
 			}
 
 			if (last != null)
 			{
-				long retTime = returnTime;
-				if (!m_alignStartTime && !m_alignEndTime)
-					retTime = lastTime;
+				if (m_alignStartTime || m_alignEndTime)
+					last.setTimestamp(returnTime);
 
-				return Collections.singletonList(m_dataPointFactory.createDataPoint(retTime, last));
+				return Collections.singletonList(last);
 			}
 
 			return Collections.emptyList();

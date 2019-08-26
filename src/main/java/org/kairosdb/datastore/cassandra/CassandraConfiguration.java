@@ -33,17 +33,17 @@ public class CassandraConfiguration {
 	private static final String CASSANDRA_INDEX_TAG_LIST = "kairosdb.datastore.cassandra.index_tag_list";
 	private static final String CASSANDRA_METRIC_INDEX_TAG_LIST = "kairosdb.datastore.cassandra.metric_index_tag_list";
 	private static final String NEW_SPLIT_INDEX_START_TIME_MS = "kairosdb.datastore.cassandra.new_split_index_start_time_ms";
-	private static final String USE_NEW_SPLIT_INDEX_READ = "kairosdb.datastore.cassandra.use_new_split_index_read";
-	private static final String USE_NEW_SPLIT_INDEX_WRITE = "kairosdb.datastore.cassandra.use_new_split_index_write";
+	private static final String USE_TIME_INDEX_READ = "kairosdb.datastore.cassandra.use_time_index_read";
+	private static final String USE_TIME_INDEX_WRITE = "kairosdb.datastore.cassandra.use_time_index_write";
 	private static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.host_list";
 	private static final String CASSANDRA_PORT = "kairosdb.datastore.cassandra.port";
 	private static final String QUERY_SAMPLING_PERCENTAGE = "kairosdb.datastore.cassandra.query_sampling_percentage";
 	@Inject(optional = true)
-	@Named(USE_NEW_SPLIT_INDEX_READ)
-	private boolean m_useNewSplitIndexRead = false;
+	@Named(USE_TIME_INDEX_READ)
+	private boolean m_useTimeIndexRead = false;
 	@Inject(optional = true)
-	@Named(USE_NEW_SPLIT_INDEX_WRITE)
-	private boolean m_useNewSplitIndexWrite = false;
+	@Named(USE_TIME_INDEX_WRITE)
+	private boolean m_useTimeIndexWrite = false;
 	@Inject(optional = true)
 	@Named(NEW_SPLIT_INDEX_START_TIME_MS)
 	private long m_newSplitIndexStartTimeMs = 0L;
@@ -141,12 +141,12 @@ public class CassandraConfiguration {
 		m_keyspaceName = keyspaceName;
 	}
 
-	public boolean isUseNewSplitIndexRead() {
-		return m_useNewSplitIndexRead;
+	public boolean isUseTimeIndexRead() {
+		return m_useTimeIndexRead;
 	}
 
-	public boolean isUseNewSplitIndexWrite() {
-		return m_useNewSplitIndexWrite;
+	public boolean isUseTimeIndexWrite() {
+		return m_useTimeIndexWrite;
 	}
 
 	public long getNewSplitIndexStartTimeMs() {

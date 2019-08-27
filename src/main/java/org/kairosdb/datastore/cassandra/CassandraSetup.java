@@ -29,14 +29,14 @@ public abstract class CassandraSetup {
             "                     'compaction_window_size': '1440'," +
             "                     'class': 'org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy'}";
 
-    public static final String ROW_KEY_SPLIT_INDEX_TABLE = "" +
-            "CREATE TABLE IF NOT EXISTS row_key_split_index (" +
+    public static final String ROW_TIME_KEY_SPLIT_INDEX_TABLE = "" +
+            "CREATE TABLE IF NOT EXISTS row_time_key_split_index (" +
             "  metric_name text," +
+            "  time_bucket bigint," +
             "  tag_name text," +
             "  tag_value text, " +
             "  column1 blob," +
-            "  value blob," +
-            "  PRIMARY KEY ((metric_name, tag_name, tag_value), column1)" +
+            "  PRIMARY KEY ((metric_name, time_bucket, tag_name, tag_value), column1)" +
             ") WITH CLUSTERING ORDER BY (column1 DESC);";
 
     //  The above split index table looks identical, but was not initially made with
@@ -64,6 +64,14 @@ public abstract class CassandraSetup {
             "  column1 blob,\n" +
             "  value blob,\n" +
             "  PRIMARY KEY ((key), column1)\n" +
+            ") WITH CLUSTERING ORDER BY (column1 DESC);";
+
+    public static final String ROW_KEY_TIME_INDEX_TABLE = "" +
+            "CREATE TABLE IF NOT EXISTS row_time_key_index (\n" +
+            "  key blob,\n" +
+            "  time_bucket bigint,\n" +
+            "  column1 blob,\n" +
+            "  PRIMARY KEY ((key, time_bucket), column1)\n" +
             ") WITH CLUSTERING ORDER BY (column1 DESC);";
 
     public static final String STRING_INDEX_TABLE = "" +
@@ -108,9 +116,14 @@ public abstract class CassandraSetup {
                 session.execute(ROW_KEY_INDEX_TABLE);
             }
 
-            if(!tableExists(session, "row_key_split_index")) {
-                logger.info("Creating table 'row_key_split_index' ...");
-                session.execute(ROW_KEY_SPLIT_INDEX_TABLE);
+            if(!tableExists(session, "row_time_key_index")) {
+                logger.info("Creating table 'row_time_key_index' ...");
+                session.execute(ROW_KEY_TIME_INDEX_TABLE);
+            }
+
+            if(!tableExists(session, "row_time_key_split_index")) {
+                logger.info("Creating table 'row_time_key_split_index' ...");
+                session.execute(ROW_TIME_KEY_SPLIT_INDEX_TABLE);
             }
 
             if(!tableExists(session, "row_key_split_index_2")) {

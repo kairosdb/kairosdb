@@ -60,8 +60,11 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
     public static final String ROW_KEY_INDEX_INSERT = "INSERT INTO row_key_index " +
             "(key, column1, value) VALUES (?, ?, 0x00) USING TTL ?";
 
-    public static final String ROW_KEY_INDEX_SPLIT_INSERT = "INSERT INTO row_key_split_index " +
-            "(metric_name, tag_name, tag_value, column1, value) VALUES (?, ?, ?, ?, 0x00) USING TTL ?";
+    public static final String ROW_TIME_KEY_INDEX_SPLIT_INSERT = "INSERT INTO row_time_key_split_index " +
+            "(metric_name, tag_name, tag_value, column1, time_bucket) VALUES (?, ?, ?, ?, ?) USING TTL ?";
+
+    public static final String ROW_TIME_KEY_INDEX_INSERT = "INSERT INTO row_time_key_index " +
+            "(key, column1, time_bucket) VALUES (?, ?, ?) USING TTL ?";
 
     public static final String STRING_INDEX_INSERT = "INSERT INTO string_index " +
             "(key, column1, value) VALUES (?, ?, 0x00) USING TTL ?";
@@ -70,9 +73,9 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
     public static final String QUERY_ROW_KEY_INDEX = "SELECT column1 FROM row_key_index WHERE key = ? AND column1 >= ? and column1 <= ? ORDER BY column1 ASC LIMIT ?";
 
-    public static final String QUERY_ROW_KEY_SPLIT_INDEX = "SELECT column1 FROM row_key_split_index WHERE metric_name = ? AND tag_name = ? and tag_value IN ? AND column1 >= ? and column1 <= ? LIMIT ?";
+    public static final String QUERY_ROW_TIME_KEY_SPLIT_INDEX = "SELECT column1 FROM row_time_key_split_index WHERE metric_name = ? AND tag_name = ? and tag_value IN ? AND column1 >= ? and column1 <= ? AND time_bucket IN ? LIMIT ?";
+    public static final String QUERY_ROW_TIME_KEY_INDEX = "SELECT column1 FROM row_time_key_index WHERE key = ? AND column1 >= ? and column1 <= ? AND time_bucket IN ? ORDER BY column1 ASC LIMIT ?";
 
-    // TODO: delete next 3 constants when we're done with switching tables and row_key_split_index_2 is deleted
     public static final String QUERY_ROW_KEY_SPLIT_INDEX_2 = "SELECT column1 FROM row_key_split_index_2 WHERE metric_name = ? AND tag_name = ? and tag_value IN ? AND column1 >= ? and column1 <= ? LIMIT ?";
     public static final String ROW_KEY_INDEX_SPLIT_2_INSERT = "INSERT INTO row_key_split_index_2 " +
             "(metric_name, tag_name, tag_value, column1, value) VALUES (?, ?, ?, ?, 0x00) USING TTL ?";
@@ -101,14 +104,15 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
     private final PreparedStatement m_psInsertData;
     private final PreparedStatement m_psInsertRowKey;
-    private final PreparedStatement m_psInsertRowKeySplit;
+    private final PreparedStatement m_psInsertRowTimeKey;
+    private final PreparedStatement m_psInsertRowTimeKeySplit;
     private final PreparedStatement m_psInsertString;
     private final PreparedStatement m_psQueryStringIndex;
     private final PreparedStatement m_psQueryRowKeyIndex;
-    private final PreparedStatement m_psQueryRowKeySplitIndex;
+    private final PreparedStatement m_psQueryRowTimeKeyIndex;
+    private final PreparedStatement m_psQueryRowTimeKeySplitIndex;
     private final PreparedStatement m_psQueryDataPoints;
 
-    // TODO: delete next 3 vars when we're done with switching tables and row_key_split_index_2 is deleted
     private final PreparedStatement m_psInsertRowKeySplit2;
     private final PreparedStatement m_psQueryRowKeySplitIndex2;
 
@@ -163,14 +167,15 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         m_session = m_cassandraClient.getKeyspaceSession();
 
         m_psInsertData = m_session.prepare(DATA_POINTS_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelDataPoint());
-        m_psInsertRowKeySplit = m_session.prepare(ROW_KEY_INDEX_SPLIT_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
-        // TODO: Remove this once we finish with row_key_split_index_2
+        m_psInsertRowTimeKeySplit = m_session.prepare(ROW_TIME_KEY_INDEX_SPLIT_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psInsertRowKeySplit2 = m_session.prepare(ROW_KEY_INDEX_SPLIT_2_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psInsertRowKey = m_session.prepare(ROW_KEY_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
+        m_psInsertRowTimeKey = m_session.prepare(ROW_TIME_KEY_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psInsertString = m_session.prepare(STRING_INDEX_INSERT).setConsistencyLevel(cassandraConfiguration.getDataWriteLevelMeta());
         m_psQueryStringIndex = m_session.prepare(QUERY_STRING_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryRowKeyIndex = m_session.prepare(QUERY_ROW_KEY_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
-        m_psQueryRowKeySplitIndex = m_session.prepare(QUERY_ROW_KEY_SPLIT_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
+        m_psQueryRowTimeKeyIndex = m_session.prepare(QUERY_ROW_TIME_KEY_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
+        m_psQueryRowTimeKeySplitIndex = m_session.prepare(QUERY_ROW_TIME_KEY_SPLIT_INDEX).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryRowKeySplitIndex2 = m_session.prepare(QUERY_ROW_KEY_SPLIT_INDEX_2).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
         m_psQueryDataPoints = m_session.prepare(QUERY_DATA_POINTS).setConsistencyLevel(cassandraConfiguration.getDataReadLevel());
 
@@ -258,7 +263,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
             // Write out the row key if it is not cached
             final boolean rowKeyKnown = rowKeyCache.isKnown(serializedKey);
             if (!rowKeyKnown) {
-                storeRowKeyReverseLookups(metricName, serializedKey, rowKeyTtl, tags);
+                storeRowKeyReverseLookups(metricName, rowTime, serializedKey, rowKeyTtl, tags);
                 if (span != null) {
                     span.setTag("cache_miss_row_key", Boolean.TRUE);
                 }
@@ -319,12 +324,22 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         m_session.executeAsync(bs);
     }
 
-    private void storeRowKeyReverseLookups(final String metricName, final ByteBuffer serializedKey, final int rowKeyTtl,
+    private void storeRowKeyReverseLookups(final String metricName, long rowTime, final ByteBuffer serializedKey, final int rowKeyTtl,
                                            final Map<String, String> tags) {
-        BoundStatement bs = new BoundStatement(m_psInsertRowKey);
+        final BoundStatement bs;
+        if (m_cassandraConfiguration.isUseTimeIndexWrite()) {
+            bs = new BoundStatement(m_psInsertRowTimeKey);
+        } else {
+            bs = new BoundStatement(m_psInsertRowKey);
+        }
         bs.setBytes(0, ByteBuffer.wrap(metricName.getBytes(UTF_8)));
         bs.setBytes(1, serializedKey);
-        bs.setInt(2, rowKeyTtl);
+        if (m_cassandraConfiguration.isUseTimeIndexWrite()) {
+            bs.setLong(2, rowTime);
+            bs.setInt(3, rowKeyTtl);
+        } else {
+            bs.setInt(2, rowKeyTtl);
+        }
         m_session.executeAsync(bs);
         m_rowKeyIndexRowsInserted.incrementAndGet();
 
@@ -334,24 +349,29 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
             if (null == v || "".equals(v)) {
                 continue;
             }
-
-            if (m_cassandraConfiguration.isUseNewSplitIndexWrite()) {
-                storeRowKeySplit(m_psInsertRowKeySplit2, metricName, serializedKey, rowKeyTtl, split, v);
-            } else {
-                storeRowKeySplit(m_psInsertRowKeySplit, metricName, serializedKey, rowKeyTtl, split, v);
-            }
+            storeRowKeySplit(metricName, rowTime, serializedKey, rowKeyTtl, split, v);
         }
     }
 
-    private void storeRowKeySplit(final PreparedStatement insertStatement, final String metricName,
-                                  final ByteBuffer serializedKey, final int rowKeyTtl,
+    private void storeRowKeySplit(final String metricName,
+                                  long rowTime, final ByteBuffer serializedKey, final int rowKeyTtl,
                                   final String splitTagName, final String splitTagValue) {
-        final BoundStatement bs = new BoundStatement(insertStatement);
+        final BoundStatement bs;
+        if (m_cassandraConfiguration.isUseTimeIndexWrite()) {
+            bs = new BoundStatement(m_psInsertRowTimeKeySplit);
+        } else {
+            bs = new BoundStatement(m_psInsertRowKeySplit2);
+        }
         bs.setString(0, metricName);
         bs.setString(1, splitTagName);
         bs.setString(2, splitTagValue);
         bs.setBytes(3, serializedKey);
-        bs.setInt(4, rowKeyTtl);
+        if (m_cassandraConfiguration.isUseTimeIndexWrite()) {
+            bs.setLong(4, rowTime);
+            bs.setInt(5, rowKeyTtl);
+        } else {
+            bs.setInt(4, rowKeyTtl);
+        }
 
         m_session.executeAsync(bs);
         m_rowKeySplitIndexRowsInserted.incrementAndGet();
@@ -589,6 +609,20 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         return (timestamp - (Math.abs(timestamp) % m_rowWidthWrite));
     }
 
+    private List<Long> calculateReadTimeBuckets(long startTime, long endTime) {
+        LinkedList<Long> buckets = new LinkedList<Long>();
+
+        // find smallest start time (ie ~30 days ago) and largest end time (now)
+        long smallestStartTime = new Date().getTime() - m_cassandraConfiguration.getDatapointTtl() * 1000;
+        long largestEndTime = new Date().getTime();
+
+        long startTimeBucket = calculateRowTimeRead(Math.max(startTime, smallestStartTime));
+        long endTimeBucket = calculateRowTimeRead(Math.min(endTime, largestEndTime));
+        for (long i = startTimeBucket; i < endTimeBucket; i += m_rowWidthRead) {
+            buckets.add(i);
+        }
+        return buckets;
+    }
 
     /**
      * This is just for the delete operation of old data points.
@@ -800,7 +834,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
     private List<DataPointsRowKey> getMatchingRowKeysFromRegularIndex(DatastoreMetricQuery query,
                                                                       int limit) {
         final List<DataPointsRowKey> rowKeys = new LinkedList<>();
-        collectFromRowKeyIndex(rowKeys, m_psQueryRowKeyIndex, query, limit);
+        collectFromRowKeyIndex(rowKeys, query, limit);
         return rowKeys;
     }
 
@@ -809,87 +843,18 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                                                                     List<String> useSplit,
                                                                     int limit) {
         final List<DataPointsRowKey> rowKeys = new LinkedList<>();
-        if (m_cassandraConfiguration.isUseNewSplitIndexRead() && query.getEndTime() >= m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
-            // Allowed cases for this branch (* - a point defined by m_cassandraConfiguration.getNewSplitIndexStartTimeMs())
-            //  --|-------*------|--
-            // startTime     endTime
-            //
-            //  --|--------------*--
-            // startTime     endTime
-            //
-            //  *--------|--------------|--
-            //        startTime     endTime
-            //
-            //  --*--------------|--
-            //  startTime     endTime
-
-            if (query.getStartTime() < m_cassandraConfiguration.getNewSplitIndexStartTimeMs()) {
-                // cases
-                //  --|-------*------|--
-                // startTime     endTime
-                //  --|--------------*--
-                // startTime     endTime
-
-                // in case m_cassandraConfiguration.getNewSplitIndexStartTimeMs() == endTime
-                // with first round it will fetch data from new table for a single time point == 'endTime'
-                // the second round will fetch all the data until 'endTime' (exclusively)
-                collectFromRowKeySplitIndex(rowKeys,
-                        m_psQueryRowKeySplitIndex2,
-                        query,
-                        useSplitField,
-                        useSplit,
-                        m_cassandraConfiguration.getNewSplitIndexStartTimeMs(),
-                        query.getEndTime(),
-                        limit);
-
-                limit -= rowKeys.size();
-                if (limit > 0) {
-                    collectFromRowKeySplitIndex(rowKeys,
-                            m_psQueryRowKeySplitIndex,
-                            query,
-                            useSplitField,
-                            useSplit,
-                            query.getStartTime(),
-                            m_cassandraConfiguration.getNewSplitIndexStartTimeMs() - m_rowWidthRead,
-                            limit);
-                }
-            } else {
-                // cases
-                //  *--------|--------------|--
-                //        startTime     endTime
-                //
-                //  --*--------------|--
-                //  startTime     endTime
-                collectFromRowKeySplitIndex(rowKeys,
-                        m_psQueryRowKeySplitIndex2,
-                        query,
-                        useSplitField,
-                        useSplit,
-                        query.getStartTime(),
-                        query.getEndTime(),
-                        limit);
-            }
-        } else {
-            // Allowed cases for this branch (* - a point defined by m_cassandraConfiguration.getNewSplitIndexStartTimeMs())
-            //  --|--------------|-------*
-            // startTime     endTime
-
-            collectFromRowKeySplitIndex(rowKeys,
-                    m_psQueryRowKeySplitIndex,
-                    query,
-                    useSplitField,
-                    useSplit,
-                    query.getStartTime(),
-                    query.getEndTime(),
-                    limit);
-        }
-
+        collectFromRowKeySplitIndex(rowKeys,
+                query,
+                useSplitField,
+                useSplit,
+                query.getStartTime(),
+                query.getEndTime(),
+                limit);
         return rowKeys;
     }
 
     // TODO remove when old getMatchingRowKeys is uncommented
     private void collectFromRowKeySplitIndex(List<DataPointsRowKey> collector,
-                                             final PreparedStatement statement,
                                              final DatastoreMetricQuery query,
                                              final String useSplitField,
                                              final List<String> useSplit,
@@ -905,14 +870,23 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 
         final String metricName = query.getName();
-        final SetMultimap<String, String> filterTags = query.getTags();
 
-        final BoundStatement bs = statement.bind();
+        final BoundStatement bs;
+        if (m_cassandraConfiguration.isUseTimeIndexRead()) {
+            bs = m_psQueryRowTimeKeySplitIndex.bind();
+        } else {
+            bs = m_psQueryRowKeySplitIndex2.bind();
+        }
         bs.setString(0, metricName);
         bs.setString(1, useSplitField);
         bs.setList(2, useSplit);
-        bs.setInt(5, limit);
 
+        if (m_cassandraConfiguration.isUseTimeIndexRead()) {
+            bs.setList(5, calculateReadTimeBuckets(startTime, endTime));
+            bs.setInt(6, limit);
+        } else {
+            bs.setInt(5, limit);
+        }
 
         if ((startTime < 0) && (endTime >= 0)) {
             DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(startTime), "");
@@ -954,17 +928,25 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
     // TODO remove when old getMatchingRowKeys is uncommented
     private void collectFromRowKeyIndex(List<DataPointsRowKey> collector,
-                                        final PreparedStatement statement,
                                         DatastoreMetricQuery query,
                                         final int limit) {
         Span span = GlobalTracer.get().activeSpan();
-        final String indexName = "row_key_index";
+        String indexName = "row_key_index";
+        if (m_cassandraConfiguration.isUseTimeIndexRead()) {
+            indexName = "row_time_key_index";
+        }
         if (span != null) {
             span.setTag("index_name", indexName);
         }
 
         final DataPointsRowKeySerializer keySerializer = new DataPointsRowKeySerializer();
 
+        PreparedStatement statement;
+        if (m_cassandraConfiguration.isUseTimeIndexRead()) {
+            statement = m_psQueryRowTimeKeyIndex;
+        } else {
+            statement = m_psQueryRowKeyIndex;
+        }
         final BoundStatement bs = statement.bind();
         final String metricName = query.getName();
         ByteBuffer bMetricName;
@@ -975,10 +957,17 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         }
 
         bs.setBytes(0, bMetricName);
-        bs.setInt(3, limit);
 
         final long startTime = query.getStartTime();
         final long endTime = query.getEndTime();
+
+        if (m_cassandraConfiguration.isUseTimeIndexRead()) {
+            bs.setList(3, calculateReadTimeBuckets(startTime, endTime));
+            bs.setInt(4, limit);
+        } else {
+            bs.setInt(3, limit);
+        }
+
         if ((startTime < 0) && (endTime >= 0)) {
             DataPointsRowKey startKey = new DataPointsRowKey(metricName, calculateRowTimeRead(startTime), "");
             DataPointsRowKey endKey = new DataPointsRowKey(metricName, calculateRowTimeRead(endTime), "");

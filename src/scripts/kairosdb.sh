@@ -37,7 +37,7 @@ for jar in $KAIROSDB_LIB_DIR/*.jar; do
 	fi
 done
 
-
+JAVA_OPTS="$(java-dynamic-memory-opts) $JAVA_OPTS"
 
 if [ "$1" = "run" ] ; then
 	shift

@@ -72,7 +72,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
     public static final String QUERY_STRING_INDEX = "SELECT column1 FROM string_index WHERE key = ?";
 
-    public static final String QUERY_ROW_KEY_INDEX = "SELECT column1 FROM row_key_index WHERE key = ? AND column1 >= ? and column1 <= ? ORDER BY column1 ASC LIMIT ?";
+    public static final String QUERY_ROW_KEY_INDEX = "SELECT column1 FROM row_key_index WHERE key = ? AND column1 >= ? and column1 <= ? LIMIT ?";
 
     public static final String QUERY_ROW_TIME_KEY_SPLIT_INDEX = "SELECT column1 FROM row_time_key_split_index WHERE metric_name = ? AND tag_name = ? and tag_value = ? AND time_bucket = ? LIMIT ?";
     public static final String QUERY_ROW_TIME_KEY_INDEX = "SELECT column1 FROM row_time_key_index WHERE key = ? AND time_bucket = ? LIMIT ?";

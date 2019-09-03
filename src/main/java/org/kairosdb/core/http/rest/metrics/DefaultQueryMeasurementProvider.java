@@ -118,11 +118,11 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 		measureInternal(query.getStartTime(), Long.MAX_VALUE, histogram, "query_distance_in_days");
 	}
 
-	private void measureInternal(long startTime, long endTime, Histogram histogram, String tag) {
+	private void measureInternal(final long startTime, final long endTime, final Histogram histogram, final String tag) {
 		final long nowUTC = new DateTime(DateTimeZone.UTC).getMillis();
-		startTime = Math.max(startTime, nowUTC - datapoints_ttl * 1000);
-		endTime = Math.min(endTime, nowUTC);
-		final long timeInMillis = endTime - startTime;
+		final long actualStartTime = Math.max(startTime, nowUTC - datapoints_ttl * 1000);
+		final long actualEndTime = Math.min(endTime, nowUTC);
+		final long timeInMillis = actualEndTime - actualStartTime;
 		final long timeInMinutes = timeInMillis / 1000 / 60;
 		histogram.update(timeInMinutes);
 		tracer.activeSpan().setTag(tag, timeInMinutes / 1440);

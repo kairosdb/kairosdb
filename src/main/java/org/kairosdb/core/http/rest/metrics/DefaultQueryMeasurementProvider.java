@@ -5,6 +5,7 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.opentracing.Tracer;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -15,7 +16,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.util.Map;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -31,6 +31,12 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 	private final Histogram distanceHistogramError;
 
 	Tracer tracer;
+
+	private static final String DATAPOINT_TTL = "kairosdb.datastore.cassandra.datapoint_ttl";
+
+	@Inject(optional = true)
+	@Named(DATAPOINT_TTL)
+	private long datapoints_ttl = 3024000;
 
 	@Inject
 	public DefaultQueryMeasurementProvider(@Nonnull final MetricRegistry metricRegistry,
@@ -105,23 +111,21 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 	}
 
 	private void measureSpan(final Histogram histogram, final QueryMetric query) {
-		long endTime = query.getEndTime();
-		if (endTime == Long.MAX_VALUE) {
-			final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
-			endTime = nowUTC.getMillis();
-		}
-		final long spanInMillis = endTime - query.getStartTime();
-		final long spanInMinutes = spanInMillis / 1000 / 60;
-		histogram.update(spanInMinutes);
-		tracer.activeSpan().setTag("query_span_in_days", spanInMinutes / 1440);
+		measureInternal(query.getStartTime(), query.getEndTime(), histogram, "query_span_in_days");
 	}
 
 	private void measureDistance(final Histogram histogram, final QueryMetric query) {
-		final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
-		final long distanceInMillis = nowUTC.getMillis() - query.getStartTime();
-		final long distanceInMinutes = distanceInMillis / 1000 / 60;
-		histogram.update(distanceInMinutes);
-		tracer.activeSpan().setTag("query_distance_in_days", distanceInMinutes / 1440);
+		measureInternal(query.getStartTime(), Long.MAX_VALUE, histogram, "query_distance_in_days");
+	}
+
+	private void measureInternal(final long startTime, final long endTime, final Histogram histogram, final String tag) {
+		final long nowUTC = new DateTime(DateTimeZone.UTC).getMillis();
+		final long actualStartTime = Math.max(startTime, nowUTC - datapoints_ttl * 1000);
+		final long actualEndTime = Math.min(endTime, nowUTC);
+		final long timeInMillis = actualEndTime - actualStartTime;
+		final long timeInMinutes = timeInMillis / 1000 / 60;
+		histogram.update(timeInMinutes);
+		tracer.activeSpan().setTag(tag, timeInMinutes / 1440);
 	}
 
 	private boolean canQueryBeReported(final QueryMetric query) {

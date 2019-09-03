@@ -16,7 +16,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.util.Map;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -112,22 +111,21 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 	}
 
 	private void measureSpan(final Histogram histogram, final QueryMetric query) {
-		final long nowUTC = new DateTime(DateTimeZone.UTC).getMillis();
-		long endTime = Math.min(query.getEndTime(), nowUTC);
-		long startTime = Math.max(query.getStartTime(), nowUTC - datapoints_ttl*1000);
-		final long spanInMillis = endTime - startTime;
-		final long spanInMinutes = spanInMillis / 1000 / 60;
-		histogram.update(spanInMinutes);
-		tracer.activeSpan().setTag("query_span_in_days", spanInMinutes / 1440);
+		measureInternal(query.getStartTime(), query.getEndTime(), histogram, "query_span_in_days");
 	}
 
 	private void measureDistance(final Histogram histogram, final QueryMetric query) {
+		measureInternal(query.getStartTime(), Long.MAX_VALUE, histogram, "query_distance_in_days");
+	}
+
+	private void measureInternal(long startTime, long endTime, Histogram histogram, String tag) {
 		final long nowUTC = new DateTime(DateTimeZone.UTC).getMillis();
-		long startTime = Math.max(query.getStartTime(), nowUTC - datapoints_ttl*1000);
-		final long distanceInMillis = nowUTC - startTime;
-		final long distanceInMinutes = distanceInMillis / 1000 / 60;
-		histogram.update(distanceInMinutes);
-		tracer.activeSpan().setTag("query_distance_in_days", distanceInMinutes / 1440);
+		startTime = Math.max(startTime, nowUTC - datapoints_ttl * 1000);
+		endTime = Math.min(endTime, nowUTC);
+		final long timeInMillis = endTime - startTime;
+		final long timeInMinutes = timeInMillis / 1000 / 60;
+		histogram.update(timeInMinutes);
+		tracer.activeSpan().setTag(tag, timeInMinutes / 1440);
 	}
 
 	private boolean canQueryBeReported(final QueryMetric query) {

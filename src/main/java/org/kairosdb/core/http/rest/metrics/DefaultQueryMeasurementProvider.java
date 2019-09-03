@@ -5,6 +5,7 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.opentracing.Tracer;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -31,6 +32,12 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 	private final Histogram distanceHistogramError;
 
 	Tracer tracer;
+
+	private static final String DATAPOINT_TTL = "kairosdb.datastore.cassandra.datapoint_ttl";
+
+	@Inject(optional = true)
+	@Named(DATAPOINT_TTL)
+	private long datapoints_ttl = 3024000;
 
 	@Inject
 	public DefaultQueryMeasurementProvider(@Nonnull final MetricRegistry metricRegistry,
@@ -105,20 +112,19 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 	}
 
 	private void measureSpan(final Histogram histogram, final QueryMetric query) {
-		long endTime = query.getEndTime();
-		if (endTime == Long.MAX_VALUE) {
-			final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
-			endTime = nowUTC.getMillis();
-		}
-		final long spanInMillis = endTime - query.getStartTime();
+		final long nowUTC = new DateTime(DateTimeZone.UTC).getMillis();
+		long endTime = Math.min(query.getEndTime(), nowUTC);
+		long startTime = Math.max(query.getStartTime(), nowUTC - datapoints_ttl*1000);
+		final long spanInMillis = endTime - startTime;
 		final long spanInMinutes = spanInMillis / 1000 / 60;
 		histogram.update(spanInMinutes);
 		tracer.activeSpan().setTag("query_span_in_days", spanInMinutes / 1440);
 	}
 
 	private void measureDistance(final Histogram histogram, final QueryMetric query) {
-		final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
-		final long distanceInMillis = nowUTC.getMillis() - query.getStartTime();
+		final long nowUTC = new DateTime(DateTimeZone.UTC).getMillis();
+		long startTime = Math.max(query.getStartTime(), nowUTC - datapoints_ttl*1000);
+		final long distanceInMillis = nowUTC - startTime;
 		final long distanceInMinutes = distanceInMillis / 1000 / 60;
 		histogram.update(distanceInMinutes);
 		tracer.activeSpan().setTag("query_distance_in_days", distanceInMinutes / 1440);

@@ -119,9 +119,10 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 	}
 
 	private void measureInternal(final long startTime, final long endTime, final Histogram histogram, final String tag) {
-		final long nowUTC = new DateTime(DateTimeZone.UTC).getMillis();
-		final long actualStartTime = Math.max(startTime, nowUTC - datapoints_ttl * 1000);
-		final long actualEndTime = Math.min(endTime, nowUTC);
+		final long now = System.currentTimeMillis();
+		// ensure that: now-TTL <= startTime <= now, and startTome <= endTime <= now
+		final long actualStartTime = Math.max(Math.min(startTime, now), now - datapoints_ttl * 1000);
+		final long actualEndTime = Math.max(Math.min(endTime, now), actualStartTime);
 		final long timeInMillis = actualEndTime - actualStartTime;
 		final long timeInMinutes = timeInMillis / 1000 / 60;
 		histogram.update(timeInMinutes);

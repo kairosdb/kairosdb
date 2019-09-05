@@ -5,16 +5,12 @@ import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.opentracing.Tracer;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.kairosdb.core.admin.InternalMetricsProvider;
 import org.kairosdb.core.datastore.QueryMetric;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -31,12 +27,6 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 	private final Histogram distanceHistogramError;
 
 	Tracer tracer;
-
-	private static final String DATAPOINT_TTL = "kairosdb.datastore.cassandra.datapoint_ttl";
-
-	@Inject(optional = true)
-	@Named(DATAPOINT_TTL)
-	private long datapoints_ttl = 3024000;
 
 	@Inject
 	public DefaultQueryMeasurementProvider(@Nonnull final MetricRegistry metricRegistry,
@@ -115,15 +105,11 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 	}
 
 	private void measureDistance(final Histogram histogram, final QueryMetric query) {
-		measureInternal(query.getStartTime(), Long.MAX_VALUE, histogram, "query_distance_in_days");
+		measureInternal(query.getStartTime(), System.currentTimeMillis(), histogram, "query_distance_in_days");
 	}
 
 	private void measureInternal(final long startTime, final long endTime, final Histogram histogram, final String tag) {
-		final long now = System.currentTimeMillis();
-		// ensure that: now-TTL <= startTime <= now, and startTome <= endTime <= now
-		final long actualStartTime = Math.max(Math.min(startTime, now), now - datapoints_ttl * 1000);
-		final long actualEndTime = Math.max(Math.min(endTime, now), actualStartTime);
-		final long timeInMillis = actualEndTime - actualStartTime;
+		final long timeInMillis = endTime - startTime;
 		final long timeInMinutes = timeInMillis / 1000 / 60;
 		histogram.update(timeInMinutes);
 		tracer.activeSpan().setTag(tag, timeInMinutes / 1440);

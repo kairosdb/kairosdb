@@ -455,6 +455,8 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
         try (Scope scope = tracer.scopeManager().activate(span, false)) {
 
+            span.setTag("keys", rowKeys.size());
+
             if (rowKeys.size() < 64) {
                 for (DataPointsRowKey k : rowKeys) {
                     // logger.info("<64: delta={}", k.getTimestamp() - currentTimeTier);

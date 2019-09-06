@@ -411,6 +411,7 @@ public class KairosDatastore {
                                 tempFile, m_metric.getCacheTime(), m_dataPointFactory);
                         if (cachedResults != null) {
                             returnedRows = cachedResults.getRows();
+                            span.setTag("cached", true);
                         }
                     }
 

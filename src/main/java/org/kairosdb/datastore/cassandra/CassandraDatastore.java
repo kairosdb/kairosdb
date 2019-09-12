@@ -813,10 +813,12 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                                  boolean limitExceeded,
                                  int limit,
                                  String index) {
-        final long endTime = Long.MAX_VALUE == query.getEndTime() ? System.currentTimeMillis() : query.getEndTime();
-        logger.warn("{}_query: uuid={} metric={} query={} read={} filtered={} start_time={} end_time={} duration={} exceeded={} limit={} index={}",
-                query.getQueryLoggingType(), query.getQueryUUID(), query.getName(), query.getTags(), rowReadCount, filteredRowKeys.size(),
-                query.getStartTime(), endTime, endTime - query.getStartTime(), limitExceeded, limit, index);
+        final boolean isUntilNow = Long.MAX_VALUE == query.getEndTime();
+        final long endTime = isUntilNow ? System.currentTimeMillis() : query.getEndTime();
+        logger.warn("{}_query: uuid={} metric={} query={} read={} filtered={} start_time={} end_time={} duration={} " +
+                        "is_until_now={} exceeded={} limit={} index={}", query.getQueryLoggingType(),
+                query.getQueryUUID(), query.getName(), query.getTags(), rowReadCount, filteredRowKeys.size(),
+                query.getStartTime(), endTime, endTime - query.getStartTime(), isUntilNow, limitExceeded, limit, index);
     }
 
     private List<String> getIndexTags(String metricName) {

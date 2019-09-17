@@ -461,10 +461,11 @@ public class QueryParser
 	{
 		final long now = System.currentTimeMillis();
 		long endTime = now;
-		if (request.getEndAbsolute() != null)
+		if (request.getEndAbsolute() != null) {
 			endTime = request.getEndAbsolute();
-		else if (request.getEndRelative() != null)
+		} else if (request.getEndRelative() != null) {
 			endTime = request.getEndRelative().getTimeRelativeTo(now);
+		}
 		// ensure that: now-TTL <= endTime <= now
 		return Math.max(Math.min(endTime, now), now - datapoints_ttl * 1000);
 	}

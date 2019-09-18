@@ -30,6 +30,7 @@ import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,7 +47,6 @@ public class QueryParserTest
 		parser = new QueryParser(new TestAggregatorFactory(), new TestGroupByFactory(), new TestQueryPluginFactory());
 	}
 
-	@Ignore
 	@Test
 	public void test_absolute_dates() throws Exception
 	{
@@ -56,10 +56,13 @@ public class QueryParserTest
 
 		assertThat(results.size(), equalTo(1));
 
+		long now = System.currentTimeMillis();
+		long ttl = 35 * 24 * 60 * 60 * 1000L;
+
 		QueryMetric queryMetric = results.get(0);
 		assertThat(queryMetric.getName(), equalTo("abc.123"));
-		assertThat(queryMetric.getStartTime(), equalTo(784041330L));
-		assertThat(queryMetric.getEndTime(), equalTo(788879730L));
+		assertThat(BigDecimal.valueOf(queryMetric.getStartTime()), closeTo(BigDecimal.valueOf(now - ttl), BigDecimal.valueOf(100_000)));
+		assertThat(BigDecimal.valueOf(queryMetric.getEndTime()), closeTo(BigDecimal.valueOf(now - ttl), BigDecimal.valueOf(100_000)));
 		assertThat(queryMetric.getAggregators().size(), equalTo(1));
 		assertThat(queryMetric.getGroupBys().size(), equalTo(2));
 	}
@@ -73,10 +76,13 @@ public class QueryParserTest
 
 		assertThat(results.size(), equalTo(1));
 
+		long now = System.currentTimeMillis();
+		long ttl = 35 * 24 * 60 * 60 * 1000L;
+
 		QueryMetric queryMetric = results.get(0);
 		assertThat(queryMetric.getName(), equalTo("abc.123"));
-		assertThat(queryMetric.getStartTime(), equalTo(784020000L));
-		assertThat(queryMetric.getEndTime(), equalTo(788879730L));
+		assertThat(BigDecimal.valueOf(queryMetric.getStartTime()), closeTo(BigDecimal.valueOf(now - ttl), BigDecimal.valueOf(100_000)));
+		assertThat(BigDecimal.valueOf(queryMetric.getEndTime()), closeTo(BigDecimal.valueOf(now - ttl), BigDecimal.valueOf(100_000)));
 		assertThat(queryMetric.getAggregators().size(), equalTo(0));
 		assertThat(queryMetric.getGroupBys().size(), equalTo(2));
 	}

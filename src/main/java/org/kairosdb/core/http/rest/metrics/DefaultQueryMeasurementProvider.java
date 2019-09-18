@@ -6,16 +6,12 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.opentracing.Tracer;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.kairosdb.core.admin.InternalMetricsProvider;
 import org.kairosdb.core.datastore.QueryMetric;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
 import java.util.Map;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -105,23 +101,18 @@ public class DefaultQueryMeasurementProvider implements QueryMeasurementProvider
 	}
 
 	private void measureSpan(final Histogram histogram, final QueryMetric query) {
-		long endTime = query.getEndTime();
-		if (endTime == Long.MAX_VALUE) {
-			final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
-			endTime = nowUTC.getMillis();
-		}
-		final long spanInMillis = endTime - query.getStartTime();
-		final long spanInMinutes = spanInMillis / 1000 / 60;
-		histogram.update(spanInMinutes);
-		tracer.activeSpan().setTag("query_span_in_days", spanInMinutes / 1440);
+		measureInternal(query.getStartTime(), query.getEndTime(), histogram, "query_span_in_days");
 	}
 
 	private void measureDistance(final Histogram histogram, final QueryMetric query) {
-		final DateTime nowUTC = new DateTime(DateTimeZone.UTC);
-		final long distanceInMillis = nowUTC.getMillis() - query.getStartTime();
-		final long distanceInMinutes = distanceInMillis / 1000 / 60;
-		histogram.update(distanceInMinutes);
-		tracer.activeSpan().setTag("query_distance_in_days", distanceInMinutes / 1440);
+		measureInternal(query.getStartTime(), System.currentTimeMillis(), histogram, "query_distance_in_days");
+	}
+
+	private void measureInternal(final long startTime, final long endTime, final Histogram histogram, final String tag) {
+		final long timeInMillis = endTime - startTime;
+		final long timeInMinutes = timeInMillis / 1000 / 60;
+		histogram.update(timeInMinutes);
+		tracer.activeSpan().setTag(tag, timeInMinutes / 1440);
 	}
 
 	private boolean canQueryBeReported(final QueryMetric query) {

@@ -42,6 +42,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Null;
 import javax.validation.metadata.ConstraintDescriptor;
 
+import com.google.inject.name.Named;
 import org.apache.bval.constraints.NotEmpty;
 import org.apache.bval.jsr303.ApacheValidationProvider;
 import org.joda.time.DateTimeZone;
@@ -97,6 +98,12 @@ public class QueryParser
 	private Map<Class, Map<String, PropertyDescriptor>> m_descriptorMap;
 	private final Object m_descriptorMapLock = new Object();
 	private Gson m_gson;
+
+	private static final String DATAPOINT_TTL = "kairosdb.datastore.cassandra.datapoint_ttl";
+
+	@Inject(optional = true)
+	@Named(DATAPOINT_TTL)
+	private long datapoints_ttl = 3024000;
 
 	@Inject
 	public QueryParser(AggregatorFactory aggregatorFactory, GroupByFactory groupByFactory,
@@ -429,30 +436,38 @@ public class QueryParser
 
 	private long getStartTime(Query request) throws BeanValidationException
 	{
+		final long now = System.currentTimeMillis();
+		long startTime;
 		if (request.getStartAbsolute() != null)
 		{
-			long start = request.getStartAbsolute();
-			return start - (start % 60_000);
+			startTime = request.getStartAbsolute();
+
 		}
 		else if (request.getStartRelative() != null)
 		{
-			long start = request.getStartRelative().getTimeRelativeTo(System.currentTimeMillis());
-			// align on one mintue boundaries too for relative queries. Caching takes start time into account.
-			return start - (start % 60_000);
+			startTime = request.getStartRelative().getTimeRelativeTo(now);
 		}
 		else
 		{
 			throw new BeanValidationException(new SimpleConstraintViolation("start_time", "relative or absolute time must be set"), "query");
 		}
+		// ensure that: now-TTL <= startTime <= now
+		startTime = Math.max(Math.min(startTime, now), now - datapoints_ttl * 1000);
+		// align on one mintue boundaries. Caching takes start time into account.
+		return startTime - (startTime % 60_000);
 	}
 
 	private long getEndTime(Query request)
 	{
-		if (request.getEndAbsolute() != null)
-			return request.getEndAbsolute();
-		else if (request.getEndRelative() != null)
-			return request.getEndRelative().getTimeRelativeTo(System.currentTimeMillis());
-		return -1;
+		final long now = System.currentTimeMillis();
+		long endTime = now;
+		if (request.getEndAbsolute() != null) {
+			endTime = request.getEndAbsolute();
+		} else if (request.getEndRelative() != null) {
+			endTime = request.getEndRelative().getTimeRelativeTo(now);
+		}
+		// ensure that: now-TTL <= endTime <= now
+		return Math.max(Math.min(endTime, now), now - datapoints_ttl * 1000);
 	}
 
 	//===========================================================================

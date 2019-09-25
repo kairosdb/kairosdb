@@ -624,15 +624,9 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         return (timestamp - (Math.abs(timestamp) % m_rowWidthWrite));
     }
 
-    private List<Long> calculateReadTimeBuckets(long startTime, long endTime) {
-        LinkedList<Long> buckets = new LinkedList<Long>();
+    private List<Long> calculateReadTimeBuckets(long startTimeBucket, long endTimeBucket) {
+        LinkedList<Long> buckets = new LinkedList<>();
 
-        // find smallest start time (ie ~30 days ago) and largest end time (now)
-        long smallestStartTime = new Date().getTime() - m_cassandraConfiguration.getDatapointTtl() * 1000;
-        long largestEndTime = new Date().getTime();
-
-        long startTimeBucket = calculateRowTimeRead(Math.max(startTime, smallestStartTime));
-        long endTimeBucket = calculateRowTimeRead(Math.min(endTime, largestEndTime));
         for (long i = startTimeBucket; i <= endTimeBucket; i += m_rowWidthRead) {
             buckets.add(i);
         }
@@ -719,10 +713,6 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
             }
         }
         return false;
-    }
-
-    private void filterAndAddKeys(DatastoreMetricQuery query, ResultSet rs, List<DataPointsRowKey> filteredRowKeys, int readRowsLimit, String index) {
-        filterAndAddKeys(query, rs, filteredRowKeys, readRowsLimit, index, false);
     }
 
     private void filterAndAddKeys(DatastoreMetricQuery query, ResultSet rs, List<DataPointsRowKey> filteredRowKeys, int readRowsLimit, String index, boolean last) {
@@ -848,7 +838,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
             long startTime = calculateRowTimeRead(query.getStartTime());
             // Use write width here, as END time is upper bound for query and end with produces the bigger timestamp
             long endTime = calculateRowTimeWrite(query.getEndTime());
-            // logger.info("calculated: s={} cs={} e={} ce={}", startTime, calculatedStarTime, endTime, calculatedEndTime);
+            logger.info("calculated: s={} e={}", startTime, endTime);
 
             if (useSplitField != null && !"".equals(useSplitField) && useSplitSet.size() > 0) {
                 span.setTag("type", "split");
@@ -880,7 +870,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
         if (m_cassandraConfiguration.isUseTimeIndexRead()) {
             index = "row_time_key_index";
-            futures = calculateReadTimeBuckets(query.getStartTime(), query.getEndTime())
+            futures = calculateReadTimeBuckets(startTime, endTime)
                     .stream()
                     .map(bucket -> collectFromRowTimeKeyIndexAsync(query, metricName, bucket, limit))
                     .collect(Collectors.toList());
@@ -916,7 +906,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
         if (m_cassandraConfiguration.isUseTimeIndexRead()) {
             index = "row_time_key_split_index";
-            futures = calculateReadTimeBuckets(query.getStartTime(), query.getEndTime())
+            futures = calculateReadTimeBuckets(startTime, endTime)
                     .stream()
                     .flatMap(bucket -> useSplit.stream().map(useSplitValue -> collectFromRowTimeKeySplitIndexAsync(query, useSplitField, useSplitValue, bucket, limit)))
                     .collect(Collectors.toList());

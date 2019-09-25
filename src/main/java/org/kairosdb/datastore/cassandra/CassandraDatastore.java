@@ -897,6 +897,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         Span span = GlobalTracer.get().activeSpan();
         if (span != null) {
             span.setTag("index_name", index);
+            span.setTag("buckets", futures.size());
         }
 
         for (ResultSetFuture future : futures) {

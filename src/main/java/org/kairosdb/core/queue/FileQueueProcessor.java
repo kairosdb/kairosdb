@@ -236,7 +236,7 @@ public class FileQueueProcessor extends QueueProcessor
 
 
 
-	@Override
+	//@Override
 	public void addReportedMetrics(ArrayList<DataPointSet> metrics, long now)
 	{
 		long arraySize = m_bigArray.getHeadIndex() - m_nextIndex;

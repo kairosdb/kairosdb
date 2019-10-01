@@ -16,6 +16,7 @@
 
 package org.kairosdb.core.http.rest.json;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -36,6 +37,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -56,13 +58,13 @@ public class DataPointsParser
 		return dataPointCount;
 	}
 
-	public int getIngestTime()
+	public long getIngestTime()
 	{
 		return ingestTime;
 	}
 
 	private int dataPointCount;
-	private int ingestTime;
+	private long ingestTime;
 
 	public DataPointsParser(Publisher<DataPointEvent> publisher, Reader stream, Gson gson,
 			KairosDataPointFactory dataPointFactory)
@@ -75,7 +77,7 @@ public class DataPointsParser
 
 	public ValidationErrors parse() throws IOException, DatastoreException
 	{
-		long start = System.currentTimeMillis();
+		Stopwatch timer = Stopwatch.createStarted();
 		ValidationErrors validationErrors = new ValidationErrors();
 
 		try (JsonReader reader = new JsonReader(inputStream))
@@ -116,7 +118,7 @@ public class DataPointsParser
 			validationErrors.addErrorMessage("Invalid json. No content due to end of input.");
 		}
 
-		ingestTime = (int) (System.currentTimeMillis() - start);
+		ingestTime = timer.elapsed(TimeUnit.MILLISECONDS);
 
 		return validationErrors;
 	}

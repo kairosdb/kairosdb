@@ -21,29 +21,26 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
-import org.kairosdb.metrics4j.ReporterFactory;
+import org.kairosdb.metrics.TelnetMetrics;
+import org.kairosdb.metrics4j.MetricSourceManager;
 import org.kairosdb.util.Tags;
 import org.kairosdb.util.Util;
 import org.kairosdb.util.ValidationException;
 import org.kairosdb.util.Validator;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 
 public class PutMillisecondCommand implements TelnetCommand//, KairosMetricReporter
 {
-	private static TelnetMetrics reporter = ReporterFactory.getReporter(TelnetMetrics.class);
+	private static TelnetMetrics Metrics = MetricSourceManager.getSource(TelnetMetrics.class);
 	//private AtomicInteger m_counter = new AtomicInteger();
 	private String m_hostName;
 	private LongDataPointFactory m_longFactory;
@@ -126,7 +123,7 @@ public class PutMillisecondCommand implements TelnetCommand//, KairosMetricRepor
 		if (tagCount == 0)
 			tags.put("add", "tag");
 
-		reporter.telnetRequestCount(m_hostName, getCommand()).add(1);
+		Metrics.telnetRequestCount(m_hostName, getCommand()).put(1);
 		//m_counter.incrementAndGet();
 		m_publisher.post(new DataPointEvent(metricName, tags.build(), dp, ttl));
 	}

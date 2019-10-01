@@ -42,6 +42,9 @@ import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.metrics4j.MetricSourceManager;
+import org.kairosdb.metrics4j.collectors.DurationCollector;
+import org.kairosdb.metrics4j.collectors.LongCollector;
 import org.kairosdb.util.MemoryMonitorException;
 import org.kairosdb.util.SimpleStats;
 import org.kairosdb.util.SimpleStatsReporter;
@@ -53,6 +56,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.io.*;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
@@ -74,10 +78,12 @@ enum ServerType
 	DELETE
 }
 
+
 @Path("/api/v1")
-public class MetricsResource implements KairosMetricReporter
+public class MetricsResource// implements KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(MetricsResource.class);
+	private static final MetricsResourceMetrics metrics = MetricSourceManager.getSource(MetricsResourceMetrics.class);
 	public static final String QUERY_TIME = "kairosdb.http.query_time";
 	public static final String REQUEST_TIME = "kairosdb.http.request_time";
 	public static final String INGEST_COUNT = "kairosdb.http.ingest_count";
@@ -94,8 +100,8 @@ public class MetricsResource implements KairosMetricReporter
 	private final Gson gson;
 
 	//These two are used to track rate of ingestion
-	private final AtomicInteger m_ingestedDataPoints = new AtomicInteger();
-	private final AtomicInteger m_ingestTime = new AtomicInteger();
+	//private final AtomicInteger m_ingestedDataPoints = new AtomicInteger();
+	//private final AtomicInteger m_ingestTime = new AtomicInteger();
 
 	private final StatsMap m_statsMap = new StatsMap();
 	private final KairosDataPointFactory m_kairosDataPointFactory;
@@ -143,6 +149,12 @@ public class MetricsResource implements KairosMetricReporter
 	//Used for setting which API methods are enabled
 	private EnumSet<ServerType> m_serverType = EnumSet.of(ServerType.INGEST, ServerType.QUERY, ServerType.DELETE);
 
+	public interface MetricsResourceMetrics
+	{
+		LongCollector ingestDataPoints();
+		DurationCollector ingestTime();
+	}
+
 	@Inject(optional = true)
 	@VisibleForTesting
 	void setServerType(@Named("kairosdb.server.type") String serverType)
@@ -162,8 +174,8 @@ public class MetricsResource implements KairosMetricReporter
 	}
 
 
-	@Inject
-	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
+	//@Inject
+	//private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
 	@Inject
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
@@ -292,18 +304,23 @@ public class MetricsResource implements KairosMetricReporter
 		checkServerType(ServerType.INGEST, "JSON /datapoints", "POST");
 		try
 		{
-			List<String> requestHeader = httpheaders.getRequestHeader("Content-Encoding");
-			if (requestHeader != null && requestHeader.contains("gzip"))
+			if (httpheaders != null)  //when called from addGzip this is null
 			{
-				stream = new GZIPInputStream(stream);
+				List<String> requestHeader = httpheaders.getRequestHeader("Content-Encoding");
+				if (requestHeader != null && requestHeader.contains("gzip"))
+				{
+					stream = new GZIPInputStream(stream);
+				}
 			}
 
 			DataPointsParser parser = new DataPointsParser(m_publisher, new InputStreamReader(stream, "UTF-8"),
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 
-			m_ingestedDataPoints.addAndGet(parser.getDataPointCount());
-			m_ingestTime.addAndGet(parser.getIngestTime());
+			//m_ingestedDataPoints.addAndGet(parser.getDataPointCount());
+			metrics.ingestDataPoints().put(parser.getDataPointCount());
+			//m_ingestTime.addAndGet(parser.getIngestTime());
+			metrics.ingestTime().put(Duration.ofMillis(parser.getIngestTime()));
 
 			if (!validationErrors.hasErrors())
 				return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
@@ -752,28 +769,9 @@ public class MetricsResource implements KairosMetricReporter
 		}
 	}
 
-	@Override
+	/*@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
-		int time = m_ingestTime.getAndSet(0);
-		int count = m_ingestedDataPoints.getAndSet(0);
-		List<DataPointSet> ret = new ArrayList<>();
-
-		if (count != 0)
-		{
-
-			DataPointSet dpsCount = new DataPointSet(INGEST_COUNT);
-			DataPointSet dpsTime = new DataPointSet(INGEST_TIME);
-
-			dpsCount.addTag("host", hostName);
-			dpsTime.addTag("host", hostName);
-
-			dpsCount.addDataPoint(m_longDataPointFactory.createDataPoint(now, count));
-			dpsTime.addDataPoint(m_longDataPointFactory.createDataPoint(now, time));
-
-			ret.add(dpsCount);
-			ret.add(dpsTime);
-		}
 
 		Map<String, SimpleStats> statsMap = m_statsMap.getStatsMap();
 
@@ -786,7 +784,7 @@ public class MetricsResource implements KairosMetricReporter
 		}
 
 		return ret;
-	}
+	}*/
 
 	public static class ValuesStreamingOutput implements StreamingOutput
 	{

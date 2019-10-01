@@ -1,10 +1,13 @@
 package org.kairosdb.core.queue;
 
-import org.kairosdb.core.DataPointSet;
+import com.google.common.collect.ImmutableMap;
+import org.kairosdb.core.KairosPostConstructInit;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.metrics.MemoryQueueMetrics;
+import org.kairosdb.metrics4j.MetricSourceManager;
+import org.kairosdb.metrics4j.annotation.Reported;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,10 +23,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  Created by bhawkins on 12/15/16.
  */
-public class MemoryQueueProcessor extends QueueProcessor// implements KairosMetricReporter
+public class MemoryQueueProcessor extends QueueProcessor implements KairosPostConstructInit// implements KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(MemoryQueueProcessor.class);
 	private static final EventCompletionCallBack CALL_BACK = new VoidCompletionCallBack();
+	private static final MemoryQueueMetrics Metrics = MetricSourceManager.getSource(MemoryQueueMetrics.class);
 
 	private AtomicInteger m_readFromQueueCount = new AtomicInteger();
 	private final BlockingQueue<DataPointEvent> m_queue;
@@ -49,6 +53,14 @@ public class MemoryQueueProcessor extends QueueProcessor// implements KairosMetr
 	}
 
 	@Override
+	public void init()
+	{
+		ImmutableMap<String, String> tags = ImmutableMap.of("host", m_hostName);
+		MetricSourceManager.export(this, tags);
+	}
+
+
+	/*@Override
 	public void addReportedMetrics(ArrayList<DataPointSet> metrics, long now)
 	{
 		long readFromQueue = m_readFromQueueCount.getAndSet(0);
@@ -65,6 +77,12 @@ public class MemoryQueueProcessor extends QueueProcessor// implements KairosMetr
 		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, arraySize));
 
 		metrics.add(dps);
+	}*/
+
+	@Reported
+	public long getMemoryQueueSize()
+	{
+		return m_queue.size();
 	}
 
 	@Override
@@ -102,7 +120,8 @@ public class MemoryQueueProcessor extends QueueProcessor// implements KairosMetr
 		m_queue.drainTo(ret, batchSize -1);
 
 		//System.out.println(ret.size());
-		m_readFromQueueCount.getAndAdd(ret.size());
+		//m_readFromQueueCount.getAndAdd(ret.size());
+		Metrics.processCount(m_hostName).put(ret.size());
 		return ret;
 	}
 

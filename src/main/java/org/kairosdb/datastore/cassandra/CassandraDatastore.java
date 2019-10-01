@@ -31,6 +31,7 @@ import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.KairosPostConstructInit;
 import org.kairosdb.core.datapoints.DataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyDoubleDataPoint;
@@ -54,6 +55,8 @@ import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.metrics4j.MetricSourceManager;
+import org.kairosdb.metrics4j.annotation.Reported;
 import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.KDataInput;
 import org.kairosdb.util.MemoryMonitor;
@@ -80,11 +83,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.LongSupplier;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMetricReporter,
-		ServiceKeyStore
+public class CassandraDatastore implements Datastore, ProcessorHandler,
+		ServiceKeyStore, KairosPostConstructInit
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
 
@@ -180,6 +184,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_queueProcessor.setProcessorHandler(this);
 	}
 
+
+
 	//Used for creating the end string for prefix searches
 	private static ByteBuffer serializeEndString(String str)
 	{
@@ -237,6 +243,11 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		batchHandler = m_batchHandlerFactory.create(events, eventCompletionCallBack, fullBatch);
 
 		m_congestionExecutor.submit(batchHandler);
+	}
+
+	@Override
+	public void init()
+	{
 	}
 
 	private interface ClusterCallback
@@ -543,7 +554,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		cqlQueryWithRowKeys(query, queryCallback, getKeysForQueryIterator(query));
 	}
 
-	@Override
+
+	/*@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
 		List<DataPointSet> ret = new ArrayList<>();
@@ -559,7 +571,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 				"table", "row_keys", ret);
 
 		return ret;
-	}
+	}*/
 
 	private class QueryListener implements FutureCallback<ResultSet>
 	{

@@ -7,31 +7,26 @@ import com.datastax.driver.core.WriteType;
 import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.policies.RetryPolicy;
 import com.google.inject.Inject;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.metrics.RetryMetrics;
+import org.kairosdb.metrics4j.MetricSourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
+public class KairosRetryPolicy implements RetryPolicy//, KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(KairosRetryPolicy.class);
+	private static final RetryMetrics Metrics = MetricSourceManager.getSource(RetryMetrics.class);
 
 	private final int m_retryCount;
 
-	private AtomicInteger m_readRetries = new AtomicInteger(0);
-	private AtomicInteger m_writeRetries = new AtomicInteger(0);
-	private AtomicInteger m_unavailableRetries = new AtomicInteger(0);
-	private AtomicInteger m_errorRetries = new AtomicInteger(0);
+	//private AtomicInteger m_readRetries = new AtomicInteger(0);
+	//private AtomicInteger m_writeRetries = new AtomicInteger(0);
+	//private AtomicInteger m_unavailableRetries = new AtomicInteger(0);
+	//private AtomicInteger m_errorRetries = new AtomicInteger(0);
 
 	@Inject
 	@Named("HOSTNAME")
@@ -58,7 +53,7 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 			return RetryDecision.rethrow();
 		else
 		{
-			int count = m_readRetries.incrementAndGet();
+			Metrics.retryCount(m_hostName, m_clusterName, "read_timeout").put(1);
 			return RetryDecision.tryNextHost(cl);
 		}
 	}
@@ -71,7 +66,7 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 			return RetryDecision.rethrow();
 		else
 		{
-			m_writeRetries.incrementAndGet();
+			Metrics.retryCount(m_hostName, m_clusterName, "write_timeout").put(1);
 			return RetryDecision.tryNextHost(cl);
 		}
 	}
@@ -84,7 +79,7 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 			return RetryDecision.rethrow();
 		else
 		{
-			m_unavailableRetries.incrementAndGet();
+			Metrics.retryCount(m_hostName, m_clusterName, "unavailable").put(1);
 			return RetryDecision.tryNextHost(cl);
 		}
 	}
@@ -97,7 +92,7 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 			return RetryDecision.rethrow();
 		else
 		{
-			m_errorRetries.incrementAndGet();
+			Metrics.retryCount(m_hostName, m_clusterName, "request_error").put(1);
 			return RetryDecision.tryNextHost(cl);
 		}
 	}
@@ -114,7 +109,7 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 		logger.info("Closing KairosRetryPolicy");
 	}
 
-	@Override
+	/*@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
 		List<DataPointSet> ret = new ArrayList<>();
@@ -141,5 +136,5 @@ public class KairosRetryPolicy implements RetryPolicy, KairosMetricReporter
 
 
 		return ret;
-	}
+	}*/
 }

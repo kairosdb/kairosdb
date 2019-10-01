@@ -306,7 +306,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 			public CQLBatch create()
 			{
 				return new CQLBatch(ConsistencyLevel.QUORUM, m_clusterConnection,
-						batchStats, client.getWriteLoadBalancingPolicy());
+						client.getWriteLoadBalancingPolicy());
 			}
 		};
 

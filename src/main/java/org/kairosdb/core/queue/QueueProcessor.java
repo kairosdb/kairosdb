@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutorService;
 /**
  Created by bhawkins on 10/12/16.
  */
-public abstract class QueueProcessor implements KairosMetricReporter
+public abstract class QueueProcessor// implements KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(QueueProcessor.class);
 
@@ -91,9 +91,9 @@ public abstract class QueueProcessor implements KairosMetricReporter
 
 	protected abstract EventCompletionCallBack getCompletionCallBack();
 
-	protected abstract void addReportedMetrics(ArrayList<DataPointSet> metrics, long now);
+	//protected abstract void addReportedMetrics(ArrayList<DataPointSet> metrics, long now);
 
-	public List<DataPointSet> getMetrics(long now)
+	/*public List<DataPointSet> getMetrics(long now)
 	{
 		ArrayList<DataPointSet> metrics = new ArrayList<>();
 		addReportedMetrics(metrics, now);
@@ -102,7 +102,7 @@ public abstract class QueueProcessor implements KairosMetricReporter
 				"kairosdb.queue.batch_stats", metrics);
 
 		return metrics;
-	}
+	}*/
 
 
 	/**

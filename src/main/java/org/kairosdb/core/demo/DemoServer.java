@@ -1,31 +1,28 @@
 package org.kairosdb.core.demo;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
 import org.joda.time.DateTime;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.exception.KairosDBException;
-import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
-import org.kairosdb.metrics4j.ReporterFactory;
+import org.kairosdb.metrics.DemoMetrics;
+import org.kairosdb.metrics4j.MetricSourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
-import java.util.List;
 
 public class DemoServer implements KairosDBService, Runnable//, KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(DemoServer.class);
-	private static final DemoMetrics reporter = ReporterFactory.getReporter(DemoMetrics.class);
+	private static final DemoMetrics Metrics = MetricSourceManager.getSource(DemoMetrics.class);
 
 	public static final String METRIC_NAME = "kairosdb.demo.metric_name";
 	public static final String NUMBER_OF_ROWS = "kairosdb.demo.number_of_rows";
@@ -89,7 +86,7 @@ public class DemoServer implements KairosDBService, Runnable//, KairosMetricRepo
 				ImmutableSortedMap<String, String> tags = ImmutableSortedMap.of("host", "demo_server_"+I);
 				DataPointEvent dataPointEvent = new DataPointEvent(m_metricName, tags, dataPoint, m_ttl);
 				m_publisher.post(dataPointEvent);
-				reporter.submissionCount(m_hostName).add(1);
+				Metrics.submissionCount(m_hostName).put(1);
 			}
 
 			insertTime += 60000; //Advance 1 minute

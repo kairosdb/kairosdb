@@ -1,26 +1,23 @@
 package org.kairosdb.core.blast;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
 import org.apache.commons.lang3.RandomUtils;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.exception.KairosDBException;
-import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
-import org.kairosdb.metrics4j.ReporterFactory;
+import org.kairosdb.metrics.BlastMetrics;
+import org.kairosdb.metrics4j.MetricSourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class BlastServer implements KairosDBService, Runnable//, KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(BlastServer.class);
-	private static final BlastMetrics reporter = ReporterFactory.getReporter(BlastMetrics.class);
+	private static final BlastMetrics Metrics = MetricSourceManager.getSource(BlastMetrics.class);
 
 	public static final String NUMBER_OF_ROWS = "kairosdb.blast.number_of_rows";
 	public static final String DURATION_SECONDS = "kairosdb.blast.duration_seconds";
@@ -44,7 +41,7 @@ public class BlastServer implements KairosDBService, Runnable//, KairosMetricRep
 	private final long m_durration;  //in seconds
 	private final String m_metricName;
 
-	//private long m_counter = 0L;
+	private long m_counter = 0L;
 
 	@Inject
 	@Named("HOSTNAME")
@@ -99,10 +96,10 @@ public class BlastServer implements KairosDBService, Runnable//, KairosMetricRep
 
 			DataPointEvent dataPointEvent = new DataPointEvent(m_metricName, tags, dataPoint, m_ttl);
 			m_publisher.post(dataPointEvent);
-			//m_counter ++;
-			long count = reporter.submissionCount(m_hostName).add(1);
+			m_counter ++;
+			Metrics.submissionCount(m_hostName).put(1);
 
-			if ((count % 100000 == 0) && (timer.elapsed(TimeUnit.SECONDS) > m_durration))
+			if ((m_counter % 100000 == 0) && (timer.elapsed(TimeUnit.SECONDS) > m_durration))
 				m_keepRunning = false;
 
 		}

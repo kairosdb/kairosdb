@@ -7,6 +7,8 @@ import com.datastax.driver.core.Host;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.metrics.BatchMetrics;
+import org.kairosdb.metrics4j.MetricSourceManager;
 import org.kairosdb.util.KDataOutput;
 
 import javax.inject.Inject;
@@ -29,10 +31,11 @@ import static org.kairosdb.datastore.cassandra.CassandraDatastore.ROW_KEY_METRIC
  */
 public class CQLBatch
 {
+	private static final BatchMetrics metrics = MetricSourceManager.getSource(BatchMetrics.class);
 	private static final Charset UTF_8 = Charset.forName("UTF-8");
 
 	private final ClusterConnection m_clusterConnection;
-	private final BatchStats m_batchStats;
+	//private final BatchStats m_batchStats;
 	private final ConsistencyLevel m_consistencyLevel;
 	private final long m_now;
 	private final LoadBalancingPolicy m_loadBalancingPolicy;
@@ -52,12 +55,11 @@ public class CQLBatch
 	public CQLBatch(
 			ConsistencyLevel consistencyLevel,
 			@Named("write_cluster")ClusterConnection clusterConnection,
-			BatchStats batchStats,
 			LoadBalancingPolicy loadBalancingPolicy)
 	{
 		m_consistencyLevel = consistencyLevel;
 		m_clusterConnection = clusterConnection;
-		m_batchStats = batchStats;
+		//m_batchStats = batchStats;
 		m_now = System.currentTimeMillis();
 		m_loadBalancingPolicy = loadBalancingPolicy;
 	}
@@ -158,14 +160,14 @@ public class CQLBatch
 		if (metricNamesBatch.size() != 0)
 		{
 			m_clusterConnection.executeAsync(metricNamesBatch);
-			m_batchStats.addNameBatch(metricNamesBatch.size());
+			metrics.nameBatch().put(metricNamesBatch.size());
 		}
 
 		if (rowKeyBatch.size() != 0)
 		{
 			//rowKeyBatch.enableTracing();
 			m_clusterConnection.executeAsync(rowKeyBatch);
-			m_batchStats.addRowKeyBatch(rowKeyBatch.size());
+			metrics.rowKeyBatch().put(rowKeyBatch.size());
 		}
 
 		for (BatchStatement batchStatement : m_batchMap.values())
@@ -175,7 +177,7 @@ public class CQLBatch
 			{
 				m_clusterConnection.execute(batchStatement);
 				//System.out.println(resultSet.getExecutionInfo().getQueryTrace().getTraceId());
-				m_batchStats.addDatapointsBatch(batchStatement.size());
+				metrics.datapointsBatch().put(batchStatement.size());
 			}
 		}
 
@@ -183,7 +185,7 @@ public class CQLBatch
 		if (dataPointBatch.size() != 0)
 		{
 			m_clusterConnection.execute(dataPointBatch);
-			m_batchStats.addDatapointsBatch(dataPointBatch.size());
+			metrics.datapointsBatch().put(dataPointBatch.size());
 		}
 	}
 

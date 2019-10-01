@@ -51,7 +51,7 @@ public class BatchHandlerTest
 
 		public FakeCQLBatch(RuntimeException exceptionToThrow)
 		{
-			super(null, null, null, null);
+			super(null, null, null);
 
 			m_exceptionToThrow = exceptionToThrow;
 		}

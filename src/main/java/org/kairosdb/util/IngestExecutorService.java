@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 /**
  Created by bhawkins on 10/27/16.
  */
-public class IngestExecutorService implements KairosMetricReporter
+public class IngestExecutorService// implements KairosMetricReporter
 {
 	public static final String PERMIT_COUNT = "kairosdb.ingest_executor.thread_count";
 
@@ -117,7 +117,7 @@ public class IngestExecutorService implements KairosMetricReporter
 		}
 	}
 
-	@Override
+	//@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
 		List<DataPointSet> ret = new ArrayList<>();

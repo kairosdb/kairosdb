@@ -36,6 +36,12 @@ public class DataPointsRowKey {
         this(metricName, timestamp, dataType, new TreeMap<>());
     }
 
+
+    public DataPointsRowKey(String metricName, long timestamp, String dataType, Boolean endKey) {
+        this(metricName, timestamp, dataType);
+        this.m_endSearchKey = endKey;
+    }
+
     public DataPointsRowKey(String metricName, long timestamp, String datatype,
                             SortedMap<String, String> tags) {
         m_metricName = checkNotNullOrEmpty(metricName);

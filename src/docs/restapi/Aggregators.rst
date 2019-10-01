@@ -295,6 +295,26 @@ Filter
 
 		**threshold** (double) - Sets the threshold value for filtering data points.
 
+------
+Score
+------
+.. js:data:: score
+
+	Scores the data based on a set of thresholds. Each data point will be mapped to a value between 0 and n where n is the
+	number of thresholds.
+
+	Parameters:
+		**order** (ASCENDING, DESCENDING) - The order by which scores are assigned.
+
+		**thresholds** (list) - A set of thresholds to compare the data against, where a threshold is an object with the following properties:
+
+		- **value** (double) - The value of the threshold.
+
+		- **boundary** (SUPERIOR, INFERIOR) - Determines how to compare against values equal to the threshold value. Values
+		  equal to the threshold value are greater than thresholds with inferior boundaries and less than thresholds with
+		  superior boundaries.
+
+
 -------------
 JS Aggregator
 -------------

@@ -156,6 +156,22 @@ public class BatchHandler extends RetryCallable
 		}
 	}
 
+	private void clearCacheOfFailedBatch(CQLBatch batch)
+	{
+		if (batch != null)
+		{
+			for (String newMetric : batch.getNewMetrics())
+			{
+				m_metricNameCache.removeKey(newMetric);
+			}
+
+			for (DataPointsRowKey newRowKey : batch.getNewRowKeys())
+			{
+				m_rowKeyCache.removeKey(newRowKey);
+			}
+		}
+	}
+
 	@Override
 	public void retryCall() throws Exception
 	{
@@ -167,41 +183,47 @@ public class BatchHandler extends RetryCallable
 		{
 			retry = false;
 
+			CQLBatch lastBatch = null;
+
 			//Used to reduce batch size with each retry
 			limit = m_events.size() / divisor;
 			try
 			{
 				Iterator<DataPointEvent> events = m_events.iterator();
 
+				//Send new batch if not all events went out
 				while (events.hasNext())
 				{
-					CQLBatch batch = m_cqlBatchFactory.create();
+					lastBatch = m_cqlBatchFactory.create();
 
 					/*CQLBatch batch = new CQLBatch(m_consistencyLevel, m_session, m_schema,
 							m_batchStats, m_loadBalancingPolicy);*/
 
-					loadBatch(limit, batch, events);
+					loadBatch(limit, lastBatch, events);
 
-					batch.submitBatch();
+					lastBatch.submitBatch();
 
 				}
 
 			}
-			//If More exceptions are added to retry they need to be added to AdaptiveExecutorService
+			//If More exceptions are added to retry they need to be added to IngestExecutorService
 			catch (NoHostAvailableException nae)
 			{
+				clearCacheOfFailedBatch(lastBatch);
 				//Throw this out so the back off retry can happen
 				logger.error(nae.getMessage());
 				throw nae;
 			}
 			catch (UnavailableException ue)
 			{
+				clearCacheOfFailedBatch(lastBatch);
 				//Throw this out so the back off retry can happen
 				logger.error(ue.getMessage());
 				throw ue;
 			}
 			catch (Exception e)
 			{
+				clearCacheOfFailedBatch(lastBatch);
 				if ("Batch too large".equals(e.getMessage()))
 					logger.warn("Batch size is too large");
 				else

@@ -413,12 +413,7 @@ public class QueryParser
 					SaveAsAggregator saveAsAggregator = (SaveAsAggregator) m_processingChain.getFeatureProcessingFactory(Aggregator.class).createFeatureProcessor("save_as");
 					saveAsAggregator.setMetricName(rollup.getSaveAs());
 					saveAsAggregator.setGroupBys(query.getGroupBys());
-
-					TrimAggregator trimAggregator = (TrimAggregator) m_processingChain.getFeatureProcessingFactory(Aggregator.class).createFeatureProcessor("trim");
-					trimAggregator.setTrim(TrimAggregator.Trim.BOTH);
-
 					query.addAggregator(saveAsAggregator);
-					query.addAggregator(trimAggregator);
 				}
 
 				rollup.addQueries(queries);

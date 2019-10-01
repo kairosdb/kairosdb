@@ -294,7 +294,7 @@ Body
 -----------
 Description
 -----------
-Returns all keys for the given service key or an empty list if no keys exist.
+Delete the given key if it exists.
 
 *service*
 The name of the service.
@@ -302,19 +302,16 @@ The name of the service.
 *serviceKey*
 The name of the service key.
 
+*key*
+The name of the key.
+
 --------
 Response
 --------
 
 *Success*
 
-  ::
-
-     {
-        "results":["key_1", "key_2"]
-     }
-
-  The response contains a list of keys for the given service key or an empty string if not found. Returns 200 when successful.
+  Returns 204 when successful.
 
 *Failure*
 

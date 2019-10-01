@@ -523,7 +523,6 @@ public class QueryParserTest
 				1,
 				"kairosdb.http.query_time",
 				"kairosdb.http.query_time_rollup",
-				createTrimAggregator(TrimAggregator.Trim.BOTH),
 				createSaveAsAggregator(
 						"kairosdb.http.query_time_rollup",
 						ImmutableList.of("group1", "group2")),
@@ -555,7 +554,6 @@ public class QueryParserTest
 				1,
 				"kairosdb.http.query_time",
 				"kairosdb.http.query_time_rollup",
-				createTrimAggregator(TrimAggregator.Trim.BOTH),
 				createSaveAsAggregator(
 						"kairosdb.http.query_time_rollup",
 						ImmutableList.of("group1", "group2")),
@@ -567,7 +565,6 @@ public class QueryParserTest
 				1,
 				"kairosdb.http.foo",
 				"kairosdb.http.foo_rollup",
-				createTrimAggregator(TrimAggregator.Trim.BOTH),
 				createSaveAsAggregator(
 						"kairosdb.http.foo_rollup",
 						ImmutableList.of("group3", "group4")),

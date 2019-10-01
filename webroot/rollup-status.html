@@ -8,6 +8,7 @@
             <tr>
                 <td>
                     <span class="text-info">Metric:</span> {{statusTask.metric_name}}<br>
+                    <span class="text-info">Id:</span> {{statusTask.id}}<br>
                     <span class="text-info">Saved as:</span> {{statusTask.save_as}} <br>
                     <span class="text-info">Executing on:</span> {{status.executing_host}} <br>
                     <span class="text-info">Last Executed:</span> Never<br>
@@ -22,6 +23,7 @@
 			<tr ng-repeat="taskStatus in status.statuses">
 				<td>
                     <span class="text-info">Metric:</span> {{taskStatus.metric_name}}<br>
+					<span class="text-info">Id:</span> {{statusTask.id}}<br>
                     <span class="text-info">Saved as:</span> {{statusTask.save_as}} <br>
                     <span class="text-info">Executing on:</span> {{status.executing_host}} <br>
                     <span class="text-info">Last Executed:</span> {{taskStatus.last_executed}}<br>

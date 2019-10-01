@@ -21,4 +21,6 @@ public interface CassandraClient
 	ClusterConfiguration getClusterConfiguration();
 
 	void close();
+
+	void init();
 }

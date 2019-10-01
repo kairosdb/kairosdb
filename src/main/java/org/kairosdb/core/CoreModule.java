@@ -30,44 +30,14 @@ import com.google.inject.spi.TypeListener;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueType;
-import org.kairosdb.core.aggregator.AggregatorFactory;
-import org.kairosdb.core.aggregator.AvgAggregator;
-import org.kairosdb.core.aggregator.CountAggregator;
-import org.kairosdb.core.aggregator.DataGapsMarkingAggregator;
-import org.kairosdb.core.aggregator.DiffAggregator;
-import org.kairosdb.core.aggregator.DivideAggregator;
-import org.kairosdb.core.aggregator.FilterAggregator;
-import org.kairosdb.core.aggregator.FirstAggregator;
-import org.kairosdb.core.aggregator.LastAggregator;
-import org.kairosdb.core.aggregator.LeastSquaresAggregator;
-import org.kairosdb.core.aggregator.MaxAggregator;
-import org.kairosdb.core.aggregator.MinAggregator;
-import org.kairosdb.core.aggregator.PercentileAggregator;
-import org.kairosdb.core.aggregator.RateAggregator;
-import org.kairosdb.core.aggregator.SamplerAggregator;
-import org.kairosdb.core.aggregator.SaveAsAggregator;
-import org.kairosdb.core.aggregator.ScaleAggregator;
-import org.kairosdb.core.aggregator.SmaAggregator;
-import org.kairosdb.core.aggregator.StdAggregator;
-import org.kairosdb.core.aggregator.SumAggregator;
-import org.kairosdb.core.aggregator.TrimAggregator;
+import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.configuration.ConfigurationTypeListener;
-import org.kairosdb.core.datapoints.DoubleDataPointFactory;
-import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
-import org.kairosdb.core.datapoints.LegacyDataPointFactory;
-import org.kairosdb.core.datapoints.LongDataPointFactory;
-import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datapoints.NullDataPointFactory;
-import org.kairosdb.core.datapoints.StringDataPointFactory;
+import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.GuiceQueryPluginFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryPluginFactory;
 import org.kairosdb.core.datastore.QueryQueuingManager;
-import org.kairosdb.core.groupby.BinGroupBy;
-import org.kairosdb.core.groupby.GroupByFactory;
-import org.kairosdb.core.groupby.TagGroupBy;
-import org.kairosdb.core.groupby.TimeGroupBy;
-import org.kairosdb.core.groupby.ValueGroupBy;
+import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.http.rest.GuiceQueryPreProcessor;
 import org.kairosdb.core.http.rest.QueryPreProcessorContainer;
 import org.kairosdb.core.http.rest.json.QueryParser;
@@ -82,6 +52,7 @@ import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
+import org.kairosdb.sample.SampleQueryPlugin;
 import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.SimpleStatsReporter;
@@ -93,7 +64,6 @@ import se.ugli.bigqueue.BigArray;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.MissingResourceException;
-import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -139,12 +109,12 @@ public class CoreModule extends AbstractModule
 		return (klass);
 	}
 
-	public void bindConfiguration(Binder binder)
+	public static void bindConfiguration(KairosRootConfig rootConfig, Binder binder)
 	{
 		binder = binder.skipSources(Names.class);
 
-		Config config = m_config.getRawConfig();
-		for (String propertyName : m_config)
+		Config config = rootConfig.getRawConfig();
+		for (String propertyName : rootConfig)
 		{
 			ConfigValue value = config.getValue(propertyName);
 
@@ -152,24 +122,11 @@ public class CoreModule extends AbstractModule
 
 			try
 			{
+				logger.debug(String.format("%s = %s", propertyName, value.unwrapped().toString()));
+
 				//type binding didn't work well for numbers, guice will not convert double to int
-				/*switch (configValueType)
-				{
-					case STRING:
-						binder.bindConstant().annotatedWith(Names.named(propertyName)).to((String) value.unwrapped());
-						break;
-					case BOOLEAN:
-						binder.bindConstant().annotatedWith(Names.named(propertyName)).to((Boolean) value.unwrapped());
-						break;
-					case NUMBER:
-						Number number = (Number) value.unwrapped();
-						binder.bindConstant().annotatedWith(Names.named(propertyName)).to(number.doubleValue());
-				}*/
-
-				//binder.bind(Key.get(String.class, Names.named(propertyName))).toInstance(value);
-				logger.debug("%s = %s", propertyName, value.unwrapped().toString());
-
-				bindConstant().annotatedWith(Names.named(propertyName)).to(value.unwrapped().toString());
+				//So we bind everything as a string and let guice convert - which it does well
+				binder.bindConstant().annotatedWith(Names.named(propertyName)).to(value.unwrapped().toString());
 			}
 			catch (Exception e)
 			{
@@ -178,7 +135,7 @@ public class CoreModule extends AbstractModule
 			}
 		}
 
-		binder.bindListener(Matchers.any(), new ConfigurationTypeListener(m_config));
+		binder.bindListener(Matchers.any(), new ConfigurationTypeListener(rootConfig));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -211,7 +168,7 @@ public class CoreModule extends AbstractModule
 		});
 
 		//Names.bindProperties(binder(), m_config);
-		bindConfiguration(binder());
+		bindConfiguration(m_config, binder());
 		bind(KairosRootConfig.class).toInstance(m_config);
 
 		bind(QueryQueuingManager.class).in(Singleton.class);
@@ -251,6 +208,7 @@ public class CoreModule extends AbstractModule
 		bind(TrimAggregator.class);
 		bind(SmaAggregator.class);
 		bind(FilterAggregator.class);
+		bind(ScoreAggregator.class);
 
 		bind(ValueGroupBy.class);
 		bind(TimeGroupBy.class);
@@ -294,6 +252,8 @@ public class CoreModule extends AbstractModule
 		bindConstant().annotatedWith(Names.named("HOST_IP")).to(hostIp != null ? hostIp: InetAddresses.toAddrString(Util.findPublicIp()));
 
 		bind(QueryPreProcessorContainer.class).to(GuiceQueryPreProcessor.class).in(Singleton.class);
+
+		bind(SampleQueryPlugin.class);
 	}
 
 	@Provides

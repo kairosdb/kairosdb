@@ -2,20 +2,31 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.google.common.base.Splitter;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimap;
+import com.typesafe.config.ConfigException;
+import com.typesafe.config.ConfigValue;
 import org.kairosdb.core.KairosConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
 public class ClusterConfiguration
 {
+	public static final Logger logger = LoggerFactory.getLogger(ClusterConnection.class);
 	private final Splitter PortSplitter = Splitter.on(':')
 			.trimResults().omitEmptyStrings();
 
@@ -33,6 +44,7 @@ public class ClusterConfiguration
 	private final int m_requestRetryCount;
 	private final Map<String, Integer> m_hostList;
 	private final String m_clusterName;
+	private final Multimap<String, String> m_tagIndexedMetrics;
 	private String m_authPassword;
 	private String m_authUser;
 	private String m_localDCName;
@@ -105,6 +117,45 @@ public class ClusterConfiguration
 			m_endTime = Long.MAX_VALUE;
 
 		checkState(m_startTime < m_endTime, "Cluster start time must be before end time");
+
+		m_tagIndexedMetrics = HashMultimap.create();
+		if (config.hasPath("tag_indexed_row_key_lookup_metrics"))
+		{
+			try
+			{
+				KairosConfig indexTagConfig = config.getConfig("tag_indexed_row_key_lookup_metrics");
+
+				for (Map.Entry<String, ConfigValue> configEntry : indexTagConfig.getRawConfig().entrySet())
+				{
+					Object metricTags = configEntry.getValue().unwrapped();
+					if (metricTags instanceof List)
+					{
+						@SuppressWarnings("unchecked")
+						List<String> tagList = (List<String>) metricTags;
+						if (tagList.isEmpty())
+							m_tagIndexedMetrics.put(configEntry.getKey(), "*");
+
+						for (String metricTag : tagList)
+						{
+							m_tagIndexedMetrics.put(configEntry.getKey(), metricTag);
+						}
+					}
+					else
+					{
+						throw new ParseException("tag_indexed_row_key_lookup_metrics must be a list of string or an object, see config documentation.", -1);
+					}
+				}
+
+			}
+			catch (ConfigException.WrongType wt)
+			{
+				List<String> indexedTags = config.getStringList("tag_indexed_row_key_lookup_metrics");
+				for (String indexedTag : indexedTags)
+				{
+					m_tagIndexedMetrics.put(indexedTag, "*");
+				}
+			}
+		}
 	}
 
 	public String getKeyspace()
@@ -210,6 +261,11 @@ public class ClusterConfiguration
 	public boolean containRange(long queryStartTime, long queryEndTime)
 	{
 		return (!(queryEndTime < m_startTime || queryStartTime > m_endTime));
+	}
+
+	public Multimap<String, String> getTagIndexedMetrics()
+	{
+		return m_tagIndexedMetrics;
 	}
 }
 

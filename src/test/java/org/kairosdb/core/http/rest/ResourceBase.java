@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
+import static org.kairosdb.core.CoreModule.bindConfiguration;
+
 public abstract class ResourceBase
 {
     private static final FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new KairosRootConfig()));
@@ -70,28 +72,9 @@ public abstract class ResourceBase
                         typeEncounter.register((InjectionListener<I>) i -> eventBus.register(i));
                     }
                 });
-                bind(String.class).annotatedWith(Names.named(WebServer.JETTY_ADDRESS_PROPERTY)).toInstance("0.0.0.0");
-                bind(Integer.class).annotatedWith(Names.named(WebServer.JETTY_PORT_PROPERTY)).toInstance(9001);
-                bind(String.class).annotatedWith(Names.named(WebServer.JETTY_WEB_ROOT_PROPERTY)).toInstance("bogus");
-                bind(Boolean.class).annotatedWith(Names.named(WebServer.JETTY_SHOW_STACKTRACE)).toInstance(Boolean.FALSE);
-                bind(Datastore.class).toInstance(datastore);
-                bind(ServiceKeyStore.class).toInstance(datastore);
-                bind(KairosDatastore.class).in(Singleton.class);
-                bind(FeaturesResource.class).in(Singleton.class);
-                bind(FeatureProcessor.class).to(KairosFeatureProcessor.class);
-                bind(new TypeLiteral<FeatureProcessingFactory<Aggregator>>() {}).to(TestAggregatorFactory.class);
-                bind(new TypeLiteral<FeatureProcessingFactory<GroupBy>>() {}).to(TestGroupByFactory.class);                bind(QueryParser.class).in(Singleton.class);
-                bind(QueryQueuingManager.class).toInstance(queuingManager);
-                bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
-                bindConstant().annotatedWith(Names.named("kairosdb.datastore.concurrentQueryThreads")).to(1);
-                bindConstant().annotatedWith(Names.named("kairosdb.query_cache.keep_cache_files")).to(false);
-                bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
-                bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
-                bind(SimpleStatsReporter.class);
-                bind(String.class).annotatedWith(Names.named("kairosdb.server.type")).toInstance("ALL");
 
                 KairosRootConfig props = new KairosRootConfig();
-                String configFileName = "kairosdb.properties";
+                String configFileName = "kairosdb.conf";
                 InputStream is = getClass().getClassLoader().getResourceAsStream(configFileName);
                 try
                 {
@@ -105,6 +88,33 @@ public abstract class ResourceBase
 
                 //Names.bindProperties(binder(), props);
                 bind(KairosRootConfig.class).toInstance(props);
+
+                Map<String, String> testProperties = new HashMap<>();
+
+                testProperties.put(WebServer.JETTY_ADDRESS_PROPERTY, "0.0.0.0");
+                testProperties.put(WebServer.JETTY_PORT_PROPERTY, "9001");
+                testProperties.put(WebServer.JETTY_WEB_ROOT_PROPERTY, "bogus");
+                testProperties.put(WebServer.JETTY_SHOW_STACKTRACE, "false");
+                testProperties.put("kairosdb.datastore.concurrentQueryThreads", "1");
+                testProperties.put("kairosdb.query_cache.keep_cache_files", "false");
+                testProperties.put("kairosdb.server.type", "ALL");
+
+                props.load(testProperties);
+                bindConfiguration(props, binder());
+
+                bind(Datastore.class).toInstance(datastore);
+                bind(ServiceKeyStore.class).toInstance(datastore);
+                bind(KairosDatastore.class).in(Singleton.class);
+                bind(FeaturesResource.class).in(Singleton.class);
+                bind(FeatureProcessor.class).to(KairosFeatureProcessor.class);
+                bind(new TypeLiteral<FeatureProcessingFactory<Aggregator>>() {}).to(TestAggregatorFactory.class);
+                bind(new TypeLiteral<FeatureProcessingFactory<GroupBy>>() {}).to(TestGroupByFactory.class);                bind(QueryParser.class).in(Singleton.class);
+                bind(QueryQueuingManager.class).toInstance(queuingManager);
+                bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
+                bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
+                bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
+                bind(SimpleStatsReporter.class);
+
 
                 bind(DoubleDataPointFactory.class)
                         .to(DoubleDataPointFactoryImpl.class).in(Singleton.class);
@@ -222,6 +232,11 @@ public abstract class ResourceBase
         public TagSet queryMetricTags(DatastoreMetricQuery query)
         {
             return null;
+        }
+
+        @Override
+        public void indexMetricTags(DatastoreMetricQuery query, int indexTtl) throws DatastoreException
+        {
         }
 
         @Override

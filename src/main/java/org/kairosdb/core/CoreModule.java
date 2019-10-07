@@ -32,6 +32,8 @@ import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.jobs.CacheFileCleaner;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
+import org.kairosdb.core.tiers.MetricTiersConfiguration;
+import org.kairosdb.core.tiers.MetricTiersConfigurationUpdateJob;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.Util;
 
@@ -79,6 +81,8 @@ public class CoreModule extends AbstractModule
 		bind(QueryPluginFactory.class).to(GuiceQueryPluginFactory.class).in(Singleton.class);
 		bind(QueryParser.class).in(Singleton.class);
 		bind(CacheFileCleaner.class).in(Singleton.class);
+		bind(MetricTiersConfiguration.class).in(Singleton.class);
+		bind(MetricTiersConfigurationUpdateJob.class).in(Singleton.class);
 		bind(KairosDBScheduler.class).in(Singleton.class);
 		bind(MemoryMonitor.class).in(Singleton.class);
 

@@ -49,6 +49,7 @@ import org.kairosdb.core.http.rest.metrics.QueryMeasurementProvider;
 import org.kairosdb.core.opentracing.HttpHeadersCarrier;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.core.tiers.QueryRejectedException;
 import org.kairosdb.datastore.cassandra.MaxRowKeysForQueryExceededException;
 import org.kairosdb.util.MemoryMonitorException;
 import org.slf4j.Logger;
@@ -356,6 +357,10 @@ public class MetricsResource implements KairosMetricReporter {
 			span.log(e.getMessage());
 			System.gc();
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		} catch (QueryRejectedException e) {
+			logger.error("Query was rejected.", e);
+			span.log(e.getMessage());
+			return setHeaders(Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(new ErrorResponse(e.getMessage()))).build();
 		} catch (Exception e) {
 			logger.error("Query failed.", e);
 			Tags.ERROR.set(span, Boolean.TRUE);
@@ -498,6 +503,10 @@ public class MetricsResource implements KairosMetricReporter {
 			span.setTag("query_timeout", true);
 			span.log(e.getMessage());
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		} catch (QueryRejectedException e) {
+			logger.error("Query was rejected.", e);
+			span.log(e.getMessage());
+			return setHeaders(Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(new ErrorResponse(e.getMessage()))).build();
 		} catch (Exception e) {
 			logger.error("Query failed.", e);
 			Tags.ERROR.set(span, Boolean.TRUE);

@@ -37,6 +37,7 @@ import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.core.tiers.MetricTiersConfiguration;
+import org.kairosdb.core.tiers.QueryRejectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -151,8 +152,13 @@ public class QueryParser
 		}
 	}
 
-	public List<QueryMetric> parseQueryMetric(String json) throws QueryException, BeanValidationException
-	{
+	private void validateMetricTier(final Metric metric) throws QueryRejectedException {
+		if (!m_metricTiersConfig.isMetricActiveForQuery(metric.getName())) {
+			throw new QueryRejectedException(metric.getName());
+		}
+	}
+
+	public List<QueryMetric> parseQueryMetric(String json) throws QueryException, BeanValidationException, QueryRejectedException {
 		List<QueryMetric> ret = new ArrayList<QueryMetric>();
 
 		JsonParser parser = new JsonParser();
@@ -179,11 +185,11 @@ public class QueryParser
 		for (int I = 0; I < metricsArray.size(); I++)
 		{
 			String context = "query.metric[" + I + "]";
-			try
-			{
+			try {
 				Metric metric = m_gson.fromJson(metricsArray.get(I), Metric.class);
 
 				validateObject(metric, context);
+				validateMetricTier(metric);
 
 				long startTime = getStartTime(query);
 				QueryMetric queryMetric = new QueryMetric(startTime, query.getCacheTime(),
@@ -203,23 +209,20 @@ public class QueryParser
 				JsonObject jsMetric = metricsArray.get(I).getAsJsonObject();
 
 				JsonElement group_by = jsMetric.get("group_by");
-				if (group_by != null)
-				{
+				if (group_by != null) {
 					JsonArray groupBys = group_by.getAsJsonArray();
 					parseGroupBy(context, queryMetric, groupBys);
 				}
 
 				JsonElement aggregators = jsMetric.get("aggregators");
-				if (aggregators != null)
-				{
+				if (aggregators != null) {
 					JsonArray asJsonArray = aggregators.getAsJsonArray();
 					if (asJsonArray.size() > 0)
 						parseAggregators(context, queryMetric, asJsonArray, query.getTimeZone());
 				}
 
 				JsonElement plugins = jsMetric.get("plugins");
-				if (plugins != null)
-				{
+				if (plugins != null) {
 					JsonArray pluginArray = plugins.getAsJsonArray();
 					if (pluginArray.size() > 0)
 						parsePlugins(context, queryMetric, pluginArray);
@@ -232,9 +235,7 @@ public class QueryParser
 				queryMetric.setTags(metric.getTags());
 
 				ret.add(queryMetric);
-			}
-			catch (ContextualJsonSyntaxException e)
-			{
+			} catch (ContextualJsonSyntaxException e) {
 				throw new BeanValidationException(new SimpleConstraintViolation(e.getContext(), e.getMessage()), context);
 			}
 		}

@@ -27,6 +27,7 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
+import org.kairosdb.core.tiers.QueryRejectedException;
 import org.kairosdb.core.tiers.TestMetricTierConfiguration;
 
 import java.io.IOException;
@@ -179,15 +180,13 @@ public class QueryParserTest
 	}
 
 	@Test
-	public void test_absoluteStartTime_before_epoch_invalid() throws IOException, QueryException
-	{
+	public void test_absoluteStartTime_before_epoch_invalid() throws IOException, QueryException, QueryRejectedException {
 		String json = Resources.toString(Resources.getResource("query-metric-start_absolute-before-epoch.json"), Charsets.UTF_8);
 		parser.parseQueryMetric(json);
 	}
 
 	@Test
-	public void test_relativeStartTime_before_epoch_valid() throws IOException, QueryException
-	{
+	public void test_relativeStartTime_before_epoch_valid() throws IOException, QueryException, QueryRejectedException {
 		String json = Resources.toString(Resources.getResource("query-metric-relative-startTime-before-epoch.json"), Charsets.UTF_8);
 		parser.parseQueryMetric(json);
 	}
@@ -321,8 +320,7 @@ public class QueryParserTest
 	}
 	
 	@Test
-	public void test_aggregator_sum_noSampling_valid() throws IOException, QueryException
-	{
+	public void test_aggregator_sum_noSampling_valid() throws IOException, QueryException, QueryRejectedException {
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sum-no-sampling.json"), Charsets.UTF_8);
 
 		parser.parseQueryMetric(json);
@@ -464,7 +462,7 @@ public class QueryParserTest
 			parser.parseQueryMetric(json);
 			fail("Expected BeanValidationException");
 		}
-		catch (QueryException e)
+		catch (QueryException | QueryRejectedException e)
 		{
 			fail("Expected BeanValidationException");
 		}

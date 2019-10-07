@@ -16,6 +16,35 @@
 
 package org.kairosdb.core.http.rest.json;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.TreeMultimap;
+import com.google.gson.*;
+import com.google.gson.annotations.SerializedName;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import org.apache.bval.constraints.NotEmpty;
+import org.apache.bval.jsr303.ApacheValidationProvider;
+import org.joda.time.DateTimeZone;
+import org.kairosdb.core.aggregator.*;
+import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.groupby.GroupBy;
+import org.kairosdb.core.groupby.GroupByFactory;
+import org.kairosdb.core.http.rest.BeanValidationException;
+import org.kairosdb.core.http.rest.QueryException;
+import org.kairosdb.core.tiers.MetricTiersConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.validation.*;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Null;
+import javax.validation.metadata.ConstraintDescriptor;
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -23,67 +52,7 @@ import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-import javax.validation.ConstraintViolation;
-import javax.validation.Path;
-import javax.validation.Valid;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Null;
-import javax.validation.metadata.ConstraintDescriptor;
-
-import com.google.inject.name.Named;
-import org.apache.bval.constraints.NotEmpty;
-import org.apache.bval.jsr303.ApacheValidationProvider;
-import org.joda.time.DateTimeZone;
-import org.kairosdb.core.aggregator.Aggregator;
-import org.kairosdb.core.aggregator.AggregatorFactory;
-import org.kairosdb.core.aggregator.GroupByAware;
-import org.kairosdb.core.aggregator.RangeAggregator;
-import org.kairosdb.core.aggregator.TimezoneAware;
-import org.kairosdb.core.datastore.Order;
-import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.datastore.QueryPlugin;
-import org.kairosdb.core.datastore.QueryPluginFactory;
-import org.kairosdb.core.datastore.TimeUnit;
-import org.kairosdb.core.groupby.GroupBy;
-import org.kairosdb.core.groupby.GroupByFactory;
-import org.kairosdb.core.http.rest.BeanValidationException;
-import org.kairosdb.core.http.rest.QueryException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.SetMultimap;
-import com.google.common.collect.TreeMultimap;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
-import com.google.gson.TypeAdapter;
-import com.google.gson.TypeAdapterFactory;
-import com.google.gson.annotations.SerializedName;
-import com.google.gson.reflect.TypeToken;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.JsonWriter;
-import com.google.inject.Inject;
+import java.util.*;
 
 
 public class QueryParser
@@ -104,10 +73,13 @@ public class QueryParser
 	@Inject(optional = true)
 	@Named(DATAPOINT_TTL)
 	private long datapoints_ttl = 3024000;
+	private MetricTiersConfiguration m_metricTiersConfig;
 
 	@Inject
-	public QueryParser(AggregatorFactory aggregatorFactory, GroupByFactory groupByFactory,
-	                   QueryPluginFactory pluginFactory)
+	public QueryParser(AggregatorFactory aggregatorFactory,
+					   GroupByFactory groupByFactory,
+					   QueryPluginFactory pluginFactory,
+					   MetricTiersConfiguration metricTiersConfig)
 	{
 		m_aggregatorFactory = aggregatorFactory;
 		m_groupByFactory = groupByFactory;
@@ -123,6 +95,7 @@ public class QueryParser
 		builder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES);
 
 		m_gson = builder.create();
+		m_metricTiersConfig = metricTiersConfig;
 	}
 
 	private PropertyDescriptor getPropertyDescriptor(Class objClass, String property) throws IntrospectionException
@@ -450,6 +423,10 @@ public class QueryParser
 		else
 		{
 			throw new BeanValidationException(new SimpleConstraintViolation("start_time", "relative or absolute time must be set"), "query");
+		}
+
+		if (m_metricTiersConfig.getQueryDistanceHoursLimit() > 0) {
+			startTime = Math.max(startTime, now - m_metricTiersConfig.getQueryDistanceHoursLimit() * 60 * 60_000);
 		}
 		// ensure that: now-TTL <= startTime <= now
 		startTime = Math.max(Math.min(startTime, now), now - datapoints_ttl * 1000);

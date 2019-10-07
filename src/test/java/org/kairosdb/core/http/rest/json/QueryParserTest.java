@@ -20,7 +20,6 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datastore.QueryMetric;
@@ -28,6 +27,7 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
+import org.kairosdb.core.tiers.TestMetricTierConfiguration;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -44,7 +44,7 @@ public class QueryParserTest
 	@Before
 	public void setup() throws KairosDBException
 	{
-		parser = new QueryParser(new TestAggregatorFactory(), new TestGroupByFactory(), new TestQueryPluginFactory());
+		parser = new QueryParser(new TestAggregatorFactory(), new TestGroupByFactory(), new TestQueryPluginFactory(), new TestMetricTierConfiguration());
 	}
 
 	@Test

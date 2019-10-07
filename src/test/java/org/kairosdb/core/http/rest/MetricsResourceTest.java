@@ -39,6 +39,7 @@ import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
+import org.kairosdb.core.tiers.MetricTiersConfiguration;
 import org.kairosdb.datastore.h2.orm.MetricIdResults;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
@@ -91,6 +92,7 @@ public class MetricsResourceTest
 				bind(KairosDatastore.class).in(Singleton.class);
 				bind(AggregatorFactory.class).to(TestAggregatorFactory.class);
 				bind(GroupByFactory.class).to(TestGroupByFactory.class);
+				bind(MetricTiersConfiguration.class).in(Singleton.class);
 				bind(QueryParser.class).in(Singleton.class);
 				bind(new TypeLiteral<List<DataPointListener>>(){}).toProvider(DataPointListenerProvider.class);
 				bind(QueryQueuingManager.class).toInstance(queuingManager);

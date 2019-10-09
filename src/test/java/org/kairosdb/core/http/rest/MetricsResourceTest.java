@@ -40,7 +40,6 @@ import org.kairosdb.core.http.WebServletModule;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
 import org.kairosdb.core.tiers.MetricTiersConfiguration;
-import org.kairosdb.datastore.h2.orm.MetricIdResults;
 import org.kairosdb.testing.Client;
 import org.kairosdb.testing.JsonResponse;
 import org.kairosdb.util.LoggingUtils;

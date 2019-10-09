@@ -13,7 +13,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zalando.stups.tokens.AccessToken;
+import org.zalando.stups.tokens.AccessTokens;
 
 import java.io.IOException;
 import java.util.*;
@@ -26,7 +26,7 @@ public class MetricTiersConfigurationUpdateJob implements KairosDBJob {
     private MetricTiersConfiguration config;
     private ObjectMapper objectMapper;
     private Executor executor;
-    private AccessToken accessToken;
+    private AccessTokens accessTokens;
     private String schedule;
     private String hostname;
 
@@ -37,13 +37,13 @@ public class MetricTiersConfigurationUpdateJob implements KairosDBJob {
     public MetricTiersConfigurationUpdateJob(final MetricTiersConfiguration config,
                                              final ObjectMapper objectMapper,
                                              final Executor executor,
-                                             final AccessToken accessToken,
+                                             final AccessTokens accessTokens,
                                              @Named("kairosdb.tiers.schedule") final String schedule,
                                              @Named("zmon.hostname") final String hostname) {
         this.config = config;
         this.objectMapper = objectMapper;
         this.executor = executor;
-        this.accessToken = accessToken;
+        this.accessTokens = accessTokens;
         this.schedule = schedule;
         this.hostname = hostname;
     }
@@ -89,7 +89,7 @@ public class MetricTiersConfigurationUpdateJob implements KairosDBJob {
 
     Optional<JsonNode> getEntityData(final String entityId) throws IOException {
         final String uri = hostname + "/api/v1/entities/" + entityId;
-        final Request request = Request.Get(uri).addHeader("Authorization", "Bearer " + accessToken.getToken());
+        final Request request = Request.Get(uri).addHeader("Authorization", "Bearer " + accessTokens.get("zmon-read"));
         final String response = executor.execute(request).returnContent().toString();
         final JsonNode jsonNode = objectMapper.readTree(response);
         return Optional.ofNullable(jsonNode.get("data"));

@@ -17,6 +17,7 @@ import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
+import org.kairosdb.core.jobs.CacheFileCleaner;
 import org.kairosdb.datastore.h2.H2Datastore;
 import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
@@ -45,10 +46,11 @@ public class RollupProcessorImplTest
 	private static RollupTaskStatusStore mockStatusStore;
 
 	@BeforeClass
-	public static void setupDatabase() throws KairosDBException
+	public static void setupDatabase() throws KairosDBException, IOException
 	{
 
 		KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
+		FileUtils.deleteDirectory(new File(DB_PATH));
 		H2Datastore h2Datastore = new H2Datastore(DB_PATH, dataPointFactory, eventBus, "regex:");
 
 		datastore = new KairosDatastore(h2Datastore,

@@ -267,15 +267,7 @@ public class KairosDatastore implements KairosPostConstructInit
 		{
 			dq = new DatastoreQueryImpl(metric);
 		}
-		catch (UnsupportedEncodingException e)
-		{
-			throw new DatastoreException(e);
-		}
-		catch (NoSuchAlgorithmException e)
-		{
-			throw new DatastoreException(e);
-		}
-		catch (InterruptedException e)
+		catch (UnsupportedEncodingException | NoSuchAlgorithmException | InterruptedException e)
 		{
 			throw new DatastoreException(e);
 		}

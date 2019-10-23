@@ -1,6 +1,7 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.ProtocolOptions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -33,6 +34,7 @@ public class ClusterConfiguration
 	private final String m_keyspace;
 	private final ConsistencyLevel m_readConsistencyLevel;
 	private final ConsistencyLevel m_writeConsistencyLevel;
+	private final ProtocolOptions.Compression m_compression;
 	private final boolean m_useSsl;
 	private final int m_maxQueueSize;
 	private final int m_connectionsLocalCore;
@@ -61,6 +63,7 @@ public class ClusterConfiguration
 		m_clusterName = config.getString("name", "default");
 		m_readConsistencyLevel = ConsistencyLevel.valueOf(config.getString("read_consistency_level", "ONE"));
 		m_writeConsistencyLevel = ConsistencyLevel.valueOf(config.getString("write_consistency_level", "QUORUM"));
+		m_compression = ProtocolOptions.Compression.valueOf(config.getString("protocol_compression", "LZ4"));
 
 		m_useSsl = config.getBoolean("use_ssl", false);
 		m_maxQueueSize = config.getInt("max_queue_size", 500);
@@ -171,6 +174,11 @@ public class ClusterConfiguration
 	public ConsistencyLevel getWriteConsistencyLevel()
 	{
 		return m_writeConsistencyLevel;
+	}
+
+	public ProtocolOptions.Compression getCompression()
+	{
+		return m_compression;
 	}
 
 	public boolean isUseSsl()

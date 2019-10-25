@@ -61,6 +61,10 @@ public class CQLBatch
 		m_batchStats = batchStats;
 		m_now = System.currentTimeMillis();
 		m_loadBalancingPolicy = loadBalancingPolicy;
+
+		metricNamesBatch.setConsistencyLevel(consistencyLevel);
+		dataPointBatch.setConsistencyLevel(consistencyLevel);
+		rowKeyBatch.setConsistencyLevel(consistencyLevel);
 	}
 
 	public void addRowKey(String metricName, DataPointsRowKey rowKey, int rowKeyTtl)
@@ -110,6 +114,7 @@ public class CQLBatch
 			if (batchStatement == null)
 			{
 				batchStatement = new BatchStatement(BatchStatement.Type.UNLOGGED);
+				batchStatement.setConsistencyLevel(m_consistencyLevel);
 				m_batchMap.put(hostKey, batchStatement);
 			}
 			batchStatement.add(boundStatement);

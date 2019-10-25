@@ -40,9 +40,9 @@ public class CQLBatch
 
 	private Map<Host, BatchStatement> m_batchMap = new HashMap<>();
 
-	private BatchStatement metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-	private BatchStatement dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-	private BatchStatement rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+	private BatchStatement m_metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+	private BatchStatement m_dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+	private BatchStatement m_rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 
 	private List<DataPointsRowKey> m_newRowKeys = new ArrayList<>();
 	private List<String> m_newMetrics = new ArrayList<>();
@@ -62,9 +62,9 @@ public class CQLBatch
 		m_now = System.currentTimeMillis();
 		m_loadBalancingPolicy = loadBalancingPolicy;
 
-		metricNamesBatch.setConsistencyLevel(consistencyLevel);
-		dataPointBatch.setConsistencyLevel(consistencyLevel);
-		rowKeyBatch.setConsistencyLevel(consistencyLevel);
+		m_metricNamesBatch.setConsistencyLevel(consistencyLevel);
+		m_dataPointBatch.setConsistencyLevel(consistencyLevel);
+		m_rowKeyBatch.setConsistencyLevel(consistencyLevel);
 	}
 
 	public void addRowKey(String metricName, DataPointsRowKey rowKey, int rowKeyTtl)
@@ -83,13 +83,13 @@ public class CQLBatch
 
 		bs.setConsistencyLevel(m_consistencyLevel);
 
-		rowKeyBatch.add(bs);
+		m_rowKeyBatch.add(bs);
 
 		RowKeyLookup rowKeyLookup = m_clusterConnection.getRowKeyLookupForMetric(rowKey.getMetricName());
 		for (Statement rowKeyInsertStmt : rowKeyLookup.createInsertStatements(rowKey, rowKeyTtl))
 		{
 			rowKeyInsertStmt.setConsistencyLevel(m_consistencyLevel);
-			rowKeyBatch.add(rowKeyInsertStmt);
+			m_rowKeyBatch.add(rowKeyInsertStmt);
 		}
 	}
 
@@ -99,7 +99,7 @@ public class CQLBatch
 		for (Statement rowKeyInsertStmt : rowKeyLookup.createIndexStatements(rowKey, rowKeyTtl))
 		{
 			rowKeyInsertStmt.setConsistencyLevel(m_consistencyLevel);
-			rowKeyBatch.add(rowKeyInsertStmt);
+			m_rowKeyBatch.add(rowKeyInsertStmt);
 		}
 	}
 
@@ -110,7 +110,7 @@ public class CQLBatch
 		bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
 		bs.setString(1, metricName);
 		bs.setConsistencyLevel(m_consistencyLevel);
-		metricNamesBatch.add(bs);
+		m_metricNamesBatch.add(bs);
 	}
 
 	private void addBoundStatement(BoundStatement boundStatement)
@@ -131,7 +131,7 @@ public class CQLBatch
 		}
 		else
 		{
-			dataPointBatch.add(boundStatement);
+			m_dataPointBatch.add(boundStatement);
 		}
 	}
 
@@ -172,17 +172,17 @@ public class CQLBatch
 
 	public void submitBatch()
 	{
-		if (metricNamesBatch.size() != 0)
+		if (m_metricNamesBatch.size() != 0)
 		{
-			m_clusterConnection.executeAsync(metricNamesBatch);
-			m_batchStats.addNameBatch(metricNamesBatch.size());
+			m_clusterConnection.executeAsync(m_metricNamesBatch);
+			m_batchStats.addNameBatch(m_metricNamesBatch.size());
 		}
 
-		if (rowKeyBatch.size() != 0)
+		if (m_rowKeyBatch.size() != 0)
 		{
-			//rowKeyBatch.enableTracing();
-			m_clusterConnection.executeAsync(rowKeyBatch);
-			m_batchStats.addRowKeyBatch(rowKeyBatch.size());
+			//m_rowKeyBatch.enableTracing();
+			m_clusterConnection.executeAsync(m_rowKeyBatch);
+			m_batchStats.addRowKeyBatch(m_rowKeyBatch.size());
 		}
 
 		for (BatchStatement batchStatement : m_batchMap.values())
@@ -197,10 +197,10 @@ public class CQLBatch
 		}
 
 		//Catch all in case of a load balancing problem
-		if (dataPointBatch.size() != 0)
+		if (m_dataPointBatch.size() != 0)
 		{
-			m_clusterConnection.execute(dataPointBatch);
-			m_batchStats.addDatapointsBatch(dataPointBatch.size());
+			m_clusterConnection.execute(m_dataPointBatch);
+			m_batchStats.addDatapointsBatch(m_dataPointBatch.size());
 		}
 	}
 

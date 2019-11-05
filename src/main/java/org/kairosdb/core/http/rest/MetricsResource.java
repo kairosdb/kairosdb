@@ -49,7 +49,6 @@ import org.kairosdb.core.http.rest.metrics.QueryMeasurementProvider;
 import org.kairosdb.core.opentracing.HttpHeadersCarrier;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.core.reporting.ThreadReporter;
-import org.kairosdb.core.tiers.QueryRejectedException;
 import org.kairosdb.datastore.cassandra.MaxRowKeysForQueryExceededException;
 import org.kairosdb.util.MemoryMonitorException;
 import org.slf4j.Logger;
@@ -233,7 +232,7 @@ public class MetricsResource implements KairosMetricReporter {
 	public Response add(@Context HttpHeaders httpHeaders, InputStream json) {
 		Span span = createSpan("datapoints_insert", httpHeaders);
 
-		try (Scope scope = tracer.scopeManager().activate(span, false)) {
+		try (Scope scope = tracer.scopeManager().activate(span)) {
 			DataPointsParser parser = new DataPointsParser(datastore, new InputStreamReader(json, "UTF-8"),
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
@@ -299,7 +298,7 @@ public class MetricsResource implements KairosMetricReporter {
 
 		Span span = createSpan("datapoints_query_tags", httpHeaders);
 
-		try (Scope scope = tracer.scopeManager().activate(span, false)) {
+		try (Scope scope = tracer.scopeManager().activate(span)) {
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new FileWriter(respFile));
 
@@ -310,7 +309,13 @@ public class MetricsResource implements KairosMetricReporter {
 			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
 			for (QueryMetric query : queries) {
-				List<DataPointGroup> result = datastore.queryTags(query);
+				List<DataPointGroup> result;
+				if (query.isRejected()) {
+					logger.warn("Query to metric {} was rejected due to tier limitations", query.getName());
+					result = new ArrayList<>();
+				} else {
+					result = datastore.queryTags(query);
+				}
 
 				try {
 					jsonResponse.formatQuery(result, false, -1);
@@ -357,10 +362,6 @@ public class MetricsResource implements KairosMetricReporter {
 			span.log(e.getMessage());
 			System.gc();
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
-		} catch (QueryRejectedException e) {
-			logger.error("Query was rejected.", e);
-			span.log(e.getMessage());
-			return setHeaders(Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(new ErrorResponse(e.getMessage()))).build();
 		} catch (Exception e) {
 			logger.error("Query failed.", e);
 			Tags.ERROR.set(span, Boolean.TRUE);
@@ -406,16 +407,15 @@ public class MetricsResource implements KairosMetricReporter {
 
 
 		final Span span = createSpan("datapoints_query", httpHeaders);
-		try (Scope scope = tracer.scopeManager().activate(span, false)) {
+		try (Scope scope = tracer.scopeManager().activate(span)) {
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(respFile), "UTF-8"));
 			JsonResponse jsonResponse = new JsonResponse(writer);
 			jsonResponse.begin();
 			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
-
 			return limiter.callWithTimeout(() -> {
-				try (Scope internalScope = tracer.scopeManager().activate(span, false)) {
+				try (Scope internalScope = tracer.scopeManager().activate(span)) {
 
 					for (QueryMetric query : queries) {
 						Map<String, Collection<String>> tags = query.getTags().asMap();
@@ -436,19 +436,30 @@ public class MetricsResource implements KairosMetricReporter {
 						queryMeasurementProvider.measureSpanForMetric(query);
 						queryMeasurementProvider.measureDistanceForMetric(query);
 
-						DatastoreQuery dq = datastore.createQuery(query);
+						DatastoreQuery dq = null;
+						int sampleSize = 0;
 						try {
-							List<DataPointGroup> results = dq.execute();
-							jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
+							List<DataPointGroup> results;
+							if (query.isRejected()) {
+								logger.warn("Query to metric {} was rejected due to tier limitations", query.getName());
+								results = new ArrayList<>();
+							} else {
+								dq = datastore.createQuery(query);
+								results = dq.execute();
+								sampleSize = dq.getSampleSize();
+							}
+							jsonResponse.formatQuery(results, query.isExcludeTags(), sampleSize);
 						} catch (Throwable e) {
 							queryMeasurementProvider.measureSpanError(query);
 							queryMeasurementProvider.measureDistanceError(query);
 							throw e;
 						} finally {
-							m_datapointsCount.addAndGet(dq.getSampleSize());
+							m_datapointsCount.addAndGet(sampleSize);
 							queryMeasurementProvider.measureSpanSuccess(query);
 							queryMeasurementProvider.measureDistanceSuccess(query);
-							dq.close();
+							if (dq != null) {
+								dq.close();
+							}
 						}
 					}
 
@@ -503,10 +514,6 @@ public class MetricsResource implements KairosMetricReporter {
 			span.setTag("query_timeout", true);
 			span.log(e.getMessage());
 			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
-		} catch (QueryRejectedException e) {
-			logger.error("Query was rejected.", e);
-			span.log(e.getMessage());
-			return setHeaders(Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(new ErrorResponse(e.getMessage()))).build();
 		} catch (Exception e) {
 			logger.error("Query failed.", e);
 			Tags.ERROR.set(span, Boolean.TRUE);
@@ -541,9 +548,7 @@ public class MetricsResource implements KairosMetricReporter {
 
 		Span span = createSpan("datapoints_delete", httpHeaders);
 
-		try (Scope scope = tracer.scopeManager().activate(span, false)) {
-			span = scope.span();
-
+		try (Scope scope = tracer.scopeManager().activate(span)) {
 			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
 			for (QueryMetric query : queries) {
@@ -616,7 +621,7 @@ public class MetricsResource implements KairosMetricReporter {
 	public Response metricDelete(@Context HttpHeaders httpHeaders, @PathParam("metricName") String metricName) throws Exception {
 		Span span = createSpan("delete_metric", httpHeaders);
 
-		try (Scope scope = tracer.scopeManager().activate(span, false)) {
+		try (Scope scope = tracer.scopeManager().activate(span)) {
 			QueryMetric query = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, metricName);
 			datastore.delete(query);
 

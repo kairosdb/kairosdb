@@ -43,6 +43,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	private UUID uuid;
 	private String loggingType;
 	private boolean loggable;
+	private boolean rejected;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
@@ -225,5 +226,13 @@ public class QueryMetric implements DatastoreMetricQuery
 
 	public void setLoggable(boolean loggable) {
 		this.loggable = loggable;
+	}
+
+	public void setRejected(boolean rejected) {
+		this.rejected = rejected;
+	}
+
+	public boolean isRejected() {
+		return rejected;
 	}
 }

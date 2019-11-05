@@ -37,7 +37,6 @@ import org.kairosdb.core.groupby.GroupByFactory;
 import org.kairosdb.core.http.rest.BeanValidationException;
 import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.core.tiers.MetricTiersConfiguration;
-import org.kairosdb.core.tiers.QueryRejectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -152,13 +151,11 @@ public class QueryParser
 		}
 	}
 
-	private void validateMetricTier(final Metric metric) throws QueryRejectedException {
-		if (!m_metricTiersConfig.isMetricActiveForQuery(metric.getName())) {
-			throw new QueryRejectedException(metric.getName());
-		}
+	private boolean isMetricRejected(final Metric metric) {
+		return !m_metricTiersConfig.isMetricActiveForQuery(metric.getName());
 	}
 
-	public List<QueryMetric> parseQueryMetric(String json) throws QueryException, BeanValidationException, QueryRejectedException {
+	public List<QueryMetric> parseQueryMetric(String json) throws QueryException, BeanValidationException {
 		List<QueryMetric> ret = new ArrayList<QueryMetric>();
 
 		JsonParser parser = new JsonParser();
@@ -189,7 +186,6 @@ public class QueryParser
 				Metric metric = m_gson.fromJson(metricsArray.get(I), Metric.class);
 
 				validateObject(metric, context);
-				validateMetricTier(metric);
 
 				long startTime = getStartTime(query);
 				QueryMetric queryMetric = new QueryMetric(startTime, query.getCacheTime(),
@@ -233,6 +229,7 @@ public class QueryParser
 					queryMetric.setOrder(Order.fromString(order.getAsString(), context));
 
 				queryMetric.setTags(metric.getTags());
+				queryMetric.setRejected(isMetricRejected(metric));
 
 				ret.add(queryMetric);
 			} catch (ContextualJsonSyntaxException e) {
@@ -428,6 +425,7 @@ public class QueryParser
 
 		if (m_metricTiersConfig.getQueryDistanceHoursLimit() > 0) {
 			startTime = Math.max(startTime, now - m_metricTiersConfig.getQueryDistanceHoursLimit() * 60 * 60_000);
+			logger.debug("Start time was changed to {}", startTime);
 		}
 		// ensure that: now-TTL <= startTime <= now
 		startTime = Math.max(Math.min(startTime, now), now - datapoints_ttl * 1000);

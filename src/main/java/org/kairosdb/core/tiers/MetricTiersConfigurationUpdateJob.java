@@ -61,8 +61,15 @@ public class MetricTiersConfigurationUpdateJob implements KairosDBJob {
         logger.debug("Updating metric tiers configuration");
         try {
             final Map<String, Set<Integer>> checkTiers = getCheckTiers();
+            logger.debug("Received check tiers:  critical: {}, important: {}",
+                    checkTiers.get("critical").size(), checkTiers.get("important").size());
+
             final Map<String, Integer> limitConfig = getLimitConfig();
+            logger.debug("Received limit config: query_max_check_tier: {}, query_distance_hours_limit: {}",
+                    limitConfig.get("query_max_check_tier"), limitConfig.get("query_distance_hours_limit"));
+
             config.update(checkTiers, limitConfig);
+            logger.debug("Config updated");
         } catch (IOException e) {
             logger.error("Metric tiers configuration update failed", e);
         }

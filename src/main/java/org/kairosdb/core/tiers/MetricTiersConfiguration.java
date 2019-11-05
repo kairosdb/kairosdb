@@ -38,7 +38,7 @@ public class MetricTiersConfiguration {
     }
 
     void update(final Map<String, Set<Integer>> checkTiers,
-                        final Map<String, Integer> limitConfig) {
+                final Map<String, Integer> limitConfig) {
         this.criticalChecks = checkTiers.get("critical");
         this.importantChecks = checkTiers.get("important");
 

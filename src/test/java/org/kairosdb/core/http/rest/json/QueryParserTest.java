@@ -77,6 +77,24 @@ public class QueryParserTest
 	}
 
 	@Test
+	public void test_absolute_date_overrides() throws Exception
+	{
+		String json = Resources.toString(Resources.getResource("query-metric-absolute-dates-with-override.json"), Charsets.UTF_8);
+
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
+
+		assertThat(results.size(), equalTo(1));
+
+		QueryMetric queryMetric = results.get(0);
+		assertThat(queryMetric.getName(), equalTo("abc.123"));
+		assertThat(queryMetric.getStartTime(), equalTo(784041331L));
+		assertThat(queryMetric.getEndTime(), equalTo(788879731L));
+		assertThat(queryMetric.getAggregators().size(), equalTo(1));
+		assertThat(queryMetric.getGroupBys().size(), equalTo(0));
+	}
+
+
+	@Test
 	public void test_withNoAggregators() throws Exception
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-no-aggregators.json"), Charsets.UTF_8);

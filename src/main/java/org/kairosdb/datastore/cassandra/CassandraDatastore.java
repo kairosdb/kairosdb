@@ -905,13 +905,13 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         List<ResultSetFuture> futures;
 
         if (m_cassandraConfiguration.isUseTimeIndexRead()) {
-            index = "row_time_key_split_index";
+            index = "row_time_key_split_index:" + useSplitField;
             futures = calculateReadTimeBuckets(startTime, endTime)
                     .stream()
                     .flatMap(bucket -> useSplit.stream().map(useSplitValue -> collectFromRowTimeKeySplitIndexAsync(query, useSplitField, useSplitValue, bucket, limit)))
                     .collect(Collectors.toList());
         } else {
-            index = "row_key_split_index";
+            index = "row_key_split_index:" + useSplitField;
             futures = useSplit.stream()
                     .map(useSplitValue -> collectFromRowKeySplitIndexAsync(query, useSplitField, useSplitValue, startTime, endTime, limit))
                     .collect(Collectors.toList());

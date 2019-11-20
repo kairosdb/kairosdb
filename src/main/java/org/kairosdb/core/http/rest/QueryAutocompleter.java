@@ -31,14 +31,20 @@ public class QueryAutocompleter {
         final SetMultimap<String, String> tags = query.getTags();
         final Set<String> keys = tags.get(KEY_TAG_NAME);
         final Set<String> metrics = new HashSet<>();
+        boolean keyHasWildCard = false;
         for (final String key : keys) {
+            if (isWildcard(key)) {
+                keyHasWildCard = true;
+            }
             final String metric = extractMetricName(key);
             if (isWildcard(metric)) {
                 return;
             }
             metrics.add(metric);
         }
-        tags.putAll(METRIC_TAG_NAME, metrics);
+        if (keyHasWildCard) {
+            tags.putAll(METRIC_TAG_NAME, metrics);
+        }
     }
 
     private String extractMetricName(final String key) {
@@ -54,8 +60,8 @@ public class QueryAutocompleter {
     }
 
 
-    private boolean isWildcard(final String metric) {
-        return metric == null || metric.contains("*") || metric.contains("?");
+    private boolean isWildcard(final String tag) {
+        return tag == null || tag.contains("*") || tag.contains("?");
     }
 
 }

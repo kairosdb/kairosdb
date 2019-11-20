@@ -297,6 +297,14 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                         tagNameCache.put(tagName);
                     }
                 }
+            } else {
+                final long nextRowTime = rowTime + m_rowWidthWrite;
+                final DataPointsRowKey nextBucketRowKey = new DataPointsRowKey(metricName, nextRowTime, dataPoint.getDataStoreDataType(), tags);
+                final ByteBuffer serializeNextKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(nextBucketRowKey);
+                if (!rowKeyCache.isKnown(serializeNextKey)) {
+                    storeRowKeyReverseLookups(metricName, nextRowTime, serializeNextKey, rowKeyTtl, tags);
+                    rowKeyCache.put(serializeNextKey);
+                }
             }
 
             int columnTime = getColumnName(rowTime, dataPoint.getTimestamp());

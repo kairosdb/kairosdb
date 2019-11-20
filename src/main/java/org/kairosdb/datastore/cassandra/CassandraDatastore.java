@@ -32,6 +32,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.datastore.cassandra.cache.CacheUpfrontHeatingLogic;
 import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
 import org.kairosdb.datastore.cassandra.cache.StringKeyCache;
 import org.kairosdb.util.KDataOutput;
@@ -50,7 +51,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.core.tiers.MetricNameUtils.metricNameToCheckId;
 import static org.kairosdb.datastore.cassandra.cache.DefaultMetricNameCache.METRIC_NAME_CACHE;
 import static org.kairosdb.datastore.cassandra.cache.DefaultTagNameCache.TAG_NAME_CACHE;
 
@@ -124,6 +124,8 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
     private final KairosDataPointFactory m_kairosDataPointFactory;
     private final LongDataPointFactory m_longDataPointFactory;
 
+    private final CacheUpfrontHeatingLogic cacheUpfrontHeatingLogic;
+
     private final List<String> m_indexTagList;
     private final ListMultimap<String, String> m_metricIndexTagMap;
 
@@ -162,6 +164,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         m_cassandraClient = cassandraClient;
         m_kairosDataPointFactory = kairosDataPointFactory;
         m_longDataPointFactory = longDataPointFactory;
+        cacheUpfrontHeatingLogic = new CacheUpfrontHeatingLogic();
 
         setupSchema();
 
@@ -298,19 +301,13 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                         tagNameCache.put(tagName);
                     }
                 }
-            } else {
-                final int checkId = metricNameToCheckId(metricName).orElse(0);
-                final long gracePeriod = 90; // minutes
-                final long currentMinuteOfBucket = (System.currentTimeMillis() - rowTime) / 1000 / 60;
-                final long currentMinuteOfGracePeriod = currentMinuteOfBucket % gracePeriod;
-                if (checkId % gracePeriod == currentMinuteOfGracePeriod) {
-                    final long nextRowTime = rowTime + m_rowWidthWrite;
-                    final DataPointsRowKey nextBucketRowKey = new DataPointsRowKey(metricName, nextRowTime, dataPoint.getDataStoreDataType(), tags);
-                    final ByteBuffer serializeNextKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(nextBucketRowKey);
-                    if (!rowKeyCache.isKnown(serializeNextKey)) {
-                        storeRowKeyReverseLookups(metricName, nextRowTime, serializeNextKey, rowKeyTtl, tags);
-                        rowKeyCache.put(serializeNextKey);
-                    }
+            } else if (cacheUpfrontHeatingLogic.isHeatingNeeded(metricName, System.currentTimeMillis(), rowTime)) {
+                final long nextRowTime = rowTime + m_rowWidthWrite;
+                final DataPointsRowKey nextBucketRowKey = new DataPointsRowKey(metricName, nextRowTime, dataPoint.getDataStoreDataType(), tags);
+                final ByteBuffer serializeNextKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(nextBucketRowKey);
+                if (!rowKeyCache.isKnown(serializeNextKey)) {
+                    storeRowKeyReverseLookups(metricName, nextRowTime, serializeNextKey, rowKeyTtl, tags);
+                    rowKeyCache.put(serializeNextKey);
                 }
             }
 

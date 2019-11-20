@@ -301,7 +301,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                         tagNameCache.put(tagName);
                     }
                 }
-            } else if (cacheUpfrontHeatingLogic.isHeatingNeeded(metricName, System.currentTimeMillis(), rowTime)) {
+            } else if (cacheUpfrontHeatingLogic.isHeatingNeeded(metricName, System.currentTimeMillis(), rowTime, m_rowWidthWrite, 120)) { // TODO: move `120` to entity config
                 final long nextRowTime = rowTime + m_rowWidthWrite;
                 final DataPointsRowKey nextBucketRowKey = new DataPointsRowKey(metricName, nextRowTime, dataPoint.getDataStoreDataType(), tags);
                 final ByteBuffer serializeNextKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(nextBucketRowKey);

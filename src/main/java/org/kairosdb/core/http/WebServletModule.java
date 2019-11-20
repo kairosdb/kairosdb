@@ -24,6 +24,7 @@ import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
 import org.eclipse.jetty.servlets.GzipFilter;
 import org.kairosdb.core.http.rest.MetricsResource;
+import org.kairosdb.core.http.rest.QueryAutocompleter;
 import org.kairosdb.core.http.rest.metrics.DefaultQueryMeasurementProvider;
 import org.kairosdb.core.http.rest.metrics.QueryMeasurementProvider;
 
@@ -46,6 +47,7 @@ public class WebServletModule extends JerseyServletModule
 		bind(WebServer.class);
 
 		bind(QueryMeasurementProvider.class).to(DefaultQueryMeasurementProvider.class).in(Singleton.class);
+		bind(QueryAutocompleter.class).in(Singleton.class);
 
 		//Bind resource classes here
 		bind(MetricsResource.class).in(Scopes.SINGLETON);

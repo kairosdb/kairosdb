@@ -85,6 +85,7 @@ public class MetricsResource implements KairosMetricReporter {
 	private final KairosDatastore datastore;
 	private final Map<String, DataFormatter> formatters = new HashMap<String, DataFormatter>();
 	private final QueryParser queryParser;
+	private final QueryAutocompleter queryAutocompleter;
 
 	// Used for parsing incoming metrices
 	private final Gson gson;
@@ -126,10 +127,15 @@ public class MetricsResource implements KairosMetricReporter {
 	private TimeLimiter limiter;
 
 	@Inject
-	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
-						   KairosDataPointFactory dataPointFactory, QueryMeasurementProvider queryMeasurementProvider, Tracer tracer) {
+	public MetricsResource(KairosDatastore datastore,
+							QueryParser queryParser,
+							QueryAutocompleter queryAutocompleter,
+							KairosDataPointFactory dataPointFactory,
+							QueryMeasurementProvider queryMeasurementProvider,
+							Tracer tracer) {
 		this.datastore = checkNotNull(datastore);
 		this.queryParser = checkNotNull(queryParser);
+		this.queryAutocompleter = queryAutocompleter;
 		this.queryMeasurementProvider = checkNotNull(queryMeasurementProvider);
 		m_kairosDataPointFactory = dataPointFactory;
 		formatters.put("json", new JsonFormatter());
@@ -309,6 +315,8 @@ public class MetricsResource implements KairosMetricReporter {
 			List<QueryMetric> queries = queryParser.parseQueryMetric(json);
 
 			for (QueryMetric query : queries) {
+				queryAutocompleter.complete(query);
+
 				List<DataPointGroup> result;
 				if (query.isRejected()) {
 					logger.warn("Query to metric {} was rejected due to tier limitations", query.getName());
@@ -435,6 +443,8 @@ public class MetricsResource implements KairosMetricReporter {
 
 						queryMeasurementProvider.measureSpanForMetric(query);
 						queryMeasurementProvider.measureDistanceForMetric(query);
+
+						queryAutocompleter.complete(query);
 
 						DatastoreQuery dq = null;
 						int sampleSize = 0;

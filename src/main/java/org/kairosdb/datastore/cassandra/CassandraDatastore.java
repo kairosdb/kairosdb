@@ -50,6 +50,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.kairosdb.core.tiers.MetricNameUtils.metricNameToCheckId;
 import static org.kairosdb.datastore.cassandra.cache.DefaultMetricNameCache.METRIC_NAME_CACHE;
 import static org.kairosdb.datastore.cassandra.cache.DefaultTagNameCache.TAG_NAME_CACHE;
 
@@ -298,12 +299,18 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                     }
                 }
             } else {
-                final long nextRowTime = rowTime + m_rowWidthWrite;
-                final DataPointsRowKey nextBucketRowKey = new DataPointsRowKey(metricName, nextRowTime, dataPoint.getDataStoreDataType(), tags);
-                final ByteBuffer serializeNextKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(nextBucketRowKey);
-                if (!rowKeyCache.isKnown(serializeNextKey)) {
-                    storeRowKeyReverseLookups(metricName, nextRowTime, serializeNextKey, rowKeyTtl, tags);
-                    rowKeyCache.put(serializeNextKey);
+                final int checkId = metricNameToCheckId(metricName).orElse(0);
+                final long gracePeriod = 90; // minutes
+                final long currentMinuteOfBucket = (System.currentTimeMillis() - rowTime) / 1000 / 60;
+                final long currentMinuteOfGracePeriod = currentMinuteOfBucket % gracePeriod;
+                if (checkId % gracePeriod == currentMinuteOfGracePeriod) {
+                    final long nextRowTime = rowTime + m_rowWidthWrite;
+                    final DataPointsRowKey nextBucketRowKey = new DataPointsRowKey(metricName, nextRowTime, dataPoint.getDataStoreDataType(), tags);
+                    final ByteBuffer serializeNextKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(nextBucketRowKey);
+                    if (!rowKeyCache.isKnown(serializeNextKey)) {
+                        storeRowKeyReverseLookups(metricName, nextRowTime, serializeNextKey, rowKeyTtl, tags);
+                        rowKeyCache.put(serializeNextKey);
+                    }
                 }
             }
 

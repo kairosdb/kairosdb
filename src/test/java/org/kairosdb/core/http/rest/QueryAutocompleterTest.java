@@ -28,7 +28,7 @@ public class QueryAutocompleterTest {
     }
 
     @Test
-    public void testAddOneMetricWhichIsCommonForSeveralKeys() {
+    public void testAddOneMetricWhichIsCommonForSeveralKeysWithWildcard() {
         Set<String> expected = setOf("bbb");
         QueryMetric queryMetric = createWithKeys("aaa.*.bbb", "ccc.bbb", "111.bbb");
 
@@ -38,9 +38,39 @@ public class QueryAutocompleterTest {
     }
 
     @Test
-    public void testAddTwoMetricsForTwoKeys() {
+    public void testNoMetricWhichIsCommonForSeveralKeysWithOutWildcard() {
+        Set<String> expected = emptySet();
+        QueryMetric queryMetric = createWithKeys("aaa.123.bbb", "ccc.bbb", "111.bbb");
+
+        service.complete(queryMetric);
+
+        assertEquals(expected, queryMetric.getTags().get("metric"));
+    }
+
+    @Test
+    public void testNoMetricWhenThereIsNoWildcardInKey() {
+        Set<String> expected = emptySet();
+        QueryMetric queryMetric = createWithKeys("aaa.bbb", "ccc.ddd");
+
+        service.complete(queryMetric);
+
+        assertEquals(expected, queryMetric.getTags().get("metric"));
+    }
+
+    @Test
+    public void testAddTwoMetricsForTwoKeysWithFirstSeeWildCardKey() {
         Set<String> expected = setOf("bbb", "ddd");
         QueryMetric queryMetric = createWithKeys("aaa.*.bbb", "ccc.ddd");
+
+        service.complete(queryMetric);
+
+        assertEquals(expected, queryMetric.getTags().get("metric"));
+    }
+
+    @Test
+    public void testAddTwoMetricsForTwoKeysWithFirstSeeNonWildCardKey() {
+        Set<String> expected = setOf("bbb", "ddd");
+        QueryMetric queryMetric = createWithKeys("ccc.ddd", "aaa.*.bbb");
 
         service.complete(queryMetric);
 
@@ -71,16 +101,6 @@ public class QueryAutocompleterTest {
     public void testWorkNormallyWhenDotAtTheEndOfTheKey() {
         Set<String> expected = setOf("bbb", "ddd");
         QueryMetric queryMetric = createWithKeys("aaa.*.bbb", "ccc.ddd.");
-
-        service.complete(queryMetric);
-
-        assertEquals(expected, queryMetric.getTags().get("metric"));
-    }
-
-    @Test
-    public void testAddMeaninglessMetricWhenThereIsNoWildcardInKey() {
-        Set<String> expected = setOf("bbb", "ddd");
-        QueryMetric queryMetric = createWithKeys("aaa.bbb", "ccc.ddd");
 
         service.complete(queryMetric);
 

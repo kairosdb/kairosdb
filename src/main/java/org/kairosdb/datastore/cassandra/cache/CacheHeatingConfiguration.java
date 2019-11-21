@@ -20,4 +20,12 @@ public class CacheHeatingConfiguration {
         }
         this.heatingIntervalMinutes.set(newHeatingIntervalMinutes);
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("CacheHeatingConfiguration{");
+        sb.append("heatingIntervalMinutes=").append(heatingIntervalMinutes.get());
+        sb.append('}');
+        return sb.toString();
+    }
 }

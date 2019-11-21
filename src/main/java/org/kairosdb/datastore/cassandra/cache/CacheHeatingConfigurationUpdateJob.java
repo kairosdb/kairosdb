@@ -25,7 +25,7 @@ public class CacheHeatingConfigurationUpdateJob implements KairosDBJob {
     @Inject
     public CacheHeatingConfigurationUpdateJob(final CacheHeatingConfiguration config,
                                               final EntityResolver entityResolver,
-                                              @Named("kairosdb.tiers.schedule") final String schedule) {
+                                              @Named("kairosdb.cache.warmup.schedule") final String schedule) {
         this.config = config;
         this.schedule = schedule;
         this.entityResolver = entityResolver;
@@ -41,7 +41,8 @@ public class CacheHeatingConfigurationUpdateJob implements KairosDBJob {
 
     @Override
     public void execute(final JobExecutionContext ctx) {
-        logger.debug("Updating metric tiers configuration");
+        logger.debug("Updating KairosDB warmup cache configuration");
+        logger.debug("Current config is: " + config.toString());
         this.getHeatingInterval().ifPresent(newInterval -> {
             logger.debug("Updating heating interval to " + newInterval);
             config.update(newInterval);

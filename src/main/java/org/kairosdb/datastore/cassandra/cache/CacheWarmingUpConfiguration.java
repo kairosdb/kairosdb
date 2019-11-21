@@ -30,8 +30,9 @@ public class CacheWarmingUpConfiguration {
     }
 
     public void setHeatingIntervalMinutes(final int newHeatingIntervalMinutes) {
-        if (newHeatingIntervalMinutes < 5) {
+        if (newHeatingIntervalMinutes < 1) {
             logger.warn(String.format("Discarding setting heatingIntervalMinutes to '%d' since it doesn't make sense", newHeatingIntervalMinutes));
+            return;
         }
         this.heatingIntervalMinutes.set(newHeatingIntervalMinutes);
     }
@@ -39,6 +40,7 @@ public class CacheWarmingUpConfiguration {
     public void setRowIntervalInMinutes(int newRowIntervalInMinutes) {
         if (newRowIntervalInMinutes < 1) {
             logger.warn(String.format("Discarding setting rowIntervalInMinutes to '%d' since it doesn't make sense", newRowIntervalInMinutes));
+            return;
         }
         this.rowIntervalInMinutes.set(newRowIntervalInMinutes);
     }

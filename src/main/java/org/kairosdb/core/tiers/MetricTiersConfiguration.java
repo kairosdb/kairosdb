@@ -2,7 +2,10 @@ package org.kairosdb.core.tiers;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+
+import static org.kairosdb.core.tiers.MetricNameUtils.metricNameToCheckId;
 
 public class MetricTiersConfiguration {
 
@@ -20,21 +23,17 @@ public class MetricTiersConfiguration {
             return true;
         }
 
-        final String[] split = metricName.split("\\.");
-        if (split.length != 3 || !split[0].equals("zmon") || !split[1].equals("check")) {
+        final Optional<Integer> maybeCheckId = metricNameToCheckId(metricName);
+        if (maybeCheckId.isPresent()) {
+            int checkId = maybeCheckId.get();
+
+            if (queryMaxCheckTier == 1) return criticalChecks.contains(checkId);
+            else if (queryMaxCheckTier == 2) return criticalChecks.contains(checkId) || importantChecks.contains(checkId);
+
+            return false;
+        } else {
             return false;
         }
-        int checkId;
-        try {
-            checkId = Integer.parseInt(split[2]);
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-
-        if (queryMaxCheckTier == 1) return criticalChecks.contains(checkId);
-        else if (queryMaxCheckTier == 2) return criticalChecks.contains(checkId) || importantChecks.contains(checkId);
-
-        return false;
     }
 
     void update(final Map<String, Set<Integer>> checkTiers,
@@ -46,5 +45,4 @@ public class MetricTiersConfiguration {
         this.queryMaxCheckTier = limitConfig.get("query_max_check_tier");
 
     }
-
 }

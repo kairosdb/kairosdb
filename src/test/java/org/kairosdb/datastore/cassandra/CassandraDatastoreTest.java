@@ -31,6 +31,8 @@ import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreMetricQueryImpl;
 import org.kairosdb.datastore.DatastoreTestHelper;
+import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpConfiguration;
+import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpLogic;
 import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
 import org.kairosdb.datastore.cassandra.cache.StringKeyCache;
 
@@ -189,7 +191,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper {
         // TODO: test the caches being hit
         final StringKeyCache stringCache = mock(StringKeyCache.class);
         s_datastore = new CassandraDatastore(new CassandraClientImpl(cassandraConfig), cassandraConfig,
-                dataPointFactory, longDataPointFactory, mock(RowKeyCache.class), stringCache, stringCache, tracer);
+                dataPointFactory, longDataPointFactory, new CacheWarmingUpLogic(), new CacheWarmingUpConfiguration(), mock(RowKeyCache.class), stringCache, stringCache, tracer);
 
         System.out.println("Creating KairosDataStore");
         DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,

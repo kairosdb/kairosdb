@@ -33,11 +33,15 @@ import org.kairosdb.core.datastore.QueryQueuingManager;
 import org.kairosdb.core.groupby.*;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.jobs.CacheFileCleaner;
+import org.kairosdb.core.onlineconfig.EntityResolver;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.core.tiers.AccessTokensProvider;
 import org.kairosdb.core.tiers.ExecutorProvider;
 import org.kairosdb.core.tiers.MetricTiersConfiguration;
 import org.kairosdb.core.tiers.MetricTiersConfigurationUpdateJob;
+import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpConfiguration;
+import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpConfigurationUpdateJob;
+import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpLogic;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.Util;
 import org.zalando.stups.tokens.AccessTokens;
@@ -94,6 +98,10 @@ public class CoreModule extends AbstractModule
 		bind(Executor.class).toProvider(ExecutorProvider.class).in(Singleton.class);
 		bind(MetricTiersConfiguration.class).in(Singleton.class);
 		bind(MetricTiersConfigurationUpdateJob.class).in(Singleton.class);
+		bind(EntityResolver.class).in(Singleton.class);
+		bind(CacheWarmingUpLogic.class).in(Singleton.class);
+		bind(CacheWarmingUpConfiguration.class).in(Singleton.class);
+		bind(CacheWarmingUpConfigurationUpdateJob.class).in(Singleton.class);
 
 		bind(SumAggregator.class);
 		bind(MinAggregator.class);

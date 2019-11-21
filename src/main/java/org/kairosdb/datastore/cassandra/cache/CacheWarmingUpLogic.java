@@ -14,8 +14,7 @@ public class CacheWarmingUpLogic {
             return false;
         }
         final int numberOfRows = minutesBeforeNextBucket / ROW_SIZE;
-        final long currentRowOfBucket = (currentTime - warmingUpPeriodStartsAt) / 1000 / 60 / ROW_SIZE;
-        final long currentRowOfGracePeriod = currentRowOfBucket % numberOfRows;
+        final long currentRowOfGracePeriod = (currentTime - warmingUpPeriodStartsAt) / 1000 / 60 / ROW_SIZE;
         return checkId % numberOfRows == currentRowOfGracePeriod;
     }
 }

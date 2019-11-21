@@ -20,31 +20,31 @@ public class CacheWarmingUpLogicTest {
     }
 
     @Test
-    public void testShouldNotHeatToEarly() {
+    public void testShouldNotWarmUpToEarly() {
         final boolean result = logic.isWarmingUpNeeded("bla-bla-bla", 104 * MINUTES, 5 * MINUTES, 120 * MINUTES, 20);
         Assert.assertFalse(result);
     }
 
     @Test
-    public void testShouldHeatAllNonZmonMetricOnTheFirstMinute() {
+    public void testShouldWarmUpAllNonZmonMetricOnTheFirstMinute() {
         final boolean result = logic.isWarmingUpNeeded("bla-bla-bla", 105 * MINUTES, 5 * MINUTES, 120 * MINUTES, 20);
         Assert.assertTrue(result);
     }
 
     @Test
-    public void testHeatingNeededForCheckIdEqualCurrentMinute() {
+    public void testWarmingUpNeededForCheckIdEqualCurrentMinute() {
         final boolean result = logic.isWarmingUpNeeded("zmon.check.5", 101 * MINUTES, 0, 120 * MINUTES, 30);
         Assert.assertTrue(result);
     }
 
     @Test
-    public void testHeatingNeededForCheckIdModuleCurrentMinute() {
+    public void testWarmingUpNeededForCheckIdModuleCurrentMinute() {
         final boolean result = logic.isWarmingUpNeeded("zmon.check.65", 110 * MINUTES, 10 * MINUTES, 120 * MINUTES, 30);
         Assert.assertTrue(result);
     }
 
     @Test
-    public void testHeatingPercentageIsCorrect() {
+    public void testWarmingUpPercentageIsCorrect() {
         long now = System.currentTimeMillis();
         long bucketSize = 120 * MINUTES;
         long rowTime = now - bucketSize / 2;

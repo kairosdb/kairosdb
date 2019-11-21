@@ -33,13 +33,13 @@ public class CacheWarmingUpLogicTest {
 
     @Test
     public void testHeatingNeededForCheckIdEqualCurrentMinute() {
-        final boolean result = logic.isWarmingUpNeeded("zmon.check.10", 100 * MINUTES, 0, 120 * MINUTES, 30);
+        final boolean result = logic.isWarmingUpNeeded("zmon.check.5", 101 * MINUTES, 0, 120 * MINUTES, 30);
         Assert.assertTrue(result);
     }
 
     @Test
     public void testHeatingNeededForCheckIdModuleCurrentMinute() {
-        final boolean result = logic.isWarmingUpNeeded("zmon.check.70", 110 * MINUTES, 10 * MINUTES, 120 * MINUTES, 30);
+        final boolean result = logic.isWarmingUpNeeded("zmon.check.65", 110 * MINUTES, 10 * MINUTES, 120 * MINUTES, 30);
         Assert.assertTrue(result);
     }
 
@@ -55,7 +55,7 @@ public class CacheWarmingUpLogicTest {
                 cnt++;
             }
         }
-        Assert.assertEquals(10, cnt);
+        Assert.assertEquals(20, cnt);
     }
 
 }

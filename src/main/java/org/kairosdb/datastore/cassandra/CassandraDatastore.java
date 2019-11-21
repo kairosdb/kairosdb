@@ -306,7 +306,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                         tagNameCache.put(tagName);
                     }
                 }
-            } else {
+            } else if (m_cacheWarmingUpConfiguration.isEnabled()) {
                 long now = System.currentTimeMillis();
                 int interval = m_cacheWarmingUpConfiguration.getHeatingIntervalMinutes();
                 if (m_cacheUpfrontHeatingLogic.isHeatingNeeded(metricName, now, rowTime, m_rowWidthWrite, interval)) {

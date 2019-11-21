@@ -2,6 +2,7 @@ package org.kairosdb.datastore.cassandra.cache;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.codehaus.jackson.JsonNode;
 import org.kairosdb.core.onlineconfig.EntityResolver;
 import org.kairosdb.core.scheduler.KairosDBJob;
 import org.quartz.CronScheduleBuilder;
@@ -43,17 +44,18 @@ public class CacheWarmingUpConfigurationUpdateJob implements KairosDBJob {
     public void execute(final JobExecutionContext ctx) {
         logger.debug("Updating KairosDB warmup cache configuration");
         logger.debug("Current config is: " + config.toString());
-        this.getHeatingInterval().ifPresent(newInterval -> {
-            logger.debug("Updating heating interval to " + newInterval);
-            config.update(newInterval);
-        });
-        logger.debug("Config updated");
+
+        Optional<JsonNode> maybeData = this.entityResolver.getEntityData(ENTITY_ID);
+        maybeData.flatMap(dataNode -> this.entityResolver.getIntValue(dataNode, "heating_interval_minutes"))
+                .ifPresent(newInterval -> {
+                    logger.debug("Updating heating interval to " + newInterval);
+                    config.setHeatingIntervalMinutes(newInterval);
+                });
+        maybeData.flatMap(dataNode -> this.entityResolver.getBooleanValue(dataNode, "enabled"))
+                .ifPresent(enabledValue -> {
+                    logger.debug("Updating 'enabled' value to " + enabledValue);
+                    config.setEnabled(enabledValue);
+                });
+        logger.debug("Config updated: " + config.toString());
     }
-
-    private Optional<Integer> getHeatingInterval() {
-        return this.entityResolver.getEntityData(ENTITY_ID)
-                .flatMap(dataNode -> this.entityResolver.getIntValue(dataNode, "heating_interval_minutes"));
-    }
-
-
 }

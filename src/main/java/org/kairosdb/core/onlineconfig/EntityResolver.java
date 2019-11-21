@@ -55,4 +55,17 @@ public class EntityResolver {
         }
         return Optional.of(intNode.asInt());
     }
+
+    public Optional<Boolean> getBooleanValue(JsonNode dataNode, String key) {
+        if (dataNode == null) {
+            logger.debug("No data node provided");
+            return Optional.empty();
+        }
+        JsonNode intNode = dataNode.get(key);
+        if (intNode == null) {
+            logger.debug(String.format("There is no node for key '%s'", key));
+            return Optional.empty();
+        }
+        return Optional.of(intNode.asBoolean());
+    }
 }

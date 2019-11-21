@@ -46,15 +46,20 @@ public class CacheWarmingUpConfigurationUpdateJob implements KairosDBJob {
         logger.debug("Current config is: " + config.toString());
 
         Optional<JsonNode> maybeData = this.entityResolver.getEntityData(ENTITY_ID);
-        maybeData.flatMap(dataNode -> this.entityResolver.getIntValue(dataNode, "heating_interval_minutes"))
-                .ifPresent(newInterval -> {
-                    logger.debug("Updating heating interval to " + newInterval);
-                    config.setHeatingIntervalMinutes(newInterval);
-                });
         maybeData.flatMap(dataNode -> this.entityResolver.getBooleanValue(dataNode, "enabled"))
                 .ifPresent(enabledValue -> {
                     logger.debug("Updating 'enabled' value to " + enabledValue);
                     config.setEnabled(enabledValue);
+                });
+        maybeData.flatMap(dataNode -> this.entityResolver.getIntValue(dataNode, "warming_up_interval_minutes"))
+                .ifPresent(newInterval -> {
+                    logger.debug("Updating warming-up interval to " + newInterval);
+                    config.setHeatingIntervalMinutes(newInterval);
+                });
+        maybeData.flatMap(dataNode -> this.entityResolver.getIntValue(dataNode, "warming_up_interval_row_size"))
+                .ifPresent(newRowSize -> {
+                    logger.debug("Updating warming-up row size to " + newRowSize);
+                    config.setRowIntervalInMinutes(newRowSize);
                 });
         logger.debug("Config updated: " + config.toString());
     }

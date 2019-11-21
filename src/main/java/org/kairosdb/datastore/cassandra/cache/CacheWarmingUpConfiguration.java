@@ -9,15 +9,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CacheWarmingUpConfiguration {
     public static final Logger logger = LoggerFactory.getLogger(CacheWarmingUpConfiguration.class);
 
-    private AtomicInteger heatingIntervalMinutes = new AtomicInteger(120);
-    private AtomicBoolean enabled = new AtomicBoolean(false);
+    private final AtomicBoolean enabled = new AtomicBoolean(false);
+    private final AtomicInteger heatingIntervalMinutes = new AtomicInteger(120);
+    private final AtomicInteger rowIntervalInMinutes = new AtomicInteger(2);
+
+    public boolean isEnabled() {
+        return enabled.get();
+    }
 
     public int getHeatingIntervalMinutes() {
         return heatingIntervalMinutes.get();
     }
 
-    public boolean isEnabled() {
-        return enabled.get();
+    public int getRowIntervalMinutes() {
+        return rowIntervalInMinutes.get();
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled.set(enabled);
     }
 
     public void setHeatingIntervalMinutes(final int newHeatingIntervalMinutes) {
@@ -27,8 +36,11 @@ public class CacheWarmingUpConfiguration {
         this.heatingIntervalMinutes.set(newHeatingIntervalMinutes);
     }
 
-    public void setEnabled(boolean enabled) {
-        this.enabled.set(enabled);
+    public void setRowIntervalInMinutes(int newRowIntervalInMinutes) {
+        if (newRowIntervalInMinutes < 1) {
+            logger.warn(String.format("Discarding setting rowIntervalInMinutes to '%d' since it doesn't make sense", newRowIntervalInMinutes));
+        }
+        this.rowIntervalInMinutes.set(newRowIntervalInMinutes);
     }
 
     @Override

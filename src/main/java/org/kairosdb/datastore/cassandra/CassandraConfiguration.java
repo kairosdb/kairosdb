@@ -28,7 +28,6 @@ public class CassandraConfiguration {
 	private static final String CASSANDRA_ADDRESS_TRANSLATOR = "kairosdb.datastore.cassandra.address_translator";
 	private static final String CASSANDRA_READ_ROWWIDTH = "kairosdb.datastore.cassandra.read_row_width";
 	private static final String CASSANDRA_WRITE_ROWWIDTH = "kairosdb.datastore.cassandra.write_row_width";
-	private static final String CASSANDRA_ROW_SHIFT = "kairosdb.datastore.cassandra.row_shift";
 	private static final String CASSANDRA_MAX_ROW_KEYS_FOR_QUERY = "kairosdb.datastore.cassandra.max_row_keys_for_query";
 	private static final String CASSANDRA_MAX_ROWS_FOR_KEY_QUERY = "kairosdb.datastore.cassandra.max_rows_for_key_query";
 	private static final String CASSANDRA_INDEX_TAG_LIST = "kairosdb.datastore.cassandra.index_tag_list";
@@ -69,9 +68,6 @@ public class CassandraConfiguration {
 	@Inject(optional=true)
 	@Named(CASSANDRA_READ_ROWWIDTH)
 	private long m_rowWidthRead = 1814400000L; // 3 weeks for reading - backwards compatible
-	@Inject(optional=true)
-	@Named(CASSANDRA_ROW_SHIFT)
-	private long m_rowShift = 0;
 	@Inject
 	@Named(WRITE_CONSISTENCY_LEVEL_META)
 	private ConsistencyLevel m_dataWriteLevelMeta = ConsistencyLevel.LOCAL_ONE;
@@ -268,10 +264,6 @@ public class CassandraConfiguration {
 
 	public void setQuerySamplingPercentage(int querySamplingPercentage) {
 		this.querySamplingPercentage = querySamplingPercentage;
-	}
-
-	public long getRowShift() {
-		return m_rowShift;
 	}
 
 	public static enum ADDRESS_TRANSLATOR_TYPE {

@@ -93,6 +93,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
     public final long m_rowWidthRead;
     public final long m_rowWidthWrite;
+    public final long m_rowShift;
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
     public static final String ROW_KEY_METRIC_NAMES = "metric_names";
@@ -190,6 +191,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
         m_rowWidthRead = cassandraConfiguration.getRowWidthRead();
         m_rowWidthWrite = cassandraConfiguration.getRowWidthWrite();
+        m_rowShift = cassandraConfiguration.getRowShift();
 
         this.tracer = tracer;
     }
@@ -638,11 +640,11 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
     }
 
     public long calculateRowTimeRead(long timestamp) {
-        return (timestamp - (Math.abs(timestamp) % m_rowWidthRead));
+        return timestamp - Math.abs(timestamp) % m_rowWidthRead + m_rowShift;
     }
 
     public long calculateRowTimeWrite(long timestamp) {
-        return (timestamp - (Math.abs(timestamp) % m_rowWidthWrite));
+        return timestamp - Math.abs(timestamp) % m_rowWidthWrite + m_rowShift;
     }
 
     private List<Long> calculateReadTimeBuckets(long startTimeBucket, long endTimeBucket) {

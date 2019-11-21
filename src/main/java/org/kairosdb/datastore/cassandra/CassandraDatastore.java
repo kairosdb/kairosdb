@@ -310,9 +310,9 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                 long now = System.currentTimeMillis();
                 int interval = m_cacheWarmingUpConfiguration.getHeatingIntervalMinutes();
                 int rowSize = m_cacheWarmingUpConfiguration.getRowIntervalMinutes();
-                if (m_cacheWarmingUpLogic.isWarmingUpNeeded(metricName, now, rowTime, m_rowWidthWrite, interval, rowSize)) {
-                    final long nextRowTime = rowTime + m_rowWidthWrite;
-                    final DataPointsRowKey nextBucketRowKey = new DataPointsRowKey(metricName, nextRowTime, dataPoint.getDataStoreDataType(), tags);
+                final long nextRowTime = rowTime + m_rowWidthWrite;
+                final DataPointsRowKey nextBucketRowKey = new DataPointsRowKey(metricName, nextRowTime, dataPoint.getDataStoreDataType(), tags);
+                if (m_cacheWarmingUpLogic.isWarmingUpNeeded(nextBucketRowKey.hashCode(), now, nextRowTime, interval, rowSize)) {
                     final ByteBuffer serializeNextKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(nextBucketRowKey);
                     if (!rowKeyCache.isKnown(serializeNextKey)) {
                         storeRowKeyReverseLookups(metricName, nextRowTime, serializeNextKey, rowKeyTtl, tags);

@@ -16,8 +16,8 @@ public class CacheWarmingUpLogicTest {
     }
 
     @Test
-    public void testNotFailForUnknownMetric() {
-        final boolean result = logic.isWarmingUpNeeded("bla-bla-bla", 100 * MINUTES, 5 * MINUTES, 120 * MINUTES, 1, 2);
+    public void testNotFailForZeroHashCode() {
+        final boolean result = logic.isWarmingUpNeeded(0, 100 * MINUTES, 120 * MINUTES, 1, 2);
         Assert.assertFalse(result);
     }
 
@@ -27,25 +27,25 @@ public class CacheWarmingUpLogicTest {
         final long bucketStart = now - 45 * 60 * MINUTES;
         final long bucketSize = 48 * 60 * MINUTES;
         final int minutesInterval = 150;
-        final boolean result = logic.isWarmingUpNeeded("bla-bla-bla", now, bucketStart, bucketSize, minutesInterval, 2);
+        final boolean result = logic.isWarmingUpNeeded(111, now, bucketStart + bucketSize, minutesInterval, 2);
         Assert.assertFalse(result);
     }
 
     @Test
-    public void testShouldWarmUpAllNonZmonMetricOnTheFirstMinute() {
-        final boolean result = logic.isWarmingUpNeeded("bla-bla-bla", 105 * MINUTES, 5 * MINUTES, 120 * MINUTES, 20, 2);
+    public void testShouldWarmUpZeroHashCodeOnTheFirstRow() {
+        final boolean result = logic.isWarmingUpNeeded(0, 100 * MINUTES, 120 * MINUTES, 20, 2);
         Assert.assertTrue(result);
     }
 
     @Test
     public void testWarmingUpNeededForCheckIdEqualCurrentMinute() {
-        final boolean result = logic.isWarmingUpNeeded("zmon.check.5", 101 * MINUTES, 0, 120 * MINUTES, 30, 2);
+        final boolean result = logic.isWarmingUpNeeded(5, 101 * MINUTES, 120 * MINUTES, 30, 2);
         Assert.assertTrue(result);
     }
 
     @Test
     public void testWarmingUpNeededForCheckIdModuleCurrentMinute() {
-        final boolean result = logic.isWarmingUpNeeded("zmon.check.65", 110 * MINUTES, 10 * MINUTES, 120 * MINUTES, 30, 2);
+        final boolean result = logic.isWarmingUpNeeded(65, 100 * MINUTES, 120 * MINUTES, 30, 2);
         Assert.assertTrue(result);
     }
 
@@ -57,7 +57,7 @@ public class CacheWarmingUpLogicTest {
             long rowTime = now - bucketSize / 2;
             int cnt = 0;
             for (int i = 1; i <= 900; i++) {
-                boolean needed = logic.isWarmingUpNeeded("zmon.check." + i, now, rowTime, bucketSize, 90, rowSize);
+                boolean needed = logic.isWarmingUpNeeded(i, now, rowTime + bucketSize, 90, rowSize);
                 if (needed) {
                     cnt++;
                 }

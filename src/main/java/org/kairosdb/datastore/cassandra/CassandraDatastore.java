@@ -33,7 +33,7 @@ import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpConfiguration;
-import org.kairosdb.datastore.cassandra.cache.CacheUpfrontHeatingLogic;
+import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpLogic;
 import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
 import org.kairosdb.datastore.cassandra.cache.StringKeyCache;
 import org.kairosdb.util.KDataOutput;
@@ -126,7 +126,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
     private final KairosDataPointFactory m_kairosDataPointFactory;
     private final LongDataPointFactory m_longDataPointFactory;
 
-    private final CacheUpfrontHeatingLogic m_cacheUpfrontHeatingLogic;
+    private final CacheWarmingUpLogic m_cacheWarmingUpLogic;
     private final CacheWarmingUpConfiguration m_cacheWarmingUpConfiguration;
 
     private final List<String> m_indexTagList;
@@ -151,7 +151,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                               CassandraConfiguration cassandraConfiguration,
                               KairosDataPointFactory kairosDataPointFactory,
                               LongDataPointFactory longDataPointFactory,
-                              CacheUpfrontHeatingLogic cacheUpfrontHeatingLogic,
+                              CacheWarmingUpLogic cacheWarmingUpLogic,
                               CacheWarmingUpConfiguration cacheWarmingUpConfiguration,
                               RowKeyCache rowKeyCache,
                               @Named(METRIC_NAME_CACHE) StringKeyCache metricNameCache,
@@ -169,7 +169,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         m_cassandraClient = cassandraClient;
         m_kairosDataPointFactory = kairosDataPointFactory;
         m_longDataPointFactory = longDataPointFactory;
-        m_cacheUpfrontHeatingLogic = cacheUpfrontHeatingLogic;
+        m_cacheWarmingUpLogic = cacheWarmingUpLogic;
         m_cacheWarmingUpConfiguration = cacheWarmingUpConfiguration;
 
         setupSchema();
@@ -311,7 +311,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
             } else if (m_cacheWarmingUpConfiguration.isEnabled()) {
                 long now = System.currentTimeMillis();
                 int interval = m_cacheWarmingUpConfiguration.getHeatingIntervalMinutes();
-                if (m_cacheUpfrontHeatingLogic.isHeatingNeeded(metricName, now, rowTime, m_rowWidthWrite, interval)) {
+                if (m_cacheWarmingUpLogic.isWarmingUpNeeded(metricName, now, rowTime, m_rowWidthWrite, interval)) {
                     final long nextRowTime = rowTime + m_rowWidthWrite;
                     final DataPointsRowKey nextBucketRowKey = new DataPointsRowKey(metricName, nextRowTime, dataPoint.getDataStoreDataType(), tags);
                     final ByteBuffer serializeNextKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(nextBucketRowKey);

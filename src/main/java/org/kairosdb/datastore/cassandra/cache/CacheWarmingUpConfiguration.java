@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CacheHeatingConfiguration {
-    public static final Logger logger = LoggerFactory.getLogger(CacheHeatingConfiguration.class);
+public class CacheWarmingUpConfiguration {
+    public static final Logger logger = LoggerFactory.getLogger(CacheWarmingUpConfiguration.class);
 
     private AtomicInteger heatingIntervalMinutes = new AtomicInteger(30);
 
@@ -23,7 +23,7 @@ public class CacheHeatingConfiguration {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("CacheHeatingConfiguration{");
+        final StringBuilder sb = new StringBuilder("CacheWarmingUpConfiguration{");
         sb.append("heatingIntervalMinutes=").append(heatingIntervalMinutes.get());
         sb.append('}');
         return sb.toString();

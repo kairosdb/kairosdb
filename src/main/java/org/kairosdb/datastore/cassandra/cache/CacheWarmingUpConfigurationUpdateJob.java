@@ -14,16 +14,16 @@ import java.util.Optional;
 
 import static org.quartz.TriggerBuilder.newTrigger;
 
-public class CacheHeatingConfigurationUpdateJob implements KairosDBJob {
-    public static final Logger logger = LoggerFactory.getLogger(CacheHeatingConfigurationUpdateJob.class);
+public class CacheWarmingUpConfigurationUpdateJob implements KairosDBJob {
+    public static final Logger logger = LoggerFactory.getLogger(CacheWarmingUpConfigurationUpdateJob.class);
     private static final String ENTITY_ID = "kairosdb-write-cache-heating";
 
-    private final CacheHeatingConfiguration config;
+    private final CacheWarmingUpConfiguration config;
     private final EntityResolver entityResolver;
     private final String schedule;
 
     @Inject
-    public CacheHeatingConfigurationUpdateJob(final CacheHeatingConfiguration config,
+    public CacheWarmingUpConfigurationUpdateJob(final CacheWarmingUpConfiguration config,
                                               final EntityResolver entityResolver,
                                               @Named("kairosdb.cache.warmup.schedule") final String schedule) {
         this.config = config;

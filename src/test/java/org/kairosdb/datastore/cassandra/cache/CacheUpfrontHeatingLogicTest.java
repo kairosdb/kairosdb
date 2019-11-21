@@ -20,6 +20,18 @@ public class CacheUpfrontHeatingLogicTest {
     }
 
     @Test
+    public void testShouldNotHeatToEarly() {
+        final boolean result = logic.isHeatingNeeded("bla-bla-bla", 104 * MINUTES, 5 * MINUTES, 120 * MINUTES, 20);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testShouldHeatAllNonZmonMetricOnTheFirstMinute() {
+        final boolean result = logic.isHeatingNeeded("bla-bla-bla", 105 * MINUTES, 5 * MINUTES, 120 * MINUTES, 20);
+        Assert.assertTrue(result);
+    }
+
+    @Test
     public void testHeatingNeededForCheckIdEqualCurrentMinute() {
         final boolean result = logic.isHeatingNeeded("zmon.check.10", 100 * MINUTES, 0, 120 * MINUTES, 30);
         Assert.assertTrue(result);
@@ -27,7 +39,7 @@ public class CacheUpfrontHeatingLogicTest {
 
     @Test
     public void testHeatingNeededForCheckIdModuleCurrentMinute() {
-        final boolean result = logic.isHeatingNeeded("zmon.check.10", 110 * MINUTES, 10 * MINUTES, 120 * MINUTES, 20);
+        final boolean result = logic.isHeatingNeeded("zmon.check.70", 110 * MINUTES, 10 * MINUTES, 120 * MINUTES, 30);
         Assert.assertTrue(result);
     }
 

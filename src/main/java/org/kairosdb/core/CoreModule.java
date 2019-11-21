@@ -38,6 +38,8 @@ import org.kairosdb.core.tiers.AccessTokensProvider;
 import org.kairosdb.core.tiers.ExecutorProvider;
 import org.kairosdb.core.tiers.MetricTiersConfiguration;
 import org.kairosdb.core.tiers.MetricTiersConfigurationUpdateJob;
+import org.kairosdb.datastore.cassandra.cache.CacheHeatingConfiguration;
+import org.kairosdb.datastore.cassandra.cache.CacheHeatingConfigurationUpdateJob;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.Util;
 import org.zalando.stups.tokens.AccessTokens;
@@ -94,6 +96,8 @@ public class CoreModule extends AbstractModule
 		bind(Executor.class).toProvider(ExecutorProvider.class).in(Singleton.class);
 		bind(MetricTiersConfiguration.class).in(Singleton.class);
 		bind(MetricTiersConfigurationUpdateJob.class).in(Singleton.class);
+		bind(CacheHeatingConfiguration.class).in(Singleton.class);
+		bind(CacheHeatingConfigurationUpdateJob.class).in(Singleton.class);
 
 		bind(SumAggregator.class);
 		bind(MinAggregator.class);

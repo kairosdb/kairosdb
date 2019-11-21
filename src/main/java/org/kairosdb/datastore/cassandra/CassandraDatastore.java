@@ -32,6 +32,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.datastore.cassandra.cache.CacheHeatingConfiguration;
 import org.kairosdb.datastore.cassandra.cache.CacheUpfrontHeatingLogic;
 import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
 import org.kairosdb.datastore.cassandra.cache.StringKeyCache;
@@ -124,7 +125,8 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
     private final KairosDataPointFactory m_kairosDataPointFactory;
     private final LongDataPointFactory m_longDataPointFactory;
 
-    private final CacheUpfrontHeatingLogic cacheUpfrontHeatingLogic;
+    private final CacheUpfrontHeatingLogic m_cacheUpfrontHeatingLogic;
+    private final CacheHeatingConfiguration m_cacheHeatingConfiguration;
 
     private final List<String> m_indexTagList;
     private final ListMultimap<String, String> m_metricIndexTagMap;
@@ -148,6 +150,8 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                               CassandraConfiguration cassandraConfiguration,
                               KairosDataPointFactory kairosDataPointFactory,
                               LongDataPointFactory longDataPointFactory,
+                              CacheUpfrontHeatingLogic cacheUpfrontHeatingLogic,
+                              CacheHeatingConfiguration cacheHeatingConfiguration,
                               RowKeyCache rowKeyCache,
                               @Named(METRIC_NAME_CACHE) StringKeyCache metricNameCache,
                               @Named(TAG_NAME_CACHE) StringKeyCache tagNameCache,
@@ -164,7 +168,8 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         m_cassandraClient = cassandraClient;
         m_kairosDataPointFactory = kairosDataPointFactory;
         m_longDataPointFactory = longDataPointFactory;
-        cacheUpfrontHeatingLogic = new CacheUpfrontHeatingLogic();
+        m_cacheUpfrontHeatingLogic = cacheUpfrontHeatingLogic;
+        m_cacheHeatingConfiguration = cacheHeatingConfiguration;
 
         setupSchema();
 
@@ -301,13 +306,17 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                         tagNameCache.put(tagName);
                     }
                 }
-            } else if (cacheUpfrontHeatingLogic.isHeatingNeeded(metricName, System.currentTimeMillis(), rowTime, m_rowWidthWrite, 120)) { // TODO: move `120` to entity config
-                final long nextRowTime = rowTime + m_rowWidthWrite;
-                final DataPointsRowKey nextBucketRowKey = new DataPointsRowKey(metricName, nextRowTime, dataPoint.getDataStoreDataType(), tags);
-                final ByteBuffer serializeNextKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(nextBucketRowKey);
-                if (!rowKeyCache.isKnown(serializeNextKey)) {
-                    storeRowKeyReverseLookups(metricName, nextRowTime, serializeNextKey, rowKeyTtl, tags);
-                    rowKeyCache.put(serializeNextKey);
+            } else {
+                long now = System.currentTimeMillis();
+                int interval = m_cacheHeatingConfiguration.getHeatingIntervalMinutes();
+                if (m_cacheUpfrontHeatingLogic.isHeatingNeeded(metricName, now, rowTime, m_rowWidthWrite, interval)) {
+                    final long nextRowTime = rowTime + m_rowWidthWrite;
+                    final DataPointsRowKey nextBucketRowKey = new DataPointsRowKey(metricName, nextRowTime, dataPoint.getDataStoreDataType(), tags);
+                    final ByteBuffer serializeNextKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(nextBucketRowKey);
+                    if (!rowKeyCache.isKnown(serializeNextKey)) {
+                        storeRowKeyReverseLookups(metricName, nextRowTime, serializeNextKey, rowKeyTtl, tags);
+                        rowKeyCache.put(serializeNextKey);
+                    }
                 }
             }
 

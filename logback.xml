@@ -26,5 +26,8 @@
         <logger name="org.kairosdb.core.datastore.KairosDatastore" level="INFO" additivity="false">
                 <appender-ref ref="stdout"/>
         </logger>
+        <logger name="org.kairosdb.datastore.cassandra.cache.CacheWarmingUpLogic" level="DEBUG" additivity="false">
+                <appender-ref ref="stdout"/>
+        </logger>
 </configuration>
 

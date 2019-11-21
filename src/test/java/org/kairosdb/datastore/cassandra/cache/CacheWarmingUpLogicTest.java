@@ -21,7 +21,11 @@ public class CacheWarmingUpLogicTest {
 
     @Test
     public void testShouldNotWarmUpToEarly() {
-        final boolean result = logic.isWarmingUpNeeded("bla-bla-bla", 104 * MINUTES, 5 * MINUTES, 120 * MINUTES, 20);
+        final long now = System.currentTimeMillis();
+        final long bucketStart = now - 45 * 60 * MINUTES;
+        final long bucketSize = 48 * 60 * MINUTES;
+        final int minutesInterval = 150;
+        final boolean result = logic.isWarmingUpNeeded("bla-bla-bla", now, bucketStart, bucketSize, minutesInterval);
         Assert.assertFalse(result);
     }
 

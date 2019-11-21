@@ -20,7 +20,7 @@ public class CacheWarmingUpLogic {
         final int numberOfRows = minutesBeforeNextBucket / ROW_SIZE;
         final long currentRowOfGracePeriod = (currentTime - warmingUpPeriodStartsAt) / 1000 / 60 / ROW_SIZE;
         boolean result = checkId % numberOfRows == currentRowOfGracePeriod;
-        logger.error(String.format("Result '%b' is calculated based on following: " +
+        logger.debug(String.format("Result '%b' is calculated based on following: " +
                         "metric name = '%s', check id = '%d', " +
                         "number of rows = '%d', current row of grace period = '%d', " +
                         "checkId %% numberOfRows is '%d'",

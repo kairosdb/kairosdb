@@ -317,7 +317,6 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                     if (!rowKeyCache.isKnown(serializeNextKey)) {
                         storeRowKeyReverseLookups(metricName, nextRowTime, serializeNextKey, rowKeyTtl, tags);
                         rowKeyCache.put(serializeNextKey);
-                        logger.warn("next_bucket_row_key={}", nextBucketRowKey);
                     }
                 }
             }

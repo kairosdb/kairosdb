@@ -12,6 +12,8 @@ public class CacheWarmingUpConfiguration {
     private final AtomicBoolean enabled = new AtomicBoolean(false);
     private final AtomicInteger heatingIntervalMinutes = new AtomicInteger(120);
     private final AtomicInteger rowIntervalInMinutes = new AtomicInteger(2);
+    private final AtomicBoolean useRPS = new AtomicBoolean(false);
+    private final AtomicInteger warmingUpInsertsPerSecond = new AtomicInteger(1000);
 
     public boolean isEnabled() {
         return enabled.get();
@@ -23,6 +25,14 @@ public class CacheWarmingUpConfiguration {
 
     public int getRowIntervalMinutes() {
         return rowIntervalInMinutes.get();
+    }
+
+    public boolean isUseRPS() {
+        return useRPS.get();
+    }
+
+    public int getWarmingUpInsertsPerSecond() {
+        return warmingUpInsertsPerSecond.get();
     }
 
     public void setEnabled(boolean enabled) {
@@ -43,6 +53,18 @@ public class CacheWarmingUpConfiguration {
             return;
         }
         this.rowIntervalInMinutes.set(newRowIntervalInMinutes);
+    }
+
+    public void setUseRPS(boolean enabled) {
+        this.enabled.set(enabled);
+    }
+
+    public void setWarmingUpInsertsPerSecond(int newWarmingUpInsertsPerSecond) {
+        if (newWarmingUpInsertsPerSecond < 1) {
+            logger.warn(String.format("Discarding setting newWarmingUpInsertsPerSecond to '%d' since it doesn't make sense", newWarmingUpInsertsPerSecond));
+            return;
+        }
+        this.rowIntervalInMinutes.set(newWarmingUpInsertsPerSecond);
     }
 
     @Override

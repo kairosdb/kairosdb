@@ -61,6 +61,16 @@ public class CacheWarmingUpConfigurationUpdateJob implements KairosDBJob {
                     logger.debug("Updating warming-up row size to " + newRowSize);
                     config.setRowIntervalInMinutes(newRowSize);
                 });
+        maybeData.flatMap(dataNode -> this.entityResolver.getBooleanValue(dataNode, "use_rps"))
+                .ifPresent(shouldUseRPS -> {
+                    logger.debug("Updating 'useRPS' value to " + shouldUseRPS);
+                    config.setUseRPS(shouldUseRPS);
+                });
+        maybeData.flatMap(dataNode -> this.entityResolver.getIntValue(dataNode, "warming_up_rps"))
+                .ifPresent(newRPS -> {
+                    logger.debug("Updating warming-up inserts per second " + newRPS);
+                    config.setWarmingUpInsertsPerSecond(newRPS);
+                });
         logger.debug("Config updated: " + config.toString());
     }
 }

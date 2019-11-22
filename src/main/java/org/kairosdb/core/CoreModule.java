@@ -41,6 +41,8 @@ import org.kairosdb.core.tiers.MetricTiersConfiguration;
 import org.kairosdb.core.tiers.MetricTiersConfigurationUpdateJob;
 import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpConfiguration;
 import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpConfigurationUpdateJob;
+import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpLeakingBucketHolder;
+import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpLeakingBucketJob;
 import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpLogic;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.Util;
@@ -102,6 +104,9 @@ public class CoreModule extends AbstractModule
 		bind(CacheWarmingUpLogic.class).in(Singleton.class);
 		bind(CacheWarmingUpConfiguration.class).in(Singleton.class);
 		bind(CacheWarmingUpConfigurationUpdateJob.class).in(Singleton.class);
+		bind(CacheWarmingUpLeakingBucketHolder.class).in(Singleton.class);
+		bind(CacheWarmingUpLeakingBucketJob.class).in(Singleton.class);
+
 
 		bind(SumAggregator.class);
 		bind(MinAggregator.class);

@@ -3,6 +3,8 @@ package org.kairosdb.datastore.cassandra.cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 
 public class CacheWarmingUpLogic {
     private static final Logger logger = LoggerFactory.getLogger(CacheWarmingUpLogic.class);
@@ -23,5 +25,9 @@ public class CacheWarmingUpLogic {
                         "hashCode %% numberOfRows is '%d'",
                 result, hashCode, numberOfRows, currentRowOfGracePeriod, modulo));
         return result;
+    }
+
+    public boolean isWarmingUpNeeded(final AtomicLong counter) {
+        return counter.decrementAndGet() > 0;
     }
 }

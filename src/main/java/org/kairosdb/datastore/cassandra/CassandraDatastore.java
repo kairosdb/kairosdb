@@ -33,6 +33,7 @@ import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpConfiguration;
+import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpLeakingBucketHolder;
 import org.kairosdb.datastore.cassandra.cache.CacheWarmingUpLogic;
 import org.kairosdb.datastore.cassandra.cache.RowKeyCache;
 import org.kairosdb.datastore.cassandra.cache.StringKeyCache;
@@ -127,6 +128,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
 
     private final CacheWarmingUpLogic m_cacheWarmingUpLogic;
     private final CacheWarmingUpConfiguration m_cacheWarmingUpConfiguration;
+    private final CacheWarmingUpLeakingBucketHolder m_cacheWarmingUpLeakingBucketHolder;
 
     private final List<String> m_indexTagList;
     private final ListMultimap<String, String> m_metricIndexTagMap;
@@ -153,6 +155,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                               LongDataPointFactory longDataPointFactory,
                               CacheWarmingUpLogic cacheWarmingUpLogic,
                               CacheWarmingUpConfiguration cacheWarmingUpConfiguration,
+                              CacheWarmingUpLeakingBucketHolder cacheWarmingUpLeakingBucketHolder,
                               RowKeyCache rowKeyCache,
                               @Named(METRIC_NAME_CACHE) StringKeyCache metricNameCache,
                               @Named(TAG_NAME_CACHE) StringKeyCache tagNameCache,
@@ -171,6 +174,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
         m_longDataPointFactory = longDataPointFactory;
         m_cacheWarmingUpLogic = cacheWarmingUpLogic;
         m_cacheWarmingUpConfiguration = cacheWarmingUpConfiguration;
+        m_cacheWarmingUpLeakingBucketHolder = cacheWarmingUpLeakingBucketHolder;
 
         setupSchema();
 
@@ -315,7 +319,10 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                 int rowSize = m_cacheWarmingUpConfiguration.getRowIntervalMinutes();
                 final long nextRowTime = calculateRowTimeWrite(dataPoint.getTimestamp() + m_rowWidthWrite);
                 final DataPointsRowKey nextBucketRowKey = new DataPointsRowKey(metricName, nextRowTime, dataPoint.getDataStoreDataType(), tags);
-                if (m_cacheWarmingUpLogic.isWarmingUpNeeded(nextBucketRowKey.hashCode(), now, nextRowTime, interval, rowSize)) {
+                boolean isWarmingUpNeeded = m_cacheWarmingUpConfiguration.isUseRPS()
+                        ? m_cacheWarmingUpLogic.isWarmingUpNeeded(m_cacheWarmingUpLeakingBucketHolder.getLeakingBucket())
+                        : m_cacheWarmingUpLogic.isWarmingUpNeeded(nextBucketRowKey.hashCode(), now, nextRowTime, interval, rowSize);
+                if (isWarmingUpNeeded) {
                     final ByteBuffer serializeNextKey = DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(nextBucketRowKey);
                     if (!rowKeyCache.isKnown(serializeNextKey)) {
                         storeRowKeyReverseLookups(metricName, nextRowTime, serializeNextKey, rowKeyTtl, tags);

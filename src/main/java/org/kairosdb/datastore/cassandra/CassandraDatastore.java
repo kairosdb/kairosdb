@@ -136,6 +136,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
     private final Random random = new Random();
 
     private final AtomicLong m_rowKeyIndexRowsInserted = new AtomicLong();
+    private final AtomicLong m_nextRowKeyIndexRowsInserted = new AtomicLong();
     private final AtomicLong m_rowKeySplitIndexRowsInserted = new AtomicLong();
     private final AtomicLong m_readRowLimitExceededCount = new AtomicLong();
     private final AtomicLong m_filteredRowLimitExceededCount = new AtomicLong();
@@ -306,7 +307,9 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                         tagNameCache.put(tagName);
                     }
                 }
-            } else if (m_cacheWarmingUpConfiguration.isEnabled()) {
+            }
+
+            if (m_cacheWarmingUpConfiguration.isEnabled()) {
                 long now = System.currentTimeMillis();
                 int interval = m_cacheWarmingUpConfiguration.getHeatingIntervalMinutes();
                 int rowSize = m_cacheWarmingUpConfiguration.getRowIntervalMinutes();
@@ -317,7 +320,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
                     if (!rowKeyCache.isKnown(serializeNextKey)) {
                         storeRowKeyReverseLookups(metricName, nextRowTime, serializeNextKey, rowKeyTtl, tags);
                         rowKeyCache.put(serializeNextKey);
-                        logger.warn("next_bucket_row_key={}", nextBucketRowKey);
+                        m_nextRowKeyIndexRowsInserted.incrementAndGet();
                     }
                 }
             }
@@ -584,6 +587,7 @@ public class CassandraDatastore implements Datastore, KairosMetricReporter {
     public List<DataPointSet> getMetrics(long now) {
         return Arrays.asList(
                 getDataPointSet(now, m_rowKeyIndexRowsInserted, "kairosdb.inserted.row_key_index"),
+                getDataPointSet(now, m_nextRowKeyIndexRowsInserted, "kairosdb.inserted.next_row_key_index"),
                 getDataPointSet(now, m_rowKeySplitIndexRowsInserted, "kairosdb.inserted.row_key_split_index"),
                 getDataPointSet(now, m_readRowLimitExceededCount, "kairosdb.limits.read_rows_exceeded"),
                 getDataPointSet(now, m_filteredRowLimitExceededCount, "kairosdb.limits.filtered_rows_exceeded")

@@ -19,9 +19,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPoint;
-import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.LegacyLongDataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
+import org.kairosdb.core.datapoints.StringDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.testing.ListDataPointGroup;
@@ -36,7 +36,7 @@ public class LastAggregatorTest
 	@Before
 	public void setup()
 	{
-		aggregator = new LastAggregator(new DoubleDataPointFactoryImpl());
+		aggregator = new LastAggregator();
 	}
 
 	@Test(expected = NullPointerException.class)
@@ -114,6 +114,8 @@ public class LastAggregatorTest
 		group.addDataPoint(new DoubleDataPoint(2, 3.2));
 		group.addDataPoint(new DoubleDataPoint(2, 5.0));
 		group.addDataPoint(new DoubleDataPoint(3, 25.1));
+		group.addDataPoint(new StringDataPoint(3, "23.1"));
+		group.addDataPoint(new DoubleDataPoint(4, 25.1));
 
 		DataPointGroup results = aggregator.aggregate(group);
 
@@ -127,6 +129,10 @@ public class LastAggregatorTest
 
 		dataPoint = results.next();
 		assertThat(dataPoint.getTimestamp(), equalTo(3L));
+		assertThat(((StringDataPoint)dataPoint).getValue(), equalTo("23.1"));
+
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(4L));
 		assertThat(dataPoint.getDoubleValue(), equalTo(25.1));
 
 		assertThat(results.hasNext(), equalTo(false));
@@ -184,6 +190,35 @@ public class LastAggregatorTest
 	}
 
 	@Test
+	public void test_stringValues()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new StringDataPoint(1, "a"));
+		group.addDataPoint(new StringDataPoint(1, "b"));
+		group.addDataPoint(new StringDataPoint(1, "c"));
+		group.addDataPoint(new StringDataPoint(2, "d"));
+		group.addDataPoint(new StringDataPoint(2, "e"));
+		group.addDataPoint(new StringDataPoint(2, "f"));
+		group.addDataPoint(new StringDataPoint(3, "g"));
+
+		DataPointGroup results = aggregator.aggregate(group);
+
+		DataPoint dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(1L));
+		assertThat(((StringDataPoint)dataPoint).getValue(), equalTo("c"));
+
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(2L));
+		assertThat(((StringDataPoint)dataPoint).getValue(), equalTo("f"));
+
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(3L));
+		assertThat(((StringDataPoint)dataPoint).getValue(), equalTo("g"));
+
+		assertThat(results.hasNext(), equalTo(false));
+	}
+
+	@Test
 	public void test_alignStartOn()
 	{
 		ListDataPointGroup group = new ListDataPointGroup("group");
@@ -196,7 +231,7 @@ public class LastAggregatorTest
 		group.addDataPoint(new LongDataPoint(7, 5));
 		group.addDataPoint(new LongDataPoint(8, 25));
 
-		LastAggregator lastAggregator = new LastAggregator(new DoubleDataPointFactoryImpl());
+		LastAggregator lastAggregator = new LastAggregator();
 		lastAggregator.setSampling(new Sampling(5, TimeUnit.MILLISECONDS));
 		lastAggregator.setAlignStartTime(true);
 		DataPointGroup results = lastAggregator.aggregate(group);
@@ -225,7 +260,7 @@ public class LastAggregatorTest
 		group.addDataPoint(new LongDataPoint(7, 5));
 		group.addDataPoint(new LongDataPoint(8, 25));
 
-		LastAggregator lastAggregator = new LastAggregator(new DoubleDataPointFactoryImpl());
+		LastAggregator lastAggregator = new LastAggregator();
 		lastAggregator.setSampling(new Sampling(5, TimeUnit.MILLISECONDS));
 		lastAggregator.setAlignStartTime(false);
 		DataPointGroup results = lastAggregator.aggregate(group);
@@ -254,7 +289,7 @@ public class LastAggregatorTest
 		group.addDataPoint(new LongDataPoint(7, 5));
 		group.addDataPoint(new LongDataPoint(8, 25));
 
-		LastAggregator lastAggregator = new LastAggregator(new DoubleDataPointFactoryImpl());
+		LastAggregator lastAggregator = new LastAggregator();
 		lastAggregator.setSampling(new Sampling(5, TimeUnit.MILLISECONDS));
 		lastAggregator.setAlignEndTime(true);
 		DataPointGroup results = lastAggregator.aggregate(group);

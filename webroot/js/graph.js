@@ -158,17 +158,12 @@ function buildKairosDBQuery() {
 				}
 				metric.addScaleAggregator(scalingFactor);
 			}
-                        else if (name == 'filter')
-                        {
-                                var filterop = $(aggregator).find(".aggregatorFilterOpValue").val();
+      else if (name == 'filter')
+      {
+        var filterop = $(aggregator).find(".aggregatorFilterOpValue").val();
 				var threshold = $(aggregator).find(".aggregatorFilterThresholdValue").val();
-				if (!$.isNumeric(threshold))
-				{
-					showErrorMessage("filter threshold value must be a numeric value.");
-					return true;
-				}
-				metric.addFilterAggregator(filterop, threshold);
-                        }
+				metric.addFilterAggregator(filterop, $.isNumeric(threshold) ? parseFloat(threshold) : threshold);
+      }
 			else if (name == 'trim')
 			{
 				var agg = metric.addAggregator(name);

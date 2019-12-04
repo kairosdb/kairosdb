@@ -36,7 +36,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.management.ManagementFactory;
-import java.util.*;
+import java.util.List;
+import java.util.Arrays;
+import java.util.Map;
 
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
 import static org.quartz.TriggerBuilder.newTrigger;
@@ -65,13 +67,12 @@ public class MetricReporterService implements KairosDBJob
 	private void setCustomTags(@Named("kairosdb.metrics.custom_tags") String customTags)
 	{
 		if (customTags.equals("") || customTags.equals(null)) return;
-		String customTagsString = customTags.replaceAll("\\s+","");
-		List<String> customTagsList = Arrays.asList(customTagsString.split(","));
+		List<String> customTagsList = Arrays.asList(customTags.split(","));
 
 		for (String ctString : customTagsList)
 		{
-			String[] tagValuePair = ctString.split(":");
-			m_customTagsMap.put(tagValuePair[0], tagValuePair[1]);
+			String[] tagValuePair = ctString.split(":", 2);
+			m_customTagsMap.put(tagValuePair[0].trim(), tagValuePair[1].trim());
 		}
 
 		logger.info("KairosDB metrics custom tags defined as: " + m_customTagsMap.toString());

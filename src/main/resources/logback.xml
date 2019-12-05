@@ -75,6 +75,7 @@
 	<logger name="org.kairosdb.datastore.cassandra.CassandraDatastore" level="DEBUG"/>-->
 
 	<!--<logger name="org.kairosdb.core.http.rest.MetricsResource" level="DEBUG"/>-->
+	<logger name="org.kairosdb.metrics4j" level="DEBUG"/>
 
 	<root level="INFO">
 		<appender-ref ref="stdout"/>

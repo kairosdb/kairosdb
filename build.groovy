@@ -446,8 +446,8 @@ def doRun(Rule rule)
 
 	//this is to load logback into classpath
 	runClasspath = jc.getClasspath()
-	runClasspath.addPaths(ivyDefaultResolve.getClasspath())
 	runClasspath.addPath("src/main/resources").addPath("src/main/java")
+	runClasspath.addPaths(ivyDefaultResolve.getClasspath())
 	kairosDefinition.set("classpath", runClasspath)
 	//ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
 	ret = saw.exec(kairosDefinition.getCommand())

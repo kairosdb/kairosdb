@@ -395,7 +395,7 @@ public class KairosDatastoreTest
 		}
 
 		@Override
-		public void indexMetricTags(DatastoreMetricQuery query, int indexTtl)
+		public void indexMetricTags(DatastoreMetricQuery query)
 		{
 		}
 

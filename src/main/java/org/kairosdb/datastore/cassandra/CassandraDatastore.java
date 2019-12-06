@@ -404,7 +404,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	}
 
 	@Override
-	public void indexMetricTags(DatastoreMetricQuery query, int indexTtl) throws DatastoreException
+	public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
 	{
 		CQLBatch batch = m_cqlBatchFactory.create();
 		Iterator<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query);
@@ -414,7 +414,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		while (rowKeys.hasNext())
 		{
 			DataPointsRowKey dataPointsRowKey = rowKeys.next();
-			batch.indexRowKey(dataPointsRowKey, indexTtl);
+			batch.indexRowKey(dataPointsRowKey, dataPointsRowKey.getTtl());
 			mm.checkMemoryAndThrowException();
 			indexStatementCount++;
 			if (indexStatementCount % MAX_CQL_BATCH_SIZE == 0) {

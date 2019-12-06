@@ -1,5 +1,6 @@
 package org.kairosdb.rollup;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
 import java.util.Date;
@@ -28,7 +29,7 @@ public class SamplingPeriod
 	@Override
 	public String toString()
 	{
-		return Objects.toStringHelper(this)
+		return MoreObjects.toStringHelper(this)
 				.add("startTime", new Date(startTime))
 				.add("endTime", new Date(endTime))
 				.toString();

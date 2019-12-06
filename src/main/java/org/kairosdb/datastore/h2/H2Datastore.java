@@ -517,7 +517,7 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	}
 
 	@Override
-	public void indexMetricTags(DatastoreMetricQuery query, int indexTtl) throws DatastoreException
+	public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
 	{
 		// H2 does not have an index
 	}

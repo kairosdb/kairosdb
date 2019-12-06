@@ -774,7 +774,7 @@ public class DataPointsParserTest
 		}
 
 		@Override
-		public void indexMetricTags(DatastoreMetricQuery query, int indexTtl) throws DatastoreException
+		public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
 		{
 		}
 

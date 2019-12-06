@@ -252,9 +252,9 @@ public class KairosDatastore implements KairosPostConstructInit
 
 	}
 
-	public void indexTags(QueryMetric queryMetric, int indexTtl) throws DatastoreException
+	public void indexTags(QueryMetric queryMetric) throws DatastoreException
 	{
-		m_datastore.indexMetricTags(queryMetric, indexTtl);
+		m_datastore.indexMetricTags(queryMetric);
 	}
 
 	public DatastoreQuery createQuery(QueryMetric metric) throws DatastoreException
@@ -495,11 +495,16 @@ public class KairosDatastore implements KairosPostConstructInit
 					m_datastore.queryDatabase(m_metric, searchResult);
 					returnedRows = searchResult.getRows();
 				}
+
 			}
 			catch (Exception e)
 			{
 				logger.error("Query Error", e);
 				throw new DatastoreException(e);
+			}
+			finally
+			{
+				searchResult.close();
 			}
 
 			//Get data point count

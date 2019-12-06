@@ -206,10 +206,10 @@ public class ClusterConnection
 			"FROM row_key_time_index WHERE metric = ? AND table_name = ? AND " +
 			"row_time >= ? AND row_time <= ?";
 
-	public static final String ROW_KEY_QUERY = "SELECT row_time, data_type, tags " +
+	public static final String ROW_KEY_QUERY = "SELECT row_time, data_type, tags, TTL (value) " +
 			"FROM row_keys WHERE metric = ? AND table_name = ? AND row_time = ?";
 
-	public static final String TAG_INDEXED_ROW_KEY_QUERY = "SELECT row_time, data_type, tags, tag_collection_hash " +
+	public static final String TAG_INDEXED_ROW_KEY_QUERY = "SELECT row_time, data_type, tags, TTL (value), tag_collection_hash " +
 			"FROM tag_indexed_row_keys WHERE metric = ? AND table_name = ? AND row_time = ? and single_tag_pair = ? " +
 			"ORDER BY data_type, tag_collection_hash";
 

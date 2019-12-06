@@ -174,6 +174,8 @@ outer:
 
 				rowKey = new DataPointsRowKey(m_metricName, m_clusterName, record.getTimestamp(0).getTime(),
 						record.getString(1), new TreeMap<String, String>(record.getMap(2, String.class, String.class)));
+
+				rowKey.setTtl(record.getInt(3));
 			}
 			else
 				rowKey = CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER.fromByteBuffer(record.getBytes(0), m_clusterName);

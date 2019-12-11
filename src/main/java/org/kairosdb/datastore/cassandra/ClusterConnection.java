@@ -16,6 +16,7 @@ import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -798,7 +799,7 @@ public class ClusterConnection
 								return resultSetsGroupedByTagName.stream().map(RowCountEstimatingRowKeyResultSet::create).min(comparator)
 										.orElseThrow(() -> new IllegalStateException("No minimal ResultSet found"));
 							}
-						});
+						}, MoreExecutors.directExecutor());
 
 				return keyTimeQueryResultSetFuture;
 			}

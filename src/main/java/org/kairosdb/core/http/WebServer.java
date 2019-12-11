@@ -180,7 +180,7 @@ public class WebServer implements KairosDBService
 				httpConfig.setSecureScheme("https");
 				httpConfig.setSecurePort(m_sslPort);
 				httpConfig.addCustomizer(new SecureRequestCustomizer());
-				SslContextFactory sslContextFactory = new SslContextFactory();
+				SslContextFactory sslContextFactory = new SslContextFactory.Server();
 				sslContextFactory.setKeyStorePath(m_keyStorePath);
 				sslContextFactory.setKeyStorePassword(m_keyStorePassword);
 

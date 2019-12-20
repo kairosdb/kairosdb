@@ -344,7 +344,7 @@ function showErrorMessage(message) {
 	var $errorContainer = $("#errorContainer");
 	$errorContainer.show();
 	$errorContainer.html("");
-	$errorContainer.append(message);
+	$errorContainer.append(htmlEncode(message));
 }
 
 function removeMetric(removeButton) {

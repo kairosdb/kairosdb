@@ -25,6 +25,9 @@
 	<script src="js/jquery.flot.resize.js"></script>
 	<!--<script src="js/highcharts.js"></script>-->
 	<script src="js/numeral.min.js"></script>
+	<script src="js/moment.min.js"></script>
+	<script src="js/moment-timezone-with-data.min.js"></script>
+	<script src="js/moment-strftime.js"></script>
 
 	<script>
 		var metricNames = [];
@@ -41,7 +44,10 @@
 				var data = decodeURI($.url("?d"));
 				var dataObj = JSON.parse(data);
 
-				showChartForQuery("(Click and drag to zoom)", queryObj, dataObj);
+				var zone = decodeURI($.url("?tz") || "utc");
+
+				showChartForQuery("(Click and drag to zoom)", queryObj, dataObj, zone);
+
 			}
 			catch (e)
 			{

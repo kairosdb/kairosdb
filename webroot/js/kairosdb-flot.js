@@ -1,4 +1,23 @@
-function showFlotChart(subTitle, yaxis, data) {
+
+/*
+ * this simulates using the timezoneJS library so that the graph will show timestamps
+ * in the correct time zone. since we are already loading momement.tz.js and it's data,
+ * there's no point in loading an another tz data set.
+ */
+window.timezoneJS = {Date: Date};
+
+/*
+ * allows the graph to do zone-aware x axis timestamp display
+ */
+Date.prototype.strftime = function(format) {
+	return moment.tz(this, this.timezone).strftime(format);
+}
+
+Date.prototype.setTimezone = function(ts) {
+	this.timezone = ts;
+}
+
+function showFlotChart(subTitle, yaxis, data, timezone) {
 	var flotOptions = {
 		series: {
 			lines: {
@@ -16,7 +35,7 @@ function showFlotChart(subTitle, yaxis, data) {
 		},
 		xaxis: {
 			mode: "time",
-			timezone: "browser"
+			timezone: timezone
 		},
 		legend: {
 			container: $("#graphLegend"),
@@ -40,19 +59,6 @@ function showFlotChart(subTitle, yaxis, data) {
 	});
 }
 
-function getTimezone(date)
-{
-	// Just rips off the timezone string from date's toString method. Probably not the best way to get the timezone.
-	var dateString = date.toString();
-	var index = dateString.lastIndexOf(" ");
-	if (index >= 0)
-	{
-		return dateString.substring(index);
-	}
-
-	return "";
-}
-
 function drawSingleSeriesChart(subTitle, data, flotOptions) {
 	$("#flotTitle").html(subTitle);
 
@@ -64,18 +70,14 @@ function drawSingleSeriesChart(subTitle, data, flotOptions) {
 		if (item) {
 			if (previousPoint != item.dataIndex) {
 				previousPoint = item.dataIndex;
-
 				$("#tooltip").remove();
 				var x = item.datapoint[0];
 				var y = item.datapoint[1].toFixed(2);
-
-				var timestamp = new Date(x);
-				var formattedDate = $.plot.formatDate(timestamp, "%b %e, %Y %H:%M:%S.millis %p");
-				formattedDate = formattedDate.replace("millis", timestamp.getMilliseconds());
-				formattedDate += " " + getTimezone(timestamp);
-				var numberFormat = (y % 1 != 0) ? '0,0[.00]' : '0,0';
+				var numberFormat = (y % 1 != 0) ? '0,0[.000]' : '0,0';
+				var timezone = item.series.xaxis.options.timezone || "utc";
 				showTooltip(item.pageX, item.pageY,
-				item.series.label + "<br>" + formattedDate + "<br>" + numeral(y).format(numberFormat));
+				item.series.label + "<br>" + moment.tz(new Date(x), timezone).format("YYYY-MM-DD HH:mm:ss.SSS z") + "<br>" +
+				numeral(y).format(numberFormat));
 			}
 		} else {
 			$("#tooltip").remove();
@@ -134,6 +136,5 @@ function showTooltip(x, y, contents) {
 	tooltip.css("left", left);
 	tooltip.css("top", top);
 
-	tooltip.fadeIn(200);
-
+	tooltip.fadeIn(100);
 }

@@ -4,6 +4,9 @@ html {
 body {
     margin: 0 1em 1em 1em;
 }
+a {
+    color: #0066cc;
+}
 #page-header * {
     box-sizing: border-box;
 }

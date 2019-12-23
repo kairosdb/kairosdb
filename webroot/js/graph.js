@@ -343,8 +343,7 @@ function getAdditionalChartData() {
 function showErrorMessage(message) {
 	var $errorContainer = $("#errorContainer");
 	$errorContainer.show();
-	$errorContainer.html("");
-	$errorContainer.append(message);
+	$errorContainer.text(message);
 }
 
 function removeMetric(removeButton) {

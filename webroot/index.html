@@ -12,10 +12,12 @@
 		  href="img/favicon.png"/>
 
 	<link href="css/cupertino/jquery-ui-1.10.0.custom.css" rel="stylesheet">
-	<link href="css/style.css" rel="stylesheet">
 	<link href="css/combobox.css" rel="stylesheet">
 	<link href="css/jquery.dropdown.css" rel="stylesheet">
 	<link href="css/date-time-picker.css" rel="stylesheet">
+
+	<link href="css/style.css" rel="stylesheet">
+	<link href="css/header.css" rel="stylesheet">
 
 	<script src="js/jquery.1.9.0.min.js"></script>
 	<script src="js/kairosdb.js"></script>
@@ -182,42 +184,12 @@
 </head>
 
 <body>
-
-<IMG src="img/logoSmall.png" alt="KairosDB Web UI" title="KairosDB Web UI"/>
-<br>
-<br>
-
-<span class="header ui-widget">Time Range</span>
-
-<div class="wire-frame" style="margin-top: 5px;">
-	<table>
-		<tr>
-		<tr>
-			<td colspan="3" align="center" class="ui-widget header">Absolute</td>
-		<td colspan="2" align="center" class="ui-widget header">Relative</td>
-		<td align="center" class="ui-widget header">Time Zone</td>
-		</tr>
-		<tr>
-			<td class="ui-widget">From*</td>
-			<td><input id="startTime" class="ui-widget" type="text"
-					   style="width:200px;"/>
-			</td>
-			<td class="ui-widget">or</td>
-			<td><input id="startRelativeValue" class="ui-widget"
-					   style="width: 30px;" type="text" value="1">
-				<select id="startRelativeUnit" class="ui-widget">
-					<option value="years">Years</option>
-					<option value="months">Months</option>
-					<option value="weeks">Weeks</option>
-					<option value="days">Days</option>
-					<option value="hours" selected="true">Hours</option>
-					<option value="minutes">Minutes</option>
-					<option value="seconds">Seconds</option>
-				</select>
-			</td>
-			<td class="ui-widget"> ago</td>
-			<td rowspan="2">
-				<select id="timeZone" class="ui-widget timeZone"
+<div id="page-header">
+<div id="logo"><img src='img/kairosdb.png'></div>
+<a class="active" href="index.html">Query</a>
+<a href="rollups.html">Rollups</a>
+<div id="timezone-header">
+	Timezone: <select id="timeZone" class="ui-widget timeZone"
 						style="margin-left: 10px;">
 					<option value="" selected="selected">Default</option>
 					<option value="Australia/ACT">ACT</option>
@@ -762,13 +734,43 @@
 					<option value="Zulu">Zulu</option>
 					<option value="Europe/Zurich">Zurich</option>
 				</select>
+</div>
+</div>
+
+<div class="header ui-widget">Time Range</div>
+
+<div class="wire-frame" style="margin-top: 5px;">
+	<table style="white-space: nowrap;">
+		<tr>
+		<tr>
+			<td colspan="3" align="center" class="ui-widget header">Absolute</td>
+		<td colspan="2" align="center" class="ui-widget header">Relative</td>
+		</tr>
+		<tr>
+			<td class="ui-widget">From*</td>
+			<td><input id="startTime" class="ui-widget" type="text"
+					   style="width:200px;"/>
 			</td>
+			<td class="ui-widget or">or</td>
+			<td><input id="startRelativeValue" class="ui-widget"
+					   style="width: 30px;" type="text" value="1">
+					   <select id="startRelativeUnit" class="ui-widget">
+					<option value="years">Years</option>
+					<option value="months">Months</option>
+					<option value="weeks">Weeks</option>
+					<option value="days">Days</option>
+					<option value="hours" selected="true">Hours</option>
+					<option value="minutes">Minutes</option>
+					<option value="seconds">Seconds</option>
+				</select>
+			</td>
+			<td class="ui-widget"> ago</td>
 		</tr>
 		<tr>
 			<td class="ui-widget">To</td>
 			<td><input id="endTime" class="ui-widget" type="text"
 					   style="width:200px;"/></td>
-			<td class="ui-widget">or</td>
+			<td class="ui-widget or">or</td>
 			<td><input id="endRelativeValue" class="ui-widget"
 					   style="width: 30px;" type="text">
 				<select id="endRelativeUnit" class="ui-widget">
@@ -789,23 +791,30 @@
 <!--<p>
 	Post Processing Script: <input id="post_script" class="ui_widget" type="text" style="width: 150px;"/>
 </p>-->
-
-<span class="header ui-widget">Metrics</span>
+<div style="margin-top: 5px">
+<span class="ui-widget">Metrics</span>
 <button id="addMetricButton"></button>
-
+</div>
 <div id="tabs" style="width:800px; background:none;margin-top: 5px;">
 	<ul></ul>
 </div>
 
 <div class="ui-widget footnote">* Required Fields</div>
 
-<p></p>
+<p/>
 <button id="submitButton" style="margin-top: 10px;">Graph</button>
 <button id="showQueryButton" style="margin-top: 10px;">Show Query</button>
 <button id="saveButton" style="margin-top: 10px;" value="Dropdown"
 		data-dropdown="#saveDropdown">Save
 </button>
 <button id="deleteButton" style="margin-top: 10px;">Delete Data</button>
+<table style="margin-top: 10px; width: 800px" class="ui-widget"><tr>
+	<td><span class="header ui-widget">Query Time: </span><span id="queryTime" class="ui-widget"></span></td>
+	<td><span class="header ui-widget">Sample Size: </span><span id="sampleSize" class="ui-widget"></span></td>
+	<td><span class="header ui-widget">Data Points: </span><span id="numDataPoints" class="ui-widget"></span></td>
+	<td><a id="graph_link" href="" target="_blank" style="display: none">Link to Graph</a></td>
+</tr>
+</table>
 
 <div class="ui-widget">
 	<div id="errorContainer" class="ui-state-error ui-corner-all"
@@ -826,16 +835,6 @@
 			  style="margin-top: 5px;"></textarea>
 </div>
 
-<p>
-	<a id="graph_link" href="" target="_blank" style="display: none">Link to
-		Graph</a>
-</p>
-<span class="header ui-widget">Query Time: </span><span id="queryTime"
-														class="ui-widget"></span><br>
-<span class="header ui-widget">Sample Size: </span><span id="sampleSize"
-														 class="ui-widget"></span><br>
-<span class="header ui-widget">Data Points: </span><span id="numDataPoints"
-														 class="ui-widget"></span><br>
 <span id="status" class="ui-widget"></span>
 
 <table style="width: 100%;">

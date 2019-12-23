@@ -1,0 +1,42 @@
+html {
+    font-family: sans-serif;
+}
+body {
+    margin: 0 1em 1em 1em;
+}
+#page-header * {
+    box-sizing: border-box;
+}
+#page-header {
+    box-sizing: border-box;
+    background-color: #0066cc;
+    margin: 0 -1em 1em -1em;
+    font-size: 16px;
+    line-height: 30px;
+    color: white;
+}
+#page-header #logo {
+    background-color: white;
+}
+#page-header #logo img {
+    height: 30px;
+    width: 98px;
+}
+#page-header > * {
+    display: inline-block;
+    vertical-align: middle;
+    height: 40px;
+    padding: 5px 10px;
+}
+#page-header a {
+    color: white;
+    text-decoration: none;
+}
+
+#page-header a.active {
+    font-weight: bold;
+    border-bottom: 3px solid white;
+}
+#page-header a:hover {
+    background-color: rgba(255,255,255, 0.2);
+}

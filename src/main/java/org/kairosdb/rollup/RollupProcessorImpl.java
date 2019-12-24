@@ -205,8 +205,13 @@ public class RollupProcessorImpl implements RollupProcessor
 	 */
 	private static long calculateStartTime(Duration executionInterval, Sampling samplingSize, long lastExecutionTime, long now)
 	{
-		return lastExecutionTime == 0L ? RollupUtil.subtract(RollupUtil.subtract(now, executionInterval), samplingSize)
-				: lastExecutionTime;
+		if (lastExecutionTime > 0) {
+			return lastExecutionTime;
+		}
+		// if the sampling is set to more than single count of the temporal unit (eg 10 minutes),
+		// align the start time to an intuitive time boundary (eg minute zero of the hour)
+		return RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(
+				RollupUtil.subtract(RollupUtil.subtract(now, executionInterval), samplingSize), samplingSize);
 	}
 
 	@Override

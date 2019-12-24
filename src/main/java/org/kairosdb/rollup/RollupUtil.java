@@ -70,6 +70,8 @@ public class RollupUtil
 				return ChronoUnit.YEARS;
 			case MONTHS:
 				return ChronoUnit.MONTHS;
+			case WEEKS:
+				return ChronoUnit.WEEKS;
 			case DAYS:
 				return ChronoUnit.DAYS;
 			case HOURS:
@@ -128,5 +130,60 @@ public class RollupUtil
 		ChronoUnit chronoUnit = convertSamplingToChronoUnit(duration);
 		LocalDateTime localDateTime =	LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneOffset.UTC);
 		return localDateTime.minus(duration.getValue(), chronoUnit).toInstant(ZoneOffset.UTC).toEpochMilli();
+	}
+
+	/**
+	 * If the sample size is multiple units, align them on the boundary of the next highest granularity;
+	 * eg. 10 min sample size should start on minute zero of hour
+	 *
+	 * TODO Support WEEKS, eg bi-weekly rollup
+	 * - WEEKS are not supported because a week can start on a monday or a sunday depending on domain / locale.
+	 * - figure out correct locale to use to find the first day of week
+	 * - Example at https://stackoverflow.com/questions/28450720/get-date-of-first-day-of-week-based-on-localdate-now-in-java-8
+	 */
+	public static long getTimeAlignedToIntuitiveTemporalBoundary(long originalStartTime, Sampling samplingSize) {
+		// no need to align an individual sample size as it will be aligned to the next highest granularity by definition.
+		if (samplingSize.getValue() == 1) {
+			return originalStartTime;
+		}
+
+		LocalDateTime originalDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(originalStartTime), ZoneOffset.UTC);
+		LocalDateTime startTime = null;
+		ChronoUnit sampleUnit = convertSamplingToChronoUnit(samplingSize);
+
+		if (ChronoUnit.MONTHS.equals(sampleUnit)) {
+			// Because months have variable lengths,
+			// handle months as a special case as an offset from the beginning of the year. Eg 3 months = quarterly alignment.
+			startTime = originalDateTime.withDayOfYear(1).truncatedTo(ChronoUnit.DAYS);
+			while (!startTime.plusMonths(samplingSize.getValue()).isAfter(originalDateTime)) {
+				startTime = startTime.plusMonths(samplingSize.getValue());
+			}
+			return startTime.toInstant(ZoneOffset.UTC).toEpochMilli();
+		}
+
+		switch(sampleUnit) {
+			case MILLIS:
+				startTime = originalDateTime.truncatedTo(ChronoUnit.SECONDS);
+				break;
+			case SECONDS:
+				startTime = originalDateTime.truncatedTo(ChronoUnit.MINUTES);
+				break;
+			case MINUTES:
+				startTime = originalDateTime.truncatedTo(ChronoUnit.HOURS);
+				break;
+			case HOURS:
+				startTime = originalDateTime.truncatedTo(ChronoUnit.DAYS);
+				break;
+			case DAYS:
+				startTime = originalDateTime.withDayOfYear(1).truncatedTo(ChronoUnit.DAYS);
+				break;
+		}
+		if (startTime == null) {
+			// unsupported ChronoUnit, return un-clamped start time
+			return originalStartTime;
+		}
+		// brings truncated start time back as close to the original start time as possible in multiples of the samplingSize
+		startTime = startTime.plus(startTime.until(originalDateTime, sampleUnit) / samplingSize.getValue() * samplingSize.getValue(), sampleUnit);
+		return startTime.toInstant(ZoneOffset.UTC).toEpochMilli();
 	}
 }

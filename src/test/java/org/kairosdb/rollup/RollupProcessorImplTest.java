@@ -1,37 +1,43 @@
 package org.kairosdb.rollup;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.Mockito.mock;
+
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.io.Resources;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.kairosdb.core.*;
+import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.KairosFeatureProcessor;
+import org.kairosdb.core.KairosRootConfig;
+import org.kairosdb.core.TestDataPointFactory;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datapoints.LongDataPoint;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.core.datastore.DatastoreQuery;
+import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryMetric;
+import org.kairosdb.core.datastore.QueryQueuingManager;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
-import org.kairosdb.core.jobs.CacheFileCleaner;
 import org.kairosdb.datastore.h2.H2Datastore;
 import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Mockito.mock;
 
 public class RollupProcessorImplTest
 {
@@ -90,6 +96,7 @@ public class RollupProcessorImplTest
 
 		// Add data points
 		long now = now();
+
 		ImmutableSortedMap<String, String> tags = ImmutableSortedMap.of("host", "foo", "customer", "foobar");
 		addDataPoint(query.getName(), tags, now - (69 * MINUTE), 3);
 		addDataPoint(query.getName(), tags, now - (65 * MINUTE), 3);
@@ -263,7 +270,8 @@ public class RollupProcessorImplTest
 
 	private long now()
 	{
-		return System.currentTimeMillis();
+		long now = System.currentTimeMillis();
+		return now - now % 600_000L;
 	}
 
 }

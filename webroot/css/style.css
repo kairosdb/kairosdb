@@ -2,6 +2,10 @@
 .ui-widget {
 	font-size: 12px;
 }
+/* use custom icon color for more contrast */
+.ui-state-default .ui-icon {
+    background-image: url('cupertino/images/ui-icons_0066cc_256x240.png');
+}
 
 .ui-widget-header {
 	/* Remove tab header border */

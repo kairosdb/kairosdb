@@ -17,9 +17,9 @@ public interface RollupProcessor extends Interruptable
 			4 - Set start and end times on sampling period
 			5 - Create a rollup for each sampling interval until you reach now.
 		 */
-	long process(RollupTaskStatusStore statusStore, RollupTask task, QueryMetric rollupQueryMetric)
+	long process(RollupTaskStatusStore statusStore, RollupTask task, Rollup rollup, QueryMetric rollupQueryMetric)
 			throws RollUpException, DatastoreException, InterruptedException;
 
-	long process(RollupTask task, QueryMetric rollupQueryMetric, long startTime, long endTime)
+	long process(RollupTask task, Rollup rollup, QueryMetric rollupQueryMetric, long startTime, long endTime)
 			throws DatastoreException, InterruptedException;
 }

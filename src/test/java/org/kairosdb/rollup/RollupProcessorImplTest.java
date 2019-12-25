@@ -112,7 +112,7 @@ public class RollupProcessorImplTest
 		addDataPoint(query.getName(), tags, now - (15 * MINUTE), 8);
 
 		// Process rollups
-		processor.process(mockStatusStore, task, query);
+		processor.process(mockStatusStore, task, rollup, query);
 
 		// Verify 6 rollups created every 10 minutes
 		List<DataPoint> rollups = getRollups(rollup.getSaveAs());
@@ -143,7 +143,7 @@ public class RollupProcessorImplTest
 		addDataPoint(query.getName(), tags, now - (49 * MINUTE), 5);
 
 		// Process rollups
-		processor.process(mockStatusStore, task, query);
+		processor.process(mockStatusStore, task, rollup, query);
 
 		// Verify 1 rollup
 		List<DataPoint> rollups = getRollups(rollup.getSaveAs());
@@ -173,7 +173,7 @@ public class RollupProcessorImplTest
 		addDataPoint(query.getName(), tags, now - (2 * MINUTE), 2);
 
 		// Process rollups
-		processor.process(mockStatusStore, task, query);
+		processor.process(mockStatusStore, task, rollup, query);
 
 		// Verify 1 rollup where both data points are summed together
 		List<DataPoint> rollups = getRollups(existingRollupTime + 1000, rollup.getSaveAs());
@@ -202,7 +202,7 @@ public class RollupProcessorImplTest
 		addDataPoint(query.getName(), tags, now - (2 * MINUTE), 2);
 
 		// Process rollups
-		processor.process(mockStatusStore, task, query);
+		processor.process(mockStatusStore, task, rollup, query);
 
 		// Verify 1 rollup where both data points are summed together
 		List<DataPoint> rollups = getRollups(existingRollupTime + 1000, rollup.getSaveAs());
@@ -229,7 +229,7 @@ public class RollupProcessorImplTest
 		// Add NO data points
 
 		// Process rollups
-		processor.process(mockStatusStore, task, query);
+		processor.process(mockStatusStore, task, rollup, query);
 
 		// Verify not rollups after existing rollup
 		List<DataPoint> rollups = getRollups(existingRollupTime + 1000, rollup.getSaveAs());

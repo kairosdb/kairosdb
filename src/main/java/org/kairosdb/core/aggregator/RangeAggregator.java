@@ -262,7 +262,6 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
     private class RangeDataPointAggregator extends AggregatedDataPointGroupWrapper
     {
         protected RangeSubAggregator m_subAggregator;
-        protected Calendar m_calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
         protected Iterator<DataPoint> m_dpIterator;
         /* used for generic range computations */
         private DateTimeField m_unitField;

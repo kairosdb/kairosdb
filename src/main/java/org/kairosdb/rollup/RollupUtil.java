@@ -1,8 +1,5 @@
 package org.kairosdb.rollup;
 
-import org.kairosdb.core.aggregator.Sampling;
-import org.kairosdb.core.datastore.Duration;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -10,10 +7,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.TimeZone;
+import org.kairosdb.core.aggregator.Sampling;
+import org.kairosdb.core.datastore.Duration;
 
 public class RollupUtil
 {
 	private RollupUtil(){}
+
+	private static TimeZone ZONE_UTC = TimeZone.getTimeZone("UTC");
 
 	public static List<SamplingPeriod> getSamplingPeriods(Sampling sampling, long startTime, long endTime)
 	{
@@ -33,19 +35,26 @@ public class RollupUtil
 		return samplingPeriods;
 	}
 
+
+	public static List<SamplingPeriod> getSamplingPeriodsAlignedToUnit(Sampling sampling, long startTime, long endTime)
+	{
+		return getSamplingPeriodsAlignedToUnit(sampling, startTime, endTime, ZONE_UTC);
+	}
+
 	/**
 	 Returns a list of times for the specified time range aligned to a sampling boundary. For example, if the sampling
 	 is an hour, this method returns all the times between the start and end time that fall on the hour boundary.
 	 @param sampling sampling
 	 @param startTime starting time
 	 @param endTime ending time
+	 @param timeZone the timezone in which the alignment should be performed
 	 @return list of times for the specified time range aligned to the sampling
 	 */
-	public static List<SamplingPeriod> getSamplingPeriodsAlignedToUnit(Sampling sampling, long startTime, long endTime)
+	public static List<SamplingPeriod> getSamplingPeriodsAlignedToUnit(Sampling sampling, long startTime, long endTime, TimeZone timeZone)
 	{
 		List<SamplingPeriod> samplingPeriods = new ArrayList<>();
-		long startTimeAligned = alignToSamplingBoundary(sampling, startTime);
-		long endTimeAligned = alignToSamplingBoundary(sampling, endTime);
+		long startTimeAligned = alignToSamplingBoundary(sampling, startTime, timeZone);
+		long endTimeAligned = alignToSamplingBoundary(sampling, endTime, timeZone);
 
 		if (startTimeAligned == endTimeAligned)
 		{
@@ -107,9 +116,14 @@ public class RollupUtil
 
 	private static long alignToSamplingBoundary(Sampling sampling, long timestamp)
 	{
-		LocalDateTime localDateTime =	LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneOffset.UTC);
+		return alignToSamplingBoundary(sampling, timestamp, ZONE_UTC);
+	}
+
+	private static long alignToSamplingBoundary(Sampling sampling, long timestamp, TimeZone timeZone)
+	{
+		LocalDateTime localDateTime =	LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), timeZone.toZoneId());
 		localDateTime = trucateTo(localDateTime, sampling);
-		return localDateTime.toInstant(ZoneOffset.UTC).toEpochMilli();
+		return localDateTime.atZone(timeZone.toZoneId()).toInstant().toEpochMilli();
 	}
 
 	private static long getNextStartTime(Sampling sampling, long currentStartTime)
@@ -141,13 +155,13 @@ public class RollupUtil
 	 * - figure out correct locale to use to find the first day of week
 	 * - Example at https://stackoverflow.com/questions/28450720/get-date-of-first-day-of-week-based-on-localdate-now-in-java-8
 	 */
-	public static long getTimeAlignedToIntuitiveTemporalBoundary(long originalStartTime, Sampling samplingSize) {
+	public static long getTimeAlignedToIntuitiveTemporalBoundary(long originalStartTime, Sampling samplingSize, TimeZone timeZone) {
 		// no need to align an individual sample size as it will be aligned to the next highest granularity by definition.
 		if (samplingSize.getValue() == 1) {
 			return originalStartTime;
 		}
 
-		LocalDateTime originalDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(originalStartTime), ZoneOffset.UTC);
+		LocalDateTime originalDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(originalStartTime), timeZone.toZoneId());
 		LocalDateTime startTime = null;
 		ChronoUnit sampleUnit = convertSamplingToChronoUnit(samplingSize);
 
@@ -158,7 +172,7 @@ public class RollupUtil
 			while (!startTime.plusMonths(samplingSize.getValue()).isAfter(originalDateTime)) {
 				startTime = startTime.plusMonths(samplingSize.getValue());
 			}
-			return startTime.toInstant(ZoneOffset.UTC).toEpochMilli();
+			return startTime.atZone(timeZone.toZoneId()).toInstant().toEpochMilli();
 		}
 
 		switch(sampleUnit) {
@@ -184,6 +198,6 @@ public class RollupUtil
 		}
 		// brings truncated start time back as close to the original start time as possible in multiples of the samplingSize
 		startTime = startTime.plus(startTime.until(originalDateTime, sampleUnit) / samplingSize.getValue() * samplingSize.getValue(), sampleUnit);
-		return startTime.toInstant(ZoneOffset.UTC).toEpochMilli();
+		return startTime.atZone(timeZone.toZoneId()).toInstant().toEpochMilli();
 	}
 }

@@ -1,18 +1,23 @@
 package org.kairosdb.rollup;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.util.Date;
+import java.util.List;
+import org.joda.time.DateTimeZone;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.aggregator.RangeAggregator;
 import org.kairosdb.core.aggregator.Sampling;
-import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.core.datastore.DatastoreQuery;
+import org.kairosdb.core.datastore.Duration;
+import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.Order;
+import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.plugin.Aggregator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Date;
-import java.util.List;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class RollupProcessorImpl implements RollupProcessor
 {
@@ -39,7 +44,7 @@ public class RollupProcessorImpl implements RollupProcessor
 		5 - Create a rollup for each sampling interval until you reach now.
 	 */
 	@Override
-	public long process(RollupTaskStatusStore statusStore, RollupTask task, QueryMetric rollupQueryMetric)
+	public long process(RollupTaskStatusStore statusStore, RollupTask task, Rollup rollup, QueryMetric rollupQueryMetric)
 			throws RollUpException, DatastoreException, InterruptedException
 	{
 		long now = now();
@@ -47,19 +52,28 @@ public class RollupProcessorImpl implements RollupProcessor
 		long lastExecutionTime = getLastExecutionTime(statusStore, task, now);
 		if (log.isDebugEnabled())
 			log.debug("LastExecutionTime = " + new Date(lastExecutionTime));
+
+
 		long startTime = calculateStartTime(task.getExecutionInterval(), samplingSize, lastExecutionTime, now);
 		if (log.isDebugEnabled())
 			log.debug("startTime = " + new Date(startTime));
 
-		return process(task, rollupQueryMetric, startTime, now);
+		return process(task, rollup, rollupQueryMetric, startTime, now);
 	}
 
 	@Override
-	public long process(RollupTask task, QueryMetric rollupQueryMetric, long startTime, long endTime)
+	public long process(RollupTask task, Rollup rollup, QueryMetric rollupQueryMetric, long startTime, long endTime)
 			throws DatastoreException, InterruptedException
 	{
+		DateTimeZone timeZone = rollup.getTimeZone();
+		if (timeZone == null) {
+			timeZone = DateTimeZone.UTC;
+		}
 		Sampling samplingSize = getSamplingSize(rollupQueryMetric.getAggregators());
-		List<SamplingPeriod> samplingPeriods = RollupUtil.getSamplingPeriodsAlignedToUnit(samplingSize, startTime, endTime);
+		// if the sampling is set to more than single count of the temporal unit (eg 10 minutes),
+		// align the start time to an intuitive time boundary (eg minute zero of the hour)
+		startTime = RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(startTime, samplingSize, timeZone.toTimeZone());
+		List<SamplingPeriod> samplingPeriods = RollupUtil.getSamplingPeriodsAlignedToUnit(samplingSize, startTime, endTime, timeZone.toTimeZone());
 
 		if (log.isDebugEnabled())
 		{
@@ -205,13 +219,7 @@ public class RollupProcessorImpl implements RollupProcessor
 	 */
 	private static long calculateStartTime(Duration executionInterval, Sampling samplingSize, long lastExecutionTime, long now)
 	{
-		if (lastExecutionTime > 0) {
-			return lastExecutionTime;
-		}
-		// if the sampling is set to more than single count of the temporal unit (eg 10 minutes),
-		// align the start time to an intuitive time boundary (eg minute zero of the hour)
-		return RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(
-				RollupUtil.subtract(RollupUtil.subtract(now, executionInterval), samplingSize), samplingSize);
+		return lastExecutionTime > 0 ? lastExecutionTime : RollupUtil.subtract(RollupUtil.subtract(now, executionInterval), samplingSize);
 	}
 
 	@Override

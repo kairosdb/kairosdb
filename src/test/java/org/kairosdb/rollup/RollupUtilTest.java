@@ -6,6 +6,8 @@ import static org.junit.Assert.assertThat;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.TimeZone;
+import org.joda.time.DateTimeZone;
 import org.junit.Test;
 import org.kairosdb.core.aggregator.Sampling;
 import org.kairosdb.core.datastore.TimeUnit;
@@ -216,42 +218,50 @@ public class RollupUtilTest {
 
 	@Test
 	public void testGetTimeAlignedToIntuitiveTemporalBoundary() {
+		TimeZone utc = DateTimeZone.UTC.toTimeZone();
 		assertThat(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 1, 1, 0, 55, 30, 23),
-				new Sampling(20, TimeUnit.MILLISECONDS)),
+				new Sampling(20, TimeUnit.MILLISECONDS), utc),
 				equalTo(time(2003, 1, 1, 0, 55, 30, 20)));
 
 		assertThat(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 1, 1, 0, 55, 30, 23),
-				new Sampling(20, TimeUnit.SECONDS)), equalTo(time(2003, 1, 1, 0, 55, 20)));
+				new Sampling(20, TimeUnit.SECONDS), utc), equalTo(time(2003, 1, 1, 0, 55, 20)));
 
 		assertThat(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 1, 1, 0, 55, 30, 23),
-				new Sampling(20, TimeUnit.MINUTES)),
+				new Sampling(20, TimeUnit.MINUTES), utc),
 				equalTo(time(2003, 1, 1, 0, 40)));
 
 		assertThat(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 1, 1, 17, 55, 30, 23),
-				new Sampling(3, TimeUnit.HOURS)),
+				new Sampling(3, TimeUnit.HOURS), utc),
 				equalTo(time(2003, 1, 1, 15)));
 
 		assertThat(time(2003, 2, 15, 0),
 				equalTo(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 2, 17, 17, 55, 30, 23),
-						new Sampling(3, TimeUnit.DAYS))));
+						new Sampling(3, TimeUnit.DAYS), utc)));
 		// weeks isn't implemented
 		assertThat(time(2003, 1, 3, 0),
 				equalTo(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 1, 3, 0),
-						new Sampling(2, TimeUnit.WEEKS))));
+						new Sampling(2, TimeUnit.WEEKS), utc)));
 
 		// 3 month size, ie quarterly rollup, should align on quarter boundaries
 		assertThat(time(2003, 1, 1, 0),
 				equalTo(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 3, 15, 17, 55, 30, 23),
-						new Sampling(3, TimeUnit.MONTHS))));
+						new Sampling(3, TimeUnit.MONTHS), utc)));
 		assertThat(time(2003, 4, 1, 0),
 				equalTo(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 4, 15, 17, 55, 30, 23),
-						new Sampling(3, TimeUnit.MONTHS))));
+						new Sampling(3, TimeUnit.MONTHS), utc)));
 		assertThat(time(2003, 7, 1, 0),
 				equalTo(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 9, 15, 17, 55, 30, 23),
-						new Sampling(3, TimeUnit.MONTHS))));
+						new Sampling(3, TimeUnit.MONTHS), utc)));
 		assertThat(time(2003, 10, 1, 0),
 				equalTo(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 12, 15, 17, 55, 30, 23),
-						new Sampling(3, TimeUnit.MONTHS))));
+						new Sampling(3, TimeUnit.MONTHS), utc)));
+
+		/* time zone UTC-3.5 hr */
+		// 10:40 utc = 7:10 local
+		// 7:10 aligns to 6 local = 9:30 utc
+		assertThat(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 1, 1, 10, 55, 30, 23),
+				new Sampling(3, TimeUnit.HOURS), DateTimeZone.forID("America/St_Johns").toTimeZone()),
+				equalTo(time(2003, 1, 1, 9, 30)));
 	}
 
 	private static long time(int year, int month, int day, int hour) {

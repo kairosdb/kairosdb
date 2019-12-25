@@ -2,6 +2,7 @@ package org.kairosdb.rollup;
 
 import com.google.gson.annotations.SerializedName;
 import org.apache.bval.constraints.NotEmpty;
+import org.joda.time.DateTimeZone;
 import org.kairosdb.core.datastore.QueryMetric;
 
 import javax.validation.constraints.NotNull;
@@ -14,6 +15,9 @@ public class Rollup
 	@NotEmpty()
 	@SerializedName("save_as")
 	private String saveAs;
+
+	@SerializedName("time_zone")
+	private DateTimeZone timeZone;
 
 	private final transient List<QueryMetric> queryMetrics = new ArrayList<QueryMetric>();
 	// todo add tags
@@ -43,5 +47,9 @@ public class Rollup
 	public void addQuery(QueryMetric query)
 	{
 		queryMetrics.add(query);
+	}
+
+	public DateTimeZone getTimeZone() {
+		return this.timeZone;
 	}
 }

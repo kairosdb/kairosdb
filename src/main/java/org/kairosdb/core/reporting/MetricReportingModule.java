@@ -36,10 +36,10 @@ public class MetricReportingModule extends ServletModule
 		filter("/*").through(MonitorFilter.class);
 
 		bind(DataPointsMonitor.class).in(Scopes.SINGLETON);
-
+		bind(ProcessTagConfiguration.class).in(Scopes.SINGLETON);
 		KairosMetricReporterListProvider reporterProvider = new KairosMetricReporterListProvider();
 		bind(KairosMetricReporterListProvider.class).toInstance(reporterProvider);
-
+		requestStaticInjection(ThreadReporter.class);
 		bindListener(Matchers.any(), reporterProvider);
 	}
 }

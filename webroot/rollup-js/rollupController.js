@@ -153,15 +153,9 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
         }
     };
 
-    $scope.selectAllTasks = function () {
+    $scope.toggleSelectAll = function ($event) {
         _.each($scope.tasks, function (task) {
-            task.selected = true;
-        });
-    };
-
-    $scope.selectNoTasks = function () {
-        _.each($scope.tasks, function (task) {
-            task.selected = false;
+            task.selected = $event.target.checked;
         });
     };
 

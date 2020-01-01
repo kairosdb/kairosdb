@@ -47,6 +47,7 @@ public class MetricReporterService implements KairosDBJob
 	public static final String HOSTNAME = "HOSTNAME";
 	public static final String SCHEDULE_PROPERTY = "kairosdb.reporter.schedule";
 	public static final String REPORTER_TTL = "kairosdb.reporter.ttl";
+	private final ProcessTagConfiguration m_processTags;
 
 	private Publisher<DataPointEvent> m_publisher;
 	private KairosMetricReporterListProvider m_reporterProvider;
@@ -62,13 +63,14 @@ public class MetricReporterService implements KairosDBJob
 			KairosMetricReporterListProvider reporterProvider,
 			@Named(SCHEDULE_PROPERTY) String schedule,
 			@Named(HOSTNAME) String hostname,
-			@Named(REPORTER_TTL) int ttl)
+			@Named(REPORTER_TTL) int ttl,
+			ProcessTagConfiguration processTags)
 	{
 		m_hostname = checkNotNullOrEmpty(hostname);
 		m_reporterProvider = reporterProvider;
 		m_schedule = schedule;
 		m_ttl = ttl;
-
+		m_processTags = processTags;
 		m_publisher = eventBus.createPublisher(DataPointEvent.class);
 	}
 
@@ -103,6 +105,7 @@ public class MetricReporterService implements KairosDBJob
 				List<DataPointSet> dpList = reporter.getMetrics(timestamp);
 				for (DataPointSet dataPointSet : dpList)
 				{
+					dataPointSet.addTags(m_processTags.getTags());
 					for (DataPoint dataPoint : dataPointSet.getDataPoints())
 					{
 						m_publisher.post(new DataPointEvent(dataPointSet.getName(),
@@ -111,10 +114,9 @@ public class MetricReporterService implements KairosDBJob
 				}
 			}
 
-
 			Runtime runtime = Runtime.getRuntime();
 			ImmutableSortedMap<String, String> tags = Tags.create()
-					.put("host", m_hostname).build();
+					.put("host", m_hostname).putAll(m_processTags.getTags()).build();
 			m_publisher.post(new DataPointEvent("kairosdb.jvm.free_memory",
 					tags, m_dataPointFactory.createDataPoint(timestamp, runtime.freeMemory()), m_ttl));
 			m_publisher.post(new DataPointEvent("kairosdb.jvm.total_memory",

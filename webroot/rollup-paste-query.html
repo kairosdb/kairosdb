@@ -1,10 +1,8 @@
-<div style="font-family: Lucida Console, Monaco, monospace">
+<div>
 	<div class="modal-header text-center">
-		<h3 class="modal-title text-info">Create a Roll-up</h3>
-		<br>
-		<span style="font-size: 13px">Paste a JSON query from the <a href="index.html">KairosDB query</a> UI.</span>
+		<h4 class="modal-title">Create a Roll-up</h4>
+		Paste a JSON query from the <a href="index.html">KairosDB query</a> UI.
 	</div>
-
 	<div class="modal-body">
 		<table width="100%">
 			<tr>
@@ -49,7 +47,7 @@
 		<p></p><br>
 		<span style="font-weight: bold;">JSON Query</span><br>
 		<textarea
-				style="vertical-align:top; width:100%;"
+				style="vertical-align:top; width:100%; font-family: monospace;"
 				ng-model="query" cols="40" rows="10"
 				ng-change="validate()">
 		</textarea>

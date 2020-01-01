@@ -1,38 +1,34 @@
-<div style="font-family: Lucida Console, Monaco, monospace">
-	<div class="modal-header text-center">
-        <h3 class="modal-title text-info">{{statusTask.name}} status</h3>
-	</div>
+<div>
+    <div class="modal-header text-center">
+        <h4 class="modal-title">{{statusTask.name}} - Rollup Status</h3>
+    </div>
 
-	<div class="modal-body">
-		<table ng-if="!status.statuses">
-            <tr>
-                <td>
-                    <span class="text-info">Metric:</span> {{statusTask.metric_name}}<br>
-                    <span class="text-info">Id:</span> {{statusTask.id}}<br>
-                    <span class="text-info">Saved as:</span> {{statusTask.save_as}} <br>
-                    <span class="text-info">Executing on:</span> {{status.executing_host}} <br>
-                    <span class="text-info">Last Executed:</span> Never<br>
-                    <span class="text-info">Next execution:</span> <br>
-                    <span class="text-info">Data points written:</span> 0<br>
-                    <span class="text-info">Execution time: </span> 0 ms<br>
-                </td>
-            </tr>
-        </table>
+    <div class="modal-body">
+        <div ng-if="!status.statuses">
+            <table class="rollup-status">
+                <tr><td class="text-info">Metric:</td><td>{{statusTask.metric_name}}</td></tr>
+                <tr><td class="text-info">Id:</td><td>{{statusTask.id}}</td></tr>
+                <tr><td class="text-info">Saved as:</td><td>{{statusTask.save_as}} </td></tr>
+                <tr><td class="text-info">Executing on:</td><td>{{status.executing_host}} </td></tr>
+                <tr><td class="text-info">Last Executed:</td><td>Never</td></tr>
+                <tr><td class="text-info">Next execution:</td><td></td></tr>
+                <tr><td class="text-info">Data points written:</td><td>0</td></tr>
+                <tr><td class="text-info">Execution time:</td><td>0 ms</td></tr>
+            </table>
+        </div>
 
-        <table ng-if="status.statuses">
-			<tr ng-repeat="taskStatus in status.statuses">
-				<td>
-                    <span class="text-info">Metric:</span> {{taskStatus.metric_name}}<br>
-					<span class="text-info">Id:</span> {{statusTask.id}}<br>
-                    <span class="text-info">Saved as:</span> {{statusTask.save_as}} <br>
-                    <span class="text-info">Executing on:</span> {{status.executing_host}} <br>
-                    <span class="text-info">Last Executed:</span> {{taskStatus.last_executed}}<br>
-                    <span class="text-info">Next execution:</span> <span>{{status.next_scheduled}}<br></span>
-                    <span class="text-info">Data points written:</span> {{taskStatus.data_point_count}}<br>
-                    <span class="text-info">Execution time: </span> {{taskStatus.execution_length}} ms<br>
-					<span class="text-info" ng-if="taskStatus.error_message.length > 0">Error:</span> {{taskStatus.error_message}}
-				</td>
-			</tr>
-		</table>
-	</div>
+        <div ng-if="status.statuses">
+            <table ng-repeat="taskStatus in status.statuses" class="rollup-status">
+                    <tr><td class="text-info">Metric:</td><td>{{taskStatus.metric_name}}</td></tr>
+                    <tr><td class="text-info">Id:</td><td>{{statusTask.id}}</td></tr>
+                    <tr><td class="text-info">Saved as:</td><td>{{statusTask.save_as}} </td></tr>
+                    <tr><td class="text-info">Executing on:</td><td>{{status.executing_host}} </td></tr>
+                    <tr><td class="text-info">Last Executed:</td><td>{{taskStatus.last_executed}}</td></tr>
+                    <tr><td class="text-info">Next execution:</td><td>{{status.next_scheduled}}</td></tr>
+                    <tr><td class="text-info">Data points written:</td><td>{{taskStatus.data_point_count}}</td></tr>
+                    <tr><td class="text-info">Execution time:</td><td>{{taskStatus.execution_length}} ms</td></tr>
+                    <tr ng-if="taskStatus.error_message.length > 0"><td class="text-info">Error:</td><td>{{taskStatus.error_message}}</td></tr>
+            </table>
+        </div>
+    </div>
 </div>

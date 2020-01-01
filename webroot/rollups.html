@@ -13,6 +13,8 @@
 	<link href="bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
 	<link href="css/rollup.css" rel="stylesheet">
 	<link href="css/header.css" rel="stylesheet">
+	<script src="js/moment.min.js"></script>
+	<script src="js/moment-timezone-with-data.min.js"></script>
 	<script src="rollup-js/third-party/underscore-min-1.8.3.js"></script>
 	<script src="rollup-js/third-party/jquery-min-2.1.3.js"></script>
 	<script src="bootstrap-3.3.5/js/bootstrap.min.js"></script>
@@ -52,6 +54,8 @@
 				<span title="{{TOOLTIP_METRIC_NAME}}" bs-tooltip="">Metric</span></th>
 			<th data-field="save as"  data-sortable="true">
 				<span title="{{TOOLTIP_SAVE_AS}}" bs-tooltip="">Save As</span></th>
+			<th data-field="timezone" data-sortable="false">
+				<span title="{{TOOLTIP_TIMEZONE}}" bs-tooltip="">Align TZ</span></th>
 			<th data-field="execute" data-sortable="true">
 				<span title="{{TOOLTIP_EXECUTE}}" bs-tooltip="">Execute</span></th>
 			<th data-field="group-by" data-sortable="true">
@@ -129,6 +133,22 @@
 			</td>
 			<td class="text-columns">
 				<editable model="task.save_as">{{ task.save_as }}</editable>
+			</td>
+			<td class="text-columns">
+				<a href=""
+				   ng-show="!task.tzEdit"
+				   ng-click="task.tzEdit=true"
+				   style="color:black;"
+				>{{ task.time_zone || "Default: UTC"}}
+				</a>
+				<span ng-show="task.tzEdit">
+					<input type="text" list="tz" name="time_zone" ng-model="task.time_zone_input" ng-change="setTimeZone(task);" />
+					<datalist id="tz">
+						<select>
+							<option ng-repeat="tzName in TZ_NAMES" value="{{tzName}}"></option>
+						</select>
+					</datalist>
+				</span>
 			</td>
 			<td>
 				<span ng-show="task.complex">{{ task.executionType }}</span>

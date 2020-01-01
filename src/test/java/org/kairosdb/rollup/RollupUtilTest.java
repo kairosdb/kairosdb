@@ -236,7 +236,7 @@ public class RollupUtilTest {
 
 		assertThat(time(2003, 2, 15, 0),
 				equalTo(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 2, 17, 17, 55, 30, 23),
-						new Sampling(3, TimeUnit.DAYS), utc)));
+						new Sampling(5, TimeUnit.DAYS), utc)));
 		// weeks isn't implemented
 		assertThat(time(2003, 1, 3, 0),
 				equalTo(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 1, 3, 0),
@@ -256,12 +256,19 @@ public class RollupUtilTest {
 				equalTo(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 12, 15, 17, 55, 30, 23),
 						new Sampling(3, TimeUnit.MONTHS), utc)));
 
-		/* time zone UTC-3.5 hr */
+		// time zone UTC-3.5 hr
 		// 10:40 utc = 7:10 local
 		// 7:10 aligns to 6 local = 9:30 utc
 		assertThat(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 1, 1, 10, 55, 30, 23),
 				new Sampling(3, TimeUnit.HOURS), DateTimeZone.forID("America/St_Johns").toTimeZone()),
 				equalTo(time(2003, 1, 1, 9, 30)));
+
+		// for multi unit sample, if the units are not a factor of number in the next highest granularity alignment should not happen
+		assertThat(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 1, 1, 0, 55, 30, 23),
+				new Sampling(13, TimeUnit.SECONDS), utc), equalTo(time(2003, 1, 1, 0, 55, 30, 23)));
+		assertThat(RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(time(2003, 2, 17, 17, 55, 30, 23),
+				new Sampling(3, TimeUnit.DAYS), utc),
+				equalTo(time(2003, 2, 17, 17, 55, 30, 23)));
 	}
 
 	private static long time(int year, int month, int day, int hour) {

@@ -70,9 +70,6 @@ public class RollupProcessorImpl implements RollupProcessor
 			timeZone = DateTimeZone.UTC;
 		}
 		Sampling samplingSize = getSamplingSize(rollupQueryMetric.getAggregators());
-		// if the sampling is set to more than single count of the temporal unit (eg 10 minutes),
-		// align the start time to an intuitive time boundary (eg minute zero of the hour)
-		startTime = RollupUtil.getTimeAlignedToIntuitiveTemporalBoundary(startTime, samplingSize, timeZone.toTimeZone());
 		List<SamplingPeriod> samplingPeriods = RollupUtil.getSamplingPeriodsAlignedToUnit(samplingSize, startTime, endTime, timeZone.toTimeZone());
 
 		if (log.isDebugEnabled())

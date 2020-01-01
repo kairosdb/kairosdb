@@ -54,6 +54,9 @@ public class RollupUtil
 	{
 		List<SamplingPeriod> samplingPeriods = new ArrayList<>();
 		long startTimeAligned = alignToSamplingBoundary(sampling, startTime, timeZone);
+		// if the sampling is set to more than single count of the temporal unit (eg 10 minutes),
+		// align the start time to an intuitive time boundary (eg minute zero of the hour)
+		startTimeAligned = getTimeAlignedToIntuitiveTemporalBoundary(startTimeAligned, sampling, timeZone);
 		long endTimeAligned = alignToSamplingBoundary(sampling, endTime, timeZone);
 
 		if (startTimeAligned == endTimeAligned)
@@ -160,6 +163,11 @@ public class RollupUtil
 		if (samplingSize.getValue() == 1) {
 			return originalStartTime;
 		}
+		if (!isSampleSizeAFactor(samplingSize)){
+			// if the sample length does not divide evenly into the next highest granularity, this approach will not return
+			// non-overlapping sample periods as time goes on.
+			return originalStartTime;
+		}
 
 		LocalDateTime originalDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(originalStartTime), timeZone.toZoneId());
 		LocalDateTime startTime = null;
@@ -199,5 +207,38 @@ public class RollupUtil
 		// brings truncated start time back as close to the original start time as possible in multiples of the samplingSize
 		startTime = startTime.plus(startTime.until(originalDateTime, sampleUnit) / samplingSize.getValue() * samplingSize.getValue(), sampleUnit);
 		return startTime.atZone(timeZone.toZoneId()).toInstant().toEpochMilli();
+	}
+
+	/** Does the sample period evenly divide into the next highest granularity? */
+	private static boolean isSampleSizeAFactor(Sampling samplingSize) {
+		long units = samplingSize.getValue();
+		ChronoUnit sampleUnit = convertSamplingToChronoUnit(samplingSize);
+		long unitsInNextGranularity = 0;
+		switch(sampleUnit) {
+			case MILLIS:
+				unitsInNextGranularity = ChronoUnit.SECONDS.getDuration().dividedBy(ChronoUnit.MILLIS.getDuration());
+				break;
+			case SECONDS:
+				unitsInNextGranularity = ChronoUnit.MINUTES.getDuration().dividedBy(ChronoUnit.SECONDS.getDuration());
+				break;
+			case MINUTES:
+				unitsInNextGranularity = ChronoUnit.HOURS.getDuration().dividedBy(ChronoUnit.MINUTES.getDuration());
+				break;
+			case HOURS:
+				unitsInNextGranularity = ChronoUnit.DAYS.getDuration().dividedBy(ChronoUnit.HOURS.getDuration());
+				break;
+			case DAYS:
+				unitsInNextGranularity = ChronoUnit.YEARS.getDuration().dividedBy(ChronoUnit.DAYS.getDuration());
+				break;
+			case WEEKS:
+				unitsInNextGranularity = 52;
+				break;
+			case MONTHS:
+				unitsInNextGranularity = 12;
+				break;
+			default:
+				return false;
+		}
+		return unitsInNextGranularity % units == 0;
 	}
 }

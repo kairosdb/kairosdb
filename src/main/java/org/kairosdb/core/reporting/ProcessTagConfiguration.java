@@ -17,7 +17,7 @@ public class ProcessTagConfiguration {
 	@Inject
 	public ProcessTagConfiguration(KairosRootConfig config) {
 		if (config.hasPath("kairosdb.metrics.custom_tags")) {
-			ConfigObject tagObject = config.getRawConfig().getObject("kairosdb.metrics.custom_tags");
+			ConfigObject tagObject = config.getObjectMap("kairosdb.metrics.custom_tags");
 			Map<String, String> tags = new HashMap<>();
 			for(Map.Entry<String, ConfigValue> entry : tagObject.entrySet()) {
 				tags.put(entry.getKey(), entry.getValue().unwrapped().toString());

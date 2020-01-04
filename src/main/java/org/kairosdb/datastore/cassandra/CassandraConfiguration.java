@@ -146,8 +146,7 @@ public class CassandraConfiguration
 		m_createWithConfig = new HashMap<>();
 		if (config.hasPath("kairosdb.datastore.cassandra.table_create_with"))
 		{
-			config.getRawConfig().getConfig("kairosdb.datastore.cassandra.table_create_with").entrySet();
-			for (Map.Entry<String, ConfigValue> configValueEntry : config.getRawConfig().getConfig("kairosdb.datastore.cassandra.table_create_with").entrySet())
+			for (Map.Entry<String, ConfigValue> configValueEntry : config.getObjectMap("kairosdb.datastore.cassandra.table_create_with").entrySet())
 			{
 				m_createWithConfig.put(configValueEntry.getKey(), (String)configValueEntry.getValue().unwrapped());
 			}

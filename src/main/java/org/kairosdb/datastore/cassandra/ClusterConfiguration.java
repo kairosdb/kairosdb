@@ -5,23 +5,20 @@ import com.datastax.driver.core.ProtocolOptions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.typesafe.config.ConfigException;
+import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigValue;
 import org.kairosdb.core.KairosConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -126,9 +123,9 @@ public class ClusterConfiguration
 		{
 			try
 			{
-				KairosConfig indexTagConfig = config.getConfig("tag_indexed_row_key_lookup_metrics");
+				ConfigObject indexTagConfig = config.getObjectMap("tag_indexed_row_key_lookup_metrics");
 
-				for (Map.Entry<String, ConfigValue> configEntry : indexTagConfig.getRawConfig().entrySet())
+				for (Map.Entry<String, ConfigValue> configEntry : indexTagConfig.entrySet())
 				{
 					Object metricTags = configEntry.getValue().unwrapped();
 					if (metricTags instanceof List)

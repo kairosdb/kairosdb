@@ -314,7 +314,7 @@ public class ClusterConnection
 		m_cassandraClient = cassandraClient;
 		m_clusterType = clusterType;
 
-		m_alwaysUseTagIndexedLookup = tagIndexMetricNames.equals(ImmutableMultimap.of("*", "*"));
+		m_alwaysUseTagIndexedLookup = tagIndexMetricNames.containsKey("*");
 		m_tagIndexMetricNames = tagIndexMetricNames;
 
 		if (m_alwaysUseTagIndexedLookup)

@@ -40,47 +40,11 @@ public class FilterEventBus
 		filters.register(listener, priority);
 	}
 
-	/*public void unregister(Object listener)
-	{
-		filters.unregister(listener);
-	}*/
-
 	public <T> Publisher<T> createPublisher(Class<T> tClass)
 	{
 		return new Publisher<>(filters.getPipeline(tClass));
 	}
 
-	/*public void post(Object event)
-	{
-		Iterator<FilterSubscriber> subscribers = filters.getSubscribers(event);
-		if (subscribers.hasNext())
-		{
-			checkNotNull(event);
-
-			Object previousEvent = event;
-			while (subscribers.hasNext())
-			{
-				event = subscribers.next().dispatchEvent(event);
-				if (event == null)
-				{
-					event = previousEvent;
-					break;
-				}
-				else
-				{
-					previousEvent = event;
-				}
-			}
-		}
-		else if (!(event instanceof DeadEvent))
-		{
-			// the event had no subscribers and was not itself a DeadEvent
-			post(new DeadEvent(this, event));
-		}
-
-		// Now post to regular listeners
-		//super.post(event);
-	}*/
 
 	/**
 	 Handles the given exception thrown by a subscriber with the given context.

@@ -43,7 +43,7 @@ public class WebServletModule extends JerseyServletModule
 
 		//Bind resource classes here
 		bind(MetricsResource.class).in(Scopes.SINGLETON);
-        bind(MetadataResource.class).in(Scopes.SINGLETON);
+		bind(MetadataResource.class).in(Scopes.SINGLETON);
 		bind(FeaturesResource.class).in(Scopes.SINGLETON);
 
 		bind(GuiceContainer.class);

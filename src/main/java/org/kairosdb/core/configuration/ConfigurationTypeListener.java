@@ -56,10 +56,10 @@ public class ConfigurationTypeListener implements TypeListener
 						}
 						else
 						{
-							Object configValue = getConfigurationValue(parameters[0], prop, encounter);
+							Optional<Object> configValue = getConfigurationValue(parameters[0], prop, encounter);
 
-							if (configValue != null)
-								encounter.register(new ConfigMethodInjector<>(method, configValue));
+							if (configValue.isPresent())
+								encounter.register(new ConfigMethodInjector<>(method, configValue.get()));
 
 						}
 					}

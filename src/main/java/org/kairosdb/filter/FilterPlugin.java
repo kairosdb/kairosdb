@@ -5,6 +5,7 @@ import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.annotation.InjectProperty;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
+import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.eventbus.Subscribe;
@@ -29,6 +30,11 @@ public class FilterPlugin implements KairosDBService, KairosMetricReporter
 	public FilterPlugin(LongDataPointFactory dataPointFactory)
 	{
 		m_dataPointFactory = dataPointFactory;
+	}
+
+	public FilterPlugin()
+	{
+		this(new LongDataPointFactoryImpl());
 	}
 
 	@Inject

@@ -38,11 +38,11 @@ public class DataPointDeserializer extends JsonDeserializer<List<DataPointReques
 	@Override
 	public List<DataPointRequest> deserialize(JsonParser parser, DeserializationContext deserializationContext) throws IOException
 {
-		List<DataPointRequest> datapoints = new ArrayList<DataPointRequest>();
+	List<DataPointRequest> datapoints = new ArrayList<DataPointRequest>();
 
-		JsonToken token = parser.nextToken();
-		if (token != JsonToken.START_ARRAY )
-			throw deserializationContext.mappingException("Invalid data point syntax.");
+	JsonToken token = parser.nextToken();
+	if (token != JsonToken.START_ARRAY )
+		deserializationContext.reportInputMismatch(List.class, "Invalid data point syntax, expected array.");
 
 	while(token != null && token != JsonToken.END_ARRAY)
 		{
@@ -59,7 +59,7 @@ public class DataPointDeserializer extends JsonDeserializer<List<DataPointReques
 
 			token = parser.nextToken();
 			if (token != JsonToken.END_ARRAY)
-				throw deserializationContext.mappingException("Invalid data point syntax.");
+				deserializationContext.reportInputMismatch(List.class, "Invalid data point syntax, expected end array.");
 
 			token = parser.nextToken();
 		}

@@ -25,7 +25,7 @@
 		            conf="test->default"/>
 		<!--<dependency org="org.mockito" name="mockito-all" rev="1.9.5" />-->
 		<dependency org="org.mockito" name="mockito-core" rev="2.23.0" conf="test->default"/>
-		<dependency org="org.assertj" name="assertj-core" rev="3.11.1"
+		<dependency org="org.assertj" name="assertj-core" rev="3.14.0"
 					conf="test->default"/>
 		<dependency org="org.assertj" name="assertj-guava" rev="3.3.0"
 		            conf="test->default"/>

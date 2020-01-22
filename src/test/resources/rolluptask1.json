@@ -31,7 +31,8 @@
                 "sampling": {
                   "value": 10,
                   "unit": "minutes"
-                }
+                },
+                "align_sampling": false
               }
             ]
           }

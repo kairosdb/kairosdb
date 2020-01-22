@@ -4,6 +4,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.io.Resources;
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,7 +36,7 @@ import static org.mockito.Mockito.mock;
 
 public class RollupProcessorImplTest
 {
-	private static final String DB_PATH = "build/h2db_test";
+	private static final String DB_PATH = "build/h2db_rollup_test";
 	private static final long MINUTE = 1000 * 60;
 
 	private static KairosDatastore datastore;

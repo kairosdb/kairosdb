@@ -6,7 +6,7 @@
   },
   "rollups": [
     {
-      "save_as": "kairosdb.http.ingest_time_rollup",
+      "save_as": "kairosdb.testExistingRollupButNoDatapointsSince_rollup",
       "query": {
         "cache_time": 0,
         "start_relative": {
@@ -15,7 +15,7 @@
         },
         "metrics": [
           {
-            "name": "kairosdb.http.ingest_time",
+            "name": "kairosdb.testExistingRollupButNoDatapointsSince",
             "limit": 10000,
             "tags": {
               "host": [

@@ -104,4 +104,13 @@ public class DoubleDataPoint extends DataPointHelper
 		result = 31 * result + (int) (temp ^ (temp >>> 32));
 		return result;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "DoubleDataPoint{" +
+				"m_value=" + m_value +
+				", m_timestamp=" + m_timestamp +
+				'}';
+	}
 }

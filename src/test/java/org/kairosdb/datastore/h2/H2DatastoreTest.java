@@ -17,7 +17,9 @@ package org.kairosdb.datastore.h2;
 
 
 import org.hamcrest.CoreMatchers;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.kairosdb.core.KairosDataPointFactory;
@@ -42,7 +44,7 @@ import static org.junit.Assert.assertFalse;
 
 public class H2DatastoreTest extends DatastoreTestHelper
 {
-	private static final String DB_PATH = "build/h2db_test";
+	private static final String DB_PATH = "build/h2db_datastore_test";
 
 	private static H2Datastore h2Datastore;
 

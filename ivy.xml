@@ -39,7 +39,7 @@
 		            name="guice-multibindings" rev="4.2.2"/>
 		<dependency org="com.google.inject.extensions" name="guice-assistedinject" rev="4.2.2" />
 		<dependency org="com.google.inject.extensions" name="guice-servlet" rev="4.2.2" />
-		<dependency org="com.h2database" name="h2" rev="1.3.170" />
+		<dependency org="com.h2database" name="h2" rev="1.4.200" />
 		<dependency org="se.ugli.bigqueue" name="bigqueue" rev="1.6.0.0" />
 
 		<dependency org="com.typesafe" name="config" rev="1.4.0" />

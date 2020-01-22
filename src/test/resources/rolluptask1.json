@@ -6,7 +6,7 @@
   },
   "rollups": [
     {
-      "save_as": "kairosdb.http.query_time_rollup",
+      "save_as": "kairosdb.test.testNoExistingRollups.rollup",
       "query": {
         "cache_time": 0,
         "start_relative": {
@@ -15,7 +15,7 @@
         },
         "metrics": [
           {
-            "name": "kairosdb.http.query_time",
+            "name": "kairosdb.test.testNoExistingRollups",
             "limit": 10000,
             "tags": {
               "host": [
@@ -25,12 +25,6 @@
                 "foobar"
               ]
             },
-            "group_by": [
-              {
-                "name": "tag",
-                "tags": ["group1", "group2"]
-              }
-            ],
             "aggregators": [
               {
                 "name": "sum",

@@ -6,7 +6,7 @@
   },
   "rollups": [
     {
-      "save_as": "kairosdb.http.query_count_rollup",
+      "save_as": "kairosdb.test.testRecentExistingRollup_rollup",
       "query": {
         "cache_time": 0,
         "start_relative": {
@@ -15,7 +15,7 @@
         },
         "metrics": [
           {
-            "name": "kairosdb.http.query_count",
+            "name": "kairosdb.test.testRecentExistingRollup",
             "limit": 10000,
             "tags": {
               "host": [
@@ -25,19 +25,14 @@
                 "foobar"
               ]
             },
-            "group_by": [
-              {
-                "name": "tag",
-                "tags": ["group1", "group2"]
-              }
-            ],
             "aggregators": [
               {
                 "name": "sum",
                 "sampling": {
                   "value": 10,
                   "unit": "minutes"
-                }
+                },
+                "align_sampling": false
               }
             ]
           }

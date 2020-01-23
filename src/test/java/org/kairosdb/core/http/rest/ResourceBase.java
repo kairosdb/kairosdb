@@ -240,6 +240,18 @@ public abstract class ResourceBase
         }
 
         @Override
+        public long getMinTimeValue()
+        {
+            return Long.MIN_VALUE;
+        }
+
+        @Override
+        public long getMaxTimeValue()
+        {
+            return Long.MAX_VALUE;
+        }
+
+        @Override
         public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
         {
             if (m_toThrow != null)

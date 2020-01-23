@@ -536,10 +536,10 @@ public class QueryParserTest
 		assertRollup(
 				task.getRollups().get(0),
 				1,
-				"kairosdb.http.query_time",
-				"kairosdb.http.query_time_rollup",
+				"kairosdb.test.testNoExistingRollups",
+				"kairosdb.test.testNoExistingRollups.rollup",
 				createSaveAsAggregator(
-						"kairosdb.http.query_time_rollup",
+						"kairosdb.test.testNoExistingRollups.rollup",
 						ImmutableList.of("group1", "group2")),
 				createSumAggregator(new Sampling(10, TimeUnit.MINUTES))
 		);

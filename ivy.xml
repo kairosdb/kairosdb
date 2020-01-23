@@ -47,7 +47,7 @@
 		<dependency org="org.xerial.snappy" name="snappy-java" rev="1.1.7.2"/>
 
 		<!-- provides connection pooling -->
-		<dependency org="c3p0" name="c3p0" rev="0.9.1.2"/>
+		<dependency org="com.mchange" name="c3p0" rev="0.9.5.5"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2" />
 		<dependency org="org.slf4j" name="jul-to-slf4j" rev="1.7.2" />
 		<dependency org="org.apache.commons" name="commons-math3" rev="3.2" />

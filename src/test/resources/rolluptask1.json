@@ -25,6 +25,12 @@
                 "foobar"
               ]
             },
+            "group_by": [
+              {
+                "name": "tag",
+                "tags": ["group1", "group2"]
+              }
+            ],
             "aggregators": [
               {
                 "name": "sum",

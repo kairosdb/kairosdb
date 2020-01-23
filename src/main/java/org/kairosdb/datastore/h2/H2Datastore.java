@@ -85,6 +85,8 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 {
 	public static final Logger logger = LoggerFactory.getLogger(H2Datastore.class);
 	public static final String DATABASE_PATH_PROPERTY = "kairosdb.datastore.h2.database_path";
+	private static final long MIN_TIME_VALUE = Long.MIN_VALUE / 1000;
+	private static final long MAX_TIME_VALUE = Long.MAX_VALUE;
 
 	private Connection m_holdConnection;  //Connection that holds the database open
 	private final KairosDataPointFactory m_dataPointFactory;
@@ -520,6 +522,18 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
 	{
 		// H2 does not have an index
+	}
+
+	@Override
+	public long getMinTimeValue()
+	{
+		return MIN_TIME_VALUE;
+	}
+
+	@Override
+	public long getMaxTimeValue()
+	{
+		return MAX_TIME_VALUE;
 	}
 
 	@Override

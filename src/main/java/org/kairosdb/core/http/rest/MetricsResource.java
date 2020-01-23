@@ -727,7 +727,7 @@ public class MetricsResource implements KairosMetricReporter
 		checkServerType(ServerType.DELETE, "/metric/{metricName}", "DELETE");
 		try
 		{
-			QueryMetric query = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, metricName);
+			QueryMetric query = new QueryMetric(datastore.getDatastore().getMinTimeValue(), datastore.getDatastore().getMaxTimeValue(), 0, metricName);
 			datastore.delete(query);
 
 

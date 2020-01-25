@@ -42,7 +42,6 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
     private long m_queryEndTime = 0L;
     private boolean m_exhaustive;
     private DateTimeZone m_timeZone = DateTimeZone.UTC;
-
     private boolean m_alignSampling = true;
 
 
@@ -197,6 +196,10 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
     public void setAlignSampling(boolean align)
     {
         m_alignSampling = align;
+    }
+
+    public boolean is_alignSampling() {
+        return m_alignSampling;
     }
 
     /**

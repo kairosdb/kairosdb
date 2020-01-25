@@ -4,7 +4,6 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.io.Resources;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -18,7 +17,6 @@ import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.QueryException;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
-import org.kairosdb.core.jobs.CacheFileCleaner;
 import org.kairosdb.datastore.h2.H2Datastore;
 import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
@@ -78,13 +76,45 @@ public class RollupProcessorImplTest
 	}
 
 	/**
-	 Looks back 1 hour and 10 minutes(execution interval + sampling)
+	 Looks back 1 hour and 10 minutes(execution interval + sampling). Align Sampling = true
 	 */
 	@Test
-	public void testNoExistingRollups() throws IOException, QueryException, DatastoreException, InterruptedException, RollUpException
+	public void testNoExistingRollupsAlignedSamplingOn() throws IOException, QueryException, DatastoreException, InterruptedException, RollUpException
 	{
 		// Create rollup
 		String json = Resources.toString(Resources.getResource("rolluptask1.json"), Charsets.UTF_8);
+		RollupTask task = queryParser.parseRollupTask(json);
+		Rollup rollup = task.getRollups().get(0);
+		QueryMetric query = rollup.getQueryMetrics().get(0);
+
+		// Add data points
+		long now = now();
+		ImmutableSortedMap<String, String> tags = ImmutableSortedMap.of("host", "foo", "customer", "foobar");
+		addDataPoint(query.getName(), tags, now - (69 * MINUTE), 3);
+		addDataPoint(query.getName(), tags, now - (65 * MINUTE), 3);
+		addDataPoint(query.getName(), tags, now - (59 * MINUTE), 4);
+		addDataPoint(query.getName(), tags, now - (55 * MINUTE), 4);
+		addDataPoint(query.getName(), tags, now - (49 * MINUTE), 5);
+		addDataPoint(query.getName(), tags, now - (45 * MINUTE), 5);
+		addDataPoint(query.getName(), tags, now - (39 * MINUTE), 6);
+		addDataPoint(query.getName(), tags, now - (35 * MINUTE), 6);
+		addDataPoint(query.getName(), tags, now - (29 * MINUTE), 7);
+		addDataPoint(query.getName(), tags, now - (25 * MINUTE), 7);
+		addDataPoint(query.getName(), tags, now - (19 * MINUTE), 8);
+		addDataPoint(query.getName(), tags, now - (15 * MINUTE), 8);
+
+		// Process rollups
+		processor.process(mockStatusStore, task, query);
+	}
+
+	/**
+	 Looks back 1 hour and 10 minutes(execution interval + sampling). Align Sampling = false
+	 */
+	@Test
+	public void testNoExistingRollupsAlignedSamplingOff() throws IOException, QueryException, DatastoreException, InterruptedException, RollUpException
+	{
+		// Create rollup
+		String json = Resources.toString(Resources.getResource("rolluptask6.json"), Charsets.UTF_8);
 		RollupTask task = queryParser.parseRollupTask(json);
 		Rollup rollup = task.getRollups().get(0);
 		QueryMetric query = rollup.getQueryMetrics().get(0);
@@ -205,8 +235,7 @@ public class RollupProcessorImplTest
 	}
 
 	@Test
-	public void testExistingRollupButNoDatapointsSince() throws IOException, QueryException, DatastoreException, InterruptedException, RollUpException
-	{
+	public void testExistingRollupButNoDatapointsSince() throws IOException, QueryException, DatastoreException, InterruptedException, RollUpException {
 		// Create rollup
 		String json = Resources.toString(Resources.getResource("rolluptask5.json"), Charsets.UTF_8);
 		RollupTask task = queryParser.parseRollupTask(json);

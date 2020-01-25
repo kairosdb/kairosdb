@@ -38,7 +38,7 @@
                   "value": 10,
                   "unit": "minutes"
                 },
-                "align_sampling": true
+                "align_sampling": false
               }
             ]
           }

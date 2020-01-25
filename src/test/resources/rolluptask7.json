@@ -33,12 +33,7 @@
             ],
             "aggregators": [
               {
-                "name": "sum",
-                "sampling": {
-                  "value": 10,
-                  "unit": "minutes"
-                },
-                "align_sampling": true
+                "name": "trim"
               }
             ]
           }

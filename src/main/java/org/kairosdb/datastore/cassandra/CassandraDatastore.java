@@ -773,7 +773,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			}
 			catch (InterruptedException e)
 			{
-				e.printStackTrace();
+				queryMonitor.failQuery(e);
 			}
 
 			if (queryMonitor.keepRunning())

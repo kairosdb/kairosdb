@@ -232,6 +232,7 @@ public class QueryParser
 				QueryMetric queryMetric = new QueryMetric(startTime, query.getCacheTime(), metric.getName());
 				queryMetric.setExcludeTags(metric.isExcludeTags());
 				queryMetric.setLimit(metric.getLimit());
+				queryMetric.setJsonObj(obj);
 
 				getEndTime(query).ifPresent(queryMetric::setEndTime);
 

@@ -450,7 +450,7 @@ public class KairosDatastore implements KairosPostConstructInit
 
 			m_metric = metric;
 			m_cacheFilename = calculateFilenameHash(metric);
-			m_queuingManager.waitForTimeToRun(m_cacheFilename);
+			m_queuingManager.waitForTimeToRun(m_cacheFilename, metric);
 		}
 
 		public int getSampleSize()

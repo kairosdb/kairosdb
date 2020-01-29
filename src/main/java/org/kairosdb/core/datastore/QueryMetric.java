@@ -17,6 +17,7 @@ package org.kairosdb.core.datastore;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import com.google.gson.JsonObject;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.util.Preconditions;
@@ -44,6 +45,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	private Order order = Order.ASC;
 	private List<QueryPlugin> plugins;
 	private boolean explicitTags = false;
+	private JsonObject m_jsonObj;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
@@ -236,5 +238,15 @@ public class QueryMetric implements DatastoreMetricQuery
 				", order=" + order +
 				", plugins=" + plugins +
 				'}';
+	}
+
+	public void setJsonObj(JsonObject obj)
+	{
+		m_jsonObj = obj;
+	}
+
+	public JsonObject getJsonObj()
+	{
+		return m_jsonObj;
 	}
 }

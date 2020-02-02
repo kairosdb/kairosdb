@@ -15,6 +15,8 @@ Download the latest [KairosDB release](https://github.com/kairosdb/kairosdb/rele
 
 Installation instructions are found [here](http://kairosdb.github.io/docs/build/html/GettingStarted.html)
 
+If you want to test KairosDB in Kubernetes please follow the instructions from [KairosDB Helm chart](deployment/helm/README.md).
+
 ## Getting Involved
 
 Join the [KairosDB discussion group](https://groups.google.com/forum/#!forum/kairosdb-group).

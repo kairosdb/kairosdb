@@ -37,9 +37,8 @@ public class RollupProcessorImpl implements RollupProcessor
 		Sampling size is calculated from the last sampling aggregator for the rollup
 
 		1 - Query for last rollup
-			2a - No rollup and no status (First time) - set start time to run interval + sampling size
+			2a - No rollup and no status (First time) - set start time to now - run interval - sampling size
 			2b - Rollup found - set start time to be the last rollup time (this will recreate the last rollup)
-		3 - Set all sampling aggregators to have align_sampling=true (default?)
 		4 - Set start and end times on sampling period
 		5 - Create a rollup for each sampling interval until you reach now.
 	 */
@@ -48,7 +47,7 @@ public class RollupProcessorImpl implements RollupProcessor
 			throws RollUpException, DatastoreException, InterruptedException
 	{
 		long now = now();
-		Sampling samplingSize = getSamplingSize(rollupQueryMetric.getAggregators());
+		Sampling samplingSize = getSamplingSize(getLastAggregator(rollupQueryMetric.getAggregators()));
 		long lastExecutionTime = getLastExecutionTime(statusStore, task, now);
 		if (log.isDebugEnabled())
 			log.debug("LastExecutionTime = " + new Date(lastExecutionTime));
@@ -63,14 +62,23 @@ public class RollupProcessorImpl implements RollupProcessor
 
 	@Override
 	public long process(RollupTask task, Rollup rollup, QueryMetric rollupQueryMetric, long startTime, long endTime)
-			throws DatastoreException, InterruptedException
-	{
+			throws DatastoreException, InterruptedException, RollUpException {
+		RangeAggregator lastAggregator = getLastAggregator(rollupQueryMetric.getAggregators());
+
 		DateTimeZone timeZone = rollup.getTimeZone();
 		if (timeZone == null) {
 			timeZone = DateTimeZone.UTC;
 		}
-		Sampling samplingSize = getSamplingSize(rollupQueryMetric.getAggregators());
-		List<SamplingPeriod> samplingPeriods = RollupUtil.getSamplingPeriodsAlignedToUnit(samplingSize, startTime, endTime, timeZone.toTimeZone());
+
+		Sampling samplingSize = getSamplingSize(lastAggregator);
+		List<SamplingPeriod> samplingPeriods;
+
+		if (lastAggregator.is_alignSampling()){
+			samplingPeriods = RollupUtil.getSamplingPeriodsAlignedToUnit(samplingSize, startTime, endTime, timeZone.toTimeZone());
+		}
+		else {
+			samplingPeriods = RollupUtil.getSamplingPeriods(samplingSize, startTime, endTime);
+		}
 
 		if (log.isDebugEnabled())
 		{
@@ -100,19 +108,24 @@ public class RollupProcessorImpl implements RollupProcessor
 
 	/**
 	 Returns the sampling from the last RangeAggregator in the aggregators list
-	 or null if no sampling is found
+	 @exception RollUpException if no Range Aggregators exist
 	 */
-	private static Sampling getSamplingSize(List<Aggregator> aggregators)
-	{
+	private static RangeAggregator getLastAggregator(List<Aggregator> aggregators) throws RollUpException {
 		for (int i = aggregators.size() - 1; i >= 0; i--)
 		{
 			Aggregator aggregator = aggregators.get(i);
 			if (aggregator instanceof RangeAggregator)
 			{
-				return ((RangeAggregator) aggregator).getSampling();
+				return ((RangeAggregator) aggregator);
 			}
 		}
-		return null;
+		// should never happen
+		throw new RollUpException("Roll-up must have at least one Range aggregator");
+	}
+
+	private static Sampling getSamplingSize(RangeAggregator aggregator)
+	{
+		return aggregator.getSampling();
 	}
 
 	private long executeRollup(KairosDatastore datastore, QueryMetric query) throws DatastoreException

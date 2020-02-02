@@ -426,6 +426,18 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	}
 
 	@Override
+	public long getMinTimeValue()
+	{
+		return Long.MIN_VALUE;
+	}
+
+	@Override
+	public long getMaxTimeValue()
+	{
+		return Long.MAX_VALUE;
+	}
+
+	@Override
 	public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
 	{
 		BoundStatement statement = new BoundStatement(m_metaCluster.psServiceIndexInsert);
@@ -761,7 +773,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 			}
 			catch (InterruptedException e)
 			{
-				e.printStackTrace();
+				queryMonitor.failQuery(e);
 			}
 
 			if (queryMonitor.keepRunning())

@@ -42,7 +42,6 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
     private long m_queryEndTime = 0L;
     private boolean m_exhaustive;
     private DateTimeZone m_timeZone = DateTimeZone.UTC;
-
     private boolean m_alignSampling = true;
 
 
@@ -199,6 +198,10 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
         m_alignSampling = align;
     }
 
+    public boolean is_alignSampling() {
+        return m_alignSampling;
+    }
+
     /**
      * Start time to calculate the ranges from.  Typically this is the start
      * of the query
@@ -306,14 +309,14 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
         }
 
 
-        protected long getStartRange(long timestamp)
+        public long getStartRange(long timestamp)
         {
             long samplingValue = m_sampling.getValue();
             long numberOfPastPeriods = m_unitField.getDifferenceAsLong(timestamp/*getDataPointTime()*/, m_startTime) / samplingValue;
             return m_unitField.add(m_startTime, numberOfPastPeriods * samplingValue);
         }
 
-        protected long getEndRange(long timestamp)
+        public long getEndRange(long timestamp)
         {
             long samplingValue = m_sampling.getValue();
             long numberOfPastPeriods = m_unitField.getDifferenceAsLong(timestamp/*getDataPointTime()*/, m_startTime) / samplingValue;
@@ -327,7 +330,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
             {
                 //We calculate start and end ranges as the ranges may not be
                 //consecutive if data does not show up in each range.
-                long startRange = getStartRange(currentDataPoint.getTimestamp());
+                //long startRange = getStartRange(currentDataPoint.getTimestamp());
                 long endRange = getEndRange(currentDataPoint.getTimestamp());
 
                 SubRangeIterator subIterator = new SubRangeIterator(

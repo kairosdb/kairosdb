@@ -17,6 +17,7 @@ package org.kairosdb.core.datastore;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.agileclick.genorm.runtime.Pair;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPoint;
@@ -41,7 +42,7 @@ public class QueryQueuingManager implements KairosMetricReporter
 	public static final String CONCURRENT_QUERY_THREAD = "kairosdb.datastore.concurrentQueryThreads";
 	public static final String QUERY_COLLISIONS_METRIC_NAME = "kairosdb.datastore.query_collisions";
 
-	private final Map<String, Thread> runningQueries = new HashMap<String, Thread>();
+	private final Map<String, Pair<QueryMetric, Thread>> runningQueries = new HashMap<>();
 	private final ReentrantLock lock = new ReentrantLock();
 	private final Semaphore semaphore;
 	private final String hostname;
@@ -56,10 +57,10 @@ public class QueryQueuingManager implements KairosMetricReporter
 		semaphore = new Semaphore(concurrentQueryThreads, true);
 	}
 
-	public void waitForTimeToRun(String queryHash) throws InterruptedException
+	public void waitForTimeToRun(String queryHash, QueryMetric metric) throws InterruptedException
 	{
 		boolean firstTime = true;
-		while(!acquireSemaphore(queryHash))
+		while(!acquireSemaphore(queryHash, metric))
 		{
 			if (firstTime)
 			{
@@ -84,7 +85,7 @@ public class QueryQueuingManager implements KairosMetricReporter
 		semaphore.release();
 	}
 
-	private boolean acquireSemaphore(String queryHash) throws InterruptedException
+	private boolean acquireSemaphore(String queryHash, QueryMetric metric) throws InterruptedException
 	{
 		semaphore.acquire();
 
@@ -95,7 +96,7 @@ public class QueryQueuingManager implements KairosMetricReporter
 			hashConflict = runningQueries.containsKey(queryHash);
 			if (!hashConflict)
 			{
-				runningQueries.put(queryHash, Thread.currentThread());
+				runningQueries.put(queryHash, new Pair<>(metric, Thread.currentThread()));
 			}
 		}
 		finally

@@ -153,13 +153,13 @@ public class QueryParser
 		}
 	}
 
-	private long getEndTime(Query request)
+	private Optional<Long> getEndTime(Query request)
 	{
 		if (request.getEndAbsolute() != null)
-			return request.getEndAbsolute();
+			return Optional.of(request.getEndAbsolute());
 		else if (request.getEndRelative() != null)
-			return request.getEndRelative().getTimeRelativeTo(System.currentTimeMillis());
-		return -1;
+			return Optional.of(request.getEndRelative().getTimeRelativeTo(System.currentTimeMillis()));
+		return Optional.empty();
 	}
 
 
@@ -232,10 +232,9 @@ public class QueryParser
 				QueryMetric queryMetric = new QueryMetric(startTime, query.getCacheTime(), metric.getName());
 				queryMetric.setExcludeTags(metric.isExcludeTags());
 				queryMetric.setLimit(metric.getLimit());
+				queryMetric.setJsonObj(obj);
 
-				long endTime = getEndTime(query);
-				if (endTime > -1)
-					queryMetric.setEndTime(endTime);
+				getEndTime(query).ifPresent(queryMetric::setEndTime);
 
 				if (queryMetric.getEndTime() < startTime)
 					throw new BeanValidationException(new SimpleConstraintViolation("end_time", "must be greater than the start time"), context);

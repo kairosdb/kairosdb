@@ -403,5 +403,17 @@ public class PutCommandTest
 		public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
 		{
 		}
+
+		@Override
+		public long getMinTimeValue()
+		{
+			return Long.MIN_VALUE;
+		}
+
+		@Override
+		public long getMaxTimeValue()
+		{
+			return Long.MAX_VALUE;
+		}
 	}
 }

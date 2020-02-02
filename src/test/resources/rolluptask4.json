@@ -6,7 +6,7 @@
   },
   "rollups": [
     {
-      "save_as": "kairosdb.http.ingest_count_rollup",
+      "save_as": "kairosdb.testRecentExistingRollupWithSingleNewDatapoint_rollup",
       "query": {
         "cache_time": 0,
         "start_relative": {
@@ -15,7 +15,7 @@
         },
         "metrics": [
           {
-            "name": "kairosdb.http.ingest_count",
+            "name": "kairosdb.testRecentExistingRollupWithSingleNewDatapoint",
             "limit": 10000,
             "tags": {
               "host": [

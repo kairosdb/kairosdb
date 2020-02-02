@@ -9,8 +9,10 @@ dist: trusty
 #services:
 #  - cassandra
 
+install: true
+
 before_script:
-  - export CLASSPATH=tools/tablesaw-1.2.6.jar
+  - export CLASSPATH=tools/tablesaw-1.2.7.jar
 
 script:
   - java make ivy-retrieve;java make clean test-all

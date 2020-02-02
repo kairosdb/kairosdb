@@ -227,10 +227,10 @@ public class PipelineRegistry
 							method,
 							parameterTypes.length);
 
-                    Class<?> returnType = method.getReturnType();
-                    checkArgument((returnType.equals(parameterTypes[0]) || returnType.getName().equals("void")),
-                            "Method %s must have return type of %s or void",
-                            method, parameterTypes[0].getName());
+							Class<?> returnType = method.getReturnType();
+							checkArgument((returnType.equals(parameterTypes[0]) || returnType.getName().equals("void")),
+									"Method %s must have return type of %s or void",
+									method, parameterTypes[0].getName());
 
 					MethodIdentifier ident = new MethodIdentifier(method);
 					if (!identifiers.containsKey(ident))

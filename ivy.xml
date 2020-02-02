@@ -9,9 +9,10 @@
 		<conf name="testjdk11" extends="test"/>
 	</configurations>
 	<dependencies>
-		<dependency org="com.google.guava" name="guava" rev="19.0" force="true">
+		<dependency org="com.google.guava" name="guava" rev="28.2-jre" force="true">
 			<artifact name="guava" type="bundle" ext="jar"/>
 		</dependency>
+
 		<dependency org="com.github.rholder" name="guava-retrying" rev="2.0.0" />
 		<dependency org="org.apache.commons" name="commons-lang3" rev="3.4" />
 		<dependency org="org.apache.commons" name="commons-collections4" rev="4.1" />
@@ -24,9 +25,9 @@
 		            conf="test->default"/>
 		<!--<dependency org="org.mockito" name="mockito-all" rev="1.9.5" />-->
 		<dependency org="org.mockito" name="mockito-core" rev="2.23.0" conf="test->default"/>
-		<dependency org="org.assertj" name="assertj-core" rev="3.11.1"
+		<dependency org="org.assertj" name="assertj-core" rev="3.14.0"
 					conf="test->default"/>
-		<dependency org="org.assertj" name="assertj-guava" rev="3.2.1"
+		<dependency org="org.assertj" name="assertj-guava" rev="3.3.0"
 		            conf="test->default"/>
 		<!--<dependency org="io.netty" name="netty" rev="3.5.11.Final" />-->
 		<dependency org="io.netty" name="netty" rev="3.10.6.Final" />
@@ -38,15 +39,15 @@
 		            name="guice-multibindings" rev="4.2.2"/>
 		<dependency org="com.google.inject.extensions" name="guice-assistedinject" rev="4.2.2" />
 		<dependency org="com.google.inject.extensions" name="guice-servlet" rev="4.2.2" />
-		<dependency org="com.h2database" name="h2" rev="1.3.170" />
+		<dependency org="com.h2database" name="h2" rev="1.4.200" />
 		<dependency org="se.ugli.bigqueue" name="bigqueue" rev="1.6.0.0" />
 
-		<dependency org="com.typesafe" name="config" rev="1.3.1" />
+		<dependency org="com.typesafe" name="config" rev="1.4.0" />
 
 		<dependency org="org.xerial.snappy" name="snappy-java" rev="1.1.7.2"/>
 
 		<!-- provides connection pooling -->
-		<dependency org="c3p0" name="c3p0" rev="0.9.1.2"/>
+		<dependency org="com.mchange" name="c3p0" rev="0.9.5.5"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2" />
 		<dependency org="org.slf4j" name="jul-to-slf4j" rev="1.7.2" />
 		<dependency org="org.apache.commons" name="commons-math3" rev="3.2" />
@@ -69,7 +70,7 @@
 		</dependency>
 
 		<!-- Cassandra Client -->
-		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.6.0" />
+		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.8.0" />
 		<dependency org="net.jpountz.lz4" name="lz4" rev="1.3.0"/>
 
 		<!--<dependency org="org.hectorclient" name="hector-core" rev="1.1-4">
@@ -96,12 +97,12 @@
 		<dependency org="com.sun.jersey.contribs" name="jersey-guice"
 		            rev="1.18.3"/>
 		<dependency org="com.sun.jersey" name="jersey-server" rev="1.18.3"/>
-		<dependency org="com.fasterxml.jackson.jaxrs" name="jackson-jaxrs-json-provider" rev="2.2.3"/>
 		<dependency org="com.sun.jersey" name="jersey-core" rev="1.18.3"/>
 		<dependency org="com.sun.jersey" name="jersey-servlet" rev="1.18.3"
 		            transitive="false"/>
 		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-signature" rev="1.18.3" />
 		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-server" rev="1.18.3" />
+		<dependency org="com.fasterxml.jackson.jaxrs" name="jackson-jaxrs-json-provider" rev="2.10.2"/>
 
 		<!-- Pulse -->
 		<dependency org="javax.validation" name="validation-api" rev="1.0.0.GA"/>
@@ -126,5 +127,6 @@
 
 		<dependency org="com.sun.activation" name="javax.activation" rev="1.2.0" conf="jdk11->default;testjdk11->default"/>
 
+		<conflict org="com.google.guava" module="guava" rev="28.2-jre"/>
 	</dependencies>
 </ivy-module>

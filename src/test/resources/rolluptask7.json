@@ -1,12 +1,12 @@
 {
-  "name": "Rollup3",
+  "name": "Rollup1",
   "execution_interval": {
     "value": 1,
     "unit": "hours"
   },
   "rollups": [
     {
-      "save_as": "kairosdb.test.testRecentExistingRollup_rollup",
+      "save_as": "kairosdb.test.testNoExistingRollups.rollup",
       "query": {
         "cache_time": 0,
         "start_relative": {
@@ -15,7 +15,7 @@
         },
         "metrics": [
           {
-            "name": "kairosdb.test.testRecentExistingRollup",
+            "name": "kairosdb.test.testNoExistingRollups",
             "limit": 10000,
             "tags": {
               "host": [
@@ -25,14 +25,15 @@
                 "foobar"
               ]
             },
+            "group_by": [
+              {
+                "name": "tag",
+                "tags": ["group1", "group2"]
+              }
+            ],
             "aggregators": [
               {
-                "name": "sum",
-                "sampling": {
-                  "value": 10,
-                  "unit": "minutes"
-                },
-                "align_sampling": false
+                "name": "trim"
               }
             ]
           }

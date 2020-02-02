@@ -11,9 +11,8 @@ public interface RollupProcessor extends Interruptable
 			Sampling size is calculated from the last sampling aggregator for the rollup
 
 			1 - Query for last rollup
-				2a - No rollup and no status (First time) - set start time to run interval + sampling size
+				2a - No rollup and no status (First time) - set start time to now - run interval - sampling size
 				2b - Rollup found - set start time to be the last rollup time (this will recreate the last rollup)
-			3 - Set all sampling aggregators to have align_sampling=true (default?)
 			4 - Set start and end times on sampling period
 			5 - Create a rollup for each sampling interval until you reach now.
 		 */
@@ -21,5 +20,5 @@ public interface RollupProcessor extends Interruptable
 			throws RollUpException, DatastoreException, InterruptedException;
 
 	long process(RollupTask task, Rollup rollup, QueryMetric rollupQueryMetric, long startTime, long endTime)
-			throws DatastoreException, InterruptedException;
+			throws DatastoreException, InterruptedException, RollUpException;
 }

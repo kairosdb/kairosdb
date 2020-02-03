@@ -13,14 +13,18 @@
  */
 package org.kairosdb.core.aggregator;
 
+import com.google.common.collect.ImmutableList;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datapoints.NullDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.testing.ListDataPointGroup;
 
+import static org.kairosdb.core.DataPointMatcher.dataPoint;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
@@ -229,6 +233,76 @@ public class DataGapsMarkingAggregatorTest
 
 
 		assertThat(results.hasNext(), equalTo(false));
+	}
+
+	@Test
+	public void test_shouldBeEndInclusiveIfEndIsNotAligned()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new LongDataPoint(0, 0));
+		group.addDataPoint(new LongDataPoint(1000, 1));
+		group.addDataPoint(new LongDataPoint(2000, 2));
+
+		aggregator.setStartTime(0);
+		aggregator.setAlignStartTime(true);
+		aggregator.setSampling(new Sampling(1, TimeUnit.SECONDS));
+		aggregator.setEndTime(3001);
+
+		assertThat(
+				ImmutableList.copyOf(aggregator.aggregate(group)),
+				Matchers.contains(
+						ImmutableList.of(
+								dataPoint(0, 0L),
+								dataPoint(1000, 1L),
+								dataPoint(2000, 2L),
+								dataPoint(3000, null))));
+	}
+
+	@Test
+	public void test_shouldBeEndInclusiveIfNoDataIsIncludedAtEndTimestamp()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new LongDataPoint(0, 0));
+		group.addDataPoint(new LongDataPoint(1000, 1));
+		group.addDataPoint(new LongDataPoint(2000, 2));
+
+		aggregator.setStartTime(0);
+		aggregator.setAlignStartTime(true);
+		aggregator.setSampling(new Sampling(1, TimeUnit.SECONDS));
+		aggregator.setEndTime(3000);
+
+		assertThat(
+				ImmutableList.copyOf(aggregator.aggregate(group)),
+				Matchers.contains(
+						ImmutableList.of(
+								dataPoint(0, 0L),
+								dataPoint(1000, 1L),
+								dataPoint(2000, 2L),
+								dataPoint(3000, null))));
+	}
+
+	@Test
+	public void test_shouldBeEndInclusiveIfDataIsIncludedAtEndTimestamp()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new LongDataPoint(0, 0));
+		group.addDataPoint(new LongDataPoint(1000, 1));
+		group.addDataPoint(new LongDataPoint(2000, 2));
+		group.addDataPoint(new LongDataPoint(3000, 3));
+
+		aggregator.setStartTime(0);
+		aggregator.setAlignStartTime(true);
+		aggregator.setSampling(new Sampling(1, TimeUnit.SECONDS));
+		aggregator.setEndTime(3000);
+
+		assertThat(
+				ImmutableList.copyOf(aggregator.aggregate(group)),
+				Matchers.contains(
+						ImmutableList.of(
+								dataPoint(0, 0L),
+								dataPoint(1000, 1L),
+								dataPoint(2000, 2L),
+								dataPoint(3000, 3L))));
 	}
 
 }

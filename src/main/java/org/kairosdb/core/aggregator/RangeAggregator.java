@@ -452,7 +452,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
         	if(m_trim)
         		return super.hasNext();
             else
-            	return (super.hasNext() || m_nextExpectedRangeStartTime < m_queryEndTime);
+            	return (super.hasNext() || m_nextExpectedRangeStartTime <= m_queryEndTime);
         }
 
         @Override

@@ -200,5 +200,35 @@ public class DataGapsMarkingAggregatorTest
 
 		assertThat(results.hasNext(), equalTo(false));
 	}
+	
+	@Test
+	public void test_withTrimGapsBeforeAndAfterData()
+	{
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new LongDataPoint(3, 10));
+
+		group.addDataPoint(new LongDataPoint(5, 25));
+
+		aggregator.setStartTime(1);
+		aggregator.setEndTime(7);
+		aggregator.setTrim(true);
+		DataPointGroup results = aggregator.aggregate(group);
+
+
+		DataPoint dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(3L));
+		assertThat(dataPoint.getLongValue(), equalTo(10L));
+
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(4L));
+		assertThat(dataPoint instanceof NullDataPoint, equalTo(true));
+
+		dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(5L));
+		assertThat(dataPoint.getLongValue(), equalTo(25L));
+
+
+		assertThat(results.hasNext(), equalTo(false));
+	}
 
 }

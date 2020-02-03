@@ -1,0 +1,104 @@
+{{- if .Values.enabled -}}
+{{- $waitCfgName := printf "kairosdb-wait-cfg" -}}
+{{- $maxCassandraNodes := (split "," .Values.storage.cassandra.contactPoints | len) -}}
+{{- $dbHost := printf "%s" .Values.storage.cassandra.contactPoints }}
+
+apiVersion: v1
+kind: ConfigMap 
+metadata:
+  name: {{ $waitCfgName }}
+  labels:
+{{ include "kairosdb.labels" . | indent 4 }}
+data:
+  config.json: |
+    [
+      {{- if .Values.storage.cassandra.enabled -}}
+        {{ range $i, $e := (split "," $dbHost) -}}
+        {
+          "host": "{{ $e }}",
+          "port": {{ $.Values.storage.cassandra.port }},
+          "type": "cassandra"
+        }{{ if lt ((trimPrefix "_" $i) | int | add 1) $maxCassandraNodes }},{{ end }}
+        {{- end }}
+      {{- end }}
+    ]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kairosdb.fullname" . }}
+  labels:
+{{ include "kairosdb.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kairosdb.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "kairosdb.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      initContainers:
+        - name: {{ .Release.Name }}-raw-data-wait
+          image: {{ .Values.image.waitContainer.image.repository }}:{{ .Values.image.waitContainer.image.tag }}
+          imagePullPolicy: {{ .Values.image.waitContainer.image.pullPolicy }}
+          args: [ "/etc/config/config.json" ]
+          volumeMounts:
+            - name: wait-config-volume
+              mountPath: /etc/config
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [ "bash" ]
+          args:
+            - "-c"
+            - "cp -f /etc/kairosdb/custom-configs/*.conf /etc/kairosdb && . ~/.bashrc && kairosdb.sh run"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          volumeMounts:
+            - name: kairos-config-volume
+              mountPath: /etc/kairosdb/custom-configs
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: wait-config-volume
+          configMap:
+            name: {{ $waitCfgName }}
+        - name: kairos-config-volume
+          configMap:
+            name: kairosdb-config
+            items:
+              - key: kairosdb.conf
+                path: kairosdb.conf
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+{{- end }}

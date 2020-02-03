@@ -1,0 +1,2 @@
+KairosDB has been officially installed in your K8S cluster. If you want to start publishing metrics
+you can use http://{{ include "kairosdb.fullname" . }}:{{ .Values.service.port }} endpoint.

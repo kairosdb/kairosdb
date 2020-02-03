@@ -35,6 +35,12 @@ public class MemorySearchResult implements SearchResult
 		return m_dataPointRows;
 	}
 
+	@Override
+	public void close()
+	{
+
+	}
+
 
 	@Override
 	public DataPointWriter startDataPointSet(String dataType, SortedMap<String, String> tags) throws IOException

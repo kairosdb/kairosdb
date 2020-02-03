@@ -1,9 +1,17 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.ProtocolOptions;
 import com.google.common.base.Splitter;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Multimap;
+import com.typesafe.config.ConfigException;
+import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigValue;
 import org.kairosdb.core.KairosConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
 import java.util.Collections;
@@ -16,12 +24,14 @@ import static com.google.common.base.Preconditions.checkState;
 
 public class ClusterConfiguration
 {
+	public static final Logger logger = LoggerFactory.getLogger(ClusterConnection.class);
 	private final Splitter PortSplitter = Splitter.on(':')
 			.trimResults().omitEmptyStrings();
 
 	private final String m_keyspace;
 	private final ConsistencyLevel m_readConsistencyLevel;
 	private final ConsistencyLevel m_writeConsistencyLevel;
+	private final ProtocolOptions.Compression m_compression;
 	private final boolean m_useSsl;
 	private final int m_maxQueueSize;
 	private final int m_connectionsLocalCore;
@@ -33,6 +43,7 @@ public class ClusterConfiguration
 	private final int m_requestRetryCount;
 	private final Map<String, Integer> m_hostList;
 	private final String m_clusterName;
+	private final Multimap<String, String> m_tagIndexedMetrics;
 	private String m_authPassword;
 	private String m_authUser;
 	private String m_localDCName;
@@ -49,6 +60,7 @@ public class ClusterConfiguration
 		m_clusterName = config.getString("name", "default");
 		m_readConsistencyLevel = ConsistencyLevel.valueOf(config.getString("read_consistency_level", "ONE"));
 		m_writeConsistencyLevel = ConsistencyLevel.valueOf(config.getString("write_consistency_level", "QUORUM"));
+		m_compression = ProtocolOptions.Compression.valueOf(config.getString("protocol_compression", "LZ4"));
 
 		m_useSsl = config.getBoolean("use_ssl", false);
 		m_maxQueueSize = config.getInt("max_queue_size", 500);
@@ -105,6 +117,45 @@ public class ClusterConfiguration
 			m_endTime = Long.MAX_VALUE;
 
 		checkState(m_startTime < m_endTime, "Cluster start time must be before end time");
+
+		m_tagIndexedMetrics = HashMultimap.create();
+		if (config.hasPath("tag_indexed_row_key_lookup_metrics"))
+		{
+			try
+			{
+				ConfigObject indexTagConfig = config.getObjectMap("tag_indexed_row_key_lookup_metrics");
+
+				for (Map.Entry<String, ConfigValue> configEntry : indexTagConfig.entrySet())
+				{
+					Object metricTags = configEntry.getValue().unwrapped();
+					if (metricTags instanceof List)
+					{
+						@SuppressWarnings("unchecked")
+						List<String> tagList = (List<String>) metricTags;
+						if (tagList.isEmpty())
+							m_tagIndexedMetrics.put(configEntry.getKey(), "*");
+
+						for (String metricTag : tagList)
+						{
+							m_tagIndexedMetrics.put(configEntry.getKey(), metricTag);
+						}
+					}
+					else
+					{
+						throw new ParseException("tag_indexed_row_key_lookup_metrics must be a list of string or an object, see config documentation.", -1);
+					}
+				}
+
+			}
+			catch (ConfigException.WrongType wt)
+			{
+				List<String> indexedTags = config.getStringList("tag_indexed_row_key_lookup_metrics");
+				for (String indexedTag : indexedTags)
+				{
+					m_tagIndexedMetrics.put(indexedTag, "*");
+				}
+			}
+		}
 	}
 
 	public String getKeyspace()
@@ -120,6 +171,11 @@ public class ClusterConfiguration
 	public ConsistencyLevel getWriteConsistencyLevel()
 	{
 		return m_writeConsistencyLevel;
+	}
+
+	public ProtocolOptions.Compression getCompression()
+	{
+		return m_compression;
 	}
 
 	public boolean isUseSsl()
@@ -210,6 +266,11 @@ public class ClusterConfiguration
 	public boolean containRange(long queryStartTime, long queryEndTime)
 	{
 		return (!(queryEndTime < m_startTime || queryStartTime > m_endTime));
+	}
+
+	public Multimap<String, String> getTagIndexedMetrics()
+	{
+		return m_tagIndexedMetrics;
 	}
 }
 

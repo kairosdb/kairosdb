@@ -2,11 +2,10 @@ package org.kairosdb.core.datapoints;
 
 import com.google.gson.JsonElement;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.util.KDataInput;
 
-import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import static org.kairosdb.core.DataPoint.GROUP_NUMBER;
 
@@ -42,7 +41,7 @@ public class DoubleDataPointFactoryImpl implements DoubleDataPointFactory
 	}
 
 	@Override
-	public DataPoint getDataPoint(long timestamp, DataInput buffer) throws IOException
+	public DataPoint getDataPoint(long timestamp, KDataInput buffer) throws IOException
 	{
 		double value = buffer.readDouble();
 

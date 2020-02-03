@@ -110,7 +110,7 @@ public class Util
 				String line;
 				while ((line = br.readLine()) != null)
 					buffer.append(line);
-	
+
 				int returnValue = process.waitFor();
 				if (returnValue == 0)
 					return buffer.toString();
@@ -241,10 +241,14 @@ public class Util
 			if (s.length() == 1)
 				return false;
 		}
-
+		int pointCount = 0;
 		for (int i = start; i < s.length(); i++)
 		{
 			char c = s.charAt(i);
+			if (pointCount > 1)
+                return false;
+			if (c == '.')
+			    pointCount++;
 			if (!Character.isDigit(c) && c != '.')
 				return false;
 		}

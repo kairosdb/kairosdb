@@ -165,7 +165,7 @@ kairosdb.Metric = function (name) {
 			aggregator.sampling.value = value;
 			aggregator.sampling.unit = unit;
 			aggregator.sampling.time_zone = time_zone;
-			if (align == "sample") aggregator.align_sampling = true;
+			aggregator.align_sampling = true;
 			if (align == "start") aggregator.align_start_time = true;
 			if (align == "end") aggregator.align_end_time = true;
 		}

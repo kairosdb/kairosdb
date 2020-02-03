@@ -279,7 +279,7 @@ public class Main
 						if (constructor != null)
 							mod = (Module) constructor.newInstance(config);
 						else
-							mod = (Module) aClass.newInstance();
+							mod = (Module) aClass.getDeclaredConstructor().newInstance();
 
 						if (mod instanceof CoreModule)
 						{

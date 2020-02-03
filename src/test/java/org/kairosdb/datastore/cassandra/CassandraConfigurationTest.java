@@ -11,6 +11,7 @@ import java.text.ParseException;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.*;
 
 public class CassandraConfigurationTest
 {
@@ -22,6 +23,15 @@ public class CassandraConfigurationTest
 		ClusterConfiguration config = new ClusterConfiguration(rootConfig);
 
 		return config;
+	}
+
+	private CassandraConfiguration loadConfiguration(String file) throws ParseException
+	{
+		KairosRootConfig rootConfig = new KairosRootConfig();
+		rootConfig.load(this.getClass().getClassLoader().getResourceAsStream(file),
+				KairosConfig.ConfigFormat.HOCON);
+
+		return new CassandraConfiguration(rootConfig);
 	}
 
 	@Test
@@ -47,5 +57,14 @@ public class CassandraConfigurationTest
 
 		config = setHosts(ImmutableList.of("localhost"));
 		assertEquals(ImmutableMap.of("localhost", 9042), config.getHostList());
+	}
+
+	@Test
+	public void test_createTableWithConfig() throws ParseException
+	{
+		CassandraConfiguration config = loadConfiguration("test_createTableWithConfig.conf");
+		assertThat(config.getCreateWithConfig("row_key_index")).isEqualTo(" bla bla bla");
+		assertThat(config.getCreateWithConfig("string_index")).isEqualTo("");
+		assertThat(config.getCreateWithConfig("data_points")).isEqualTo("WITH COMPACT STORAGE");
 	}
 }

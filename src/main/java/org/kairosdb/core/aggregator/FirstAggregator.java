@@ -32,24 +32,22 @@ import java.util.Iterator;
 )
 public class FirstAggregator extends RangeAggregator
 {
-	private DoubleDataPointFactory m_dataPointFactory;
 
 	@Inject
-	public FirstAggregator(DoubleDataPointFactory dataPointFactory)
+	public FirstAggregator()
 	{
-		m_dataPointFactory = dataPointFactory;
 	}
 
 	@Override
 	public boolean canAggregate(String groupType)
 	{
-		return DataPoint.GROUP_NUMBER.equals(groupType);
+		return true;
 	}
 
 	@Override
 	public String getAggregatedGroupType(String groupType)
 	{
-		return m_dataPointFactory.getGroupType();
+		return groupType;
 	}
 
 	@Override
@@ -65,7 +63,11 @@ public class FirstAggregator extends RangeAggregator
 		{
 			Iterable<DataPoint> ret;
 			if (dataPointRange.hasNext())
-				ret = Collections.singletonList(m_dataPointFactory.createDataPoint(returnTime, dataPointRange.next().getDoubleValue()));
+			{
+				DataPoint next = dataPointRange.next();
+				next.setTimestamp(returnTime);
+				ret = Collections.singletonList(next);
+			}
 			else
 				ret = Collections.emptyList();
 

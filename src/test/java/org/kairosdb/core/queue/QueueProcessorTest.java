@@ -2,6 +2,8 @@ package org.kairosdb.core.queue;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.eventbus.EventBus;
+import com.google.common.io.Files;
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
@@ -12,6 +14,8 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.events.DataPointEvent;
 import se.ugli.bigqueue.BigArray;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -127,22 +131,38 @@ public class QueueProcessorTest
 	}
 
 	@Test(expected = IndexOutOfBoundsException.class)
-	public void test_bigArray_readingEmptyArray()
+	public void test_bigArray_readingEmptyArray() throws IOException
 	{
-		BigArray bigArray = new BigArray("big_array", "kairos_queue", 512*1024*1024);
+		File tempDir = Files.createTempDir();
+		try
+		{
+			BigArray bigArray = new BigArray(tempDir.getAbsolutePath(), "kairos_queue", 512 * 1024 * 1024);
 
-		long index = bigArray.getTailIndex();
-		byte[] data = bigArray.get(index);
+			long index = bigArray.getTailIndex();
+			byte[] data = bigArray.get(index);
+		}
+		finally
+		{
+			FileUtils.deleteDirectory(tempDir);
+		}
 	}
 
 	@Test(expected = IndexOutOfBoundsException.class)
-	public void test_bigArray_readingNonExistingIndex()
+	public void test_bigArray_readingNonExistingIndex() throws IOException
 	{
-		BigArray bigArray = new BigArray("big_array", "kairos_queue", 512*1024*1024);
+		File tempDir = Files.createTempDir();
+		BigArray bigArray = new BigArray(tempDir.getAbsolutePath(), "kairos_queue", 512*1024*1024);
+		try
+		{
+			long index = bigArray.getTailIndex();
+			index ++;
+			byte[] data = bigArray.get(index);
+		}
+		finally
+		{
+			FileUtils.deleteDirectory(tempDir);
+		}
 
-		long index = bigArray.getTailIndex();
-		index ++;
-		byte[] data = bigArray.get(index);
 	}
 
 	private DataPointEvent createDataPointEvent()

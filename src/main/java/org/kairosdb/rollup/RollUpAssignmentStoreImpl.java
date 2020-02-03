@@ -1,16 +1,14 @@
 package org.kairosdb.rollup;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.kairosdb.core.datastore.ServiceKeyStore;
+import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.kairosdb.core.exception.DatastoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
@@ -71,7 +69,16 @@ public class RollUpAssignmentStoreImpl implements RollUpAssignmentStore
             Map<String, String> assignments = new HashMap<>();
             Iterable<String> keys = serviceKeyStore.listKeys(SERVICE, SERVICE_KEY_ASSIGNMENTS);
             for (String key : keys) {
-                assignments.put(key, serviceKeyStore.getValue(SERVICE, SERVICE_KEY_ASSIGNMENTS, key).getValue());
+                ServiceKeyValue value = serviceKeyStore.getValue(SERVICE, SERVICE_KEY_ASSIGNMENTS, key);
+                if (value == null){
+                    // something bad happened. This should have not exist without a value
+                    logger.error("Assignment has a key but no value removing entry for key " + key);
+                    removeAssignments(ImmutableSet.of(key));
+                }
+                else
+                {
+                    assignments.put(key, value.getValue());
+                }
             }
             return assignments;
         }

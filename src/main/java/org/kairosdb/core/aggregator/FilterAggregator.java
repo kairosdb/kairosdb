@@ -19,6 +19,7 @@ package org.kairosdb.core.aggregator;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.annotation.FeatureComponent;
 import org.kairosdb.core.annotation.FeatureProperty;
+import org.kairosdb.core.datapoints.StringDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.plugin.Aggregator;
 
@@ -31,7 +32,72 @@ public class FilterAggregator implements Aggregator
 {
 	public enum FilterOperation
 	{
-		LTE, LT, GTE, GT, EQUAL
+		LTE {
+			@Override
+			protected <T> boolean compare(Comparable<T> a, T b)
+			{
+				return a.compareTo(b) <= 0;
+			}
+		},
+
+		LT {
+			@Override
+			protected <T> boolean compare(Comparable<T> a, T b)
+			{
+				return a.compareTo(b) < 0;
+			}
+		},
+
+		GTE {
+			@Override
+			protected <T> boolean compare(Comparable<T> a, T b)
+			{
+				return a.compareTo(b) >= 0;
+			}
+		},
+
+		GT {
+			@Override
+			protected <T> boolean compare(Comparable<T> a, T b)
+			{
+				return a.compareTo(b) > 0;
+			}
+		},
+
+		EQUAL {
+			@Override
+			protected <T> boolean compare(Comparable<T> a, T b)
+			{
+				return a.compareTo(b) ==0;
+			}
+		},
+
+		NE {
+			@Override
+			protected <T> boolean compare(Comparable<T> a, T b)
+			{
+				return a.compareTo(b) !=0;
+			}
+		};
+
+		protected abstract <T> boolean compare(Comparable<T> a, T b);
+
+		boolean filterData(DataPoint dp, Object threshold)
+		{
+			if (String.class.isAssignableFrom(threshold.getClass()) &&
+					StringDataPoint.API_TYPE.equals(dp.getApiDataType()))
+			{
+				return compare(((StringDataPoint)dp).getValue(), threshold.toString());
+			} else if (Number.class.isAssignableFrom(threshold.getClass()) &&
+					!StringDataPoint.API_TYPE.equals(dp.getApiDataType()))
+			{
+				return compare(dp.getDoubleValue(), ((Number)threshold).doubleValue());
+			} else
+			{
+				// data that is not type compatible with the threshold will be filtered
+				return true;
+			}
+		}
 	}
 
     public FilterAggregator()
@@ -50,7 +116,7 @@ public class FilterAggregator implements Aggregator
 			label = "Filter operation",
 			description = "The operation performed for each data point.",
 			type = "enum",
-			options = {"lte", "lt", "gte", "gt", "equal"},
+			options = {"lte", "lt", "gte", "gt", "equal", "ne"},
 			default_value = "equal"
 	)
 	private FilterOperation m_filterop;
@@ -59,7 +125,7 @@ public class FilterAggregator implements Aggregator
 			label = "Threshold",
 			description = "The value the operation is performed on. If the operation is lt, then a null data point is returned if the data point is less than the threshold."
 	)
-	private double m_threshold;
+	private Object m_threshold;
 
 	/**
 	 Sets filter operation to apply to data points. Values can be LTE, LE, GTE, GT, or EQUAL.
@@ -71,7 +137,7 @@ public class FilterAggregator implements Aggregator
 		m_filterop = filterop;
 	}
 
-	public void setThreshold(double threshold)
+	public void setThreshold(Object threshold)
 	{
 		m_threshold = threshold;
 	}
@@ -103,17 +169,10 @@ public class FilterAggregator implements Aggregator
 			boolean foundValidDp = false;
 			while (!foundValidDp && currentDataPoint != null)
 			{
-				double x0 = currentDataPoint.getDoubleValue();
-				if (m_filterop == FilterOperation.LTE && x0 <= m_threshold)
+				if (m_filterop.filterData(currentDataPoint, m_threshold))
+				{
 					moveCurrentDataPoint();
-				else if (m_filterop == FilterOperation.LT && x0 < m_threshold)
-					moveCurrentDataPoint();
-				else if (m_filterop == FilterOperation.GTE && x0 >= m_threshold)
-					moveCurrentDataPoint();
-				else if (m_filterop == FilterOperation.GT && x0 > m_threshold)
-					moveCurrentDataPoint();
-				else if (m_filterop == FilterOperation.EQUAL && x0 == m_threshold)
-					moveCurrentDataPoint();
+				}
 				else
 					foundValidDp = true;
 			}

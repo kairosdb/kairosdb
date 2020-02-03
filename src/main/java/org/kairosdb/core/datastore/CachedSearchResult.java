@@ -20,12 +20,12 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.util.BufferedDataInputStream;
 import org.kairosdb.util.BufferedDataOutputStream;
+import org.kairosdb.util.KDataInputStream;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.StringPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataInputStream;
 import java.io.Externalizable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -64,7 +64,7 @@ public class CachedSearchResult implements SearchResult
 	private BufferedDataOutputStream m_dataOutputStream;
 
 	private final File m_indexFile;
-	private final AtomicInteger m_closeCounter = new AtomicInteger();
+	private final AtomicInteger m_closeCounter = new AtomicInteger(1);
 	private boolean m_readFromCache = false;
 	private final KairosDataPointFactory m_dataPointFactory;
 	private final StringPool m_stringPool;
@@ -222,7 +222,7 @@ public class CachedSearchResult implements SearchResult
 	/**
 	 Closes the underling file handle
 	 */
-	private void close()
+	private void internalClose()
 	{
 		try
 		{
@@ -243,7 +243,12 @@ public class CachedSearchResult implements SearchResult
 	protected void decrementClose()
 	{
 		if (m_closeCounter.decrementAndGet() == 0)
-			close();
+			internalClose();
+	}
+
+	public void close()
+	{
+		decrementClose();
 	}
 
 	@Override
@@ -431,7 +436,7 @@ public class CachedSearchResult implements SearchResult
 	{
 		private long m_currentPosition;
 		private long m_endPostition;
-		private DataInputStream m_readBuffer = null;
+		private KDataInputStream m_readBuffer = null;
 		private Map<String, String> m_tags;
 		private final String m_dataType;
 		private final int m_dataPointCount;

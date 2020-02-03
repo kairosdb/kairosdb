@@ -29,6 +29,7 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.testing.TestUtil;
 import org.kairosdb.util.Tags;
 
 import java.io.IOException;
@@ -37,9 +38,7 @@ import java.net.UnknownHostException;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.kairosdb.util.DataPointEventUtil.verifyEvent;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  Created with IntelliJ IDEA.
@@ -49,7 +48,7 @@ import static org.mockito.Mockito.when;
  */
 public class TelnetServerTest
 {
-	private static final int TELNET_PORT = 4244;
+	private static int telnetPort;
 	private static final int MAX_COMMAND_LENGTH = 1024;
 	private FilterEventBus m_eventBus;
 	private Publisher<DataPointEvent> m_publisher;
@@ -61,6 +60,7 @@ public class TelnetServerTest
 	@Before
 	public void setupDatastore() throws KairosDBException, IOException
 	{
+		telnetPort = TestUtil.findFreePort();
 		m_eventBus = mock(FilterEventBus.class);
 		m_publisher = mock(Publisher.class);
 
@@ -70,10 +70,10 @@ public class TelnetServerTest
 		commandProvider.putCommand("put", new PutCommand(m_eventBus, "localhost",
 				new LongDataPointFactoryImpl(), new DoubleDataPointFactoryImpl()));
 
-		m_server = new TelnetServer(TELNET_PORT, MAX_COMMAND_LENGTH, commandProvider);
+		m_server = new TelnetServer(telnetPort, MAX_COMMAND_LENGTH, commandProvider);
 		m_server.start();
 
-		m_client = new TelnetClient("127.0.0.1", TELNET_PORT);
+		m_client = new TelnetClient("127.0.0.1", telnetPort);
 	}
 
 	@After
@@ -210,9 +210,9 @@ public class TelnetServerTest
 		commandProvider.putCommand("put", new PutCommand(m_eventBus, "localhost",
 				new LongDataPointFactoryImpl(), new DoubleDataPointFactoryImpl()));
 		m_server.stop();
-		m_server = new TelnetServer(TELNET_PORT, 4148, commandProvider);
+		m_server = new TelnetServer(telnetPort, 4148, commandProvider);
 		m_server.start();
-		m_client = new TelnetClient("127.0.0.1", TELNET_PORT);
+		m_client = new TelnetClient("127.0.0.1", telnetPort);
 
 		long now = System.currentTimeMillis() / 1000;
 		String metricName = createLongString(2048);

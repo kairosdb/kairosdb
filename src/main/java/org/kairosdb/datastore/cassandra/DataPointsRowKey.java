@@ -31,6 +31,7 @@ public class DataPointsRowKey
 	private final SortedMap<String, String> m_tags;
 	private boolean m_endSearchKey; //Only used for end slice operations.  Serialization
 	//adds a 0xFF after the timestamp to make sure we get all data for that timestamp.
+	private int m_ttl = 0;
 
 	private ByteBuffer m_serializedBuffer;
 
@@ -83,6 +84,16 @@ public class DataPointsRowKey
 	public void setEndSearchKey(boolean endSearchKey)
 	{
 		m_endSearchKey = endSearchKey;
+	}
+
+	public int getTtl()
+	{
+		return m_ttl;
+	}
+
+	public void setTtl(int ttl)
+	{
+		m_ttl = ttl;
 	}
 
 	/**

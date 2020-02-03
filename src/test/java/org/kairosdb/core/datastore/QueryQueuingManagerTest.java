@@ -149,7 +149,7 @@ public class QueryQueuingManagerTest
 			try
 			{
 				runningCount.incrementAndGet();
-				manager.waitForTimeToRun(hash);
+				manager.waitForTimeToRun(hash, null);
 				while(runningCount.get() < waitCount)
 				{
 					Thread.sleep(100);

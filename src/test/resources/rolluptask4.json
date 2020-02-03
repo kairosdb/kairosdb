@@ -1,0 +1,48 @@
+{
+  "name": "Rollup4",
+  "execution_interval": {
+    "value": 1,
+    "unit": "hours"
+  },
+  "rollups": [
+    {
+      "save_as": "kairosdb.testRecentExistingRollupWithSingleNewDatapoint_rollup",
+      "query": {
+        "cache_time": 0,
+        "start_relative": {
+          "value": "1",
+          "unit": "hours"
+        },
+        "metrics": [
+          {
+            "name": "kairosdb.testRecentExistingRollupWithSingleNewDatapoint",
+            "limit": 10000,
+            "tags": {
+              "host": [
+                "foo"
+              ],
+              "customer": [
+                "foobar"
+              ]
+            },
+            "group_by": [
+              {
+                "name": "tag",
+                "tags": ["group1", "group2"]
+              }
+            ],
+            "aggregators": [
+              {
+                "name": "sum",
+                "sampling": {
+                  "value": 10,
+                  "unit": "minutes"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -17,6 +17,10 @@
 package org.kairosdb.core.reporting;
 
 import com.google.common.collect.ImmutableSortedMap;
+import java.util.LinkedList;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import javax.inject.Inject;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.exception.DatastoreException;
@@ -24,10 +28,6 @@ import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.StatsMap;
 import org.kairosdb.util.Tags;
-
-import java.util.LinkedList;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 /**
  Created with IntelliJ IDEA.
@@ -79,7 +79,12 @@ public class ThreadReporter
 		public int getTtl() { return (m_ttl); }
 		public boolean isStringValue() { return m_strValue != null; }
 
-		public ImmutableSortedMap<String, String> getTags() { return m_tags.build(); }
+		public ImmutableSortedMap<String, String> getTags() {
+			if (processTags != null) {
+				m_tags.putAll(processTags.getTags());
+			}
+			return m_tags.build();
+		}
 	}
 
 	private static class CurrentTags extends ThreadLocal<SortedMap<String, String>>
@@ -127,6 +132,9 @@ public class ThreadReporter
 	private static ReporterData s_reporterData = new ReporterData();
 	private static CurrentTags s_currentTags = new CurrentTags();
 	private static ReporterTime s_reportTime = new ReporterTime();
+
+	@Inject
+	private static ProcessTagConfiguration processTags;
 
 	private ThreadReporter()
 	{

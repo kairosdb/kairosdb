@@ -77,4 +77,35 @@ public class HostManagerTest
         assertNull(activeKairosHosts.get("3"));
         assertThat(activeKairosHosts.get("myGuid").getValue(), equalTo("myHost")); // current host should always be there
     }
+
+    @Test
+    public void test_hostsChanged()
+            throws DatastoreException
+    {
+        keyStore.setValue(SERVICE, SERVICE_KEY, "1", "host1");
+        keyStore.setValue(SERVICE, SERVICE_KEY, "2", "host2");
+        keyStore.setValue(SERVICE, SERVICE_KEY, "3", "host3");
+
+        manager.checkHostChanges();
+
+        assertThat(manager.acknowledgeHostListChanged(), equalTo(true));
+        assertThat(manager.acknowledgeHostListChanged(), equalTo(false)); // set back to false after acknowledgement
+
+        long timeChange = 1000 * 10; // 10 seconds
+        keyStore.setKeyModificationTime(SERVICE, SERVICE_KEY, "1", new Date(timeChange));
+        keyStore.setKeyModificationTime(SERVICE, SERVICE_KEY, "3", new Date(timeChange));
+
+        manager.checkHostChanges();
+
+        assertThat(manager.acknowledgeHostListChanged(), equalTo(true));
+        assertThat(manager.acknowledgeHostListChanged(), equalTo(false)); // set back to false after acknowledgement
+
+        timeChange = 1000 * 20; // 10 seconds
+        keyStore.setKeyModificationTime(SERVICE, SERVICE_KEY, "1", new Date(timeChange));
+        keyStore.setKeyModificationTime(SERVICE, SERVICE_KEY, "3", new Date(timeChange));
+
+        manager.checkHostChanges();
+
+        assertThat(manager.acknowledgeHostListChanged(), equalTo(false));
+    }
 }

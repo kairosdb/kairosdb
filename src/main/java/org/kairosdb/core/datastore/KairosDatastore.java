@@ -16,6 +16,7 @@
 package org.kairosdb.core.datastore;
 
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
@@ -251,6 +252,11 @@ public class KairosDatastore implements KairosPostConstructInit
 
 	}
 
+	public void indexTags(QueryMetric queryMetric) throws DatastoreException
+	{
+		m_datastore.indexMetricTags(queryMetric);
+	}
+
 	public DatastoreQuery createQuery(QueryMetric metric) throws DatastoreException
 	{
 		checkNotNull(metric);
@@ -261,15 +267,7 @@ public class KairosDatastore implements KairosPostConstructInit
 		{
 			dq = new DatastoreQueryImpl(metric);
 		}
-		catch (UnsupportedEncodingException e)
-		{
-			throw new DatastoreException(e);
-		}
-		catch (NoSuchAlgorithmException e)
-		{
-			throw new DatastoreException(e);
-		}
-		catch (InterruptedException e)
+		catch (UnsupportedEncodingException | NoSuchAlgorithmException | InterruptedException e)
 		{
 			throw new DatastoreException(e);
 		}
@@ -452,7 +450,7 @@ public class KairosDatastore implements KairosPostConstructInit
 
 			m_metric = metric;
 			m_cacheFilename = calculateFilenameHash(metric);
-			m_queuingManager.waitForTimeToRun(m_cacheFilename);
+			m_queuingManager.waitForTimeToRun(m_cacheFilename, metric);
 		}
 
 		public int getSampleSize()
@@ -464,8 +462,8 @@ public class KairosDatastore implements KairosPostConstructInit
 		@Override
 		public List<DataPointGroup> execute() throws DatastoreException
 		{
-			long queryStartTime = System.currentTimeMillis();
-			
+			Stopwatch stopwatch = Stopwatch.createStarted();
+
 			SearchResult searchResult = null;
 
 			List<DataPointRow> returnedRows = null;
@@ -497,11 +495,16 @@ public class KairosDatastore implements KairosPostConstructInit
 					m_datastore.queryDatabase(m_metric, searchResult);
 					returnedRows = searchResult.getRows();
 				}
+
 			}
 			catch (Exception e)
 			{
 				logger.error("Query Error", e);
 				throw new DatastoreException(e);
+			}
+			finally
+			{
+				searchResult.close();
 			}
 
 			//Get data point count
@@ -567,7 +570,7 @@ public class KairosDatastore implements KairosPostConstructInit
 
 
 			//Report how long query took
-			ThreadReporter.addDataPoint(QUERY_METRIC_TIME, System.currentTimeMillis() - queryStartTime);
+			ThreadReporter.addDataPoint(QUERY_METRIC_TIME, stopwatch.elapsed(java.util.concurrent.TimeUnit.MILLISECONDS));
 
 			return (m_results);
 		}

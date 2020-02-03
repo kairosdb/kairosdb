@@ -47,6 +47,7 @@
 
 	<!--<logger name="org.kairosdb.core.aggregator.SumAggregator" level="DEBUG"/>
 	<logger name="org.kairosdb.datastore.cassandra.CassandraDatastore" level="DEBUG"/>-->
+	<!--<logger name="org.kairosdb.datastore.h2.orm" level="DEBUG"/>-->
 
 	<root level="ERROR">
 		<appender-ref ref="stdout"/>

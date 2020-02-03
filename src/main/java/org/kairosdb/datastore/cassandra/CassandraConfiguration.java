@@ -3,6 +3,7 @@ package org.kairosdb.datastore.cassandra;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.typesafe.config.ConfigValue;
 import org.kairosdb.core.KairosConfig;
 import org.kairosdb.core.KairosRootConfig;
 
@@ -29,6 +30,7 @@ public class CassandraConfiguration
 	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
 	public static final String SIMULTANEOUS_QUERIES = "kairosdb.datastore.cassandra.simultaneous_cql_queries";
 	public static final String QUERY_LIMIT = "kairosdb.datastore.cassandra.query_limit";
+	public static final String QUERY_TIME_LIMIT = "kairosdb.datastore.cassandra.query_time_limit_sec";
 	public static final String QUERY_READER_THREADS = "kairosdb.datastore.cassandra.query_reader_threads";
 
 	public static final String AUTH_USER_NAME = "kairosdb.datastore.cassandra.auth.user_name";
@@ -47,6 +49,8 @@ public class CassandraConfiguration
 	public static final String MAX_QUEUE_SIZE = "kairosdb.datastore.cassandra.max_queue_size";
 	
 	public static final String LOCAL_DATACENTER = "kairosdb.datastore.cassandra.local_datacenter";
+
+	public static final String START_ASYNC = "kairosdb.datastore.cassandra.start_async";
 
 
 	@Inject(optional = true)
@@ -83,7 +87,11 @@ public class CassandraConfiguration
 
 	@Inject(optional = true)
 	@Named(QUERY_LIMIT)
-	private int m_queryLimit = 0;
+	private long m_queryLimit = 0;
+
+	@Inject(optional = true)
+	@Named(QUERY_TIME_LIMIT)
+	private long m_queryTimeLimit = 0;
 
 	private Map<String, Integer> m_hostList = new HashMap<>();
 
@@ -98,6 +106,12 @@ public class CassandraConfiguration
 	@Inject(optional = true)
 	@Named(LOCAL_DATACENTER)
 	private String m_localDatacenter;
+
+	@Inject
+	@Named(START_ASYNC)
+	private boolean m_startAsync = false;
+
+	private final Map<String, String> m_createWithConfig;
 
 	@Inject
 	public CassandraConfiguration(KairosRootConfig config) throws ParseException
@@ -128,6 +142,15 @@ public class CassandraConfiguration
 		}
 		else
 			m_readClusters = ImmutableList.of();
+
+		m_createWithConfig = new HashMap<>();
+		if (config.hasPath("kairosdb.datastore.cassandra.table_create_with"))
+		{
+			for (Map.Entry<String, ConfigValue> configValueEntry : config.getObjectMap("kairosdb.datastore.cassandra.table_create_with").entrySet())
+			{
+				m_createWithConfig.put(configValueEntry.getKey(), (String)configValueEntry.getValue().unwrapped());
+			}
+		}
 	}
 
 
@@ -166,9 +189,14 @@ public class CassandraConfiguration
 		return m_queryReaderThreads;
 	}
 
-	public int getQueryLimit()
+	public long getQueryLimit()
 	{
 		return m_queryLimit;
+	}
+
+	public long getQueryTimeLimit()
+	{
+		return m_queryTimeLimit;
 	}
 	
 	public String getLocalDatacenter()
@@ -189,5 +217,15 @@ public class CassandraConfiguration
 	public List<ClusterConfiguration> getReadClusters()
 	{
 		return m_readClusters;
+	}
+
+	public boolean isStartAsync()
+	{
+		return m_startAsync;
+	}
+
+	public String getCreateWithConfig(String tableName)
+	{
+		return m_createWithConfig.getOrDefault(tableName, "");
 	}
 }

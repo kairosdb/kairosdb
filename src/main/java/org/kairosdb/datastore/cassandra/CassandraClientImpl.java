@@ -79,8 +79,8 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		//instances.  A load balancing policy for reads will set shuffle to true
 		// When connecting to Cassandra notes in different datacenters, the local datacenter should be provided.
 		// Not doing this will select the datacenter from the first connected Cassandra node, which is not guaranteed to be the correct one.
-		m_writeLoadBalancingPolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), false);
-		TokenAwarePolicy readLoadBalancePolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), true);
+		m_writeLoadBalancingPolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), TokenAwarePolicy.ReplicaOrdering.TOPOLOGICAL);
+		TokenAwarePolicy readLoadBalancePolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), TokenAwarePolicy.ReplicaOrdering.RANDOM);
 
 		final Cluster.Builder builder = new Cluster.Builder()
 				//.withProtocolVersion(ProtocolVersion.V3)
@@ -93,7 +93,7 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 						.setMaxQueueSize(m_clusterConfiguration.getMaxQueueSize()))
 				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 5 * 1000))
 				.withLoadBalancingPolicy(new SelectiveLoadBalancingPolicy(readLoadBalancePolicy, m_writeLoadBalancingPolicy))
-				.withCompression(ProtocolOptions.Compression.LZ4)
+				.withCompression(m_clusterConfiguration.getCompression())
 				.withoutJMXReporting()
 				.withQueryOptions(new QueryOptions().setConsistencyLevel(m_clusterConfiguration.getReadConsistencyLevel()))
 				.withTimestampGenerator(new TimestampGenerator() //todo need to remove this and put it only on the datapoints call

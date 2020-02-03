@@ -77,6 +77,21 @@ public class QueryParserTest
 	}
 
 	@Test
+	public void test_negative_absolute_dates() throws QueryException, IOException
+	{
+		String json = Resources.toString(Resources.getResource("query-metric-negative-absolute-dates.json"), Charsets.UTF_8);
+
+		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
+
+		assertThat(results.size(), equalTo(1));
+
+		QueryMetric queryMetric = results.get(0);
+		assertThat(queryMetric.getName(), equalTo("abc.123"));
+		assertThat(queryMetric.getStartTime(), equalTo(-200L));
+		assertThat(queryMetric.getEndTime(), equalTo(-100L));
+	}
+
+	@Test
 	public void test_withNoAggregators() throws Exception
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-no-aggregators.json"), Charsets.UTF_8);
@@ -521,11 +536,10 @@ public class QueryParserTest
 		assertRollup(
 				task.getRollups().get(0),
 				1,
-				"kairosdb.http.query_time",
-				"kairosdb.http.query_time_rollup",
-				createTrimAggregator(TrimAggregator.Trim.BOTH),
+				"kairosdb.test.testNoExistingRollups",
+				"kairosdb.test.testNoExistingRollups.rollup",
 				createSaveAsAggregator(
-						"kairosdb.http.query_time_rollup",
+						"kairosdb.test.testNoExistingRollups.rollup",
 						ImmutableList.of("group1", "group2")),
 				createSumAggregator(new Sampling(10, TimeUnit.MINUTES))
 		);
@@ -555,7 +569,6 @@ public class QueryParserTest
 				1,
 				"kairosdb.http.query_time",
 				"kairosdb.http.query_time_rollup",
-				createTrimAggregator(TrimAggregator.Trim.BOTH),
 				createSaveAsAggregator(
 						"kairosdb.http.query_time_rollup",
 						ImmutableList.of("group1", "group2")),
@@ -567,7 +580,6 @@ public class QueryParserTest
 				1,
 				"kairosdb.http.foo",
 				"kairosdb.http.foo_rollup",
-				createTrimAggregator(TrimAggregator.Trim.BOTH),
 				createSaveAsAggregator(
 						"kairosdb.http.foo_rollup",
 						ImmutableList.of("group3", "group4")),

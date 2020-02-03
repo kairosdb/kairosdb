@@ -267,4 +267,6 @@ public class KairosRootConfigImplTest
 		//assertTrue(m_config.isSupportedFormat(KairosConfig.ConfigFormat.JSON));
 		assertTrue(m_config.isSupportedFormat(KairosRootConfig.ConfigFormat.HOCON));
 	}
+
+
 }

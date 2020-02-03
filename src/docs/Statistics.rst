@@ -15,7 +15,12 @@ The possible values for kairosdb.reporter.period_unit are milliseconds, seconds,
 
 If you change these properties you must restart KairosDB for the changes to take effect.
 
-You can turn off metrics reporting by removing the kairosdb.service.reporter property from the property file.
+Metrics reporting is turned on by default. You can remove metrics reporting by adding the line below to the property file.
+This prevents the reporting module from loading.
+
+::
+
+    kairosdb.service.reporter=
 
 ----------------
 Metrics Reported

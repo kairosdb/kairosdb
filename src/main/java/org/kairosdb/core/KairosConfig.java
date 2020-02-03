@@ -1,6 +1,7 @@
 package org.kairosdb.core;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigObject;
 import org.apache.commons.io.FilenameUtils;
 
 import java.text.ParseException;
@@ -69,6 +70,12 @@ public class KairosConfig
 	{
 		return new KairosConfig(m_config.getConfig(path));
 	}
+
+	public ConfigObject getObjectMap(String path)
+	{
+		return m_config.getObject(path);
+	}
+
 
 	public boolean hasPath(String path)
 	{

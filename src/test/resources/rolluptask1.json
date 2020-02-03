@@ -6,7 +6,7 @@
   },
   "rollups": [
     {
-      "save_as": "kairosdb.http.query_time_rollup",
+      "save_as": "kairosdb.test.testNoExistingRollups.rollup",
       "query": {
         "cache_time": 0,
         "start_relative": {
@@ -15,7 +15,7 @@
         },
         "metrics": [
           {
-            "name": "kairosdb.http.query_time",
+            "name": "kairosdb.test.testNoExistingRollups",
             "limit": 10000,
             "tags": {
               "host": [
@@ -37,7 +37,8 @@
                 "sampling": {
                   "value": 10,
                   "unit": "minutes"
-                }
+                },
+                "align_sampling": true
               }
             ]
           }

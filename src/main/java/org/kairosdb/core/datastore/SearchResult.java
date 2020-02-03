@@ -8,4 +8,5 @@ import java.util.List;
 public interface SearchResult extends QueryCallback
 {
 	List<DataPointRow> getRows();
+	void close();
 }

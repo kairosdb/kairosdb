@@ -22,7 +22,6 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.mchange.v2.c3p0.DataSources;
 import org.agileclick.genorm.runtime.GenOrmQueryResultSet;
-import org.agileclick.genorm.runtime.LeakDetectorDataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datastore.Datastore;
@@ -48,7 +47,6 @@ import org.kairosdb.datastore.h2.orm.MetricNamesQuery;
 import org.kairosdb.datastore.h2.orm.MetricTag;
 import org.kairosdb.datastore.h2.orm.MetricTagValuesQuery;
 import org.kairosdb.datastore.h2.orm.ServiceIndex;
-import org.kairosdb.datastore.h2.orm.ServiceIndex_base;
 import org.kairosdb.datastore.h2.orm.ServiceModification;
 import org.kairosdb.datastore.h2.orm.Tag;
 import org.kairosdb.datastore.h2.orm.TagNamesQuery;
@@ -87,6 +85,8 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 {
 	public static final Logger logger = LoggerFactory.getLogger(H2Datastore.class);
 	public static final String DATABASE_PATH_PROPERTY = "kairosdb.datastore.h2.database_path";
+	private static final long MIN_TIME_VALUE = Long.MIN_VALUE / 1000;
+	private static final long MAX_TIME_VALUE = Long.MAX_VALUE;
 
 	private Connection m_holdConnection;  //Connection that holds the database open
 	private final KairosDataPointFactory m_dataPointFactory;
@@ -516,6 +516,24 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 		}
 
 		return tagSet;
+	}
+
+	@Override
+	public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
+	{
+		// H2 does not have an index
+	}
+
+	@Override
+	public long getMinTimeValue()
+	{
+		return MIN_TIME_VALUE;
+	}
+
+	@Override
+	public long getMaxTimeValue()
+	{
+		return MAX_TIME_VALUE;
 	}
 
 	@Override

@@ -18,6 +18,7 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.AbstractModule;
@@ -42,8 +43,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -140,20 +143,25 @@ public class CassandraModule extends AbstractModule
 
 		if (writeConfig == metaConfig) //No separate meta cluster configuration
 		{
-			m_metaCluster = m_writeCluster = new ClusterConnection(writeClient, EnumSet.of(
-					ClusterConnection.Type.WRITE, ClusterConnection.Type.META));
+			m_metaCluster = m_writeCluster = new ClusterConnection(configuration, writeClient, EnumSet.of(
+					ClusterConnection.Type.WRITE, ClusterConnection.Type.META),
+					writeConfig.getTagIndexedMetrics());
+			m_metaCluster.startup(configuration.isStartAsync());
 		}
 		else
 		{
-			m_writeCluster = new ClusterConnection(writeClient, EnumSet.of(
-					ClusterConnection.Type.WRITE));
+			m_writeCluster = new ClusterConnection(configuration, writeClient, EnumSet.of(
+					ClusterConnection.Type.WRITE),
+					writeConfig.getTagIndexedMetrics());
+			m_writeCluster.startup(configuration.isStartAsync());
 
 			Injector metaInjector = injector.createChildInjector((Module) binder -> bindCassandraClient(binder, metaConfig) );
 
 			CassandraClient metaClient = metaInjector.getInstance(CassandraClient.class);
 
-			m_metaCluster = new ClusterConnection(metaClient, EnumSet.of(
-					ClusterConnection.Type.META));
+			m_metaCluster = new ClusterConnection(configuration, metaClient, EnumSet.of(
+					ClusterConnection.Type.META), HashMultimap.create());
+			m_metaCluster.startup(configuration.isStartAsync());
 		}
 	}
 
@@ -208,7 +216,8 @@ public class CassandraModule extends AbstractModule
 
 				CassandraClient client = readInjector.getInstance(CassandraClient.class);
 
-				clusters.add(new ClusterConnection(client, EnumSet.of(ClusterConnection.Type.READ)));
+				clusters.add(new ClusterConnection(configuration, client, EnumSet.of(ClusterConnection.Type.READ),
+						clusterConfiguration.getTagIndexedMetrics()).startup(configuration.isStartAsync()));
 			}
 		}
 		catch (Exception e)

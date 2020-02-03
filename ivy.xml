@@ -70,7 +70,9 @@
 		</dependency>
 
 		<!-- Cassandra Client -->
-		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.8.0" />
+		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.8.0">
+			<exclude org="com.fasterxml.jackson.core" name="jackson-databind"/>
+		</dependency>
 		<dependency org="net.jpountz.lz4" name="lz4" rev="1.3.0"/>
 
 		<!--<dependency org="org.hectorclient" name="hector-core" rev="1.1-4">

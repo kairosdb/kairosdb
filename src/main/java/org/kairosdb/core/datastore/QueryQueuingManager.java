@@ -25,6 +25,7 @@ import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -111,6 +112,26 @@ public class QueryQueuingManager implements KairosMetricReporter
 		}
 		else
 			return true;
+	}
+
+	public ArrayList<Pair<String, QueryMetric>> getRunningQueries()
+	{
+		ArrayList<Pair<String, QueryMetric>> runningQueriesList = new ArrayList<Pair<String, QueryMetric>>();
+		lock.lock();
+		ArrayList<String> queryKeys = new ArrayList<String>();
+		queryKeys.addAll(runningQueries.keySet());
+		try
+		{
+			for (String key : queryKeys)
+			{
+				runningQueriesList.add(new Pair<String, QueryMetric>(key, runningQueries.get(key).getFirst()));
+			}
+		}
+		finally
+		{
+			lock.unlock();
+		}
+		return runningQueriesList;
 	}
 
 	public int getQueryWaitingCount()

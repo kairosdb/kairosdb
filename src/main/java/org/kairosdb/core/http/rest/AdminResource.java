@@ -55,30 +55,6 @@ public class AdminResource
                 QueryMetric queryMetric = query.getSecond();
                 queryJson.addProperty("query hash", queryHash);
                 queryJson.addProperty("metric name", queryMetric.getName());
-                JsonObject groupBys = new JsonObject();
-                for (GroupBy groupBy : queryMetric.getGroupBys())
-                {
-                    groupBys.addProperty("group by", groupBy.getClass().toString());
-//                    groupBys.addProperty("group by", groupBy.toString());
-                }
-                queryJson.add("group bys", groupBys);
-
-                JsonObject aggs = new JsonObject();
-                for (Aggregator agg : queryMetric.getAggregators())
-                {
-                    aggs.addProperty("aggregator", agg.getClass().toString());
-//                    aggs.addProperty("aggregator", agg.toString());
-                }
-                queryJson.add("aggregators", aggs);
-
-                JsonObject tags = new JsonObject();
-                SetMultimap<String, String> tagSet = queryMetric.getTags();
-                for (String key : tagSet.keySet())
-                {
-                    tags.addProperty(key, tagSet.get(key).toString());
-                }
-                queryJson.add("tags", tags);
-
                 queryJson.add("query JSON", queryMetric.getJsonObj());
 
                 queryInfo.add(queryJson);

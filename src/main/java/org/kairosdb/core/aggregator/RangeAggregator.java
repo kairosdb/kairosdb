@@ -45,6 +45,9 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	private DateTimeZone m_timeZone = DateTimeZone.UTC;
 	private boolean m_alignSampling = true;
 
+	/* used for generic range computations */
+	private DateTimeField m_unitField;
+
 
 	@NotNull
 	@Valid
@@ -99,6 +102,40 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	public RangeAggregator(boolean exhaustive)
 	{
 		m_exhaustive = exhaustive;
+	}
+
+	public void init()
+	{
+		Chronology chronology = GregorianChronology.getInstance(m_timeZone);
+
+		TimeUnit tu = m_sampling.getUnit();
+		switch (tu)
+		{
+			case YEARS:
+				m_unitField = chronology.year();
+				break;
+			case MONTHS:
+				m_unitField = chronology.monthOfYear();
+				break;
+			case WEEKS:
+				m_unitField = chronology.weekOfWeekyear();
+				break;
+			case DAYS:
+				m_unitField = chronology.dayOfMonth();
+				break;
+			case HOURS:
+				m_unitField = chronology.hourOfDay();
+				break;
+			case MINUTES:
+				m_unitField = chronology.minuteOfHour();
+				break;
+			case SECONDS:
+				m_unitField = chronology.secondOfDay();
+				break;
+			default:
+				m_unitField = chronology.millisOfSecond();
+				break;
+		}
 	}
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
@@ -272,6 +309,20 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 		return m_sampling;
 	}
 
+	public long getStartRange(long timestamp)
+	{
+		long samplingValue = m_sampling.getValue();
+		long numberOfPastPeriods = m_unitField.getDifferenceAsLong(timestamp/*getDataPointTime()*/, m_startTime) / samplingValue;
+		return m_unitField.add(m_startTime, numberOfPastPeriods * samplingValue);
+	}
+
+	public long getEndRange(long timestamp)
+	{
+		long samplingValue = m_sampling.getValue();
+		long numberOfPastPeriods = m_unitField.getDifferenceAsLong(timestamp/*getDataPointTime()*/, m_startTime) / samplingValue;
+		return m_unitField.add(m_startTime, (numberOfPastPeriods + 1) * samplingValue);
+	}
+
 	//===========================================================================
 
 	/**
@@ -282,8 +333,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 		protected RangeSubAggregator m_subAggregator;
 		protected Calendar m_calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		protected Iterator<DataPoint> m_dpIterator;
-		/* used for generic range computations */
-		private DateTimeField m_unitField;
+
 
 		public RangeDataPointAggregator(DataPointGroup innerDataPointGroup,
 				RangeSubAggregator subAggregator)
@@ -291,53 +341,10 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 			super(innerDataPointGroup);
 			m_subAggregator = subAggregator;
 			m_dpIterator = new ArrayList<DataPoint>().iterator();
-
-			Chronology chronology = GregorianChronology.getInstance(m_timeZone);
-
-			TimeUnit tu = m_sampling.getUnit();
-			switch (tu)
-			{
-				case YEARS:
-					m_unitField = chronology.year();
-					break;
-				case MONTHS:
-					m_unitField = chronology.monthOfYear();
-					break;
-				case WEEKS:
-					m_unitField = chronology.weekOfWeekyear();
-					break;
-				case DAYS:
-					m_unitField = chronology.dayOfMonth();
-					break;
-				case HOURS:
-					m_unitField = chronology.hourOfDay();
-					break;
-				case MINUTES:
-					m_unitField = chronology.minuteOfHour();
-					break;
-				case SECONDS:
-					m_unitField = chronology.secondOfDay();
-					break;
-				default:
-					m_unitField = chronology.millisOfSecond();
-					break;
-			}
 		}
 
 
-		public long getStartRange(long timestamp)
-		{
-			long samplingValue = m_sampling.getValue();
-			long numberOfPastPeriods = m_unitField.getDifferenceAsLong(timestamp/*getDataPointTime()*/, m_startTime) / samplingValue;
-			return m_unitField.add(m_startTime, numberOfPastPeriods * samplingValue);
-		}
 
-		public long getEndRange(long timestamp)
-		{
-			long samplingValue = m_sampling.getValue();
-			long numberOfPastPeriods = m_unitField.getDifferenceAsLong(timestamp/*getDataPointTime()*/, m_startTime) / samplingValue;
-			return m_unitField.add(m_startTime, (numberOfPastPeriods + 1) * samplingValue);
-		}
 
 		@Override
 		public DataPoint next()

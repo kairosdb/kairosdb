@@ -35,6 +35,7 @@ public class CountAggregatorTest
     public void setup()
     {
         aggregator = new CountAggregator(new LongDataPointFactoryImpl());
+        aggregator.init();
     }
 
     @Test(expected = NullPointerException.class)

@@ -342,6 +342,11 @@ public class QueryParser
 			deserializeProperties(qpContext, jsQueryProcessor, qpName, queryProcessor);
 			validateObject(queryProcessor, qpContext);
 			addQueryProcessorToMetric(queryProcessor, queryMetric);
+
+			if (queryProcessor instanceof Aggregator)
+			{
+				((Aggregator)queryProcessor).init();
+			}
 		}
 	}
 

@@ -42,6 +42,12 @@ public class DiffAggregator implements Aggregator
 		return m_dataPointFactory.getGroupType();
 	}
 
+	@Override
+	public void init()
+	{
+
+	}
+
 	private class DiffDataPointGroup extends AggregatedDataPointGroupWrapper
 	{
 

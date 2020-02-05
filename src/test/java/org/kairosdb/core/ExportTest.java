@@ -173,6 +173,7 @@ public class ExportTest
 		QueryMetric queryMetric = new QueryMetric(0, 0, METRIC_NAME);
 		SumAggregator sum = new SumAggregator(new DoubleDataPointFactoryImpl());
 		sum.setSampling(new Sampling(100, TimeUnit.YEARS));
+		sum.init();
 		queryMetric.addAggregator(sum);
 		DatastoreQuery query = ds.createQuery(queryMetric);
 		List<DataPointGroup> results = query.execute();

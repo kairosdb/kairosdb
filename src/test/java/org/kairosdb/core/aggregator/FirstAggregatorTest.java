@@ -36,6 +36,7 @@ public class FirstAggregatorTest
 	public void setup()
 	{
 		aggregator = new FirstAggregator();
+		aggregator.init();
 	}
 
 	@Test(expected = NullPointerException.class)

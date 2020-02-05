@@ -38,6 +38,7 @@ public class AvgAggregatorTest
 	public void setup() throws KairosDBException
 	{
 		aggregator = new AvgAggregator(new DoubleDataPointFactoryImpl());
+		aggregator.init();
 	}
 
 	@Test(expected = NullPointerException.class)

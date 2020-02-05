@@ -29,7 +29,7 @@ public class LeastSquaresAggregatorTest
 		m_aggregator = new LeastSquaresAggregator(new DoubleDataPointFactoryImpl());
 		m_aggregator.setStartTime(0);
 		m_aggregator.setSampling(new Sampling(1, TimeUnit.HOURS));
-
+		m_aggregator.init();
 	}
 
 	@Test

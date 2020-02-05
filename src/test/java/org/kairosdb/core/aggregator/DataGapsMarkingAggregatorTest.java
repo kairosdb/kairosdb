@@ -55,6 +55,7 @@ public class DataGapsMarkingAggregatorTest
 
 		aggregator.setStartTime(1);
 		aggregator.setEndTime(5);
+		aggregator.init();
 		DataPointGroup results = aggregator.aggregate(group);
 
 		results.next();
@@ -80,6 +81,7 @@ public class DataGapsMarkingAggregatorTest
 
 		aggregator.setStartTime(0);
 		aggregator.setEndTime(5);
+		aggregator.init();
 		DataPointGroup results = aggregator.aggregate(group);
 
 		DataPoint dataPoint = results.next();
@@ -133,6 +135,7 @@ public class DataGapsMarkingAggregatorTest
 
 		aggregator.setStartTime(1);
 		aggregator.setEndTime(5);
+		aggregator.init();
 		DataPointGroup results = aggregator.aggregate(group);
 
 		DataPoint dataPoint = results.next();
@@ -170,6 +173,7 @@ public class DataGapsMarkingAggregatorTest
 
 		aggregator.setStartTime(1);
 		aggregator.setEndTime(7);
+		aggregator.init();
 		DataPointGroup results = aggregator.aggregate(group);
 
 		DataPoint dataPoint = results.next();
@@ -216,6 +220,7 @@ public class DataGapsMarkingAggregatorTest
 		aggregator.setStartTime(1);
 		aggregator.setEndTime(7);
 		aggregator.setTrim(true);
+		aggregator.init();
 		DataPointGroup results = aggregator.aggregate(group);
 
 
@@ -247,6 +252,7 @@ public class DataGapsMarkingAggregatorTest
 		aggregator.setAlignStartTime(true);
 		aggregator.setSampling(new Sampling(1, TimeUnit.SECONDS));
 		aggregator.setEndTime(3001);
+		aggregator.init();
 
 		assertThat(
 				ImmutableList.copyOf(aggregator.aggregate(group)),
@@ -270,6 +276,7 @@ public class DataGapsMarkingAggregatorTest
 		aggregator.setAlignStartTime(true);
 		aggregator.setSampling(new Sampling(1, TimeUnit.SECONDS));
 		aggregator.setEndTime(3000);
+		aggregator.init();
 
 		assertThat(
 				ImmutableList.copyOf(aggregator.aggregate(group)),
@@ -294,6 +301,7 @@ public class DataGapsMarkingAggregatorTest
 		aggregator.setAlignStartTime(true);
 		aggregator.setSampling(new Sampling(1, TimeUnit.SECONDS));
 		aggregator.setEndTime(3000);
+		aggregator.init();
 
 		assertThat(
 				ImmutableList.copyOf(aggregator.aggregate(group)),

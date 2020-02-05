@@ -22,4 +22,10 @@ public class InvalidAggregator implements Aggregator
     {
         return null;
     }
+
+    @Override
+    public void init()
+    {
+
+    }
 }

@@ -86,6 +86,12 @@ public class ScoreAggregator implements Aggregator
         return dataPointFactory.getGroupType();
     }
 
+    @Override
+    public void init()
+    {
+
+    }
+
     public DataPointGroup aggregate(DataPointGroup dataPointGroup)
     {
         Objects.requireNonNull(dataPointGroup);

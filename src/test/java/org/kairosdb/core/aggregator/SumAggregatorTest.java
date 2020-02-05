@@ -35,6 +35,7 @@ public class SumAggregatorTest
 	public void setup()
 	{
 		aggregator = new SumAggregator(new DoubleDataPointFactoryImpl());
+		aggregator.init();
 	}
 
 	@Test(expected = NullPointerException.class)

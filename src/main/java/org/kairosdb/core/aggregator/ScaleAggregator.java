@@ -70,6 +70,12 @@ public class ScaleAggregator implements Aggregator
 	}
 
 	@Override
+	public void init()
+	{
+
+	}
+
+	@Override
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
 		checkNotNull(dataPointGroup);

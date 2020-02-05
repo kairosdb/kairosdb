@@ -37,6 +37,7 @@ public class LastAggregatorTest
 	public void setup()
 	{
 		aggregator = new LastAggregator();
+		aggregator.init();
 	}
 
 	@Test(expected = NullPointerException.class)
@@ -234,6 +235,7 @@ public class LastAggregatorTest
 		LastAggregator lastAggregator = new LastAggregator();
 		lastAggregator.setSampling(new Sampling(5, TimeUnit.MILLISECONDS));
 		lastAggregator.setAlignStartTime(true);
+		lastAggregator.init();
 		DataPointGroup results = lastAggregator.aggregate(group);
 
 		DataPoint dataPoint = results.next();
@@ -263,6 +265,7 @@ public class LastAggregatorTest
 		LastAggregator lastAggregator = new LastAggregator();
 		lastAggregator.setSampling(new Sampling(5, TimeUnit.MILLISECONDS));
 		lastAggregator.setAlignStartTime(false);
+		lastAggregator.init();
 		DataPointGroup results = lastAggregator.aggregate(group);
 
 		DataPoint dataPoint = results.next();
@@ -292,6 +295,7 @@ public class LastAggregatorTest
 		LastAggregator lastAggregator = new LastAggregator();
 		lastAggregator.setSampling(new Sampling(5, TimeUnit.MILLISECONDS));
 		lastAggregator.setAlignEndTime(true);
+		lastAggregator.init();
 		DataPointGroup results = lastAggregator.aggregate(group);
 
 		DataPoint dataPoint = results.next();

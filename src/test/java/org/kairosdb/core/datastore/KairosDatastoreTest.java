@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.TestDataPointFactory;
+import org.kairosdb.core.aggregator.RangeAggregator;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyLongDataPoint;
@@ -70,7 +71,9 @@ public class KairosDatastoreTest
 		datastore.init();
 
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
-		metric.addAggregator(aggFactory.createFeatureProcessor("sum"));
+		Aggregator agg = aggFactory.createFeatureProcessor("sum");
+		((RangeAggregator)agg).init();
+		metric.addAggregator(agg);
 
 		DatastoreQuery dq = datastore.createQuery(metric);
 		List<DataPointGroup> results = dq.execute();

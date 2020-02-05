@@ -35,6 +35,7 @@ public class MinAggregatorTest
 	public void setup()
 	{
 		aggregator = new MinAggregator(new DoubleDataPointFactoryImpl());
+		aggregator.init();
 	}
 
 	@Test(expected = NullPointerException.class)

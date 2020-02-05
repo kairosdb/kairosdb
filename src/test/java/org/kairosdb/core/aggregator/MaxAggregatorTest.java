@@ -35,6 +35,7 @@ public class MaxAggregatorTest
 	public void setup()
 	{
 		aggregator = new MaxAggregator(new DoubleDataPointFactoryImpl());
+		aggregator.init();
 	}
 
 	@Test(expected = NullPointerException.class)

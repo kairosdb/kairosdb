@@ -69,6 +69,12 @@ public class SamplerAggregator implements Aggregator, TimezoneAware
 		return m_dataPointFactory.getGroupType();
 	}
 
+	@Override
+	public void init()
+	{
+
+	}
+
 	public void setUnit(TimeUnit timeUnit)
 	{
 		m_sampling = new Sampling(1, timeUnit);

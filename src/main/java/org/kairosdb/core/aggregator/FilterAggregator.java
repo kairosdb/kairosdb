@@ -157,6 +157,12 @@ public class FilterAggregator implements Aggregator
 		return groupType;
 	}
 
+	@Override
+	public void init()
+	{
+
+	}
+
 	private class FilterDataPointAggregator extends AggregatedDataPointGroupWrapper
 	{
 		public FilterDataPointAggregator(DataPointGroup innerDataPointGroup)

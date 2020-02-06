@@ -13,9 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import org.agileclick.genorm.runtime.Pair;
 import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -62,6 +60,7 @@ public class AdminResource
             responseJson.add("queries", queryInfo);
             responseJson.addProperty("queries waiting", queriesWaitingCount);
 
+            logger.debug("Listing running queries.");
             Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(responseJson.toString());
             setHeaders(responseBuilder);
             return responseBuilder.build();
@@ -70,6 +69,24 @@ public class AdminResource
         catch (Exception e)
         {
             logger.error("Failed to get running queries.", e);
+            return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+        }
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+    @Path("/killquery/{queryHash}")
+    public Response killQueryByHash(@PathParam("queryHash") String queryHash)
+    {
+        try
+        {
+            m_queuingManager.killQuery(queryHash);
+            logger.info("Killed query by hash: " + queryHash);
+            return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
+        }
+        catch (Exception e)
+        {
+            logger.error("Failed to kill query by hash: " + queryHash, e);
             return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
         }
     }

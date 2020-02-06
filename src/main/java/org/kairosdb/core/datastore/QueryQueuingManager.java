@@ -134,6 +134,19 @@ public class QueryQueuingManager implements KairosMetricReporter
 		return runningQueriesList;
 	}
 
+	public void killQuery(String queryHash)
+	{
+		lock.lock();
+		try
+		{
+			runningQueries.get(queryHash).getSecond().interrupt();	// Call interrupt on Thread associated with provided query hash
+		}
+		finally
+		{
+			lock.unlock();
+		}
+	}
+
 	public int getQueryWaitingCount()
 	{
 		return semaphore.getQueueLength();

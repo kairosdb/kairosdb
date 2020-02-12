@@ -17,6 +17,8 @@ package org.kairosdb.core.datastore;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.sun.xml.internal.ws.api.message.ExceptionHasMessage;
+import com.typesafe.config.ConfigException;
 import org.agileclick.genorm.runtime.Pair;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
@@ -118,11 +120,9 @@ public class QueryQueuingManager implements KairosMetricReporter
 	{
 		ArrayList<Pair<String, QueryMetric>> runningQueriesList = new ArrayList<Pair<String, QueryMetric>>();
 		lock.lock();
-		ArrayList<String> queryKeys = new ArrayList<String>();
-		queryKeys.addAll(runningQueries.keySet());
 		try
 		{
-			for (String key : queryKeys)
+			for (String key : runningQueries.keySet())
 			{
 				runningQueriesList.add(new Pair<String, QueryMetric>(key, runningQueries.get(key).getFirst()));
 			}
@@ -139,7 +139,10 @@ public class QueryQueuingManager implements KairosMetricReporter
 		lock.lock();
 		try
 		{
-			runningQueries.get(queryHash).getSecond().interrupt();	// Call interrupt on Thread associated with provided query hash
+			if (runningQueries.get(queryHash) != null)
+			{
+				runningQueries.get(queryHash).getSecond().interrupt();    // Call interrupt on Thread associated with provided query hash
+			}
 		}
 		finally
 		{

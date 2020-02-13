@@ -17,10 +17,7 @@ package org.kairosdb.core.datastore;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.sun.xml.internal.ws.api.message.ExceptionHasMessage;
-import com.typesafe.config.ConfigException;
 import org.agileclick.genorm.runtime.Pair;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.reporting.KairosMetricReporter;

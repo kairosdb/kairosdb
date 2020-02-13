@@ -17,6 +17,8 @@ package org.kairosdb.core.datastore;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.sun.xml.internal.ws.api.message.ExceptionHasMessage;
+import com.typesafe.config.ConfigException;
 import org.agileclick.genorm.runtime.Pair;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
@@ -25,6 +27,7 @@ import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -111,6 +114,40 @@ public class QueryQueuingManager implements KairosMetricReporter
 		}
 		else
 			return true;
+	}
+
+	public ArrayList<Pair<String, QueryMetric>> getRunningQueries()
+	{
+		ArrayList<Pair<String, QueryMetric>> runningQueriesList = new ArrayList<Pair<String, QueryMetric>>();
+		lock.lock();
+		try
+		{
+			for (String key : runningQueries.keySet())
+			{
+				runningQueriesList.add(new Pair<String, QueryMetric>(key, runningQueries.get(key).getFirst()));
+			}
+		}
+		finally
+		{
+			lock.unlock();
+		}
+		return runningQueriesList;
+	}
+
+	public void killQuery(String queryHash)
+	{
+		lock.lock();
+		try
+		{
+			if (runningQueries.get(queryHash) != null)
+			{
+				runningQueries.get(queryHash).getSecond().interrupt();    // Call interrupt on Thread associated with provided query hash
+			}
+		}
+		finally
+		{
+			lock.unlock();
+		}
 	}
 
 	public int getQueryWaitingCount()

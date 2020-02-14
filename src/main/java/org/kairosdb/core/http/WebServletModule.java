@@ -16,12 +16,14 @@
 package org.kairosdb.core.http;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Scopes;
 import com.google.inject.servlet.GuiceFilter;
 import com.sun.jersey.guice.JerseyServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
-import org.kairosdb.core.KairosRootConfig;
+import org.eclipse.jetty.servlets.QoSFilter;
 import org.kairosdb.core.http.exceptionmapper.InvalidServerTypeExceptionMapper;
+import org.kairosdb.core.KairosRootConfig;
 import org.kairosdb.core.http.rest.AdminResource;
 import org.kairosdb.core.http.rest.FeaturesResource;
 import org.kairosdb.core.http.rest.MetadataResource;
@@ -29,8 +31,39 @@ import org.kairosdb.core.http.rest.MetricsResource;
 
 public class WebServletModule extends JerseyServletModule
 {
+	public static final String QOS_URL = "kairosdb.qos.url";
+	public static final String QOS_PREFIX = "kairosdb.qos.";
+
+	private String qosURL = null;
+	private ImmutableMap<String, String> qosParams;
+
 	public WebServletModule(KairosRootConfig props)
 	{
+		if (props.hasPath(QOS_URL) && !(props.getString(QOS_URL,"")).trim().equals(""))
+		{
+			qosURL =  props.getString(QOS_URL);
+			ImmutableMap.Builder<String, String> qosBuilder = new ImmutableMap.Builder<>();
+			for (String key : props)
+			{
+				if (key.startsWith(QOS_PREFIX) && !key.contentEquals(QOS_URL))
+				{
+					String qosKey = key.substring(QOS_PREFIX.length());
+					String qosValue = props.getString(key);
+					qosBuilder.put(qosKey, qosValue);
+				}
+			}
+			this.qosParams = qosBuilder.build();
+		}
+	}
+
+	public String getQosUrl()
+	{
+		return qosURL;
+	}
+
+	public ImmutableMap<String, String> getQosParams()
+	{
+		return qosParams;
 	}
 
 	@Override
@@ -52,6 +85,12 @@ public class WebServletModule extends JerseyServletModule
 
 		bind(LoggingFilter.class).in(Scopes.SINGLETON);
 		filter("/*").through(LoggingFilter.class);
+
+		if (qosURL != null)
+		{
+			bind(QoSFilter.class).in(Scopes.SINGLETON);
+			filter(qosURL).through(QoSFilter.class, qosParams);
+		}
 
 		// hook Jackson into Jersey as the POJO <-> JSON mapper
 		bind(JacksonJsonProvider.class).in(Scopes.SINGLETON);

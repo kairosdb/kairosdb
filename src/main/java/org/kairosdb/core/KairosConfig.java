@@ -1,6 +1,7 @@
 package org.kairosdb.core;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigObject;
 import org.apache.commons.io.FilenameUtils;
 
@@ -54,6 +55,7 @@ public class KairosConfig
 
 	public KairosConfig()
 	{
+		m_config = ConfigFactory.empty();
 	}
 
 	public KairosConfig(Config config)

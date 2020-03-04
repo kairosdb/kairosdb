@@ -74,6 +74,7 @@ public class ClusterConnection
 			"  PRIMARY KEY ((metric, row_time, data_type, tags), offset)" +
 			")";*/
 
+	//old row key index
 	public static final String ROW_KEY_INDEX_TABLE_NAME = "row_key_index";
 	public static final String ROW_KEY_INDEX_TABLE = "" +
 			"CREATE TABLE IF NOT EXISTS "+ROW_KEY_INDEX_TABLE_NAME+" (\n" +

@@ -10,6 +10,8 @@ public class BatchStats
 	private final SimpleStats m_dataPointStats = new SimpleStats();
 	private final SimpleStats m_rowKeyStats = new SimpleStats();
 	private final SimpleStats m_nameStats = new SimpleStats();
+	private final SimpleStats m_rowKeyTimeStats = new SimpleStats();
+	private final SimpleStats m_tagIndexdStats = new SimpleStats();
 
 	public BatchStats()
 	{
@@ -30,6 +32,16 @@ public class BatchStats
 		m_dataPointStats.addValue(count);
 	}
 
+	public void addRowKeyTimeBatch(long count)
+	{
+		m_rowKeyTimeStats.addValue(count);
+	}
+
+	public void addTagIndexedBatch(long count)
+	{
+		m_tagIndexdStats.addValue(count);
+	}
+
 	public SimpleStats.Data getDataPointStats()
 	{
 		return m_dataPointStats.getAndClear();
@@ -43,5 +55,15 @@ public class BatchStats
 	public SimpleStats.Data getNameStats()
 	{
 		return m_nameStats.getAndClear();
+	}
+
+	public SimpleStats.Data getRowKeyTimeStats()
+	{
+		return m_rowKeyTimeStats.getAndClear();
+	}
+
+	public SimpleStats.Data getTagIndexedStats()
+	{
+		return m_tagIndexdStats.getAndClear();
 	}
 }

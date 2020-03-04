@@ -97,6 +97,7 @@ public class JsonResponse
 
 				if (!excludeTags)
 				{
+					//todo move this to after the values are obtained so we can filter unused tags
 					m_jsonWriter.key("tags").object();
 
 					for (String tagName : group.getTagNames())

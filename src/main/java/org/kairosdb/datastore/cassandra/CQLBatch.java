@@ -38,6 +38,10 @@ public class CQLBatch
 	private final long m_now;
 	private final LoadBalancingPolicy m_loadBalancingPolicy;
 
+	private long m_rowKeysCount = 0;
+	private long m_rowKeyTimeIndexCount = 0;
+	private long m_tagIndexedRowKeysCount = 0;
+
 	private Map<Host, BatchStatement> m_batchMap = new HashMap<>();
 
 	private BatchStatement m_metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
@@ -84,9 +88,16 @@ public class CQLBatch
 		bs.setConsistencyLevel(m_consistencyLevel);
 
 		m_rowKeyBatch.add(bs);
+		m_rowKeyTimeIndexCount++;
 
+		m_rowKeysCount++;
 		RowKeyLookup rowKeyLookup = m_clusterConnection.getRowKeyLookupForMetric(rowKey.getMetricName());
-		for (Statement rowKeyInsertStmt : rowKeyLookup.createInsertStatements(rowKey, rowKeyTtl))
+		List<Statement> insertStatements = rowKeyLookup.createInsertStatements(rowKey, rowKeyTtl);
+		//if this is greater than 1 we are indexing on a tag
+		if (insertStatements.size() > 1)
+			m_tagIndexedRowKeysCount += (insertStatements.size() - 1)
+					;
+		for (Statement rowKeyInsertStmt : insertStatements)
 		{
 			rowKeyInsertStmt.setConsistencyLevel(m_consistencyLevel);
 			m_rowKeyBatch.add(rowKeyInsertStmt);
@@ -98,6 +109,7 @@ public class CQLBatch
 		RowKeyLookup rowKeyLookup = m_clusterConnection.getRowKeyLookupForMetric(rowKey.getMetricName());
 		for (Statement rowKeyInsertStmt : rowKeyLookup.createIndexStatements(rowKey, rowKeyTtl))
 		{
+			m_tagIndexedRowKeysCount++;
 			rowKeyInsertStmt.setConsistencyLevel(m_consistencyLevel);
 			m_rowKeyBatch.add(rowKeyInsertStmt);
 		}
@@ -182,7 +194,9 @@ public class CQLBatch
 		{
 			//m_rowKeyBatch.enableTracing();
 			m_clusterConnection.executeAsync(m_rowKeyBatch);
-			m_batchStats.addRowKeyBatch(m_rowKeyBatch.size());
+			m_batchStats.addRowKeyBatch(m_rowKeysCount);
+			m_batchStats.addRowKeyTimeBatch(m_rowKeyTimeIndexCount);
+			m_batchStats.addTagIndexedBatch(m_tagIndexedRowKeysCount);
 		}
 
 		for (BatchStatement batchStatement : m_batchMap.values())

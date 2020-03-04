@@ -597,6 +597,12 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 		m_simpleStatsReporter.reportStats(m_batchStats.getRowKeyStats(), now,
 				"kairosdb.datastore.cassandra.write_batch_size",
 				"table", "row_keys", ret);
+		m_simpleStatsReporter.reportStats(m_batchStats.getRowKeyTimeStats(), now,
+				"kairosdb.datastore.cassandra.write_batch_size",
+				"table", "row_key_time_index", ret);
+		m_simpleStatsReporter.reportStats(m_batchStats.getTagIndexedStats(), now,
+				"kairosdb.datastore.cassandra.write_batch_size",
+				"table", "tag_indexed_row_keys", ret);
 
 		return ret;
 	}

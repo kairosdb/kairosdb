@@ -84,7 +84,7 @@ public class RollUpJob implements InterruptableJob
 					try
 					{
 						long executionStartTime = System.currentTimeMillis();
-						long dpCount = processor.process(statusStore, task, queryMetric);
+						long dpCount = processor.process(statusStore, task, queryMetric, rollup.getTimeZone());
 						long executionLength = System.currentTimeMillis() - executionStartTime;
 						status.addStatus(RollupTaskStatus.createQueryMetricStatus(queryMetric.getName(), System.currentTimeMillis(), dpCount, executionLength));
 					}

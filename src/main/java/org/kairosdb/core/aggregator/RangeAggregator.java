@@ -136,14 +136,14 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 				m_unitField = chronology.millisOfSecond();
 				break;
 		}
+
+		if (m_alignSampling)
+			m_startTime = alignRangeBoundary(m_startTime);
 	}
 
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
 		checkNotNull(dataPointGroup);
-
-		if (m_alignSampling)
-			m_startTime = alignRangeBoundary(m_startTime);
 
 		if (m_exhaustive)
 			return (new ExhaustiveRangeDataPointAggregator(dataPointGroup, getSubAggregator()));

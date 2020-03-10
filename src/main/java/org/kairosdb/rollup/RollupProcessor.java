@@ -1,5 +1,6 @@
 package org.kairosdb.rollup;
 
+import org.joda.time.DateTimeZone;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
 
@@ -16,9 +17,9 @@ public interface RollupProcessor extends Interruptable
 			4 - Set start and end times on sampling period
 			5 - Create a rollup for each sampling interval until you reach now.
 		 */
-	long process(RollupTaskStatusStore statusStore, RollupTask task, QueryMetric rollupQueryMetric)
+	long process(RollupTaskStatusStore statusStore, RollupTask task, QueryMetric rollupQueryMetric, DateTimeZone timeZone)
 			throws RollUpException, DatastoreException, InterruptedException;
 
-	long process(RollupTask task, QueryMetric rollupQueryMetric, long startTime, long endTime)
+	long process(RollupTask task, QueryMetric rollupQueryMetric, long startTime, long endTime, DateTimeZone timeZone)
 			throws DatastoreException, InterruptedException, RollUpException;
 }

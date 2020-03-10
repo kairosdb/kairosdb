@@ -1,5 +1,7 @@
 package org.kairosdb.rollup;
 
+import org.joda.time.DateTimeZone;
+import org.kairosdb.core.aggregator.RangeAggregator;
 import org.kairosdb.core.aggregator.Sampling;
 import org.kairosdb.core.datastore.Duration;
 
@@ -15,37 +17,23 @@ public class RollupUtil
 {
 	private RollupUtil(){}
 
-	public static List<SamplingPeriod> getSamplingPeriods(Sampling sampling, long startTime, long endTime)
-	{
-		List<SamplingPeriod> samplingPeriods = new ArrayList<>();
-		if (startTime == endTime)
-		{
-			return Collections.emptyList();
-		}
-
-		long nextStartTime = startTime;
-		while(nextStartTime < endTime)
-		{
-			long periodStart = nextStartTime;
-			nextStartTime = getNextStartTime(sampling, nextStartTime);
-			samplingPeriods.add(new SamplingPeriod(periodStart, nextStartTime));
-		}
-		return samplingPeriods;
-	}
-
 	/**
 	 Returns a list of times for the specified time range aligned to a sampling boundary. For example, if the sampling
 	 is an hour, this method returns all the times between the start and end time that fall on the hour boundary.
-	 @param sampling sampling
+	 @param aggregator aggregator
 	 @param startTime starting time
 	 @param endTime ending time
 	 @return list of times for the specified time range aligned to the sampling
 	 */
-	public static List<SamplingPeriod> getSamplingPeriodsAlignedToUnit(Sampling sampling, long startTime, long endTime)
+	public static List<SamplingPeriod> getSamplingPeriodsAlignedToUnit(RangeAggregator aggregator,
+			long startTime, long endTime, DateTimeZone timeZone)
 	{
+		aggregator.setTimeZone(timeZone);
+		aggregator.setAlignSampling(true);
+		aggregator.init();
 		List<SamplingPeriod> samplingPeriods = new ArrayList<>();
-		long startTimeAligned = alignToSamplingBoundary(sampling, startTime);
-		long endTimeAligned = alignToSamplingBoundary(sampling, endTime);
+		long startTimeAligned = aggregator.getStartRange(startTime);
+		long endTimeAligned = aggregator.getEndRange(endTime);
 
 		if (startTimeAligned == endTimeAligned)
 		{
@@ -56,7 +44,7 @@ public class RollupUtil
 		while( nextStartTime < endTimeAligned)
 		{
 			long periodStart = nextStartTime;
-			nextStartTime = getNextStartTime(sampling, nextStartTime);
+			nextStartTime = getNextStartTime(aggregator.getSampling(), nextStartTime);
 			samplingPeriods.add(new SamplingPeriod(periodStart, nextStartTime));
 		}
 		return samplingPeriods;
@@ -101,13 +89,6 @@ public class RollupUtil
 		{
 			return time.truncatedTo(chronoUnit);
 		}
-	}
-
-	private static long alignToSamplingBoundary(Sampling sampling, long timestamp)
-	{
-		LocalDateTime localDateTime =	LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneOffset.UTC);
-		localDateTime = trucateTo(localDateTime, sampling);
-		return localDateTime.toInstant(ZoneOffset.UTC).toEpochMilli();
 	}
 
 	private static long getNextStartTime(Sampling sampling, long currentStartTime)

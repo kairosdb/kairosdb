@@ -14,6 +14,7 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
     $scope.TOOLTIP_TASK_NAME = "The name of the roll-up name";
     $scope.TOOLTIP_METRIC_NAME = "The metric the roll-up will query";
     $scope.TOOLTIP_SAVE_AS = "The new metric that will be created by the roll-up";
+	$scope.TOOLTIP_TIMEZONE = "Use this time zone when calculating sample alignment";
     $scope.TOOLTIP_EXECUTE = "How often the roll-up will be executed";
     $scope.TOOLTIP_GROUP_BY = "Groups the roll-up query by the tags";
     $scope.TOOLTIP_TAGS = "Narrows query down by tags";
@@ -46,6 +47,15 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
         {'name': 'least_squares',  'align_sampling': true, 'sampling': $scope.DEFAULT_SAMPLING},
         {'name': 'count',  'align_sampling': true, 'sampling': $scope.DEFAULT_SAMPLING},
         {'name': 'percentile',  'align_sampling': true, 'sampling': $scope.DEFAULT_SAMPLING}];
+
+	$scope.TZ_NAMES = moment.tz.names();
+	// move most likely to be used time zones to the top
+	$scope.TZ_NAMES.splice($scope.TZ_NAMES.indexOf("UTC"), 1);
+	$scope.TZ_NAMES.unshift("UTC");
+	if(moment.tz.guess() !== "UTC") {
+		$scope.TZ_NAMES.splice($scope.TZ_NAMES.indexOf(moment.tz.guess()), 1);
+		$scope.TZ_NAMES.unshift(moment.tz.guess())
+	}
 
     $scope.aggregatorDescriptor = {};
 
@@ -164,6 +174,14 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
         $scope.onBlur(task);
     };
 
+	$scope.setTimeZone = function (task) {
+		if ($scope.TZ_NAMES.indexOf(task.time_zone_input) >= 0) {
+			task.time_zone = task.time_zone_input;
+			task.tzEdit = false;
+			$scope.onBlur(task);
+		}
+	};
+
     $scope.setGroupBy = function (task, type) {
         task.groupByType = type;
         $scope.onBlur(task);
@@ -264,6 +282,8 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
         if (task.rollups.length > 0) {
             newTask.save_as = task.rollups[0].save_as;
 
+			newTask.time_zone_input = newTask.time_zone = task.rollups[0].time_zone;
+
             var query = task.rollups[0].query;
             if (query) {
                 $scope.toSimpleQuery(query, newTask);
@@ -307,6 +327,10 @@ function simpleController($scope, $http, $uibModal, orderByFilter, KairosDBDatas
         var query = {};
         var metrics = [];
         var metric = {};
+
+		if (task.time_zone) {
+			rollup.time_zone = task.time_zone;
+		}
 
         newTask.id = task.id;
         newTask.name = task.name;

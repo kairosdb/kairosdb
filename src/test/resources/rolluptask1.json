@@ -9,10 +9,7 @@
       "save_as": "kairosdb.test.testNoExistingRollups.rollup",
       "query": {
         "cache_time": 0,
-        "start_relative": {
-          "value": "1",
-          "unit": "hours"
-        },
+        "start_absolute": 1583722196000,
         "metrics": [
           {
             "name": "kairosdb.test.testNoExistingRollups",

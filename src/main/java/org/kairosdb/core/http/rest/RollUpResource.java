@@ -254,7 +254,7 @@ public class RollUpResource
 				{
 					for (QueryMetric queryMetric : rollup.getQueryMetrics())
 					{
-						rollupProcessor.process(task, queryMetric, startTimeMillis, endTimeMillis);
+						rollupProcessor.process(task, queryMetric, startTimeMillis, endTimeMillis, rollup.getTimeZone());
 					}
 				}
 

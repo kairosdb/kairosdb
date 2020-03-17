@@ -82,7 +82,7 @@ public class SchedulingManagerTest extends RollupTestBase
 	@Test
 	public void testConstructor_hostname_null_invalid() throws RollUpException
 	{
-		expectedException.expect(NullPointerException.class);
+		expectedException.expect(IllegalArgumentException.class);
 		expectedException.expectMessage("hostname cannot be null or empty");
 
 		new SchedulingManager(taskStore, assignmentStore, mockScheduler, mockDatastore, mockExecutionService, mockEventBus,mockStatusStore,10, null, SERVER_GUID);

@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  A subscriber method on a filter object. Uses an executor that executes in the same thread.
@@ -69,7 +69,7 @@ class FilterSubscriber implements Comparable<FilterSubscriber>
 	private FilterSubscriber(FilterEventBus bus, Object target, Method method, int priority)
 	{
 		this.bus = bus;
-		this.target = checkNotNull(target);
+		this.target = requireNonNull(target);
 		this.method = method;
 		this.priority = priority;
 		method.setAccessible(true);
@@ -119,7 +119,7 @@ class FilterSubscriber implements Comparable<FilterSubscriber>
 	@VisibleForTesting
 	Object invokeSubscriberMethod(Object event) throws InvocationTargetException, IllegalAccessException
 	{
-		return method.invoke(target, checkNotNull(event));
+		return method.invoke(target, requireNonNull(event));
 	}
 
 	/**
@@ -176,7 +176,7 @@ class FilterSubscriber implements Comparable<FilterSubscriber>
 		@Override
 		Object invokeSubscriberMethod(Object event) throws InvocationTargetException, IllegalAccessException
 		{
-			method.invoke(target, checkNotNull(event));
+			method.invoke(target, requireNonNull(event));
 			return event;
 		}
 	}

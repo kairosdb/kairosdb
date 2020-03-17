@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static java.util.Objects.requireNonNull;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class RollUpAssignmentStoreImpl implements RollUpAssignmentStore
 {
@@ -25,7 +25,7 @@ public class RollUpAssignmentStoreImpl implements RollUpAssignmentStore
     @Inject
     public RollUpAssignmentStoreImpl(ServiceKeyStore serviceKeyStore)
     {
-        this.serviceKeyStore = checkNotNull(serviceKeyStore, "serviceKeyStore cannot be null");
+        this.serviceKeyStore = requireNonNull(serviceKeyStore, "serviceKeyStore cannot be null");
     }
 
     @Override
@@ -111,8 +111,8 @@ public class RollUpAssignmentStoreImpl implements RollUpAssignmentStore
     public void setAssignment(String unassignedId, String hostName)
             throws RollUpException
     {
-        checkNotNullOrEmpty(unassignedId, "unassignedId cannot be null or empty");
-        checkNotNullOrEmpty(hostName, "hostName cannot be null or empty");
+        requireNonNullOrEmpty(unassignedId, "unassignedId cannot be null or empty");
+        requireNonNullOrEmpty(hostName, "hostName cannot be null or empty");
 
         try {
             serviceKeyStore.setValue(SERVICE, SERVICE_KEY_ASSIGNMENTS, unassignedId, hostName);

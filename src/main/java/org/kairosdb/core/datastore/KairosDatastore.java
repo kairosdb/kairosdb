@@ -53,7 +53,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public class KairosDatastore implements KairosPostConstructInit
@@ -81,8 +82,8 @@ public class KairosDatastore implements KairosPostConstructInit
 			@Named(KEEP_CACHE_FILES) boolean keepCacheFiles)
 			throws DatastoreException
 	{
-		m_datastore = checkNotNull(datastore);
-		m_queuingManager = checkNotNull(queuingManager);
+		m_datastore = requireNonNull(datastore);
+		m_queuingManager = requireNonNull(queuingManager);
 		m_dataPointFactory = dataPointFactory;
 
 		m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
@@ -238,7 +239,7 @@ public class KairosDatastore implements KairosPostConstructInit
 	 */
 	public void export(QueryMetric metric, QueryCallback callback) throws DatastoreException
 	{
-		checkNotNull(metric);
+		requireNonNull(metric);
 
 		m_datastore.queryDatabase(metric, callback);
 	}
@@ -259,7 +260,7 @@ public class KairosDatastore implements KairosPostConstructInit
 
 	public DatastoreQuery createQuery(QueryMetric metric) throws DatastoreException
 	{
-		checkNotNull(metric);
+		requireNonNull(metric);
 
 		DatastoreQuery dq;
 
@@ -278,7 +279,7 @@ public class KairosDatastore implements KairosPostConstructInit
 
 	public void delete(QueryMetric metric) throws DatastoreException
 	{
-		checkNotNull(metric);
+		requireNonNull(metric);
 
 		try
 		{
@@ -423,7 +424,7 @@ public class KairosDatastore implements KairosPostConstructInit
 			hashString = String.valueOf(System.currentTimeMillis());
 
 		MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-		byte[] digest = messageDigest.digest(hashString.getBytes("UTF-8"));
+		byte[] digest = messageDigest.digest(hashString.getBytes(UTF_8));
 
 		return new BigInteger(1, digest).toString(16);
 	}

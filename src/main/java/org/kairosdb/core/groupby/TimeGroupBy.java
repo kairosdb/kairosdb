@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 @FeatureComponent(
 		name = "time",
@@ -78,7 +78,7 @@ public class TimeGroupBy implements GroupBy
 	{
 		checkArgument(groupCount > 0);
 
-		this.rangeSize = checkNotNull(rangeSize);
+		this.rangeSize = requireNonNull(rangeSize);
 		this.groupCount = groupCount;
 	}
 

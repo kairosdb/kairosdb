@@ -9,7 +9,7 @@ import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  EventBus enhanced to include filters that modify or filter out events.
@@ -27,7 +27,7 @@ public class FilterEventBus
 	public FilterEventBus(EventBusConfiguration config)
 	{
 		super();
-		this.config = checkNotNull(config);
+		this.config = requireNonNull(config);
 	}
 
 	public void register(Object listener)
@@ -52,8 +52,8 @@ public class FilterEventBus
 	//@Override
 	void handleSubscriberException(Throwable e, SubscriberExceptionContext context)
 	{
-		checkNotNull(e);
-		checkNotNull(context);
+		requireNonNull(e);
+		requireNonNull(context);
 		try
 		{
 			exceptionHandler.handleException(e, context);

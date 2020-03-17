@@ -18,7 +18,7 @@ package org.kairosdb.core.http.rest.json;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class ValidationErrors
 {
@@ -27,7 +27,7 @@ public class ValidationErrors
 	@SuppressWarnings("ThrowableResultOfMethodCallIgnored")
 	public void addErrorMessage(String message)
 	{
-		checkNotNullOrEmpty(message);
+		requireNonNullOrEmpty(message);
 		errors.add(message);
 	}
 

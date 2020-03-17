@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.management.ManagementFactory;
 import java.util.List;
 
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 public class MetricReporterService implements KairosDBJob
@@ -66,7 +66,7 @@ public class MetricReporterService implements KairosDBJob
 			@Named(REPORTER_TTL) int ttl,
 			ProcessTagConfiguration processTags)
 	{
-		m_hostname = checkNotNullOrEmpty(hostname);
+		m_hostname = requireNonNullOrEmpty(hostname);
 		m_reporterProvider = reporterProvider;
 		m_schedule = schedule;
 		m_ttl = ttl;

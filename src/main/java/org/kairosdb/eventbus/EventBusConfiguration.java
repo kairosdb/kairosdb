@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Event bus configuration. Priority on a filter is set by adding the prefix kairosdb.eventbus.filter.priority.
@@ -29,7 +29,7 @@ public class EventBusConfiguration
     @Inject
     public EventBusConfiguration(KairosRootConfig config)
     {
-        checkNotNull(config, "properties cannot be null");
+        requireNonNull(config, "properties cannot be null");
 
         for (String property : config) {
             if (property.startsWith(KAIROSDB_EVENTBUS_FILTER_PRIORITY_PREFIX))

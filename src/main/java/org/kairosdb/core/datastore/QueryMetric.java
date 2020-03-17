@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class QueryMetric implements DatastoreMetricQuery
 {
@@ -53,7 +53,7 @@ public class QueryMetric implements DatastoreMetricQuery
 		this.plugins = new ArrayList<QueryPlugin>();
 		this.startTime = start_time;
 		this.cacheTime = cacheTime;
-		this.name = Preconditions.checkNotNullOrEmpty(name);
+		this.name = Preconditions.requireNonNullOrEmpty(name);
 	}
 
 	public QueryMetric(long start_time, long end_time, int cacheTime, String name)
@@ -64,12 +64,12 @@ public class QueryMetric implements DatastoreMetricQuery
 		this.endTime = end_time;
 		this.endTimeSet = true;
 		this.cacheTime = cacheTime;
-		this.name = Preconditions.checkNotNullOrEmpty(name);
+		this.name = Preconditions.requireNonNullOrEmpty(name);
 	}
 
 	public QueryMetric addAggregator(Aggregator aggregator)
 	{
-		checkNotNull(aggregator);
+		requireNonNull(aggregator);
 
 		this.aggregators.add(aggregator);
 		return (this);

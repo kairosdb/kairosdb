@@ -15,16 +15,13 @@
 package org.kairosdb.eventbus;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Objects;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import org.kairosdb.eventbus.Subscribe;
 import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
@@ -32,13 +29,16 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  Registry of filters to a single event bus. Would have extended SubscriberRegistry but it is final.
@@ -57,7 +57,7 @@ public class PipelineRegistry
 	//private final ConcurrentMap<Class<?>, SortedCopyOnWriteArrayList<FilterSubscriber>> subscribers =
 	//		Maps.newConcurrentMap();
 
-	private final ConcurrentMap<Class<?>, Pipeline> m_piplines = Maps.newConcurrentMap();
+	private final ConcurrentMap<Class<?>, Pipeline> m_piplines = new ConcurrentHashMap<>();
 
 	/**
 	 The event bus this registry belongs to.
@@ -66,7 +66,7 @@ public class PipelineRegistry
 
 	public PipelineRegistry(FilterEventBus bus)
 	{
-		this.bus = checkNotNull(bus);
+		this.bus = requireNonNull(bus);
 	}
 
 	/**
@@ -212,7 +212,7 @@ public class PipelineRegistry
 	private static ImmutableList<Method> getAnnotatedMethodsNotCached(Class<?> clazz)
 	{
 		Set<? extends Class<?>> supertypes = TypeToken.of(clazz).getTypes().rawTypes();
-		Map<MethodIdentifier, Method> identifiers = Maps.newHashMap();
+		Map<MethodIdentifier, Method> identifiers = new HashMap<>();
 		for (Class<?> supertype : supertypes)
 		{
 			for (Method method : supertype.getDeclaredMethods())
@@ -294,7 +294,7 @@ public class PipelineRegistry
 		@Override
 		public int hashCode()
 		{
-			return Objects.hashCode(name, parameterTypes);
+			return Objects.hash(name, parameterTypes);
 		}
 
 		@Override

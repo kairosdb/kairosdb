@@ -15,8 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static java.util.Objects.requireNonNull;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class HostManager implements KairosDBService
 {
@@ -43,11 +43,11 @@ public class HostManager implements KairosDBService
             @Named(DELAY) long delay, @Named("HOSTNAME") String hostName, @Named(INACTIVE_TIME) long inactiveTime,
             @Named(Main.KAIROSDB_SERVER_GUID) String guid)
     {
-        this.keyStore = checkNotNull(keyStore, "keyStore cannot be null");
-        this.executorService = checkNotNull(executorService, "executorService cannot be null");
-        this.hostname = checkNotNullOrEmpty(hostName, "hostname cannot be null or empty");
+        this.keyStore = requireNonNull(keyStore, "keyStore cannot be null");
+        this.executorService = requireNonNull(executorService, "executorService cannot be null");
+        this.hostname = requireNonNullOrEmpty(hostName, "hostname cannot be null or empty");
         this.inactiveTimeSeconds = inactiveTime;
-        this.guid = checkNotNullOrEmpty(guid, "guid cannot be null or empty");
+        this.guid = requireNonNullOrEmpty(guid, "guid cannot be null or empty");
 
         executorService.scheduleWithFixedDelay(new CheckChanges(), 0, delay, java.util.concurrent.TimeUnit.MILLISECONDS);
     }

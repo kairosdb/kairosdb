@@ -30,7 +30,7 @@ import org.kairosdb.plugin.Aggregator;
 import java.util.List;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 @FeatureComponent(
         name = "scale",
@@ -78,7 +78,7 @@ public class ScaleAggregator implements Aggregator
 	@Override
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
-		checkNotNull(dataPointGroup);
+		requireNonNull(dataPointGroup);
 
 		return new ScaleDataPointGroup(dataPointGroup);
 	}

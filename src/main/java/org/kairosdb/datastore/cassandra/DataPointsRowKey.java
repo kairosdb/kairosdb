@@ -19,8 +19,8 @@ import java.nio.ByteBuffer;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static java.util.Objects.requireNonNull;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class DataPointsRowKey
 {
@@ -43,10 +43,10 @@ public class DataPointsRowKey
 	public DataPointsRowKey(String metricName, String clusterName, long timestamp, String datatype,
 			SortedMap<String, String> tags)
 	{
-		m_metricName = checkNotNullOrEmpty(metricName);
-		m_clusterName = checkNotNullOrEmpty(clusterName);
+		m_metricName = requireNonNullOrEmpty(metricName);
+		m_clusterName = requireNonNullOrEmpty(clusterName);
 		m_timestamp = timestamp;
-		m_dataType = checkNotNull(datatype);
+		m_dataType = requireNonNull(datatype);
 		m_tags = tags;
 
 	}

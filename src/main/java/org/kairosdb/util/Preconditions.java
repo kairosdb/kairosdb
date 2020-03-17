@@ -20,11 +20,13 @@ import com.google.common.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
 
+import static java.util.Objects.requireNonNull;
+
 public class Preconditions
 {
-	public static String checkNotNullOrEmpty(String reference)
+	public static String requireNonNullOrEmpty(String reference)
 	{
-		com.google.common.base.Preconditions.checkNotNull(reference);
+		requireNonNull(reference);
 		if (reference.isEmpty())
 		{
 			throw new IllegalArgumentException();
@@ -32,12 +34,11 @@ public class Preconditions
 		return reference;
 	}
 
-	public static String checkNotNullOrEmpty(String reference,
+	public static String requireNonNullOrEmpty(String reference,
 	                                         @Nullable String errorMessageTemplate,
 	                                         @Nullable Object... errorMessageArgs)
 	{
-		com.google.common.base.Preconditions.checkNotNull(reference, errorMessageTemplate, errorMessageArgs);
-		if (reference.isEmpty())
+		if (reference == null || reference.isEmpty())
 		{
 			throw new IllegalArgumentException(format(errorMessageTemplate, errorMessageArgs));
 

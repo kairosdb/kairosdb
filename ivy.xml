@@ -7,6 +7,7 @@
 		<conf name="test" extends="default"/>
 		<conf name="jdk11" extends="default"/>
 		<conf name="testjdk11" extends="test"/>
+		<conf name="build_tools"/>
 	</configurations>
 	<dependencies>
 		<dependency org="com.google.guava" name="guava" rev="28.2-jre" force="true">
@@ -130,6 +131,12 @@
 		<dependency org="com.sun.xml.bind" name="jaxb-impl" rev="2.3.0" conf="jdk11->default;testjdk11->default"/>
 
 		<dependency org="com.sun.activation" name="javax.activation" rev="1.2.0" conf="jdk11->default;testjdk11->default"/>
+
+
+
+		<!-- Build tools -->
+		<dependency org="org.gaul" name="modernizer-maven-plugin" rev="2.0.0" conf="build_tools->default" />
+
 
 		<conflict org="com.google.guava" module="guava" rev="28.2-jre"/>
 	</dependencies>

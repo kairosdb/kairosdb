@@ -40,7 +40,7 @@ public class RollupTaskStatusStoreImplTest extends RollupTestBase
     public void test_writeRead_nullId_Invalid()
             throws RollUpException
     {
-        expectedException.expect(NullPointerException.class);
+        expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("id cannot be null or empty");
 
         store.write(null, new RollupTaskStatus(new Date(), "host"));

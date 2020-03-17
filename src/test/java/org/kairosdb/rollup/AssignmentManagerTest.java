@@ -48,7 +48,7 @@ public class AssignmentManagerTest extends RollupTestBase
     @Test
     public void testConstructor_guid_null_invalid() throws RollUpException
     {
-        expectedException.expect(NullPointerException.class);
+        expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("guid cannot be null or empty");
 
         new AssignmentManager(null, taskStore, assignmentStore, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);

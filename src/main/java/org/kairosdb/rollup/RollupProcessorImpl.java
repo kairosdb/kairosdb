@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Date;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class RollupProcessorImpl implements RollupProcessor
 {
@@ -24,7 +24,7 @@ public class RollupProcessorImpl implements RollupProcessor
 
 	public RollupProcessorImpl(KairosDatastore datastore)
 	{
-		this.datastore = checkNotNull(datastore, "datastore must not be null");
+		this.datastore = requireNonNull(datastore, "datastore must not be null");
 	}
 
 	/*

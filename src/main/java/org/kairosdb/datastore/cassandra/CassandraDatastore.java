@@ -81,7 +81,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.kairosdb.datastore.cassandra.ClusterConnection.DATA_POINTS_TABLE_NAME;
 
 public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMetricReporter,
@@ -230,7 +230,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	public void putDataPoint(DataPointEvent dataPointEvent) throws DatastoreException
 	{
 		//Todo make sure when shutting down this throws an exception
-		checkNotNull(dataPointEvent.getDataPoint().getDataStoreDataType());
+		requireNonNull(dataPointEvent.getDataPoint().getDataStoreDataType());
 		m_queueProcessor.put(dataPointEvent);
 	}
 
@@ -858,7 +858,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	@Override
 	public void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException
 	{
-		checkNotNull(deleteQuery);
+		requireNonNull(deleteQuery);
 		boolean clearCache = false;
 
 

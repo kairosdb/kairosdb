@@ -28,7 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 @FeatureComponent(
 		name = "tag",
@@ -57,7 +57,7 @@ public class TagGroupBy implements GroupBy
 
 	public TagGroupBy(List<String> tagNames)
 	{
-		checkNotNull(tagNames);
+		requireNonNull(tagNames);
 		this.tags = new ArrayList<String>(tagNames);
 	}
 

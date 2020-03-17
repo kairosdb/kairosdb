@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class TelnetServer extends SimpleChannelUpstreamHandler implements ChannelPipelineFactory,
 		KairosDBService
@@ -70,7 +70,7 @@ public class TelnetServer extends SimpleChannelUpstreamHandler implements Channe
 
 		this.port = port;
 		this.maxCommandLength = maxCommandLength;
-		this.commandProvider = checkNotNull(commandProvider);
+		this.commandProvider = requireNonNull(commandProvider);
 		this.address = InetAddress.getByName(address);
 	}
 

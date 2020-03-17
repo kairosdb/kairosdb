@@ -11,7 +11,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 public class AnnotationUtils
@@ -20,7 +20,7 @@ public class AnnotationUtils
     public static List<FeaturePropertyMetadata> getPropertyMetadata(Class clazz)
             throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, ClassNotFoundException
     {
-        checkNotNull(clazz, "class cannot be null");
+        requireNonNull(clazz, "class cannot be null");
 
         List<FeaturePropertyMetadata> properties = new ArrayList<>();
         Field[] fields = clazz.getDeclaredFields();

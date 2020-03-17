@@ -21,6 +21,7 @@ import tablesaw.rules.Rule
 import tablesaw.rules.SimpleRule
 
 import javax.swing.*
+import java.util.regex.Pattern
 
 println("===============================================")
 
@@ -622,6 +623,32 @@ new JarRule("maven-bundle", "build/bundle.jar").setDescription("Create bundle fo
 
 
 saw.setDefaultTarget("jar")
+
+//==============================================================================
+//== Modernizer plugin ==
+
+//Resolve dependencies for package
+modernizeResolve = ivy.getResolveRule("build_tools")
+new SimpleRule("modernize").setDescription("Run maven modernizer plugin on class files")
+		.addDepend(modernizeResolve)
+		.addDepend(jc)
+		.setMakeAction("doModernizeResolve")
+		.alwaysRun()
+
+def doModernizeResolve(Rule rule)
+{
+	classpath = modernizeResolve.getClasspath()
+
+	for (String jar in classpath.getPaths())
+	{
+		saw.addClasspath(jar)
+	}
+
+	saw.getScriptInterpreter().source("modernizer.groovy")
+	//saw.include("modernizer.groovy")
+
+}
+
 
 
 //------------------------------------------------------------------------------

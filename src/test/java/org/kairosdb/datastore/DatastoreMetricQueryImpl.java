@@ -24,8 +24,8 @@ import org.kairosdb.core.datastore.QueryPlugin;
 import java.util.Collections;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static java.util.Objects.requireNonNull;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 {
@@ -38,8 +38,8 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 	public DatastoreMetricQueryImpl(String name, SetMultimap<String, String> tags,
 			long startTime, long endTime)
 	{
-		m_name = checkNotNullOrEmpty(name);
-		m_tags = checkNotNull(tags);
+		m_name = requireNonNullOrEmpty(name);
+		m_tags = requireNonNull(tags);
 		m_startTime = startTime;
 		m_endTime = endTime;
 	}

@@ -28,7 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class VersionCommand implements TelnetCommand, KairosMetricReporter
 {
@@ -39,7 +39,7 @@ public class VersionCommand implements TelnetCommand, KairosMetricReporter
 	@Inject
 	public VersionCommand(@Named("HOSTNAME") String hostname, LongDataPointFactory factory)
 	{
-		checkNotNullOrEmpty(hostname);
+		requireNonNullOrEmpty(hostname);
 		m_hostName = hostname;
 		m_dataPointFactory = factory;
 	}

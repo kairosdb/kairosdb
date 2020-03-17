@@ -3,8 +3,8 @@ package org.kairosdb.events;
 import com.google.common.collect.ImmutableSortedMap;
 import org.kairosdb.core.DataPoint;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static java.util.Objects.requireNonNull;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 
 /**
@@ -22,17 +22,17 @@ public class DataPointEvent
 
 	public DataPointEvent(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint, int ttl)
 	{
-		m_metricName = checkNotNullOrEmpty(metricName);
-		m_tags = checkNotNull(tags);
-		m_dataPoint = checkNotNull(dataPoint);
+		m_metricName = requireNonNullOrEmpty(metricName);
+		m_tags = requireNonNull(tags);
+		m_dataPoint = requireNonNull(dataPoint);
 		m_ttl = ttl;
 	}
 
 	public DataPointEvent(String metricName, ImmutableSortedMap<String, String> tags, DataPoint dataPoint)
 	{
-		m_metricName = checkNotNullOrEmpty(metricName);
-		m_tags = checkNotNull(tags);
-		m_dataPoint = checkNotNull(dataPoint);
+		m_metricName = requireNonNullOrEmpty(metricName);
+		m_tags = requireNonNull(tags);
+		m_dataPoint = requireNonNull(dataPoint);
 		m_ttl = 0;
 	}
 

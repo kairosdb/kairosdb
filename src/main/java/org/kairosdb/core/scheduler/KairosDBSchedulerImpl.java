@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.quartz.JobBuilder.newJob;
 
 public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
@@ -107,8 +107,8 @@ public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
 	@Override
 	public void schedule(JobDetail jobDetail, Trigger trigger) throws KairosDBException
 	{
-		checkNotNull(jobDetail);
-		checkNotNull(trigger);
+		requireNonNull(jobDetail);
+		requireNonNull(trigger);
 
 		try
 		{
@@ -123,7 +123,7 @@ public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
 	@Override
 	public void cancel(JobKey jobKey) throws KairosDBException
 	{
-		checkNotNull(jobKey);
+		requireNonNull(jobKey);
 
 		try
 		{

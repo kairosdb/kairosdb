@@ -46,8 +46,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static java.util.Objects.requireNonNull;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 
 public class WebServer implements KairosDBService
@@ -105,7 +105,7 @@ public class WebServer implements KairosDBService
 			@Named(JETTY_WEB_ROOT_PROPERTY) String webRoot)
 			throws UnknownHostException
 	{
-		checkNotNull(webRoot);
+		requireNonNull(webRoot);
 
 		m_port = port;
 		m_webRoot = webRoot;
@@ -118,20 +118,20 @@ public class WebServer implements KairosDBService
 	                           @Named(JETTY_SSL_KEYSTORE_PASSWORD) String keyStorePassword)
 	{
 		m_sslPort = sslPort;
-		m_keyStorePath = checkNotNullOrEmpty(keyStorePath);
-		m_keyStorePassword = checkNotNullOrEmpty(keyStorePassword);
+		m_keyStorePath = requireNonNullOrEmpty(keyStorePath);
+		m_keyStorePassword = requireNonNullOrEmpty(keyStorePassword);
 	}
 
 	@Inject(optional = true)
 	public void setSSLSettings(@Named(JETTY_SSL_TRUSTSTORE_PATH) String truststorePath)
 	{
-		m_trustStorePath = checkNotNullOrEmpty(truststorePath);
+		m_trustStorePath = requireNonNullOrEmpty(truststorePath);
 	}
 
 	@Inject(optional = true)
 	public void setSSLCipherSuites(@Named(JETTY_SSL_CIPHER_SUITES) String cipherSuites)
 	{
-		checkNotNull(cipherSuites);
+		requireNonNull(cipherSuites);
 		m_cipherSuites = cipherSuites.split("\\s*,\\s*");
 	}
 
@@ -284,7 +284,7 @@ public class WebServer implements KairosDBService
 		httpConfig.setSecurePort(m_sslPort);
 		httpConfig.addCustomizer(new SecureRequestCustomizer());
 
-		SslContextFactory sslContextFactory = new SslContextFactory();
+		SslContextFactory sslContextFactory = new SslContextFactory.Server();
 		sslContextFactory.setKeyStorePath(m_keyStorePath);
 		sslContextFactory.setKeyStorePassword(m_keyStorePassword);
 		if (m_trustStorePath != null && !m_trustStorePath.isEmpty())
@@ -330,12 +330,12 @@ public class WebServer implements KairosDBService
 
     private void initializeJettyRequestLogging()
 	{
-		NCSARequestLog requestLog = new NCSARequestLog("log/jetty-yyyy_mm_dd.request.log");
-		requestLog.setAppend(true);
-		requestLog.setExtended(false);
-		requestLog.setLogTimeZone("UTC");
-		requestLog.setLogLatency(true);
-		requestLog.setRetainDays(m_requestLoggingRetainDays);
+		RequestLogWriter logWriter = new RequestLogWriter("log/jetty-yyyy_mm_dd.request.log");
+		CustomRequestLog requestLog = new CustomRequestLog(logWriter, CustomRequestLog.NCSA_FORMAT);
+		//NCSARequestLog requestLog = new NCSARequestLog("log/jetty-yyyy_mm_dd.request.log");
+		logWriter.setAppend(true);
+		logWriter.setTimeZone("UTC");
+		logWriter.setRetainDays(m_requestLoggingRetainDays);
 		if(m_loggingIgnorePaths != null)
 			requestLog.setIgnorePaths(m_loggingIgnorePaths);
 		m_server.setRequestLog(requestLog);

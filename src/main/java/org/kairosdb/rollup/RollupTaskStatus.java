@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class RollupTaskStatus
 {
@@ -19,7 +19,7 @@ public class RollupTaskStatus
     public RollupTaskStatus(Date nextExecutionTime, String executingHost)
     {
         setNextScheduled(nextExecutionTime);
-        this.executingHost = checkNotNullOrEmpty(executingHost);
+        this.executingHost = requireNonNullOrEmpty(executingHost);
     }
 
     public static RollupQueryMetricStatus createQueryMetricStatus(String metricName, long lastExecuted, long dataPointCount, long executionLength)

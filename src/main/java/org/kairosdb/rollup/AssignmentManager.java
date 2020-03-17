@@ -21,8 +21,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static java.util.Objects.requireNonNull;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 /**
  * Manages Roll-up server assignments. Assignments identify which Kairos host executes what roll-ups.
@@ -56,14 +56,14 @@ public class AssignmentManager implements KairosDBService
             @Named(RollUpModule.ROLLUP_EXECUTOR) ScheduledExecutorService executorService, HostManager hostManager,
             BalancingAlgorithm balancing, @Named(DELAY) long delay)
     {
-        this.guid = checkNotNullOrEmpty(guid, "guid cannot be null or empty");
-        this.assignmentStore = checkNotNull(assignmentStore, "assignmentStore cannot be null");
-        this.taskStore = checkNotNull(taskStore, "taskStore cannot be null");
-        this.statusStore = checkNotNull(statusStore, "statusStore cannot be null");
+        this.guid = requireNonNullOrEmpty(guid, "guid cannot be null or empty");
+        this.assignmentStore = requireNonNull(assignmentStore, "assignmentStore cannot be null");
+        this.taskStore = requireNonNull(taskStore, "taskStore cannot be null");
+        this.statusStore = requireNonNull(statusStore, "statusStore cannot be null");
 
-        this.executorService = checkNotNull(executorService, "executorService cannot be null");
-        this.balancing = checkNotNull(balancing, "balancing cannot be null");
-        this.hostManager = checkNotNull(hostManager, "hostManager cannot be null");
+        this.executorService = requireNonNull(executorService, "executorService cannot be null");
+        this.balancing = requireNonNull(balancing, "balancing cannot be null");
+        this.hostManager = requireNonNull(hostManager, "hostManager cannot be null");
 
         // Start thread that checks for rollup changes and rollup assignments
         executorService.scheduleWithFixedDelay(new updateAssignments(), 0, delay, java.util.concurrent.TimeUnit.MILLISECONDS);

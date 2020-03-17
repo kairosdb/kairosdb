@@ -23,7 +23,7 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class TagGroupByResult implements GroupByResult
 {
@@ -32,8 +32,8 @@ public class TagGroupByResult implements GroupByResult
 
 	public TagGroupByResult(TagGroupBy groupBy, Map<String, String> tagResults)
 	{
-		this.groupBy = checkNotNull(groupBy);
-		this.tagResults = checkNotNull(tagResults);
+		this.groupBy = requireNonNull(groupBy);
+		this.tagResults = requireNonNull(tagResults);
 	}
 
 	public Map<String, String> getTagResults()

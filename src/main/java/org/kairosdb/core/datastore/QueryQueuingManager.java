@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class QueryQueuingManager implements KairosMetricReporter
 {
@@ -53,7 +53,7 @@ public class QueryQueuingManager implements KairosMetricReporter
 	public QueryQueuingManager(@Named(CONCURRENT_QUERY_THREAD) int concurrentQueryThreads, @Named("HOSTNAME") String hostname)
 	{
 		checkArgument(concurrentQueryThreads > 0);
-		this.hostname = checkNotNullOrEmpty(hostname);
+		this.hostname = requireNonNullOrEmpty(hostname);
 		semaphore = new Semaphore(concurrentQueryThreads, true);
 	}
 

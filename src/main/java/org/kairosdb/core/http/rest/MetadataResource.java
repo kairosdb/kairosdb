@@ -21,7 +21,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.kairosdb.core.http.rest.MetricsResource.setHeaders;
 
 @Path("/api/v1/metadata")
@@ -36,7 +36,7 @@ public class MetadataResource
 	@Inject
 	public MetadataResource(ServiceKeyStore keyStore)
 	{
-		this.m_keyStore = checkNotNull(keyStore, "m_keyStore cannot be null");
+		this.m_keyStore = requireNonNull(keyStore, "m_keyStore cannot be null");
 	}
 
 	@GET

@@ -17,7 +17,7 @@ import javax.ws.rs.core.Response;
 
 import java.util.ArrayList;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.kairosdb.core.http.rest.MetricsResource.setHeaders;
 
 @Path("api/v1/admin")
@@ -30,7 +30,7 @@ public class AdminResource
 	@Inject
 	public AdminResource(QueryQueuingManager queuingManager)
 	{
-		this.m_queuingManager = checkNotNull(queuingManager, "queuingManager cannot be null.");
+		this.m_queuingManager = requireNonNull(queuingManager, "queuingManager cannot be null.");
 	}
 
 	@GET

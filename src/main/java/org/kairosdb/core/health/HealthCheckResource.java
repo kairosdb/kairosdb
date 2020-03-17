@@ -12,7 +12,7 @@ import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.kairosdb.core.http.rest.MetricsResource.setHeaders;
 
 /**
@@ -31,7 +31,7 @@ public class HealthCheckResource
 	@Inject
 	public HealthCheckResource(HealthCheckService healthCheckService)
 	{
-		m_healthCheckService = checkNotNull(healthCheckService);
+		m_healthCheckService = requireNonNull(healthCheckService);
 	}
 
 	@OPTIONS

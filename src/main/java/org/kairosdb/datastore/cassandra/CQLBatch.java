@@ -122,6 +122,7 @@ public class CQLBatch
 		bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
 		bs.setString(1, metricName);
 		bs.setConsistencyLevel(m_consistencyLevel);
+		bs.setIdempotent(true);
 		m_metricNamesBatch.add(bs);
 	}
 

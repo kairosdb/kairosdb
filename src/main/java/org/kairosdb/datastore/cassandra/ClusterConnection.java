@@ -606,7 +606,8 @@ public class ClusterConnection
 							.setString(1, DATA_POINTS_TABLE_NAME)
 							.setTimestamp(2, new Date(rowKey.getTimestamp()))
 							.setString(3, rowKey.getDataType())
-							.setMap(4, rowKey.getTags());
+							.setMap(4, rowKey.getTags())
+							.setIdempotent(true);
 		}
 
 		/*

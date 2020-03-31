@@ -44,6 +44,8 @@ public class MetricsResourceTest extends ResourceBase
 	private static final String ADD_METRIC_URL = "http://localhost:9001/api/v1/datapoints";
 	private static final String GET_METRIC_URL = "http://localhost:9001/api/v1/datapoints/query";
 	private static final String METRIC_NAMES_URL = "http://localhost:9001/api/v1/metricnames";
+  private static final String TAG_NAMES_URL = "http://localhost:9001/api/v1/tagnames";
+  private static final String TAG_VALUES_URL = "http://localhost:9001/api/v1/tagvalues";
 	private static final String DELETE_DATAPOINTS_URL = "http://localhost:9001/api/v1/datapoints/delete";
 	private static final String DELETE_METRIC_URL = "http://localhost:9001/api/v1/metric/";
 	private static final String VERSION_URL = "http://localhost:9001/api/v1/version";
@@ -158,6 +160,22 @@ public class MetricsResourceTest extends ResourceBase
 
 		assertResponse(response, 200, "{\"results\":[\"cpu\",\"memory\",\"disk\",\"network\"]}");
 	}
+
+  @Test
+  public void testTagNames() throws IOException
+  {
+    JsonResponse response = client.get(TAG_NAMES_URL);
+
+    assertResponse(response, 200, "{\"results\":[\"server1\",\"server2\",\"server3\"]}");
+  }
+
+  @Test
+  public void testTagValues() throws IOException
+  {
+    JsonResponse response = client.get(TAG_VALUES_URL);
+
+    assertResponse(response, 200, "{\"results\":[\"larry\",\"moe\",\"curly\"]}");
+  }
 
 	/**
 	 Verify that the web server will gzip the response if the Accept-Encoding header is set to "gzip".

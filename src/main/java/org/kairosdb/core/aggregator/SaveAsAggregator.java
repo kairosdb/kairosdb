@@ -133,7 +133,13 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 		{
 			m_innerDataPointGroup = innerDataPointGroup;
 			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.naturalOrder();
-			mapBuilder.putAll(m_tags);
+
+			for (Map.Entry<String, String> tag : m_tags.entrySet()) {
+				if (tag.getKey() != "saved_from" || !m_addSavedFrom) {
+					mapBuilder.put(tag);
+				}
+			}
+
 			if (m_addSavedFrom)
 				mapBuilder.put("saved_from", innerDataPointGroup.getName());
 

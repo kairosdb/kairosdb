@@ -143,6 +143,61 @@ public class SaveAsAggregatorTest
 	}
 
 	@Test
+	public void testOverwritePreviousSaveFrom() throws DatastoreException
+	{
+		m_aggregator.setMetricName("testTtl");
+		m_aggregator.setTags(ImmutableSortedMap.of("sweet_tag", "value", "saved_from", "previous"));
+
+		ImmutableSortedMap<String, String> verifyMap = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("saved_from", "group")
+				.put("sweet_tag", "value")
+				.build();
+
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new LongDataPoint(1, 10));
+		group.addTag("host", "tag_should_not_be_there");
+
+		DataPointGroup results = m_aggregator.aggregate(group);
+
+		assertThat(results.hasNext(), equalTo(true));
+		DataPoint dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(1L));
+		assertThat(dataPoint.getLongValue(), equalTo(10L));
+
+		verifyEvent(m_publisher, "testTtl", verifyMap, dataPoint, 0);
+
+		results.close();
+	}
+
+	@Test
+	public void testReusePreviousSaveFrom() throws DatastoreException
+	{
+		m_aggregator.setMetricName("testTtl");
+		m_aggregator.setTags(ImmutableSortedMap.of("sweet_tag", "value", "saved_from", "previous"));
+		m_aggregator.setAddSavedFrom(false);
+
+		ImmutableSortedMap<String, String> verifyMap = ImmutableSortedMap.<String, String>naturalOrder()
+				.put("saved_from", "previous")
+				.put("sweet_tag", "value")
+				.build();
+
+		ListDataPointGroup group = new ListDataPointGroup("group");
+		group.addDataPoint(new LongDataPoint(1, 10));
+		group.addTag("host", "tag_should_not_be_there");
+
+		DataPointGroup results = m_aggregator.aggregate(group);
+
+		assertThat(results.hasNext(), equalTo(true));
+		DataPoint dataPoint = results.next();
+		assertThat(dataPoint.getTimestamp(), equalTo(1L));
+		assertThat(dataPoint.getLongValue(), equalTo(10L));
+
+		verifyEvent(m_publisher, "testTtl", verifyMap, dataPoint, 0);
+
+		results.close();
+	}
+
+	@Test
 	public void testAddedTags() throws DatastoreException
 	{
 		m_aggregator.setMetricName("testTtl");

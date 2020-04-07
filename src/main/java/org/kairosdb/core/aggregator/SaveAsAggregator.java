@@ -32,6 +32,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	private int m_ttl = 0;
 	private Set<String> m_tagsToKeep = new HashSet<>();
 	private boolean m_addSavedFrom = true;
+	private static final String SAVED_FROM = "saved_from";
 
 	@FeatureProperty(
 			name = "metric_name",
@@ -135,19 +136,23 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 			ImmutableSortedMap.Builder<String, String> mapBuilder = ImmutableSortedMap.naturalOrder();
 
 			for (Map.Entry<String, String> tag : m_tags.entrySet()) {
-				if (tag.getKey() != "saved_from" || !m_addSavedFrom) {
+				if (!tag.getKey().equals(SAVED_FROM) || !m_addSavedFrom) {
+					// If saved_from is specified, overwrite it below rather than from
+					// the tags aggregator argument.
 					mapBuilder.put(tag);
 				}
 			}
 
 			if (m_addSavedFrom)
-				mapBuilder.put("saved_from", innerDataPointGroup.getName());
+				mapBuilder.put(SAVED_FROM, innerDataPointGroup.getName());
 
 			for (String innerTag : innerDataPointGroup.getTagNames())
 			{
-				Set<String> tagValues = innerDataPointGroup.getTagValues(innerTag);
-				if (m_tagsToKeep.contains(innerTag) && (tagValues.size() == 1))
-					mapBuilder.put(innerTag, tagValues.iterator().next());
+				if (!innerTag.equals(SAVED_FROM) || !m_addSavedFrom) {
+					Set<String> tagValues = innerDataPointGroup.getTagValues(innerTag);
+					if (m_tagsToKeep.contains(innerTag) && (tagValues.size() == 1))
+						mapBuilder.put(innerTag, tagValues.iterator().next());
+				}
 			}
 
 			m_groupTags = mapBuilder.build();

@@ -211,6 +211,7 @@ junit = new JUnitRule("test").addSources(testSources)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
 		.addDepends(ivyTestResolve)
+		.addJvmArgument("-Duser.timezone=UTC")
 
 if (saw.getProperty("jacoco", "false").equals("true"))
 	junit.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
@@ -221,6 +222,7 @@ junitAll = new JUnitRule("test-all").setDescription("Run unit tests including Ca
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
 		.addDepends(ivyTestResolve)
+		.addJvmArgument("-Duser.timezone=UTC")
 
 if (saw.getProperty("jacoco", "false").equals("true"))
 	junitAll.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
@@ -520,7 +522,7 @@ def doIntegration(Rule rule)
 	integrationClassPath.addPath("build/integration")
 	host = saw.getProperty("host", "127.0.0.1")
 	port = saw.getProperty("port", "8080")
-	saw.exec("java  -Dhost=${host} -Dport=${port} -cp ${integrationClassPath} org.testng.TestNG src/integration-test/testng.xml")
+	saw.exec("java -Duser.timezone=UTC -Dhost=${host} -Dport=${port} -cp ${integrationClassPath} org.testng.TestNG src/integration-test/testng.xml")
 }
 
 //------------------------------------------------------------------------------

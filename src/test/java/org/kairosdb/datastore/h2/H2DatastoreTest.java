@@ -120,12 +120,12 @@ public class H2DatastoreTest extends DatastoreTestHelper
 
 	@Test
 	public void test_serviceKeyStore_singleService()
-			throws DatastoreException
+			throws DatastoreException, InterruptedException
 	{
 		h2Datastore.setValue("Service", "ServiceKey", "key1", "value1");
 		h2Datastore.setValue("Service", "ServiceKey", "key2", "value2");
 		h2Datastore.setValue("Service", "ServiceKey", "foo", "value3");
-
+		Thread.sleep(1);	
 		// Test setValue and getValue
 		assertServiceKeyValue("Service", "ServiceKey", "key1", "value1");
 		assertServiceKeyValue("Service", "ServiceKey", "key2", "value2");
@@ -133,7 +133,9 @@ public class H2DatastoreTest extends DatastoreTestHelper
 
 		// Test lastModified value changes
 		long lastModified = h2Datastore.getValue("Service", "ServiceKey", "key2").getLastModified().getTime();
+		
 		h2Datastore.setValue("Service", "ServiceKey", "key2", "changed");
+		Thread.sleep(1);
 		assertServiceKeyValue("Service", "ServiceKey", "key2", "changed");
 		assertThat(h2Datastore.getValue("Service", "ServiceKey", "key2").getLastModified().getTime(), greaterThan(lastModified));
 
@@ -144,12 +146,14 @@ public class H2DatastoreTest extends DatastoreTestHelper
 		// Test delete
 		lastModified = h2Datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime();
 		h2Datastore.deleteKey("Service", "ServiceKey", "key2");
+		Thread.sleep(1);
 		assertThat(h2Datastore.listKeys("Service", "ServiceKey"), hasItems("foo", "key1"));
 		assertThat(h2Datastore.getValue("Service", "ServiceKey", "key2"), is(nullValue()));
 		assertThat(h2Datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime(), greaterThan(lastModified));
 
 		lastModified = h2Datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime();
 		h2Datastore.deleteKey("Service", "ServiceKey", "foo");
+		Thread.sleep(1);
 		assertThat(h2Datastore.listKeys("Service", "ServiceKey"), hasItems("key1"));
 		assertThat(h2Datastore.getValue("Service", "ServiceKey", "foo"), is(nullValue()));
 		assertThat(h2Datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime(), greaterThan(lastModified));

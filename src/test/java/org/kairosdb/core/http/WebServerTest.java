@@ -137,7 +137,7 @@ public class WebServerTest
 	@Test
 	public void test_constructorNullAddressValid() throws UnknownHostException
 	{
-		WebServer webServer = new WebServer(null, 0, ".");
+		WebServer webServer = new WebServer(null, 0, ".", 120000);
 
 		assertThat(webServer.getAddress().getHostName(), equalTo("localhost"));
 	}
@@ -145,7 +145,7 @@ public class WebServerTest
 	@Test
 	public void test_constructorEmptyAddressValid() throws UnknownHostException
 	{
-		WebServer webServer = new WebServer("", 0, ".");
+		WebServer webServer = new WebServer("", 0, ".", 120000);
 
 		assertThat(webServer.getAddress().getHostName(), equalTo("localhost"));
 	}

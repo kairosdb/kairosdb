@@ -14,7 +14,6 @@ import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.BatchReductionEvent;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.events.RowKeyEvent;
-import org.mockito.internal.matchers.Any;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -25,8 +24,10 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,7 +37,7 @@ public class BatchHandlerTest
 
 	private EventCompletionCallBack m_callBack;
 	private DataCache<DataPointsRowKey> m_rowKeyDataCache;
-	private DataCache<String> m_metricDataCache;
+	private DataCache<TimedString> m_metricDataCache;
 
 	private Publisher<RowKeyEvent> m_rowKeyEventPublisher;
 	private Publisher<BatchReductionEvent> m_batchReductionEventPublisher;
@@ -46,7 +47,7 @@ public class BatchHandlerTest
 	private class FakeCQLBatch extends CQLBatch
 	{
 		private List<DataPointsRowKey> m_newRowKeys = new ArrayList<>();
-		private List<String> m_newMetrics = new ArrayList<>();
+		private List<TimedString> m_newMetrics = new ArrayList<>();
 		private RuntimeException m_exceptionToThrow;
 
 		public FakeCQLBatch(RuntimeException exceptionToThrow)
@@ -57,13 +58,18 @@ public class BatchHandlerTest
 		}
 
 		@Override
-		public void addRowKey(String metricName, DataPointsRowKey rowKey, int rowKeyTtl)
+		public void addTimeIndex(String metricName, long rowKeyTime, int rowKeyTtl)
+		{
+		}
+
+		@Override
+		public void addRowKey(DataPointsRowKey rowKey, int rowKeyTtl)
 		{
 			m_newRowKeys.add(rowKey);
 		}
 
 		@Override
-		public void addMetricName(String metricName)
+		public void addMetricName(TimedString metricName)
 		{
 			m_newMetrics.add(metricName);
 		}
@@ -87,7 +93,7 @@ public class BatchHandlerTest
 		}
 
 		@Override
-		public List<String> getNewMetrics()
+		public List<TimedString> getNewMetrics()
 		{
 			return m_newMetrics;
 		}
@@ -174,6 +180,55 @@ public class BatchHandlerTest
 			verify(m_rowKeyEventPublisher).post(any());
 			assertThat(m_rowKeyDataCache.getCachedKeys()).isEmpty();
 		}
+	}
+
+	@Test
+	public void test_rowKey_is_cached() throws Exception
+	{
+		CQLBatch batch = mock(CQLBatch.class);
+		LongDataPointFactory dataPointFactory = new LongDataPointFactoryImpl();
+		long now = System.currentTimeMillis();
+
+		ImmutableSortedMap<String, String> tags1 = ImmutableSortedMap.of("host", "bob");
+		List<DataPointEvent> events = Arrays.asList(
+				new DataPointEvent("metric_name", tags1, dataPointFactory.createDataPoint(now, 42L)),
+				new DataPointEvent("metric_name", tags1, dataPointFactory.createDataPoint(now+1, 42L)));
+
+		setup(events);
+
+		when(m_cqlBatchFactory.create()).thenReturn(batch);
+
+		m_batchHandler.retryCall();
+
+		verify(batch, times(2)).addDataPoint(any(), anyInt(), any(), anyInt());
+		verify(batch).addMetricName(any());
+		verify(batch).addTimeIndex(any(), anyLong(), anyInt());
+		verify(batch).addRowKey(any(), anyInt());
+	}
+
+	@Test
+	public void test_timeIndex_is_cached() throws Exception
+	{
+		CQLBatch batch = mock(CQLBatch.class);
+		LongDataPointFactory dataPointFactory = new LongDataPointFactoryImpl();
+		long now = System.currentTimeMillis();
+
+		ImmutableSortedMap<String, String> tags1 = ImmutableSortedMap.of("host", "bob");
+		ImmutableSortedMap<String, String> tags2 = ImmutableSortedMap.of("host", "sam");
+		List<DataPointEvent> events = Arrays.asList(
+				new DataPointEvent("metric_name", tags1, dataPointFactory.createDataPoint(now, 42L)),
+				new DataPointEvent("metric_name", tags2, dataPointFactory.createDataPoint(now+1, 42L)));
+
+		setup(events);
+
+		when(m_cqlBatchFactory.create()).thenReturn(batch);
+
+		m_batchHandler.retryCall();
+
+		verify(batch, times(2)).addDataPoint(any(), anyInt(), any(), anyInt());
+		verify(batch).addMetricName(any());
+		verify(batch).addTimeIndex(any(), anyLong(), anyInt());
+		verify(batch, times(2)).addRowKey(any(), anyInt());
 	}
 
 

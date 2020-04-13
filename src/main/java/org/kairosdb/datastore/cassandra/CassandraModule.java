@@ -260,7 +260,7 @@ public class CassandraModule extends AbstractModule
 
 	@Provides
 	@Singleton
-	DataCache<String> getMetricNameCache(CassandraConfiguration configuration)
+	DataCache<TimedString> getMetricNameCache(CassandraConfiguration configuration)
 	{
 		return new DataCache<>(configuration.getStringCacheSize());
 	}

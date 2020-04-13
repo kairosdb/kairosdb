@@ -299,7 +299,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				ImmutableMultimap.of(TAG_INDEXED_ROW_KEY_METRIC, "*")).startup(false);
 		BatchStats batchStats = new BatchStats();
 		DataCache<DataPointsRowKey> rowKeyCache = new DataCache<>(1024);
-		DataCache<String> metricNameCache = new DataCache<>(1024);
+		DataCache<TimedString> metricNameCache = new DataCache<>(1024);
 
 		CassandraModule.CQLBatchFactory cqlBatchFactory = new CassandraModule.CQLBatchFactory()
 		{

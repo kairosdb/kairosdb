@@ -121,7 +121,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	@Inject
 	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
 	@Inject
-	private DataCache<String> m_metricNameCache = new DataCache<String>(1024);
+	private DataCache<TimedString> m_metricNameCache = new DataCache<>(1024);
 
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 	private final QueueProcessor m_queueProcessor;

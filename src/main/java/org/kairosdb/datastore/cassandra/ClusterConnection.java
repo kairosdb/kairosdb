@@ -390,6 +390,9 @@ public class ClusterConnection
 			psDataPointsInsert = m_session.prepare(DATA_POINTS_INSERT);
 			psDataPointsDelete = m_session.prepare(DATA_POINTS_DELETE);
 			psDataPointsDeleteRow = m_session.prepare(DATA_POINTS_DELETE_ROW);
+			psRowKeyDelete = m_session.prepare(ROW_KEY_DELETE);
+			psTagIndexedRowKeyDelete = m_session.prepare(TAG_INDEXED_ROW_KEY_DELETE);
+			psRowKeyTimeDelete = m_session.prepare(ROW_KEY_TIME_DELETE);
 			try
 			{
 				psDataPointsDeleteRange = m_session.prepare(DATA_POINTS_DELETE_RANGE);
@@ -433,9 +436,6 @@ public class ClusterConnection
 		{
 			psRowKeyInsert = m_session.prepare(ROW_KEY_INSERT);
 			psTagIndexedRowKeyInsert = m_session.prepare(TAG_INDEXED_ROW_KEY_INSERT);
-			psRowKeyDelete = m_session.prepare(ROW_KEY_DELETE);
-			psTagIndexedRowKeyDelete = m_session.prepare(TAG_INDEXED_ROW_KEY_DELETE);
-			psRowKeyTimeDelete = m_session.prepare(ROW_KEY_TIME_DELETE);
 			psRowKeyTimeInsert = m_session.prepare(ROW_KEY_TIME_INSERT);
 		}
 

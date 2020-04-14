@@ -224,6 +224,12 @@ public class CassandraClientImpl implements CassandraClient, KairosMetricReporte
 		ret.add(newDataPointSet(prefix, "trashed_connections", now,
 				metrics.getTrashedConnections().getValue()));
 
+		ret.add(newDataPointSet(prefix, "bytes_sent", now,
+				metrics.getBytesSent().getCount()));
+
+		ret.add(newDataPointSet(prefix, "bytes_received", now,
+				metrics.getBytesReceived().getCount()));
+
 		Snapshot snapshot = metrics.getRequestsTimer().getSnapshot();
 		prefix = prefix + ".requests_timer";
 		ret.add(newDataPointSet(prefix, "max", now,

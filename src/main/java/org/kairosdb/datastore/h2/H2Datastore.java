@@ -519,6 +519,25 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	}
 
 	@Override
+	public long queryCardinality(DatastoreMetricQuery query) throws DatastoreException
+	{
+		GenOrmQueryResultSet<? extends MetricIdResults> idQuery = getMetricIdsForQuery(query);
+		long result = 0;
+		try
+		{
+			while (idQuery.next()) {
+				result += 1;
+			}
+		}
+		finally
+		{
+			idQuery.close();
+		}
+
+		return result;
+	}
+
+	@Override
 	public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
 	{
 		GenOrmDataSource.attachAndBegin();

@@ -25,6 +25,7 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import org.json.JSONWriter;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
@@ -382,6 +383,67 @@ public class MetricsResource implements KairosMetricReporter
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
 					new FileStreamingOutput(respFile));
+
+			setHeaders(responseBuilder);
+			return responseBuilder.build();
+		}
+		catch (JsonSyntaxException | QueryException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addError(e.getMessage()).build();
+		}
+		catch (BeanValidationException e)
+		{
+			JsonResponseBuilder builder = new JsonResponseBuilder(Response.Status.BAD_REQUEST);
+			return builder.addErrors(e.getErrorMessages()).build();
+		}
+		catch (MemoryMonitorException e)
+		{
+			logger.error("Query failed.", e);
+			System.gc();
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+		catch (Exception e)
+		{
+			logger.error("Query failed.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+
+		}
+		catch (OutOfMemoryError e)
+		{
+			logger.error("Out of memory error.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+	}
+
+	@POST
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/query/cardinality")
+	public Response getCardinality(String json) throws InvalidServerTypeException
+	{
+		checkServerType(ServerType.QUERY, "/datapoints/query/tags", "POST");
+		checkNotNull(json);
+		logger.debug(json);
+
+		try
+		{
+			StringWriter writer = new StringWriter();
+			JSONWriter jWriter = new JSONWriter(writer);
+			jWriter.object().key("queryCardinalities").array();
+
+			List<QueryMetric> queries = queryParser.parseQueryMetric(json).getQueryMetrics();
+
+			for (QueryMetric query : queries)
+			{
+				long result = datastore.queryCardinality(query);
+				jWriter.value(result);
+			}
+
+			jWriter.endArray().endObject();
+			writer.flush();
+			writer.close();
+
+			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(writer.toString());
 
 			setHeaders(responseBuilder);
 			return responseBuilder.build();

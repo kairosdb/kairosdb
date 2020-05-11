@@ -471,4 +471,10 @@ public class RemoteDatastore implements Datastore
 	{
 		throw new DatastoreException("Method not implemented.");
 	}
+
+	@Override
+	public long queryCardinality(DatastoreMetricQuery query) throws DatastoreException
+	{
+		throw new DatastoreException("Method not implemented.");
+	}
 }

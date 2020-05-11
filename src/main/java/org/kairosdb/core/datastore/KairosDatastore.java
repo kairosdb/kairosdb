@@ -255,10 +255,7 @@ public class KairosDatastore implements KairosPostConstructInit
 
 	public long queryCardinality(QueryMetric metric) throws DatastoreException
 	{
-		if (!(m_datastore instanceof H2Datastore)) {
-			throw new RuntimeException("need H2 datastore for cardinality query, but have " + m_datastore.getClass());
-		}
-		return ((H2Datastore) m_datastore).queryCardinality(metric);
+		return m_datastore.queryCardinality(metric);
 	}
 
 	public DatastoreQuery createQuery(QueryMetric metric) throws DatastoreException

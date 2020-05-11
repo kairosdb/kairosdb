@@ -361,5 +361,11 @@ public class RollUpJobTest
 		{
 			throw new UnsupportedOperationException();
 		}
+
+		@Override
+		public long queryCardinality(DatastoreMetricQuery query)
+		{
+			throw new UnsupportedOperationException();
+		}
 	}
 }

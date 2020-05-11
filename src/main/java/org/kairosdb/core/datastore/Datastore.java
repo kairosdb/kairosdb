@@ -25,4 +25,6 @@ public interface Datastore
 	void deleteDataPoints(DatastoreMetricQuery deleteQuery) throws DatastoreException;
 
 	TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException;
+
+	long queryCardinality(DatastoreMetricQuery query) throws DatastoreException;
 }

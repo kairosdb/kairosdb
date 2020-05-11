@@ -396,6 +396,20 @@ public class CassandraDatastore implements Datastore, ProcessorHandler, KairosMe
 	}
 
 	@Override
+	public long queryCardinality(final DatastoreMetricQuery query) throws DatastoreException {
+		Iterator<DataPointsRowKey> rowKeys = getKeysForQueryIterator(query);
+
+		long result = 0;
+		while (rowKeys.hasNext())
+		{
+			rowKeys.next();
+			result += 1;
+		}
+
+		return result;
+	}
+
+	@Override
 	public void setValue(String service, String serviceKey, String key, String value) throws DatastoreException
 	{
 		BoundStatement statement = new BoundStatement(m_metaCluster.psServiceIndexInsert);

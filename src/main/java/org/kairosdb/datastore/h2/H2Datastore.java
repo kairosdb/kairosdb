@@ -518,6 +518,7 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 		return tagSet;
 	}
 
+	@Override
 	public long queryCardinality(DatastoreMetricQuery query) throws DatastoreException
 	{
 		GenOrmQueryResultSet<? extends MetricIdResults> idQuery = getMetricIdsForQuery(query);

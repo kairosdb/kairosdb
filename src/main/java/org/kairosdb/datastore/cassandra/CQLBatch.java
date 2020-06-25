@@ -156,14 +156,14 @@ public class CQLBatch
 	{
 		if (metricNamesBatch.size() != 0)
 		{
-			m_clusterConnection.executeAsync(metricNamesBatch);
+			m_clusterConnection.execute(metricNamesBatch);
 			m_batchStats.addNameBatch(metricNamesBatch.size());
 		}
 
 		if (rowKeyBatch.size() != 0)
 		{
 			//rowKeyBatch.enableTracing();
-			m_clusterConnection.executeAsync(rowKeyBatch);
+			m_clusterConnection.execute(rowKeyBatch);
 			m_batchStats.addRowKeyBatch(rowKeyBatch.size());
 		}
 

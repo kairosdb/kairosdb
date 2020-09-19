@@ -12,7 +12,8 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.events.DataPointEvent;
-import se.ugli.bigqueue.BigArray;
+import org.kairosdb.bigqueue.BigArrayImpl;
+import org.kairosdb.bigqueue.IBigArray;
 
 import java.io.File;
 import java.io.IOException;
@@ -136,7 +137,7 @@ public class QueueProcessorTest
 		File tempDir = Files.createTempDir();
 		try
 		{
-			BigArray bigArray = new BigArray(tempDir.getAbsolutePath(), "kairos_queue", 512 * 1024 * 1024);
+			IBigArray bigArray = new BigArrayImpl(tempDir.getAbsolutePath(), "kairos_queue", 512 * 1024 * 1024);
 
 			long index = bigArray.getTailIndex();
 			byte[] data = bigArray.get(index);
@@ -151,7 +152,7 @@ public class QueueProcessorTest
 	public void test_bigArray_readingNonExistingIndex() throws IOException
 	{
 		File tempDir = Files.createTempDir();
-		BigArray bigArray = new BigArray(tempDir.getAbsolutePath(), "kairos_queue", 512*1024*1024);
+		IBigArray bigArray = new BigArrayImpl(tempDir.getAbsolutePath(), "kairos_queue", 512*1024*1024);
 		try
 		{
 			long index = bigArray.getTailIndex();
@@ -181,9 +182,9 @@ public class QueueProcessorTest
 
 
 	@Test
-	public void test_eventIsPulledFromMemoryQueue() throws DatastoreException
+	public void test_eventIsPulledFromMemoryQueue() throws DatastoreException, IOException
 	{
-		BigArray bigArray = mock(BigArray.class);
+		IBigArray bigArray = mock(IBigArray.class);
 
 		when(bigArray.append(any())).thenReturn(0L);
 		when(bigArray.getTailIndex()).thenReturn(0L);
@@ -210,9 +211,9 @@ public class QueueProcessorTest
 	}
 
 	@Test
-	public void test_eventIsPulledFromMemoryQueueThenBigArray() throws DatastoreException
+	public void test_eventIsPulledFromMemoryQueueThenBigArray() throws DatastoreException, IOException
 	{
-		BigArray bigArray = mock(BigArray.class);
+		IBigArray bigArray = mock(IBigArray.class);
 
 		when(bigArray.append(any())).thenReturn(0L);
 		when(bigArray.getHeadIndex()).thenReturn(2L);
@@ -243,10 +244,10 @@ public class QueueProcessorTest
 	}
 
 	@Test
-	public void test_checkPointIsCalled() throws DatastoreException
+	public void test_checkPointIsCalled() throws DatastoreException, IOException
 	{
 		final EventBus eventBus = mock(EventBus.class);
-		BigArray bigArray = mock(BigArray.class);
+		IBigArray bigArray = mock(IBigArray.class);
 
 		when(bigArray.append(any())).thenReturn(0L);
 		when(bigArray.getHeadIndex()).thenReturn(2L);

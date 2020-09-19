@@ -1,4 +1,6 @@
 <ivysettings>
+	<property name="jetty.version" value="9.4.31.v20200723"/>
+
 	<settings defaultResolver="default"/>
 	<resolvers>
 		<ibiblio name="local-m2" m2compatible="true"

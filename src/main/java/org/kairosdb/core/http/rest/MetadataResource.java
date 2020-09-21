@@ -3,6 +3,7 @@ package org.kairosdb.core.http.rest;
 import com.google.inject.Inject;
 import org.h2.util.StringUtils;
 import org.kairosdb.core.datastore.ServiceKeyStore;
+import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.kairosdb.core.formatter.JsonFormatter;
 import org.kairosdb.core.http.rest.MetricsResource.ValuesStreamingOutput;
 import org.kairosdb.core.http.rest.json.ErrorResponse;
@@ -105,10 +106,26 @@ public class MetadataResource
 		try
 		{
 			checkLocalService(service);
-			String value = m_keyStore.getValue(service, serviceKey, key).getValue();
-			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(value);
-			setHeaders(responseBuilder);
-			return responseBuilder.build();
+			ServiceKeyValue serviceKeyValue = m_keyStore.getValue(service, serviceKey, key);
+
+			String value = null;
+
+
+
+			if (serviceKeyValue != null)
+			{
+				value = serviceKeyValue.getValue();
+
+				ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(value);
+				setHeaders(responseBuilder);
+				return responseBuilder.build();
+			}
+			else
+			{
+				return setHeaders(Response.status(Status.NOT_FOUND).entity(new ErrorResponse("Key not found"))).build();
+			}
+
+
 		}
 		catch (NotAuthorizedException e)
 		{

@@ -24,17 +24,15 @@
 
 		<dependency org="org.hamcrest" name="hamcrest-library" rev="1.3"
 		            conf="test->default"/>
-		<!--<dependency org="org.mockito" name="mockito-all" rev="1.9.5" />-->
+		
 		<dependency org="org.mockito" name="mockito-core" rev="2.23.0" conf="test->default"/>
 		<dependency org="org.assertj" name="assertj-core" rev="3.14.0"
 					conf="test->default"/>
 		<dependency org="org.assertj" name="assertj-guava" rev="3.3.0"
 		            conf="test->default"/>
-		<!--<dependency org="io.netty" name="netty" rev="3.5.11.Final" />-->
+
 		<dependency org="io.netty" name="netty" rev="3.10.6.Final" />
-		<!--<dependency org="org.powermock" name="powermock-api-mockito" rev="1.4.12" />
-		<dependency org="org.powermock" name="powermock-module-junit4" rev="1.4.12" />-->
-		<!--<dependency org="org.apache.zookeeper" name="zookeeper" rev="3.4.5" transitive="false" />-->
+
 		<dependency org="com.google.inject" name="guice" rev="4.2.2" />
 		<dependency org="com.google.inject.extensions"
 		            name="guice-multibindings" rev="4.2.2"/>
@@ -76,14 +74,6 @@
 		</dependency>
 		<dependency org="net.jpountz.lz4" name="lz4" rev="1.3.0"/>
 
-		<!--<dependency org="org.hectorclient" name="hector-core" rev="1.1-4">
-			<artifact name="hector-core" type="bundle" ext="jar"/>
-			<exclude org="javax.servlet" module="servlet-api"/>
-		</dependency>-->
-
-		<!--<dependency org="com.netflix.astyanax" name="astyanax-core" rev="3.9.0" />
-		<dependency org="com.netflix.astyanax" name="astyanax-thrift" rev="3.9.0" />
-		<dependency org="com.netflix.astyanax" name="astyanax-cassandra" rev="3.9.0" />-->
 
 		<!-- Jetty server stuff -->
 		<dependency org="org.eclipse.jetty" name="jetty-server"
@@ -94,20 +84,17 @@
 		            rev="${jetty.version}"/>
 		<dependency org="org.eclipse.jetty" name="jetty-jaas"
 		            rev="${jetty.version}"/>
-		<dependency org="org.eclipse.jetty.orbit" name="javax.servlet" rev="3.0.0.v201112011016">
-			<artifact name="javax.servlet" type="orbit" ext="jar"/>
-		</dependency>
 
 		<!--Jersey-->
 		<dependency org="com.sun.jersey.contribs" name="jersey-guice"
-		            rev="1.18.3"/>
-		<dependency org="com.sun.jersey" name="jersey-server" rev="1.18.3"/>
-		<dependency org="com.sun.jersey" name="jersey-core" rev="1.18.3"/>
-		<dependency org="com.sun.jersey" name="jersey-servlet" rev="1.18.3"
+		            rev="${jersey.version}"/>
+		<dependency org="com.sun.jersey" name="jersey-server" rev="${jersey.version}"/>
+		<dependency org="com.sun.jersey" name="jersey-core" rev="${jersey.version}"/>
+		<dependency org="com.sun.jersey" name="jersey-servlet" rev="${jersey.version}"
 		            transitive="false"/>
-		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-signature" rev="1.18.3" />
-		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-server" rev="1.18.3" />
-		<dependency org="com.fasterxml.jackson.jaxrs" name="jackson-jaxrs-json-provider" rev="2.10.2"/>
+		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-signature" rev="${jersey.version}" />
+		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-server" rev="${jersey.version}" />
+		<dependency org="com.fasterxml.jackson.jaxrs" name="jackson-jaxrs-json-provider" rev="2.11.2"/>
 
 		<!-- Pulse -->
 		<dependency org="javax.validation" name="validation-api" rev="1.0.0.GA"/>

@@ -12,7 +12,7 @@ dist: trusty
 install: true
 
 before_script:
-  - export CLASSPATH=tools/tablesaw-1.2.7.jar
+  - export CLASSPATH=tools/tablesaw-1.2.8.jar
 
 script:
   - java make ivy-retrieve;java make clean test-all

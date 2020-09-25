@@ -97,11 +97,7 @@ public class MetadataResource
 		}
 	}
 
-	@GET
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/{service}/{serviceKey}/{key}")
-	public Response getValue(@PathParam("service") String service, @PathParam("serviceKey")
-			String serviceKey, @PathParam("key") String key)
+	private Response getServiceValue(String service, String serviceKey, String key, boolean jsonResponse)
 	{
 		try
 		{
@@ -109,8 +105,6 @@ public class MetadataResource
 			ServiceKeyValue serviceKeyValue = m_keyStore.getValue(service, serviceKey, key);
 
 			String value = null;
-
-
 
 			if (serviceKeyValue != null)
 			{
@@ -122,7 +116,12 @@ public class MetadataResource
 			}
 			else
 			{
-				return setHeaders(Response.status(Status.NOT_FOUND).entity(new ErrorResponse("Key not found"))).build();
+				ResponseBuilder responseBuilder = setHeaders(Response.status(Status.NOT_FOUND));
+
+				if (jsonResponse)
+					responseBuilder.entity(new ErrorResponse("Key not found"));
+
+				return responseBuilder.build();
 			}
 
 
@@ -135,8 +134,31 @@ public class MetadataResource
 		catch (Exception e)
 		{
 			logger.error("Failed to retrieve value.", e);
-			return setHeaders(Response.status(Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+			ResponseBuilder responseBuilder = setHeaders(Response.status(Status.INTERNAL_SERVER_ERROR));
+
+			if (jsonResponse)
+				responseBuilder.entity(new ErrorResponse(e.getMessage()));
+
+			return responseBuilder.build();
 		}
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/{service}/{serviceKey}/{key}")
+	public Response getValue(@PathParam("service") String service, @PathParam("serviceKey")
+			String serviceKey, @PathParam("key") String key)
+	{
+		return getServiceValue(service, serviceKey, key, true);
+	}
+
+	@GET
+	@Produces(MediaType.TEXT_PLAIN + "; charset=UTF-8")
+	@Path("/{service}/{serviceKey}/{key}")
+	public Response getValuePlain(@PathParam("service") String service, @PathParam("serviceKey")
+			String serviceKey, @PathParam("key") String key)
+	{
+		return getServiceValue(service, serviceKey, key, false);
 	}
 
 	@POST

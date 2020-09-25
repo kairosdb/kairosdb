@@ -21,6 +21,9 @@ import org.kairosdb.util.Tags;
 
 import java.util.*;
 
+/**
+ DataPointSet is used when writing metrics
+ */
 public class DataPointSet
 {
 	private final String m_name;

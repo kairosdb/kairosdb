@@ -1,5 +1,6 @@
 <ivysettings>
 	<property name="jetty.version" value="9.4.31.v20200723"/>
+	<property name="jersey.version" value="1.19.4"/>
 
 	<settings defaultResolver="default"/>
 	<resolvers>

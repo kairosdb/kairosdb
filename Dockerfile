@@ -7,7 +7,7 @@ WORKDIR /home/kairosdb
 ADD . /home/kairosdb/git
 
 RUN cd git && \
-    export CLASSPATH=tools/tablesaw-1.2.7.jar && \
+    export CLASSPATH=tools/tablesaw-1.2.8.jar && \
     java make package
 
 RUN tar -xzvf git/build/kairosdb-${KAIROSDB_VERSION}.tar.gz

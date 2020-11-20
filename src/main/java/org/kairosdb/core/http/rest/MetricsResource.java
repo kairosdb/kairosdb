@@ -511,8 +511,6 @@ public class MetricsResource implements KairosMetricReporter
 			Query mainQuery = queryParser.parseQueryMetric(json);
 			mainQuery = m_queryPreProcessor.preProcess(mainQuery);
 
-			mainQuery.getEndAbsolute();
-
 			List<QueryMetric> queries = mainQuery.getQueryMetrics();
 
 			int queryCount = 0;

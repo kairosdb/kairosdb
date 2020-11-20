@@ -125,7 +125,7 @@ public class BatchHandlerTest
 				m_rowKeyDataCache,
 				m_metricDataCache,
 				eventBus,
-				m_cqlBatchFactory);
+				m_cqlBatchFactory, new RowSpec());
 	}
 
 

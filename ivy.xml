@@ -24,7 +24,7 @@
 
 		<dependency org="org.hamcrest" name="hamcrest-library" rev="1.3"
 		            conf="test->default"/>
-		
+
 		<dependency org="org.mockito" name="mockito-core" rev="2.23.0" conf="test->default"/>
 		<dependency org="org.assertj" name="assertj-core" rev="3.14.0"
 					conf="test->default"/>

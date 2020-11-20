@@ -136,6 +136,14 @@ public class KairosConfig
 			return def;
 	}
 
+	public long getLong(String path, long def)
+		{
+		if (m_config.hasPath(path))
+			return m_config.getLong(path);
+		else
+			return def;
+		}
+
 	public List<String> getStringList(String path)
 	{
 		return m_config.getStringList(path);

@@ -268,13 +268,13 @@ public class CassandraModule extends AbstractModule
 	public interface BatchHandlerFactory
 	{
 		BatchHandler create(List<DataPointEvent> events, EventCompletionCallBack callBack,
-				boolean fullBatch);
+				boolean fullBatch, RowSpec rowSpec);
 	}
 
 	public interface DeleteBatchHandlerFactory
 	{
 		DeleteBatchHandler create(String metricName, SortedMap<String, String> tags,
-				List<DataPoint> dataPoints, EventCompletionCallBack callBack);
+				List<DataPoint> dataPoints, EventCompletionCallBack callBack, RowSpec rowSpec);
 	}
 
 	public interface CQLBatchFactory

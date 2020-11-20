@@ -14,6 +14,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import org.kairosdb.core.datastore.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import static org.kairosdb.datastore.cassandra.CassandraDatastore.ROW_KEY_METRIC_NAMES;
+import static org.kairosdb.datastore.cassandra.CassandraDatastore.serializeString;
+import static org.kairosdb.datastore.cassandra.RowSpec.DEFAULT_ROW_WIDTH;
+import static org.kairosdb.datastore.cassandra.RowSpec.LEGACY_UNIT;
 
 /**
  Created by bhawkins on 4/29/17.
@@ -142,6 +148,15 @@ public class ClusterConnection
 			" mtime timeuuid static, "+
 			" value text," +
 			" PRIMARY KEY ((service, service_key), key)" +
+			")";
+
+	public static final String SPEC_TABLE_NAME = "spec";
+	public static final String SPEC_TABLE = "" +
+			"CREATE TABLE IF NOT EXISTS "+SPEC_TABLE_NAME+" (" +
+			" spec_type text," +
+			" name text," +
+			" value text," +
+			" PRIMARY KEY ((spec_type), name)" +
 			")";
 
 
@@ -305,6 +320,8 @@ public class ClusterConnection
 
 	private final CassandraConfiguration m_cassandraConfiguration;
 
+	private RowSpec m_rowSpec;
+
 
 	public ClusterConnection(CassandraConfiguration cassandraConfig, CassandraClient cassandraClient, EnumSet<Type> clusterType,
 			Multimap<String, String> tagIndexMetricNames)
@@ -458,7 +475,70 @@ public class ClusterConnection
 			psServiceIndexGetEntries = m_session.prepare(SERVICE_INDEX_GET_ENTRIES);
 			psServiceIndexInsertModifiedTime = m_session.prepare(SERVICE_INDEX_INSERT_MODIFIED_TIME);
 		}
+
+		readRowSpec();
 	}
+
+	private void readRowSpec()
+		{
+		ClusterConfiguration clusterConfiguration = m_cassandraClient.getClusterConfiguration();
+
+		TimeUnit rowTimeUnit = TimeUnit.MILLISECONDS;
+		long rowWidth = DEFAULT_ROW_WIDTH;
+		boolean isLegacy = false;
+
+		//We only look at configuration for write clusters.  Decreases the chances of
+		//messing up an existing read cluster.
+		if (m_clusterType.contains(Type.WRITE))
+		{
+			rowTimeUnit = clusterConfiguration.getRowTimeUnit();
+			rowWidth = clusterConfiguration.getRowWidth();
+		}
+
+		ResultSet resultSet = m_session.execute("SELECT value FROM " + SPEC_TABLE_NAME + " WHERE spec_type = 'cluster_config' AND name = 'row_time_unit'");
+		Row rowTimeUnitResult = resultSet.one();
+		if (rowTimeUnitResult != null)
+		{
+			String unit = rowTimeUnitResult.getString(0);
+			if (!LEGACY_UNIT.equals(unit))
+			{
+				rowTimeUnit = TimeUnit.valueOf(unit);
+			}
+			else
+			{
+				isLegacy = true;
+				rowTimeUnit = TimeUnit.MILLISECONDS;
+			}
+		}
+		else if (m_clusterType.contains(Type.WRITE))
+		{
+			String unit = rowTimeUnit.toString();
+
+			//Check if we have any data
+			ResultSet names = m_session.execute("SELECT column1 FROM string_index " +
+					"WHERE key = ? LIMIT 1", serializeString(ROW_KEY_METRIC_NAMES));
+
+			if (names.one() != null)
+			{
+				unit = LEGACY_UNIT;
+				isLegacy = true;
+			}
+
+			m_session.execute("INSERT INTO " + SPEC_TABLE_NAME + " (spec_type, name, value) VALUES ('cluster_config', 'row_time_unit', '" + unit + "')");
+		}
+
+		resultSet = m_session.execute("SELECT value FROM " + SPEC_TABLE_NAME + " WHERE spec_type = 'cluster_config' AND name = 'row_width'");
+		Row rowWidthResult = resultSet.one();
+		if (rowWidthResult != null)
+			rowWidth = Long.parseLong(rowWidthResult.getString(0));
+		else if (m_clusterType.contains(Type.WRITE))
+			m_session.execute("INSERT INTO "+SPEC_TABLE_NAME+" (spec_type, name, value) VALUES ('cluster_config', 'row_width', '"+rowWidth+"')");
+
+		logger.info("RowSpec for {}, Legacy: {}, Unit: {}, Width: {}", m_cassandraClient.getClusterConfiguration().getClusterName(),
+				isLegacy, rowTimeUnit, rowWidth);
+
+		m_rowSpec = new RowSpec(rowWidth, rowTimeUnit, isLegacy);
+		}
 
 	public void close()
 	{
@@ -476,6 +556,11 @@ public class ClusterConnection
 	{
 		return m_cassandraClient.getWriteLoadBalancingPolicy();
 	}
+
+	public RowSpec getRowSpec()
+		{
+		return m_rowSpec;
+		}
 
 	public String getClusterName()
 	{
@@ -528,6 +613,8 @@ public class ClusterConnection
 					session.execute(ROW_KEYS+" "+m_cassandraConfiguration.getCreateWithConfig(ROW_KEYS_NAME));
 					session.execute(TAG_INDEXED_ROW_KEYS+" "+m_cassandraConfiguration.getCreateWithConfig(TAG_INDEXED_ROW_KEYS_NAME));
 					session.execute(ROW_KEY_TIME_INDEX+" "+m_cassandraConfiguration.getCreateWithConfig(ROW_KEY_TIME_INDEX_NAME));
+
+					session.execute(SPEC_TABLE+" "+m_cassandraConfiguration.getCreateWithConfig(SPEC_TABLE_NAME));
 				}
 				catch (Exception e)
 				{

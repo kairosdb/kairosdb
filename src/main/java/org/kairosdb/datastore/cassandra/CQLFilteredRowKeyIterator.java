@@ -31,6 +31,7 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 	private ResultSet m_currentResultSet;
 	private final String m_metricName;
 	private final String m_clusterName;
+	private final RowSpec m_rowSpec;
 	private int m_rawRowKeyCount = 0;
 	private Map<String, Pattern> m_patternFilter;
 	private Set<DataPointsRowKey> m_returnedKeys;  //keep from returning duplicates, querying old and new indexes
@@ -48,6 +49,7 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 		m_filterTags = HashMultimap.create();
 		m_filterTagNames = new HashSet<>();
 		m_patternFilter = new HashMap<>();
+		m_rowSpec = cluster.getRowSpec();
 
 		//Set of tags to pass to the RowKeyResultSetProcessor, it cannot contain
 		//tags that are also specified as regex values
@@ -213,7 +215,7 @@ outer:
 			BoundStatement statement = new BoundStatement(cluster.psRowKeyTimeQuery);
 			statement.setString(0, metricName);
 			statement.setString(1, DATA_POINTS_TABLE_NAME);
-			statement.setTimestamp(2, new Date(CassandraDatastore.calculateRowTime(startTime)));
+			statement.setTimestamp(2, new Date(m_rowSpec.calculateRowTime(startTime)));
 			statement.setTimestamp(3, new Date(endTime));
 			statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
 
@@ -235,10 +237,10 @@ outer:
 			String metricName, long startTime, long endTime)
 	{
 		DataPointsRowKey startKey = new DataPointsRowKey(metricName, m_clusterName,
-				CassandraDatastore.calculateRowTime(startTime), "");
+				m_rowSpec.calculateRowTime(startTime), "");
 
 		DataPointsRowKey endKey = new DataPointsRowKey(metricName, m_clusterName,
-				CassandraDatastore.calculateRowTime(endTime), "");
+				m_rowSpec.calculateRowTime(endTime), "");
 		endKey.setEndSearchKey(true);
 
 		boundStatement.setBytesUnsafe(1, CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(startKey));

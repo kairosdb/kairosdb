@@ -79,10 +79,12 @@ public class Validator
 			validationErrors.addErrorMessage(name + " may not be empty.");
 			return false;
 		}
-		if (value.isJsonArray() && value.getAsJsonArray().size() < 1)
-		{
-			validationErrors.addErrorMessage(name + " may not be an empty array.");
-			return false;
+		if (value.isJsonArray()) {
+			if (value.getAsJsonArray().size() < 1) {
+				validationErrors.addErrorMessage(name + " may not be an empty array.");
+				return false;
+			}
+			return true;
 		}
 		if (!value.isJsonObject() && value.getAsString().isEmpty())
 		{

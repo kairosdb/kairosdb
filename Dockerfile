@@ -1,4 +1,4 @@
-ARG KAIROSDB_VERSION=1.3.0-0.1beta
+ARG KAIROSDB_VERSION=1.3.0-0.2beta
 
 FROM openjdk:8u242-jdk-slim-buster as build
 ARG KAIROSDB_VERSION

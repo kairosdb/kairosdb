@@ -20,7 +20,7 @@
 
 		<dependency org="org.json" name="json" rev="20180130" />
 		<dependency org="com.google.code.gson" name="gson" rev="2.2.4" />
-		<dependency org="junit" name="junit" rev="4.12" conf="test->default" />
+		<dependency org="junit" name="junit" rev="4.13.1" conf="test->default" />
 
 		<dependency org="org.hamcrest" name="hamcrest-library" rev="1.3"
 		            conf="test->default"/>
@@ -50,9 +50,9 @@
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2" />
 		<dependency org="org.slf4j" name="jul-to-slf4j" rev="1.7.2" />
 		<dependency org="org.apache.commons" name="commons-math3" rev="3.2" />
-		<dependency org="commons-io" name="commons-io" rev="2.5" />
+		<dependency org="commons-io" name="commons-io" rev="2.7" />
 		<dependency org="com.beust" name="jcommander" rev="1.35" />
-		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.3.6" />
+		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.5.13" />
 		<dependency org="joda-time" name="joda-time" rev="2.10.6" />
 
 		<dependency org="ch.qos.logback" name="logback-core" rev="1.2.3" />
@@ -63,6 +63,9 @@
 			<exclude org="javax.servlet" name="servlet-api"/>
 			<exclude org="org.agileclick.slickxml" name="slickxml"/>
 			<exclude org="org.agileclick.ultramc" name="ultramc"/>
+			<exclude org="dom4j" name="dom4j"/>
+			<exclude org="org.antlr" name="stringtemplate"/>
+			<exclude org="jaxen" name="jaxen"/>
 		</dependency>
 		<dependency org="dom4j" name="dom4j" rev="1.6.1" conf="build_tools->default"/>
 		<dependency org="org.antlr" name="stringtemplate" rev="3.2.1" conf="build_tools->default"/>

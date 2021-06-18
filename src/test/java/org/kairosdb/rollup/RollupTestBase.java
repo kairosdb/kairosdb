@@ -23,9 +23,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 public abstract class RollupTestBase
 {
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     static final String LOCAL_HOST = "hostname0";
     static final RollupTask TASK1 = createTask("1", "task1");
     static final RollupTask TASK2 = createTask("2", "task2");

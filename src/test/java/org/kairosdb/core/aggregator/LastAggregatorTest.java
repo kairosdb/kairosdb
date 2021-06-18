@@ -27,7 +27,7 @@ import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.testing.ListDataPointGroup;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class LastAggregatorTest
 {

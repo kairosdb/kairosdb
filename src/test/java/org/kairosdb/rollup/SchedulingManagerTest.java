@@ -10,6 +10,8 @@ import org.kairosdb.eventbus.FilterEventBus;
 import org.mockito.Mock;
 import org.quartz.impl.JobDetailImpl;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -37,73 +39,58 @@ public class SchedulingManagerTest extends RollupTestBase
 	@Test
 	public void testConstructor_taskStore_null_invalid() throws RollUpException
 	{
-		expectedException.expect(NullPointerException.class);
-		expectedException.expectMessage("taskStore cannot be null");
-
-		new SchedulingManager(null, assignmentStore, mockScheduler, mockDatastore, mockExecutionService, mockEventBus, mockStatusStore,10, LOCAL_HOST,SERVER_GUID);
+		assertThrows("taskStore cannot be null", NullPointerException.class, () ->
+				new SchedulingManager(null, assignmentStore, mockScheduler, mockDatastore, mockExecutionService, mockEventBus, mockStatusStore, 10, LOCAL_HOST, SERVER_GUID));
 	}
 
 	@Test
 	public void testConstructor_assignmentStore_null_invalid() throws RollUpException
 	{
-		expectedException.expect(NullPointerException.class);
-		expectedException.expectMessage("assignmentStore cannot be null");
-
-		new SchedulingManager(taskStore, null, mockScheduler, mockDatastore, mockExecutionService, mockEventBus,mockStatusStore,10, "hostname", SERVER_GUID);
+		assertThrows("assignmentStore cannot be null", NullPointerException.class, () ->
+			new SchedulingManager(taskStore, null, mockScheduler, mockDatastore, mockExecutionService, mockEventBus,mockStatusStore,10, "hostname", SERVER_GUID));
 	}
 
 	@Test
 	public void testConstructor_scheduler_null_invalid() throws RollUpException
 	{
-		expectedException.expect(NullPointerException.class);
-		expectedException.expectMessage("scheduler cannot be null");
-
-		new SchedulingManager(taskStore, assignmentStore, null, mockDatastore, mockExecutionService, mockEventBus, mockStatusStore,10, "hostname", SERVER_GUID);
+		assertThrows("scheduler cannot be null", NullPointerException.class, () ->
+			new SchedulingManager(taskStore, assignmentStore, null, mockDatastore, mockExecutionService, mockEventBus, mockStatusStore,10, "hostname", SERVER_GUID));
 	}
 
 	@Test
 	public void testConstructor_dataStore_null_invalid() throws RollUpException
 	{
-		expectedException.expect(NullPointerException.class);
-		expectedException.expectMessage("dataStore cannot be null");
-
-		new SchedulingManager(taskStore, assignmentStore, mockScheduler, null, mockExecutionService, mockEventBus, mockStatusStore,10, "hostname", SERVER_GUID);
+		assertThrows("dataStore cannot be null", NullPointerException.class, () ->
+			new SchedulingManager(taskStore, assignmentStore, mockScheduler, null, mockExecutionService, mockEventBus, mockStatusStore,10, "hostname", SERVER_GUID));
 	}
 
 	@Test
 	public void testConstructor_executor_null_invalid() throws RollUpException
 	{
-		expectedException.expect(NullPointerException.class);
-		expectedException.expectMessage("executorService cannot be null");
-
-		new SchedulingManager(taskStore, assignmentStore, mockScheduler, mockDatastore, null, mockEventBus, mockStatusStore,10, "hostname", SERVER_GUID);
+		assertThrows("executorService cannot be null", NullPointerException.class, () ->
+			new SchedulingManager(taskStore, assignmentStore, mockScheduler, mockDatastore, null, mockEventBus, mockStatusStore,10, "hostname", SERVER_GUID));
 	}
 
 	@Test
 	public void testConstructor_hostname_null_invalid() throws RollUpException
 	{
-		expectedException.expect(IllegalArgumentException.class);
-		expectedException.expectMessage("hostname cannot be null or empty");
-
-		new SchedulingManager(taskStore, assignmentStore, mockScheduler, mockDatastore, mockExecutionService, mockEventBus,mockStatusStore,10, null, SERVER_GUID);
+		assertThrows("hostname cannot be null or empty", IllegalArgumentException.class, () ->
+			new SchedulingManager(taskStore, assignmentStore, mockScheduler, mockDatastore, mockExecutionService, mockEventBus,mockStatusStore,10, null, SERVER_GUID));
 	}
 
 	@Test
 	public void testConstructor_hostname_empty_invalid() throws RollUpException
 	{
-		expectedException.expect(IllegalArgumentException.class);
-		expectedException.expectMessage("hostname cannot be null or empty");
+		assertThrows("hostname cannot be null or empty", IllegalArgumentException.class, () ->
+			new SchedulingManager(taskStore, assignmentStore, mockScheduler, mockDatastore, mockExecutionService, mockEventBus,mockStatusStore,10, "", SERVER_GUID));
 
-		new SchedulingManager(taskStore, assignmentStore, mockScheduler, mockDatastore, mockExecutionService, mockEventBus,mockStatusStore,10, "", SERVER_GUID);
 	}
 
 	@Test
 	public void testConstructor_eventBus_null_invalid() throws RollUpException
 	{
-		expectedException.expect(NullPointerException.class);
-		expectedException.expectMessage("eventBus cannot be null");
-
-		new SchedulingManager(taskStore, assignmentStore, mockScheduler, mockDatastore, mockExecutionService, null, mockStatusStore,10, "hostname", SERVER_GUID);
+		assertThrows("eventBus cannot be null", NullPointerException.class, () ->
+			new SchedulingManager(taskStore, assignmentStore, mockScheduler, mockDatastore, mockExecutionService, null, mockStatusStore,10, "hostname", SERVER_GUID));
 	}
 
 	@Test

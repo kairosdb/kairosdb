@@ -126,7 +126,6 @@ def configurePomRule(PomRule pomRule)
 configurePomRule(ivy.createPomRule("pom.xml", ivy.getResolveRule(defaultConfig), ivy.getResolveRule(testConfig)))
 		.setName("project-pom")
 		.setDescription("Use this target to generate a pom used for opening project in IDE")
-		//.alwaysRun()
 
 //------------------------------------------------------------------------------
 //==-- Maven POM Rule --==

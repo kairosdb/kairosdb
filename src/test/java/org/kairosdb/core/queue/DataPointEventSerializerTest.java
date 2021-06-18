@@ -10,7 +10,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.events.DataPointEvent;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  Created by bhawkins on 10/25/16.

@@ -9,13 +9,11 @@ import java.util.Date;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 public class RollupTaskStatusStoreImplTest extends RollupTestBase
 {
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     private static final String HOST1 = "host1";
     private static final String HOST2 = "host2";
     private static final String HOST3 = "host3";
@@ -40,20 +38,16 @@ public class RollupTaskStatusStoreImplTest extends RollupTestBase
     public void test_writeRead_nullId_Invalid()
             throws RollUpException
     {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("id cannot be null or empty");
-
-        store.write(null, new RollupTaskStatus(new Date(), "host"));
+        assertThrows("id cannot be null or empty", IllegalArgumentException.class, () ->
+            store.write(null, new RollupTaskStatus(new Date(), "host")));
     }
 
     @Test
     public void test_writeRead_emptyId_Invalid()
             throws RollUpException
     {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("id cannot be null or empty");
-
-        store.write("", new RollupTaskStatus(new Date(), "host"));
+        assertThrows("id cannot be null or empty", IllegalArgumentException.class, () ->
+            store.write("", new RollupTaskStatus(new Date(), "host")));
     }
 
     @Test

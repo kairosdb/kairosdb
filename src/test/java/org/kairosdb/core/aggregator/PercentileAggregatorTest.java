@@ -33,14 +33,12 @@ import java.util.Random;
 import static java.lang.Math.floor;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.closeTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 public class PercentileAggregatorTest
 {
 	private PercentileAggregator aggregator;
-
-	@Rule
-	public ExpectedException exception = ExpectedException.none();
 
 	@Before
 	public void setUp()
@@ -250,17 +248,17 @@ public class PercentileAggregatorTest
 	@Test
 	public void test_invalidPercentiles()
 	{
-		exception.expect(IllegalArgumentException.class);
-		test_percentileValue_long(5, 10);
+		assertThrows(IllegalArgumentException.class, () ->
+			test_percentileValue_long(5, 10));
 
-		exception.expect(IllegalArgumentException.class);
-		test_percentileValue_double(1.2, 10);
+		assertThrows(IllegalArgumentException.class, () ->
+			test_percentileValue_double(1.2, 10));
 
-		exception.expect(IllegalArgumentException.class);
-		test_percentileValue_mixedTypeValues(-2, 10);
+		assertThrows(IllegalArgumentException.class, () ->
+			test_percentileValue_mixedTypeValues(-2, 10));
 
-		exception.expect(IllegalArgumentException.class);
-		test_percentileValue_long(1.00001, 10);
+		assertThrows(IllegalArgumentException.class, () ->
+			test_percentileValue_long(1.00001, 10));
 	}
 
 }

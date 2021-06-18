@@ -25,13 +25,11 @@ import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
 public class AssignmentManagerTest extends RollupTestBase
 {
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Mock
     private HostManager mockHostManager;
 
@@ -48,64 +46,50 @@ public class AssignmentManagerTest extends RollupTestBase
     @Test
     public void testConstructor_guid_null_invalid() throws RollUpException
     {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("guid cannot be null or empty");
-
-        new AssignmentManager(null, taskStore, assignmentStore, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
+        assertThrows("guid cannot be null or empty", IllegalArgumentException.class, () ->
+            new AssignmentManager(null, taskStore, assignmentStore, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10));
     }
 
     @Test
     public void testConstructor_hostname_empty_invalid() throws RollUpException
     {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("guid cannot be null or empty");
-
-        new AssignmentManager("", taskStore, assignmentStore, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
+        assertThrows("guid cannot be null or empty", IllegalArgumentException.class, () ->
+            new AssignmentManager("", taskStore, assignmentStore, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10));
     }
 
     @Test
     public void testConstructor_taskStore_null_invalid() throws RollUpException
     {
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage("taskStore cannot be null");
-
-        new AssignmentManager("guid", null, assignmentStore, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
+        assertThrows("taskStore cannot be null", NullPointerException.class, () ->
+            new AssignmentManager("guid", null, assignmentStore, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10));
     }
 
     @Test
     public void testConstructor_assignmentStore_null_invalid() throws RollUpException
     {
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage("assignmentStore cannot be null");
-
-        new AssignmentManager("guid", taskStore, null, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
+        assertThrows("assignmentStore cannot be null", NullPointerException.class, () ->
+            new AssignmentManager("guid", taskStore, null, statusStore, mockExecutionService, mockHostManager, balancingAlgorithm, 10));
     }
 
     @Test
     public void testConstructor_statusStore_null_invalid() throws RollUpException
     {
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage("statusStore cannot be null");
-
-        new AssignmentManager("guid", taskStore, assignmentStore, null, mockExecutionService, mockHostManager, balancingAlgorithm, 10);
+        assertThrows("statusStore cannot be null", NullPointerException.class, () ->
+            new AssignmentManager("guid", taskStore, assignmentStore, null, mockExecutionService, mockHostManager, balancingAlgorithm, 10));
     }
 
     @Test
     public void testConstructor_executor_null_invalid() throws RollUpException
     {
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage("executorService cannot be null");
-
-        new AssignmentManager("guid", taskStore, assignmentStore, statusStore,null, mockHostManager, balancingAlgorithm, 10);
+        assertThrows("executorService cannot be null", NullPointerException.class, () ->
+            new AssignmentManager("guid", taskStore, assignmentStore, statusStore,null, mockHostManager, balancingAlgorithm, 10));
     }
 
     @Test
     public void testConstructor_balancing_null_invalid() throws RollUpException
     {
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage("balancing cannot be null");
-
-        new AssignmentManager("guid", taskStore, assignmentStore, statusStore, mockExecutionService, mockHostManager,null, 10);
+        assertThrows("balancing cannot be null", NullPointerException.class, () ->
+            new AssignmentManager("guid", taskStore, assignmentStore, statusStore, mockExecutionService, mockHostManager,null, 10));
     }
 
     @Test

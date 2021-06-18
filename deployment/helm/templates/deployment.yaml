@@ -66,6 +66,17 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
+          env:
+            - name: CASSANDRA_USER
+              valueFrom:
+                secretKeyRef:
+                  name: { { .Values.storage.cassandra.authSecret } }
+                  key: username
+            - name: CASSANDRA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: { { .Values.storage.cassandra.authSecret } }
+                  key: password
           livenessProbe:
             httpGet:
               path: /

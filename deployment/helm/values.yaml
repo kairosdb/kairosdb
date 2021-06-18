@@ -76,6 +76,7 @@ storage:
     enabled: false
     contactPoints: localhost # comma separated list of hosts which can be used as contact points for cassandra.
     port: 9042
+    authSecret: "cassandra-credential-secret"
   h2:
     enabled: true
   hbase:

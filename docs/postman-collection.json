@@ -1,0 +1,629 @@
+{
+	"info": {
+		"_postman_id": "30147479-a1d8-4b74-859b-1b2d0a7cd8df",
+		"name": "KairosDB",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Checks",
+			"item": [
+				{
+					"name": "Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/health/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"health",
+								"status"
+							]
+						},
+						"description": "Returns the status of each health check as JSON."
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/health/status",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"health",
+										"status"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": null,
+							"cookie": [],
+							"body": "[\n    \"JVM-Thread-Deadlock: OK\",\n    \"Datastore-Query: OK\"\n]"
+						}
+					]
+				},
+				{
+					"name": "Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/health/check",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"health",
+								"check"
+							]
+						},
+						"description": "Checks the status of each health check. If all are healthy it returns status 204 otherwise it returns 500. \n\n*This can be configured to return something other than 204 by changing the `kairosdb.health.healthyResponseCode` property.*"
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/health/check",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"health",
+										"check"
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": null
+						}
+					]
+				}
+			],
+			"description": "KairosDB provides REST APIs that show the health of the system.\n\nThere are currently two health checks executed for each API.\n\n- The JVM thread deadlock check verifies that no deadlocks exist in the KairosDB JVM.\n- The Datastore query check performs a query on the data store to ensure that the data store is responding."
+		},
+		{
+			"name": "Query Metrics",
+			"item": [
+				{
+					"name": "Query Data",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/datapoints/query?query",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"datapoints",
+								"query"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Query Data",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/datapoints/query?query=[]",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"datapoints",
+										"query"
+									],
+									"query": [
+										{
+											"key": "query",
+											"value": "[]",
+											"description": "encoded_JSON"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": null,
+							"cookie": [],
+							"body": "{\n    \"queries\": [\n        {\n            \"sample_size\": 14368,\n            \"results\": [\n                {\n                    \"name\": \"abc_123\",\n                    \"group_by\": [\n                        {\n                            \"name\": \"type\",\n                            \"type\": \"number\"\n                        },\n                        {\n                            \"name\": \"tag\",\n                            \"tags\": [\n                                \"host\"\n                            ],\n                            \"group\": {\n                                \"host\": \"server1\"\n                            }\n                        }\n                    ],\n                    \"tags\": {\n                        \"host\": [\n                            \"server1\"\n                        ],\n                        \"customer\": [\n                            \"bar\"\n                        ]\n                    },\n                    \"values\": [\n                        [\n                            1364968800000,\n                            11019\n                        ],\n                        [\n                            1366351200000,\n                            2843\n                        ]\n                    ]\n                }\n            ]\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Query Data Post",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/datapoints/query",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"datapoints",
+								"query"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Query Data Post",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n   \"start_absolute\": 1357023600000,\r\n   \"end_relative\": {\r\n       \"value\": \"5\",\r\n       \"unit\": \"days\"\r\n   },\r\n   \"time_zone\": \"Asia/Kabul\",\r\n   \"metrics\": [\r\n       {\r\n           \"tags\": {\r\n               \"host\": [\"foo\", \"foo2\"],\r\n               \"customer\": [\"bar\"]\r\n           },\r\n           \"name\": \"abc.123\",\r\n           \"limit\": 10000,\r\n           \"aggregators\": [\r\n               {\r\n                   \"name\": \"sum\",\r\n                   \"sampling\": {\r\n                       \"value\": 10,\r\n                       \"unit\": \"minutes\"\r\n                   }\r\n               }\r\n           ]\r\n       },\r\n       {\r\n           \"tags\": {\r\n               \"host\": [\"foo\", \"foo2\"],\r\n               \"customer\": [\"bar\"]\r\n           },\r\n           \"name\": \"xyz.123\",\r\n           \"aggregators\": [\r\n               {\r\n                   \"name\": \"avg\",\r\n                   \"sampling\": {\r\n                       \"value\": 10,\r\n                       \"unit\": \"minutes\"\r\n                   }\r\n               }\r\n           ]\r\n       }\r\n   ]\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/datapoints/query",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"datapoints",
+										"query"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": null,
+							"cookie": [],
+							"body": "{\n    \"queries\": [\n        {\n            \"sample_size\": 14368,\n            \"results\": [\n                {\n                    \"name\": \"abc_123\",\n                    \"group_by\": [\n                        {\n                            \"name\": \"type\",\n                            \"type\": \"number\"\n                        },\n                        {\n                            \"name\": \"tag\",\n                            \"tags\": [\n                                \"host\"\n                            ],\n                            \"group\": {\n                                \"host\": \"server1\"\n                            }\n                        }\n                    ],\n                    \"tags\": {\n                        \"host\": [\n                            \"server1\"\n                        ],\n                        \"customer\": [\n                            \"bar\"\n                        ]\n                    },\n                    \"values\": [\n                        [\n                            1364968800000,\n                            11019\n                        ],\n                        [\n                            1366351200000,\n                            2843\n                        ]\n                    ]\n                }\n            ]\n        }\n    ]\n}"
+						}
+					]
+				}
+			],
+			"description": "Returns a list of metric values based on a set of criteria. Also returns a set of all tag names and values that are found across the data points.\n\nThe time range can be specified with absolute or relative time values. Absolute time values are in milliseconds. Relative time values are specified as an integer duration and a unit. Possible unit values are “milliseconds”, “seconds”, “minutes”, “hours”, “days”, “weeks”, “months”, and “years”. For example, “5 hours” means that metric values submitted 5 hours ago will be returned. The end time is optional. If no end time is specified, the end time is assumed to be now (the current date and time).\n\n#### Grouping\n\nThe results of the query can be grouped together.There are three ways to group the data; by tags, by a time range, and by value. Grouping is done with the group_by property which is an array of one or more groupers.\n\n*Note that grouping by a time range or value can slow down the query.*\n\n#### Aggregators\n\nOptionally you can specify aggregators. Aggregators perform an operation on data points and down samples. For example, you could sum all data points that exist in 5 minute periods.\n\nAggregators can be combined together. For example, you could sum all data points in 5 minute periods then average them for a week period.\n\nAggregators are processed in the order they are specified in the JSON. The output of one is send to the input of the next.\n\n*See the [Aggregators documentation](https://kairosdb.github.io/docs/build/html/restapi/Aggregators.html) for a complete list of aggregators.*\n\n#### Filtering\n\nIt is possible to filter the data returned by specifying a tag. The data returned will only contain data points associated with the specified"
+		},
+		{
+			"name": "Add Data Points",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/datapoints",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"datapoints"
+					]
+				},
+				"description": "Records metric data points\n\n*Note: you can gzip the json and upload with the content type set to application/gzip if you are batching large amounts of data.*"
+			},
+			"response": [
+				{
+					"name": "Success",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\r\n  {\r\n      \"name\": \"archive_file_tracked\",\r\n      \"datapoints\": [[1359788400000, 123], [1359788300000, 13.2], [1359788410000, 23.1]],\r\n      \"tags\": {\r\n          \"host\": \"server1\",\r\n          \"data_center\": \"DC1\"\r\n      },\r\n      \"ttl\": 300\r\n  },\r\n  {\r\n      \"name\": \"impedance\",\r\n      \"type\": \"complex-number\",\r\n      \"datapoints\": [\r\n          [\r\n              1359788400000,\r\n              {\r\n                  \"real\": 2.3,\r\n                  \"imaginary\": 3.4\r\n              }\r\n          ],\r\n          [\r\n              1359788300000,\r\n              {\r\n                  \"real\": 1.1,\r\n                  \"imaginary\": 5\r\n              }\r\n          ]\r\n      ],\r\n      \"tags\": {\r\n          \"host\": \"server1\",\r\n          \"data_center\": \"DC1\"\r\n      }\r\n  },\r\n  {\r\n      \"name\": \"archive_file_search\",\r\n      \"timestamp\": 1359786400000,\r\n      \"value\": 321,\r\n      \"tags\": {\r\n          \"host\": \"server2\"\r\n      }\r\n  }\r\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{baseUrl}}/api/v1/datapoints",
+							"protocol": "http",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"datapoints"
+							]
+						}
+					},
+					"status": "No Content",
+					"code": 204,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				},
+				{
+					"name": "Failure",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\r\n  {\r\n      \"name\": \"archive_file_tracked\",\r\n      \"datapoints\": [[1359788400000, 123], [1359788300000, 13.2], [1359788410000, 23.1]],\r\n      \"tags\": {\r\n          \"host\": \"server1\",\r\n          \"data_center\": \"DC1\"\r\n      },\r\n      \"ttl\": 300\r\n  },\r\n  {\r\n      \"name\": \"impedance\",\r\n      \"type\": \"complex-number\",\r\n      \"datapoints\": [\r\n          [\r\n              1359788400000,\r\n              {\r\n                  \"real\": 2.3,\r\n                  \"imaginary\": 3.4\r\n              }\r\n          ],\r\n          [\r\n              1359788300000,\r\n              {\r\n                  \"real\": 1.1,\r\n                  \"imaginary\": 5\r\n              }\r\n          ]\r\n      ],\r\n      \"tags\": {\r\n          \"host\": \"server1\",\r\n          \"data_center\": \"DC1\"\r\n      }\r\n  },\r\n  {\r\n      \"name\": \"archive_file_search\",\r\n      \"timestamp\": 1359786400000,\r\n      \"value\": 321,\r\n      \"tags\": {\r\n          \"host\": \"server2\"\r\n      }\r\n  }\r\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{baseUrl}}/api/v1/datapoints",
+							"protocol": "http",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"datapoints"
+							]
+						}
+					},
+					"status": "Internal Server Error",
+					"code": 500,
+					"_postman_previewlanguage": "json",
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"errors\": [\n        \"Connect to 10.92.4.1:4242 timed out\"\n    ]\n}"
+				}
+			]
+		},
+		{
+			"name": "Delete Data Points",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/datapoints/delete",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"datapoints",
+						"delete"
+					]
+				},
+				"description": "Delete will perform the query specified in the body and delete all data points returned by the query. Aggregators and groupers have no effect on which data points are deleted.\n\nDelete is designed such that you could perform a query, verify that the data points returned are correct, and issue the delete with that query.\n\n*Note: Delete works for the Cassandra and H2 data store only.*"
+			},
+			"response": [
+				{
+					"name": "Success",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"start_absolute\": 1357023600000,\r\n   \"end_relative\": {\r\n       \"value\": \"5\",\r\n       \"unit\": \"days\"\r\n   },\r\n   \"time_zone\": \"Asia/Kabul\",\r\n   \"metrics\": [\r\n       {\r\n           \"tags\": {\r\n               \"host\": [\"foo\", \"foo2\"],\r\n               \"customer\": [\"bar\"]\r\n           },\r\n           \"name\": \"abc.123\",\r\n           \"limit\": 10000,\r\n           \"aggregators\": [\r\n               {\r\n                   \"name\": \"sum\",\r\n                   \"sampling\": {\r\n                       \"value\": 10,\r\n                       \"unit\": \"minutes\"\r\n                   }\r\n               }\r\n           ]\r\n       },\r\n       {\r\n           \"tags\": {\r\n               \"host\": [\"foo\", \"foo2\"],\r\n               \"customer\": [\"bar\"]\r\n           },\r\n           \"name\": \"xyz.123\",\r\n           \"aggregators\": [\r\n               {\r\n                   \"name\": \"avg\",\r\n                   \"sampling\": {\r\n                       \"value\": 10,\r\n                       \"unit\": \"minutes\"\r\n                   }\r\n               }\r\n           ]\r\n       }\r\n   ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/datapoints/delete",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"datapoints",
+								"delete"
+							]
+						}
+					},
+					"status": "No Content",
+					"code": 204,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				}
+			]
+		},
+		{
+			"name": "Delete Metric",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/metric/{metric_name}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"metric",
+						"{metric_name}"
+					]
+				},
+				"description": "Deletes a metric and all data points associated with the metric.\n\n*Note: Delete works for the Cassandra and H2 data stores only.*"
+			},
+			"response": [
+				{
+					"name": "Success",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/datapoints/delete",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"datapoints",
+								"delete"
+							]
+						}
+					},
+					"status": "No Content",
+					"code": 204,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": null
+				}
+			]
+		},
+		{
+			"name": "Features",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/features",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"features"
+					]
+				},
+				"description": "The Features API returns metadata about various components of KairosDB. For example, this API will return metadata about aggregators and GroupBys.\n\nReturns metadata for all features."
+			},
+			"response": [
+				{
+					"name": "Success",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/features",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"features"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": null,
+					"cookie": [],
+					"body": "[{\r\n    \"name\": \"groupby\",\r\n            \"label\": \"Group By\",\r\n            \"properties\": [{\r\n                    \"name\": \"tag\",\r\n                    \"label\": \"Tag\",\r\n                    \"description\": \"Groups data points by tag names.\",\r\n                    \"properties\": [{\r\n                            \"name\": \"tags\",\r\n                            \"label\": \"Tags\",\r\n                            \"description\": \"A list of tags to group by.\",\r\n                            \"optional\": false,\r\n                            \"type\": \"array\",\r\n                            \"options\": [],\r\n                            \"defaultValue\": \"[]\",\r\n                            \"autocomplete\": \"tags\",\r\n                            \"multiline\": false,\r\n                            \"validations\": [{\r\n                                    \"expression\": \"value.length \\u003e 0\",\r\n                                    \"type\": \"js\",\r\n                                    \"message\": \"Tags can\\u0027t be empty.\"\r\n                            }]\r\n                    }]\r\n            },\r\n            ...\r\n    },\r\n    {\r\n            \"name\": \"aggregators\",\r\n            \"label\": \"Aggregator\",\r\n            \"properties\": [{\r\n                    \"name\": \"avg\",\r\n                    \"label\": \"AVG\",\r\n                    \"description\": \"Averages the data points together.\",\r\n                    \"properties\": [{\r\n                            \"name\": \"align_sampling\",\r\n                            \"label\": \"Align sampling\",\r\n                            \"description\": \"When set to true the time for the aggregated data point for each range will fall on the start of the range instead of being the value for the first data point within that range. Note that align_sampling, align_start_time, and align_end_time are mutually exclusive. If more than one are set, unexpected results will occur.\",\r\n                            \"optional\": false,\r\n                            \"type\": \"boolean\",\r\n                            \"options\": [],\r\n                            \"defaultValue\": \"true\",\r\n                            \"autocomplete\": \"\",\r\n                            \"multiline\": false,\r\n                            \"validations\": []\r\n                    }]\r\n            },\r\n            ...\r\n            }]\r\n    }]"
+				}
+			]
+		},
+		{
+			"name": "List Metric Names",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/metricnames",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"metricnames"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "All metric names",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/metricnames",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"metricnames"
+							]
+						}
+					},
+					"_postman_previewlanguage": "json",
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"results\": [\n        \"archive_file_search\",\n        \"archive_file_tracked\"\n    ]\n}"
+				},
+				{
+					"name": "Metric names with prefix",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/metricnames?prefix=archi",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"metricnames"
+							],
+							"query": [
+								{
+									"key": "prefix",
+									"value": "archi"
+								}
+							]
+						}
+					},
+					"_postman_previewlanguage": "json",
+					"header": null,
+					"cookie": [],
+					"body": "{\n    \"results\": [\n        \"archive_file_search\",\n        \"archive_file_tracked\"\n    ]\n}"
+				}
+			]
+		},
+		{
+			"name": "List Tag Names",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tagnames",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tagnames"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "List Tag Names",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/tagnames",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tagnames"
+							]
+						}
+					},
+					"_postman_previewlanguage": "json",
+					"header": null,
+					"cookie": [],
+					"body": "{\r\n  \"results\": [\r\n    \"host\",\r\n    \"type\"\r\n  ]\r\n}"
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
+}

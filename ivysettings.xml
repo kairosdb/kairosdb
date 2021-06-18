@@ -24,7 +24,7 @@
 		<chain name="default">
 			<resolver ref="central"/>
 			<!--<resolver ref="staging"/>-->
-			<!--<resolver ref="local-m2-publish"/>-->
+			<resolver ref="local-m2-publish"/>
 		</chain>
 	</resolvers>
 </ivysettings>

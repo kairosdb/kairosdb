@@ -114,14 +114,14 @@ public class RelativeTimeTest
 	}
 
 	@Test
-	public void testValueZeroInvalid()
+	public void testValueNegativeInvalid()
 	{
-		RelativeTime time = new RelativeTime(0, "days");
+		RelativeTime time = new RelativeTime(-1, "days");
 		Set<ConstraintViolation<RelativeTime>> violations = BeanValidationHelper.VALIDATOR.validate(time);
 		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
 
 		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("value must be greater than or equal to 1"));
+		assertThat(violationMessages.get(0), equalTo("value must be greater than or equal to 0"));
 	}
 
 	@Test
@@ -131,9 +131,7 @@ public class RelativeTimeTest
 		Set<ConstraintViolation<RelativeTime>> violations = BeanValidationHelper.VALIDATOR.validate(time);
 		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
 
-		assertThat(violationMessages.size(), equalTo(2));
-		/*assertThat(violationMessages.get(1), equalTo("value must be greater than or equal to 1"));
-		assertThat(violationMessages.get(0), equalTo("unit may not be null"));*/
+		assertThat(violationMessages.get(0), equalTo("unit may not be null"));
 	}
 
 	@Test

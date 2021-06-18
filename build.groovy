@@ -483,12 +483,12 @@ def doRun(Rule rule)
 genormDefinition = saw.getDefinition("genormous")
 genormDefinition.set("genorm")
 new SimpleRule("genorm").setDescription("Generate ORM files")
-		.addDepend(ivy.getResolveRule(defaultConfig))
+		.addDepend(ivy.getResolveRule("build_tools"))
 		.setMakeAction("doGenorm")
 
 def doGenorm(Rule rule)
 {
-	resolve = ivy.getResolveRule(defaultConfig)
+	resolve = ivy.getResolveRule("build_tools")
 
 	genormClasspath = new Classpath(resolve.getClasspath())
 	genormDefinition.set("classpath", genormClasspath.toString())

@@ -234,7 +234,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-relative-startTime-value.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "start_relative.value must be greater than or equal to 1");
+		assertBeanValidation(json, "start_relative.value must be greater than or equal to 0");
 	}
 
 	@Test
@@ -242,7 +242,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-relative-endTime-value.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "end_relative.value must be greater than or equal to 1");
+		assertBeanValidation(json, "end_relative.value must be greater than or equal to 0");
 	}
 
 	@Test
@@ -330,7 +330,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-aggregators-sampling-value.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].aggregators[0].sampling.value must be greater than or equal to 1");
+		assertBeanValidation(json, "query.metric[0].aggregators[0].sampling.value must be greater than or equal to 0");
 	}
 
 	@Test
@@ -451,7 +451,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-group_by-time-range_size_value.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].group_by[0].range_size.value must be greater than or equal to 1");
+		assertBeanValidation(json, "query.metric[0].group_by[0].range_size.value must be greater than or equal to 0");
 	}
 
 	@Test
@@ -475,7 +475,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-group_by-value-range_size.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].group_by[0].range_size.value must be greater than or equal to 1");
+		assertBeanValidation(json, "query.metric[0].group_by[0].range_size.value must be greater than or equal to 0");
 	}
 
 	@Test

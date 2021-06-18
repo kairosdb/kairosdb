@@ -33,6 +33,8 @@ public class DSEnvelope implements GenOrmDSEnvelope
 		
 	/**
 		Method for overriding the standard key generator
+	 	@param table Name of table to apply generator to
+	 	@param generator Key generator to use
 	*/
 	public void setKeyGenerator(String table, GenOrmKeyGenerator generator)
 		{

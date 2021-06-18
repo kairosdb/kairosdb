@@ -59,12 +59,14 @@
 		<dependency org="ch.qos.logback" name="logback-classic" rev="1.2.3" />
 
 		<!--Genormous dependencies-->
-		<dependency org="org.agileclick.genorm" name="genormous" rev="1.6.4.jdbc41">
+		<dependency org="org.agileclick.genorm" name="genormous" rev="1.6.5.jdbc41" conf="default,build_tools->default">
 			<exclude org="javax.servlet" name="servlet-api"/>
 			<exclude org="org.agileclick.slickxml" name="slickxml"/>
 			<exclude org="org.agileclick.ultramc" name="ultramc"/>
 		</dependency>
-		<dependency org="jaxen" name="jaxen" rev="1.1.6" transitive="false">
+		<dependency org="dom4j" name="dom4j" rev="1.6.1" conf="build_tools->default"/>
+		<dependency org="org.antlr" name="stringtemplate" rev="3.2.1" conf="build_tools->default"/>
+		<dependency org="jaxen" name="jaxen" rev="1.1.6" transitive="false" conf="build_tools->default">
 			<artifact name="jaxen" type="jar"/>
 		</dependency>
 

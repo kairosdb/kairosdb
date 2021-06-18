@@ -12,7 +12,7 @@
 				{
 					"name": "time",
 					"range_size": {
-						"value": "0",
+						"value": "-1",
 						"unit": "minutes"
 					},
 					"group_count": "1"

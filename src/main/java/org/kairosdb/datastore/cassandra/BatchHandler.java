@@ -28,6 +28,8 @@ import java.util.Map;
  */
 public class BatchHandler extends RetryCallable
 {
+	/* Cassandra MAX_TTL in seconds */
+	private static final int MAX_TTL_IN_SECONDS = 630720000;
 	public static final Logger logger = LoggerFactory.getLogger(BatchHandler.class);
 	public static final Logger failedLogger = LoggerFactory.getLogger("failed_logger");
 
@@ -113,6 +115,11 @@ public class BatchHandler extends RetryCallable
 				// the resulting aligned ttl is the former calculated ttl minus the datapoint's age
 				ttl = ttl - datapointAgeInSeconds;
 				logger.trace("alligned ttl (seconds): {}", ttl);
+				
+				if (ttl >= MAX_TTL_IN_SECONDS) {
+					logger.warn("ttl ({} seconds) for {} with tags {} is bigger than allowed Cassandra MAX_TTL ({} seconds)", datapointAgeInSeconds, metricName, tags, MAX_TTL_IN_SECONDS);
+					continue;
+				}
 				// if the aligned ttl is negative, the datapoint is already dead
 				if (ttl <= 0)
 				{

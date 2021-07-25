@@ -2,10 +2,16 @@
 Cassandra Schema
 ================
 
-The cassandra schema consists of 3 column families 
-  * data_points - where the data is kept.
-  * row_key_index - index to lookup what rows to get during a query.
-  * string_index - used to answer the query of what tags and metrics are in the system.
+The cassandra schema consists of 7 column families, 8 if you have the legacy row_key_index.
+
+* data_points - where the data is kept.
+* row_key_index - (legacy) index to lookup what rows to get during a query.
+* row_key_time_index - Index for what time frame a metrics is stored in.
+* row_keys - Index of row keys for data_points tables.
+* tag_indexed_row_keys - Used to index high cardinality tags for faster lookup.
+* string_index - Used to answer the query of what metrics are in the system.
+* service_index - Used for storing metadata.
+* spec - Place to store internal settings like row width.
 
 
 ---------------
@@ -17,39 +23,78 @@ Data Points Column Family
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The row key is made up of 3 parts all concatenated together.
-  1. Metric name (UTF-8)
-  2. Row time stamp.  The time stamp for the row to begin at.
-  3. Datastore type.
-  4. Concatenated string of tags (tag1=val1:tag2=val2...)
 
-The column name is 32 bits of data.  The first 31 bits is the unsigned time offset from the row key (in milliseconds).  The last bit is unused.
+1. Metric name (UTF-8) null terminated.
+2. Row time stamp (64 bits).  The time stamp for the row to begin at.
+3. Datastore type (UTF-8).  Length preceded (1 byte) utf-8 string with null at the end.  Yes kinda redundant but it works nice.
+4. Concatenated string of tags (tag1=val1:tag2=val2...) (UTF-8)
 
-The value of the column varies depending on the type of value.  The exact format is defined by the ``writeValueToBuffer`` method on the DataPoint.
+The column name is different depending on of it from the legacy row_key_index or not.
 
-The length of the row is set to exactly three weeks of data or 1,814,400,000 columns.
+**Legacy Column Name**:
+The column name is 32 bits of data.  The first 31 bits is the unsigned time offset
+from the row key (in milliseconds).  The last bit is unused.
+
+**Current Column Name**: 32 bit value (no shifting and unsigned) that represents the number of time units
+from the row key timestamp.  The time unit is either seconds or milliseconds
+depending on how the cluster was configured when first created.
+
+The value of the column varies depending on the type of value.  The exact format
+is defined by the ``writeValueToBuffer`` method on the DataPoint.
+
+The length of the row defaults to exactly three weeks of data or 1,814,400,000 columns.
+The width of the row can be changed in the cluster configuration when the cluster
+is created.  It cannot be changed after the schema has been created.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Row Key Index Column Family
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This row is primarily used when querying the data.  The row key is the name of the metric.  The names of the columns are the row keys from the data_points column family.  The columns have no values.
+**Legacy** This row is primarily used when querying the data.  The row key is the name of
+the metric.  The names of the columns are the row keys from the data_points column
+family.  The columns have no values.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Row Key Time Index Column Family
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+^^^^^^^^^^^^^^^^^^^^^^
+Row Keys Column Family
+^^^^^^^^^^^^^^^^^^^^^^
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Tag Indexed Row Keys Column Family
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 String Index Column Family
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Just an index to lookup what metric names, tag names and tag values are in the system.  There are three rows one for each of the above mentioned.
+Just an index to lookup what metric names, tag names and tag values are in the
+system.  There are three rows one for each of the above mentioned.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Service Index Column Family
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+^^^^^^^^^^^^^^^^^^
+Spec Column Family
+^^^^^^^^^^^^^^^^^^
 
 ----------------------
 How the Schema is Used
 ----------------------
 
-When a query comes in a column slice of the row key index is done for the particular metric, this returns the rows that will contain the data.  The row keys are then filtered based on if any tags were specified.  A multi get hector call is made to fetch the data from the various rows.  If any row has more data then the remainder is fetched individually using a larger buffer.
+When a query comes in a column slice of the row key index is done for the
+particular metric, this returns the rows that will contain the data.  The row
+keys are then filtered based on if any tags were specified.  A multi get hector
+call is made to fetch the data from the various rows.  If any row has more data
+then the remainder is fetched individually using a larger buffer.
 
-----------------------------
-Comparison to OpenTSDB HBase
-----------------------------
+--------------------------------
+Row width and second granularity
+--------------------------------
 
-For one we do not use id's for strings.  The string data (metric names and tags) are written to row keys and the appropriate indexes.  Because Cassandra has much wider rows there are far fewer keys written to the database.  The space saved by using id's is minor and by not using id's we avoid having to use any kind of locks across the cluster.
 
-As mentioned the Cassandra has wider row which are set to 3 weeks.

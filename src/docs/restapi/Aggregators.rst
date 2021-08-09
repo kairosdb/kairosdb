@@ -322,9 +322,11 @@ JS Aggregator
 .. js:data:: js_filter
 .. js:data:: js_range
 
-	The JS Aggregator is provided as a thrid party module found here
+	The JS Aggregator is provided as a third party module found here
 
 	https://github.com/Kratos-ISE/kise-kairosdb-module/
 
 	The module requires Java 8 and provides a way to pass javascript code as the
 	aggregator.
+
+	Note. this project is now out of date with current version of Kairos.

@@ -18,6 +18,7 @@ In order to publish events you will need to inject into your code an instance of
 that you will be publishing.
 
 .. code-block:: java
+
 	Publisher<DataPointEvent> publisher = eventBus.createPublisher(DataPointEvent.class);
 
 The publisher that is returned should be a long lived object.
@@ -32,6 +33,7 @@ argument method with the `@Subscribe` annotation.  The argument of the method is
 type of event you want to receive.  Here is an example from `CassandraDatastore.java`
 
 .. code-block:: java
+
 	@Subscribe
 	public void putDataPoint(DataPointEvent dataPointEvent) throws DatastoreException
 

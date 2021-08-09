@@ -15,8 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static java.util.Objects.requireNonNull;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class HostManager implements KairosDBService
 {
@@ -26,7 +26,7 @@ public class HostManager implements KairosDBService
     private static final String SERVICE_KEY = "Active";
     private static final String DELAY = "kairosdb.host_service_manager.check_delay_time_millseconds";
     private static final String INACTIVE_TIME = "kairosdb.host_service_manager.inactive_time_seconds";
-    public static final String HOST_MANAGER_SERVICE_EXECUTOR = "HostManagerServiceExecutor";
+    static final String HOST_MANAGER_SERVICE_EXECUTOR = "HostManagerServiceExecutor";
 
     private final ServiceKeyStore keyStore;
     private final String hostname;
@@ -35,6 +35,7 @@ public class HostManager implements KairosDBService
     private ScheduledExecutorService executorService;
 
     private volatile Map<String, ServiceKeyValue> activeHosts = new HashMap<>();
+    private volatile boolean hostListChanged;
 
     @Inject
     public HostManager(ServiceKeyStore keyStore,
@@ -42,11 +43,11 @@ public class HostManager implements KairosDBService
             @Named(DELAY) long delay, @Named("HOSTNAME") String hostName, @Named(INACTIVE_TIME) long inactiveTime,
             @Named(Main.KAIROSDB_SERVER_GUID) String guid)
     {
-        this.keyStore = checkNotNull(keyStore, "keyStore cannot be null");
-        this.executorService = checkNotNull(executorService, "executorService cannot be null");
-        this.hostname = checkNotNullOrEmpty(hostName, "hostname cannot be null or empty");
+        this.keyStore = requireNonNull(keyStore, "keyStore cannot be null");
+        this.executorService = requireNonNull(executorService, "executorService cannot be null");
+        this.hostname = requireNonNullOrEmpty(hostName, "hostname cannot be null or empty");
         this.inactiveTimeSeconds = inactiveTime;
-        this.guid = checkNotNullOrEmpty(guid, "guid cannot be null or empty");
+        this.guid = requireNonNullOrEmpty(guid, "guid cannot be null or empty");
 
         executorService.scheduleWithFixedDelay(new CheckChanges(), 0, delay, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
@@ -78,8 +79,14 @@ public class HostManager implements KairosDBService
                 }
             }
 
+            hosts = getHostsFromKeyStore();
+            if (!activeHosts.equals(hosts)) {
+                logger.debug("Hosts list changed");
+                hostListChanged = true;
+            }
+
             // update cache
-            activeHosts = getHostsFromKeyStore();
+            activeHosts = hosts;
         }
         catch (Throwable e) {
             logger.error("Could not access keystore " + SERVICE + ":" + SERVICE_KEY);
@@ -107,6 +114,16 @@ public class HostManager implements KairosDBService
     public Map<String, ServiceKeyValue> getActiveKairosHosts()
     {
         return ImmutableMap.copyOf(activeHosts);
+    }
+
+    /**
+     * Returns true if the host list has changed since last called and resets the value to false.
+     */
+    public boolean acknowledgeHostListChanged()
+    {
+        boolean changed = hostListChanged;
+        hostListChanged = false;
+        return changed;
     }
 
     @Override

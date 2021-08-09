@@ -14,7 +14,7 @@
 
 package org.kairosdb.core.datastore;
 
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public enum TimeUnit
 {
@@ -29,7 +29,7 @@ public enum TimeUnit
 
 	public static TimeUnit from(String value)
 	{
-		checkNotNullOrEmpty(value);
+		requireNonNullOrEmpty(value);
 		for (TimeUnit unit : values())
 		{
 			if (unit.toString().equalsIgnoreCase(value))

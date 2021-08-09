@@ -94,6 +94,8 @@ public class CachedSearchResultTest
 		rows.get(1).close();
 		rows.get(2).close();
 
+		csResult.close();
+
 		//Re-open cached file and verify the data is the same.
 		csResult =
 				CachedSearchResult.openCachedSearchResult("metric1", tempFile, 100, dataPointFactory, true);
@@ -111,6 +113,8 @@ public class CachedSearchResultTest
 		rows.get(0).close();
 		rows.get(1).close();
 		rows.get(2).close();
+
+		csResult.close();
 
 	}
 

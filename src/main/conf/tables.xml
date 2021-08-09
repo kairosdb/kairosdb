@@ -98,7 +98,6 @@
 			</sql>
 		</table_query>
 
-
 		<table_query name="service_keys" result_type="multi">
 			<input>
 				<param name="service" type="string" test="foo"/>
@@ -200,6 +199,20 @@
 
 	<!-- ======================================================================= -->
 	<queries>
+		<query name="metric_tag_values">
+			<input>
+				<param name="metric_name" type="string" test="foo"/>
+				<param name="tag_name" type="string" test="host"/>
+			</input>
+			<return>
+				<param name="tag_value" type="string"/>
+			</return>
+			<sql>
+				select "tag_value" from metric_tag
+				where "metric_id" = ? and "tag_name" = ?
+			</sql>
+		</query>
+
 		<query name="metric_names">
 			<input>
 			</input>
@@ -261,7 +274,7 @@
 				where
 				mt."metric_id" = m."id"
 				and m."name" = ?
-				group by m."id"
+				group by m."id", m."type"
 			</sql>
 		</query>
 
@@ -285,7 +298,7 @@
 				mt."metric_id" = m."id"
 				and m."name" = ?
 				%tags%
-				group by m."id" having count(0) = ?
+				group by m."id", m."type" having count(0) = ?
 			</sql>
 		</query>
 

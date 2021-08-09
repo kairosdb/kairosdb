@@ -16,28 +16,21 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Session;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.SetMultimap;
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.theories.suppliers.TestedOn;
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.TestDataPointFactory;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.kairosdb.core.*;
 import org.kairosdb.core.datapoints.LongDataPoint;
-import org.kairosdb.core.datastore.CachedSearchResult;
-import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.DataPointRow;
-import org.kairosdb.core.datastore.DatastoreMetricQuery;
-import org.kairosdb.core.datastore.DatastoreQuery;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.datastore.QueryQueuingManager;
-import org.kairosdb.core.datastore.ServiceKeyValue;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.core.queue.MemoryQueueProcessor;
@@ -47,20 +40,11 @@ import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.IngestExecutorService;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.text.ParseException;
+import java.util.*;
 import java.util.concurrent.Executors;
 
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -74,6 +58,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 {
 	private static final String ROW_KEY_TEST_METRIC = "row_key_test_metric";
 	private static final String ROW_KEY_BIG_METRIC = "row_key_big_metric";
+	private static final String TAG_INDEXED_ROW_KEY_METRIC = "tag_indexed_row_key_metric";
 
 	private static final int MAX_ROW_READ_SIZE = 1024;
 	private static final int OVERFLOW_SIZE = MAX_ROW_READ_SIZE * 2 + 10;
@@ -82,8 +67,9 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	private static Random random = new Random();
 	private static CassandraDatastore s_datastore;
 	private static long s_dataPointTime;
-	private static final HashMultimap<String,String> EMPTY_MAP = HashMultimap.create();
-	private static Schema m_schema;
+	public static final HashMultimap<String,String> EMPTY_MAP = HashMultimap.create();
+	private static ClusterConnection m_clusterConnection;
+	private static RowSpec m_rowSpec;
 
 	private static void putDataPoints(DataPointSet dps) throws DatastoreException
 	{
@@ -146,6 +132,43 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		putDataPoints(dpSet);
 
+		metricNames.add(TAG_INDEXED_ROW_KEY_METRIC);
+
+		dpSet = new DataPointSet(TAG_INDEXED_ROW_KEY_METRIC);
+		dpSet.addTag("host", "A");
+		dpSet.addTag("client", "foo");
+
+		dpSet.addDataPoint(new LongDataPoint(s_dataPointTime, 42));
+
+		putDataPoints(dpSet);
+
+
+		dpSet = new DataPointSet(TAG_INDEXED_ROW_KEY_METRIC);
+		dpSet.addTag("host", "B");
+		dpSet.addTag("client", "foo");
+
+		dpSet.addDataPoint(new LongDataPoint(s_dataPointTime, 42));
+
+		putDataPoints(dpSet);
+
+
+		dpSet = new DataPointSet(TAG_INDEXED_ROW_KEY_METRIC);
+		dpSet.addTag("host", "C");
+		dpSet.addTag("client", "bar");
+
+		dpSet.addDataPoint(new LongDataPoint(s_dataPointTime, 42));
+
+		putDataPoints(dpSet);
+
+
+		dpSet = new DataPointSet(TAG_INDEXED_ROW_KEY_METRIC);
+		dpSet.addTag("host", "D");
+		dpSet.addTag("client", "bar");
+
+		dpSet.addDataPoint(new LongDataPoint(s_dataPointTime, 42));
+
+		putDataPoints(dpSet);
+
 
 		// NOTE: This data will be deleted by delete tests. Do not expect it to be there.
 		metricNames.add("MetricToDelete");
@@ -153,7 +176,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addTag("host", "A");
 		dpSet.addTag("client", "bar");
 
-		long rowKeyTime = CassandraDatastore.calculateRowTime(s_dataPointTime);
+		long rowKeyTime = m_rowSpec.calculateRowTime(s_dataPointTime);
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime, 13));
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + 1000, 14));
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + 2000, 15));
@@ -168,9 +191,9 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addTag("client", "bar");
 
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime, 13));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + CassandraDatastore.ROW_WIDTH, 14));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * CassandraDatastore.ROW_WIDTH), 15));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * CassandraDatastore.ROW_WIDTH), 16));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + m_rowSpec.getRowWidthInMillis(), 14));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * m_rowSpec.getRowWidthInMillis()), 15));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * m_rowSpec.getRowWidthInMillis()), 16));
 
 		putDataPoints(dpSet);
 
@@ -181,9 +204,9 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addTag("client", "bar");
 
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime, 13));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + CassandraDatastore.ROW_WIDTH, 14));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * CassandraDatastore.ROW_WIDTH), 15));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * CassandraDatastore.ROW_WIDTH), 16));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + m_rowSpec.getRowWidthInMillis(), 14));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * m_rowSpec.getRowWidthInMillis()), 15));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * m_rowSpec.getRowWidthInMillis()), 16));
 
 		putDataPoints(dpSet);
 
@@ -206,7 +229,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addTag("host", "A");
 		dpSet.addTag("client", "bar");
 
-		rowKeyTime = CassandraDatastore.calculateRowTime(s_dataPointTime);
+		rowKeyTime = m_rowSpec.calculateRowTime(s_dataPointTime);
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime, 13));
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + 1000, 14));
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + 2000, 15));
@@ -221,9 +244,9 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addTag("client", "bar");
 
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime, 13));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + CassandraDatastore.ROW_WIDTH, 14));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * CassandraDatastore.ROW_WIDTH), 15));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * CassandraDatastore.ROW_WIDTH), 16));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + m_rowSpec.getRowWidthInMillis(), 14));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * m_rowSpec.getRowWidthInMillis()), 15));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * m_rowSpec.getRowWidthInMillis()), 16));
 
 		putDataPoints(dpSet);
 
@@ -234,9 +257,9 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		dpSet.addTag("client", "bar");
 
 		dpSet.addDataPoint(new LongDataPoint(rowKeyTime, 13));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + CassandraDatastore.ROW_WIDTH, 14));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * CassandraDatastore.ROW_WIDTH), 15));
-		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * CassandraDatastore.ROW_WIDTH), 16));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + m_rowSpec.getRowWidthInMillis(), 14));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (2 * m_rowSpec.getRowWidthInMillis()), 15));
+		dpSet.addDataPoint(new LongDataPoint(rowKeyTime + (3 * m_rowSpec.getRowWidthInMillis()), 16));
 
 		putDataPoints(dpSet);
 
@@ -255,57 +278,84 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	}
 
 	@BeforeClass
-	public static void setupDatastore() throws InterruptedException, DatastoreException
+	public static void setupDatastore() throws InterruptedException, DatastoreException, ParseException
 	{
 		String cassandraHost = "localhost";
 		if (System.getenv("CASSANDRA_HOST") != null)
 			cassandraHost = System.getenv("CASSANDRA_HOST");
 
-		CassandraConfiguration configuration = new CassandraConfiguration("kairosdb_test");
-		configuration.setHostList(cassandraHost);
-		CassandraClient client = new CassandraClientImpl(configuration);
-		m_schema = new Schema(client);
-		Session session = m_schema.getSession();
+		ImmutableMap<String, ? extends Object> configMap = ImmutableMap.<String, Object>builder()
+				.put("kairosdb.datastore.cassandra.write_cluster.keyspace", "kairosdb_test")
+				.put("kairosdb.datastore.cassandra.write_cluster.cql_host_list", Collections.singletonList(cassandraHost))
+				.build();
+
+		KairosRootConfig config = new KairosRootConfig();
+		config.load(configMap);
+
+		CassandraConfiguration configuration = new CassandraConfiguration(config);
+		CassandraClientImpl client = new CassandraClientImpl(configuration.getWriteCluster());
+		client.init();
+		m_clusterConnection = new ClusterConnection(configuration, client,
+				EnumSet.of(ClusterConnection.Type.WRITE, ClusterConnection.Type.META),
+				ImmutableMultimap.of(TAG_INDEXED_ROW_KEY_METRIC, "*")).startup(false);
+		m_rowSpec = m_clusterConnection.getRowSpec();
 		BatchStats batchStats = new BatchStats();
 		DataCache<DataPointsRowKey> rowKeyCache = new DataCache<>(1024);
-		DataCache<String> metricNameCache = new DataCache<>(1024);
+		DataCache<TimedString> metricNameCache = new DataCache<>(1024);
 
 		CassandraModule.CQLBatchFactory cqlBatchFactory = new CassandraModule.CQLBatchFactory()
 		{
 			@Override
 			public CQLBatch create()
 			{
-				return new CQLBatch(ConsistencyLevel.QUORUM, session, m_schema,
-						batchStats, client.getLoadBalancingPolicy());
+				return new CQLBatch(ConsistencyLevel.QUORUM, m_clusterConnection,
+						batchStats, client.getWriteLoadBalancingPolicy());
 			}
 		};
 
 		s_datastore = new CassandraDatastore(
-				client,
 				configuration,
-				m_schema,
-				session,
+				m_clusterConnection,
+				m_clusterConnection,
+				Collections.emptyList(),
 				dataPointFactory,
 				new MemoryQueueProcessor(Executors.newSingleThreadExecutor(), 1000, 10000, 10, 500),
-				new IngestExecutorService(s_eventBus, 1),
+				new IngestExecutorService(1),
 				new CassandraModule.BatchHandlerFactory()
 				{
 					@Override
-					public BatchHandler create(List<DataPointEvent> events, EventCompletionCallBack callBack, boolean fullBatch)
+					public BatchHandler create(List<DataPointEvent> events, EventCompletionCallBack callBack, boolean fullBatch, RowSpec rowSpec)
 					{
 						return new BatchHandler(events, callBack,
 								configuration, rowKeyCache, metricNameCache,
-								s_eventBus, cqlBatchFactory);
+								s_eventBus, cqlBatchFactory, rowSpec);
 					}
 				},
 				new CassandraModule.DeleteBatchHandlerFactory()
 				{
 					@Override
 					public DeleteBatchHandler create(String metricName, SortedMap<String,
-							String> tags, List<DataPoint> dataPoints, EventCompletionCallBack callBack)
+							String> tags, List<DataPoint> dataPoints, EventCompletionCallBack callBack, RowSpec rowSpec)
 					{
 						return new DeleteBatchHandler(metricName, tags, dataPoints,
-								callBack, cqlBatchFactory);
+								callBack, rowSpec, cqlBatchFactory);
+					}
+				},
+				new CassandraModule.CQLFilteredRowKeyIteratorFactory()
+				{
+					@Override
+					public CQLFilteredRowKeyIterator create(ClusterConnection cluster,
+							String metricName, long startTime, long endTime,
+							SetMultimap<String, String> filterTags) throws DatastoreException
+					{
+						return new CQLFilteredRowKeyIterator(cluster, metricName,
+								startTime, endTime, filterTags, "");
+					}
+				},
+				new CassandraModule.CQLBatchFactory() {
+					@Override
+					public CQLBatch create() {
+						return null;
 					}
 				});
 
@@ -313,6 +363,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				new QueryQueuingManager(1, "hostname"),
 				dataPointFactory, false);
 
+		DatastoreTestHelper.s_datastore.init();
 		s_eventBus.register(s_datastore);
 
 		loadCassandraData();
@@ -370,6 +421,63 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
 
 		assertEquals(2, keys.size());
+	}
+
+	@Test
+	public void test_getKeysForQuery_TagIndexedRowKeys() throws DatastoreException
+	{
+		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(TAG_INDEXED_ROW_KEY_METRIC,
+				HashMultimap.create(), s_dataPointTime, s_dataPointTime);
+
+		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
+
+		assertEquals(4, keys.size());
+	}
+
+	@Test
+	public void test_getKeysForQuery_withFilter_TagIndexedRowKeys() throws DatastoreException
+	{
+		SetMultimap<String, String> tagFilter = HashMultimap.create();
+		tagFilter.put("client", "bar");
+
+		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(TAG_INDEXED_ROW_KEY_METRIC,
+				tagFilter, s_dataPointTime, s_dataPointTime);
+
+		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
+
+		assertEquals(2, keys.size());
+	}
+
+	@Test
+	public void testQueryTagIndexedRowKeyMetric() throws DatastoreException
+	{
+		Map<String, String> tags = new TreeMap<>();
+		tags.put("client", "foo");
+		QueryMetric tagFilteredQueryMetric = new QueryMetric(0, 0, TAG_INDEXED_ROW_KEY_METRIC);
+		tagFilteredQueryMetric.setTags(tags);
+
+		DatastoreQuery tagFilteredQuery = DatastoreTestHelper.s_datastore.createQuery(tagFilteredQueryMetric);
+
+		List<DataPointGroup> results = tagFilteredQuery.execute();
+
+		assertThat(results.size(), CoreMatchers.equalTo(1));
+		DataPointGroup dpg = results.get(0);
+		assertThat(dpg.getName(), is(TAG_INDEXED_ROW_KEY_METRIC));
+		assertThat(Iterators.size(dpg), is(2));
+
+		tagFilteredQuery.close();
+
+		QueryMetric unfilteredQueryMetric = new QueryMetric(0, 0, TAG_INDEXED_ROW_KEY_METRIC);
+		DatastoreQuery unfilteredQuery = DatastoreTestHelper.s_datastore.createQuery(unfilteredQueryMetric);
+
+		results = unfilteredQuery.execute();
+
+		assertThat(results.size(), CoreMatchers.equalTo(1));
+		dpg = results.get(0);
+		assertThat(dpg.getName(), is(TAG_INDEXED_ROW_KEY_METRIC));
+		assertThat(Iterators.size(dpg), is(4));
+
+		unfilteredQuery.close();
 	}
 
 	@Test
@@ -468,7 +576,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@Test
 	public void test_deleteDataPoints_DeleteColumnsSpanningRows_rowsLeft() throws IOException, DatastoreException, InterruptedException
 	{
-		long rowKeyTime = CassandraDatastore.calculateRowTime(s_dataPointTime);
+		long rowKeyTime = m_rowSpec.calculateRowTime(s_dataPointTime);
 		String metricToDelete = "MetricToPartiallyDelete";
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 
@@ -478,7 +586,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(rows.size(), equalTo(4));
 
 		DatastoreMetricQuery deleteQuery = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L,
-				rowKeyTime + (3 * CassandraDatastore.ROW_WIDTH - 1));
+				rowKeyTime + (3 * m_rowSpec.getRowWidthInMillis() - 1));
 		s_datastore.deleteDataPoints(deleteQuery);
 		Thread.sleep(2000);
 
@@ -499,7 +607,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@Test
 	public void test_deleteDataPoints_DeleteColumnWithinRow() throws IOException, DatastoreException, InterruptedException
 	{
-		long rowKeyTime = CassandraDatastore.calculateRowTime(s_dataPointTime);
+		long rowKeyTime = m_rowSpec.calculateRowTime(s_dataPointTime);
 		String metricToDelete = "YetAnotherMetricToDelete";
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete,
 				EMPTY_MAP, rowKeyTime, rowKeyTime + 2000);
@@ -530,7 +638,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@Test
 	public void test_deleteDataPoints_DeleteEntireRow2() throws IOException, DatastoreException, InterruptedException
 	{
-		m_schema.psDataPointsDeleteRange = null;
+		m_clusterConnection.psDataPointsDeleteRange = null;
 		String metricToDelete = "MetricToDelete2";
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, Long.MIN_VALUE, Long.MAX_VALUE);
 
@@ -560,7 +668,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@Test
 	public void test_deleteDataPoints_DeleteColumnsSpanningRows2() throws IOException, DatastoreException, InterruptedException
 	{
-		m_schema.psDataPointsDeleteRange = null;
+		m_clusterConnection.psDataPointsDeleteRange = null;
 		String metricToDelete = "OtherMetricToDelete2";
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, Long.MIN_VALUE, Long.MAX_VALUE);
 
@@ -589,8 +697,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@Test
 	public void test_deleteDataPoints_DeleteColumnsSpanningRows_rowsLeft2() throws IOException, DatastoreException, InterruptedException
 	{
-		m_schema.psDataPointsDeleteRange = null;
-		long rowKeyTime = CassandraDatastore.calculateRowTime(s_dataPointTime);
+		m_clusterConnection.psDataPointsDeleteRange = null;
+		long rowKeyTime = m_rowSpec.calculateRowTime(s_dataPointTime);
 		String metricToDelete = "MetricToPartiallyDelete2";
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 
@@ -600,7 +708,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		assertThat(rows.size(), equalTo(4));
 
 		DatastoreMetricQuery deleteQuery = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L,
-				rowKeyTime + (3 * CassandraDatastore.ROW_WIDTH - 1));
+				rowKeyTime + (3 * m_rowSpec.getRowWidthInMillis() - 1));
 		s_datastore.deleteDataPoints(deleteQuery);
 		Thread.sleep(2000);
 
@@ -621,8 +729,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	@Test
 	public void test_deleteDataPoints_DeleteColumnWithinRow2() throws IOException, DatastoreException, InterruptedException
 	{
-		m_schema.psDataPointsDeleteRange = null;
-		long rowKeyTime = CassandraDatastore.calculateRowTime(s_dataPointTime);
+		m_clusterConnection.psDataPointsDeleteRange = null;
+		long rowKeyTime = m_rowSpec.calculateRowTime(s_dataPointTime);
 		String metricToDelete = "YetAnotherMetricToDelete2";
 		DatastoreMetricQuery query = new DatastoreMetricQueryImpl(metricToDelete,
 				EMPTY_MAP, rowKeyTime, rowKeyTime + 2000);

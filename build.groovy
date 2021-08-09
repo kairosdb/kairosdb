@@ -21,6 +21,7 @@ import tablesaw.rules.Rule
 import tablesaw.rules.SimpleRule
 
 import javax.swing.*
+import java.util.regex.Pattern
 
 println("===============================================")
 
@@ -28,7 +29,7 @@ saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
 programName = "kairosdb"
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "1.2.1"
+version = "1.3.0"
 release = saw.getProperty("KAIROS_RELEASE_NUMBER", "1") //package release number
 summary = "KairosDB"
 description = """\
@@ -47,7 +48,21 @@ saw.setProperty(PomRule.URL_PROPERTY, "http://kairosdb.org")
 saw = Tablesaw.getCurrentTablesaw()
 saw.includeDefinitionFile("definitions.xml")
 
-ivyConfig = ["default", "integration"]
+//add -D usejdk11=true for java 11 compile
+useJdk11 = saw.getProperty("usejdk11", "false").equals("true")
+
+javaVersion = "1.8"
+defaultConfig = "default"
+testConfig = "test"
+
+if (useJdk11)
+{
+	javaVersion = "11"
+	defaultConfig = "jdk11"
+	testConfig = "testjdk11"
+}
+
+ivyConfig = [defaultConfig, "integration"]
 
 
 rpmDir = "build/rpm"
@@ -79,36 +94,44 @@ jp = new JavaProgram()
 		.setup()
 
 jc = jp.getCompileRule()
-ivyDefaultResolve = ivy.getResolveRule("default")
+ivyDefaultResolve = ivy.getResolveRule(defaultConfig)
 jc.addDepend(ivyDefaultResolve)
 
-jc.getDefinition().set("target", "1.8")
-jc.getDefinition().set("source", "1.8")
+
+
+
+jc.getDefinition().set("target", javaVersion)
+jc.getDefinition().set("source", javaVersion)
 jc.getDefinition().set("encoding", "UTF8")
 jc.getDefinition().set("deprecation")
 jc.getDefinition().set("unchecked")
 
-jp.getJarRule().addFiles("src/main/resources", "kairosdb.properties")
+jp.getJarRule().addFiles("src/main/resources", "kairosdb.conf")
 jp.getJarRule().addFiles("src/main/resources", "create.sql")
 
+def configurePomRule(PomRule pomRule)
+{
+	pomRule.addDepend("ivy.xml")
+			.addDepend("ivysettings.xml")
+			.setJavaVersion(javaVersion)
+			.addLicense("The Apache Software License, Version 2.0", "http://www.apache.org/licenses/LICENSE-2.0.txt", "repo")
+			.addDeveloper("brianhks", "Brian", "brianhks1+kairos@gmail.com")
+			.addDeveloper("jeff", "Jeff", "jeff.sabin+kairos@gmail.com")
+
+	return pomRule;
+}
 
 //------------------------------------------------------------------------------
 //==-- Generate Project Pom --==
-ivy.createPomRule("pom.xml", ivy.getResolveRule("default"), ivy.getResolveRule("test"))
-		.addDepend("ivy.xml")
-		.addDepend("ivysettings.xml")
+configurePomRule(ivy.createPomRule("pom.xml", ivy.getResolveRule(defaultConfig), ivy.getResolveRule(testConfig)))
 		.setName("project-pom")
 		.setDescription("Use this target to generate a pom used for opening project in IDE")
-		.setJavaVersion("1.8")
-		//.alwaysRun()
 
 //------------------------------------------------------------------------------
 //==-- Maven POM Rule --==
-pomRule = ivy.createPomRule("build/jar/pom.xml", ivy.getResolveRule("default"))
+pomRule = configurePomRule(ivy.createPomRule("build/jar/pom.xml", ivy.getResolveRule(defaultConfig)))
 		.addDepend(jp.getJarRule())
-		.addLicense("The Apache Software License, Version 2.0", "http://www.apache.org/licenses/LICENSE-2.0.txt", "repo")
-		.addDeveloper("brianhks", "Brian", "brianhks1+kairos@gmail.com")
-		.addDeveloper("jeff", "Jeff", "jeff.sabin+kairos@gmail.com")
+
 
 //------------------------------------------------------------------------------
 //==-- Publish Artifacts --==
@@ -117,7 +140,7 @@ if (version.contains("SNAPSHOT"))
 else
 	defaultResolver = "local-m2-publish"
 PublishRule publishRule = ivy.createPublishRule(saw.getProperty("ivy.publish_resolver", defaultResolver),
-			ivy.getResolveRule("default"))
+			ivy.getResolveRule(defaultConfig))
 		.setName("publish")
 		.setDescription("Publish pom and jar to maven snapshot repo")
 		.publishMavenMetadata()
@@ -169,7 +192,7 @@ testSources = new RegExFileSet("src/test/java", ".*Test\\.java").recurse()
 		.addExcludeFiles("CassandraDatastoreTest.java")
 		.getFilePaths()
 testCompileRule = jp.getTestCompileRule()
-ivyTestResolve = ivy.getResolveRule("test")
+ivyTestResolve = ivy.getResolveRule(testConfig)
 testCompileRule.addDepend(ivyTestResolve)
 testCompileRule.getDefinition().set("unchecked")
 testCompileRule.getDefinition().set("deprecation")
@@ -187,6 +210,7 @@ junit = new JUnitRule("test").addSources(testSources)
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
 		.addDepends(ivyTestResolve)
+		.addJvmArgument("-Duser.timezone=UTC")
 
 if (saw.getProperty("jacoco", "false").equals("true"))
 	junit.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
@@ -197,6 +221,7 @@ junitAll = new JUnitRule("test-all").setDescription("Run unit tests including Ca
 		.setClasspath(junitClasspath)
 		.addDepends(testCompileRule)
 		.addDepends(ivyTestResolve)
+		.addJvmArgument("-Duser.timezone=UTC")
 
 if (saw.getProperty("jacoco", "false").equals("true"))
 	junitAll.addJvmArgument("-javaagent:lib_test/jacocoagent.jar=destfile=build/jacoco.exec")
@@ -208,7 +233,7 @@ srcRpmFile = "$programName-$version-${release}.src.rpm"
 ivyFileSet = new SimpleFileSet()
 
 //Resolve dependencies for package
-ivyResolve = ivy.getResolveRule("default")
+ivyResolve = ivy.getResolveRule(defaultConfig)
 resolveIvyFileSetRule = new SimpleRule()
 		.addDepend(ivyResolve)
 		.setMakeAction("doIvyResolve")
@@ -233,18 +258,21 @@ libFileSets = [
 
 scriptsFileSet = new RegExFileSet("src/scripts", ".*").addExcludeFile("kairosdb-env.sh")
 webrootFileSet = new RegExFileSet("webroot", ".*").recurse()
+authFileSet = new RegExFileSet("src/main/conf/auth", ".*")
 
 zipLibDir = "$programName/lib"
 zipBinDir = "$programName/bin"
 zipConfDir = "$programName/conf"
 zipConfLoggingDir = "$zipConfDir/logging"
 zipWebRootDir = "$programName/webroot"
+zipAuthDir = "$programName/conf/auth"
 tarRule = new TarRule("build/${programName}-${version}-${release}.tar")
 		.addDepend(jp.getJarRule())
 		.addDepend(resolveIvyFileSetRule)
 		.addFileSetTo(zipBinDir, scriptsFileSet)
 		.addFileSetTo(zipWebRootDir, webrootFileSet)
-		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.properties")
+		.addFileSetTo(zipAuthDir, authFileSet)
+		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.conf")
 		.addFileTo(zipConfLoggingDir, "src/main/resources", "logback.xml")
 		.setFilePermission(".*\\.sh", 0755)
 
@@ -298,7 +326,7 @@ def doRPM(Rule rule)
 			}
 
 	if ("on".equals(rule.getProperty("dependency")))
-		rpmBuilder.addDependencyMore("jre", "1.8")
+		rpmBuilder.addDependencyMore("jre", javaVersion)
 
 	rpmBuilder.setPostInstallScript(new File("src/scripts/install/post_install.sh"))
 	rpmBuilder.setPreUninstallScript(new File("src/scripts/install/pre_uninstall.sh"))
@@ -308,9 +336,10 @@ def doRPM(Rule rule)
 
 	addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/bin", scriptsFileSet)
 
-	rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
-	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.properties",
-			new File("src/main/resources/kairosdb.properties"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
+	//rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
+	rpmBuilder.addFile("/lib/systemd/system/kairosdb.service", new File("src/scripts/kairosdb.service"), 0644)
+	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.conf",
+			new File("src/main/resources/kairosdb.conf"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/logging/logback.xml",
 			new File("src/main/resources/logback.xml"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/bin/kairosdb-env.sh",
@@ -420,8 +449,11 @@ def doRun(Rule rule)
 		kairosDefinition.set("command", "run")
 
 	//Check if you have a custom kairosdb.properties file and load it.
+	customConf = new File("kairosdb.conf")
 	customProps = new File("kairosdb.properties")
-	if (customProps.exists())
+	if (customConf.exists())
+		kairosDefinition.set("properties", "kairosdb.conf")
+	else if (customProps.exists())
 		kairosDefinition.set("properties", "kairosdb.properties")
 
 	if (rule.getProperty("DEBUG"))
@@ -450,12 +482,12 @@ def doRun(Rule rule)
 genormDefinition = saw.getDefinition("genormous")
 genormDefinition.set("genorm")
 new SimpleRule("genorm").setDescription("Generate ORM files")
-		.addDepend(ivy.getResolveRule("default"))
+		.addDepend(ivy.getResolveRule("build_tools"))
 		.setMakeAction("doGenorm")
 
 def doGenorm(Rule rule)
 {
-	resolve = ivy.getResolveRule("default")
+	resolve = ivy.getResolveRule("build_tools")
 
 	genormClasspath = new Classpath(resolve.getClasspath())
 	genormDefinition.set("classpath", genormClasspath.toString())
@@ -489,7 +521,7 @@ def doIntegration(Rule rule)
 	integrationClassPath.addPath("build/integration")
 	host = saw.getProperty("host", "127.0.0.1")
 	port = saw.getProperty("port", "8080")
-	saw.exec("java  -Dhost=${host} -Dport=${port} -cp ${integrationClassPath} org.testng.TestNG src/integration-test/testng.xml")
+	saw.exec("java -Duser.timezone=UTC -Dhost=${host} -Dport=${port} -cp ${integrationClassPath} org.testng.TestNG src/integration-test/testng.xml")
 }
 
 //------------------------------------------------------------------------------
@@ -592,6 +624,32 @@ new JarRule("maven-bundle", "build/bundle.jar").setDescription("Create bundle fo
 
 
 saw.setDefaultTarget("jar")
+
+//==============================================================================
+//== Modernizer plugin ==
+
+//Resolve dependencies for package
+modernizeResolve = ivy.getResolveRule("build_tools")
+new SimpleRule("modernize").setDescription("Run maven modernizer plugin on class files")
+		.addDepend(modernizeResolve)
+		.addDepend(jc)
+		.setMakeAction("doModernizeResolve")
+		.alwaysRun()
+
+def doModernizeResolve(Rule rule)
+{
+	classpath = modernizeResolve.getClasspath()
+
+	for (String jar in classpath.getPaths())
+	{
+		saw.addClasspath(jar)
+	}
+
+	saw.getScriptInterpreter().source("modernizer.groovy")
+	//saw.include("modernizer.groovy")
+
+}
+
 
 
 //------------------------------------------------------------------------------

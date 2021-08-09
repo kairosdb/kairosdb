@@ -1,16 +1,14 @@
 package org.kairosdb.util;
 
-import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import static org.kairosdb.core.Main.UTF_8;
 
 /**
  Created by bhawkins on 12/19/16.
  */
-public class ByteBufferDataInput implements DataInput
+public class ByteBufferDataInput implements KDataInput
 {
 	private final ByteBuffer m_buffer;
 
@@ -117,5 +115,30 @@ public class ByteBufferDataInput implements DataInput
 	public String readUTF() throws IOException
 	{
 		return DataInputStream.readUTF(this);
+	}
+
+	/**
+	 Reads data from internal ByteBuffer and writes them to b.  Returns the number of
+	 bytes read.
+	 @param b
+	 @return
+	 @throws IOException
+	 */
+	@Override
+	public int read(byte[] b) throws IOException
+	{
+		int ret = 0;
+		if (b.length < m_buffer.remaining())
+		{
+			ret = b.length;
+			m_buffer.get(b);
+		}
+		else
+		{
+			ret = m_buffer.remaining();
+			m_buffer.get(b, 0, m_buffer.remaining());
+		}
+
+		return ret;
 	}
 }

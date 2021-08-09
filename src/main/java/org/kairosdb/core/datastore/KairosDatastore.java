@@ -16,12 +16,14 @@
 package org.kairosdb.core.datastore;
 
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
+import org.kairosdb.core.KairosPostConstructInit;
 import org.kairosdb.core.aggregator.LimitAggregator;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.groupby.GroupByResult;
@@ -51,10 +53,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkState;
 
-public class KairosDatastore
+public class KairosDatastore implements KairosPostConstructInit
 {
 	public static final Logger logger = LoggerFactory.getLogger(KairosDatastore.class);
 	public static final String QUERY_CACHE_DIR = "kairosdb.query_cache.cache_dir";
@@ -79,13 +82,17 @@ public class KairosDatastore
 			@Named(KEEP_CACHE_FILES) boolean keepCacheFiles)
 			throws DatastoreException
 	{
-		m_datastore = checkNotNull(datastore);
-		m_queuingManager = checkNotNull(queuingManager);
+		m_datastore = requireNonNull(datastore);
+		m_queuingManager = requireNonNull(queuingManager);
 		m_dataPointFactory = dataPointFactory;
 
 		m_baseCacheDir = System.getProperty("java.io.tmpdir") + "/kairos_cache/";
 		m_keepCacheFiles = keepCacheFiles;
+	}
 
+	@Override
+	public void init()
+	{
 		setupCacheDirectory();
 	}
 
@@ -96,7 +103,6 @@ public class KairosDatastore
 		if (cacheTempDir != null && !cacheTempDir.equals(""))
 		{
 			m_baseCacheDir = cacheTempDir;
-			setupCacheDirectory();
 		}
 	}
 
@@ -233,7 +239,7 @@ public class KairosDatastore
 	 */
 	public void export(QueryMetric metric, QueryCallback callback) throws DatastoreException
 	{
-		checkNotNull(metric);
+		requireNonNull(metric);
 
 		m_datastore.queryDatabase(metric, callback);
 	}
@@ -247,9 +253,14 @@ public class KairosDatastore
 
 	}
 
+	public void indexTags(QueryMetric queryMetric) throws DatastoreException
+	{
+		m_datastore.indexMetricTags(queryMetric);
+	}
+
 	public DatastoreQuery createQuery(QueryMetric metric) throws DatastoreException
 	{
-		checkNotNull(metric);
+		requireNonNull(metric);
 
 		DatastoreQuery dq;
 
@@ -257,15 +268,7 @@ public class KairosDatastore
 		{
 			dq = new DatastoreQueryImpl(metric);
 		}
-		catch (UnsupportedEncodingException e)
-		{
-			throw new DatastoreException(e);
-		}
-		catch (NoSuchAlgorithmException e)
-		{
-			throw new DatastoreException(e);
-		}
-		catch (InterruptedException e)
+		catch (UnsupportedEncodingException | NoSuchAlgorithmException | InterruptedException e)
 		{
 			throw new DatastoreException(e);
 		}
@@ -276,7 +279,7 @@ public class KairosDatastore
 
 	public void delete(QueryMetric metric) throws DatastoreException
 	{
-		checkNotNull(metric);
+		requireNonNull(metric);
 
 		try
 		{
@@ -421,7 +424,7 @@ public class KairosDatastore
 			hashString = String.valueOf(System.currentTimeMillis());
 
 		MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-		byte[] digest = messageDigest.digest(hashString.getBytes("UTF-8"));
+		byte[] digest = messageDigest.digest(hashString.getBytes(UTF_8));
 
 		return new BigInteger(1, digest).toString(16);
 	}
@@ -448,7 +451,7 @@ public class KairosDatastore
 
 			m_metric = metric;
 			m_cacheFilename = calculateFilenameHash(metric);
-			m_queuingManager.waitForTimeToRun(m_cacheFilename);
+			m_queuingManager.waitForTimeToRun(m_cacheFilename, metric);
 		}
 
 		public int getSampleSize()
@@ -460,8 +463,8 @@ public class KairosDatastore
 		@Override
 		public List<DataPointGroup> execute() throws DatastoreException
 		{
-			long queryStartTime = System.currentTimeMillis();
-			
+			Stopwatch stopwatch = Stopwatch.createStarted();
+
 			SearchResult searchResult = null;
 
 			List<DataPointRow> returnedRows = null;
@@ -493,11 +496,16 @@ public class KairosDatastore
 					m_datastore.queryDatabase(m_metric, searchResult);
 					returnedRows = searchResult.getRows();
 				}
+
 			}
 			catch (Exception e)
 			{
 				logger.error("Query Error", e);
 				throw new DatastoreException(e);
+			}
+			finally
+			{
+				searchResult.close();
 			}
 
 			//Get data point count
@@ -563,7 +571,7 @@ public class KairosDatastore
 
 
 			//Report how long query took
-			ThreadReporter.addDataPoint(QUERY_METRIC_TIME, System.currentTimeMillis() - queryStartTime);
+			ThreadReporter.addDataPoint(QUERY_METRIC_TIME, stopwatch.elapsed(java.util.concurrent.TimeUnit.MILLISECONDS));
 
 			return (m_results);
 		}

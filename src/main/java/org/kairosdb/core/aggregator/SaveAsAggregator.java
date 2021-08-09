@@ -105,6 +105,12 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	}
 
 	@Override
+	public void init()
+	{
+
+	}
+
+	@Override
 	public void setGroupBys(List<GroupBy> groupBys)
 	{
 		for (GroupBy groupBy : groupBys)

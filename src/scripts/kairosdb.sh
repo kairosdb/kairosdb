@@ -41,11 +41,16 @@ done
 
 if [ "$1" = "run" ] ; then
 	shift
-	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main -c run -p conf/kairosdb.properties
+	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main -c run -p conf/kairosdb.conf
+elif [ "$1" = "start-systemd" ] ; then
+	shift
+	echo "Starting KairosDB"
+	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main \
+		-c start -p conf/kairosdb.conf
 elif [ "$1" = "start" ] ; then
 	shift
 	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main \
-		-c start -p conf/kairosdb.properties >> "$KAIROSDB_LOG_DIR/kairosdb.log" 2>&1 &
+		-c start -p conf/kairosdb.conf >> "$KAIROSDB_LOG_DIR/kairosdb.log" 2>&1 &
 	echo $! > "$KAIROS_PID_FILE"
 elif [ "$1" = "stop" ] ; then
 	shift
@@ -57,10 +62,10 @@ elif [ "$1" = "stop" ] ; then
 	rm $KAIROS_PID_FILE
 elif [ "$1" = "export" ] ; then
 	shift
-	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main -c export -p conf/kairosdb.properties $*
+	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main -c export -p conf/kairosdb.conf "$@"
 elif [ "$1" = "import" ] ; then
 	shift
-	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main -c import -p conf/kairosdb.properties $*
+	exec "$JAVA" $JAVA_OPTS -cp $CLASSPATH org.kairosdb.core.Main -c import -p conf/kairosdb.conf "$@"
 else
 	echo "Unrecognized command."
 	exit 1

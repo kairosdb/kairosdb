@@ -33,7 +33,11 @@ public class DropAggregator implements Aggregator
 		return null;
 	}
 
+	@Override
+	public void init()
+	{
 
+	}
 
 
 }

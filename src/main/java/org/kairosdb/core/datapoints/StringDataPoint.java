@@ -5,6 +5,7 @@ import org.json.JSONWriter;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  Created by bhawkins on 12/14/13.
@@ -72,5 +73,21 @@ public class StringDataPoint extends DataPointHelper
 	public String getValue()
 	{
 		return (m_value);
+	}
+
+	@Override
+	public boolean equals(Object o)
+	{
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		if (!super.equals(o)) return false;
+		StringDataPoint that = (StringDataPoint) o;
+		return Objects.equals(m_value, that.m_value);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(super.hashCode(), m_value);
 	}
 }

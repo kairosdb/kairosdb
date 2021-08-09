@@ -1,16 +1,16 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.ConsistencyLevel;
-import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.typesafe.config.ConfigValue;
+import org.kairosdb.core.KairosConfig;
+import org.kairosdb.core.KairosRootConfig;
 
-import java.util.ArrayList;
+import java.text.ParseException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  Created by bhawkins on 10/13/14.
@@ -27,11 +27,10 @@ public class CassandraConfiguration
 	public static final String ROW_KEY_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.row_key_cache_size";
 	public static final String STRING_CACHE_SIZE_PROPERTY = "kairosdb.datastore.cassandra.string_cache_size";
 
-	public static final String KEYSPACE_PROPERTY = "kairosdb.datastore.cassandra.keyspace";
-	public static final String REPLICATION_PROPERTY = "kairosdb.datastore.cassandra.replication";
 	public static final String HOST_LIST_PROPERTY = "kairosdb.datastore.cassandra.cql_host_list";
-	public static final String SIMULTANIOUS_QUERIES = "kairosdb.datastore.cassandra.simultaneous_cql_queries";
+	public static final String SIMULTANEOUS_QUERIES = "kairosdb.datastore.cassandra.simultaneous_cql_queries";
 	public static final String QUERY_LIMIT = "kairosdb.datastore.cassandra.query_limit";
+	public static final String QUERY_TIME_LIMIT = "kairosdb.datastore.cassandra.query_time_limit_sec";
 	public static final String QUERY_READER_THREADS = "kairosdb.datastore.cassandra.query_reader_threads";
 
 	public static final String AUTH_USER_NAME = "kairosdb.datastore.cassandra.auth.user_name";
@@ -51,13 +50,8 @@ public class CassandraConfiguration
 	
 	public static final String LOCAL_DATACENTER = "kairosdb.datastore.cassandra.local_datacenter";
 
-	@Inject
-	@Named(WRITE_CONSISTENCY_LEVEL)
-	private ConsistencyLevel m_dataWriteLevel = ConsistencyLevel.QUORUM;
+	public static final String START_ASYNC = "kairosdb.datastore.cassandra.start_async";
 
-	@Inject
-	@Named(READ_CONSISTENCY_LEVEL)
-	private ConsistencyLevel m_dataReadLevel = ConsistencyLevel.ONE;
 
 	@Inject(optional = true)
 	@Named(DATAPOINT_TTL)
@@ -84,7 +78,7 @@ public class CassandraConfiguration
 	private Map<String, String> m_cassandraAuthentication;
 
 	@Inject
-	@Named(SIMULTANIOUS_QUERIES)
+	@Named(SIMULTANEOUS_QUERIES)
 	private int m_simultaneousQueries = 20;
 
 	@Inject
@@ -93,55 +87,19 @@ public class CassandraConfiguration
 
 	@Inject(optional = true)
 	@Named(QUERY_LIMIT)
-	private int m_queryLimit = 0;
+	private long m_queryLimit = 0;
 
-	@Inject
-	@Named(KEYSPACE_PROPERTY)
-	private String m_keyspaceName;
-
-	@Inject
-	@Named(REPLICATION_PROPERTY)
-	private String m_replication = "{'class': 'SimpleStrategy','replication_factor' : 1}";
+	@Inject(optional = true)
+	@Named(QUERY_TIME_LIMIT)
+	private long m_queryTimeLimit = 0;
 
 	private Map<String, Integer> m_hostList = new HashMap<>();
 
-	@Inject(optional = true)
-	@Named(AUTH_USER_NAME)
-	private String m_authUserName;
+	private final ClusterConfiguration m_writeCluster;
+	private final ClusterConfiguration m_metaCluster;
 
-	@Inject(optional = true)
-	@Named(AUTH_PASSWORD)
-	private String m_authPassword;
+	private final List<ClusterConfiguration> m_readClusters;
 
-	@Inject
-	@Named(USE_SSL)
-	private boolean m_useSsl;
-
-	@Inject
-	@Named(LOCAL_CORE_CONNECTIONS)
-	private int m_localCoreConnections = 5;
-
-	@Inject
-	@Named(LOCAL_MAX_CONNECTIONS)
-	private int m_localMaxConnections = 100;
-
-	@Inject
-	@Named(REMOTE_CORE_CONNECTIONS)
-	private int m_remoteCoreConnections = 1;
-
-	@Inject
-	@Named(REMOTE_MAX_CONNECTIONS)
-	private int m_remoteMaxConnections = 10;
-
-	@Inject
-	@Named(LOCAL_MAX_REQ_PER_CONN)
-	private int m_localMaxReqPerConn = 128;
-
-	@Inject
-	@Named(REMOTE_MAX_REQ_PER_CONN)
-	private int m_remoteMaxReqPerConn = 128;
-
-	@Inject
 	@Named(MAX_QUEUE_SIZE)
 	private int m_maxQueueSize = 500;
 	
@@ -149,54 +107,52 @@ public class CassandraConfiguration
 	@Named(LOCAL_DATACENTER)
 	private String m_localDatacenter;
 
-	public CassandraConfiguration()
-	{
-	}
+	@Inject
+	@Named(START_ASYNC)
+	private boolean m_startAsync = false;
 
-	public CassandraConfiguration(String keyspaceName)
-	{
-		m_keyspaceName = keyspaceName;
-	}
-
-	public Map<String, Integer> getHostList()
-	{
-		return m_hostList;
-	}
-
-	private final Splitter HostSplitter = Splitter.on(',')
-			.trimResults().omitEmptyStrings();
-
-	private final Splitter PortSplitter = Splitter.on(':')
-			.trimResults().omitEmptyStrings();
+	private final Map<String, String> m_createWithConfig;
 
 	@Inject
-	public void setHostList(@Named(HOST_LIST_PROPERTY) String hostList)
+	public CassandraConfiguration(KairosRootConfig config) throws ParseException
 	{
-		Iterable<String> strHostList = HostSplitter.split(hostList);
-		for (String hostEntry : strHostList)
+		KairosConfig writeConfig = config.getConfig("kairosdb.datastore.cassandra.write_cluster");
+
+		m_writeCluster = new ClusterConfiguration(writeConfig);
+
+		if (config.hasPath("kairosdb.datastore.cassandra.meta_cluster"))
 		{
-			Iterator<String> hostPort = PortSplitter.split(hostEntry).iterator();
-
-			String host = hostPort.next();
-			int port = 9042;
-
-			if (hostPort.hasNext())
-				port = Integer.parseInt(hostPort.next());
-
-			m_hostList.put(host, port);
+			m_metaCluster = new ClusterConfiguration(config.getConfig("kairosdb.datastore.cassandra.meta_cluster"));
 		}
+		else
+			m_metaCluster = m_writeCluster;
 
+		if (config.hasPath("kairosdb.datastore.cassandra.read_clusters"))
+		{
+			System.out.println("LOADING READ CLUSTERS");
+			List<KairosConfig> clientList = config.getConfigList("kairosdb.datastore.cassandra.read_clusters");
+
+			ImmutableList.Builder<ClusterConfiguration> readClusterBuilder = new ImmutableList.Builder<>();
+			for (KairosConfig client : clientList)
+			{
+				readClusterBuilder.add(new ClusterConfiguration(client));
+			}
+
+			m_readClusters = readClusterBuilder.build();
+		}
+		else
+			m_readClusters = ImmutableList.of();
+
+		m_createWithConfig = new HashMap<>();
+		if (config.hasPath("kairosdb.datastore.cassandra.table_create_with"))
+		{
+			for (Map.Entry<String, ConfigValue> configValueEntry : config.getObjectMap("kairosdb.datastore.cassandra.table_create_with").entrySet())
+			{
+				m_createWithConfig.put(configValueEntry.getKey(), (String)configValueEntry.getValue().unwrapped());
+			}
+		}
 	}
 
-	public ConsistencyLevel getDataWriteLevel()
-	{
-		return m_dataWriteLevel;
-	}
-
-	public ConsistencyLevel getDataReadLevel()
-	{
-		return m_dataReadLevel;
-	}
 
 	public int getDatapointTtl()
 	{
@@ -223,69 +179,9 @@ public class CassandraConfiguration
 		return m_stringCacheSize;
 	}
 
-	public Map<String, String> getCassandraAuthentication()
-	{
-		return m_cassandraAuthentication;
-	}
-
-	public String getKeyspaceName()
-	{
-		return m_keyspaceName;
-	}
-
 	public int getSimultaneousQueries()
 	{
 		return m_simultaneousQueries;
-	}
-
-	public String getAuthUserName()
-	{
-		return m_authUserName;
-	}
-
-	public String getAuthPassword()
-	{
-		return m_authPassword;
-	}
-
-	public int getLocalCoreConnections()
-	{
-		return m_localCoreConnections;
-	}
-
-	public int getLocalMaxConnections()
-	{
-		return m_localMaxConnections;
-	}
-
-	public int getRemoteCoreConnections()
-	{
-		return m_remoteCoreConnections;
-	}
-
-	public int getRemoteMaxConnections()
-	{
-		return m_remoteMaxConnections;
-	}
-
-	public int getLocalMaxReqPerConn()
-	{
-		return m_localMaxReqPerConn;
-	}
-
-	public int getRemoteMaxReqPerConn()
-	{
-		return m_remoteMaxReqPerConn;
-	}
-
-	public int getMaxQueueSize()
-	{
-		return m_maxQueueSize;
-	}
-	
-	public String getLocalDatacenter()
-	{
-		return m_localDatacenter;
 	}
 
 	public int getQueryReaderThreads()
@@ -293,18 +189,43 @@ public class CassandraConfiguration
 		return m_queryReaderThreads;
 	}
 
-	public int getQueryLimit()
+	public long getQueryLimit()
 	{
 		return m_queryLimit;
 	}
 
-	public boolean isUseSsl()
+	public long getQueryTimeLimit()
 	{
-		return m_useSsl;
+		return m_queryTimeLimit;
+	}
+	
+	public String getLocalDatacenter()
+	{
+		return m_localDatacenter;
 	}
 
-	public String getReplication()
+	public ClusterConfiguration getWriteCluster()
 	{
-		return m_replication;
+		return m_writeCluster;
+	}
+
+	public ClusterConfiguration getMetaCluster()
+	{
+		return m_metaCluster;
+	}
+
+	public List<ClusterConfiguration> getReadClusters()
+	{
+		return m_readClusters;
+	}
+
+	public boolean isStartAsync()
+	{
+		return m_startAsync;
+	}
+
+	public String getCreateWithConfig(String tableName)
+	{
+		return m_createWithConfig.getOrDefault(tableName, "");
 	}
 }

@@ -356,10 +356,10 @@ define([
 				for (var i = 0; i < MetricList.length; i++) {
 					Metric = MetricList[i];
 					MetricArray = Metric.split('.');
-					if (!result.hasOwnProperty(MetricArray[0])) {
+					if (!(MetricArray[0] in result)) {
 						result[MetricArray[0]] = {};
 					}
-					if (!result[MetricArray[0]].hasOwnProperty(MetricArray[1])) {
+					if (!(MetricArray[1] in result[MetricArray[0]])) {
 						result[MetricArray[0]][MetricArray[1]] = [];
 					}
 					result[MetricArray[0]][MetricArray[1]].push(MetricArray[2]);

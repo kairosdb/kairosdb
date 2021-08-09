@@ -31,9 +31,9 @@ import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static com.google.common.base.Preconditions.checkState;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 import static org.quartz.CalendarIntervalScheduleBuilder.calendarIntervalSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
@@ -75,15 +75,15 @@ public class SchedulingManager implements KairosDBService
             @Named(Main.KAIROSDB_SERVER_GUID) String guid)
             throws RollUpException
     {
-        this.taskStore = checkNotNull(taskStore, "taskStore cannot be null");
-        this.scheduler = checkNotNull(scheduler, "scheduler cannot be null");
-        this.dataStore = checkNotNull(dataStore, "dataStore cannot be null");
-        this.assignmentStore = checkNotNull(assignmentStore, "assignmentStore cannot be null");
-        this.hostName = checkNotNullOrEmpty(hostName, "hostname cannot be null or empty");
-        this.executorService = checkNotNull(executorService, "executorService cannot be null or empty");
-        this.eventBus = checkNotNull(eventBus, "eventBus cannot be null");
-        this.statusStore = checkNotNull(statusStore, "statusStore cannot be null");
-        this.serverGuid = checkNotNullOrEmpty(guid, "guid cannot be null or empty");
+        this.taskStore = requireNonNull(taskStore, "taskStore cannot be null");
+        this.scheduler = requireNonNull(scheduler, "scheduler cannot be null");
+        this.dataStore = requireNonNull(dataStore, "dataStore cannot be null");
+        this.assignmentStore = requireNonNull(assignmentStore, "assignmentStore cannot be null");
+        this.hostName = requireNonNullOrEmpty(hostName, "hostname cannot be null or empty");
+        this.executorService = requireNonNull(executorService, "executorService cannot be null or empty");
+        this.eventBus = requireNonNull(eventBus, "eventBus cannot be null");
+        this.statusStore = requireNonNull(statusStore, "statusStore cannot be null");
+        this.serverGuid = requireNonNullOrEmpty(guid, "guid cannot be null or empty");
 
         // Start thread that checks for rollup changes and rollup assignments
         executorService.scheduleWithFixedDelay(new CheckChanges(), 0, delay, java.util.concurrent.TimeUnit.MILLISECONDS);

@@ -19,7 +19,7 @@ import com.google.common.eventbus.EventBus;
 
 import java.lang.reflect.Method;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Context for an exception thrown by a subscriber.
@@ -42,10 +42,10 @@ public class SubscriberExceptionContext
    */
   SubscriberExceptionContext(FilterEventBus eventBus, Object event, Object subscriber,
       Method subscriberMethod) {
-    this.eventBus = checkNotNull(eventBus);
-    this.event = checkNotNull(event);
-    this.subscriber = checkNotNull(subscriber);
-    this.subscriberMethod = checkNotNull(subscriberMethod);
+    this.eventBus = requireNonNull(eventBus);
+    this.event = requireNonNull(event);
+    this.subscriber = requireNonNull(subscriber);
+    this.subscriberMethod = requireNonNull(subscriberMethod);
   }
 
   /**

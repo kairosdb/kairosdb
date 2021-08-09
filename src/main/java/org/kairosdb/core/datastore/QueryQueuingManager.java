@@ -17,13 +17,14 @@ package org.kairosdb.core.datastore;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.kairosdb.core.DataPoint;
+import org.agileclick.genorm.runtime.Pair;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class QueryQueuingManager implements KairosMetricReporter
 {
@@ -41,7 +42,7 @@ public class QueryQueuingManager implements KairosMetricReporter
 	public static final String CONCURRENT_QUERY_THREAD = "kairosdb.datastore.concurrentQueryThreads";
 	public static final String QUERY_COLLISIONS_METRIC_NAME = "kairosdb.datastore.query_collisions";
 
-	private final Map<String, Thread> runningQueries = new HashMap<String, Thread>();
+	private final Map<String, Pair<QueryMetric, Thread>> runningQueries = new HashMap<>();
 	private final ReentrantLock lock = new ReentrantLock();
 	private final Semaphore semaphore;
 	private final String hostname;
@@ -52,14 +53,14 @@ public class QueryQueuingManager implements KairosMetricReporter
 	public QueryQueuingManager(@Named(CONCURRENT_QUERY_THREAD) int concurrentQueryThreads, @Named("HOSTNAME") String hostname)
 	{
 		checkArgument(concurrentQueryThreads > 0);
-		this.hostname = checkNotNullOrEmpty(hostname);
+		this.hostname = requireNonNullOrEmpty(hostname);
 		semaphore = new Semaphore(concurrentQueryThreads, true);
 	}
 
-	public void waitForTimeToRun(String queryHash) throws InterruptedException
+	public void waitForTimeToRun(String queryHash, QueryMetric metric) throws InterruptedException
 	{
 		boolean firstTime = true;
-		while(!acquireSemaphore(queryHash))
+		while(!acquireSemaphore(queryHash, metric))
 		{
 			if (firstTime)
 			{
@@ -84,7 +85,7 @@ public class QueryQueuingManager implements KairosMetricReporter
 		semaphore.release();
 	}
 
-	private boolean acquireSemaphore(String queryHash) throws InterruptedException
+	private boolean acquireSemaphore(String queryHash, QueryMetric metric) throws InterruptedException
 	{
 		semaphore.acquire();
 
@@ -95,7 +96,7 @@ public class QueryQueuingManager implements KairosMetricReporter
 			hashConflict = runningQueries.containsKey(queryHash);
 			if (!hashConflict)
 			{
-				runningQueries.put(queryHash, Thread.currentThread());
+				runningQueries.put(queryHash, new Pair<>(metric, Thread.currentThread()));
 			}
 		}
 		finally
@@ -110,6 +111,40 @@ public class QueryQueuingManager implements KairosMetricReporter
 		}
 		else
 			return true;
+	}
+
+	public ArrayList<Pair<String, QueryMetric>> getRunningQueries()
+	{
+		ArrayList<Pair<String, QueryMetric>> runningQueriesList = new ArrayList<Pair<String, QueryMetric>>();
+		lock.lock();
+		try
+		{
+			for (String key : runningQueries.keySet())
+			{
+				runningQueriesList.add(new Pair<String, QueryMetric>(key, runningQueries.get(key).getFirst()));
+			}
+		}
+		finally
+		{
+			lock.unlock();
+		}
+		return runningQueriesList;
+	}
+
+	public void killQuery(String queryHash)
+	{
+		lock.lock();
+		try
+		{
+			if (runningQueries.get(queryHash) != null)
+			{
+				runningQueries.get(queryHash).getSecond().interrupt();    // Call interrupt on Thread associated with provided query hash
+			}
+		}
+		finally
+		{
+			lock.unlock();
+		}
 	}
 
 	public int getQueryWaitingCount()

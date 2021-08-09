@@ -1,16 +1,8 @@
-body {
-    margin: 0 5%;
-    width: 90%;
-}
 
 th {
-    background-color: #C4D6E0;
+    background-color: #ccc;
     color: black;
-}
-
-h1 {
-    border-color: blue;
-    border-width: 1px;
+    vertical-align: middle !important;
 }
 
 .no-padding {
@@ -32,7 +24,7 @@ h1 {
 }
 
 .modal-content {
-    background: url('brickwall.png')
+    background-color: white;
 }
 
 #paste-query-execute.btn {
@@ -66,4 +58,25 @@ h1 {
 .small-input {
     padding:0;
     line-height:16px;
+}
+
+.btn-primary {
+    background-color: #0066cc;
+    border: 0;
+}
+
+table.rollup-status {
+    margin-bottom: 1em;
+    border-bottom: 1px solid #aaa;
+    width: 100%;
+}
+
+table.rollup-status td {
+    padding: 3px;
+}
+table.rollup-status td:first-child {
+    text-align: right;
+}
+table.rollup-status tr:nth-child(even) {
+    background-color: #eee;
 }

@@ -1,5 +1,10 @@
+
 .ui-widget {
 	font-size: 12px;
+}
+/* use custom icon color for more contrast */
+.ui-state-default .ui-icon {
+    background-image: url('cupertino/images/ui-icons_0066cc_256x240.png');
 }
 
 .ui-widget-header {
@@ -12,23 +17,20 @@
 	outline: none;
 }
 
-.header {
-	color: #2779aa;
-}
 
 .wire-frame {
-	border: 1px solid #aed0ea;
-	width: 560px;
+	border: 1px solid #ddd;
+	width: 785px;
 	padding: 10px;
 }
 
 .component-frame {
-	border: 1px solid #aed0ea;
+	border: 1px solid #ddd;
 	padding: 2px;
 }
 
 textarea {
-	border-color: #aed0ea;
+	border-color: #ddd;
 	padding: 0;
 	margin: 0;
 	width: 525px;
@@ -68,7 +70,7 @@ button {
 
 a
 {
-    color: #2779aa;
+    color: #0066cc;
 }
 
 .flotChartSize{
@@ -87,4 +89,17 @@ a
 
 .cursorNormal * {
 	cursor: auto;
+}
+
+.ui-button, .ui-combobox-input{
+	min-height: 2em;
+}
+
+#timezone-header {
+	float: right;
+	color: white;
+	background-color: #0066cc;
+}
+.ui-widget.or {
+	padding: 0 2em;
 }

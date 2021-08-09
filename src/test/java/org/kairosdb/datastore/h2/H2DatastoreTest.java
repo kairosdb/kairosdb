@@ -17,19 +17,16 @@ package org.kairosdb.datastore.h2;
 
 
 import org.hamcrest.CoreMatchers;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.TestDataPointFactory;
-import org.kairosdb.core.datastore.DataPointGroup;
-import org.kairosdb.core.datastore.DatastoreQuery;
-import org.kairosdb.core.datastore.KairosDatastore;
-import org.kairosdb.core.datastore.QueryMetric;
-import org.kairosdb.core.datastore.QueryQueuingManager;
+import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.datastore.DatastoreTestHelper;
-import org.kairosdb.core.datastore.ServiceKeyValue;
 
 import java.io.File;
 import java.util.List;
@@ -47,7 +44,7 @@ import static org.junit.Assert.assertFalse;
 
 public class H2DatastoreTest extends DatastoreTestHelper
 {
-	private static final String DB_PATH = "build/h2db_test";
+	private static final String DB_PATH = "build/h2db_datastore_test";
 
 	private static H2Datastore h2Datastore;
 
@@ -76,11 +73,12 @@ public class H2DatastoreTest extends DatastoreTestHelper
 	public static void setupDatabase() throws DatastoreException
 	{
 		KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
-		h2Datastore = new H2Datastore(DB_PATH, dataPointFactory, s_eventBus);
+		h2Datastore = new H2Datastore(DB_PATH, dataPointFactory, s_eventBus, "regex:");
 
 		s_datastore = new KairosDatastore(h2Datastore,
 				new QueryQueuingManager(1, "hostname"),
 				dataPointFactory, false);
+		s_datastore.init();
 
 		s_eventBus.register(h2Datastore);
 
@@ -122,12 +120,12 @@ public class H2DatastoreTest extends DatastoreTestHelper
 
 	@Test
 	public void test_serviceKeyStore_singleService()
-			throws DatastoreException
+			throws DatastoreException, InterruptedException
 	{
 		h2Datastore.setValue("Service", "ServiceKey", "key1", "value1");
 		h2Datastore.setValue("Service", "ServiceKey", "key2", "value2");
 		h2Datastore.setValue("Service", "ServiceKey", "foo", "value3");
-
+		Thread.sleep(1);	
 		// Test setValue and getValue
 		assertServiceKeyValue("Service", "ServiceKey", "key1", "value1");
 		assertServiceKeyValue("Service", "ServiceKey", "key2", "value2");
@@ -135,7 +133,9 @@ public class H2DatastoreTest extends DatastoreTestHelper
 
 		// Test lastModified value changes
 		long lastModified = h2Datastore.getValue("Service", "ServiceKey", "key2").getLastModified().getTime();
+		
 		h2Datastore.setValue("Service", "ServiceKey", "key2", "changed");
+		Thread.sleep(1);
 		assertServiceKeyValue("Service", "ServiceKey", "key2", "changed");
 		assertThat(h2Datastore.getValue("Service", "ServiceKey", "key2").getLastModified().getTime(), greaterThan(lastModified));
 
@@ -146,12 +146,14 @@ public class H2DatastoreTest extends DatastoreTestHelper
 		// Test delete
 		lastModified = h2Datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime();
 		h2Datastore.deleteKey("Service", "ServiceKey", "key2");
+		Thread.sleep(1);
 		assertThat(h2Datastore.listKeys("Service", "ServiceKey"), hasItems("foo", "key1"));
 		assertThat(h2Datastore.getValue("Service", "ServiceKey", "key2"), is(nullValue()));
 		assertThat(h2Datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime(), greaterThan(lastModified));
 
 		lastModified = h2Datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime();
 		h2Datastore.deleteKey("Service", "ServiceKey", "foo");
+		Thread.sleep(1);
 		assertThat(h2Datastore.listKeys("Service", "ServiceKey"), hasItems("key1"));
 		assertThat(h2Datastore.getValue("Service", "ServiceKey", "foo"), is(nullValue()));
 		assertThat(h2Datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime(), greaterThan(lastModified));

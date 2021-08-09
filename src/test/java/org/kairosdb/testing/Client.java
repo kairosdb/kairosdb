@@ -5,6 +5,7 @@
 //        
 package org.kairosdb.testing;
 
+import com.google.common.io.ByteStreams;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -26,13 +27,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.CertificateException;
+import java.util.HashMap;
+import java.util.Map;
 
+import static javax.ws.rs.core.HttpHeaders.ACCEPT;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -41,14 +41,29 @@ public class Client
 	private CloseableHttpClient client;
 	private String username;
 	private String password;
+	private Map<String, String> headers = new HashMap<>();
 
 	public Client()
 	{
 		client = HttpClients.createDefault();
+		addHeader(CONTENT_TYPE, APPLICATION_JSON);
+		addHeader(ACCEPT, APPLICATION_JSON);
+	}
+
+	public Client(boolean disableCompression)
+	{
+		HttpClientBuilder builder = HttpClientBuilder.create();
+		builder.disableContentCompression();
+		client = builder.build();
+
+		addHeader(CONTENT_TYPE, APPLICATION_JSON);
+		addHeader(ACCEPT, APPLICATION_JSON);
 	}
 
 	public Client(String keystorePath, String keystorePassword) throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException, KeyManagementException
 	{
+		addHeader(CONTENT_TYPE, APPLICATION_JSON);
+		addHeader(ACCEPT, APPLICATION_JSON);
 		HttpClientBuilder b = HttpClientBuilder.create();
 		if (keystorePath != null)
 		{
@@ -71,6 +86,12 @@ public class Client
 		client = b.build();
 	}
 
+
+	public void addHeader(String header, String value)
+	{
+		headers.put(header, value);
+	}
+
 	public void setAuthentication(String username, String password)
 	{
 		this.username = username;
@@ -81,12 +102,31 @@ public class Client
 	{
 		HttpClientContext context = setCredentials(url);
 		HttpPost post = new HttpPost(url);
-		post.setHeader(CONTENT_TYPE, APPLICATION_JSON);
 		post.setEntity(new StringEntity(json));
+
+		for (String header : headers.keySet())
+		{
+			post.addHeader(header, headers.get(header));
+		}
 
 		try(CloseableHttpResponse response = client.execute(post, context))
 		{
 			return new JsonResponse(response);
+		}
+	}
+
+	public byte[] getAsBytes(String url) throws IOException
+	{
+		HttpClientContext context = setCredentials(url);
+
+		HttpGet get = new HttpGet(url);
+		for (String header : headers.keySet())
+		{
+			get.addHeader(header, headers.get(header));
+		}
+		try(CloseableHttpResponse response = client.execute(get, context))
+		{
+			return ByteStreams.toByteArray(response.getEntity().getContent());
 		}
 	}
 
@@ -95,6 +135,10 @@ public class Client
 		HttpClientContext context = setCredentials(url);
 
 		HttpGet get = new HttpGet(url);
+		for (String header : headers.keySet())
+		{
+			get.addHeader(header, headers.get(header));
+		}
 		try(CloseableHttpResponse response = client.execute(get, context))
 		{
 			return new JsonResponse(response);

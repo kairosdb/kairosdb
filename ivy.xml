@@ -5,93 +5,101 @@
 		<conf name="default"/>
 		<conf name="integration" extends="test"/>
 		<conf name="test" extends="default"/>
+		<conf name="jdk11" extends="default"/>
+		<conf name="testjdk11" extends="test"/>
+		<conf name="build_tools"/>
 	</configurations>
 	<dependencies>
-		<dependency org="com.google.guava" name="guava" rev="19.0" force="true">
+		<dependency org="com.google.guava" name="guava" rev="28.2-jre" force="true">
 			<artifact name="guava" type="bundle" ext="jar"/>
 		</dependency>
+
 		<dependency org="com.github.rholder" name="guava-retrying" rev="2.0.0" />
 		<dependency org="org.apache.commons" name="commons-lang3" rev="3.4" />
 		<dependency org="org.apache.commons" name="commons-collections4" rev="4.1" />
 
-		<dependency org="org.json" name="org.json" rev="chargebee-1.0" />
+		<dependency org="org.json" name="json" rev="20180130" />
 		<dependency org="com.google.code.gson" name="gson" rev="2.2.4" />
-		<dependency org="junit" name="junit" rev="4.12" conf="test->default" />
+		<dependency org="junit" name="junit" rev="4.13.1" conf="test->default" />
 
 		<dependency org="org.hamcrest" name="hamcrest-library" rev="1.3"
 		            conf="test->default"/>
-		<!--<dependency org="org.mockito" name="mockito-all" rev="1.9.5" />-->
-		<dependency org="org.mockito" name="mockito-core" rev="2.13.0" conf="test->default"/>
-		<!--<dependency org="io.netty" name="netty" rev="3.5.11.Final" />-->
+
+		<dependency org="org.mockito" name="mockito-core" rev="2.23.0" conf="test->default"/>
+		<dependency org="org.assertj" name="assertj-core" rev="3.14.0"
+					conf="test->default"/>
+		<dependency org="org.assertj" name="assertj-guava" rev="3.3.0"
+		            conf="test->default"/>
+
 		<dependency org="io.netty" name="netty" rev="3.10.6.Final" />
-		<!--<dependency org="org.powermock" name="powermock-api-mockito" rev="1.4.12" />
-		<dependency org="org.powermock" name="powermock-module-junit4" rev="1.4.12" />-->
-		<!--<dependency org="org.apache.zookeeper" name="zookeeper" rev="3.4.5" transitive="false" />-->
-		<dependency org="com.google.inject" name="guice" rev="4.1.0" />
+
+		<dependency org="com.google.inject" name="guice" rev="4.2.2" />
 		<dependency org="com.google.inject.extensions"
-		            name="guice-multibindings" rev="4.1.0"/>
-		<dependency org="com.google.inject.extensions" name="guice-assistedinject" rev="4.1.0" />
-		<dependency org="com.google.inject.extensions" name="guice-servlet" rev="4.1.0" />
-		<dependency org="com.h2database" name="h2" rev="1.3.170" />
-		<dependency org="se.ugli.bigqueue" name="bigqueue" rev="1.6.0.0" />
+		            name="guice-multibindings" rev="4.2.2"/>
+		<dependency org="com.google.inject.extensions" name="guice-assistedinject" rev="4.2.2" />
+		<dependency org="com.google.inject.extensions" name="guice-servlet" rev="4.2.2" />
+		<dependency org="com.h2database" name="h2" rev="1.4.200" />
+		<dependency org="org.kairosdb" name="bigqueue" rev="1.0.1" />
+
+		<dependency org="com.typesafe" name="config" rev="1.4.0" />
+
+		<dependency org="org.xerial.snappy" name="snappy-java" rev="1.1.7.2"/>
 
 		<!-- provides connection pooling -->
-		<dependency org="c3p0" name="c3p0" rev="0.9.1.2"/>
+		<dependency org="com.mchange" name="c3p0" rev="0.9.5.5"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2" />
 		<dependency org="org.slf4j" name="jul-to-slf4j" rev="1.7.2" />
 		<dependency org="org.apache.commons" name="commons-math3" rev="3.2" />
-		<dependency org="commons-io" name="commons-io" rev="2.5" />
+		<dependency org="commons-io" name="commons-io" rev="2.7" />
 		<dependency org="com.beust" name="jcommander" rev="1.35" />
-		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.3.6" />
-		<dependency org="joda-time" name="joda-time" rev="2.3" />
+		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.5.13" />
+		<dependency org="joda-time" name="joda-time" rev="2.10.6" />
 
-		<dependency org="ch.qos.logback" name="logback-core" rev="1.1.7" />
-		<dependency org="ch.qos.logback" name="logback-classic" rev="1.1.7" />
+		<dependency org="ch.qos.logback" name="logback-core" rev="1.2.3" />
+		<dependency org="ch.qos.logback" name="logback-classic" rev="1.2.3" />
 
 		<!--Genormous dependencies-->
-		<dependency org="org.agileclick.genorm" name="genormous" rev="1.6.4.jdbc41">
+		<dependency org="org.agileclick.genorm" name="genormous" rev="1.6.5.jdbc41" conf="default,build_tools->default">
 			<exclude org="javax.servlet" name="servlet-api"/>
 			<exclude org="org.agileclick.slickxml" name="slickxml"/>
 			<exclude org="org.agileclick.ultramc" name="ultramc"/>
+			<exclude org="dom4j" name="dom4j"/>
+			<exclude org="org.antlr" name="stringtemplate"/>
+			<exclude org="jaxen" name="jaxen"/>
 		</dependency>
-		<dependency org="jaxen" name="jaxen" rev="1.1.6" transitive="false">
+		<dependency org="dom4j" name="dom4j" rev="1.6.1" conf="build_tools->default"/>
+		<dependency org="org.antlr" name="stringtemplate" rev="3.2.1" conf="build_tools->default"/>
+		<dependency org="jaxen" name="jaxen" rev="1.1.6" transitive="false" conf="build_tools->default">
 			<artifact name="jaxen" type="jar"/>
 		</dependency>
 
 		<!-- Cassandra Client -->
-		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.3.2" />
+		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.10.2">
+			<exclude org="com.fasterxml.jackson.core" name="jackson-databind"/>
+		</dependency>
 		<dependency org="net.jpountz.lz4" name="lz4" rev="1.3.0"/>
 
-		<!--<dependency org="org.hectorclient" name="hector-core" rev="1.1-4">
-			<artifact name="hector-core" type="bundle" ext="jar"/>
-			<exclude org="javax.servlet" module="servlet-api"/>
-		</dependency>-->
-
-		<!--<dependency org="com.netflix.astyanax" name="astyanax-core" rev="3.9.0" />
-		<dependency org="com.netflix.astyanax" name="astyanax-thrift" rev="3.9.0" />
-		<dependency org="com.netflix.astyanax" name="astyanax-cassandra" rev="3.9.0" />-->
 
 		<!-- Jetty server stuff -->
 		<dependency org="org.eclipse.jetty" name="jetty-server"
-		            rev="8.1.16.v20140903"/>
+		            rev="${jetty.version}"/>
 		<dependency org="org.eclipse.jetty" name="jetty-servlet"
-		            rev="8.1.16.v20140903"/>
+		            rev="${jetty.version}"/>
 		<dependency org="org.eclipse.jetty" name="jetty-servlets"
-		            rev="8.1.16.v20140903"/>
-		<dependency org="org.eclipse.jetty.orbit" name="javax.servlet" rev="3.0.0.v201112011016">
-			<artifact name="javax.servlet" type="orbit" ext="jar"/>
-		</dependency>
+		            rev="${jetty.version}"/>
+		<dependency org="org.eclipse.jetty" name="jetty-jaas"
+		            rev="${jetty.version}"/>
 
 		<!--Jersey-->
 		<dependency org="com.sun.jersey.contribs" name="jersey-guice"
-		            rev="1.18.3"/>
-		<dependency org="com.sun.jersey" name="jersey-server" rev="1.18.3"/>
-		<dependency org="com.fasterxml.jackson.jaxrs" name="jackson-jaxrs-json-provider" rev="2.2.3"/>
-		<dependency org="com.sun.jersey" name="jersey-core" rev="1.18.3"/>
-		<dependency org="com.sun.jersey" name="jersey-servlet" rev="1.18.3"
+		            rev="${jersey.version}"/>
+		<dependency org="com.sun.jersey" name="jersey-server" rev="${jersey.version}"/>
+		<dependency org="com.sun.jersey" name="jersey-core" rev="${jersey.version}"/>
+		<dependency org="com.sun.jersey" name="jersey-servlet" rev="${jersey.version}"
 		            transitive="false"/>
-		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-signature" rev="1.18.3" />
-		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-server" rev="1.18.3" />
+		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-signature" rev="${jersey.version}" />
+		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-server" rev="${jersey.version}" />
+		<dependency org="com.fasterxml.jackson.jaxrs" name="jackson-jaxrs-json-provider" rev="2.11.2"/>
 
 		<!-- Pulse -->
 		<dependency org="javax.validation" name="validation-api" rev="1.0.0.GA"/>
@@ -100,7 +108,7 @@
 		<dependency org="com.google.code.findbugs" name="jsr305" rev="1.3.9"/>
 
 		<!-- Quartz -->
-		<dependency org="org.quartz-scheduler" name="quartz" rev="2.1.7" />
+		<dependency org="org.quartz-scheduler" name="quartz" rev="2.3.2" />
 
 		<!-- Codehale Metrics -->
 		<dependency org="com.codahale.metrics" name="metrics-healthchecks"
@@ -109,5 +117,19 @@
 
 		<dependency org="org.testng" name="testng" rev="6.8.5" conf="integration->default"/>
 
+		<!-- Dependencies removed in jdk9 -->
+		<dependency org="javax.xml.bind" name="jaxb-api" rev="2.3.0" conf="jdk11->default;testjdk11->default"/>
+		<dependency org="com.sun.xml.bind" name="jaxb-core" rev="2.3.0" conf="jdk11->default;testjdk11->default"/>
+		<dependency org="com.sun.xml.bind" name="jaxb-impl" rev="2.3.0" conf="jdk11->default;testjdk11->default"/>
+
+		<dependency org="com.sun.activation" name="javax.activation" rev="1.2.0" conf="jdk11->default;testjdk11->default"/>
+
+
+
+		<!-- Build tools -->
+		<dependency org="org.gaul" name="modernizer-maven-plugin" rev="2.0.0" conf="build_tools->default" />
+
+
+		<conflict org="com.google.guava" module="guava" rev="28.2-jre"/>
 	</dependencies>
 </ivy-module>

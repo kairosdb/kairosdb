@@ -16,7 +16,7 @@ import java.util.ArrayList;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class GuiceAggregatorFactoryTest
 {
@@ -58,7 +58,7 @@ public class GuiceAggregatorFactoryTest
         ImmutableList<FeaturePropertyMetadata> samplingProperties = properties.get(7).getProperties();
         assertProperty(samplingProperties.get(0), "value", "Value", "The number of units for the aggregation buckets", "long", "1",
                 ImmutableList.copyOf(new FeatureValidationMetadata[]{
-                        new FeatureValidationMetadata("value > 0", "js", "Value must be greater than 0.")
+                        new FeatureValidationMetadata("value >= 0", "js", "Value must be greater or equal to 0.")
                 }));
         assertProperty(samplingProperties.get(1), "unit", "Unit", "The time unit for the sampling rate", "enum", "MILLISECONDS", ImmutableList.copyOf(new ArrayList<>()));
     }

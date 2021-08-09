@@ -7,26 +7,34 @@ public class RollupQueryMetricStatus
     private long dataPointCount;
     private long executionLength;
     private String errorMessage;
+    private long lastExecutionTime; // added to be backward compatible
 
-    public RollupQueryMetricStatus(String metricName, String lastExecuted, long dataPointCount, long executionLength)
+    public RollupQueryMetricStatus(String metricName, String lastExecuted, long dataPointCount, long executionLength, long lastExecutionTime)
     {
         this.metricName = metricName;
         this.lastExecuted = lastExecuted;
         this.dataPointCount = dataPointCount;
         this.executionLength = executionLength;
+        this.lastExecutionTime = lastExecutionTime;
     }
 
-    public RollupQueryMetricStatus(String metricName, String lastExecuted, long executionLength, String errorMessage)
+    public RollupQueryMetricStatus(String metricName, String lastExecuted, long executionLength, long lastExecutionTime, String errorMessage)
     {
         this.metricName = metricName;
         this.lastExecuted = lastExecuted;
         this.executionLength = executionLength;
         this.errorMessage = errorMessage;
+        this.lastExecutionTime = lastExecutionTime;
     }
 
     public String getMetricName()
     {
         return metricName;
+    }
+
+    public long getLastExecutionTime()
+    {
+        return lastExecutionTime;
     }
 
     public String getLastExecuted()

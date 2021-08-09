@@ -3,6 +3,7 @@ package org.kairosdb.core.http.rest;
 import com.google.inject.Inject;
 import org.h2.util.StringUtils;
 import org.kairosdb.core.datastore.ServiceKeyStore;
+import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.kairosdb.core.formatter.JsonFormatter;
 import org.kairosdb.core.http.rest.MetricsResource.ValuesStreamingOutput;
 import org.kairosdb.core.http.rest.json.ErrorResponse;
@@ -21,7 +22,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.kairosdb.core.http.rest.MetricsResource.setHeaders;
 
 @Path("/api/v1/metadata")
@@ -36,7 +37,7 @@ public class MetadataResource
 	@Inject
 	public MetadataResource(ServiceKeyStore keyStore)
 	{
-		this.m_keyStore = checkNotNull(keyStore, "m_keyStore cannot be null");
+		this.m_keyStore = requireNonNull(keyStore, "m_keyStore cannot be null");
 	}
 
 	@GET
@@ -96,19 +97,34 @@ public class MetadataResource
 		}
 	}
 
-	@GET
-	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
-	@Path("/{service}/{serviceKey}/{key}")
-	public Response getValue(@PathParam("service") String service, @PathParam("serviceKey")
-			String serviceKey, @PathParam("key") String key)
+	private Response getServiceValue(String service, String serviceKey, String key, boolean jsonResponse)
 	{
 		try
 		{
 			checkLocalService(service);
-			String value = m_keyStore.getValue(service, serviceKey, key).getValue();
-			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(value);
-			setHeaders(responseBuilder);
-			return responseBuilder.build();
+			ServiceKeyValue serviceKeyValue = m_keyStore.getValue(service, serviceKey, key);
+
+			String value = null;
+
+			if (serviceKeyValue != null)
+			{
+				value = serviceKeyValue.getValue();
+
+				ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(value);
+				setHeaders(responseBuilder);
+				return responseBuilder.build();
+			}
+			else
+			{
+				ResponseBuilder responseBuilder = setHeaders(Response.status(Status.NOT_FOUND));
+
+				if (jsonResponse)
+					responseBuilder.entity(new ErrorResponse("Key not found"));
+
+				return responseBuilder.build();
+			}
+
+
 		}
 		catch (NotAuthorizedException e)
 		{
@@ -118,8 +134,31 @@ public class MetadataResource
 		catch (Exception e)
 		{
 			logger.error("Failed to retrieve value.", e);
-			return setHeaders(Response.status(Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+			ResponseBuilder responseBuilder = setHeaders(Response.status(Status.INTERNAL_SERVER_ERROR));
+
+			if (jsonResponse)
+				responseBuilder.entity(new ErrorResponse(e.getMessage()));
+
+			return responseBuilder.build();
 		}
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/{service}/{serviceKey}/{key}")
+	public Response getValue(@PathParam("service") String service, @PathParam("serviceKey")
+			String serviceKey, @PathParam("key") String key)
+	{
+		return getServiceValue(service, serviceKey, key, true);
+	}
+
+	@GET
+	@Produces(MediaType.TEXT_PLAIN + "; charset=UTF-8")
+	@Path("/{service}/{serviceKey}/{key}")
+	public Response getValuePlain(@PathParam("service") String service, @PathParam("serviceKey")
+			String serviceKey, @PathParam("key") String key)
+	{
+		return getServiceValue(service, serviceKey, key, false);
 	}
 
 	@POST

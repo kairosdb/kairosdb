@@ -10,8 +10,8 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static java.util.Objects.requireNonNull;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class RollupTaskStatusStoreImpl implements RollupTaskStatusStore
 {
@@ -26,7 +26,7 @@ public class RollupTaskStatusStoreImpl implements RollupTaskStatusStore
     @Inject
     public RollupTaskStatusStoreImpl(ServiceKeyStore keyStore)
     {
-        this.keyStore = checkNotNull(keyStore, "keystore cannot be null");
+        this.keyStore = requireNonNull(keyStore, "keystore cannot be null");
     }
 
     @Override
@@ -34,8 +34,8 @@ public class RollupTaskStatusStoreImpl implements RollupTaskStatusStore
             throws RollUpException
     {
         try {
-            checkNotNullOrEmpty(id, "id cannot be null or empty");
-            checkNotNull(status, "status cannot be null or empty");
+            requireNonNullOrEmpty(id, "id cannot be null or empty");
+            requireNonNull(status, "status cannot be null or empty");
             String json = gson.toJson(status);
             keyStore.setValue(SERVICE, SERVICE_KEY_STATUS, id, json);
         }
@@ -49,7 +49,7 @@ public class RollupTaskStatusStoreImpl implements RollupTaskStatusStore
             throws RollUpException
     {
         try {
-            checkNotNullOrEmpty(id, "id cannot be null or empty");
+            requireNonNullOrEmpty(id, "id cannot be null or empty");
             ServiceKeyValue value = keyStore.getValue(SERVICE, SERVICE_KEY_STATUS, id);
             if (value != null)
             {
@@ -71,7 +71,7 @@ public class RollupTaskStatusStoreImpl implements RollupTaskStatusStore
             throws RollUpException
     {
         try {
-            checkNotNullOrEmpty(id, "id cannot be null or empty");
+            requireNonNullOrEmpty(id, "id cannot be null or empty");
             keyStore.deleteKey(SERVICE, SERVICE_KEY_STATUS, id);
         }
         catch (DatastoreException e) {

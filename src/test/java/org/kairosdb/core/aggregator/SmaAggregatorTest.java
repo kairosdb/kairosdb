@@ -15,10 +15,11 @@
  */
 package org.kairosdb.core.aggregator;
 
-import static org.hamcrest.CoreMatchers.equalTo;
+/*import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.closeTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;*/
 
+import org.assertj.core.data.Offset;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
@@ -28,6 +29,9 @@ import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.testing.ListDataPointGroup;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.number.IsCloseTo.closeTo;
 
 public class SmaAggregatorTest
 {
@@ -61,22 +65,22 @@ public class SmaAggregatorTest
 		DataPointGroup results = aggregator.aggregate(group);
 
 		DataPoint dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(1L));
-		assertThat(dataPoint.getLongValue(), equalTo(11L));
+		assertThat(dataPoint.getTimestamp()).isEqualTo(1L);
+		assertThat(dataPoint.getLongValue()).isEqualTo(11L);
 
 		dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(2L));
-		assertThat(dataPoint.getLongValue(), equalTo(8L));
+		assertThat(dataPoint.getTimestamp()).isEqualTo(2L);
+		assertThat(dataPoint.getLongValue()).isEqualTo(8L);
 
 		dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(2L));
-		assertThat(dataPoint.getLongValue(), equalTo(3L));
+		assertThat(dataPoint.getTimestamp()).isEqualTo(2L);
+		assertThat(dataPoint.getLongValue()).isEqualTo(3L);
 
 		dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(3L));
-		assertThat(dataPoint.getLongValue(), equalTo(4L));
+		assertThat(dataPoint.getTimestamp()).isEqualTo(3L);
+		assertThat(dataPoint.getLongValue()).isEqualTo(4L);
 		
-		assertThat(results.hasNext(), equalTo(false));
+		assertThat(results.hasNext()).isEqualTo(false);
 	}
 
 	@Test
@@ -94,22 +98,22 @@ public class SmaAggregatorTest
 		DataPointGroup results = aggregator.aggregate(group);
 
 		DataPoint dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(1L));
-		assertThat(dataPoint.getDoubleValue(), equalTo(11.1));
+		assertThat(dataPoint.getTimestamp()).isEqualTo(1L);
+		assertThat(dataPoint.getDoubleValue()).isEqualTo(11.1);
 
 		dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(2L));
-		assertThat(dataPoint.getDoubleValue(), equalTo(8.1));
+		assertThat(dataPoint.getTimestamp()).isEqualTo(2L);
+		assertThat(dataPoint.getDoubleValue()).isEqualTo(8.1);
 
 		dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(2L));
-		assertThat(dataPoint.getDoubleValue(), closeTo(3.067, 2));
+		assertThat(dataPoint.getTimestamp()).isEqualTo(2L);
+		assertThat(dataPoint.getDoubleValue()).isCloseTo(3.067, Offset.offset(2.0));
 
 		dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(3L));
-		assertThat(dataPoint.getDoubleValue(), closeTo(4.067, 2));
+		assertThat(dataPoint.getTimestamp()).isEqualTo(3L);
+		assertThat(dataPoint.getDoubleValue()).isCloseTo(4.067, Offset.offset(2.0));
 		
-		assertThat(results.hasNext(), equalTo(false));
+		assertThat(results.hasNext()).isEqualTo(false);
 	}
 
 	@Test
@@ -127,22 +131,22 @@ public class SmaAggregatorTest
 		DataPointGroup results = aggregator.aggregate(group);
 
 		DataPoint dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(1L));
-		assertThat(dataPoint.getDoubleValue(), equalTo(11.1));
+		assertThat(dataPoint.getTimestamp()).isEqualTo(1L);
+		assertThat(dataPoint.getDoubleValue()).isEqualTo(11.1);
 
 		dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(2L));
-		assertThat(dataPoint.getDoubleValue(), equalTo(8.1));
+		assertThat(dataPoint.getTimestamp()).isEqualTo(2L);
+		assertThat(dataPoint.getDoubleValue()).isEqualTo(8.1);
 		
 		dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(2L));
-		assertThat(dataPoint.getDoubleValue(), closeTo(3.067, 2));
+		assertThat(dataPoint.getTimestamp()).isEqualTo(2L);
+		assertThat(dataPoint.getDoubleValue()).isCloseTo(3.067, Offset.offset(2.0));
 
 		dataPoint = results.next();
-		assertThat(dataPoint.getTimestamp(), equalTo(3L));
-		assertThat(dataPoint.getDoubleValue(), closeTo(4.067, 2));
+		assertThat(dataPoint.getTimestamp()).isEqualTo(3L);
+		assertThat(dataPoint.getDoubleValue()).isCloseTo(4.067, Offset.offset(2.0));
 
-		assertThat(results.hasNext(), equalTo(false));
+		assertThat(results.hasNext()).isEqualTo(false);
 	}
 
 }

@@ -4,16 +4,19 @@ language: java
 
 jdk:
   - oraclejdk8
+dist: trusty
 
 #services:
 #  - cassandra
 
+install: true
+
 before_script:
-  - export CLASSPATH=tools/tablesaw-1.2.6.jar
+  - export CLASSPATH=tools/tablesaw-1.2.8.jar
 
 script:
   - java make ivy-retrieve;java make clean test-all
 
 before_install:
   - sudo rm -rf /var/lib/cassandra/*
-  - wget http://www.us.apache.org/dist/cassandra/3.11.1/apache-cassandra-3.11.1-bin.tar.gz && tar -xvzf apache-cassandra-3.11.1-bin.tar.gz && sudo sh apache-cassandra-3.11.1/bin/cassandra -R
+  - wget http://www.us.apache.org/dist/cassandra/3.11.6/apache-cassandra-3.11.6-bin.tar.gz && tar -xvzf apache-cassandra-3.11.6-bin.tar.gz && sudo sh apache-cassandra-3.11.6/bin/cassandra -R

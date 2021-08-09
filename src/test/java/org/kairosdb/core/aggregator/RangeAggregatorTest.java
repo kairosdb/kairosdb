@@ -41,6 +41,7 @@ public class RangeAggregatorTest
 		agg.setSampling(new Sampling(1, TimeUnit.YEARS));
 		agg.setAlignSampling(false);
 		agg.setStartTime(startDate.getMillis());
+		agg.init();
 
 		DataPointGroup aggregated = agg.aggregate(dpGroup);
 
@@ -72,6 +73,7 @@ public class RangeAggregatorTest
 		agg.setSampling(new Sampling(3, TimeUnit.MONTHS));
 		agg.setAlignSampling(false);
 		agg.setStartTime(startDate.getMillis());
+		agg.init();
 
 		DataPointGroup dpg = agg.aggregate(dpGroup);
 
@@ -114,6 +116,7 @@ public class RangeAggregatorTest
 		agg.setAlignSampling(true);
 		agg.setAlignStartTime(true);
 		agg.setStartTime(startDate.getMillis());
+		agg.init();
 
 		DataPointGroup dpg = agg.aggregate(dpGroup);
 
@@ -153,6 +156,7 @@ public class RangeAggregatorTest
 		agg.setAlignSampling(true);
 		agg.setAlignEndTime(true);
 		agg.setStartTime(startDate.getMillis());
+		agg.init();
 
 		DataPointGroup dpg = agg.aggregate(dpGroup);
 
@@ -190,6 +194,7 @@ public class RangeAggregatorTest
 		aggregator.setSampling(new Sampling(1, TimeUnit.MONTHS));
 		aggregator.setAlignSampling(false);
 		aggregator.setStartTime(startDate.getMillis());
+		aggregator.init();
 
 		DataPointGroup aggregated = aggregator.aggregate(dpGroup);
 
@@ -231,6 +236,7 @@ public class RangeAggregatorTest
 		aggregator.setAlignSampling(true);
 		aggregator.setAlignStartTime(true);
 		aggregator.setStartTime(startDate.getMillis());
+		aggregator.init();
 
 		DataPointGroup aggregated = aggregator.aggregate(dpGroup);
 
@@ -275,6 +281,7 @@ public class RangeAggregatorTest
 		aggregator.setAlignSampling(true);
 		aggregator.setAlignEndTime(true);
 		aggregator.setStartTime(startDate.getMillis());
+		aggregator.init();
 
 		DataPointGroup aggregated = aggregator.aggregate(dpGroup);
 
@@ -319,6 +326,7 @@ public class RangeAggregatorTest
 		aggregator.setAlignSampling(true);
 		aggregator.setAlignStartTime(true);
 		aggregator.setStartTime(startDate.getMillis());
+		aggregator.init();
 
 		DataPointGroup aggregated = aggregator.aggregate(dpGroup);
 
@@ -363,6 +371,7 @@ public class RangeAggregatorTest
 		aggregator.setAlignSampling(true);
 		aggregator.setAlignEndTime(true);
 		aggregator.setStartTime(startDate.getMillis());
+		aggregator.init();
 
 		DataPointGroup aggregated = aggregator.aggregate(dpGroup);
 
@@ -406,6 +415,7 @@ public class RangeAggregatorTest
 		aggregator.setTimeZone(paris);
 		aggregator.setSampling(new Sampling(1, TimeUnit.MONTHS));
 		aggregator.setAlignSampling(true);
+		aggregator.init();
 
 		DataPointGroup hourCount = aggregator.aggregate(group);
 		assert hourCount.hasNext();
@@ -432,6 +442,7 @@ public class RangeAggregatorTest
 		aggregator.setTimeZone(paris);
 		aggregator.setSampling(new Sampling(1, TimeUnit.MONTHS));
 		aggregator.setAlignSampling(true);
+		aggregator.init();
 
 		DataPointGroup hourCount = aggregator.aggregate(group);
 		assertThat(hourCount.hasNext(), is(true));
@@ -460,6 +471,7 @@ public class RangeAggregatorTest
 		SumAggregator aggregator = new SumAggregator(new DoubleDataPointFactoryImpl());
 		aggregator.setSampling(new Sampling(1, TimeUnit.YEARS));
 		aggregator.setAlignSampling(false);
+		aggregator.init();
 
 		DataPointGroup dayCount = aggregator.aggregate(dpGroup);
 
@@ -496,6 +508,7 @@ public class RangeAggregatorTest
 		SumAggregator aggregator = new SumAggregator(new DoubleDataPointFactoryImpl());
 		aggregator.setSampling(new Sampling(1, TimeUnit.DAYS));
 		aggregator.setAlignSampling(false);
+		aggregator.init();
 
 		DataPointGroup dayCount = aggregator.aggregate(group);
 
@@ -529,6 +542,7 @@ public class RangeAggregatorTest
 		SumAggregator aggregator = new SumAggregator(new DoubleDataPointFactoryImpl());
 		aggregator.setSampling(new Sampling(1, TimeUnit.HOURS));
 		aggregator.setAlignSampling(false);
+		aggregator.init();
 
 		DataPointGroup dayCount = aggregator.aggregate(group);
 
@@ -562,6 +576,7 @@ public class RangeAggregatorTest
 		SumAggregator aggregator = new SumAggregator(new DoubleDataPointFactoryImpl());
 		aggregator.setSampling(new Sampling(1, TimeUnit.MINUTES));
 		aggregator.setAlignSampling(false);
+		aggregator.init();
 
 		DataPointGroup dayCount = aggregator.aggregate(group);
 
@@ -594,6 +609,7 @@ public class RangeAggregatorTest
 		SumAggregator aggregator = new SumAggregator(new DoubleDataPointFactoryImpl());
 		aggregator.setSampling(new Sampling(1, TimeUnit.SECONDS));
 		aggregator.setAlignSampling(false);
+		aggregator.init();
 
 		DataPointGroup dayCount = aggregator.aggregate(group);
 
@@ -629,6 +645,7 @@ public class RangeAggregatorTest
 		aggregator.setSampling(new Sampling(1, TimeUnit.MILLISECONDS));
 		aggregator.setAlignSampling(false);
 		aggregator.setStartTime(startDate.getMillis());
+		aggregator.init();
 
 		DataPointGroup dayCount = aggregator.aggregate(group);
 
@@ -676,6 +693,7 @@ public class RangeAggregatorTest
 		aggregator.setSampling(new Sampling(1, TimeUnit.MILLISECONDS));
 		aggregator.setAlignSampling(false);
 		aggregator.setStartTime(startDate.getMillis());
+		aggregator.init();
 
 		DataPointGroup dpg = aggregator.aggregate(group);
 

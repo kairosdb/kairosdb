@@ -56,6 +56,7 @@ public class GenOrmDataSource
 			
 		/**
 			Adds a connection to the thread
+		 	@param connection Connection to add to thread
 		*/
 		public void addConnection(GenOrmConnection connection)
 			{
@@ -64,6 +65,7 @@ public class GenOrmDataSource
 			
 		/**
 			Gets the current connection on the thread or null if none
+		 	@return GenOrmConnection on the thread if any
 		*/
 		public GenOrmConnection getConnection()
 			{
@@ -75,6 +77,7 @@ public class GenOrmDataSource
 			Removes the connection from the thread.
 			If it is the last connection on the stack the thread local data is 
 			removed.
+			@return GenOrmConnection on the thread if any
 		*/
 		public GenOrmConnection removeConnection()
 			{
@@ -107,6 +110,7 @@ public class GenOrmDataSource
 	
 	/**
 		Gets the default data source
+		@return GenOrmDSEnvelope
 	*/
 	public static GenOrmDSEnvelope getDataSource()
 		{
@@ -115,7 +119,9 @@ public class GenOrmDataSource
 		
 	/**
 		Gets the data source for the particular key
-	*/
+		@param key Key the datasource is associated with
+		@return GenOrmDSEnvelope
+	 */
 	public static GenOrmDSEnvelope getDataSource(String key)
 		{
 		return (s_dataSourceMap.get(key));
@@ -281,6 +287,7 @@ public class GenOrmDataSource
 		the thread
 		@return Returns a Statement or null if there is not a current connection set
 		on the thread
+		@throws SQLException if the an error occurs on the connection
 	*/
 	public static Statement createStatement()
 			throws SQLException
@@ -292,8 +299,10 @@ public class GenOrmDataSource
 	/**
 		Creates a <code>java.sql.PreparedStatement</code> using the current connection on 
 		the thread
+		@param sql SQL to prepare a statement for
 		@return Returns a PreparedStatement or null if there is not a current connection set
 		on the thread
+		@throws SQLException if an error occurs preparing the statement
 	*/
 	public static PreparedStatement prepareStatement(String sql)
 			throws SQLException
@@ -309,6 +318,8 @@ public class GenOrmDataSource
 		stmt.executeUpdate(sql);
 		stmt.close();</code>
 		@param sql SQL update to process
+		@return number of rows updated
+		@throws SQLException if an error occurs running the sql statement
 	*/
 	public static int rawUpdate(String sql)
 			throws SQLException

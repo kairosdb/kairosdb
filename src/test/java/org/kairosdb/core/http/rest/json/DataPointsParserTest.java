@@ -23,10 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.junit.Before;
 import org.junit.Test;
-import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.TestDataPointFactory;
+import org.kairosdb.core.*;
 import org.kairosdb.core.datapoints.StringDataPoint;
 import org.kairosdb.core.datastore.Datastore;
 import org.kairosdb.core.datastore.DatastoreMetricQuery;
@@ -48,7 +45,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 import java.util.zip.GZIPInputStream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -64,11 +60,11 @@ public class DataPointsParserTest
 	private Publisher<DataPointEvent> publisher;
 
 	@Before
-    public void setup()
-    {
-        eventBus = new FilterEventBus(new EventBusConfiguration(new Properties()));
-        publisher = eventBus.createPublisher(DataPointEvent.class);
-    }
+	public void setup()
+	{
+		eventBus = new FilterEventBus(new EventBusConfiguration(new KairosRootConfig()));
+		publisher = eventBus.createPublisher(DataPointEvent.class);
+	}
 
 	@Test
 	public void test_emptyJson_Invalid() throws DatastoreException, IOException
@@ -775,6 +771,23 @@ public class DataPointsParserTest
 		public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
 		{
 			return null;
+		}
+
+		@Override
+		public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
+		{
+		}
+
+		@Override
+		public long getMinTimeValue()
+		{
+			return Long.MIN_VALUE;
+		}
+
+		@Override
+		public long getMaxTimeValue()
+		{
+			return Long.MAX_VALUE;
 		}
 
 		@Override

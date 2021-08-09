@@ -33,4 +33,10 @@ public class BAggregator implements Aggregator
     {
         return null;
     }
+
+    @Override
+    public void init()
+    {
+
+    }
 }

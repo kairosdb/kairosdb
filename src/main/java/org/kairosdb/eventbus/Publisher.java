@@ -1,7 +1,7 @@
 package org.kairosdb.eventbus;
 
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class Publisher<T>
 {
@@ -9,7 +9,7 @@ public class Publisher<T>
 
 	public Publisher(Pipeline pipeline)
 	{
-		m_pipeline = checkNotNull(pipeline);
+		m_pipeline = requireNonNull(pipeline);
 	}
 
 	@SuppressWarnings("unchecked")

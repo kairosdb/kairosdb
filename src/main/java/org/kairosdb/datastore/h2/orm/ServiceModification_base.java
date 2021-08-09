@@ -75,6 +75,7 @@ public class ServiceModification_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Returns a list of the feild meta for the class that this is a factory of
+			@return List of GenOrmFieldMeta
 		*/
 		public List<GenOrmFieldMeta> getFields()
 			{
@@ -84,6 +85,7 @@ public class ServiceModification_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Returns a list of foreign key constraints
+			@return List of GenOrmConstraint
 		*/
 		public List<GenOrmConstraint> getForeignKeyConstraints()
 			{
@@ -93,6 +95,7 @@ public class ServiceModification_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Returns the SQL create statement for this table
+			@return SQL create statement
 		*/
 		public String getCreateStatement()
 			{
@@ -102,6 +105,9 @@ public class ServiceModification_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry with the specified primary keys.
+			@param service String
+			@param serviceKey String
+			@return new ServiceModification
 		*/
 		public ServiceModification create(String service, String serviceKey)
 			{
@@ -117,6 +123,7 @@ public class ServiceModification_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry that is empty
+			@return new blank ServiceModification
 		*/
 		public ServiceModification createRecord()
 			{
@@ -261,6 +268,7 @@ public class ServiceModification_base extends GenOrmRecord
 			Convenience method for selecting records.  Ideally this should not be use, 
 			instead a custom query for this table should be used.
 			@param where sql where statement.
+			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where)
 			{
@@ -273,6 +281,7 @@ public class ServiceModification_base extends GenOrmRecord
 			instead a custom query for this table should be used.
 			@param where sql where statement.
 			@param orderBy sql order by statement
+			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where, String orderBy)
 			{
@@ -517,6 +526,8 @@ public class ServiceModification_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return String
 	*/
 	public String getService() { return (m_service.getValue()); }
 	public ServiceModification setService(String data)
@@ -541,6 +552,8 @@ public class ServiceModification_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return String
 	*/
 	public String getServiceKey() { return (m_serviceKey.getValue()); }
 	public ServiceModification setServiceKey(String data)
@@ -565,6 +578,8 @@ public class ServiceModification_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return java.sql.Timestamp
 	*/
 	public java.sql.Timestamp getModificationTime() { return (m_modificationTime.getValue()); }
 	public ServiceModification setModificationTime(java.sql.Timestamp data)

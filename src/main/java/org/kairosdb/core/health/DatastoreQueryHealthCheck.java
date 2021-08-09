@@ -10,7 +10,7 @@ import org.kairosdb.core.exception.DatastoreException;
 
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class DatastoreQueryHealthCheck extends HealthCheck implements HealthStatus
 {
@@ -20,7 +20,7 @@ public class DatastoreQueryHealthCheck extends HealthCheck implements HealthStat
 	@Inject
 	public DatastoreQueryHealthCheck(KairosDatastore datastore)
 	{
-		this.datastore = checkNotNull(datastore);
+		this.datastore = requireNonNull(datastore);
 	}
 
 	@Override

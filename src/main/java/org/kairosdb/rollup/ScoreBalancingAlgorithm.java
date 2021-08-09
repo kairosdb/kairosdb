@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class ScoreBalancingAlgorithm implements BalancingAlgorithm
 {
@@ -82,7 +82,7 @@ public class ScoreBalancingAlgorithm implements BalancingAlgorithm
 
         ServerAssignment(String host)
         {
-            this.host = checkNotNullOrEmpty(host, "host cannot be null or empty");
+            this.host = requireNonNullOrEmpty(host, "host cannot be null or empty");
         }
 
         @Override

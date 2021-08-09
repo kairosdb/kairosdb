@@ -36,9 +36,11 @@ function updateChart() {
 		displayQuery();
 
 		var $graphLink = $("#graph_link");
-		$graphLink.attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) + "&d=" + encodeURI(JSON.stringify(metricData, null, 0)));
+		$graphLink.attr("href", "view.html?q=" + encodeURI(JSON.stringify(query, null, 0)) +
+			"&d=" + encodeURI(JSON.stringify(metricData, null, 0)) +
+			"&tz=" + encodeURI($('#timeZone').val()));
 		$graphLink.show();
-		showChartForQuery("(Click and drag to zoom)", query, metricData);
+		showChartForQuery("(Click and drag to zoom)", query, metricData, $('#timeZone').val());
 	}
 }
 
@@ -158,17 +160,12 @@ function buildKairosDBQuery() {
 				}
 				metric.addScaleAggregator(scalingFactor);
 			}
-                        else if (name == 'filter')
-                        {
-                                var filterop = $(aggregator).find(".aggregatorFilterOpValue").val();
+      else if (name == 'filter')
+      {
+        var filterop = $(aggregator).find(".aggregatorFilterOpValue").val();
 				var threshold = $(aggregator).find(".aggregatorFilterThresholdValue").val();
-				if (!$.isNumeric(threshold))
-				{
-					showErrorMessage("filter threshold value must be a numeric value.");
-					return true;
-				}
-				metric.addFilterAggregator(filterop, threshold);
-                        }
+				metric.addFilterAggregator(filterop, $.isNumeric(threshold) ? parseFloat(threshold) : threshold);
+      }
 			else if (name == 'trim')
 			{
 				var agg = metric.addAggregator(name);
@@ -188,7 +185,7 @@ function buildKairosDBQuery() {
 				}
 				var align = $(aggregator).find(".aggregatorAlign").val();
 
-				var agg = metric.addRangeAggregator(name, value, unit, percentile, time_zone, align);
+				var agg = metric.addRangeAggregator(name, value, unit, time_zone, align);
 				agg.return_type = $(aggregator).find(".aggregatorDevValue").val();
 			}
 			else if (name == 'save_as')
@@ -348,8 +345,7 @@ function getAdditionalChartData() {
 function showErrorMessage(message) {
 	var $errorContainer = $("#errorContainer");
 	$errorContainer.show();
-	$errorContainer.html("");
-	$errorContainer.append(message);
+	$errorContainer.text(message);
 }
 
 function removeMetric(removeButton) {
@@ -660,6 +656,7 @@ function addAggregator(container) {
 		else if (name == "percentile") {
 			$aggregatorContainer.find(".aggregatorPercentile").show().css('display', 'table-cell');
 			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
+			$aggregatorContainer.find(".aggregatorSampling").show();
 			$aggregatorContainer.find(".aggregatorAlign").show();
 		}
 		else if (name == "div") {
@@ -794,14 +791,14 @@ function getTagsForMetric(metricName) {
 	});
 }
 
-function showChartForQuery(subTitle, query, metricData) {
+function showChartForQuery(subTitle, query, metricData, timezone) {
 	kairosdb.dataPointsQuery(query, function (queries) {
-		showChart(subTitle, queries, metricData);
+		showChart(subTitle, queries, metricData, timezone || "utc");
 		$("#deleteButton").button("enable");
 	});
 }
 
-function showChart(subTitle, queries, metricData) {
+function showChart(subTitle, queries, metricData, timezone) {
 	if (queries.length == 0) {
 		return;
 	}
@@ -885,9 +882,9 @@ function showChart(subTitle, queries, metricData) {
 	}
 
 	if (isHighChartsLoaded())
-		showHighChartsChart(subTitle, yaxis, data);
+		showHighChartsChart(subTitle, yaxis, data, timezone);
 	else
-		showFlotChart(subTitle, yaxis, data);
+		showFlotChart(subTitle, yaxis, data, timezone);
 	$status.html("");
 }
 

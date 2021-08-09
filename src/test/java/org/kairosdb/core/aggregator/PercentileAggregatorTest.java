@@ -33,14 +33,12 @@ import java.util.Random;
 import static java.lang.Math.floor;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.closeTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 public class PercentileAggregatorTest
 {
 	private PercentileAggregator aggregator;
-
-	@Rule
-	public ExpectedException exception = ExpectedException.none();
 
 	@Before
 	public void setUp()
@@ -88,7 +86,7 @@ public class PercentileAggregatorTest
 		double[] doubleValues = new double[values.length];
 		for (int i = 0; i < values.length; i++)
 		{
-			doubleValues[i] = new Double(values[i].toString());
+			doubleValues[i] = Double.valueOf(values[i].toString());
 		}
 		return getActualPercentile(percentile, doubleValues);
 	}
@@ -97,6 +95,7 @@ public class PercentileAggregatorTest
 	{
 		Random random = new Random();
 		aggregator.setPercentile(percentile);
+		aggregator.init();
 		ListDataPointGroup group = new ListDataPointGroup("group");
 		double[] values = new double[testSize];
 		for (int i = 0; i < testSize; i++)
@@ -120,6 +119,7 @@ public class PercentileAggregatorTest
 	{
 		Random random = new Random();
 		aggregator.setPercentile(percentile);
+		aggregator.init();
 		ListDataPointGroup group = new ListDataPointGroup("group");
 		long[] values = new long[testSize];
 		long range = 1000000000L;
@@ -144,6 +144,7 @@ public class PercentileAggregatorTest
 	{
 		Random random = new Random();
 		aggregator.setPercentile(percentile);
+		aggregator.init();
 		ListDataPointGroup group = new ListDataPointGroup("group");
 		Object[] values = new Object[testSize];
 		long range = 1000000000L;
@@ -247,17 +248,17 @@ public class PercentileAggregatorTest
 	@Test
 	public void test_invalidPercentiles()
 	{
-		exception.expect(IllegalArgumentException.class);
-		test_percentileValue_long(5, 10);
+		assertThrows(IllegalArgumentException.class, () ->
+			test_percentileValue_long(5, 10));
 
-		exception.expect(IllegalArgumentException.class);
-		test_percentileValue_double(1.2, 10);
+		assertThrows(IllegalArgumentException.class, () ->
+			test_percentileValue_double(1.2, 10));
 
-		exception.expect(IllegalArgumentException.class);
-		test_percentileValue_mixedTypeValues(-2, 10);
+		assertThrows(IllegalArgumentException.class, () ->
+			test_percentileValue_mixedTypeValues(-2, 10));
 
-		exception.expect(IllegalArgumentException.class);
-		test_percentileValue_long(1.00001, 10);
+		assertThrows(IllegalArgumentException.class, () ->
+			test_percentileValue_long(1.00001, 10));
 	}
 
 }

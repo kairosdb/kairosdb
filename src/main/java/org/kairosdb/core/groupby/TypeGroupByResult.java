@@ -23,7 +23,7 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class TypeGroupByResult implements GroupByResult
 {

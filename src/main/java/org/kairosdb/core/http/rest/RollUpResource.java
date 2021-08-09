@@ -2,58 +2,55 @@ package org.kairosdb.core.http.rest;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import org.kairosdb.core.datastore.KairosDatastore;
+import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.http.rest.json.ErrorResponse;
 import org.kairosdb.core.http.rest.json.JsonResponseBuilder;
 import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.RollupResponse;
-import org.kairosdb.rollup.RollUpException;
-import org.kairosdb.rollup.RollUpTasksStore;
-import org.kairosdb.rollup.RollupTask;
-import org.kairosdb.rollup.RollupTaskStatus;
-import org.kairosdb.rollup.RollupTaskStatusStore;
+import org.kairosdb.rollup.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.kairosdb.core.http.rest.MetricsResource.setHeaders;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 @Path("/api/v1/rollups")
 public class RollUpResource
 {
 	private static final Logger logger = LoggerFactory.getLogger(MetricsResource.class);
 	static final String RESOURCE_URL = "/api/v1/rollups/";
+	private static final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS");
 
 	private final QueryParser parser;
 	private final RollUpTasksStore store;
 	private final RollupTaskStatusStore statusStore;
+	private final KairosDatastore datastore;
 
 	@Inject
-	public RollUpResource(QueryParser parser, RollUpTasksStore store, RollupTaskStatusStore statusStore)
+	public RollUpResource(QueryParser parser, RollUpTasksStore store, RollupTaskStatusStore statusStore,
+			KairosDatastore datastore)
 	{
-		this.parser = checkNotNull(parser);
-		this.store = checkNotNull(store);
-		this.statusStore = checkNotNull(statusStore);
+		this.parser = requireNonNull(parser);
+		this.store = requireNonNull(store);
+		this.statusStore = requireNonNull(statusStore);
+		this.datastore = requireNonNull(datastore);
 	}
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	public Response create(String json)
 	{
-		checkNotNullOrEmpty(json);
+		requireNonNullOrEmpty(json);
 		try
 		{
 			RollupTask task = parser.parseRollupTask(json);
@@ -109,7 +106,7 @@ public class RollUpResource
 	@Path("/status/{id}")
 	public Response getStatus(@PathParam("id") String id)
 	{
-		checkNotNullOrEmpty(id);
+		requireNonNullOrEmpty(id);
 		try
 		{
 			ResponseBuilder responseBuilder;
@@ -137,7 +134,7 @@ public class RollUpResource
 	@Path("{id}")
 	public Response get(@PathParam("id") String id)
 	{
-		checkNotNullOrEmpty(id);
+		requireNonNullOrEmpty(id);
 		try
 		{
 			ResponseBuilder responseBuilder;
@@ -167,7 +164,7 @@ public class RollUpResource
 	{
 		try
 		{
-			checkNotNullOrEmpty(id);
+			requireNonNullOrEmpty(id);
 
 			RollupTask task = store.read(id);
 			if (task != null)
@@ -194,8 +191,8 @@ public class RollUpResource
 	@Path("{id}")
 	public Response update(@PathParam("id") String id, String json)
 	{
-		checkNotNullOrEmpty(id);
-		checkNotNullOrEmpty(json);
+		requireNonNullOrEmpty(id);
+		requireNonNullOrEmpty(json);
 
 		try
 		{
@@ -207,7 +204,7 @@ public class RollUpResource
 			}
 			else
 			{
-				RollupTask task = parser.parseRollupTask(json);
+				RollupTask task = parser.parseRollupTask(json, id);
 				RollupTask updatedTask = new RollupTask(id, task.getName(), task.getExecutionInterval(), task.getRollups(), task.getJson());
 				store.write(ImmutableList.of(updatedTask));
 				responseBuilder = Response.status(Status.OK).entity(parser.getGson().toJson(createResponse(updatedTask)));
@@ -219,6 +216,52 @@ public class RollUpResource
 		{
 			JsonResponseBuilder builder = new JsonResponseBuilder(Status.BAD_REQUEST);
 			return builder.addErrors(e.getErrorMessages()).build();
+		}
+		catch (Exception e)
+		{
+			logger.error("Failed to add roll-up.", e);
+			return setHeaders(Response.status(Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+	}
+
+	// todo what if browser times out?
+	@GET
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/backfill/{id}")
+	public Response backfill(@PathParam("id") String id,
+			@QueryParam("startTime") String startTime, @QueryParam("endTime") String endTime)
+	{
+		requireNonNullOrEmpty(id);
+		requireNonNullOrEmpty(startTime, "startTime must be specified");
+
+		try
+		{
+			long startTimeMillis = DATE_TIME_FORMAT.parse(startTime).getTime();
+
+			long endTimeMillis = System.currentTimeMillis();
+			if (endTime != null) endTimeMillis = DATE_TIME_FORMAT.parse(endTime).getTime();
+
+			ResponseBuilder responseBuilder;
+			RollupTask task = store.read(id);
+			if (task == null)
+			{
+				responseBuilder = Response.status(Status.NOT_FOUND).entity(new ErrorResponse("Resource not found for id " + id));
+			}
+			else
+			{
+				RollupProcessorImpl rollupProcessor = new RollupProcessorImpl(datastore);
+				for (Rollup rollup : task.getRollups())
+				{
+					for (QueryMetric queryMetric : rollup.getQueryMetrics())
+					{
+						rollupProcessor.process(task, queryMetric, startTimeMillis, endTimeMillis, rollup.getTimeZone());
+					}
+				}
+
+				responseBuilder = Response.status(Status.NO_CONTENT);
+			}
+			setHeaders(responseBuilder);
+			return responseBuilder.build();
 		}
 		catch (Exception e)
 		{

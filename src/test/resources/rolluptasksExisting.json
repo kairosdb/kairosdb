@@ -1,0 +1,96 @@
+[
+  {
+    "id": "46f67574-011c-46ba-bae2-1872239ec404",
+    "name": "Rollup1",
+    "execution_interval": {
+      "value": 1,
+      "unit": "hours"
+    },
+    "rollups": [
+      {
+        "save_as": "kairosdb.http.query_time_rollup",
+        "query": {
+          "cache_time": 0,
+          "start_relative": {
+            "value": "1",
+            "unit": "hours"
+          },
+          "metrics": [
+            {
+              "name": "kairosdb.http.query_time",
+              "limit": 10000,
+              "tags": {
+                "host": [
+                  "foo",
+                  "bar"
+                ]
+              },
+              "group_by": [
+                {
+                  "name": "tag",
+                  "tags": ["group1", "group2"]
+                }
+              ],
+              "aggregators": [
+                {
+                  "name": "sum",
+                  "sampling": {
+                    "value": 10,
+                    "unit": "minutes"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "f20f8904-368e-43e2-8e54-984b3c8fb405",
+    "name": "Rollup2",
+    "execution_interval": {
+      "value": 1,
+      "unit": "minutes"
+    },
+    "rollups": [
+      {
+        "save_as": "kairosdb.http.foo_rollup",
+        "query": {
+          "cache_time": 0,
+          "start_relative": {
+            "value": "1",
+            "unit": "hours"
+          },
+          "metrics": [
+            {
+              "name": "kairosdb.http.foo",
+              "limit": 10000,
+              "tags": {
+                "host": [
+                  "foo",
+                  "bar"
+                ]
+              },
+              "group_by": [
+                {
+                  "name": "tag",
+                  "tags": ["group3", "group4"]
+                }
+              ],
+              "aggregators": [
+                {
+                  "name": "sum",
+                  "sampling": {
+                    "value": 24,
+                    "unit": "hours"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

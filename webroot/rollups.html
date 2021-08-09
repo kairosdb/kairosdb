@@ -12,7 +12,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link href="bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
 	<link href="css/rollup.css" rel="stylesheet">
-
+	<link href="css/header.css" rel="stylesheet">
 	<script src="rollup-js/third-party/underscore-min-1.8.3.js"></script>
 	<script src="rollup-js/third-party/jquery-min-2.1.3.js"></script>
 	<script src="bootstrap-3.3.5/js/bootstrap.min.js"></script>
@@ -26,47 +26,36 @@
 	<script src="rollup-js/kairosdbDatasource.js"></script>
 	<script src="rollup-js/rollupController.js"></script>
 	<script src="rollup-js/pasteQueryController.js"></script>
+	<script src="js/moment.min.js"></script>
+	<script src="js/moment-timezone-with-data.min.js"></script>
 </head>
 
-<body ng-app="rollupApp" ng-controller="rollupController" background="css/brickwall.png">
+<body ng-app="rollupApp" ng-controller="rollupController">
 
+<div id="page-header">
+<div id="logo"><img src='img/kairosdb.png'></div>
+<a href="index.html">Query</a>
+<a class="active" href="rollups.html">Rollups</a>
+<div style="float:right"><span id="lastSaved"
+	class="last-saved small"
+	ng-hide="lastSaved == null"><span class="glyphicon glyphicon-ok"></span> Last Saved {{lastSaved}}</span>
+</div>
+</div>
 <div class="container-fluid">
-	<div class="page-header" style="font-family: Lucida Console, Monaco, monospace">
-		<div class="text-center text-info">
-			<h1>Roll-ups</h1>
-		</div>
-
-		<span id="lastSaved"
-			  class="last-saved pull-right text-info small"
-			  ng-hide="lastSaved == null">Last Saved {{lastSaved}}</span>
-	</div>
-
-	<button id="small" type="button" class="btn btn-primary" ng-disabled="!anyTasksSelected()" ng-click="deleteSelected()">Delete</button>
-
-	<p></p>
-
 	<table class="table table-striped table-bordered" data-sort-name="metric-name"  data-sort-order="asc">
 		<thead>
 		<tr class="text-info">
 			<th></th>
-			<th data-field="select" data-sortable="false">
-				<div class="dropdown">
-					<button id="small"
-							class="btn btn-primary dropdown-toggle"
-							type="button" data-toggle="dropdown"
-
-					>Select <span class="caret"></span></button>
-					<ul class="dropdown-menu">
-						<li><a href="#" ng-click="selectAllTasks()">All</a></li>
-						<li><a href="#" ng-click="selectNoTasks()">None</a></li>
-					</ul>
-				</div>
+			<th data-field="select" data-sortable="false" style="text-align: center" title="Toggle Select All">
+				<input type="checkbox" name="toggleSelect" ng-click="toggleSelectAll($event)"/>
 			<th data-field="name" data-sortable="true">
 				<span title="{{TOOLTIP_TASK_NAME}}" bs-tooltip="">Name</span></th>
 			<th data-field="metric-name" data-sortable="true">
 				<span title="{{TOOLTIP_METRIC_NAME}}" bs-tooltip="">Metric</span></th>
 			<th data-field="save as"  data-sortable="true">
 				<span title="{{TOOLTIP_SAVE_AS}}" bs-tooltip="">Save As</span></th>
+			<th data-field="timezone" data-sortable="false">
+				<span title="{{TOOLTIP_TIMEZONE}}" bs-tooltip="">Align TZ</span></th>
 			<th data-field="execute" data-sortable="true">
 				<span title="{{TOOLTIP_EXECUTE}}" bs-tooltip="">Execute</span></th>
 			<th data-field="group-by" data-sortable="true">
@@ -144,6 +133,22 @@
 			</td>
 			<td class="text-columns">
 				<editable model="task.save_as">{{ task.save_as }}</editable>
+			</td>
+			<td class="text-columns">
+				<a href=""
+				   ng-show="!task.tzEdit"
+				   ng-click="task.tzEdit=true"
+				   style="color:black;"
+				>{{ task.time_zone || "Default: UTC"}}
+				</a>
+				<span ng-show="task.tzEdit">
+					<input type="text" list="tz" name="time_zone" ng-model="task.time_zone_input" ng-change="setTimeZone(task);" />
+					<datalist id="tz">
+						<select>
+							<option ng-repeat="tzName in TZ_NAMES" value="{{tzName}}"></option>
+						</select>
+					</datalist>
+				</span>
 			</td>
 			<td>
 				<span ng-show="task.complex">{{ task.executionType }}</span>
@@ -228,6 +233,7 @@
 		</tr>
 		</tbody>
 	</table>
+	<button id="small" type="button" class="btn btn-primary" ng-disabled="!anyTasksSelected()" ng-click="deleteSelected()">Delete Selected</button>
 </div>
 
 <!--{{ tasks }}-->

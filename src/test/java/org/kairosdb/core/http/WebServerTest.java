@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class WebServerTest
 {
@@ -137,7 +137,7 @@ public class WebServerTest
 	@Test
 	public void test_constructorNullAddressValid() throws UnknownHostException
 	{
-		WebServer webServer = new WebServer(null, 0, ".");
+		WebServer webServer = new WebServer(null, 0, ".", 120000);
 
 		assertThat(webServer.getAddress().getHostName(), equalTo("localhost"));
 	}
@@ -145,7 +145,7 @@ public class WebServerTest
 	@Test
 	public void test_constructorEmptyAddressValid() throws UnknownHostException
 	{
-		WebServer webServer = new WebServer("", 0, ".");
+		WebServer webServer = new WebServer("", 0, ".", 120000);
 
 		assertThat(webServer.getAddress().getHostName(), equalTo("localhost"));
 	}
@@ -202,7 +202,7 @@ public class WebServerTest
 		assertThat(response.getJson().length(), greaterThan(0));
 	}
 
-	@Test
+	/*@Test
 	public void test_basicAuth_unauthorized() throws KairosDBException, IOException, InterruptedException
 	{
 		server = new WebServer(9001, ".");
@@ -228,7 +228,7 @@ public class WebServerTest
 		JsonResponse response = client.get("http://localhost:9001/");
 		assertThat(response.getStatusCode(), equalTo(200));
 		assertThat(response.getJson().length(), greaterThan(0));
-	}
+	}*/
 
 	@Test
 	public void test_success() throws KairosDBException, IOException, InterruptedException

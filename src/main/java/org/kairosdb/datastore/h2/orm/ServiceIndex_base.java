@@ -50,13 +50,23 @@ public class ServiceIndex_base extends GenOrmRecord
 		public ServiceIndex find(String service, String serviceKey, String key);
 		public ServiceIndex findOrCreate(String service, String serviceKey, String key);
 		/**
-		*/
+
+			@param service String
+			@param serviceKey String
+			@return Results*/
 		public ResultSet getKeys(String service, String serviceKey);/**
-		*/
+
+			@param service String
+			@return Results*/
 		public ResultSet getServiceKeys(String service);/**
-		*/
+
+			@return Results*/
 		public ServiceIndex getModificationTime();/**
-		*/
+
+			@param service String
+			@param serviceKey String
+			@param keyPrefix String
+			@return Results*/
 		public ResultSet getKeysLike(String service, String serviceKey, String keyPrefix);
 		}
 	
@@ -90,6 +100,7 @@ public class ServiceIndex_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Returns a list of the feild meta for the class that this is a factory of
+			@return List of GenOrmFieldMeta
 		*/
 		public List<GenOrmFieldMeta> getFields()
 			{
@@ -99,6 +110,7 @@ public class ServiceIndex_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Returns a list of foreign key constraints
+			@return List of GenOrmConstraint
 		*/
 		public List<GenOrmConstraint> getForeignKeyConstraints()
 			{
@@ -108,6 +120,7 @@ public class ServiceIndex_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Returns the SQL create statement for this table
+			@return SQL create statement
 		*/
 		public String getCreateStatement()
 			{
@@ -117,6 +130,10 @@ public class ServiceIndex_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry with the specified primary keys.
+			@param service String
+			@param serviceKey String
+			@param key String
+			@return new ServiceIndex
 		*/
 		public ServiceIndex create(String service, String serviceKey, String key)
 			{
@@ -133,6 +150,7 @@ public class ServiceIndex_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry that is empty
+			@return new blank ServiceIndex
 		*/
 		public ServiceIndex createRecord()
 			{
@@ -278,6 +296,7 @@ public class ServiceIndex_base extends GenOrmRecord
 			Convenience method for selecting records.  Ideally this should not be use, 
 			instead a custom query for this table should be used.
 			@param where sql where statement.
+			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where)
 			{
@@ -290,6 +309,7 @@ public class ServiceIndex_base extends GenOrmRecord
 			instead a custom query for this table should be used.
 			@param where sql where statement.
 			@param orderBy sql order by statement
+			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where, String orderBy)
 			{
@@ -372,7 +392,7 @@ public class ServiceIndex_base extends GenOrmRecord
 		*/
 		public ResultSet getServiceKeys(String service)
 			{
-			String query = SELECT+"from service_index this\n				where\n				this.\"service\" = ?\n				order by this.\"key\" asc";
+			String query = SELECT+"from service_index this\n				WHERE\n				this.\"service\" = ?\n				ORDER BY this.\"key\" asc";
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			
@@ -689,6 +709,8 @@ public class ServiceIndex_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return String
 	*/
 	public String getService() { return (m_service.getValue()); }
 	public ServiceIndex setService(String data)
@@ -713,6 +735,8 @@ public class ServiceIndex_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return String
 	*/
 	public String getServiceKey() { return (m_serviceKey.getValue()); }
 	public ServiceIndex setServiceKey(String data)
@@ -737,6 +761,8 @@ public class ServiceIndex_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return String
 	*/
 	public String getKey() { return (m_key.getValue()); }
 	public ServiceIndex setKey(String data)
@@ -761,6 +787,8 @@ public class ServiceIndex_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return String
 	*/
 	public String getValue() { return (m_value.getValue()); }
 	public ServiceIndex setValue(String data)
@@ -804,6 +832,8 @@ public class ServiceIndex_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return java.sql.Timestamp
 	*/
 	public java.sql.Timestamp getModificationTime() { return (m_modificationTime.getValue()); }
 	public ServiceIndex setModificationTime(java.sql.Timestamp data)

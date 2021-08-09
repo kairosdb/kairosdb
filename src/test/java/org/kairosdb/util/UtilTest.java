@@ -3,7 +3,7 @@ package org.kairosdb.util;
 import org.junit.Test;
 
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class UtilTest
 {
@@ -89,5 +89,10 @@ public class UtilTest
 	public void test_isNumber_withMinusSign()
 	{
 		assertThat(Util.isNumber("-102"), equalTo(true));
+	}
+
+	@Test
+	public void test_isNumber_withPoint(){
+		assertThat(Util.isNumber("6.0.5"), equalTo(false));
 	}
 }

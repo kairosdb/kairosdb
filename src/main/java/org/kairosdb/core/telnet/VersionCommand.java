@@ -19,7 +19,6 @@ package org.kairosdb.core.telnet;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.jboss.netty.channel.Channel;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.exception.DatastoreException;
@@ -29,7 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class VersionCommand implements TelnetCommand, KairosMetricReporter
 {
@@ -40,13 +39,13 @@ public class VersionCommand implements TelnetCommand, KairosMetricReporter
 	@Inject
 	public VersionCommand(@Named("HOSTNAME") String hostname, LongDataPointFactory factory)
 	{
-		checkNotNullOrEmpty(hostname);
+		requireNonNullOrEmpty(hostname);
 		m_hostName = hostname;
 		m_dataPointFactory = factory;
 	}
 
 	@Override
-	public void execute(Channel chan, String[] command) throws DatastoreException
+	public void execute(Channel chan, List<String> command) throws DatastoreException
 	{
 		m_counter.incrementAndGet();
 		if (chan.isConnected())

@@ -17,6 +17,7 @@
 package org.kairosdb.core.formatter;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.json.JSONWriter;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datastore.DataPointGroup;
@@ -37,11 +38,13 @@ public class JsonResponse
 		m_jsonWriter = new JSONWriter(writer);
 	}
 
-	public void begin() throws FormatterException
+	public void begin(String originalQuery) throws FormatterException
 	{
 		try
 		{
 			m_jsonWriter.object();
+			if (originalQuery != null)
+				m_jsonWriter.key("original_query").value(new JSONObject(originalQuery));
 			m_jsonWriter.key("queries").array();
 		}
 		catch (JSONException e)
@@ -94,6 +97,7 @@ public class JsonResponse
 
 				if (!excludeTags)
 				{
+					//todo move this to after the values are obtained so we can filter unused tags
 					m_jsonWriter.key("tags").object();
 
 					for (String tagName : group.getTagNames())
@@ -112,19 +116,6 @@ public class JsonResponse
 					m_jsonWriter.array().value(dataPoint.getTimestamp());
 					dataPoint.writeValueToJson(m_jsonWriter);
 
-					/*if (dataPoint.isInteger())
-					{
-						m_jsonWriter.value(dataPoint.getLongValue());
-					}
-					else
-					{
-						final double value = dataPoint.getDoubleValue();
-						if (value != value || Double.isInfinite(value))
-						{
-							throw new IllegalStateException("NaN or Infinity:" + value + " data point=" + dataPoint);
-						}
-						m_jsonWriter.value(value);
-					}*/
 					m_jsonWriter.endArray();
 				}
 				m_jsonWriter.endArray();

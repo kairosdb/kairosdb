@@ -18,13 +18,15 @@ package org.kairosdb.core.telnet;
 
 import org.jboss.netty.channel.Channel;
 
+import java.util.List;
+
 public class UnknownCommand implements TelnetCommand
 {
 	@Override
-	public void execute(Channel chan, String[] command)
+	public void execute(Channel chan, List<String> command)
 	{
 		//logWarn(chan, "unknown command : " + Arrays.toString(cmd));
-		chan.write("unknown command: " + command[0] + ".  Try `help'.\n");
+		chan.write("unknown command: " + command.get(0) + ".  Try `help'.\n");
 	}
 
 	@Override

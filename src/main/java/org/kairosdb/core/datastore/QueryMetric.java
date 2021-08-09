@@ -17,6 +17,7 @@ package org.kairosdb.core.datastore;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
+import com.google.gson.JsonObject;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.util.Preconditions;
@@ -26,7 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class QueryMetric implements DatastoreMetricQuery
 {
@@ -43,6 +44,8 @@ public class QueryMetric implements DatastoreMetricQuery
 	private int limit;
 	private Order order = Order.ASC;
 	private List<QueryPlugin> plugins;
+	private boolean explicitTags = false;
+	private JsonObject m_jsonObj;
 
 	public QueryMetric(long start_time, int cacheTime, String name)
 	{
@@ -50,7 +53,7 @@ public class QueryMetric implements DatastoreMetricQuery
 		this.plugins = new ArrayList<QueryPlugin>();
 		this.startTime = start_time;
 		this.cacheTime = cacheTime;
-		this.name = Preconditions.checkNotNullOrEmpty(name);
+		this.name = Preconditions.requireNonNullOrEmpty(name);
 	}
 
 	public QueryMetric(long start_time, long end_time, int cacheTime, String name)
@@ -61,12 +64,12 @@ public class QueryMetric implements DatastoreMetricQuery
 		this.endTime = end_time;
 		this.endTimeSet = true;
 		this.cacheTime = cacheTime;
-		this.name = Preconditions.checkNotNullOrEmpty(name);
+		this.name = Preconditions.requireNonNullOrEmpty(name);
 	}
 
 	public QueryMetric addAggregator(Aggregator aggregator)
 	{
-		checkNotNull(aggregator);
+		requireNonNull(aggregator);
 
 		this.aggregators.add(aggregator);
 		return (this);
@@ -90,6 +93,12 @@ public class QueryMetric implements DatastoreMetricQuery
 	return this;
 	}
 
+	public QueryMetric setExplicitTags(boolean explicitTags)
+	{
+		this.explicitTags = explicitTags;
+		return this;
+	}
+
 	public QueryMetric addTag(String name, String value)
 	{
 		this.tags.put(name, value);
@@ -111,6 +120,12 @@ public class QueryMetric implements DatastoreMetricQuery
 	public SetMultimap<String, String> getTags()
 	{
 		return (tags);
+	}
+
+	@Override
+	public boolean isExplicitTags()
+	{
+		return explicitTags;
 	}
 
 	@Override
@@ -223,5 +238,15 @@ public class QueryMetric implements DatastoreMetricQuery
 				", order=" + order +
 				", plugins=" + plugins +
 				'}';
+	}
+
+	public void setJsonObj(JsonObject obj)
+	{
+		m_jsonObj = obj;
+	}
+
+	public JsonObject getJsonObj()
+	{
+		return m_jsonObj;
 	}
 }

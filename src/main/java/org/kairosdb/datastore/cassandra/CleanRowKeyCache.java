@@ -14,7 +14,8 @@ import static org.quartz.TriggerBuilder.newTrigger;
  User: bhawkins
  Date: 1/7/14
  Time: 2:58 PM
- To change this template use File | Settings | File Templates.
+ This cleans out keys from the cache that are no longer part of the current time
+ bucket.
  */
 public class CleanRowKeyCache implements KairosDBJob
 {

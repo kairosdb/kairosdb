@@ -20,13 +20,14 @@ import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.datapoints.DataPointFactory;
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.util.KDataInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.kairosdb.util.Util.packLong;
 import static org.kairosdb.util.Util.unpackLong;
 
@@ -58,9 +59,9 @@ public class Group
 	private Group(File file, DataPointGroup dataPointGroup, List<GroupByResult> groupByResults,
 			KairosDataPointFactory dataPointFactory) throws FileNotFoundException
 	{
-		checkNotNull(file);
-		checkNotNull(groupByResults);
-		checkNotNull(dataPointGroup);
+		requireNonNull(file);
+		requireNonNull(groupByResults);
+		requireNonNull(dataPointGroup);
 
 		this.dataPointFactory = dataPointFactory;
 		storageTypeIdMap = new HashMap<String, Integer>();
@@ -80,9 +81,9 @@ public class Group
 	public static Group createGroup(DataPointGroup dataPointGroup, List<Integer> groupIds,
 			List<GroupByResult> groupByResults, KairosDataPointFactory dataPointFactory) throws IOException
 	{
-		checkNotNull(dataPointGroup);
-		checkNotNull(groupIds);
-		checkNotNull(groupByResults);
+		requireNonNull(dataPointGroup);
+		requireNonNull(groupIds);
+		requireNonNull(groupByResults);
 
 		return new Group(getFile(groupIds), dataPointGroup, groupByResults, dataPointFactory);
 	}
@@ -122,7 +123,7 @@ public class Group
 
 	public void addGroupByResults(List<GroupByResult> results)
 	{
-		groupByResults.addAll(checkNotNull(results));
+		groupByResults.addAll(requireNonNull(results));
 	}
 
 	public DataPointGroup getDataPointGroup() throws IOException
@@ -148,11 +149,11 @@ public class Group
 	private class CachedDataPointGroup implements DataPointGroup
 	{
 		private int m_readCount = 0; //number of datapoints read from file
-		private DataInputStream m_dataInputStream;
+		private KDataInputStream m_dataInputStream;
 
 		private CachedDataPointGroup() throws IOException
 		{
-			m_dataInputStream = new DataInputStream(new BufferedInputStream(
+			m_dataInputStream = new KDataInputStream(new BufferedInputStream(
 					new FileInputStream(m_groupCacheFile)));
 		}
 

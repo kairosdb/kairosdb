@@ -76,6 +76,12 @@ public class SmaAggregator implements Aggregator
 	}
 
 	@Override
+	public void init()
+	{
+
+	}
+
+	@Override
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
 		checkState(m_size != 0);

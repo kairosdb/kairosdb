@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.kairosdb.util.Util.packLong;
 import static org.kairosdb.util.Util.unpackLong;
 
@@ -59,9 +59,9 @@ public class Group
 	private Group(File file, DataPointGroup dataPointGroup, List<GroupByResult> groupByResults,
 			KairosDataPointFactory dataPointFactory) throws FileNotFoundException
 	{
-		checkNotNull(file);
-		checkNotNull(groupByResults);
-		checkNotNull(dataPointGroup);
+		requireNonNull(file);
+		requireNonNull(groupByResults);
+		requireNonNull(dataPointGroup);
 
 		this.dataPointFactory = dataPointFactory;
 		storageTypeIdMap = new HashMap<String, Integer>();
@@ -81,9 +81,9 @@ public class Group
 	public static Group createGroup(DataPointGroup dataPointGroup, List<Integer> groupIds,
 			List<GroupByResult> groupByResults, KairosDataPointFactory dataPointFactory) throws IOException
 	{
-		checkNotNull(dataPointGroup);
-		checkNotNull(groupIds);
-		checkNotNull(groupByResults);
+		requireNonNull(dataPointGroup);
+		requireNonNull(groupIds);
+		requireNonNull(groupByResults);
 
 		return new Group(getFile(groupIds), dataPointGroup, groupByResults, dataPointFactory);
 	}
@@ -123,7 +123,7 @@ public class Group
 
 	public void addGroupByResults(List<GroupByResult> results)
 	{
-		groupByResults.addAll(checkNotNull(results));
+		groupByResults.addAll(requireNonNull(results));
 	}
 
 	public DataPointGroup getDataPointGroup() throws IOException

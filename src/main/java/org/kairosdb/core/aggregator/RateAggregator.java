@@ -61,6 +61,12 @@ public class RateAggregator implements Aggregator, TimezoneAware
 		return m_dataPointFactory.getGroupType();
 	}
 
+	@Override
+	public void init()
+	{
+
+	}
+
 	public DataPointGroup aggregate(DataPointGroup dataPointGroup)
 	{
 		return (new RateDataPointAggregator(dataPointGroup));

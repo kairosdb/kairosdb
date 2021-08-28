@@ -45,4 +45,17 @@ If however, we create a roll-up task that rolls up to daily values, the query is
     Data Points Returned: 2,045
     Data Points Plotted: 12
 
+-----------------
+Roll-up Algorithm
+-----------------
 
+Roll-ups are executed on a schedule specified by the execution interval. When a roll-up executes
+the following is done:
+
+1. The sampling time is calculated by getting the last sampling aggregator in the roll-up query.
+2. KairosDB queries for the last time the roll-up was executed.
+	* First time - the start time is set to execution interval + sampling time.
+	* Subsequent time - the start time is set to the last time the roll-up was executed.
+3. The end time is set to the current time (now).
+4. The time range (from start to end time) is divided into sampling periods.
+5. A roll-up is created for each sampling period.

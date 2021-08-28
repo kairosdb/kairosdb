@@ -37,7 +37,8 @@ import java.util.zip.GZIPInputStream;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 public class MetricsResourceTest extends ResourceBase
 {
@@ -197,31 +198,26 @@ public class MetricsResourceTest extends ResourceBase
 		}
 	}
 
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	@Test
 	public void test_checkServerTypeStaticIngestDisabled() throws InvalidServerTypeException
 	{
-		thrown.expect(InvalidServerTypeException.class);
-		thrown.expectMessage("{\"errors\": [\"Forbidden: INGEST API methods are disabled on this KairosDB instance.\"]}");
-		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.QUERY, ServerType.DELETE), ServerType.INGEST, "/datapoints", "POST");
+		assertThrows("{\"errors\": [\"Forbidden: INGEST API methods are disabled on this KairosDB instance.\"]}", InvalidServerTypeException.class, () ->
+			MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.QUERY, ServerType.DELETE), ServerType.INGEST, "/datapoints", "POST"));
 	}
 
 	@Test
 	public void test_checkServerTypeStaticQueryDisabled() throws InvalidServerTypeException
 	{
-		thrown.expect(InvalidServerTypeException.class);
-		thrown.expectMessage("{\"errors\": [\"Forbidden: QUERY API methods are disabled on this KairosDB instance.\"]}");
-		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.INGEST, ServerType.DELETE), ServerType.QUERY, "/datapoints/query", "POST");
+		assertThrows("{\"errors\": [\"Forbidden: QUERY API methods are disabled on this KairosDB instance.\"]}", InvalidServerTypeException.class, () ->
+			MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.INGEST, ServerType.DELETE), ServerType.QUERY, "/datapoints/query", "POST"));
 	}
 
 	@Test
 	public void test_checkServerTypeStaticDeleteDisabled() throws InvalidServerTypeException
 	{
-		thrown.expect(InvalidServerTypeException.class);
-		thrown.expectMessage("{\"errors\": [\"Forbidden: DELETE API methods are disabled on this KairosDB instance.\"]}");
-		MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.INGEST, ServerType.QUERY), ServerType.DELETE, "/datapoints/delete", "POST");
+		assertThrows("{\"errors\": [\"Forbidden: DELETE API methods are disabled on this KairosDB instance.\"]}", InvalidServerTypeException.class, () ->
+			MetricsResource.checkServerTypeStatic(EnumSet.of(ServerType.INGEST, ServerType.QUERY), ServerType.DELETE, "/datapoints/delete", "POST"));
 	}
 
 	@Test

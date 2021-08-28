@@ -101,6 +101,12 @@ public class TrimAggregator implements Aggregator
 		return groupType;
 	}
 
+	@Override
+	public void init()
+	{
+
+	}
+
 	private class TimDataPointAggregator extends AggregatedDataPointGroupWrapper
 	{
 		public TimDataPointAggregator(DataPointGroup innerDataPointGroup)

@@ -1,11 +1,9 @@
 package org.kairosdb.util;
 
-import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import static org.kairosdb.core.Main.UTF_8;
 
 /**
  Created by bhawkins on 12/19/16.

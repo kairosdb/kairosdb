@@ -295,6 +295,26 @@ Filter
 
 		**threshold** (double) - Sets the threshold value for filtering data points.
 
+------
+Score
+------
+.. js:data:: score
+
+	Scores the data based on a set of thresholds. Each data point will be mapped to a value between 0 and n where n is the
+	number of thresholds.
+
+	Parameters:
+		**order** (ASCENDING, DESCENDING) - The order by which scores are assigned.
+
+		**thresholds** (list) - A set of thresholds to compare the data against, where a threshold is an object with the following properties:
+
+		- **value** (double) - The value of the threshold.
+
+		- **boundary** (SUPERIOR, INFERIOR) - Determines how to compare against values equal to the threshold value. Values
+		  equal to the threshold value are greater than thresholds with inferior boundaries and less than thresholds with
+		  superior boundaries.
+
+
 -------------
 JS Aggregator
 -------------
@@ -302,9 +322,11 @@ JS Aggregator
 .. js:data:: js_filter
 .. js:data:: js_range
 
-	The JS Aggregator is provided as a thrid party module found here
+	The JS Aggregator is provided as a third party module found here
 
 	https://github.com/Kratos-ISE/kise-kairosdb-module/
 
 	The module requires Java 8 and provides a way to pass javascript code as the
 	aggregator.
+
+	Note. this project is now out of date with current version of Kairos.

@@ -28,7 +28,7 @@ import org.kairosdb.testing.ListDataPointGroup;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.closeTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AvgAggregatorTest
 {
@@ -38,6 +38,7 @@ public class AvgAggregatorTest
 	public void setup() throws KairosDBException
 	{
 		aggregator = new AvgAggregator(new DoubleDataPointFactoryImpl());
+		aggregator.init();
 	}
 
 	@Test(expected = NullPointerException.class)

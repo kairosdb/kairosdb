@@ -36,7 +36,7 @@ import org.kairosdb.util.Validator;
 
 import java.util.List;
 
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class PutMillisecondCommand implements TelnetCommand//, KairosMetricReporter
 {
@@ -51,7 +51,7 @@ public class PutMillisecondCommand implements TelnetCommand//, KairosMetricRepor
 	public PutMillisecondCommand(FilterEventBus eventBus, @Named("HOSTNAME") String hostname,
 			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
-		checkNotNullOrEmpty(hostname);
+		requireNonNullOrEmpty(hostname);
 		m_hostName = hostname;
 		m_longFactory = longFactory;
 		m_doubleFactory = doubleFactory;

@@ -17,7 +17,7 @@ import org.kairosdb.util.ValidationException;
 import javax.inject.Named;
 import java.util.List;
 
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class PutStringCommand extends PutMillisecondCommand implements TelnetCommand
 {

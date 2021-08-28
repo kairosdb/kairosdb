@@ -90,6 +90,8 @@ Response
 
   .. code-block:: json
 
+{
+  "queries": [
     {
         "results": [
             {
@@ -112,6 +114,8 @@ Response
             }
         ]
     }
+]
+}
 
 *Failure*
 

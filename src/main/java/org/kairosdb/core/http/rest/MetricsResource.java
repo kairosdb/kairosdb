@@ -31,6 +31,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.datastore.*;
+import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.InvalidServerTypeException;
 import org.kairosdb.core.formatter.DataFormatter;
 import org.kairosdb.core.formatter.FormatterException;
@@ -58,10 +59,10 @@ import javax.ws.rs.core.*;
 import java.io.*;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static javax.ws.rs.core.Response.ResponseBuilder;
 
 enum NameType
@@ -181,10 +182,10 @@ public class MetricsResource// implements KairosMetricReporter
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
 			KairosDataPointFactory dataPointFactory, FilterEventBus eventBus)
 	{
-		this.datastore = checkNotNull(datastore);
-		this.queryParser = checkNotNull(queryParser);
+		this.datastore = requireNonNull(datastore);
+		this.queryParser = requireNonNull(queryParser);
 		m_kairosDataPointFactory = dataPointFactory;
-		m_publisher = checkNotNull(eventBus).createPublisher(DataPointEvent.class);
+		m_publisher = requireNonNull(eventBus).createPublisher(DataPointEvent.class);
 		formatters.put("json", new JsonFormatter());
 
 		GsonBuilder builder = new GsonBuilder();
@@ -313,7 +314,7 @@ public class MetricsResource// implements KairosMetricReporter
 				}
 			}
 
-			DataPointsParser parser = new DataPointsParser(m_publisher, new InputStreamReader(stream, "UTF-8"),
+			DataPointsParser parser = new DataPointsParser(m_publisher, new InputStreamReader(stream, UTF_8),
 					gson, m_kairosDataPointFactory);
 			ValidationErrors validationErrors = parser.parse();
 
@@ -352,6 +353,28 @@ public class MetricsResource// implements KairosMetricReporter
 		}
 	}
 
+	@GET
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/datapoints/index")
+	public Response index(@QueryParam("start_absolute") Long startTime, @QueryParam("end_absolute") Long endTime,
+			@QueryParam("metric") String metric) throws InvalidServerTypeException
+	{
+		checkServerType(ServerType.INGEST, "JSON /datapoints/index", "GET");
+
+		try {
+			datastore.indexTags(new QueryMetric(startTime, endTime, 0, metric));
+			return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();
+		}
+		catch (DatastoreException e) {
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+		catch (OutOfMemoryError e)
+		{
+			logger.error("Out of memory error.", e);
+			return setHeaders(Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new ErrorResponse(e.getMessage()))).build();
+		}
+	}
+
 	@OPTIONS
 	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
 	@Path("/datapoints/query/tags")
@@ -369,7 +392,7 @@ public class MetricsResource// implements KairosMetricReporter
 	public Response getMeta(String json) throws InvalidServerTypeException
 	{
 		checkServerType(ServerType.QUERY, "/datapoints/query/tags", "POST");
-		checkNotNull(json);
+		requireNonNull(json);
 		logger.debug(json);
 
 		try
@@ -488,7 +511,7 @@ public class MetricsResource// implements KairosMetricReporter
 				throw new BeanValidationException(new QueryParser.SimpleConstraintViolation("query json", "must not be null or empty"), "");
 
 			File respFile = File.createTempFile("kairos", ".json", new File(datastore.getCacheDir()));
-			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(respFile), "UTF-8"));
+			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(respFile), UTF_8));
 
 			JsonResponse jsonResponse = new JsonResponse(writer);
 
@@ -499,8 +522,6 @@ public class MetricsResource// implements KairosMetricReporter
 
 			Query mainQuery = queryParser.parseQueryMetric(json);
 			mainQuery = m_queryPreProcessor.preProcess(mainQuery);
-
-			mainQuery.getEndAbsolute();
 
 			List<QueryMetric> queries = mainQuery.getQueryMetrics();
 
@@ -640,7 +661,7 @@ public class MetricsResource// implements KairosMetricReporter
 	public Response delete(String json) throws Exception
 	{
 		checkServerType(ServerType.DELETE, "/datapoints/delete", "POST");
-		checkNotNull(json);
+		requireNonNull(json);
 		logger.debug(json);
 
 		try
@@ -718,7 +739,7 @@ public class MetricsResource// implements KairosMetricReporter
 		checkServerType(ServerType.DELETE, "/metric/{metricName}", "DELETE");
 		try
 		{
-			QueryMetric query = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, metricName);
+			QueryMetric query = new QueryMetric(datastore.getDatastore().getMinTimeValue(), datastore.getDatastore().getMaxTimeValue(), 0, metricName);
 			datastore.delete(query);
 
 
@@ -800,7 +821,7 @@ public class MetricsResource// implements KairosMetricReporter
 		@SuppressWarnings("ResultOfMethodCallIgnored")
 		public void write(OutputStream output) throws IOException, WebApplicationException
 		{
-			Writer writer = new OutputStreamWriter(output, "UTF-8");
+			Writer writer = new OutputStreamWriter(output, UTF_8);
 
 			try
 			{

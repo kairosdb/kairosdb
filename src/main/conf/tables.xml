@@ -274,7 +274,7 @@
 				where
 				mt."metric_id" = m."id"
 				and m."name" = ?
-				group by m."id"
+				group by m."id", m."type"
 			</sql>
 		</query>
 
@@ -298,7 +298,7 @@
 				mt."metric_id" = m."id"
 				and m."name" = ?
 				%tags%
-				group by m."id" having count(0) = ?
+				group by m."id", m."type" having count(0) = ?
 			</sql>
 		</query>
 

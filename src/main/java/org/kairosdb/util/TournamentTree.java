@@ -103,6 +103,8 @@ public class TournamentTree<T>
 			m_treeSet.add(value);
 		}
 
+		//todo notify the iterator that we actually returned a value from it, use for returning tags.
+
 		return (ret);
 	}
 }

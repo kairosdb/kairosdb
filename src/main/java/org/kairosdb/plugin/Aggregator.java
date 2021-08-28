@@ -22,4 +22,9 @@ public interface Aggregator
 	DataPointGroup aggregate(DataPointGroup dataPointGroup);
 	boolean canAggregate(String groupType);
 	String getAggregatedGroupType(String groupType);
+
+	/**
+	 This is called after the aggregator is created and properties have been set.
+	 */
+	void init();
 }

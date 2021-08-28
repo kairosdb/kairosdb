@@ -75,6 +75,7 @@ public class Metric_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Returns a list of the feild meta for the class that this is a factory of
+			@return List of GenOrmFieldMeta
 		*/
 		public List<GenOrmFieldMeta> getFields()
 			{
@@ -84,6 +85,7 @@ public class Metric_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Returns a list of foreign key constraints
+			@return List of GenOrmConstraint
 		*/
 		public List<GenOrmConstraint> getForeignKeyConstraints()
 			{
@@ -93,6 +95,7 @@ public class Metric_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Returns the SQL create statement for this table
+			@return SQL create statement
 		*/
 		public String getCreateStatement()
 			{
@@ -102,6 +105,8 @@ public class Metric_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry with the specified primary keys.
+			@param id String
+			@return new Metric
 		*/
 		public Metric create(String id)
 			{
@@ -116,6 +121,7 @@ public class Metric_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry that is empty
+			@return new blank Metric
 		*/
 		public Metric createRecord()
 			{
@@ -269,6 +275,7 @@ public class Metric_base extends GenOrmRecord
 			Convenience method for selecting records.  Ideally this should not be use, 
 			instead a custom query for this table should be used.
 			@param where sql where statement.
+			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where)
 			{
@@ -281,6 +288,7 @@ public class Metric_base extends GenOrmRecord
 			instead a custom query for this table should be used.
 			@param where sql where statement.
 			@param orderBy sql order by statement
+			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where, String orderBy)
 			{
@@ -526,6 +534,8 @@ public class Metric_base extends GenOrmRecord
 	//---------------------------------------------------------------------------
 	/**
 		id is the combination of the name and tags
+
+	 	@return String
 	*/
 	public String getId() { return (m_id.getValue()); }
 	public Metric setId(String data)
@@ -550,6 +560,8 @@ public class Metric_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return String
 	*/
 	public String getName() { return (m_name.getValue()); }
 	public Metric setName(String data)
@@ -593,6 +605,8 @@ public class Metric_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return String
 	*/
 	public String getType() { return (m_type.getValue()); }
 	public Metric setType(String data)

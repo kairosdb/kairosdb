@@ -32,12 +32,10 @@ import java.util.Iterator;
 )
 public class FirstAggregator extends RangeAggregator
 {
-	private DoubleDataPointFactory m_dataPointFactory;
 
 	@Inject
-	public FirstAggregator(DoubleDataPointFactory dataPointFactory)
+	public FirstAggregator()
 	{
-		m_dataPointFactory = dataPointFactory;
 	}
 
 	@Override
@@ -49,7 +47,7 @@ public class FirstAggregator extends RangeAggregator
 	@Override
 	public String getAggregatedGroupType(String groupType)
 	{
-		return m_dataPointFactory.getGroupType();
+		return groupType;
 	}
 
 	@Override

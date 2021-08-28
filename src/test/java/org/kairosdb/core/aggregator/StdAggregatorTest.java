@@ -40,6 +40,7 @@ public class StdAggregatorTest
 		}
 
 		StdAggregator aggregator = new StdAggregator(new DoubleDataPointFactoryImpl());
+		aggregator.init();
 
 		DataPointGroup dataPointGroup = aggregator.aggregate(group);
 
@@ -63,6 +64,7 @@ public class StdAggregatorTest
 		}
 
 		StdAggregator aggregator = new StdAggregator(new DoubleDataPointFactoryImpl());
+		aggregator.init();
 
 		DataPointGroup dataPointGroup = aggregator.aggregate(group);
 

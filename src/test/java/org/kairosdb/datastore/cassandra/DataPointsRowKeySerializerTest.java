@@ -9,7 +9,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class DataPointsRowKeySerializerTest
 {

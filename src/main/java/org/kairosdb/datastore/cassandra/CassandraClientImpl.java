@@ -96,7 +96,7 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 						.setMaxQueueSize(m_clusterConfiguration.getMaxQueueSize()))
 				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 5 * 1000))
 				.withLoadBalancingPolicy(new SelectiveLoadBalancingPolicy(readLoadBalancePolicy, m_writeLoadBalancingPolicy))
-				.withCompression(ProtocolOptions.Compression.LZ4)
+				.withCompression(m_clusterConfiguration.getCompression())
 				.withoutJMXReporting()
 				.withQueryOptions(new QueryOptions().setConsistencyLevel(m_clusterConfiguration.getReadConsistencyLevel()))
 				.withTimestampGenerator(new TimestampGenerator() //todo need to remove this and put it only on the datapoints call
@@ -320,6 +320,12 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 
 		ret.add(newDataPointSet(prefix, "trashed_connections", now,
 				metrics.getTrashedConnections().getValue()));
+
+		ret.add(newDataPointSet(prefix, "bytes_sent", now,
+				metrics.getBytesSent().getCount()));
+
+		ret.add(newDataPointSet(prefix, "bytes_received", now,
+				metrics.getBytesReceived().getCount()));
 
 		Snapshot snapshot = metrics.getRequestsTimer().getSnapshot();
 		prefix = prefix + ".requests_timer";

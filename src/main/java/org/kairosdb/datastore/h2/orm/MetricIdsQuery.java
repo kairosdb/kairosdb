@@ -26,7 +26,7 @@ public class MetricIdsQuery extends org.agileclick.genorm.runtime.SQLQuery
 	private static final Logger s_logger = LoggerFactory.getLogger(MetricIdsQuery.class.getName());
 	
 	public static final String QUERY_NAME = "metric_ids";
-	public static final String QUERY = "select m.\"id\" as metric_id, m.\"type\" as metric_type\n				from metric m, metric_tag mt\n				where\n				mt.\"metric_id\" = m.\"id\"\n				and m.\"name\" = ?\n				group by m.\"id\"";
+	public static final String QUERY = "select m.\"id\" as metric_id, m.\"type\" as metric_type\n				from metric m, metric_tag mt\n				where\n				mt.\"metric_id\" = m.\"id\"\n				and m.\"name\" = ?\n				group by m.\"id\", m.\"type\"";
 	private static final int ATTRIBUTE_COUNT = 2;
 	private static Map<String, Integer> s_attributeIndex;
 	private static String[] s_attributeNames = {

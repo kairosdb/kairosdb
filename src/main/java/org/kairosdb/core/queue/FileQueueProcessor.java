@@ -8,12 +8,13 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.bigqueue.IBigArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.ugli.bigqueue.BigArray;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -29,7 +30,7 @@ public class FileQueueProcessor extends QueueProcessor
 	public static final String SECONDS_TILL_CHECKPOINT = "kairosdb.queue_processor.seconds_till_checkpoint";
 
 	private final Object m_lock = new Object();
-	private final BigArray m_bigArray;
+	private final IBigArray m_bigArray;
 	private final CircularFifoQueue<IndexedEvent> m_memoryQueue;
 	private final DataPointEventSerializer m_eventSerializer;
 	private final List<DataPointEvent> m_internalMetrics = new ArrayList<>();
@@ -51,7 +52,7 @@ public class FileQueueProcessor extends QueueProcessor
 	@Inject
 	public FileQueueProcessor(
 			DataPointEventSerializer eventSerializer,
-			BigArray bigArray,
+			IBigArray bigArray,
 			@Named(QUEUE_PROCESSOR) ExecutorService executor,
 			@Named(BATCH_SIZE) int batchSize,
 			@Named(MEMORY_QUEUE_SIZE) int memoryQueueSize,
@@ -82,7 +83,14 @@ public class FileQueueProcessor extends QueueProcessor
 		m_shuttingDown = true;
 
 		m_bigArray.flush();
-		m_bigArray.close();
+		try
+		{
+			m_bigArray.close();
+		}
+		catch (IOException e)
+		{
+			logger.warn("Error while shutting down bigqueue", e);
+		}
 
 		super.shutdown();
 	}
@@ -142,16 +150,23 @@ public class FileQueueProcessor extends QueueProcessor
 
 		byte[] eventBytes = m_eventSerializer.serializeEvent(dataPointEvent);
 
-		synchronized (m_lock)
+		try
 		{
-			long index = -1L;
-			//Add data to bigArray first
-			index = m_bigArray.append(eventBytes);
-			//Then stick it into the in memory queue
-			m_memoryQueue.add(new IndexedEvent(dataPointEvent, index));
+			synchronized (m_lock)
+			{
+				long index = -1L;
+				//Add data to bigArray first
+				index = m_bigArray.append(eventBytes);
+				//Then stick it into the in memory queue
+				m_memoryQueue.add(new IndexedEvent(dataPointEvent, index));
 
-			//Notify the reader thread if it is waiting for data
-			m_lock.notify();
+				//Notify the reader thread if it is waiting for data
+				m_lock.notify();
+			}
+		}
+		catch (IOException ioe)
+		{
+			throw new DatastoreException("Failure to write data to bigqueue", ioe);
 		}
 	}
 
@@ -189,9 +204,17 @@ public class FileQueueProcessor extends QueueProcessor
 					{
 						if (m_nextIndex != m_bigArray.getHeadIndex())
 						{
-							DataPointEvent dataPointEvent = m_eventSerializer.deserializeEvent(m_bigArray.get(m_nextIndex));
-							event = new IndexedEvent(dataPointEvent, m_nextIndex);
-							m_readFromFileCount.incrementAndGet();
+							try
+							{
+								DataPointEvent dataPointEvent = m_eventSerializer.deserializeEvent(m_bigArray.get(m_nextIndex));
+								event = new IndexedEvent(dataPointEvent, m_nextIndex);
+								m_readFromFileCount.incrementAndGet();
+							}
+							catch (IOException ioe)
+							{
+								logger.error("Unable to read from bigqueue", ioe);
+								break;
+							}
 						}
 					}
 
@@ -334,7 +357,14 @@ public class FileQueueProcessor extends QueueProcessor
 			{
 				m_childCallBack.complete();
 				//Checkpoint big queue
-				m_bigArray.removeBeforeIndex(m_completionIndex);
+				try
+				{
+					m_bigArray.removeBeforeIndex(m_completionIndex);
+				}
+				catch (IOException e)
+				{
+					logger.warn("Unable to cleanup bigqueue", e);
+				}
 			}
 		}
 	}

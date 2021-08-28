@@ -35,7 +35,7 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class Util
 {
@@ -228,7 +228,7 @@ public class Util
 	 */
 	public static boolean isNumber(String s)
 	{
-		checkNotNull(s);
+		requireNonNull(s);
 
 		if (s.isEmpty())
 			return false;

@@ -21,7 +21,7 @@ import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class JsonResponseBuilder
 {
@@ -30,7 +30,7 @@ public class JsonResponseBuilder
 
 	public JsonResponseBuilder(Response.Status status)
 	{
-		checkNotNull(status);
+		requireNonNull(status);
 		this.status = status.getStatusCode();
 	}
 

@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static java.util.Objects.requireNonNull;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 /**
  Roll up task.
@@ -44,7 +44,7 @@ public class RollupTask
 
 	public RollupTask(String name, Duration executionInterval, List<Rollup> rollups)
 	{
-		checkNotNull(rollups);
+		requireNonNull(rollups);
 		checkArgument(rollups.size() > 0);
 
 		id = UUID.randomUUID().toString();
@@ -53,9 +53,9 @@ public class RollupTask
 
 	public RollupTask(String id, String name, Duration executionInterval, List<Rollup> rollups, String json)
 	{
-		checkNotNullOrEmpty(id);
-		checkNotNullOrEmpty(json);
-		checkNotNull(rollups);
+		requireNonNullOrEmpty(id);
+		requireNonNullOrEmpty(json);
+		requireNonNull(rollups);
 		checkArgument(rollups.size() > 0);
 
 		this.id = id;
@@ -65,9 +65,9 @@ public class RollupTask
 
 	private void initialize(String name, Duration executionInterval, List<Rollup> rollups)
 	{
-		this.name = checkNotNullOrEmpty(name);
+		this.name = requireNonNullOrEmpty(name);
 		this.rollups.addAll(rollups);
-		this.executionInterval = checkNotNull(executionInterval);
+		this.executionInterval = requireNonNull(executionInterval);
 		this.lastModified = System.currentTimeMillis();
 	}
 
@@ -93,7 +93,7 @@ public class RollupTask
 
 	public void addJson(String json)
 	{
-		checkNotNullOrEmpty(json);
+		requireNonNullOrEmpty(json);
 
 		if (json.contains("\"id\":"))
 		{

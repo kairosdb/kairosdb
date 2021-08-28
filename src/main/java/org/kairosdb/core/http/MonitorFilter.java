@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class MonitorFilter implements Filter, KairosMetricReporter
 {
@@ -46,7 +46,7 @@ public class MonitorFilter implements Filter, KairosMetricReporter
 	@Inject
 	public MonitorFilter(@Named("HOSTNAME")String hostname, LongDataPointFactory dataPointFactory)
 	{
-		this.hostname = checkNotNullOrEmpty(hostname);
+		this.hostname = requireNonNullOrEmpty(hostname);
 		m_dataPointFactory = dataPointFactory;
 	}
 

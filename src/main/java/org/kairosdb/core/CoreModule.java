@@ -57,12 +57,14 @@ import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.MemoryMonitor;
 import org.kairosdb.util.SimpleStatsReporter;
 import org.kairosdb.util.Util;
+import org.kairosdb.bigqueue.BigArrayImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.ugli.bigqueue.BigArray;
+import org.kairosdb.bigqueue.IBigArray;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.io.IOException;
 import java.util.MissingResourceException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -208,6 +210,7 @@ public class CoreModule extends AbstractModule
 		bind(TrimAggregator.class);
 		bind(SmaAggregator.class);
 		bind(FilterAggregator.class);
+		bind(ScoreAggregator.class);
 
 		bind(ValueGroupBy.class);
 		bind(TimeGroupBy.class);
@@ -257,10 +260,10 @@ public class CoreModule extends AbstractModule
 
 	@Provides
 	@Singleton
-	public BigArray getBigArray(@Named(QUEUE_PATH) String queuePath,
-			@Named(PAGE_SIZE) int pageSize)
+	public IBigArray getBigArray(@Named(QUEUE_PATH) String queuePath,
+			@Named(PAGE_SIZE) int pageSize) throws IOException
 	{
-		return new BigArray(queuePath, "kairos_queue", pageSize);
+		return new BigArrayImpl(queuePath, "kairos_queue", pageSize);
 	}
 
 	@Provides @Named(QUEUE_PROCESSOR) @Singleton

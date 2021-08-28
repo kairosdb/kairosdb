@@ -42,10 +42,9 @@ import javax.annotation.Nullable;
 import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 
 public class PutCommandTest
@@ -398,6 +397,23 @@ public class PutCommandTest
 		public TagSet queryMetricTags(DatastoreMetricQuery query) throws DatastoreException
 		{
 			return null;
+		}
+
+		@Override
+		public void indexMetricTags(DatastoreMetricQuery query) throws DatastoreException
+		{
+		}
+
+		@Override
+		public long getMinTimeValue()
+		{
+			return Long.MIN_VALUE;
+		}
+
+		@Override
+		public long getMaxTimeValue()
+		{
+			return Long.MAX_VALUE;
 		}
 	}
 }

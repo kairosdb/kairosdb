@@ -18,6 +18,7 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.SetMultimap;
 import com.google.inject.AbstractModule;
@@ -142,14 +143,14 @@ public class CassandraModule extends AbstractModule
 
 		if (writeConfig == metaConfig) //No separate meta cluster configuration
 		{
-			m_metaCluster = m_writeCluster = new ClusterConnection(writeClient, EnumSet.of(
+			m_metaCluster = m_writeCluster = new ClusterConnection(configuration, writeClient, EnumSet.of(
 					ClusterConnection.Type.WRITE, ClusterConnection.Type.META),
 					writeConfig.getTagIndexedMetrics());
 			m_metaCluster.startup(configuration.isStartAsync());
 		}
 		else
 		{
-			m_writeCluster = new ClusterConnection(writeClient, EnumSet.of(
+			m_writeCluster = new ClusterConnection(configuration, writeClient, EnumSet.of(
 					ClusterConnection.Type.WRITE),
 					writeConfig.getTagIndexedMetrics());
 			m_writeCluster.startup(configuration.isStartAsync());
@@ -158,8 +159,8 @@ public class CassandraModule extends AbstractModule
 
 			CassandraClient metaClient = metaInjector.getInstance(CassandraClient.class);
 
-			m_metaCluster = new ClusterConnection(metaClient, EnumSet.of(
-					ClusterConnection.Type.META), new HashSet<>());
+			m_metaCluster = new ClusterConnection(configuration, metaClient, EnumSet.of(
+					ClusterConnection.Type.META), HashMultimap.create());
 			m_metaCluster.startup(configuration.isStartAsync());
 		}
 	}
@@ -215,7 +216,7 @@ public class CassandraModule extends AbstractModule
 
 				CassandraClient client = readInjector.getInstance(CassandraClient.class);
 
-				clusters.add(new ClusterConnection(client, EnumSet.of(ClusterConnection.Type.READ),
+				clusters.add(new ClusterConnection(configuration, client, EnumSet.of(ClusterConnection.Type.READ),
 						clusterConfiguration.getTagIndexedMetrics()).startup(configuration.isStartAsync()));
 			}
 		}
@@ -259,7 +260,7 @@ public class CassandraModule extends AbstractModule
 
 	@Provides
 	@Singleton
-	DataCache<String> getMetricNameCache(CassandraConfiguration configuration)
+	DataCache<TimedString> getMetricNameCache(CassandraConfiguration configuration)
 	{
 		return new DataCache<>(configuration.getStringCacheSize());
 	}
@@ -267,13 +268,13 @@ public class CassandraModule extends AbstractModule
 	public interface BatchHandlerFactory
 	{
 		BatchHandler create(List<DataPointEvent> events, EventCompletionCallBack callBack,
-				boolean fullBatch);
+				boolean fullBatch, RowSpec rowSpec);
 	}
 
 	public interface DeleteBatchHandlerFactory
 	{
 		DeleteBatchHandler create(String metricName, SortedMap<String, String> tags,
-				List<DataPoint> dataPoints, EventCompletionCallBack callBack);
+				List<DataPoint> dataPoints, EventCompletionCallBack callBack, RowSpec rowSpec);
 	}
 
 	public interface CQLBatchFactory

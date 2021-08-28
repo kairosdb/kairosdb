@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
 import static org.kairosdb.core.KairosConfigProperties.QUERIES_REGEX_PREFIX;
+import static org.kairosdb.datastore.cassandra.ClusterConnection.DATA_POINTS_TABLE_NAME;
 
 public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 {
@@ -30,6 +31,7 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 	private ResultSet m_currentResultSet;
 	private final String m_metricName;
 	private final String m_clusterName;
+	private final RowSpec m_rowSpec;
 	private int m_rawRowKeyCount = 0;
 	private Map<String, Pattern> m_patternFilter;
 	private Set<DataPointsRowKey> m_returnedKeys;  //keep from returning duplicates, querying old and new indexes
@@ -47,23 +49,30 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 		m_filterTags = HashMultimap.create();
 		m_filterTagNames = new HashSet<>();
 		m_patternFilter = new HashMap<>();
+		m_rowSpec = cluster.getRowSpec();
+
+		//Set of tags to pass to the RowKeyResultSetProcessor, it cannot contain
+		//tags that are also specified as regex values
+		HashMultimap<String, String> processorTags = HashMultimap.create();
 
 		for (Map.Entry<String, String> entry : filterTags.entries())
 		{
+			String tag = entry.getKey();
 			if (regexPrefix.length() != 0 && entry.getValue().startsWith(regexPrefix))
 			{
 				String regex = entry.getValue().substring(regexPrefix.length());
 
 				Pattern pattern = Pattern.compile(regex);
 
-				m_patternFilter.put(entry.getKey(), pattern);
+				m_patternFilter.put(tag, pattern);
 			}
 			else
 			{
-				m_filterTags.put(entry.getKey(), entry.getValue());
+				m_filterTags.put(tag, entry.getValue());
+
 			}
 
-			m_filterTagNames.add(entry.getKey());
+			m_filterTagNames.add(tag);
 		}
 
 
@@ -113,17 +122,7 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 		List<Long> queryKeyList = createQueryKeyList(cluster, metricName, startTime, endTime);
 		for (Long keyTime : queryKeyList)
 		{
-			RowKeyLookup.RowKeyResultSetProcessor rowKeyResultSetProcessor = rowKeyLookup.createRowKeyQueryProcessor(metricName, keyTime, filterTags);
-			List<Statement> queryStatements = rowKeyResultSetProcessor.getQueryStatements();
-			List<ListenableFuture<ResultSet>> resultSetForKeyTimeFutures = new ArrayList<>(queryStatements.size());
-			for (Statement rowKeyQueryStmt : queryStatements)
-			{
-				rowKeyQueryStmt.setConsistencyLevel(cluster.getReadConsistencyLevel());
-				resultSetForKeyTimeFutures.add(cluster.executeAsync(rowKeyQueryStmt));
-			}
-			ListenableFuture<ResultSet> keyTimeQueryResultSetFuture =
-					Futures.transform(Futures.allAsList(resultSetForKeyTimeFutures), rowKeyResultSetProcessor);
-			futures.add(keyTimeQueryResultSetFuture);
+			futures.add(rowKeyLookup.queryRowKeys(metricName, keyTime, m_filterTags));
 		}
 
 		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);
@@ -177,6 +176,8 @@ outer:
 
 				rowKey = new DataPointsRowKey(m_metricName, m_clusterName, record.getTimestamp(0).getTime(),
 						record.getString(1), new TreeMap<String, String>(record.getMap(2, String.class, String.class)));
+
+				rowKey.setTtl(record.getInt(3));
 			}
 			else
 				rowKey = CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER.fromByteBuffer(record.getBytes(0), m_clusterName);
@@ -213,8 +214,9 @@ outer:
 		{
 			BoundStatement statement = new BoundStatement(cluster.psRowKeyTimeQuery);
 			statement.setString(0, metricName);
-			statement.setTimestamp(1, new Date(CassandraDatastore.calculateRowTime(startTime)));
-			statement.setTimestamp(2, new Date(endTime));
+			statement.setString(1, DATA_POINTS_TABLE_NAME);
+			statement.setTimestamp(2, new Date(m_rowSpec.calculateRowTime(startTime)));
+			statement.setTimestamp(3, new Date(endTime));
 			statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
 
 			//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
@@ -235,10 +237,10 @@ outer:
 			String metricName, long startTime, long endTime)
 	{
 		DataPointsRowKey startKey = new DataPointsRowKey(metricName, m_clusterName,
-				CassandraDatastore.calculateRowTime(startTime), "");
+				m_rowSpec.calculateRowTime(startTime), "");
 
 		DataPointsRowKey endKey = new DataPointsRowKey(metricName, m_clusterName,
-				CassandraDatastore.calculateRowTime(endTime), "");
+				m_rowSpec.calculateRowTime(endTime), "");
 		endKey.setEndSearchKey(true);
 
 		boundStatement.setBytesUnsafe(1, CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(startKey));

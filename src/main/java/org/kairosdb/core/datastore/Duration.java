@@ -25,7 +25,7 @@ import javax.validation.constraints.NotNull;
 
 public class Duration
 {
-    @Min(1)
+    @Min(0)
     @FeatureProperty(
             name = "value",
             label = "Value",
@@ -33,8 +33,8 @@ public class Duration
             default_value = "1",
             validations = {
                     @ValidationProperty(
-                            expression = "value > 0",
-                            message = "Value must be greater than 0."
+                            expression = "value >= 0",
+                            message = "Value must be greater or equal to 0."
                     )
             }
     )

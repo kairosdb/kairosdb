@@ -10,7 +10,7 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 public class FeaturePropertyMetadata
@@ -47,7 +47,7 @@ public class FeaturePropertyMetadata
     public FeaturePropertyMetadata(String name, FeatureCompoundProperty property, List<FeaturePropertyMetadata> properties)
     {
         this.name = isEmpty(property.name()) ? name : property.name();
-        this.label = checkNotNull(property.label(), "Label cannot be null");
+        this.label = requireNonNull(property.label(), "Label cannot be null");
         this.type = "Object";
 
         Comparator<FeaturePropertyMetadata> comparator = property.order().length > 0 ?

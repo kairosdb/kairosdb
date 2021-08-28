@@ -1,6 +1,6 @@
 
 =============================
-KairosDB documentation v1.2.0
+KairosDB documentation v1.3.0
 =============================
 
 Contents:
@@ -20,6 +20,7 @@ Contents:
    Statistics
    KairosClient
    CassandraSchema
+   MultiCluster
    Roll-ups
    kairosdevelopment/index
    restapi/index

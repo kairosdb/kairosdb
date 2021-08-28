@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.KairosFeatureProcessor;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
+import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.rest.json.ErrorResponse;
@@ -51,16 +52,18 @@ public class RollUpResourceTest
 	private RollupTaskStatusStore mockStatusStore;
 	private QueryParser mockQueryParser;
 	private QueryParser queryParser;
+	private KairosDatastore mockDatastore;
 
 	@Before
 	public void setup() throws KairosDBException
 	{
+		mockDatastore = mock(KairosDatastore.class);
 		mockStore = mock(RollUpTasksStore.class);
 		mockQueryParser = mock(QueryParser.class);
 		mockStatusStore = mock(RollupTaskStatusStore.class);
 		queryParser = new QueryParser(new KairosFeatureProcessor(new TestAggregatorFactory(), new TestGroupByFactory()),
 				new TestQueryPluginFactory());
-		resource = new RollUpResource(mockQueryParser, mockStore, mockStatusStore);
+		resource = new RollUpResource(mockQueryParser, mockStore, mockStatusStore, mockDatastore);
 	}
 
 	@Test(expected = NullPointerException.class)
@@ -112,7 +115,7 @@ public class RollUpResourceTest
 	@Test
 	public void testCreate() throws IOException, QueryException
 	{
-		resource = new RollUpResource(queryParser, mockStore, mockStatusStore);
+		resource = new RollUpResource(queryParser, mockStore, mockStatusStore, mockDatastore);
 		String json = Resources.toString(Resources.getResource("rolluptask1.json"), Charsets.UTF_8);
 		RollupTask task = queryParser.parseRollupTask(json);
 
@@ -125,7 +128,7 @@ public class RollUpResourceTest
 	@Test
 	public void testList() throws IOException, QueryException, RollUpException
 	{
-		resource = new RollUpResource(queryParser, mockStore, mockStatusStore);
+		resource = new RollUpResource(queryParser, mockStore, mockStatusStore, mockDatastore);
 		List<RollupTask> tasks = mockTasks(Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8));
 
 		Response response = resource.list();
@@ -136,7 +139,7 @@ public class RollUpResourceTest
 	}
 
 	@Test
-	public void testList_internalError() throws IOException, QueryException, RollUpException
+	public void testList_internalError() throws RollUpException
 	{
 		Level previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);
 		try
@@ -171,7 +174,7 @@ public class RollUpResourceTest
 	@Test
 	public void testGet() throws IOException, QueryException, RollUpException
 	{
-		resource = new RollUpResource(queryParser, mockStore, mockStatusStore);
+		resource = new RollUpResource(queryParser, mockStore, mockStatusStore, mockDatastore);
 		String json = Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8);
 		List<RollupTask> tasks = mockTasks(json);
 
@@ -185,7 +188,7 @@ public class RollUpResourceTest
 	@Test
 	public void testGet_taskDoesNotExist() throws IOException, QueryException, RollUpException
 	{
-		resource = new RollUpResource(queryParser, mockStore, mockStatusStore);
+		resource = new RollUpResource(queryParser, mockStore, mockStatusStore, mockDatastore);
 		String json = Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8);
 		mockTasks(json);
 
@@ -197,7 +200,7 @@ public class RollUpResourceTest
 	}
 
 	@Test
-	public void testGet_internalError() throws IOException, QueryException, RollUpException
+	public void testGet_internalError() throws RollUpException
 	{
 		Level previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);
 		try
@@ -234,7 +237,7 @@ public class RollUpResourceTest
 	{
 		String json = Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8);
 		List<RollupTask> tasks = mockTasks(json);
-		resource = new RollUpResource(queryParser, mockStore, mockStatusStore);
+		resource = new RollUpResource(queryParser, mockStore, mockStatusStore, mockDatastore);
 
 		Response response = resource.delete(tasks.get(0).getId());
 
@@ -266,7 +269,7 @@ public class RollUpResourceTest
 	}
 
 	@Test
-	public void testDelete_resourceNotExists() throws IOException, QueryException, RollUpException
+	public void testDelete_resourceNotExists() throws RollUpException
 	{
 		when(mockStore.read()).thenReturn(ImmutableMap.of());
 
@@ -305,7 +308,7 @@ public class RollUpResourceTest
 	@Test
 	public void testUpdate() throws IOException, QueryException, RollUpException
 	{
-		resource = new RollUpResource(queryParser, mockStore, mockStatusStore);
+		resource = new RollUpResource(queryParser, mockStore, mockStatusStore, mockDatastore);
 		String json = Resources.toString(Resources.getResource("rolluptasksExisting.json"), Charsets.UTF_8);
 		List<RollupTask> tasks = mockTasks(json);
 
@@ -338,7 +341,7 @@ public class RollUpResourceTest
 		Level previousLogLevel = LoggingUtils.setLogLevel(Level.OFF);
 		try
 		{
-			resource = new RollUpResource(queryParser, mockStore, mockStatusStore);
+			resource = new RollUpResource(queryParser, mockStore, mockStatusStore, mockDatastore);
 			String json = Resources.toString(Resources.getResource("rolluptasks.json"), Charsets.UTF_8);
 			List<RollupTask> tasks = mockTasks(json);
 			//noinspection unchecked
@@ -357,7 +360,7 @@ public class RollUpResourceTest
 	}
 
 	@Test
-	public void testUpdate_resourceNotExists() throws IOException, QueryException, RollUpException
+	public void testUpdate_resourceNotExists() throws RollUpException
 	{
 		when(mockStore.read()).thenReturn(ImmutableMap.of());
 
@@ -375,7 +378,7 @@ public class RollUpResourceTest
 		return CONTEXT + " " + BEAN_VALIDATION_ERROR;
 	}
 
-	private BeanValidationException createBeanException() throws BeanValidationException
+	private BeanValidationException createBeanException()
 	{
 		return new BeanValidationException(new QueryParser.SimpleConstraintViolation(CONTEXT, BEAN_VALIDATION_ERROR), "");
 	}

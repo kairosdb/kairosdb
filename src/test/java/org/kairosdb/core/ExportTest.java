@@ -48,6 +48,7 @@ import java.io.Writer;
 import java.net.Socket;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -55,7 +56,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ExportTest
 {
-	public static final String METRIC_NAME = "kairos.import_export_unit_test";
+	public static String METRIC_NAME = "kairos.import_export_unit_test";
 	private static Main s_main;
 	private static Injector s_injector;
 	public static final long LOAD = 1000L;
@@ -64,6 +65,7 @@ public class ExportTest
 	@BeforeClass
 	public static void setup()
 	{
+		METRIC_NAME += "_" + UUID.randomUUID();
 		new File("build").mkdir();
 	}
 
@@ -112,8 +114,9 @@ public class ExportTest
 	{
 		KairosDatastore ds = s_injector.getInstance(KairosDatastore.class);
 
-		QueryMetric metric = new QueryMetric(Long.MIN_VALUE, Long.MAX_VALUE, 0, METRIC_NAME);
+		QueryMetric metric = new QueryMetric(ds.getDatastore().getMinTimeValue(), ds.getDatastore().getMaxTimeValue(), 0, METRIC_NAME);
 		ds.delete(metric);
+		ds.close();
 		Thread.sleep(500);
 	}
 
@@ -170,6 +173,7 @@ public class ExportTest
 		QueryMetric queryMetric = new QueryMetric(0, 0, METRIC_NAME);
 		SumAggregator sum = new SumAggregator(new DoubleDataPointFactoryImpl());
 		sum.setSampling(new Sampling(100, TimeUnit.YEARS));
+		sum.init();
 		queryMetric.addAggregator(sum);
 		DatastoreQuery query = ds.createQuery(queryMetric);
 		List<DataPointGroup> results = query.execute();

@@ -1,0 +1,40 @@
+{
+  "name": "Rollup3",
+  "execution_interval": {
+    "value": 1,
+    "unit": "hours"
+  },
+  "rollups": [
+    {
+      "save_as": "kairosdb.test.testRecentExistingRollup_rollup",
+      "query": {
+        "cache_time": 0,
+        "start_absolute": 1583722196000,
+        "metrics": [
+          {
+            "name": "kairosdb.test.testRecentExistingRollup",
+            "limit": 10000,
+            "tags": {
+              "host": [
+                "foo"
+              ],
+              "customer": [
+                "foobar"
+              ]
+            },
+            "aggregators": [
+              {
+                "name": "sum",
+                "sampling": {
+                  "value": 10,
+                  "unit": "minutes"
+                },
+                "align_sampling": false
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

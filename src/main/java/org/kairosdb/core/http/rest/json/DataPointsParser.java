@@ -39,7 +39,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  Originally used Jackson to parse, but this approach failed for a very large JSON because
@@ -70,7 +70,7 @@ public class DataPointsParser
 			KairosDataPointFactory dataPointFactory)
 	{
 		m_publisher = publisher;
-		this.inputStream = checkNotNull(stream);
+		this.inputStream = requireNonNull(stream);
 		this.gson = gson;
 		this.dataPointFactory = dataPointFactory;
 	}

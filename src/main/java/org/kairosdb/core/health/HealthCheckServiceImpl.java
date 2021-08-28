@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 public class HealthCheckServiceImpl implements HealthCheckService
 {
@@ -19,7 +19,7 @@ public class HealthCheckServiceImpl implements HealthCheckService
 	@Inject
 	public HealthCheckServiceImpl(Injector injector)
 	{
-		checkNotNull(injector);
+		requireNonNull(injector);
 
 		Map<Key<?>, Binding<?>> bindings = injector.getAllBindings();
 

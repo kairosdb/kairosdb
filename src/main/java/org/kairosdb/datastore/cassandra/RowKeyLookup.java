@@ -1,11 +1,12 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Statement;
 import com.google.common.base.Function;
 import com.google.common.collect.SetMultimap;
+import com.google.common.util.concurrent.ListenableFuture;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,15 +20,19 @@ interface RowKeyLookup
 	List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl);
 
 	/**
+	 * Create the statements to index references to the given row key.
+	 */
+	default List<Statement> createIndexStatements(DataPointsRowKey rowKey, int rowKeyTtl) {
+		return new ArrayList<>();
+	}
+
+	/**
 	 * Create the statements to delete references to the given row key.
 	 */
 	List<Statement> createDeleteStatements(DataPointsRowKey rowKey);
 
-	/**
-	 * Create the processor to provide the statements for row keys and transform the resulting ResultSets into a single
-	 * ResultSet for the given metric name, row key timestamp, and tag filter.
-	 */
-	RowKeyResultSetProcessor createRowKeyQueryProcessor(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags);
+	ListenableFuture<ResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags);
+
 
 	/**
 	 * Provides Statements for querying row keys for a given metric, timestamp, and tag filter, and a processor

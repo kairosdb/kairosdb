@@ -46,14 +46,29 @@ public class DataPoint_base extends GenOrmRecord
 		public DataPoint find(String metricId, java.sql.Timestamp timestamp);
 		public DataPoint findOrCreate(String metricId, java.sql.Timestamp timestamp);
 		/**
-		*/
+
+			@param metricId String
+			@param startTime java.sql.Timestamp
+			@param endTime java.sql.Timestamp
+			@param order String
+			@return Results*/
 		public ResultSet getForMetricId(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, String order);/**
 			Check for at least a single data point for a given metric id
-		*/
+
+			@param metricId String
+			@return Results*/
 		public DataPoint getWithMetricId(String metricId);/**
-		*/
+
+			@param metricId String
+			@return Results*/
 		public ResultSet getByMetric(String metricId);/**
-		*/
+
+			@param metricId String
+			@param startTime java.sql.Timestamp
+			@param endTime java.sql.Timestamp
+			@param limit int
+			@param order String
+			@return Results*/
 		public ResultSet getForMetricIdWithLimit(String metricId, java.sql.Timestamp startTime, java.sql.Timestamp endTime, int limit, String order);
 		}
 	
@@ -87,6 +102,7 @@ public class DataPoint_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Returns a list of the feild meta for the class that this is a factory of
+			@return List of GenOrmFieldMeta
 		*/
 		public List<GenOrmFieldMeta> getFields()
 			{
@@ -96,6 +112,7 @@ public class DataPoint_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Returns a list of foreign key constraints
+			@return List of GenOrmConstraint
 		*/
 		public List<GenOrmConstraint> getForeignKeyConstraints()
 			{
@@ -105,6 +122,7 @@ public class DataPoint_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Returns the SQL create statement for this table
+			@return SQL create statement
 		*/
 		public String getCreateStatement()
 			{
@@ -114,6 +132,9 @@ public class DataPoint_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry with the specified primary keys.
+			@param metricId String
+			@param timestamp java.sql.Timestamp
+			@return new DataPoint
 		*/
 		public DataPoint create(String metricId, java.sql.Timestamp timestamp)
 			{
@@ -129,6 +150,7 @@ public class DataPoint_base extends GenOrmRecord
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry that is empty
+			@return new blank DataPoint
 		*/
 		public DataPoint createRecord()
 			{
@@ -273,6 +295,7 @@ public class DataPoint_base extends GenOrmRecord
 			Convenience method for selecting records.  Ideally this should not be use, 
 			instead a custom query for this table should be used.
 			@param where sql where statement.
+			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where)
 			{
@@ -285,6 +308,7 @@ public class DataPoint_base extends GenOrmRecord
 			instead a custom query for this table should be used.
 			@param where sql where statement.
 			@param orderBy sql order by statement
+			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where, String orderBy)
 			{
@@ -687,6 +711,8 @@ public class DataPoint_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return String
 	*/
 	public String getMetricId() { return (m_metricId.getValue()); }
 	public DataPoint setMetricId(String data)
@@ -711,6 +737,8 @@ public class DataPoint_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return java.sql.Timestamp
 	*/
 	public java.sql.Timestamp getTimestamp() { return (m_timestamp.getValue()); }
 	public DataPoint setTimestamp(java.sql.Timestamp data)
@@ -735,6 +763,8 @@ public class DataPoint_base extends GenOrmRecord
 
 	//---------------------------------------------------------------------------
 	/**
+
+	 	@return byte[]
 	*/
 	public byte[] getValue() { return (m_value.getValue()); }
 	public DataPoint setValue(byte[] data)

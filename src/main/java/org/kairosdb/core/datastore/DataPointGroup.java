@@ -23,6 +23,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+/**
+ This interface is used to group data points together when reading from the
+ datastore
+ */
 public interface DataPointGroup extends Iterator<DataPoint>, TagSet
 {
 	/**

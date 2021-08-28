@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 import static org.quartz.JobBuilder.newJob;
 
 public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
@@ -45,7 +45,6 @@ public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
 
 		Properties props = new Properties();
 		props.setProperty("org.quartz.threadPool.threadCount", "4");
-		props.setProperty(StdSchedulerFactory.PROP_SCHED_SKIP_UPDATE_CHECK, "true");
 
 		StdSchedulerFactory factory = new StdSchedulerFactory(props);
 		scheduler = factory.getScheduler();
@@ -100,15 +99,15 @@ public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
 		}
 		catch (SchedulerException e)
 		{
-			log.error("Failed to start " + getClass().getName(), e);
+			log.error("Failed to stop " + getClass().getName(), e);
 		}
 	}
 
 	@Override
 	public void schedule(JobDetail jobDetail, Trigger trigger) throws KairosDBException
 	{
-		checkNotNull(jobDetail);
-		checkNotNull(trigger);
+		requireNonNull(jobDetail);
+		requireNonNull(trigger);
 
 		try
 		{
@@ -123,7 +122,7 @@ public class KairosDBSchedulerImpl implements KairosDBService, KairosDBScheduler
 	@Override
 	public void cancel(JobKey jobKey) throws KairosDBException
 	{
-		checkNotNull(jobKey);
+		requireNonNull(jobKey);
 
 		try
 		{

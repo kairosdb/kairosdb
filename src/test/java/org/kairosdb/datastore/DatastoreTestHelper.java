@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 import org.junit.Test;
+import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosRootConfig;
 import org.kairosdb.core.datapoints.DoubleDataPoint;
 import org.kairosdb.core.datapoints.LongDataPoint;
@@ -50,6 +51,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.kairosdb.datastore.cassandra.RowSpec.DEFAULT_ROW_WIDTH;
 
 public abstract class DatastoreTestHelper
 {
@@ -296,7 +298,9 @@ public abstract class DatastoreTestHelper
 			assertThat(dpg.getName(), is("string_data"));
 
 			assertThat(dpg.hasNext(), is(true));
-			String actual = ((StringDataPoint)dpg.next()).getValue();
+			DataPoint dataPoint = dpg.next();
+			assertThat(dataPoint.getTimestamp(), is(s_startTime));
+			String actual = ((StringDataPoint) dataPoint).getValue();
 			assertThat(actual, is("Hello"));
 		}
 		finally
@@ -836,9 +840,9 @@ public abstract class DatastoreTestHelper
 	@Test
 	public void test_deleteTimeWindowWithTag() throws DatastoreException, InterruptedException
 	{
-		QueryMetric query = new QueryMetric(s_startTime - CassandraDatastore.ROW_WIDTH, 0, "double_delete");
+		QueryMetric query = new QueryMetric(s_startTime - DEFAULT_ROW_WIDTH, 0, "double_delete");
 		query.setTags(ImmutableMap.of("tag", "1"));
-		query.setEndTime(s_startTime + CassandraDatastore.ROW_WIDTH);
+		query.setEndTime(s_startTime + DEFAULT_ROW_WIDTH);
 
 		s_datastore.delete(query);
 

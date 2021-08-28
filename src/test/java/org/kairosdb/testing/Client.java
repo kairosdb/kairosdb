@@ -32,6 +32,7 @@ import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static javax.ws.rs.core.HttpHeaders.ACCEPT;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -46,6 +47,7 @@ public class Client
 	{
 		client = HttpClients.createDefault();
 		addHeader(CONTENT_TYPE, APPLICATION_JSON);
+		addHeader(ACCEPT, APPLICATION_JSON);
 	}
 
 	public Client(boolean disableCompression)
@@ -55,11 +57,13 @@ public class Client
 		client = builder.build();
 
 		addHeader(CONTENT_TYPE, APPLICATION_JSON);
+		addHeader(ACCEPT, APPLICATION_JSON);
 	}
 
 	public Client(String keystorePath, String keystorePassword) throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException, KeyManagementException
 	{
 		addHeader(CONTENT_TYPE, APPLICATION_JSON);
+		addHeader(ACCEPT, APPLICATION_JSON);
 		HttpClientBuilder b = HttpClientBuilder.create();
 		if (keystorePath != null)
 		{

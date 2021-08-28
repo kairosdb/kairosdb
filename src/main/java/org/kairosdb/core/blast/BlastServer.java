@@ -103,6 +103,8 @@ public class BlastServer implements KairosDBService, Runnable//, KairosMetricRep
 				m_keepRunning = false;
 
 		}
+
+		logger.info("Blast Server Finished");
 	}
 
 	/*@Override

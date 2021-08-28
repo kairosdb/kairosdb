@@ -13,13 +13,11 @@ import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 
-public class RollUpAssignmentStoreImplTest
+    public class RollUpAssignmentStoreImplTest
 {
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     private FakeServiceKeyStore fakeKeyStore = new FakeServiceKeyStore();
     private RollUpAssignmentStore store = new RollUpAssignmentStoreImpl(fakeKeyStore);
 
@@ -37,10 +35,8 @@ public class RollUpAssignmentStoreImplTest
     @Test
     public void test_constructor_nullKeystore_invalid()
     {
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage("serviceKeyStore cannot be null");
-
-        new RollUpAssignmentStoreImpl(null);
+        assertThrows("serviceKeyStore cannot be null", NullPointerException.class, () ->
+            new RollUpAssignmentStoreImpl(null));
     }
 
     @Test

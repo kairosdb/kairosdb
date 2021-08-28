@@ -19,8 +19,8 @@ import java.nio.ByteBuffer;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.kairosdb.util.Preconditions.checkNotNullOrEmpty;
+import static java.util.Objects.requireNonNull;
+import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class DataPointsRowKey
 {
@@ -31,6 +31,7 @@ public class DataPointsRowKey
 	private final SortedMap<String, String> m_tags;
 	private boolean m_endSearchKey; //Only used for end slice operations.  Serialization
 	//adds a 0xFF after the timestamp to make sure we get all data for that timestamp.
+	private int m_ttl = 0;
 
 	private ByteBuffer m_serializedBuffer;
 
@@ -42,10 +43,10 @@ public class DataPointsRowKey
 	public DataPointsRowKey(String metricName, String clusterName, long timestamp, String datatype,
 			SortedMap<String, String> tags)
 	{
-		m_metricName = checkNotNullOrEmpty(metricName);
-		m_clusterName = checkNotNullOrEmpty(clusterName);
+		m_metricName = requireNonNullOrEmpty(metricName);
+		m_clusterName = requireNonNullOrEmpty(clusterName);
 		m_timestamp = timestamp;
-		m_dataType = checkNotNull(datatype);
+		m_dataType = requireNonNull(datatype);
 		m_tags = tags;
 
 	}
@@ -83,6 +84,16 @@ public class DataPointsRowKey
 	public void setEndSearchKey(boolean endSearchKey)
 	{
 		m_endSearchKey = endSearchKey;
+	}
+
+	public int getTtl()
+	{
+		return m_ttl;
+	}
+
+	public void setTtl(int ttl)
+	{
+		m_ttl = ttl;
 	}
 
 	/**

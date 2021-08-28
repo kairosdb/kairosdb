@@ -18,9 +18,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.concurrent.Callable;
 
-import static org.kairosdb.datastore.cassandra.CassandraDatastore.calculateRowTime;
-import static org.kairosdb.datastore.cassandra.CassandraDatastore.getColumnName;
-
 /**
  Created by bhawkins on 1/11/17.
  */
@@ -33,6 +30,7 @@ public class DeleteBatchHandler extends RetryCallable
 	private final EventCompletionCallBack m_callBack;
 	private final CassandraModule.CQLBatchFactory m_cqlBatchFactory;
 	private final String m_metricName;
+	private final RowSpec m_rowSpec;
 	private final SortedMap<String, String> m_tags;
 
 	@Inject
@@ -41,12 +39,14 @@ public class DeleteBatchHandler extends RetryCallable
 			@Assisted SortedMap<String, String> tags,
 			@Assisted List<DataPoint> events,
 			@Assisted EventCompletionCallBack callBack,
+			@Assisted RowSpec rowSpec,
 			CassandraModule.CQLBatchFactory CQLBatchFactory)
 	{
 		m_metricName = metricName;
 		m_tags = tags;
 		m_events = events;
 		m_callBack = callBack;
+		m_rowSpec = rowSpec;
 
 		m_cqlBatchFactory = CQLBatchFactory;
 	}
@@ -59,13 +59,13 @@ public class DeleteBatchHandler extends RetryCallable
 			DataPoint dataPoint = events.next();
 			count++;
 
-			long rowTime = calculateRowTime(dataPoint.getTimestamp());
+			long rowTime = m_rowSpec.calculateRowTime(dataPoint.getTimestamp());
 
 			DataPointsRowKey rowKey = new DataPointsRowKey(m_metricName, "delete", rowTime, dataPoint.getDataStoreDataType(),
 					m_tags);
 
 
-			int columnTime = getColumnName(rowTime, dataPoint.getTimestamp());
+			int columnTime = m_rowSpec.getColumnName(rowTime, dataPoint.getTimestamp());
 
 			batch.deleteDataPoint(rowKey, columnTime);
 		}

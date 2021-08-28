@@ -1,0 +1,97 @@
+replicaCount: 1
+enabled: true
+
+image:
+  repository: rcosnita/kairosdb # this must be changed when we onboard kairosdb to official dockerhub repository.
+  tag: 1.3.0-3283c4e8d4d
+  pullPolicy: IfNotPresent
+
+  waitContainer:
+    image:
+        repository: rcosnita/wait-container
+        tag: 1.0.0
+        pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+configuration:
+  telnet:
+    enabled: true
+    port: 4242
+    maxCommandSize: 1024
+  cassandra:
+    maxConcurrentMetricQueries: 20
+    maxQueryReaderThreads: 6
+    replicationFactor: 1
+    readConsistency: LOCAL_QUORUM
+    writeConsistency: LOCAL_QUORUM
+    
+    dataPointsToSend: 200
+    minDataPointsToSend: 100
+    minBatchWaitMs: 500
+
+    memoryQueueSize: 100000
+    secondsTillCheckpointSec: 60
+    pageSizeBytes: 52428800 # 50 MB
+    maxThreadCount: 10 # total number of threads allowed to insert data in Cassandra.
+
+    connection:
+      localCores: 5
+      maxLocalCores: 100
+      remoteCores: 1
+      maxRemoteCores: 10
+      maxRequestsPerLocalConnection: 256
+      maxRequestsPerRemoteConnection: 256
+
+  queryLimit:
+    enabled: false
+    maxDataPoints: 10000000
+    timeoutSec: 60
+  dataPointTTL: 31536000
+  queueSize: 500
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+  hosts:
+    - host: chart-example.local
+      http:
+        paths:
+            - path: /
+
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+storage:
+  cassandra:
+    enabled: false
+    contactPoints: localhost # comma separated list of hosts which can be used as contact points for cassandra.
+    port: 9042
+    authSecret: "cassandra-credential-secret"
+  h2:
+    enabled: true
+  hbase:
+    enabled: false # not supported yet
+
+resources:
+  limits:
+    cpu: 1
+    memory: 256Mi
+  requests:
+    cpu: 1
+    memory: 256Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

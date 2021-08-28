@@ -25,6 +25,9 @@
 	<script src="js/jquery.flot.resize.js"></script>
 	<!--<script src="js/highcharts.js"></script>-->
 	<script src="js/numeral.min.js"></script>
+	<script src="js/moment.min.js"></script>
+	<script src="js/moment-timezone-with-data.min.js"></script>
+	<script src="js/moment-strftime.js"></script>
 
 	<script>
 		var metricNames = [];
@@ -41,7 +44,10 @@
 				var data = decodeURI($.url("?d"));
 				var dataObj = JSON.parse(data);
 
-				showChartForQuery("(Click and drag to zoom)", queryObj, dataObj);
+				var zone = decodeURI($.url("?tz") || "utc");
+
+				showChartForQuery("(Click and drag to zoom)", queryObj, dataObj, zone);
+
 			}
 			catch (e)
 			{
@@ -68,9 +74,6 @@
 <div class="ui-widget" style="padding-bottom: 10px;">
 	<div id="errorContainer" class="ui-state-error ui-corner-all" style="padding:5px; width: 500px;"></div>
 </div>
-
-<span class="header ui-widget">Query Time: </span><span id="queryTime" class="ui-widget"></span><br>
-<span class="header ui-widget">Data Points: </span><span id="numDataPoints" class="ui-widget"></span><br>
 <span id="status" class="ui-widget"></span>
 
 <table style="width: 100%;">
@@ -94,6 +97,10 @@
 
 <button id="resetZoom" class=ui-widget>Reset Zoom</button>
 <button id="refreshGraph" class="ui-widget" onclick="loadChart()">Refresh Graph</button>
-
+<div style="display: inline-block;">
+	<span class="header ui-widget" style="margin-left: 1.5em;">Query Time: </span><span id="queryTime" class="ui-widget"></span>
+	<span class="header ui-widget" style="margin-left: 1.5em;">Sample Size: </span><span id="sampleSize" class="ui-widget"></span>
+	<span class="header ui-widget" style="margin-left: 1.5em;">Data Points: </span><span id="numDataPoints" class="ui-widget"></span>
+</div>
 </body>
 </html>

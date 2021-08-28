@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.TestDataPointFactory;
+import org.kairosdb.core.aggregator.RangeAggregator;
 import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 import org.kairosdb.core.datapoints.LegacyLongDataPoint;
@@ -40,7 +41,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KairosDatastoreTest
 {
@@ -70,7 +71,9 @@ public class KairosDatastoreTest
 		datastore.init();
 
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
-		metric.addAggregator(aggFactory.createFeatureProcessor("sum"));
+		Aggregator agg = aggFactory.createFeatureProcessor("sum");
+		((RangeAggregator)agg).init();
+		metric.addAggregator(agg);
 
 		DatastoreQuery dq = datastore.createQuery(metric);
 		List<DataPointGroup> results = dq.execute();
@@ -392,6 +395,23 @@ public class KairosDatastoreTest
 		public TagSet queryMetricTags(DatastoreMetricQuery query)
 		{
 			return null;  //To change body of implemented methods use File | Settings | File Templates.
+		}
+
+		@Override
+		public void indexMetricTags(DatastoreMetricQuery query)
+		{
+		}
+
+		@Override
+		public long getMinTimeValue()
+		{
+			return Long.MIN_VALUE;
+		}
+
+		@Override
+		public long getMaxTimeValue()
+		{
+			return Long.MAX_VALUE;
 		}
 
 		@Override

@@ -48,12 +48,12 @@ class Monitor
 	end
 
 	def add_crit_message(msg)
-		@crit_messages.append(msg)
+		@crit_messages.push(msg)
 		@return_code = 2
 	end
 
 	def add_warn_message(msg)
-		@warn_messages.append(msg)
+		@warn_messages.push(msg)
 		@return_code = 1 if @return_code == 0
 	end
 
@@ -126,7 +126,7 @@ end
 def get_sampling(sampling)
 	number, unit = parse_time(sampling)
 
-	{value: value, unit: unit}
+	{value: number, unit: unit}
 end
 
 def print_results(query_results)
@@ -136,7 +136,7 @@ def print_results(query_results)
 			group_str_arr = []
 
 			groups.each do |key, value|
-				group_str_arr.append("#{key}=#{value}")
+				group_str_arr.push("#{key}=#{value}")
 			end
 
 			values.each do |value|
@@ -155,7 +155,7 @@ def check_results(query_results)
 			group_str_arr = []
 
 			groups.each do |key, value|
-				group_str_arr.append("#{key}=#{value}")
+				group_str_arr.push("#{key}=#{value}")
 			end
 
 			if values.empty?
@@ -263,7 +263,7 @@ Available options:'
 
 			tags[key] = [] if tags[key].nil?
 
-			tags[key].append(value)
+			tags[key].push(value)
 		end
 	end
 
@@ -287,7 +287,7 @@ Available options:'
 				abort("Unrecognized aggregator: #{agg_name}")
 			end
 
-			query_aggs.append(agg_json)
+			query_aggs.push(agg_json)
 		end
 	end
 
@@ -295,7 +295,7 @@ Available options:'
 		groups = v.split(',')
 		$metric_query[:group_by] = []
 		group_tags = {}
-		$metric_query[:group_by].append(group_tags)
+		$metric_query[:group_by].push(group_tags)
 		group_tags[:name] = 'tag'
 		group_tags[:tags] = groups
 	end
@@ -351,6 +351,7 @@ end.parse!
 #puts $query.to_json
 uri = URI.parse("#{$host}/api/v1/datapoints/query")
 http = Net::HTTP.new(uri.host, uri.port)
+http.use_ssl = true if $host.start_with?('https')
 request = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
 request.body = $query.to_json
 

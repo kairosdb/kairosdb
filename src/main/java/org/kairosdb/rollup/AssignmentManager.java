@@ -92,6 +92,9 @@ public class AssignmentManager implements KairosDBService
                 Map<String, RollupTask> tasks = taskStore.read();
                 Map<String, ServiceKeyValue> hosts = hostManager.getActiveKairosHosts();
 
+                logger.debug("Rollup tasks: {}", tasks);
+                logger.debug("Rollup assignments: {}", assignments);
+
                 if (getMyAssignmentIds(guid, newAssignments).isEmpty() && tasks.size() > hosts.size()) {
                     logger.info("Server starting up. Re-balancing roll-up assignments");
                     newAssignments = balancing.rebalance(hosts.keySet(), getScores(tasks));

@@ -72,8 +72,10 @@
 	<!--Line below suppresses large amounts of info when users authenticate, comment to get it back -->
 	<logger name="org.eclipse.jetty.jaas.spi.LdapLoginModule" level="WARN"/>
 
+	<logger name="com.datastax.driver.core" level="ERROR"/>
 
-	<!--<logger name="org.hbase.async.RegionClient" level="DEBUG"/>-->
+
+	<logger name="org.kairosdb.rollup" level="DEBUG"/>
 
 	<!--<logger name="org.kairosdb.core.aggregator.SumAggregator" level="DEBUG"/>
 	<logger name="org.kairosdb.datastore.cassandra.CassandraDatastore" level="DEBUG"/>-->

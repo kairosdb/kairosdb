@@ -798,6 +798,16 @@ function showChartForQuery(subTitle, query, metricData, timezone) {
 	});
 }
 
+function escapeHtml(unsafe)
+{
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+ }
+
 function showChart(subTitle, queries, metricData, timezone) {
 	if (queries.length == 0) {
 		return;
@@ -844,7 +854,7 @@ function showChart(subTitle, queries, metricData, timezone) {
 						if (value.length > 0) {
 							if (!first)
 								groupByMessage += ", ";
-							groupByMessage += key + '=' + value;
+							groupByMessage += key + '=' + escapeHtml(value);
 							first = false;
 						}
 					});

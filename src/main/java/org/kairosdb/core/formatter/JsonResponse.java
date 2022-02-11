@@ -75,6 +75,9 @@ public class JsonResponse
 			//This loop must call close on each group at the end.
 			for (DataPointGroup group : queryResults)
 			{
+				if (!group.hasNext())
+					continue; //no data so we don't print this one out
+
 				final String metric = group.getName();
 
 				m_jsonWriter.object();

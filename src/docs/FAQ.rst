@@ -24,3 +24,9 @@ There are several strategies here:
 
 
 Additional FAQ can be found here: https://github.com/kairosdb/kairosdb/wiki/Frequently-Asked-Questions
+
+===============================
+Can I run Kairos in Kubernetes?
+===============================
+
+KairosDB runs just fine under Kubernetes.  Kairos for the most part is stateless which lends itself to be easily deployed in Kubernetes.  Cassandra on the other hand is not so easy.  Many people have tried and failed to get Cassandra to work efficiently in Kubernetes.

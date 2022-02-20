@@ -88,7 +88,7 @@ public class RollUpAssignmentStoreImpl implements RollUpAssignmentStore
     }
 
     @Override
-    public Set<String> getAssignedIds(String host)
+    public Set<String> getAssignedIds(String hostId)
             throws RollUpException
     {
         Set<String> assignedTasks = new HashSet<>();
@@ -96,7 +96,7 @@ public class RollUpAssignmentStoreImpl implements RollUpAssignmentStore
             Iterable<String> keys = serviceKeyStore.listKeys(SERVICE, SERVICE_KEY_ASSIGNMENTS);
             for (String key : keys) {
                 String assigned = serviceKeyStore.getValue(SERVICE, SERVICE_KEY_ASSIGNMENTS, key).getValue();
-                if (assigned.equals(host)) {
+                if (assigned.equals(hostId)) {
                     assignedTasks.add(key);
                 }
             }
@@ -122,17 +122,23 @@ public class RollUpAssignmentStoreImpl implements RollUpAssignmentStore
         }
     }
 
+    public void removeAssignment(String taskId) throws RollUpException
+    {
+        try
+        {
+            serviceKeyStore.deleteKey(SERVICE, SERVICE_KEY_ASSIGNMENTS, taskId);
+        }
+        catch (DatastoreException e) {
+            throw new RollUpException("Could not delete ids.", e);
+        }
+    }
+
     @Override
     public void removeAssignments(Set<String> ids)
             throws RollUpException
     {
-        try {
-            for (String id : ids) {
-                serviceKeyStore.deleteKey(SERVICE, SERVICE_KEY_ASSIGNMENTS, id);
-            }
-        }
-        catch (DatastoreException e) {
-            throw new RollUpException("Could not delete ids.", e);
+        for (String id : ids) {
+            removeAssignment(id);
         }
     }
 }

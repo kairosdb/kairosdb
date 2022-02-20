@@ -262,6 +262,8 @@ public class KairosDatastore implements KairosPostConstructInit
 	{
 		requireNonNull(metric);
 
+		logger.debug("Creating query for: {}", metric);
+
 		DatastoreQuery dq;
 
 		try

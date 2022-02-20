@@ -4,15 +4,18 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.kairosdb.core.datastore.ServiceKeyStore;
 import org.kairosdb.core.datastore.ServiceKeyValue;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.KairosDBException;
+import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.eventbus.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static java.util.Objects.requireNonNull;
@@ -28,78 +31,102 @@ public class HostManager implements KairosDBService
     private static final String INACTIVE_TIME = "kairosdb.host_service_manager.inactive_time_seconds";
     static final String HOST_MANAGER_SERVICE_EXECUTOR = "HostManagerServiceExecutor";
 
-    private final ServiceKeyStore keyStore;
-    private final String hostname;
-    private final long inactiveTimeSeconds;
-    private final String guid;
-    private ScheduledExecutorService executorService;
+    private final ServiceKeyStore m_keyStore;
+    private final String m_hostname;
+    private final long m_inactiveTimeSeconds;
+    private final String m_guid;
+    private final Publisher<CoordinatorChangeEvent> m_coordinatorPublisher;
+    private final Publisher<HostChangeEvent> m_hostPublisher;
+    private final long m_delay;
+    private ScheduledExecutorService m_executorService;
 
-    private volatile Map<String, ServiceKeyValue> activeHosts = new HashMap<>();
-    private volatile boolean hostListChanged;
+    private volatile SortedMap<String, ServiceKeyValue> m_activeHosts = new TreeMap<>();
+    private boolean m_isCoordinatorHost = false;
 
     @Inject
     public HostManager(ServiceKeyStore keyStore,
             @Named(HOST_MANAGER_SERVICE_EXECUTOR) ScheduledExecutorService executorService,
-            @Named(DELAY) long delay, @Named("HOSTNAME") String hostName, @Named(INACTIVE_TIME) long inactiveTime,
-            @Named(Main.KAIROSDB_SERVER_GUID) String guid)
+            @Named(DELAY) long delay, @Named("HOSTNAME") String hostName,
+            @Named(INACTIVE_TIME) long inactiveTime,
+            @Named(Main.KAIROSDB_SERVER_GUID) String guid, FilterEventBus eventBus)
     {
-        this.keyStore = requireNonNull(keyStore, "keyStore cannot be null");
-        this.executorService = requireNonNull(executorService, "executorService cannot be null");
-        this.hostname = requireNonNullOrEmpty(hostName, "hostname cannot be null or empty");
-        this.inactiveTimeSeconds = inactiveTime;
-        this.guid = requireNonNullOrEmpty(guid, "guid cannot be null or empty");
+        m_keyStore = requireNonNull(keyStore, "keyStore cannot be null");
+        m_executorService = requireNonNull(executorService, "executorService cannot be null");
+        m_hostname = requireNonNullOrEmpty(hostName, "hostname cannot be null or empty");
+        m_inactiveTimeSeconds = inactiveTime;
+        m_guid = requireNonNullOrEmpty(guid, "guid cannot be null or empty");
+        m_delay = delay;
+        m_coordinatorPublisher = eventBus.createPublisher(CoordinatorChangeEvent.class);
+        m_hostPublisher = eventBus.createPublisher(HostChangeEvent.class);
 
-        executorService.scheduleWithFixedDelay(new CheckChanges(), 0, delay, java.util.concurrent.TimeUnit.MILLISECONDS);
+
     }
 
-    private class CheckChanges implements Runnable
-    {
-        @Override
-        public void run()
-        {
-            checkHostChanges();
-        }
-    }
 
     @VisibleForTesting
     void checkHostChanges()
     {
         try {
+            logger.debug("Checking host list for changes");
             // Add this host to the table if it doesn't exist or update its timestamp
-            keyStore.setValue(SERVICE, SERVICE_KEY, guid, hostname);
+            m_keyStore.setValue(SERVICE, SERVICE_KEY, m_guid, m_hostname);
 
-            Map<String, ServiceKeyValue> hosts = getHostsFromKeyStore();
+            SortedMap<String, ServiceKeyValue> hosts = getHostsFromKeyStore();
 
             // Remove inactive nodes from the table
             long now = System.currentTimeMillis();
-            for (String guid : hosts.keySet()) {
-                ServiceKeyValue host = hosts.get(guid);
-                if ((host.getLastModified().getTime() + (1000 * inactiveTimeSeconds)) < now) {
-                    keyStore.deleteKey(SERVICE, SERVICE_KEY, guid);
+            Iterator<Map.Entry<String, ServiceKeyValue>> hostIterator = hosts.entrySet().iterator();
+            while (hostIterator.hasNext())
+            {
+                Map.Entry<String, ServiceKeyValue> hostEntry = hostIterator.next();
+                ServiceKeyValue host = hostEntry.getValue();
+                if ((host.getLastModified().getTime() + (1000 * m_inactiveTimeSeconds)) < now)
+                {
+                    System.out.println("Expiring host: " + hostEntry.getKey());
+                    logger.debug("Expiring host "+ hostEntry.getKey());
+                    m_keyStore.deleteKey(SERVICE, SERVICE_KEY, hostEntry.getKey());
+                    hostIterator.remove();
                 }
             }
 
-            hosts = getHostsFromKeyStore();
-            if (!activeHosts.equals(hosts)) {
+            if (!m_activeHosts.equals(hosts))
+            {
+                //Check if we are the controller host
+                if (hosts.firstKey().equals(m_guid) && !m_isCoordinatorHost)
+                {
+                    logger.debug("We are the coordinator");
+                    m_coordinatorPublisher.post(new CoordinatorChangeEvent(true));
+                    m_isCoordinatorHost = true;
+                }
+                else if (m_isCoordinatorHost && !hosts.firstKey().equals(m_guid))
+                {
+                    logger.debug("No longer the coordinator.");
+                    m_coordinatorPublisher.post(new CoordinatorChangeEvent(false));
+                    m_isCoordinatorHost = false;
+                }
+
+                //This has to be after the coordinator change event
                 logger.debug("Hosts list changed");
-                hostListChanged = true;
+                m_hostPublisher.post(new HostChangeEvent(ImmutableMap.copyOf(hosts)));
+
+                // update cache
+                m_activeHosts = hosts;
             }
 
-            // update cache
-            activeHosts = hosts;
+
         }
         catch (Throwable e) {
             logger.error("Could not access keystore " + SERVICE + ":" + SERVICE_KEY);
         }
     }
 
-    private Map<String, ServiceKeyValue> getHostsFromKeyStore()
+    private SortedMap<String, ServiceKeyValue> getHostsFromKeyStore()
             throws DatastoreException
     {
-        Map<String, ServiceKeyValue> hosts = new HashMap<>();
-        Iterable<String> guids = keyStore.listKeys(SERVICE, SERVICE_KEY);
+        SortedMap<String, ServiceKeyValue> hosts = new TreeMap<>();
+        Iterable<String> guids = m_keyStore.listKeys(SERVICE, SERVICE_KEY);
         for (String guid : guids) {
-            ServiceKeyValue value = keyStore.getValue(SERVICE, SERVICE_KEY, guid);
+            ServiceKeyValue value = m_keyStore.getValue(SERVICE, SERVICE_KEY, guid);
             if (value != null) {
                 hosts.put(guid, value);
             }
@@ -113,28 +140,55 @@ public class HostManager implements KairosDBService
      */
     public Map<String, ServiceKeyValue> getActiveKairosHosts()
     {
-        return ImmutableMap.copyOf(activeHosts);
-    }
-
-    /**
-     * Returns true if the host list has changed since last called and resets the value to false.
-     */
-    public boolean acknowledgeHostListChanged()
-    {
-        boolean changed = hostListChanged;
-        hostListChanged = false;
-        return changed;
+        return ImmutableMap.copyOf(m_activeHosts);
     }
 
     @Override
     public void start()
             throws KairosDBException
     {
+        m_executorService.scheduleWithFixedDelay(this::checkHostChanges, 5000, m_delay, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void stop()
     {
-        executorService.shutdown();
+        m_executorService.shutdown();
+    }
+
+
+    @ToString
+    @EqualsAndHashCode
+    public static class CoordinatorChangeEvent
+    {
+        private final boolean coordinator;
+
+        /*package*/ CoordinatorChangeEvent(boolean coordinator)
+        {
+            this.coordinator = coordinator;
+        }
+
+        public boolean isCoordinator()
+        {
+            return coordinator;
+        }
+    }
+
+
+    @ToString
+    @EqualsAndHashCode
+    public static class HostChangeEvent
+    {
+        private final Map<String, ServiceKeyValue> hostMap;
+
+        /*package*/ HostChangeEvent(Map<String, ServiceKeyValue> hostMap)
+        {
+            this.hostMap = hostMap;
+        }
+
+        public Map<String, ServiceKeyValue> getHostMap()
+        {
+            return hostMap;
+        }
     }
 }

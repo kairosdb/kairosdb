@@ -175,13 +175,27 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 		m_holdConnection.commit();
 	}
 
+	/*
+	 shutdown is only used by unit tests.
+	 */
+	public void shutdown()
+	{
+		try {
+			m_holdConnection.createStatement().execute("SHUTDOWN");
+		}
+		catch (SQLException e) {
+			logger.error("Failed shutdown:", e);
+		}
+	}
+
 	@Override
 	public void close()
 	{
 		try
 		{
-			if (m_holdConnection != null)
+			if (m_holdConnection != null) {
 				m_holdConnection.close();
+			}
 		}
 		catch (SQLException e)
 		{

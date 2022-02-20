@@ -135,15 +135,15 @@ public class QueueProcessorTest
 	public void test_bigArray_readingEmptyArray() throws IOException
 	{
 		File tempDir = Files.createTempDir();
+		IBigArray bigArray = new BigArrayImpl(tempDir.getAbsolutePath(), "kairos_queue", 512 * 1024 * 1024);
 		try
 		{
-			IBigArray bigArray = new BigArrayImpl(tempDir.getAbsolutePath(), "kairos_queue", 512 * 1024 * 1024);
-
 			long index = bigArray.getTailIndex();
 			byte[] data = bigArray.get(index);
 		}
 		finally
 		{
+			bigArray.close();
 			FileUtils.deleteDirectory(tempDir);
 		}
 	}
@@ -161,6 +161,7 @@ public class QueueProcessorTest
 		}
 		finally
 		{
+			bigArray.close();
 			FileUtils.deleteDirectory(tempDir);
 		}
 

@@ -915,7 +915,8 @@ public abstract class DatastoreTestHelper
 		for (long expected : values)
 		{
 			assertThat(group.hasNext(), is(true));
-			long actual = group.next().getLongValue();
+			DataPoint next = group.next();
+			long actual = next.getLongValue();
 			assertThat(actual, is(expected));
 		}
 

@@ -52,10 +52,10 @@ the following parameters on any range aggregator.
 
 **align_start_time** - (boolean, optional, default value: false)
 
-	When set to true the time for the aggregated data point for each range will
-	fall on the start of the range instead of being the value for the first
-	data point within that range. Note that align_sampling, align_start_time, and align_end_time
-  are mutually exclusive. If more than one are set, unexpected results will occur.
+    When set to true the time for the aggregated data point for each range will
+    fall on the start of the range instead of being the value for the first
+    data point within that range. Note that align_sampling, align_start_time, and align_end_time
+    are mutually exclusive. If more than one are set, unexpected results will occur.
 
 **align_end_time** - (boolean, optional, default value: false)
 
@@ -70,13 +70,13 @@ the following parameters on any range aggregator.
 
 **align_sampling** - (boolean, optional, default value: false)
 
-	Setting this to true will cause the aggregation range to be aligned based on
-	the sampling size.  For example if your sample size is either milliseconds,
-	seconds, minutes or hours then the start of the range will always be at the top
-	of the hour.  The effect of setting this to true is that your data will
-	take the same shape when graphed as you refresh the data. Note that 
-  align_sampling, align_start_time, and align_end_time are mutually exclusive.
-  If more than one are set, unexpected results will occur.
+    Setting this to true will cause the aggregation range to be aligned based on
+    the sampling size.  For example if your sample size is either milliseconds,
+    seconds, minutes or hours then the start of the range will always be at the top
+    of the hour.  The effect of setting this to true is that your data will
+    take the same shape when graphed as you refresh the data. Note that
+    align_sampling, align_start_time, and align_end_time are mutually exclusive.
+    If more than one are set, unexpected results will occur.
 
 **start_time** - (long, optional, default value: 0)
 

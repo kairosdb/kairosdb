@@ -45,6 +45,8 @@
 
 		<dependency org="org.xerial.snappy" name="snappy-java" rev="1.1.7.2"/>
 
+		<dependency org="org.projectlombok" name="lombok" rev="1.18.22" />
+
 		<!-- provides connection pooling -->
 		<dependency org="com.mchange" name="c3p0" rev="0.9.5.5"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2" />

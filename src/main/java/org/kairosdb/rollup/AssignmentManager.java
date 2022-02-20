@@ -31,7 +31,7 @@ import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 public class AssignmentManager implements KairosDBService
 {
     public static final Logger logger = LoggerFactory.getLogger(AssignmentManager.class);
-    private static final String DELAY = "kairosdb.rollups.server_assignment.check_update_delay_millseconds";
+    public static final String DELAY = "kairosdb.rollups.server_assignment.check_update_delay_millseconds";
 
     private final RollUpAssignmentStore assignmentStore;
     private final RollUpTasksStore taskStore;
@@ -66,17 +66,9 @@ public class AssignmentManager implements KairosDBService
         this.hostManager = requireNonNull(hostManager, "hostManager cannot be null");
 
         // Start thread that checks for rollup changes and rollup assignments
-        executorService.scheduleWithFixedDelay(new updateAssignments(), 0, delay, java.util.concurrent.TimeUnit.MILLISECONDS);
+        executorService.scheduleWithFixedDelay(this::checkAssignmentChanges, 0, delay, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
 
-    private class updateAssignments implements Runnable
-    {
-        @Override
-        public void run()
-        {
-            checkAssignmentChanges();
-        }
-    }
 
     @VisibleForTesting
     void checkAssignmentChanges()
@@ -91,6 +83,10 @@ public class AssignmentManager implements KairosDBService
                 Map<String, String> newAssignments = new HashMap<>(assignments);
                 Map<String, RollupTask> tasks = taskStore.read();
                 Map<String, ServiceKeyValue> hosts = hostManager.getActiveKairosHosts();
+
+                for (RollupTask task : tasks.values()) {
+                    logger.debug("Rollup task: {}  Assigned: {}", task.getName(), assignments.containsKey(task.getId()));
+                }
 
                 if (getMyAssignmentIds(guid, newAssignments).isEmpty() && tasks.size() > hosts.size()) {
                     logger.info("Server starting up. Re-balancing roll-up assignments");
@@ -187,7 +183,7 @@ public class AssignmentManager implements KairosDBService
     {
         lock.lock();
         try {
-            return  hostManager.acknowledgeHostListChanged() ||
+            return  //hostManager.acknowledgeHostListChanged() ||
                     assignmentsLastModified == 0 ||
                     rollupsLastModified == 0 ||
                     assignmentsLastModified != assignmentTime ||

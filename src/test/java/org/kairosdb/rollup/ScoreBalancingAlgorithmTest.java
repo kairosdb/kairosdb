@@ -16,8 +16,8 @@ public class ScoreBalancingAlgorithmTest
     @Test
     public void test_balance()
     {
-        Map<String, String> result = algorithm.rebalance(ImmutableSet.of("host1", "host2", "host3"),
-                ImmutableMap.of("1", 1L, "2", 10L, "3", 1L, "4", 1L, "5", 3L));
+        Map<String, String> result = algorithm.rebalance(ImmutableSet.of("host3", "host2", "host1"),
+                ImmutableMap.of("2", 10L, "1", 1L, "3", 1L, "4", 1L, "5", 3L));
 
         assertThat(result.get("1"), equalTo("host1"));
         assertThat(result.get("2"), equalTo("host2"));

@@ -60,11 +60,7 @@ public class RollUpJobTest
 		String json = Resources.toString(Resources.getResource("rolluptask1.json"), Charsets.UTF_8);
 		task = queryParser.parseRollupTask(json);
 		ImmutableMap<Object, Object> map = ImmutableMap.of(
-				"task", task,
-				"eventBus", mockEventBus,
-				"datastore", mockDatastore,
-				"hostName", "localhost",
-				"statusStore", mockStatusStore
+				"task", task
 		);
 		JobDataMap jobDataMap = new JobDataMap(map);
 
@@ -75,7 +71,7 @@ public class RollUpJobTest
 		when(mockJobExecutionContext.getMergedJobDataMap()).thenReturn(jobDataMap);
 		when(mockJobExecutionContext.getScheduler()).thenReturn(mockScheduler);
 
-		job = new RollUpJob();
+		job = new RollUpJob(mockDatastore, mockEventBus, "localhost", mockStatusStore);
 	}
 
 	@After
@@ -109,7 +105,7 @@ public class RollUpJobTest
 		RollupTaskStatus expected = new RollupTaskStatus(new Date(), "localhost");
 		RollupQueryMetricStatus foo = new RollupQueryMetricStatus("any",
 				"any", 1L, 1L,
-				"java.lang.RuntimeException: ExpectedException\n");
+				"java.lang.RuntimeException: ExpectedException");
 		expected.addStatus(foo);
 		verify(mockStatusStore).write(eq(task.getId()), argThat(new RollupStatusMatcher(expected)));
 	}

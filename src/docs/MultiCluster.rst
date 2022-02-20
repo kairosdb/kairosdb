@@ -1,3 +1,5 @@
+.. _multi_cluster:
+
 =======================
 Multi Cluster Cassandra
 =======================

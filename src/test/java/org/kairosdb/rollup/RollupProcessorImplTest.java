@@ -44,6 +44,7 @@ public class RollupProcessorImplTest
 	private static QueryParser queryParser;
 	private static Publisher<DataPointEvent> publisher;
 	private static RollupTaskStatusStore mockStatusStore;
+	private static H2Datastore h2Datastore;
 
 	@BeforeClass
 	public static void setupDatabase() throws KairosDBException, IOException
@@ -51,7 +52,7 @@ public class RollupProcessorImplTest
 
 		KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
 		FileUtils.deleteDirectory(new File(DB_PATH));
-		H2Datastore h2Datastore = new H2Datastore(DB_PATH, dataPointFactory, eventBus, "regex:");
+		h2Datastore = new H2Datastore(DB_PATH, dataPointFactory, eventBus, "regex:");
 
 		datastore = new KairosDatastore(h2Datastore,
 				new QueryQueuingManager(1, "hostname"),
@@ -71,7 +72,9 @@ public class RollupProcessorImplTest
 	@AfterClass
 	public static void cleanupDatabase() throws InterruptedException, DatastoreException, IOException
 	{
+		h2Datastore.shutdown();
 		datastore.close();
+		Thread.sleep(100);
 		FileUtils.deleteDirectory(new File(DB_PATH));
 	}
 

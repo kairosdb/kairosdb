@@ -35,14 +35,14 @@ public class RollUpTasksStoreImpl implements RollUpTasksStore
     static final String SERVICE_KEY_CONFIG = "Config";
 
     private ServiceKeyStore keyStore;
-    private final QueryParser parser;
+    private QueryParser parser;
+    private String oldFileName = OLD_FILENAME;
 
-    @Inject
-    public RollUpTasksStoreImpl(ServiceKeyStore keyStore, QueryParser parser)
-            throws RollUpException
+    public RollUpTasksStoreImpl(ServiceKeyStore keyStore, QueryParser parser, String oldFileName) throws RollUpException
     {
         this.keyStore = requireNonNull(keyStore, "keyStore cannot be null");
         this.parser = requireNonNull(parser, "parser cannot be null");
+        this.oldFileName = oldFileName;
 
         try {
             importFromOldFile();
@@ -50,6 +50,12 @@ public class RollUpTasksStoreImpl implements RollUpTasksStore
         catch (RollUpException | IOException | QueryException e) {
             throw new RollUpException("Failed to complete import from old roll-up format to new format in the datastore.", e);
         }
+    }
+    @Inject
+    public RollUpTasksStoreImpl(ServiceKeyStore keyStore, QueryParser parser)
+            throws RollUpException
+    {
+        this(keyStore, parser, OLD_FILENAME);
     }
 
     @Override
@@ -120,7 +126,9 @@ public class RollUpTasksStoreImpl implements RollUpTasksStore
             if (value == null) {
                 return null;
             }
-            return parser.parseRollupTask(value.getValue());
+            RollupTask rollupTask = parser.parseRollupTask(value.getValue());
+            rollupTask.setLastModified(value.getLastModified().getTime());
+            return rollupTask;
         }
         catch (DatastoreException e) {
             throw new RollUpException("Failed to read roll-up task " + id, e);
@@ -166,7 +174,7 @@ public class RollUpTasksStoreImpl implements RollUpTasksStore
     private void importFromOldFile()
             throws RollUpException, IOException, QueryException
     {
-        File oldFile = new File(OLD_FILENAME);
+        File oldFile = new File(oldFileName);
         if (oldFile.exists()) {
             List<String> taskJson = Files.readAllLines(oldFile.toPath(), Charset.forName("UTF-8"));
             List<RollupTask> tasks = new ArrayList<>();

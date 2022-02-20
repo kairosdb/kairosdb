@@ -666,6 +666,10 @@ def printMessage(String title, String message) {
 	{
 		notifyDef = saw.getDefinition("mac-notify")
 	}
+	else if (osName.startsWith("Windows"))
+	{
+		notifyDef = saw.getDefinition("windows-notify")
+	}
 
 	if (notifyDef != null)
 	{

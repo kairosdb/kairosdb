@@ -10,7 +10,7 @@
 		<conf name="build_tools"/>
 	</configurations>
 	<dependencies>
-		<dependency org="com.google.guava" name="guava" rev="28.2-jre" force="true">
+		<dependency org="com.google.guava" name="guava" rev="30.1.1-jre" force="true">
 			<artifact name="guava" type="bundle" ext="jar"/>
 		</dependency>
 
@@ -38,7 +38,7 @@
 		            name="guice-multibindings" rev="4.2.2"/>
 		<dependency org="com.google.inject.extensions" name="guice-assistedinject" rev="4.2.2" />
 		<dependency org="com.google.inject.extensions" name="guice-servlet" rev="4.2.2" />
-		<dependency org="com.h2database" name="h2" rev="1.4.200" />
+		<dependency org="com.h2database" name="h2" rev="2.1.210" />
 		<dependency org="org.kairosdb" name="bigqueue" rev="1.0.1" />
 
 		<dependency org="com.typesafe" name="config" rev="1.4.0" />
@@ -57,8 +57,8 @@
 		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.5.13" />
 		<dependency org="joda-time" name="joda-time" rev="2.10.6" />
 
-		<dependency org="ch.qos.logback" name="logback-core" rev="1.2.3" />
-		<dependency org="ch.qos.logback" name="logback-classic" rev="1.2.3" />
+		<dependency org="ch.qos.logback" name="logback-core" rev="1.2.10" />
+		<dependency org="ch.qos.logback" name="logback-classic" rev="1.2.10" />
 
 		<!--Genormous dependencies-->
 		<dependency org="org.agileclick.genorm" name="genormous" rev="1.6.5.jdbc41" conf="default,build_tools->default">
@@ -131,7 +131,8 @@
 		<!-- Build tools -->
 		<dependency org="org.gaul" name="modernizer-maven-plugin" rev="2.0.0" conf="build_tools->default" />
 
+		<!-- Must match dependency declared above -->
+		<conflict org="com.google.guava" module="guava" rev="30.1.1-jre"/>
 
-		<conflict org="com.google.guava" module="guava" rev="28.2-jre"/>
 	</dependencies>
 </ivy-module>

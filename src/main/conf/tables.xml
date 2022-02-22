@@ -14,7 +14,7 @@
 			<type custom="boolean" java="boolean" db="BOOLEAN"/>
 			<type custom="string" java="String" db="VARCHAR"/>
 			<type custom="timestamp" java="java.sql.Timestamp" db="TIMESTAMP"/>
-			<type custom="binary" java="byte[]" db="BINARY"/>
+			<type custom="binary" java="byte[]" db="VARBINARY(256)"/>
 			<type custom="money" java="java.math.BigDecimal" db="DECIMAL"/>
 			<type custom="version" java="Double" db="DOUBLE PRECISION"/>
 		</type_map>

@@ -559,10 +559,13 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 			ServiceIndex serviceIndex = ServiceIndex.factory.findOrCreate(service, serviceKey, key);
 			if (value != null) {
 				serviceIndex.setValue(value);
+				long now = System.currentTimeMillis();
+				//Need to make sure the modification time always gets updated
+				serviceIndex.setModificationTime(new java.sql.Timestamp(now));
 
 				// Update the service key timestamp
 				ServiceModification orCreate = ServiceModification.factory.findOrCreate(service, serviceKey);
-				orCreate.setModificationTime(new java.sql.Timestamp(System.currentTimeMillis()));
+				orCreate.setModificationTime(new java.sql.Timestamp(now));
 			}
 
 			GenOrmDataSource.commit();

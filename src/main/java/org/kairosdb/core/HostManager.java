@@ -82,7 +82,6 @@ public class HostManager implements KairosDBService
                 ServiceKeyValue host = hostEntry.getValue();
                 if ((host.getLastModified().getTime() + (1000 * m_inactiveTimeSeconds)) < now)
                 {
-                    System.out.println("Expiring host: " + hostEntry.getKey());
                     logger.debug("Expiring host "+ hostEntry.getKey());
                     m_keyStore.deleteKey(SERVICE, SERVICE_KEY, hostEntry.getKey());
                     hostIterator.remove();
@@ -116,7 +115,7 @@ public class HostManager implements KairosDBService
 
         }
         catch (Throwable e) {
-            logger.error("Could not access keystore " + SERVICE + ":" + SERVICE_KEY);
+            logger.error("Could not access keystore " + SERVICE + ":" + SERVICE_KEY, e);
         }
     }
 

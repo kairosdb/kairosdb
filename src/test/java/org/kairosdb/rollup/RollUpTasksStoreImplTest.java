@@ -106,7 +106,7 @@ public class RollUpTasksStoreImplTest extends RollupTestBase
             oldTasks.add(queryParser.parseRollupTask(line));
         }
 
-        File tempDir = com.google.common.io.Files.createTempDir();
+        File tempDir = Files.createTempDirectory("kairos").toFile();
         Path path = new File(tempDir, "rollup.config").toPath();
 
         try {
@@ -130,7 +130,7 @@ public class RollUpTasksStoreImplTest extends RollupTestBase
     public void test_import_oldFileNotExists()
             throws IOException, RollUpException, QueryException
     {
-        File tempDir = com.google.common.io.Files.createTempDir();
+        File tempDir = Files.createTempDirectory("kairos").toFile();
         Path path = new File(tempDir, "rollup.config").toPath();
         assertFalse(Files.exists(path));
 

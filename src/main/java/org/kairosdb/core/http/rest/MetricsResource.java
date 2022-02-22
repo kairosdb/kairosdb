@@ -400,7 +400,7 @@ public class MetricsResource implements KairosMetricReporter
 
 				try
 				{
-					jsonResponse.formatQuery(result, false, -1);
+					jsonResponse.formatQuery(result, false, -1, false);
 				}
 				finally
 				{
@@ -526,7 +526,7 @@ public class MetricsResource implements KairosMetricReporter
 				try
 				{
 					List<DataPointGroup> results = dq.execute();
-					jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize());
+					jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize(), true);
 
 					ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
 				}

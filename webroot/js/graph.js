@@ -768,7 +768,7 @@ function getTagsForMetric(metricName) {
 	var query = new kairosdb.MetricQuery();
 	query.addMetric(new kairosdb.Metric(metricName));
 	query.setStartAbsolute(0);
-	$('body').toggleClass('cursorWaiting');
+	$('body').toggleClass('cursorWaiting', true);
 
 	$.ajax({
 		type: "POST",
@@ -777,15 +777,14 @@ function getTagsForMetric(metricName) {
 		data: JSON.stringify(query),
 		dataType: 'json',
 		success: function (data) {
+			$('body').toggleClass('cursorWaiting', false);
 			var metric = metricToTags[metricName] = {};
 			$.each(data.queries[0].results[0].tags, function (tag, values) {
 				metric[tag] = values;
 			});
-
-			$('body').toggleClass('cursorWaiting');
 		},
 		error: function (jqXHR, textStatus, errorThrown) {
-			$('body').toggleClass('cursorWaiting');
+			$('body').toggleClass('cursorWaiting', false);
 			console.log(errorThrown);
 		}
 	});

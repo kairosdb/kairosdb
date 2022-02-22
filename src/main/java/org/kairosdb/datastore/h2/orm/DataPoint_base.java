@@ -75,7 +75,7 @@ public class DataPoint_base extends GenOrmRecord
 	public static class DataPointFactoryImpl //Inherit interfaces
 			implements DataPointFactory 
 		{
-		public static final String CREATE_SQL = "CREATE CACHED TABLE data_point (\n	\"metric_id\" VARCHAR  NOT NULL,\n	\"timestamp\" TIMESTAMP  NOT NULL,\n	\"value\" BINARY  NULL,\n	PRIMARY KEY (\"metric_id\", \"timestamp\"),\n	CONSTRAINT data_point_metric_id_fkey FOREIGN KEY (\"metric_id\")\n		REFERENCES metric (\"id\") \n	)";
+		public static final String CREATE_SQL = "CREATE CACHED TABLE data_point (\n	\"metric_id\" VARCHAR  NOT NULL,\n	\"timestamp\" TIMESTAMP  NOT NULL,\n	\"value\" VARBINARY(256)  NULL,\n	PRIMARY KEY (\"metric_id\", \"timestamp\"),\n	CONSTRAINT data_point_metric_id_fkey FOREIGN KEY (\"metric_id\")\n		REFERENCES metric (\"id\") \n	)";
 
 		private ArrayList<GenOrmFieldMeta> m_fieldMeta;
 		private ArrayList<GenOrmConstraint> m_foreignKeyConstraints;

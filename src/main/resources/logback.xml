@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- For assistance related to logback-translator or configuration  -->
-<!-- files in general, please contact the logback user mailing list -->
-<!-- at http://www.qos.ch/mailman/listinfo/logback-user             -->
-<!--                                                                -->
-<!-- For professional support please see                            -->
-<!--    http://www.qos.ch/shop/products/professionalSupport         -->
-<!--                                                                -->
+
 <configuration>
 	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
@@ -15,18 +9,16 @@
 	</appender>
 	<appender name="logfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<file>log/kairosdb.log</file>
-		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+		<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
 			<!-- daily rollover -->
 			<fileNamePattern>log/kairosdb.%d.%i.log.gz</fileNamePattern>
 
 			<!-- keep 30 days' worth of history -->
 			<maxHistory>30</maxHistory>
-
 			<!-- or whenever the file size reaches 100MB -->
-			<timeBasedFileNamingAndTriggeringPolicy
-				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-				<maxFileSize>100MB</maxFileSize>
-			</timeBasedFileNamingAndTriggeringPolicy>
+			<maxFileSize>100MB</maxFileSize>
+			<!-- cap total size of logs to 10GB -->
+			<!--<totalSizeCap>10GB</totalSizeCap>-->
 
 			<!-- Whenever startup, will run the rollover -->
 			<!--<cleanHistoryOnStart>true</cleanHistoryOnStart>-->
@@ -43,18 +35,16 @@
 			<onMatch>ACCEPT</onMatch>
 			<onMismatch>DENY</onMismatch>
 		</filter>
-		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+		<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
 			<!-- daily rollover -->
 			<fileNamePattern>log/failed.%d.%i.log.gz</fileNamePattern>
 
 			<!-- keep 30 days' worth of history -->
 			<maxHistory>30</maxHistory>
-
 			<!-- or whenever the file size reaches 100MB -->
-			<timeBasedFileNamingAndTriggeringPolicy
-					class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-				<maxFileSize>100MB</maxFileSize>
-			</timeBasedFileNamingAndTriggeringPolicy>
+			<maxFileSize>100MB</maxFileSize>
+			<!-- cap total size of logs to 10GB -->
+			<!--<totalSizeCap>10GB</totalSizeCap>-->
 		</rollingPolicy>
 		<encoder>
 			<pattern>%d{MM-dd|HH:mm:ss.SSS} - %msg%n</pattern>

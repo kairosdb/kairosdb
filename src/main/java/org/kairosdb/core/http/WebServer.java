@@ -180,13 +180,9 @@ public class WebServer implements KairosDBService
 	}
 
 	@Inject(optional = true)
-	void setJettyRequestLoggingIgnorePaths(@Named(JETTY_REQUEST_LOGGING_IGNORE_PATHS) String ignorePaths)
+	void setJettyRequestLoggingIgnorePaths(@Named(JETTY_REQUEST_LOGGING_IGNORE_PATHS) List<String> ignorePaths)
 	{
-		Splitter splitter = Splitter.on(",");
-		CharMatcher cm =  CharMatcher.anyOf("[]").or(CharMatcher.whitespace());
-		splitter = splitter.trimResults(cm);
-		List<String> ignorePathsList = splitter.splitToList(ignorePaths);
-		m_loggingIgnorePaths = ignorePathsList.toArray(new String[ignorePathsList.size()]);
+		m_loggingIgnorePaths = ignorePaths.toArray(new String[ignorePaths.size()]);
 	}
 
 	@Override

@@ -133,7 +133,7 @@ public class BatchHandler extends RetryCallable
 			{
 				cachedRowKey = rowKey;
 
-				//Row key will expire 3 weeks after the data in the row expires
+				//Row key will expire using the ttl plus the width of the row (typically 3 weeks)
 				int rowKeyTtl = (ttl == 0) ? 0 : ttl + ((int) (m_rowSpec.getRowWidthInMillis() / 1000));
 
 				batch.addRowKey(cachedRowKey, rowKeyTtl);

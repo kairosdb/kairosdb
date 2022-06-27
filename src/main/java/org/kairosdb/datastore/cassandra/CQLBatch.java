@@ -7,6 +7,7 @@ import com.datastax.driver.core.Host;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.kairosdb.core.DataPoint;
+import org.kairosdb.core.annotation.InjectProperty;
 import org.kairosdb.util.KDataOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ public class CQLBatch
 {
 	public static final Logger logger = LoggerFactory.getLogger(CQLBatch.class);
 	private static final Charset UTF_8 = Charset.forName("UTF-8");
+	public static final String METRIC_INDEX_FILTER_PREFIX = "kairosdb.metric_index_filter.prefix";
 
 	private final ClusterConnection m_clusterConnection;
 	private final BatchStats m_batchStats;
@@ -54,6 +56,7 @@ public class CQLBatch
 	private List<DataPointsRowKey> m_newRowKeys = new ArrayList<>();
 	private List<TimedString> m_newMetrics = new ArrayList<>();
 
+	private List<String> m_prefixFilterList = new ArrayList<>();
 
 
 	@Inject
@@ -72,6 +75,12 @@ public class CQLBatch
 		m_metricNamesBatch.setConsistencyLevel(consistencyLevel);
 		m_dataPointBatch.setConsistencyLevel(consistencyLevel);
 		m_rowKeyBatch.setConsistencyLevel(consistencyLevel);
+	}
+
+	@InjectProperty(prop = METRIC_INDEX_FILTER_PREFIX, optional = true)
+	public void setFilterPrefixList(List<String> list)
+	{
+		m_prefixFilterList = list;
 	}
 
 	public void addTimeIndex(String metricName, long rowKeyTime, int rowKeyTtl)
@@ -120,13 +129,27 @@ public class CQLBatch
 
 	public void addMetricName(TimedString metricNameTime)
 	{
-		m_newMetrics.add(metricNameTime);
-		BoundStatement bs = new BoundStatement(m_clusterConnection.psStringIndexInsert);
-		bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
-		bs.setString(1, metricNameTime.getString());
-		bs.setConsistencyLevel(m_consistencyLevel);
-		bs.setIdempotent(true);
-		m_metricNamesBatch.add(bs);
+		String metricName = metricNameTime.getString();
+		boolean skip = false;
+
+		for (String prefix : m_prefixFilterList)
+		{
+			if (metricName.startsWith(prefix)) {
+				skip = true;
+				break;
+			}
+		}
+
+		if (skip)
+		{
+			m_newMetrics.add(metricNameTime);
+			BoundStatement bs = new BoundStatement(m_clusterConnection.psStringIndexInsert);
+			bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
+			bs.setString(1, metricName);
+			bs.setConsistencyLevel(m_consistencyLevel);
+			bs.setIdempotent(true);
+			m_metricNamesBatch.add(bs);
+		}
 	}
 
 	private void addBoundStatement(BoundStatement boundStatement)

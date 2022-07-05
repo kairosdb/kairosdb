@@ -348,33 +348,38 @@ Available options:'
 	end
 end.parse!
 
-#puts $query.to_json
-uri = URI.parse("#{$host}/api/v1/datapoints/query")
-http = Net::HTTP.new(uri.host, uri.port)
-http.use_ssl = true if $host.start_with?('https')
-request = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
-request.body = $query.to_json
+begin
+	#puts $query.to_json
+	uri = URI.parse("#{$host}/api/v1/datapoints/query")
+	http = Net::HTTP.new(uri.host, uri.port)
+	http.use_ssl = true if $host.start_with?('https')
+	request = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
+	request.body = $query.to_json
 
-response = http.request(request)
+	response = http.request(request)
 
-if response.code.to_i != 200
-	abort("Query failed: #{response.body}")
-end
+	if response.code.to_i != 200
+		abort("Query failed: #{response.body}")
+	end
 
-json_resp = JSON.parse(response.body)
+	json_resp = JSON.parse(response.body)
 
 
-# We only query a single metric so there is only one query result
-query_results = QueryResults.new(json_resp['queries'][0]['results'])
+	# We only query a single metric so there is only one query result
+	query_results = QueryResults.new(json_resp['queries'][0]['results'])
 
-#puts json_resp['queries'][0]['results']
+	#puts json_resp['queries'][0]['results']
 
-if $monitor.monitor_set?
-	check_results(query_results)
-	puts $monitor.get_message
-	exit($monitor.return_code)
-else
-	print_results(query_results)
+	if $monitor.monitor_set?
+		check_results(query_results)
+		puts $monitor.get_message
+		exit($monitor.return_code)
+	else
+		print_results(query_results)
+	end
+rescue => error
+	puts "Query failed: #{error}"
+	exit(5)
 end
 
 

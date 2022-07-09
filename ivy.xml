@@ -20,7 +20,7 @@
 
 		<dependency org="org.json" name="json" rev="20180130" />
 		<dependency org="com.google.code.gson" name="gson" rev="2.8.9" />
-		<dependency org="junit" name="junit" rev="4.13.1" conf="test->default" />
+		<dependency org="junit" name="junit" rev="4.13.2" conf="test->default" />
 
 		<dependency org="org.hamcrest" name="hamcrest-library" rev="1.3"
 		            conf="test->default"/>

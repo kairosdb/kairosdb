@@ -140,7 +140,7 @@ public class CQLBatch
 			}
 		}
 
-		if (skip)
+		if (!skip)
 		{
 			m_newMetrics.add(metricNameTime);
 			BoundStatement bs = new BoundStatement(m_clusterConnection.psStringIndexInsert);

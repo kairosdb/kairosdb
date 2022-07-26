@@ -81,7 +81,7 @@ Response
 
   The response will be 500 Internal Server Error if an error occurs writing the value.
 
-  ::
+  .. code-block:: json
 
     {
         "errors": [
@@ -141,7 +141,7 @@ Response
 
   The response will be 500 Internal Server Error if an error occurs writing the value.
 
-  ::
+  .. code-block:: json
 
     {
         "errors": [
@@ -187,7 +187,7 @@ Response
 
 *Success*
 
-  ::
+  .. code-block:: json
 
      {
         "results":["service_key_1", "service_key_2"]
@@ -199,7 +199,7 @@ Response
 
   The response will be 500 Internal Server Error if an error occurs writing the value.
 
-  ::
+  .. code-block:: json
 
     {
         "errors": [
@@ -247,7 +247,7 @@ Response
 
 *Success*
 
-  ::
+  .. code-block:: json
 
      {
         "results":["key_1", "key_2"]
@@ -259,7 +259,7 @@ Response
 
   The response will be 500 Internal Server Error if an error occurs writing the value.
 
-  ::
+  .. code-block:: json
 
     {
         "errors": [
@@ -317,7 +317,7 @@ Response
 
   The response will be 500 Internal Server Error if an error occurs writing the value.
 
-  ::
+  .. code-block:: json
 
     {
         "errors": [

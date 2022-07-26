@@ -253,6 +253,18 @@ def doIvyResolve(Rule rule)
 	}
 }
 
+//Check for plugins config
+buildPlugins = new HashMap()
+propertyKeys = saw.getProperties().keySet()
+for (String key in propertyKeys)
+{
+	if (key.startsWith("kairos.build_plugin."))
+	{
+		plugin = key.substring(20)
+		buildPlugins.put(plugin, new RegExFileSet(saw.getProperty(key), ".*\\.jar"))
+	}
+}
+
 libFileSets = [
 		new RegExFileSet("build/jar", ".*\\.jar"),
 		new RegExFileSet("lib", ".*\\.jar"),
@@ -336,6 +348,11 @@ def doRPM(Rule rule)
 
 	for (AbstractFileSet fs in libFileSets)
 		addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/lib", fs)
+
+	//Add any plugins to build
+	buildPlugins.each { plugin, jars ->
+		addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/lib/$plugin", jars)
+	}
 
 	addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/bin", scriptsFileSet)
 

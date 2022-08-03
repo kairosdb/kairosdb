@@ -303,10 +303,22 @@ gzipRule = new GZipRule("package").setSource(tarRule.getTarget())
 //------------------------------------------------------------------------------
 //Build rpm file
 rpmBaseInstallDir = "/opt/$programName"
+targetServiceFile = "build/kairosdb.service"
+serviceFileRule = new SimpleRule()
+		.addTarget(targetServiceFile)
+		.addSource("src/scripts/kairosdb.service")
+		.setMakeAction("copyServiceFile")
+def copyServiceFile(Rule rule)
+{
+	String content = new File(rule.source).text
+	new File(rule.target).write(content.replaceAll("BASE_INSTALL_DIR", rpmBaseInstallDir))
+}
+
 rpmRule = new SimpleRule("package-rpm").setDescription("Build RPM Package")
 		.addDepend(jp.getJarRule())
 		.addDepend(resolveIvyFileSetRule)
 		.addDepend(rpmDirRule)
+		.addDepend(serviceFileRule)
 		.addTarget("$rpmDir/$rpmFile")
 		.setMakeAction("doRPM")
 		.setProperty("dependency", "on")
@@ -315,6 +327,7 @@ new SimpleRule("package-rpm-nodep").setDescription("Build RPM Package with no de
 		.addDepend(jp.getJarRule())
 		.addDepend(resolveIvyFileSetRule)
 		.addDepend(rpmNoDepDirRule)
+		.addDepend(serviceFileRule)
 		.addTarget("${rpmNoDepDir}/$rpmFile")
 		.setMakeAction("doRPM")
 
@@ -357,7 +370,7 @@ def doRPM(Rule rule)
 	addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/bin", scriptsFileSet)
 
 	//rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
-	rpmBuilder.addFile("/lib/systemd/system/kairosdb.service", new File("src/scripts/kairosdb.service"), 0644)
+	rpmBuilder.addFile("/lib/systemd/system/kairosdb.service", new File(serviceFileRule.getTarget()), 0644)
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.conf",
 			new File("src/main/resources/kairosdb.conf"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/logging/logback.xml",

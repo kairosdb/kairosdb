@@ -568,6 +568,45 @@ public class DataPointsParserTest
 	}
 
 	@Test
+	public void test_emptyStringWithType_valid() throws DatastoreException, IOException
+	{
+		String json = "{\"name\": \"metric1\", \"type\": \"string\", \"timestamp\": 1234, \"value\": \"\", \"tags\":{\"foo\":\"bar\"}}";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		eventBus.register(fakeds);
+		DataPointsParser parser = new DataPointsParser(publisher, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.hasErrors(), equalTo(false));
+
+		List<DataPointSet> dataPointSetList = fakeds.getDataPointSetList();
+		assertThat(dataPointSetList.size(), equalTo(1));
+
+		assertThat(dataPointSetList.get(0).getName(), equalTo("metric1"));
+		assertThat(dataPointSetList.get(0).getTags().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getTags().get("foo"), equalTo("bar"));
+		assertThat(dataPointSetList.get(0).getDataPoints().size(), equalTo(1));
+		assertThat(dataPointSetList.get(0).getDataPoints().get(0).getTimestamp(), equalTo(1234L));
+		assertThat(((StringDataPoint)dataPointSetList.get(0).getDataPoints().get(0)).getValue(), equalTo(""));
+	}
+
+	@Test
+	public void test_emptyStringWithNoType_invalid() throws DatastoreException, IOException
+	{
+		String json = "{\"name\": \"metric1\", \"timestamp\": 1234, \"value\": \"\", \"tags\":{\"foo\":\"bar\"}}";
+
+		FakeDataStore fakeds = new FakeDataStore();
+		eventBus.register(fakeds);
+		DataPointsParser parser = new DataPointsParser(publisher, new StringReader(json),
+				new Gson(), dataPointFactory);
+
+		ValidationErrors validationErrors = parser.parse();
+
+		assertThat(validationErrors.hasErrors(), equalTo(true));
+	}
+	@Test
 	public void test_stringWithNoTypeAsArray_valid() throws DatastoreException, IOException
 	{
 		String json = "[{\"name\": \"metric1\",\"datapoints\": [[1234, \"The Value\"]],\"tags\": {\"foo\": \"bar\"}}]";

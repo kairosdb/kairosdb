@@ -264,8 +264,13 @@ public class DataPointsParser
 				//Validator.isValidateCharacterSet(validationErrors, context, metric.getName());
 			}
 
-			if (metric.getTimestamp() != null)
-				Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("value"), metric.getValue());
+			//if there is a timestamp they are passing a single data point vs an array of data points
+			if (metric.getTimestamp() != null) {
+				if ("string".equals(metric.getType()))
+					Validator.isNotNull(validationErrors, context.setAttribute("value"), metric.getValue());
+				else
+					Validator.isNotNullOrEmpty(validationErrors, context.setAttribute("value"), metric.getValue());
+			}
 			else if (metric.getValue() != null && !metric.getValue().isJsonNull())
 				Validator.isNotNull(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp());
 			//				Validator.isGreaterThanOrEqualTo(validationErrors, context.setAttribute("timestamp"), metric.getTimestamp(), 1);
@@ -358,8 +363,17 @@ public class DataPointsParser
 						if (dataPoint.length > 2)
 							type = dataPoint[2].getAsString();
 
-						if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
-							continue;
+						//String type data can be empty
+						if ("string".equals(type))
+						{
+							if (!Validator.isNotNull(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
+								continue;
+						}
+						else
+						{
+							if (!Validator.isNotNullOrEmpty(validationErrors, dataPointContext.setAttribute("value"), dataPoint[1]))
+								continue;
+						}
 
 						if (type == null)
 						{

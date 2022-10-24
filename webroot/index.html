@@ -18,6 +18,7 @@
 
 	<link href="css/style.css" rel="stylesheet">
 	<link href="css/header.css" rel="stylesheet">
+	<link href="css/footable.standalone.css" rel="stylesheet">
 
 	<script src="js/jquery.1.9.0.min.js"></script>
 	<script src="js/kairosdb.js"></script>
@@ -41,6 +42,7 @@
 	<script src="js/moment-timezone-with-data.min.js"></script>
 	<script src="js/moment-strftime.js"></script>
 	<script src="js/date-time-picker.js"></script>
+	<script src="js/footable.min.js"></script>
 
 	<script>
 		var metricNames = [];
@@ -52,6 +54,7 @@
 					}
 				};
 			} // If not console, don't log
+
 
 			var tzSelect = $("#timeZone");
 
@@ -325,6 +328,11 @@ Timezone: <select id="timeZone" class="ui-widget timeZone" style="margin-left: 1
 <button id="resetZoom" class=ui-widget>Reset Zoom</button>
 
 <div id="container"></div>
+
+<div class="header ui-widget">String Data Table</div>
+
+<table class="table" data-paging="true">
+</table>
 
 <!-- Hidden Metric div used for cloning -->
 <div id="metricTemplate">

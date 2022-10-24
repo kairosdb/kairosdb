@@ -815,9 +815,14 @@ function showChart(subTitle, queries, metricData, timezone) {
 	yaxis = [];
 	var dataPointCount = 0;
 	var data = [];
+	var tableData = {};
+	tableData.columns = [];
+	tableData.columns.push({"name": "ts", "title": "Timestamp"})
+	tableData.rows = {};
 	var axisCount = 0;
 	var metricCount = 0;
 	var sampleSize = 0;
+
 	queries.forEach(function (resultSet) {
 		var axis = {};
 		if (metricCount == 0) {
@@ -863,18 +868,56 @@ function showChart(subTitle, queries, metricData, timezone) {
 				});
 			}
 
+			if (groupType == 'text')
+			{
+				var columnIndex = queryResult.name+groupByMessage;
+				tableData.columns.push({"name": columnIndex, "title": queryResult.name+groupByMessage});
+				var lastValue = ""; //to compress string results to only changing values;
 
-			var result = {};
-			result.name = queryResult.name + groupByMessage;
-			result.label = queryResult.name + groupByMessage;
-			result.data = queryResult.values;
-			result.yaxis = axisCount; // Flot
-			result.yAxis = axisCount - 1; // Highcharts
+				$.each(queryResult.values, function(index, value) {
+					if (value[1] != lastValue)
+					{
+						var row = tableData.rows[value[0]];
+						if (row == null)
+						{
+							row = {};
+							tableData.rows[value[0]] = row;
 
-			dataPointCount += queryResult.values.length;
-			data.push(result);
+							row["ts"] = new Date(value[0]).toLocaleString("en-US", {"timeZone": timezone});
+						}
+
+						row[columnIndex] = value[1];
+						lastValue = value[1];
+					}
+				});
+			}
+			else
+			{
+				var result = {};
+				result.name = queryResult.name + groupByMessage;
+				result.label = queryResult.name + groupByMessage;
+				result.data = queryResult.values;
+				result.yaxis = axisCount; // Flot
+				result.yAxis = axisCount - 1; // Highcharts
+
+				dataPointCount += queryResult.values.length;
+				data.push(result);
+			}
+
 		});
 		metricCount++;
+	});
+
+	var sortedRows = [];
+	$.each(Object.keys(tableData.rows).sort((a, b) => (a - b)), function(index, key) {
+		sortedRows.push(tableData.rows[key]);
+	});
+
+	$('.table').empty();
+	$('.table').footable({
+		"empty": "No string data in results.",
+		"columns": tableData.columns,
+		"rows": sortedRows
 	});
 
 	$("#sampleSize").html(numeral(sampleSize).format('0,0'));

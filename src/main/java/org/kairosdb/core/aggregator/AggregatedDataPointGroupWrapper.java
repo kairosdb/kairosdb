@@ -43,6 +43,12 @@ public abstract class AggregatedDataPointGroupWrapper implements DataPointGroup
 	}
 
 	@Override
+	public String getAlias()
+	{
+		return innerDataPointGroup.getAlias();
+	}
+
+	@Override
 	public Set<String> getTagNames()
 	{
 		return (innerDataPointGroup.getTagNames());

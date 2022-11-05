@@ -29,6 +29,7 @@ import static java.util.Objects.requireNonNull;
 public abstract class AbstractDataPointGroup implements DataPointGroup
 {
 	private String name;
+	private String alias;
 	private TreeMultimap<String, String> tags = TreeMultimap.create();
 	private List<GroupByResult> groupByResult = new ArrayList<>();
 
@@ -82,6 +83,17 @@ public abstract class AbstractDataPointGroup implements DataPointGroup
 	public String getName()
 	{
 		return name;
+	}
+
+	@Override
+	public String getAlias()
+	{
+		return alias;
+	}
+
+	public void setAlias(String alias)
+	{
+		this.alias = alias;
 	}
 
 	@Override

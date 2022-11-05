@@ -83,6 +83,10 @@ public class JsonResponse
 				m_jsonWriter.object();
 				m_jsonWriter.key("name").value(metric);
 
+				final String alias = group.getAlias();
+				if (alias != null)
+					m_jsonWriter.key("alias").value(alias);
+
 				if (!group.getGroupByResult().isEmpty())
 				{
 					m_jsonWriter.key("group_by");

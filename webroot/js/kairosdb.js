@@ -49,6 +49,10 @@ kairosdb.Metric = function (name) {
 	this.group_by;
 	this.limit;
 
+	this.setAlias = function (alias) {
+		this.alias = alias;
+	}
+
 	this.addGroupBy = function (groupBy) {
 		if (!this.group_by) {
 			this.group_by = [];

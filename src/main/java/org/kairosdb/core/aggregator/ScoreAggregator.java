@@ -149,6 +149,12 @@ public class ScoreAggregator implements Aggregator
         }
 
         @Override
+        public String getAlias()
+        {
+            return innerDataPointGroup.getAlias();
+        }
+
+        @Override
         public List<GroupByResult> getGroupByResult()
         {
             return (innerDataPointGroup.getGroupByResult());

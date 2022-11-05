@@ -9,6 +9,7 @@
 <head>
 	<link href="css/cupertino/jquery-ui-1.10.0.custom.css" rel="stylesheet">
 	<link href="css/style.css" rel="stylesheet">
+	<link href="css/footable.standalone.css" rel="stylesheet">
 	<link rel="icon" type="image/png" href="img/favicon.png" />
 
 	<script src="js/jquery.1.9.0.min.js"></script>
@@ -28,6 +29,7 @@
 	<script src="js/moment.min.js"></script>
 	<script src="js/moment-timezone-with-data.min.js"></script>
 	<script src="js/moment-strftime.js"></script>
+	<script src="js/footable.min.js"></script>
 
 	<script>
 		var metricNames = [];
@@ -102,5 +104,11 @@
 	<span class="header ui-widget" style="margin-left: 1.5em;">Sample Size: </span><span id="sampleSize" class="ui-widget"></span>
 	<span class="header ui-widget" style="margin-left: 1.5em;">Data Points: </span><span id="numDataPoints" class="ui-widget"></span>
 </div>
+
+<div class="header ui-widget">String Data Table</div>
+
+<table class="table" data-paging="true">
+</table>
+
 </body>
 </html>

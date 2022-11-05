@@ -40,6 +40,12 @@ public class DataPointGroupRowWrapper implements DataPointGroup
 	}
 
 	@Override
+	public String getAlias()
+	{
+		return null; //Alias is not used from this and is set in the sorted data point group
+	}
+
+	@Override
 	public Set<String> getTagNames()
 	{
 		return (m_row.getTagNames());

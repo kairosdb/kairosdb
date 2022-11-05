@@ -49,6 +49,7 @@ public class Group
 	private DataOutputStream m_dataOutputStream;
 	private List<GroupByResult> groupByResults;
 	private String name;
+	private String alias;
 	private HashMultimap<String, String> tags = HashMultimap.create();
 	private int m_dataPointCount; //Number of datapoints written to file
 
@@ -74,6 +75,7 @@ public class Group
 
 		this.groupByResults = groupByResults;
 		this.name = dataPointGroup.getName();
+		this.alias = dataPointGroup.getAlias();
 
 		addTags(dataPointGroup);
 	}
@@ -161,6 +163,12 @@ public class Group
 		public String getName()
 		{
 			return name;
+		}
+
+		@Override
+		public String getAlias()
+		{
+			return alias;
 		}
 
 		@Override

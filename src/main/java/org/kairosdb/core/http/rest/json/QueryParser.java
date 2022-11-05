@@ -232,6 +232,7 @@ public class QueryParser
 				queryMetric.setExcludeTags(metric.isExcludeTags());
 				queryMetric.setLimit(metric.getLimit());
 				queryMetric.setJsonObj(obj);
+				queryMetric.setAlias(metric.getAlias());
 
 				getEndTime(query).ifPresent(queryMetric::setEndTime);
 
@@ -544,6 +545,9 @@ public class QueryParser
 		@SerializedName("name")
 		private final String name;
 
+		@SerializedName("alias")
+		private String alias;
+
 		@SerializedName("tags")
 		private final SetMultimap<String, String> tags;
 
@@ -564,6 +568,16 @@ public class QueryParser
 		public String getName()
 		{
 			return name;
+		}
+
+		public String getAlias()
+		{
+			return alias;
+		}
+
+		public void setAlias(String alias)
+		{
+			this.alias = alias;
 		}
 
 		public int getLimit()
@@ -815,6 +829,10 @@ public class QueryParser
 			JsonElement limit = jsonObject.get("limit");
 			if (limit != null)
 				ret.setLimit(limit.getAsInt());
+
+			JsonElement alias = jsonObject.get("alias");
+			if (alias != null)
+				ret.setAlias(alias.getAsString());
 
 			return (ret);
 		}

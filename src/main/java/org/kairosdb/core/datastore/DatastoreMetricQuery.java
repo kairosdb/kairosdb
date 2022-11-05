@@ -23,6 +23,8 @@ public interface DatastoreMetricQuery extends PluggableQuery
 {
 	String getName();
 
+	String getAlias();
+
 	SetMultimap<String, String> getTags();
 
 	boolean isExplicitTags();

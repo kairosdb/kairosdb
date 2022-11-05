@@ -61,6 +61,15 @@ function buildKairosDBQuery() {
 
 		var metric = new kairosdb.Metric(metricName);
 
+		// Add Alias
+        $metricContainer.find("[name='alias']").each(function (index, aliasInput) {
+            var value = $(aliasInput).val();
+
+            if (value){
+				metric.setAlias(value);
+			}
+        });
+
 		$metricContainer.find(".groupBy").each(function (index, groupBy) {
 			var name = $(groupBy).find(".groupByName").val();
 
@@ -894,8 +903,11 @@ function showChart(subTitle, queries, metricData, timezone) {
 			else
 			{
 				var result = {};
-				result.name = queryResult.name + groupByMessage;
-				result.label = queryResult.name + groupByMessage;
+				var name = queryResult.name;
+				if ('alias' in queryResult)
+					name = queryResult.alias;
+				result.name = name + groupByMessage; //highcharts
+				result.label = name + groupByMessage; //flot
 				result.data = queryResult.values;
 				result.yaxis = axisCount; // Flot
 				result.yAxis = axisCount - 1; // Highcharts

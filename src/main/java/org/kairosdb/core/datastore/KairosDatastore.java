@@ -314,7 +314,7 @@ public class KairosDatastore implements KairosPostConstructInit
 		return null;
 	}
 
-	protected List<DataPointGroup> groupByTypeAndTag(String metricName,
+	protected List<DataPointGroup> groupByTypeAndTag(String metricName, String alias,
 			List<DataPointRow> rows, TagGroupBy tagGroupBy, Order order)
 	{
 		List<DataPointGroup> ret = new ArrayList<DataPointGroup>();
@@ -322,7 +322,7 @@ public class KairosDatastore implements KairosPostConstructInit
 
 		if (rows.isEmpty())
 		{
-			ret.add(new SortingDataPointGroup(metricName, order));
+			ret.add(new SortingDataPointGroup(metricName, alias, order));
 		}
 		else
 		{
@@ -364,14 +364,14 @@ public class KairosDatastore implements KairosPostConstructInit
 
 					for (String key : sortedGroups)
 					{
-						SortingDataPointGroup sdpGroup = new SortingDataPointGroup(groups.get(key), groupByResults.get(key), order);
+						SortingDataPointGroup sdpGroup = new SortingDataPointGroup(alias, groups.get(key), groupByResults.get(key), order);
 						sdpGroup.addGroupByResult(new TypeGroupByResult(type));
 						ret.add(sdpGroup);
 					}
 				}
 				else
 				{
-					ret.add(new SortingDataPointGroup(typeGroups.get(type), new TypeGroupByResult(type), order));
+					ret.add(new SortingDataPointGroup(alias, typeGroups.get(type), new TypeGroupByResult(type), order));
 				}
 			}
 		}
@@ -521,7 +521,7 @@ public class KairosDatastore implements KairosPostConstructInit
 			ThreadReporter.addDataPoint(QUERY_SAMPLE_SIZE, m_dataPointCount);
 			ThreadReporter.addDataPoint(QUERY_ROW_COUNT, m_rowCount);
 
-			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(),
+			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(), m_metric.getAlias(),
 					returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
 
 

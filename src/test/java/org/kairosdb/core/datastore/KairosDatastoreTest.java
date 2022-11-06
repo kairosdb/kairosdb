@@ -214,7 +214,7 @@ public class KairosDatastoreTest
 		rows.add(row1);
 		rows.add(row2);
 
-		List<DataPointGroup> dataPointsGroup = datastore.groupByTypeAndTag("metricName", rows, groupBy, Order.ASC);
+		List<DataPointGroup> dataPointsGroup = datastore.groupByTypeAndTag("metricName", "alias", rows, groupBy, Order.ASC);
 
 		assertThat(dataPointsGroup.size(), equalTo(2));
 
@@ -245,7 +245,7 @@ public class KairosDatastoreTest
 		rows.add(row1);
 		rows.add(row2);
 
-		List<DataPointGroup> dataPoints = datastore.groupByTypeAndTag("metricName", rows, groupBy, Order.ASC);
+		List<DataPointGroup> dataPoints = datastore.groupByTypeAndTag("metricName", "alias", rows, groupBy, Order.ASC);
 
 		assertThat(dataPoints.size(), equalTo(2));
 
@@ -288,7 +288,7 @@ public class KairosDatastoreTest
 		rows.add(row2);
 		rows.add(row3);
 
-		List<DataPointGroup> dataPoints = datastore.groupByTypeAndTag("metricName", rows, groupBy, Order.ASC);
+		List<DataPointGroup> dataPoints = datastore.groupByTypeAndTag("metricName", "alias", rows, groupBy, Order.ASC);
 
 		assertThat(dataPoints.size(), equalTo(3));
 

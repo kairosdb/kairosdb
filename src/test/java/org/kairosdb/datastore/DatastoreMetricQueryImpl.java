@@ -51,6 +51,12 @@ public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 	}
 
 	@Override
+	public String getAlias()
+	{
+		return null;
+	}
+
+	@Override
 	public SetMultimap<String, String> getTags()
 	{
 		return (m_tags);

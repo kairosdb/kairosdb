@@ -21,7 +21,6 @@ import tablesaw.rules.Rule
 import tablesaw.rules.SimpleRule
 
 import javax.swing.*
-import java.util.regex.Pattern
 
 println("===============================================")
 
@@ -32,7 +31,7 @@ if (programName == null)
 	programName = "kairosdb"
 
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "1.3.0"
+version = "1.3.1"
 release = saw.getProperty("KAIROS_RELEASE_NUMBER", "1") //package release number
 summary = "KairosDB"
 description = """\
@@ -423,7 +422,7 @@ def doDeb(Rule rule)
 
 	if (password != null)
 	{
-		sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --bump=0 --to-deb $rpmFile")
+		sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --scripts --bump=0 --to-deb $rpmFile")
 		sudo.run()
 		//pass the password to the process on stdin
 		sudo.sendMessage("$password\n")

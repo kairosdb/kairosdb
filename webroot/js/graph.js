@@ -877,10 +877,14 @@ function showChart(subTitle, queries, metricData, timezone) {
 				});
 			}
 
+			var name = queryResult.name;
+			if ('alias' in queryResult)
+				name = queryResult.alias;
+
 			if (groupType == 'text')
 			{
-				var columnIndex = queryResult.name+groupByMessage;
-				tableData.columns.push({"name": columnIndex, "title": queryResult.name+groupByMessage});
+				var columnIndex = name+groupByMessage;
+				tableData.columns.push({"name": columnIndex, "title": name+groupByMessage});
 				var lastValue = ""; //to compress string results to only changing values;
 
 				$.each(queryResult.values, function(index, value) {
@@ -903,9 +907,6 @@ function showChart(subTitle, queries, metricData, timezone) {
 			else
 			{
 				var result = {};
-				var name = queryResult.name;
-				if ('alias' in queryResult)
-					name = queryResult.alias;
 				result.name = name + groupByMessage; //highcharts
 				result.label = name + groupByMessage; //flot
 				result.data = queryResult.values;

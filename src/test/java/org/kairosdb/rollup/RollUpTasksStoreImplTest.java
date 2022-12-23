@@ -3,6 +3,7 @@ package org.kairosdb.rollup;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -10,6 +11,7 @@ import org.junit.rules.ExpectedException;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.http.rest.QueryException;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -104,12 +106,14 @@ public class RollUpTasksStoreImplTest extends RollupTestBase
             oldTasks.add(queryParser.parseRollupTask(line));
         }
 
-        Path path = Paths.get(RollUpTasksStoreImpl.OLD_FILENAME);
+        File tempDir = Files.createTempDirectory("kairos").toFile();
+        Path path = new File(tempDir, "rollup.config").toPath();
+
         try {
             Files.write(path, oldFormat.getBytes());
             assertTrue(Files.exists(path));
 
-            RollUpTasksStoreImpl store = new RollUpTasksStoreImpl(fakeServiceKeyStore, queryParser);
+            RollUpTasksStoreImpl store = new RollUpTasksStoreImpl(fakeServiceKeyStore, queryParser, path.toString());
 
             Map<String, RollupTask> tasks = store.read();
             assertThat(tasks.size(), equalTo(2));
@@ -118,9 +122,7 @@ public class RollUpTasksStoreImplTest extends RollupTestBase
             }
         }
         finally {
-            if (Files.exists(path)) {
-                Files.delete(path);
-            }
+            FileUtils.deleteDirectory(tempDir);
         }
     }
 
@@ -128,7 +130,8 @@ public class RollUpTasksStoreImplTest extends RollupTestBase
     public void test_import_oldFileNotExists()
             throws IOException, RollUpException, QueryException
     {
-        Path path = Paths.get(RollUpTasksStoreImpl.OLD_FILENAME);
+        File tempDir = Files.createTempDirectory("kairos").toFile();
+        Path path = new File(tempDir, "rollup.config").toPath();
         assertFalse(Files.exists(path));
 
         RollUpTasksStoreImpl store = new RollUpTasksStoreImpl(fakeServiceKeyStore, queryParser);

@@ -32,6 +32,12 @@ public class EmptyDataPointGroup implements DataPointGroup
 	}
 
 	@Override
+	public String getAlias()
+	{
+		return null;
+	}
+
+	@Override
 	public List<GroupByResult> getGroupByResult()
 	{
 		return (Collections.emptyList());

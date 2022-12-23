@@ -18,6 +18,7 @@ package org.kairosdb.core.datastore;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.gson.JsonObject;
+import lombok.ToString;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.util.Preconditions;
@@ -29,6 +30,7 @@ import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 
+@ToString
 public class QueryMetric implements DatastoreMetricQuery
 {
 	private long startTime;
@@ -36,6 +38,7 @@ public class QueryMetric implements DatastoreMetricQuery
 	private boolean endTimeSet;
 	private int cacheTime;
 	private String name;
+	private String alias;
 	private SetMultimap<String, String> tags = HashMultimap.create();
 	private List<GroupBy> groupBys = new ArrayList<GroupBy>();
 	private List<Aggregator> aggregators;
@@ -109,6 +112,17 @@ public class QueryMetric implements DatastoreMetricQuery
 	public String getName()
 	{
 		return name;
+	}
+
+	@Override
+	public String getAlias()
+	{
+		return alias;
+	}
+
+	public void setAlias(String alias)
+	{
+		this.alias = alias;
 	}
 
 	public List<Aggregator> getAggregators()
@@ -220,8 +234,8 @@ public class QueryMetric implements DatastoreMetricQuery
 		this.plugins.add(plugin);
 	}
 
-	@Override
-	public String toString()
+	//@Override
+	public String toString_Not()
 	{
 		return "QueryMetric{" +
 				"startTime=" + startTime +
@@ -229,6 +243,7 @@ public class QueryMetric implements DatastoreMetricQuery
 				", endTimeSet=" + endTimeSet +
 				", cacheTime=" + cacheTime +
 				", name='" + name + '\'' +
+				", alias='" + alias + '\'' +
 				", tags=" + tags +
 				", groupBys=" + groupBys +
 				", aggregators=" + aggregators +

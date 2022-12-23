@@ -21,16 +21,18 @@ import tablesaw.rules.Rule
 import tablesaw.rules.SimpleRule
 
 import javax.swing.*
-import java.util.regex.Pattern
 
 println("===============================================")
 
 saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
 
-programName = "kairosdb"
+programName = saw.getProperty(JavaProgram.PROGRAM_NAME_PROPERTY)
+if (programName == null)
+	programName = "kairosdb"
+
 //Do not use '-' in version string, it breaks rpm uninstall.
 version = "1.3.1"
-release = saw.getProperty("KAIROS_RELEASE_NUMBER", "0.1") //package release number
+release = saw.getProperty("KAIROS_RELEASE_NUMBER", "1") //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -250,6 +252,18 @@ def doIvyResolve(Rule rule)
 	}
 }
 
+//Check for plugins config
+buildPlugins = new HashMap()
+propertyKeys = saw.getProperties().keySet()
+for (String key in propertyKeys)
+{
+	if (key.startsWith("kairos.build_plugin."))
+	{
+		plugin = key.substring(20)
+		buildPlugins.put(plugin, new RegExFileSet(saw.getProperty(key), ".*\\.jar"))
+	}
+}
+
 libFileSets = [
 		new RegExFileSet("build/jar", ".*\\.jar"),
 		new RegExFileSet("lib", ".*\\.jar"),
@@ -288,10 +302,22 @@ gzipRule = new GZipRule("package").setSource(tarRule.getTarget())
 //------------------------------------------------------------------------------
 //Build rpm file
 rpmBaseInstallDir = "/opt/$programName"
+targetServiceFile = "build/kairosdb.service"
+serviceFileRule = new SimpleRule()
+		.addTarget(targetServiceFile)
+		.addSource("src/scripts/kairosdb.service")
+		.setMakeAction("copyServiceFile")
+def copyServiceFile(Rule rule)
+{
+	String content = new File(rule.source).text
+	new File(rule.target).write(content.replaceAll("BASE_INSTALL_DIR", rpmBaseInstallDir))
+}
+
 rpmRule = new SimpleRule("package-rpm").setDescription("Build RPM Package")
 		.addDepend(jp.getJarRule())
 		.addDepend(resolveIvyFileSetRule)
 		.addDepend(rpmDirRule)
+		.addDepend(serviceFileRule)
 		.addTarget("$rpmDir/$rpmFile")
 		.setMakeAction("doRPM")
 		.setProperty("dependency", "on")
@@ -300,6 +326,7 @@ new SimpleRule("package-rpm-nodep").setDescription("Build RPM Package with no de
 		.addDepend(jp.getJarRule())
 		.addDepend(resolveIvyFileSetRule)
 		.addDepend(rpmNoDepDirRule)
+		.addDepend(serviceFileRule)
 		.addTarget("${rpmNoDepDir}/$rpmFile")
 		.setMakeAction("doRPM")
 
@@ -334,10 +361,15 @@ def doRPM(Rule rule)
 	for (AbstractFileSet fs in libFileSets)
 		addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/lib", fs)
 
+	//Add any plugins to build
+	buildPlugins.each { plugin, jars ->
+		addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/lib/$plugin", jars)
+	}
+
 	addFileSetToRPM(rpmBuilder, "$rpmBaseInstallDir/bin", scriptsFileSet)
 
 	//rpmBuilder.addFile("/etc/init.d/kairosdb", new File("src/scripts/kairosdb-service.sh"), 0755)
-	rpmBuilder.addFile("/lib/systemd/system/kairosdb.service", new File("src/scripts/kairosdb.service"), 0644)
+	rpmBuilder.addFile("/lib/systemd/system/kairosdb.service", new File(serviceFileRule.getTarget()), 0644)
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/kairosdb.conf",
 			new File("src/main/resources/kairosdb.conf"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/conf/logging/logback.xml",
@@ -390,7 +422,7 @@ def doDeb(Rule rule)
 
 	if (password != null)
 	{
-		sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --bump=0 --to-deb $rpmFile")
+		sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --scripts --bump=0 --to-deb $rpmFile")
 		sudo.run()
 		//pass the password to the process on stdin
 		sudo.sendMessage("$password\n")
@@ -665,6 +697,10 @@ def printMessage(String title, String message) {
 	else if (osName.startsWith("Mac"))
 	{
 		notifyDef = saw.getDefinition("mac-notify")
+	}
+	else if (osName.startsWith("Windows"))
+	{
+		notifyDef = saw.getDefinition("windows-notify")
 	}
 
 	if (notifyDef != null)

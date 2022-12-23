@@ -175,13 +175,27 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 		m_holdConnection.commit();
 	}
 
+	/*
+	 shutdown is only used by unit tests.
+	 */
+	public void shutdown()
+	{
+		try {
+			m_holdConnection.createStatement().execute("SHUTDOWN");
+		}
+		catch (SQLException e) {
+			logger.error("Failed shutdown:", e);
+		}
+	}
+
 	@Override
 	public void close()
 	{
 		try
 		{
-			if (m_holdConnection != null)
+			if (m_holdConnection != null) {
 				m_holdConnection.close();
+			}
 		}
 		catch (SQLException e)
 		{
@@ -545,10 +559,13 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 			ServiceIndex serviceIndex = ServiceIndex.factory.findOrCreate(service, serviceKey, key);
 			if (value != null) {
 				serviceIndex.setValue(value);
+				long now = System.currentTimeMillis();
+				//Need to make sure the modification time always gets updated
+				serviceIndex.setModificationTime(new java.sql.Timestamp(now));
 
 				// Update the service key timestamp
 				ServiceModification orCreate = ServiceModification.factory.findOrCreate(service, serviceKey);
-				orCreate.setModificationTime(new java.sql.Timestamp(System.currentTimeMillis()));
+				orCreate.setModificationTime(new java.sql.Timestamp(now));
 			}
 
 			GenOrmDataSource.commit();

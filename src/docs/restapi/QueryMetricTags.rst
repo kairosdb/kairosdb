@@ -86,39 +86,40 @@ Tags narrow down the search. Only metrics that include the tag and matches one o
 Response
 --------
 *Success*
+
   The response contains either the metric values or possible error values. Returns 200 for successful queries.
 
   .. code-block:: json
 
-{
-  "queries": [
     {
-        "results": [
+      "queries": [
+        {
+          "results": [
             {
-                "name": "abc_123",
-                "tags": {
-                    "host": ["server1"],
-                    "dc": ["awsuse", "awsusw"],
-                    "type": ["bar"]
-                },
-                "values": [[1492602706055,0],[1492602711000,0],[1492602712000,0],[1492602716055,0]]
+              "name": "abc_123",
+              "tags": {
+                "host": ["server1"],
+                "dc": ["awsuse", "awsusw"],
+                "type": ["bar"]
+              },
+            "values": []
             },
             {
-                "name": "xyz_123",
-                "tags": {
-                    "host": ["server1","server2"],
-                    "dc": ["awsuse"],
-                    "type": ["bar"]
-                },
-                "values": [[1492602706055,0],[1492602711000,42],[1492602712000,0],[1492602716055,42]]
+              "name": "xyz_123",
+              "tags": {
+                "host": ["server1","server2"],
+                "dc": ["awsuse"],
+                "type": ["bar"]
+              },
+            "values": []
             }
-        ]
+          ]
+        }
+      ]
     }
-]
-}
 
 *Failure*
 
   The response will be 400 Bad Request if the request is invalid.
-
+  
   The response will be 500 Internal Server Error if an error occurs retrieving data.

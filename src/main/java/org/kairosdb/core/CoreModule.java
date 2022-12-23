@@ -28,6 +28,7 @@ import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigValue;
 import com.typesafe.config.ConfigValueType;
 import org.kairosdb.core.aggregator.*;
@@ -66,6 +67,7 @@ import org.kairosdb.bigqueue.IBigArray;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -127,11 +129,27 @@ public class CoreModule extends AbstractModule
 
 			try
 			{
-				logger.debug(String.format("%s = %s", propertyName, value.unwrapped().toString()));
+				logger.debug(String.format("%s (%s) = %s", propertyName, configValueType.name(), value.unwrapped().toString()));
 
 				//type binding didn't work well for numbers, guice will not convert double to int
 				//So we bind everything as a string and let guice convert - which it does well
-				binder.bindConstant().annotatedWith(Names.named(propertyName)).to(value.unwrapped().toString());
+				if (configValueType == ConfigValueType.LIST)
+				{
+					try
+					{
+						List<String> stringList = config.getStringList(propertyName);
+						binder.bind(new TypeLiteral<List<String>>() {})
+								.annotatedWith(Names.named(propertyName)).toInstance(stringList);
+					}
+					catch (ConfigException ce)
+					{
+						logger.debug("Property {} is not a list of string", propertyName);
+					}
+				}
+				else
+					binder.bindConstant().annotatedWith(Names.named(propertyName)).to(value.unwrapped().toString());
+
+				binder.bind(ConfigValue.class).annotatedWith(Names.named(propertyName)).toInstance(value);
 			}
 			catch (Exception e)
 			{

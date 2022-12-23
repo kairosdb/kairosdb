@@ -78,6 +78,14 @@
 		<option>"</option>
 	</definition>
 
+	<definition name="windows-notify" command="powershell">
+		<option>-Command "[void] [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); $objNotifyIcon=New-Object System.Windows.Forms.NotifyIcon;</option>
+		<option name="message" pattern="(.+)">\$objNotifyIcon.BalloonTipText='$1';</option>
+		<option>$objNotifyIcon.Icon=[system.drawing.systemicons]::Information;</option>
+		<option name="title" pattern="(.+)">\$objNotifyIcon.BalloonTipTitle='$1';</option>
+		<option>$objNotifyIcon.BalloonTipIcon='None'; $objNotifyIcon.Visible=$True; $objNotifyIcon.ShowBalloonTip(5000);"</option>
+	</definition>
+
 	<definition name="kairos" command="java">
 		<option name="debug">-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005</option>
 		<option name="profile" pattern="(.+)">$1</option>

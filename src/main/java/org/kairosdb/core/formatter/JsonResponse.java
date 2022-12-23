@@ -61,7 +61,7 @@ public class JsonResponse
 	 * @param sampleSize   Passing a sample size of -1 will cause the attribute to not show up
 	 * @throws FormatterException
 	 */
-	public void formatQuery(List<DataPointGroup> queryResults, boolean excludeTags, int sampleSize) throws FormatterException
+	public void formatQuery(List<DataPointGroup> queryResults, boolean excludeTags, int sampleSize, boolean filterEmptyResults) throws FormatterException
 	{
 		try
 		{
@@ -75,10 +75,17 @@ public class JsonResponse
 			//This loop must call close on each group at the end.
 			for (DataPointGroup group : queryResults)
 			{
+				if (filterEmptyResults && !group.hasNext())
+					continue; //no data so we don't print this one out
+
 				final String metric = group.getName();
 
 				m_jsonWriter.object();
 				m_jsonWriter.key("name").value(metric);
+
+				final String alias = group.getAlias();
+				if (alias != null)
+					m_jsonWriter.key("alias").value(alias);
 
 				if (!group.getGroupByResult().isEmpty())
 				{

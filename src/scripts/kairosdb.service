@@ -8,8 +8,8 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/opt/kairosdb/bin/kairosdb.sh start-systemd
-WorkingDirectory=/opt/kairosdb
+ExecStart=BASE_INSTALL_DIR/bin/kairosdb.sh start-systemd
+WorkingDirectory=BASE_INSTALL_DIR
 Restart=always
 TimeoutStopSec=1min
 

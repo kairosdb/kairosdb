@@ -86,6 +86,12 @@ public class LimitAggregator implements Aggregator
 		}
 
 		@Override
+		public String getAlias()
+		{
+			return m_innerDataPointGroup.getAlias();
+		}
+
+		@Override
 		public List<GroupByResult> getGroupByResult()
 		{
 			return (m_innerDataPointGroup.getGroupByResult());

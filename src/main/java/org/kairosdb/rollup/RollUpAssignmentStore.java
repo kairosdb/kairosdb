@@ -28,7 +28,7 @@ public interface RollUpAssignmentStore
     long getLastModifiedTime() throws RollUpException;
 
     /**
-     * Returns a list of all assigned ids.
+     * Returns a list of all assigned task ids.
      *
      * @return list of assigned roll-up ids
      */
@@ -38,10 +38,10 @@ public interface RollUpAssignmentStore
 
     /**
      * Returns the list of ids assigned to the given host
-     * @param host hostname
+     * @param hostId host id guid
      * @return list of ids assigned to the host or an empty list
      */
-    Set<String> getAssignedIds(String host) throws RollUpException;
+    Set<String> getAssignedIds(String hostId) throws RollUpException;
 
     /**
      * Assigns hostName to the task id.
@@ -49,6 +49,13 @@ public interface RollUpAssignmentStore
      * @param hostName host to assign
      */
     void setAssignment(String unassignedId, String hostName) throws RollUpException;
+
+    /**
+     * Removes a single assignment
+     * @param taskId to remove
+     * @throws RollUpException
+     */
+    void removeAssignment(String taskId) throws RollUpException;
 
     /**
      * Removes assignments for the specified ids.

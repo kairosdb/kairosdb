@@ -36,6 +36,12 @@ public interface DataPointGroup extends Iterator<DataPoint>, TagSet
 	public String getName();
 
 	/**
+	 * Retuns an alias for this metric that was passed with the query.
+	 * @return
+	 */
+	String getAlias();
+
+	/**
 	 * Returns the list of group by results or an empty list if the results are not grouped.
 	 *
 	 * @return list of group by results

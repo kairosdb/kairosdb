@@ -17,17 +17,13 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.driver.core.ConsistencyLevel;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.SetMultimap;
-import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.kairosdb.core.*;
 import org.kairosdb.core.datapoints.LongDataPoint;
 import org.kairosdb.core.datastore.*;
@@ -44,14 +40,7 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.Executors;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 
 
 public class CassandraDatastoreTest extends DatastoreTestHelper
@@ -406,7 +395,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
 
-		assertEquals(4, keys.size());
+		assertThat(keys).hasSize(4);
 	}
 
 	@Test
@@ -420,7 +409,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
 
-		assertEquals(2, keys.size());
+		assertThat(keys).hasSize(2);
 	}
 
 	@Test
@@ -431,7 +420,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
 
-		assertEquals(4, keys.size());
+		assertThat(keys).hasSize(4);
 	}
 
 	@Test
@@ -445,7 +434,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		List<DataPointsRowKey> keys = readIterator(s_datastore.getKeysForQueryIterator(query));
 
-		assertEquals(2, keys.size());
+		assertThat(keys).hasSize(2);
 	}
 
 	@Test
@@ -460,10 +449,10 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		List<DataPointGroup> results = tagFilteredQuery.execute();
 
-		assertThat(results.size(), CoreMatchers.equalTo(1));
+		assertThat(results).hasSize(1);
 		DataPointGroup dpg = results.get(0);
-		assertThat(dpg.getName(), is(TAG_INDEXED_ROW_KEY_METRIC));
-		assertThat(Iterators.size(dpg), is(2));
+		assertThat(dpg.getName()).isEqualTo(TAG_INDEXED_ROW_KEY_METRIC);
+		assertThat(Iterators.size(dpg)).isEqualTo(2);
 
 		tagFilteredQuery.close();
 
@@ -472,10 +461,10 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		results = unfilteredQuery.execute();
 
-		assertThat(results.size(), CoreMatchers.equalTo(1));
+		assertThat(results).hasSize(1);
 		dpg = results.get(0);
-		assertThat(dpg.getName(), is(TAG_INDEXED_ROW_KEY_METRIC));
-		assertThat(Iterators.size(dpg), is(4));
+		assertThat(dpg.getName()).isEqualTo(TAG_INDEXED_ROW_KEY_METRIC);
+		assertThat(Iterators.size(dpg)).isEqualTo(4);
 
 		unfilteredQuery.close();
 	}
@@ -504,8 +493,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		}
 
 		dataPointGroup.close();
-		assertThat(total, equalTo(counter * 42));
-		assertEquals(OVERFLOW_SIZE, counter);
+		assertThat(total).isEqualTo(counter * 42);
+		assertThat(counter).isEqualTo(OVERFLOW_SIZE);
 		dq.close();
 	}
 
@@ -526,7 +515,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		s_datastore.queryDatabase(query, res);
 		List<DataPointRow> rows = res.getRows();
 
-		assertThat(rows.size(), equalTo(1));
+		assertThat(rows).hasSize(1);
 
 		s_datastore.deleteDataPoints(query);
 		Thread.sleep(2000);
@@ -535,14 +524,14 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
 		rows = res.getRows();
-		assertThat(rows.size(), equalTo(0));
+		assertThat(rows).hasSize(0);
 
 		// Verify that the index key is gone
 		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(query));
-		assertThat(indexRowKeys.size(), equalTo(0));
+		assertThat(indexRowKeys).hasSize(0);
 
 		// Verify that the metric name is gone from the Strings column family
-		assertThat(s_datastore.getMetricNames(null), not(hasItem(metricToDelete)));
+		assertThat(s_datastore.getMetricNames(null)).doesNotContain(metricToDelete);
 	}
 
 	@Test
@@ -554,7 +543,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		CachedSearchResult res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
 		List<DataPointRow> rows = res.getRows();
-		assertThat(rows.size(), equalTo(4));
+		assertThat(rows).hasSize(4);
 
 		s_datastore.deleteDataPoints(query);
 		Thread.sleep(2000);
@@ -562,15 +551,15 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
 		rows = res.getRows();
-		assertThat(rows.size(), equalTo(0));
+		assertThat(rows).isEmpty();
 
 		// Verify that the index key is gone
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(queryEverything));
-		assertThat(indexRowKeys.size(), equalTo(0));
+		assertThat(indexRowKeys).isEmpty();
 
 		// Verify that the metric name is gone from the Strings column family
-		assertThat(s_datastore.getMetricNames(null), not(hasItem(metricToDelete)));
+		assertThat(s_datastore.getMetricNames(null)).doesNotContain(metricToDelete);
 	}
 
 	@Test
@@ -583,7 +572,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		CachedSearchResult res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
 		List<DataPointRow> rows = res.getRows();
-		assertThat(rows.size(), equalTo(4));
+		assertThat(rows).hasSize(4);
 
 		DatastoreMetricQuery deleteQuery = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L,
 				rowKeyTime + (3 * m_rowSpec.getRowWidthInMillis() - 1));
@@ -593,15 +582,15 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
 		rows = res.getRows();
-		assertThat(rows.size(), equalTo(1));
+		assertThat(rows).hasSize(1);
 
 		// Verify that the index key is gone
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(queryEverything));
-		assertThat(indexRowKeys.size(), equalTo(1));
+		assertThat(indexRowKeys).hasSize(1);
 
 		// Verify that the metric name still exists in the Strings column family
-		assertThat(s_datastore.getMetricNames(null), hasItem(metricToDelete));
+		assertThat(s_datastore.getMetricNames(null)).contains(metricToDelete);
 	}
 
 	@Test
@@ -615,7 +604,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		CachedSearchResult res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
 		List<DataPointRow> rows = res.getRows();
-		assertThat(rows.size(), equalTo(1));
+		assertThat(rows).hasSize(1);
 
 		s_datastore.deleteDataPoints(query);
 		Thread.sleep(2000);
@@ -624,15 +613,15 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		s_datastore.queryDatabase(query, res);
 		rows = res.getRows();
 
-		assertThat(rows.size(), equalTo(0));
+		assertThat(rows).isEmpty();
 
 		// Verify that the index key is still there
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(queryEverything));
-		assertThat(indexRowKeys.size(), equalTo(1));
+		assertThat(indexRowKeys).hasSize(1);
 
 		// Verify that the metric name still exists in the Strings column family
-		assertThat(s_datastore.getMetricNames(null), hasItem(metricToDelete));
+		assertThat(s_datastore.getMetricNames(null)).contains(metricToDelete);
 	}
 
 	@Test
@@ -646,7 +635,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		s_datastore.queryDatabase(query, res);
 		List<DataPointRow> rows = res.getRows();
 
-		assertThat(rows.size(), equalTo(1));
+		assertThat(rows).hasSize(1);
 
 		s_datastore.deleteDataPoints(query);
 		Thread.sleep(2000);
@@ -655,14 +644,14 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
 		rows = res.getRows();
-		assertThat(rows.size(), equalTo(0));
+		assertThat(rows).isEmpty();
 
 		// Verify that the index key is gone
 		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(query));
-		assertThat(indexRowKeys.size(), equalTo(0));
+		assertThat(indexRowKeys).isEmpty();
 
 		// Verify that the metric name is gone from the Strings column family
-		assertThat(s_datastore.getMetricNames(null), not(hasItem(metricToDelete)));
+		assertThat(s_datastore.getMetricNames(null)).doesNotContain(metricToDelete);
 	}
 
 	@Test
@@ -675,7 +664,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		CachedSearchResult res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
 		List<DataPointRow> rows = res.getRows();
-		assertThat(rows.size(), equalTo(4));
+		assertThat(rows).hasSize(4);
 
 		s_datastore.deleteDataPoints(query);
 		Thread.sleep(2000);
@@ -683,15 +672,15 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
 		rows = res.getRows();
-		assertThat(rows.size(), equalTo(0));
+		assertThat(rows).isEmpty();
 
 		// Verify that the index key is gone
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(queryEverything));
-		assertThat(indexRowKeys.size(), equalTo(0));
+		assertThat(indexRowKeys).isEmpty();
 
 		// Verify that the metric name is gone from the Strings column family
-		assertThat(s_datastore.getMetricNames(null), not(hasItem(metricToDelete)));
+		assertThat(s_datastore.getMetricNames(null)).doesNotContain(metricToDelete);
 	}
 
 	@Test
@@ -705,7 +694,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		CachedSearchResult res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
 		List<DataPointRow> rows = res.getRows();
-		assertThat(rows.size(), equalTo(4));
+		assertThat(rows).hasSize(4);
 
 		DatastoreMetricQuery deleteQuery = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L,
 				rowKeyTime + (3 * m_rowSpec.getRowWidthInMillis() - 1));
@@ -715,15 +704,15 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
 		rows = res.getRows();
-		assertThat(rows.size(), equalTo(1));
+		assertThat(rows).hasSize(1);
 
 		// Verify that the index key is gone
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(queryEverything));
-		assertThat(indexRowKeys.size(), equalTo(1));
+		assertThat(indexRowKeys).hasSize(1);
 
 		// Verify that the metric name still exists in the Strings column family
-		assertThat(s_datastore.getMetricNames(null), hasItem(metricToDelete));
+		assertThat(s_datastore.getMetricNames(null)).contains(metricToDelete);
 	}
 
 	@Test
@@ -738,7 +727,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		CachedSearchResult res = createCache(metricToDelete);
 		s_datastore.queryDatabase(query, res);
 		List<DataPointRow> rows = res.getRows();
-		assertThat(rows.size(), equalTo(1));
+		assertThat(rows).hasSize(1);
 
 		s_datastore.deleteDataPoints(query);
 		Thread.sleep(2000);
@@ -747,15 +736,15 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		s_datastore.queryDatabase(query, res);
 		rows = res.getRows();
 
-		assertThat(rows.size(), equalTo(0));
+		assertThat(rows).isEmpty();
 
 		// Verify that the index key is still there
 		DatastoreMetricQueryImpl queryEverything = new DatastoreMetricQueryImpl(metricToDelete, EMPTY_MAP, 0L, Long.MAX_VALUE);
 		List<DataPointsRowKey> indexRowKeys = readIterator(s_datastore.getKeysForQueryIterator(queryEverything));
-		assertThat(indexRowKeys.size(), equalTo(1));
+		assertThat(indexRowKeys).hasSize(1);
 
 		// Verify that the metric name still exists in the Strings column family
-		assertThat(s_datastore.getMetricNames(null), hasItem(metricToDelete));
+		assertThat(s_datastore.getMetricNames(null)).contains(metricToDelete);
 	}
 
 	/**
@@ -776,10 +765,10 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		List<DataPointGroup> results = dq.execute();
 
-		assertThat(results.size(), CoreMatchers.equalTo(1));
+		assertThat(results).hasSize(1);
 		DataPointGroup dpg = results.get(0);
-		assertThat(dpg.getName(), is("metric_not_there"));
-		assertFalse(dpg.hasNext());
+		assertThat(dpg.getName()).isEqualTo("metric_not_there");
+		assertThat(dpg.hasNext()).isFalse();
 
 		dq.close();
 	}
@@ -831,10 +820,10 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		List<DataPointGroup> results = dq.execute();
 		try
 		{
-			assertThat(results.size(), CoreMatchers.equalTo(1));
+			assertThat(results).hasSize(1);
 			DataPointGroup dpg = results.get(0);
-			assertThat(dpg.getName(), is("ttlMetric"));
-			assertThat(dq.getSampleSize(), CoreMatchers.equalTo(6));
+			assertThat(dpg.getName()).isEqualTo("ttlMetric");
+			assertThat(dq.getSampleSize()).isEqualTo(6);
 		}
 		finally
 		{
@@ -859,24 +848,24 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		long lastModified = s_datastore.getValue("Service", "ServiceKey", "key2").getLastModified().getTime();
 		s_datastore.setValue("Service", "ServiceKey", "key2", "changed");
 		assertServiceKeyValue("Service", "ServiceKey", "key2", "changed");
-		assertThat(s_datastore.getValue("Service", "ServiceKey", "key2").getLastModified().getTime(), greaterThan(lastModified));
+		assertThat(s_datastore.getValue("Service", "ServiceKey", "key2").getLastModified().getTime()).isGreaterThan(lastModified);
 
 		// Test listKeys
-		assertThat(s_datastore.listKeys("Service", "ServiceKey"), hasItems("foo", "key1", "key2"));
-		assertThat(s_datastore.listKeys("Service", "ServiceKey", "key"), hasItems("key1", "key2"));
+		assertThat(s_datastore.listKeys("Service", "ServiceKey")).contains("foo", "key1", "key2");
+		assertThat(s_datastore.listKeys("Service", "ServiceKey", "key")).contains("key1", "key2");
 
 		// Test delete
 		lastModified = s_datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime();
 		s_datastore.deleteKey("Service", "ServiceKey", "key2");
-		assertThat(s_datastore.listKeys("Service", "ServiceKey"), hasItems("key1", "foo"));
-		assertThat(s_datastore.getValue("Service", "ServiceKey", "key2"), is(nullValue()));
-		assertThat(s_datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime(), greaterThan(lastModified));
+		assertThat(s_datastore.listKeys("Service", "ServiceKey")).contains("key1", "foo");
+		assertThat(s_datastore.getValue("Service", "ServiceKey", "key2")).isNull();
+		assertThat(s_datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime()).isGreaterThan(lastModified);
 
 		lastModified = s_datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime();
 		s_datastore.deleteKey("Service", "ServiceKey", "foo");
-		assertThat(s_datastore.listKeys("Service", "ServiceKey"), hasItems("key1"));
-		assertThat(s_datastore.getValue("Service", "ServiceKey", "foo"), is(nullValue()));
-		assertThat(s_datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime(), greaterThan(lastModified));
+		assertThat(s_datastore.listKeys("Service", "ServiceKey")).contains("key1");
+		assertThat(s_datastore.getValue("Service", "ServiceKey", "foo")).isNull();
+		assertThat(s_datastore.getServiceKeyLastModifiedTime("Service", "ServiceKey").getTime()).isGreaterThan(lastModified);
 	}
 
 	@Test
@@ -896,14 +885,14 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		s_datastore.setValue("Service3", "ServiceKey1", "bar", "value9");
 
 		// Test listKeys
-		assertThat(s_datastore.listKeys("Service1", "ServiceKey1"), hasItems("key1"));
-		assertThat(s_datastore.listKeys("Service1", "ServiceKey2"), hasItems("key1"));
-		assertThat(s_datastore.listKeys("Service1", "ServiceKey3"), hasItems("key1"));
-		assertThat(s_datastore.listKeys("Service2", "ServiceKey1"), hasItems("key1", "key2", "key3", "key4"));
-		assertThat(s_datastore.listKeys("Service3", "ServiceKey1"), hasItems("foo", "bar"));
+		assertThat(s_datastore.listKeys("Service1", "ServiceKey1")).contains("key1");
+		assertThat(s_datastore.listKeys("Service1", "ServiceKey2")).contains("key1");
+		assertThat(s_datastore.listKeys("Service1", "ServiceKey3")).contains("key1");
+		assertThat(s_datastore.listKeys("Service2", "ServiceKey1")).contains("key1", "key2", "key3", "key4");
+		assertThat(s_datastore.listKeys("Service3", "ServiceKey1")).contains("foo", "bar");
 
 		// Test listServiceKeys
-		assertThat(s_datastore.listServiceKeys("Service1"), hasItems("ServiceKey1", "ServiceKey2", "ServiceKey3"));
+		assertThat(s_datastore.listServiceKeys("Service1")).contains("ServiceKey1", "ServiceKey2", "ServiceKey3");
 
 		// Test get
 		assertServiceKeyValue("Service1", "ServiceKey1", "key1", "value1");
@@ -928,14 +917,14 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		s_datastore.setValue("Service1", "ServiceKey1", "key1", "value1");
 		s_datastore.deleteKey("Service1", "ServiceKey1", "key1");
 
-		assertThat(s_datastore.listKeys("Service1", "ServiceKey1").iterator().hasNext(), equalTo(false));
+		assertThat(s_datastore.listKeys("Service1", "ServiceKey1").iterator().hasNext()).isFalse();
 	}
 
 	private void assertServiceKeyValue(String service, String serviceKey, String key, String expected)
 			throws DatastoreException
 	{
 		ServiceKeyValue value = s_datastore.getValue(service, serviceKey, key);
-		assertThat(value.getValue(), equalTo(expected));
-		assertThat(value.getLastModified(), is(notNullValue()));
+		assertThat(value.getValue()).isEqualTo(expected);
+		assertThat(value.getLastModified()).isNotNull();
 	}
 }

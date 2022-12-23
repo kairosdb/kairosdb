@@ -181,8 +181,7 @@ public class QueryParser
 
 	public Query parseQueryMetric(String json) throws QueryException, BeanValidationException
 	{
-		JsonParser parser = new JsonParser();
-		JsonObject obj = parser.parse(json).getAsJsonObject();
+		JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
 		return parseQueryMetric(obj);
 	}
 
@@ -233,6 +232,7 @@ public class QueryParser
 				queryMetric.setExcludeTags(metric.isExcludeTags());
 				queryMetric.setLimit(metric.getLimit());
 				queryMetric.setJsonObj(obj);
+				queryMetric.setAlias(metric.getAlias());
 
 				getEndTime(query).ifPresent(queryMetric::setEndTime);
 
@@ -353,8 +353,7 @@ public class QueryParser
 	public List<RollupTask> parseRollupTasks(String json) throws BeanValidationException, QueryException
 	{
 		List<RollupTask> tasks = new ArrayList<>();
-		JsonParser parser = new JsonParser();
-		JsonArray rollupTasks = parser.parse(json).getAsJsonArray();
+		JsonArray rollupTasks = JsonParser.parseString(json).getAsJsonArray();
 		for (int i = 0; i < rollupTasks.size(); i++)
 		{
 			JsonObject taskObject = rollupTasks.get(i).getAsJsonObject();
@@ -373,8 +372,7 @@ public class QueryParser
 
 	public RollupTask parseRollupTask(String json, String id) throws BeanValidationException, QueryException
 	{
-		JsonParser parser = new JsonParser();
-		JsonObject taskObject = parser.parse(json).getAsJsonObject();
+		JsonObject taskObject = JsonParser.parseString(json).getAsJsonObject();
 		RollupTask task = parseRollupTask(taskObject, "");
 		String newJson = taskObject.toString();
 
@@ -545,13 +543,16 @@ public class QueryParser
 		@NotNull
 		@NotEmpty()
 		@SerializedName("name")
-		private String name;
+		private final String name;
+
+		@SerializedName("alias")
+		private String alias;
 
 		@SerializedName("tags")
-		private SetMultimap<String, String> tags;
+		private final SetMultimap<String, String> tags;
 
 		@SerializedName("exclude_tags")
-		private boolean exclude_tags;
+		private final boolean exclude_tags;
 
 		@SerializedName("limit")
 		private int limit;
@@ -567,6 +568,16 @@ public class QueryParser
 		public String getName()
 		{
 			return name;
+		}
+
+		public String getAlias()
+		{
+			return alias;
+		}
+
+		public void setAlias(String alias)
+		{
+			this.alias = alias;
 		}
 
 		public int getLimit()
@@ -819,6 +830,10 @@ public class QueryParser
 			if (limit != null)
 				ret.setLimit(limit.getAsInt());
 
+			JsonElement alias = jsonObject.get("alias");
+			if (alias != null)
+				ret.setAlias(alias.getAsString());
+
 			return (ret);
 		}
 	}
@@ -826,7 +841,7 @@ public class QueryParser
 	//===========================================================================
 	private static class ContextualJsonSyntaxException extends RuntimeException
 	{
-		private String context;
+		private final String context;
 
 		private ContextualJsonSyntaxException(String context, String msg)
 		{
@@ -843,8 +858,8 @@ public class QueryParser
 	//===========================================================================
 	public static class SimpleConstraintViolation implements ConstraintViolation<Object>
 	{
-		private String message;
-		private String context;
+		private final String message;
+		private final String context;
 
 		public SimpleConstraintViolation(String context, String message)
 		{
@@ -903,7 +918,7 @@ public class QueryParser
 
 	private static class SimplePath implements Path
 	{
-		private String context;
+		private final String context;
 
 		private SimplePath(String context)
 		{

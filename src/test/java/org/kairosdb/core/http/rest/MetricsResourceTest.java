@@ -149,7 +149,7 @@ public class MetricsResourceTest extends ResourceBase
 		JsonResponse response = client.post(json, GET_METRIC_URL);
 
 		assertResponse(response, 400,
-				"{\"errors\":[\"com.google.gson.stream.MalformedJsonException: Use JsonReader.setLenient(true) to accept malformed JSON at line 2 column 22\"]}");
+				"{\"errors\":[\"com.google.gson.stream.MalformedJsonException: Use JsonReader.setLenient(true) to accept malformed JSON at line 2 column 22 path $\"]}");
 	}
 
 	@Test

@@ -80,7 +80,7 @@ public class RollupProcessorImpl implements RollupProcessor
 			}
 			rollupQueryMetric.setStartTime(samplingPeriod.getStartTime());
 			rollupQueryMetric.setEndTime(samplingPeriod.getEndTime());
-			dpCount += executeRollup(datastore, rollupQueryMetric);
+			dpCount += executeRollup(rollupQueryMetric);
 
 			log.debug("Rollup Task: " + task.getName() + " for Rollup " + task.getName() + " data point count of " + dpCount);
 			Thread.sleep(50);
@@ -110,7 +110,7 @@ public class RollupProcessorImpl implements RollupProcessor
 		return aggregator.getSampling();
 	}
 
-	private long executeRollup(KairosDatastore datastore, QueryMetric query) throws DatastoreException
+	private long executeRollup(QueryMetric query) throws DatastoreException
 	{
 		log.debug("Execute Rollup: " + query.getName() + " Start time: " + new Date(query.getStartTime()) + " End time: " + new Date(query.getEndTime()));
 

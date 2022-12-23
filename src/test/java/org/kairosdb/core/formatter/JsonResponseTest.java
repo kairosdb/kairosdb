@@ -38,7 +38,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class JsonResponseTest
 {
-	JsonParser parser = new JsonParser();
 	private StringWriter writer;
 	private JsonResponse response;
 
@@ -77,7 +76,7 @@ public class JsonResponseTest
 		groups.add(group2);
 
 		response.begin(null);
-		response.formatQuery(groups, false, 10);
+		response.formatQuery(groups, false, 10, false);
 		response.end();
 
 		assertJson(writer.toString(), json);
@@ -111,7 +110,7 @@ public class JsonResponseTest
 		groups.add(group2);
 
 		response.begin(null);
-		response.formatQuery(groups, true, 10);
+		response.formatQuery(groups, true, 10, false);
 		response.end();
 
 		assertJson(writer.toString(), json);
@@ -134,14 +133,14 @@ public class JsonResponseTest
 		groups.add(group1);
 
 		response.begin(null);
-		response.formatQuery(groups, false, 10);
+		response.formatQuery(groups, false, 10, false);
 		response.end();
 	}
 
 	private void assertJson(String actual, String expected)
 	{
-		JsonObject expectedObject = (JsonObject) parser.parse(expected);
-		JsonObject actualObject = (JsonObject) parser.parse(actual);
+		JsonObject expectedObject = (JsonObject) JsonParser.parseString(expected);
+		JsonObject actualObject = (JsonObject) JsonParser.parseString(actual);
 
 		assertThat(actualObject, equalTo(expectedObject));
 	}

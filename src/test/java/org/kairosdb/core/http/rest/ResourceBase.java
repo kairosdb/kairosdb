@@ -17,6 +17,7 @@ import org.kairosdb.core.aggregator.TestAggregatorFactory;
 import org.kairosdb.core.datapoints.*;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
+import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.groupby.TestGroupByFactory;
 import org.kairosdb.core.http.WebServer;
 import org.kairosdb.core.http.WebServletModule;
@@ -24,12 +25,17 @@ import org.kairosdb.core.http.rest.json.QueryParser;
 import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
 import org.kairosdb.core.processingstage.FeatureProcessingFactory;
 import org.kairosdb.core.processingstage.FeatureProcessor;
+import org.kairosdb.core.scheduler.KairosDBScheduler;
+import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
 import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.testing.Client;
 import org.kairosdb.util.SimpleStatsReporter;
+import org.quartz.JobDetail;
+import org.quartz.JobKey;
+import org.quartz.Trigger;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.io.IOException;
@@ -107,6 +113,7 @@ public abstract class ResourceBase
                 bind(KairosDatastore.class).in(Singleton.class);
                 bind(FeaturesResource.class).in(Singleton.class);
                 bind(FeatureProcessor.class).to(KairosFeatureProcessor.class);
+                bind(KairosDBScheduler.class).toInstance(new FakeScheduler());
                 bind(new TypeLiteral<FeatureProcessingFactory<Aggregator>>() {}).to(TestAggregatorFactory.class);
                 bind(new TypeLiteral<FeatureProcessingFactory<GroupBy>>() {}).to(TestGroupByFactory.class);                bind(QueryParser.class).in(Singleton.class);
                 bind(QueryQueuingManager.class).toInstance(queuingManager);
@@ -330,6 +337,39 @@ public abstract class ResourceBase
         public Date getServiceKeyLastModifiedTime(String service, String serviceKey)
         {
             return null;
+        }
+    }
+
+    private static class FakeScheduler implements KairosDBScheduler
+    {
+        @Override
+        public void start() throws KairosDBException
+        {
+
+        }
+
+        @Override
+        public void stop()
+        {
+
+        }
+
+        @Override
+        public void schedule(JobDetail jobDetail, Trigger trigger) throws KairosDBException
+        {
+
+        }
+
+        @Override
+        public void cancel(JobKey jobKey) throws KairosDBException
+        {
+
+        }
+
+        @Override
+        public Set<String> getScheduledJobIds() throws KairosDBException
+        {
+            return Collections.emptySet();
         }
     }
 }

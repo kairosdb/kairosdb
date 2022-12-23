@@ -75,6 +75,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -347,7 +348,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 
 		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);
 
-		Set<String> ret = new HashSet<String>();
+		//We want the results to be sorted so we use a tree set
+		Set<String> ret = new TreeSet<String>();
 
 		try
 		{

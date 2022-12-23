@@ -7,7 +7,6 @@ import com.datastax.driver.core.Host;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.metrics.BatchMetrics;
 import org.kairosdb.metrics4j.MetricSourceManager;
 import org.kairosdb.util.KDataOutput;
 import org.slf4j.Logger;
@@ -193,14 +192,16 @@ public class CQLBatch
 	{
 		if (m_metricNamesBatch.size() != 0)
 		{
-			metrics.nameBatch().put(metricNamesBatch.size());
 			m_clusterConnection.executeAsync(m_metricNamesBatch);
+			metrics.writeBatchSize("string_index").put(m_metricNamesBatch.size());
 		}
 
 		if (m_rowKeyBatch.size() != 0)
 		{
-			metrics.rowKeyBatch().put(rowKeyBatch.size());
 			m_clusterConnection.executeAsync(m_rowKeyBatch);
+			metrics.writeBatchSize("row_keys").put(m_rowKeyBatch.size());
+			metrics.writeBatchSize("row_key_time_index").put(m_rowKeyTimeIndexCount);
+			metrics.writeBatchSize("tag_indexed_row_keys").put(m_tagIndexedRowKeysCount);
 		}
 
 		for (BatchStatement batchStatement : m_batchMap.values())
@@ -210,15 +211,15 @@ public class CQLBatch
 			{
 				m_clusterConnection.execute(batchStatement);
 				//System.out.println(resultSet.getExecutionInfo().getQueryTrace().getTraceId());
-				metrics.datapointsBatch().put(batchStatement.size());
+				metrics.writeBatchSize("data_points").put(batchStatement.size());
 			}
 		}
 
 		//Catch all in case of a load balancing problem
 		if (m_dataPointBatch.size() != 0)
 		{
-			metrics.datapointsBatch().put(dataPointBatch.size());
 			m_clusterConnection.execute(m_dataPointBatch);
+			metrics.writeBatchSize("data_points").put(m_dataPointBatch.size());
 		}
 	}
 

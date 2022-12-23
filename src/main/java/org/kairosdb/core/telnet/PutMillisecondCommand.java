@@ -18,7 +18,6 @@ package org.kairosdb.core.telnet;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
@@ -27,7 +26,6 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
-import org.kairosdb.metrics.TelnetMetrics;
 import org.kairosdb.metrics4j.MetricSourceManager;
 import org.kairosdb.util.Tags;
 import org.kairosdb.util.Util;
@@ -38,21 +36,18 @@ import java.util.List;
 
 import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
-public class PutMillisecondCommand implements TelnetCommand//, KairosMetricReporter
+public class PutMillisecondCommand implements TelnetCommand
 {
-	private static TelnetMetrics Metrics = MetricSourceManager.getSource(TelnetMetrics.class);
-	//private AtomicInteger m_counter = new AtomicInteger();
-	private String m_hostName;
+	private static final TelnetStats stats = MetricSourceManager.getSource(TelnetStats.class);
+
 	private LongDataPointFactory m_longFactory;
 	private DoubleDataPointFactory m_doubleFactory;
 	private final Publisher<DataPointEvent> m_publisher;
 
 	@Inject
-	public PutMillisecondCommand(FilterEventBus eventBus, @Named("HOSTNAME") String hostname,
+	public PutMillisecondCommand(FilterEventBus eventBus,
 			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
-		requireNonNullOrEmpty(hostname);
-		m_hostName = hostname;
 		m_longFactory = longFactory;
 		m_doubleFactory = doubleFactory;
 
@@ -123,8 +118,7 @@ public class PutMillisecondCommand implements TelnetCommand//, KairosMetricRepor
 		if (tagCount == 0)
 			tags.put("add", "tag");
 
-		Metrics.telnetRequestCount(m_hostName, getCommand()).put(1);
-		//m_counter.incrementAndGet();
+		stats.request(getCommand()).put(1);
 		m_publisher.post(new DataPointEvent(metricName, tags.build(), dp, ttl));
 	}
 
@@ -144,14 +138,4 @@ public class PutMillisecondCommand implements TelnetCommand//, KairosMetricRepor
 		return ("putm");
 	}
 
-	/*@Override
-	public List<DataPointSet> getMetrics(long now)
-	{
-		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
-		dps.addTag("host", m_hostName);
-		dps.addTag("method", getCommand());
-		dps.addDataPoint(m_longFactory.createDataPoint(now, m_counter.getAndSet(0)));
-
-		return (Collections.singletonList(dps));
-	}*/
 }

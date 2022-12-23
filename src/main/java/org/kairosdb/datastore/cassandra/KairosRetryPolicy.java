@@ -9,7 +9,6 @@ import com.datastax.driver.core.policies.RetryPolicy;
 import com.google.inject.Inject;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.metrics.RetryMetrics;
 import org.kairosdb.metrics4j.MetricSourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +18,7 @@ import javax.inject.Named;
 public class KairosRetryPolicy implements RetryPolicy//, KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(KairosRetryPolicy.class);
-	private static final RetryMetrics Metrics = MetricSourceManager.getSource(RetryMetrics.class);
+	private static final RetryStats stats = MetricSourceManager.getSource(RetryStats.class);
 
 	private final int m_retryCount;
 
@@ -53,7 +52,7 @@ public class KairosRetryPolicy implements RetryPolicy//, KairosMetricReporter
 			return RetryDecision.rethrow();
 		else
 		{
-			Metrics.retryCount(m_hostName, m_clusterName, "read_timeout").put(1);
+			stats.retryCount(m_clusterName, "read_timeout").put(1);
 			return RetryDecision.tryNextHost(cl);
 		}
 	}
@@ -66,7 +65,7 @@ public class KairosRetryPolicy implements RetryPolicy//, KairosMetricReporter
 			return RetryDecision.rethrow();
 		else
 		{
-			Metrics.retryCount(m_hostName, m_clusterName, "write_timeout").put(1);
+			stats.retryCount(m_clusterName, "write_timeout").put(1);
 			return RetryDecision.tryNextHost(cl);
 		}
 	}
@@ -79,7 +78,7 @@ public class KairosRetryPolicy implements RetryPolicy//, KairosMetricReporter
 			return RetryDecision.rethrow();
 		else
 		{
-			Metrics.retryCount(m_hostName, m_clusterName, "unavailable").put(1);
+			stats.retryCount(m_clusterName, "unavailable").put(1);
 			return RetryDecision.tryNextHost(cl);
 		}
 	}
@@ -92,7 +91,7 @@ public class KairosRetryPolicy implements RetryPolicy//, KairosMetricReporter
 			return RetryDecision.rethrow();
 		else
 		{
-			Metrics.retryCount(m_hostName, m_clusterName, "request_error").put(1);
+			stats.retryCount(m_clusterName, "request_error").put(1);
 			return RetryDecision.tryNextHost(cl);
 		}
 	}

@@ -54,7 +54,7 @@ public class RollupProcessorImplTest
 		H2Datastore h2Datastore = new H2Datastore(DB_PATH, dataPointFactory, eventBus, "regex:");
 
 		datastore = new KairosDatastore(h2Datastore,
-				new QueryQueuingManager(1, "hostname"),
+				new QueryQueuingManager(1),
 				dataPointFactory, false);
 		datastore.init();
 

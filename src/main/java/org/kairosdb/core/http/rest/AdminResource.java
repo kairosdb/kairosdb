@@ -1,10 +1,14 @@
 package org.kairosdb.core.http.rest;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.datastore.QueryQueuingManager;
+import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.core.http.rest.json.ErrorResponse;
+import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +20,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static org.kairosdb.core.http.rest.MetricsResource.setHeaders;
@@ -26,11 +31,30 @@ public class AdminResource
 	private static final Logger logger = LoggerFactory.getLogger(AdminResource.class);
 
 	private final QueryQueuingManager m_queuingManager;
+	private final KairosDBScheduler m_scheduler;
 
 	@Inject
-	public AdminResource(QueryQueuingManager queuingManager)
+	public AdminResource(QueryQueuingManager queuingManager, KairosDBScheduler scheduler)
 	{
 		this.m_queuingManager = requireNonNull(queuingManager, "queuingManager cannot be null.");
+		this.m_scheduler = requireNonNull(scheduler, "scheduler cannot be null.");
+	}
+
+	@GET
+	@Produces(MediaType.APPLICATION_JSON + "; charset=UTF-8")
+	@Path("/scheduledjobs")
+	public Response listScheduledJobs() throws KairosDBException
+	{
+		Set<String> scheduledJobIds = m_scheduler.getScheduledJobIds();
+		JsonArray responseJson = new JsonArray();
+		for (String scheduledJobId : scheduledJobIds)
+		{
+			responseJson.add(new JsonPrimitive(scheduledJobId));
+		}
+
+		Response.ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(responseJson.toString());
+		setHeaders(responseBuilder);
+		return responseBuilder.build();
 	}
 
 	@GET

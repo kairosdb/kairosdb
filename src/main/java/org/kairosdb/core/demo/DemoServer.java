@@ -12,17 +12,16 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
-import org.kairosdb.metrics.DemoMetrics;
 import org.kairosdb.metrics4j.MetricSourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
 
-public class DemoServer implements KairosDBService, Runnable//, KairosMetricReporter
+public class DemoServer implements KairosDBService, Runnable
 {
 	public static final Logger logger = LoggerFactory.getLogger(DemoServer.class);
-	private static final DemoMetrics Metrics = MetricSourceManager.getSource(DemoMetrics.class);
+	public static final DemoStats stats = MetricSourceManager.getSource(DemoStats.class);
 
 	public static final String METRIC_NAME = "kairosdb.demo.metric_name";
 	public static final String NUMBER_OF_ROWS = "kairosdb.demo.number_of_rows";
@@ -86,7 +85,7 @@ public class DemoServer implements KairosDBService, Runnable//, KairosMetricRepo
 				ImmutableSortedMap<String, String> tags = ImmutableSortedMap.of("host", "demo_server_"+I);
 				DataPointEvent dataPointEvent = new DataPointEvent(m_metricName, tags, dataPoint, m_ttl);
 				m_publisher.post(dataPointEvent);
-				Metrics.submissionCount(m_hostName).put(1);
+				stats.submission().put(1);
 			}
 
 			insertTime += 60000; //Advance 1 minute
@@ -106,16 +105,4 @@ public class DemoServer implements KairosDBService, Runnable//, KairosMetricRepo
 		m_keepRunning = false;
 	}
 
-	/*@Override
-	public List<DataPointSet> getMetrics(long now)
-	{
-		ImmutableList.Builder<DataPointSet> ret = ImmutableList.builder();
-
-		DataPointSet ds = new DataPointSet("kairosdb.demo.submission_count");
-		ds.addTag("host", m_hostName);
-		ds.addDataPoint(m_longDataPointFactory.createDataPoint(now, m_counter));
-		ret.add(ds);
-
-		return ret.build();
-	}*/
 }

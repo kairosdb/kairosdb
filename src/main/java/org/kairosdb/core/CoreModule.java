@@ -50,6 +50,7 @@ import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
 import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.metrics.InternalSinkSetup;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.sample.SampleQueryPlugin;
@@ -77,6 +78,8 @@ import static org.kairosdb.core.queue.QueueProcessor.QUEUE_PROCESSOR_CLASS;
 public class CoreModule extends AbstractModule
 {
 	public static final Logger logger = LoggerFactory.getLogger(CoreModule.class);
+
+	public static final String HOSTNAME_CONFIG = "kairosdb.hostname";
 
 	public static final String QUEUE_PATH = "kairosdb.queue_processor.queue_path";
 	public static final String PAGE_SIZE = "kairosdb.queue_processor.page_size";
@@ -190,6 +193,9 @@ public class CoreModule extends AbstractModule
 		bind(DataPointEventSerializer.class).in(Singleton.class);
 		bind(SimpleStatsReporter.class);
 
+		//Setup sink for internal Metrics4j reporting
+		bind(InternalSinkSetup.class).asEagerSingleton();
+
 		bind(SumAggregator.class);
 		bind(MinAggregator.class);
 		bind(MaxAggregator.class);
@@ -217,7 +223,7 @@ public class CoreModule extends AbstractModule
 		bind(TagGroupBy.class);
 		bind(BinGroupBy.class);
 
-		String hostname = m_config.getProperty("kairosdb.hostname");
+		String hostname = m_config.getProperty(HOSTNAME_CONFIG);
 		bindConstant().annotatedWith(Names.named("HOSTNAME")).to(hostname != null ? hostname: Util.getHostName());
 
 		//bind queue processor impl

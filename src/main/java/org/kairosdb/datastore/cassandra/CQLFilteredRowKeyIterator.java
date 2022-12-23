@@ -4,7 +4,6 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Statement;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.util.concurrent.Futures;
@@ -13,8 +12,9 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.reporting.ThreadReporter;
+import org.kairosdb.metrics4j.MetricSourceManager;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
@@ -24,6 +24,8 @@ import static org.kairosdb.datastore.cassandra.ClusterConnection.DATA_POINTS_TAB
 
 public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 {
+	private static final CassandraStats stats = MetricSourceManager.getSource(CassandraStats.class);
+
 	private final SetMultimap<String, String> m_filterTags;
 	private final Set<String> m_filterTagNames;
 	private DataPointsRowKey m_nextKey;
@@ -133,7 +135,9 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 			if (m_resultSets.hasNext())
 				m_currentResultSet = m_resultSets.next();
 
-			ThreadReporter.addDataPoint(CassandraDatastore.KEY_QUERY_TIME, System.currentTimeMillis() - timerStart);
+			//ThreadReporter.addDataPoint(CassandraDatastore.KEY_QUERY_TIME, System.currentTimeMillis() - timerStart);
+			//ThreadReporter.reportKeyQueryTime(Duration.ofMillis(System.currentTimeMillis() - timerStart));
+			stats.keyQueryTime().put(Duration.ofMillis(System.currentTimeMillis() - timerStart));
 		}
 		catch (InterruptedException e)
 		{
@@ -267,7 +271,8 @@ outer:
 		if (m_nextKey == null)
 		{
 			//todo make this a common atomic value
-			ThreadReporter.addDataPoint(CassandraDatastore.RAW_ROW_KEY_COUNT, m_rawRowKeyCount);
+			stats.rawRowKeyCount().put(m_rawRowKeyCount);
+			//ThreadReporter.addDataPoint(CassandraDatastore.RAW_ROW_KEY_COUNT, m_rawRowKeyCount);
 		}
 
 		return (m_nextKey != null);

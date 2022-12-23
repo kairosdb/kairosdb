@@ -34,7 +34,7 @@ public class PutCommand extends PutMillisecondCommand
 	public PutCommand(FilterEventBus eventBus, @Named("HOSTNAME") String hostname,
 			LongDataPointFactory longFactory, DoubleDataPointFactory doubleFactory)
 	{
-		super(eventBus, hostname, longFactory, doubleFactory);
+		super(eventBus, longFactory, doubleFactory);
 	}
 
 	@Override

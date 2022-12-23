@@ -360,7 +360,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				});
 
 		DatastoreTestHelper.s_datastore = new KairosDatastore(s_datastore,
-				new QueryQueuingManager(1, "hostname"),
+				new QueryQueuingManager(1),
 				dataPointFactory, false);
 
 		DatastoreTestHelper.s_datastore.init();

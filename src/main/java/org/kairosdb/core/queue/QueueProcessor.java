@@ -1,18 +1,15 @@
 package org.kairosdb.core.queue;
 
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.BatchReductionEvent;
 import org.kairosdb.events.DataPointEvent;
-import org.kairosdb.util.SimpleStats;
+import org.kairosdb.metrics4j.MetricSourceManager;
 import org.kairosdb.util.SimpleStatsReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -22,6 +19,7 @@ import java.util.concurrent.ExecutorService;
 public abstract class QueueProcessor// implements KairosMetricReporter
 {
 	public static final Logger logger = LoggerFactory.getLogger(QueueProcessor.class);
+	public static final QueueStats stats = MetricSourceManager.getSource(QueueStats.class);
 
 	public static final String QUEUE_PROCESSOR_CLASS = "kairosdb.queue_processor.class";
 	public static final String QUEUE_PROCESSOR = "queue_processor";
@@ -37,7 +35,6 @@ public abstract class QueueProcessor// implements KairosMetricReporter
 	private final int m_initialBatchSize;
 	private final int m_minimumBatchSize;
 	private final int m_minBatchWait;
-	private final SimpleStats m_batchStats = new SimpleStats();
 
 	private volatile ProcessorHandler m_processorHandler;
 
@@ -90,19 +87,6 @@ public abstract class QueueProcessor// implements KairosMetricReporter
 	protected abstract int getAvailableDataPointEvents();
 
 	protected abstract EventCompletionCallBack getCompletionCallBack();
-
-	//protected abstract void addReportedMetrics(ArrayList<DataPointSet> metrics, long now);
-
-	/*public List<DataPointSet> getMetrics(long now)
-	{
-		ArrayList<DataPointSet> metrics = new ArrayList<>();
-		addReportedMetrics(metrics, now);
-
-		m_simpleStatsReporter.reportStats(m_batchStats.getAndClear(), now,
-				"kairosdb.queue.batch_stats", metrics);
-
-		return metrics;
-	}*/
 
 
 	/**
@@ -173,8 +157,6 @@ public abstract class QueueProcessor// implements KairosMetricReporter
 					List<DataPointEvent> results = get(m_batchSize);
 					//getCompletionCallBack must be called after get()
 					EventCompletionCallBack callbackToPass = getCompletionCallBack();
-
-					m_batchStats.addValue(results.size());
 
 					boolean fullBatch = false;
 

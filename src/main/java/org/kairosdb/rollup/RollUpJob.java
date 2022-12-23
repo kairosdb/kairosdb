@@ -7,15 +7,16 @@ import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.datastore.KairosDatastore;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.metrics4j.MetricSourceManager;
 import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -23,6 +24,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class RollUpJob implements InterruptableJob
 {
 	private static final Logger log = LoggerFactory.getLogger(KairosDBSchedulerImpl.class);
+	private static final RollupStats stats = MetricSourceManager.getSource(RollupStats.class);
 
 	private static final String ROLLUP_TIME = "kairosdb.rollup.execution-time";
 
@@ -81,11 +83,12 @@ public class RollUpJob implements InterruptableJob
 						break;
 					}
 					boolean success = true;
+					long executionStartTime = System.currentTimeMillis();
+					long executionLength = 0L;
 					try
 					{
-						long executionStartTime = System.currentTimeMillis();
 						long dpCount = processor.process(statusStore, task, queryMetric, rollup.getTimeZone());
-						long executionLength = System.currentTimeMillis() - executionStartTime;
+						executionLength = System.currentTimeMillis() - executionStartTime;
 						status.addStatus(RollupTaskStatus.createQueryMetricStatus(queryMetric.getName(), System.currentTimeMillis(), dpCount, executionLength));
 					}
 					catch (DatastoreException e)
@@ -103,8 +106,11 @@ public class RollUpJob implements InterruptableJob
 					finally
 					{
 						log.info("Rollup Task: " + task.getName() + " for Rollup  " + rollup.getSaveAs() + " completed");
+						stats.executionTime(rollup.getSaveAs(),
+								task.getName(),
+								success ? "success" : "failure").put(Duration.ofMillis(executionLength));
 
-						try
+						/*try
 						{
 							ThreadReporter.setReportTime(System.currentTimeMillis());
 							ThreadReporter.clearTags();
@@ -118,7 +124,7 @@ public class RollUpJob implements InterruptableJob
 						catch (DatastoreException e)
 						{
 							log.error("Could not report metrics for rollup job.", e);
-						}
+						}*/
 
 						try {
 							statusStore.write(task.getId(), status);

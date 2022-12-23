@@ -21,7 +21,6 @@ import com.google.inject.name.Named;
 import org.jboss.netty.channel.Channel;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.exception.DatastoreException;
-import org.kairosdb.metrics.TelnetMetrics;
 import org.kairosdb.metrics4j.MetricSourceManager;
 
 import java.util.List;
@@ -31,7 +30,7 @@ import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class VersionCommand implements TelnetCommand//, KairosMetricReporter
 {
-	private static final TelnetMetrics Metrics = MetricSourceManager.getSource(TelnetMetrics.class);
+	private static final TelnetStats stats = MetricSourceManager.getSource(TelnetStats.class);
 
 	private AtomicInteger m_counter = new AtomicInteger();
 	private final LongDataPointFactory m_dataPointFactory;
@@ -48,7 +47,7 @@ public class VersionCommand implements TelnetCommand//, KairosMetricReporter
 	@Override
 	public void execute(Channel chan, List<String> command) throws DatastoreException
 	{
-		Metrics.telnetRequestCount(m_hostName, getCommand()).put(1);
+		stats.request(getCommand()).put(1);
 		m_counter.incrementAndGet();
 		if (chan.isConnected())
 		{

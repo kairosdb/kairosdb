@@ -76,7 +76,7 @@ public class H2DatastoreTest extends DatastoreTestHelper
 		h2Datastore = new H2Datastore(DB_PATH, dataPointFactory, s_eventBus, "regex:");
 
 		s_datastore = new KairosDatastore(h2Datastore,
-				new QueryQueuingManager(1, "hostname"),
+				new QueryQueuingManager(1),
 				dataPointFactory, false);
 		s_datastore.init();
 

@@ -56,7 +56,7 @@ public abstract class ResourceBase
         SLF4JBridgeHandler.install();
 
         datastore = new TestDatastore();
-        queuingManager = new QueryQueuingManager(3, "localhost");
+        queuingManager = new QueryQueuingManager(3);
 
         Injector injector = Guice.createInjector(new WebServletModule(new KairosRootConfig()), new AbstractModule()
         {

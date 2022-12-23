@@ -46,6 +46,7 @@ import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.events.ShutdownEvent;
 import org.kairosdb.util.PluginClassLoader;
+import org.kairosdb.util.Util;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -80,6 +81,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.kairosdb.core.CoreModule.HOSTNAME_CONFIG;
 
 public class Main
 {
@@ -212,10 +214,16 @@ public class Main
 
 		config.resolve();
 
-		/*for (String s : config)
-		{
-			System.out.println(s);
-		}*/
+		//Check hostname
+		String hostname = config.getProperty(HOSTNAME_CONFIG);
+		if (hostname == null)
+			hostname = Util.getHostName();
+
+
+		//Set some params for metric4j
+		System.setProperty("metric-prefix", config.getProperty("kairosdb.metric-prefix"));
+		System.setProperty("kairos-host", hostname);
+
 
 		// Create guid for this server
 		if (!config.hasPath(KAIROSDB_SERVER_GUID)) {

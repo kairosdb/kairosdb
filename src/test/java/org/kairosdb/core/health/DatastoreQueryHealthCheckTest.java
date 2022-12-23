@@ -31,13 +31,13 @@ public class DatastoreQueryHealthCheckTest
 		//when(datastore.getMetricNames()).thenReturn(Collections.<String>emptyList());
 		when(datastore.createQuery(any(QueryMetric.class))).thenReturn(query);
 
-		healthCheck = new DatastoreQueryHealthCheck(datastore);
+		healthCheck = new DatastoreQueryHealthCheck(datastore, "kairosdb.");
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void testConstructorNullDatastoreInvalid()
 	{
-		new DatastoreQueryHealthCheck(null);
+		new DatastoreQueryHealthCheck(null, "kairosdb.");
 	}
 
 	@Test

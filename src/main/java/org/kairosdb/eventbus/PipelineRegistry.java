@@ -222,8 +222,8 @@ public class PipelineRegistry
 					Class<?>[] parameterTypes = method.getParameterTypes();
 					checkArgument(
 							parameterTypes.length == 1,
-							"Method %s has @Filter annotation but has %s parameters."
-									+ "Filter methods must have exactly 1 parameter.",
+							"Method %s has @Subscribe annotation but has %s parameters."
+									+ "Subscribe methods must have exactly 1 parameter.",
 							method,
 							parameterTypes.length);
 

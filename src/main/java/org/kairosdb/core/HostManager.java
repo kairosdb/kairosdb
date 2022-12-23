@@ -66,6 +66,7 @@ public class HostManager implements KairosDBService
     {
         try {
             // Add this host to the table if it doesn't exist or update its timestamp
+            keyStore.setValue(SERVICE, guid, hostname, "active");
             keyStore.setValue(SERVICE, SERVICE_KEY, guid, hostname);
 
             Map<String, ServiceKeyValue> hosts = getHostsFromKeyStore();
@@ -108,7 +109,7 @@ public class HostManager implements KairosDBService
     }
 
     /**
-     * Returns a map of kairos hosts. The key is a guid nd the value is the hostname. There should always be at least one in the map (the current kairos node).
+     * Returns a map of kairos hosts. The key is a guid and the value is the hostname. There should always be at least one in the map (the current kairos node).
      * @return list of kairos hosts.
      */
     public Map<String, ServiceKeyValue> getActiveKairosHosts()

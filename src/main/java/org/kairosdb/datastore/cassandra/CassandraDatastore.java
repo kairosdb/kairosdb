@@ -29,7 +29,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import org.kairosdb.core.DataPoint;
-import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.KairosDataPointFactory;
 import org.kairosdb.core.KairosPostConstructInit;
 import org.kairosdb.core.datapoints.DataPointFactory;
@@ -51,12 +50,9 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.queue.EventCompletionCallBack;
 import org.kairosdb.core.queue.ProcessorHandler;
 import org.kairosdb.core.queue.QueueProcessor;
-import org.kairosdb.core.reporting.KairosMetricReporter;
-import org.kairosdb.core.reporting.ThreadReporter;
 import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.metrics4j.MetricSourceManager;
-import org.kairosdb.metrics4j.annotation.Reported;
 import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.KDataInput;
 import org.kairosdb.util.MemoryMonitor;
@@ -83,7 +79,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
-import java.util.function.LongSupplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.kairosdb.datastore.cassandra.ClusterConnection.DATA_POINTS_TABLE_NAME;
@@ -92,6 +87,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 		ServiceKeyStore, KairosPostConstructInit
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraDatastore.class);
+	public static final CassandraStats stats = MetricSourceManager.getSource(CassandraStats.class);
 
 	public static final int LONG_FLAG = 0x0;
 	public static final int FLOAT_FLAG = 0x1;
@@ -819,7 +815,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 
 		}
 
-		ThreadReporter.addDataPoint(ROW_KEY_COUNT, rowCount);
+		stats.rowKeyCount().put(rowCount);
+		//ThreadReporter.addDataPoint(ROW_KEY_COUNT, rowCount);
 
 		try
 		{

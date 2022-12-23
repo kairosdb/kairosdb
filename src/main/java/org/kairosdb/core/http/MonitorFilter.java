@@ -17,10 +17,8 @@ package org.kairosdb.core.http;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
-import org.kairosdb.core.reporting.KairosMetricReporter;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -35,7 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
-public class MonitorFilter implements Filter, KairosMetricReporter
+public class MonitorFilter implements Filter
 {
 	private static final Logger logger = LoggerFactory.getLogger(MonitorFilter.class);
     
@@ -86,12 +84,13 @@ public class MonitorFilter implements Filter, KairosMetricReporter
 	{
 	}
 
-	@Override
+	//@Override
 	public List<DataPointSet> getMetrics(long now)
 	{
 		List<DataPointSet> ret = new ArrayList<DataPointSet>();
 		for (String resource : counterMap.keySet())
 		{
+			//todo this is broken
 			DataPointSet dps = new DataPointSet("kairosdb.protocol.http_request_count");
 			dps.addTag("host", hostname);
 			dps.addTag("method", resource);

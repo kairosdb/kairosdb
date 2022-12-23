@@ -84,7 +84,7 @@ public class HealthCheckResourceTest
 		{
 			List<HealthStatus> list = new ArrayList<HealthStatus>();
 			list.add(new TestHealthStatus());
-			list.add(new DatastoreQueryHealthCheck(datastore));
+			list.add(new DatastoreQueryHealthCheck(datastore, "kairosdb."));
 
 			return list;
 		}

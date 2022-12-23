@@ -117,7 +117,7 @@
 
 		<dependency org="org.testng" name="testng" rev="6.8.5" conf="integration->default"/>
 
-		<dependency org="org.kairosdb" name="metrics4j" rev="0.5.0"/>
+		<dependency org="org.kairosdb" name="metrics4j" rev="0.20.0"/>
 
 		<!-- Dependencies removed in jdk9 -->
 		<dependency org="javax.xml.bind" name="jaxb-api" rev="2.3.0" conf="jdk11->default;testjdk11->default"/>

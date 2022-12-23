@@ -20,7 +20,8 @@ import com.google.inject.name.Named;
 import org.agileclick.genorm.runtime.Pair;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.LongDataPoint;
-import org.kairosdb.core.reporting.KairosMetricReporter;
+import org.kairosdb.core.reporting.QueryStats;
+import org.kairosdb.metrics4j.MetricSourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,24 +37,22 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
-public class QueryQueuingManager implements KairosMetricReporter
+public class QueryQueuingManager
 {
 	public static final Logger logger = LoggerFactory.getLogger(QueryQueuingManager.class);
+	private static final QueryStats stats = MetricSourceManager.getSource(QueryStats.class);
+
 	public static final String CONCURRENT_QUERY_THREAD = "kairosdb.datastore.concurrentQueryThreads";
-	public static final String QUERY_COLLISIONS_METRIC_NAME = "kairosdb.datastore.query_collisions";
 
 	private final Map<String, Pair<QueryMetric, Thread>> runningQueries = new HashMap<>();
 	private final ReentrantLock lock = new ReentrantLock();
 	private final Semaphore semaphore;
-	private final String hostname;
 
-	private AtomicInteger collisions = new AtomicInteger();
 
 	@Inject
-	public QueryQueuingManager(@Named(CONCURRENT_QUERY_THREAD) int concurrentQueryThreads, @Named("HOSTNAME") String hostname)
+	public QueryQueuingManager(@Named(CONCURRENT_QUERY_THREAD) int concurrentQueryThreads)
 	{
 		checkArgument(concurrentQueryThreads > 0);
-		this.hostname = requireNonNullOrEmpty(hostname);
 		semaphore = new Semaphore(concurrentQueryThreads, true);
 	}
 
@@ -64,7 +63,7 @@ public class QueryQueuingManager implements KairosMetricReporter
 		{
 			if (firstTime)
 			{
-				collisions.incrementAndGet();
+				stats.queryCollisions().put(1);
 				firstTime = false;
 			}
 			Thread.sleep(100);
@@ -157,13 +156,4 @@ public class QueryQueuingManager implements KairosMetricReporter
 		return semaphore.availablePermits();
 	}
 
-	@Override
-	public List<DataPointSet> getMetrics(long now)
-	{
-		DataPointSet collisionSet = new DataPointSet(QUERY_COLLISIONS_METRIC_NAME);
-		collisionSet.addTag("host", hostname);
-		collisionSet.addDataPoint(new LongDataPoint(System.currentTimeMillis(), collisions.getAndSet(0)));
-
-		return Collections.singletonList(collisionSet);
-	}
 }

@@ -7,24 +7,24 @@ import org.kairosdb.core.annotation.InjectProperty;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.exception.KairosDBException;
-import org.kairosdb.core.reporting.KairosMetricReporter;
 import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.DataPointEvent;
+import org.kairosdb.metrics4j.MetricSourceManager;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-public class FilterPlugin implements KairosDBService, KairosMetricReporter
+public class FilterPlugin implements KairosDBService
 {
+	private final static FilterStats stats = MetricSourceManager.getSource(FilterStats.class);
+
 	private final LongDataPointFactory m_dataPointFactory;
 	private Link m_filterChain = null;
 	private Link m_lastLink = null;
-	private AtomicInteger m_skippedMetrics = new AtomicInteger();
 
 	@Inject
 	public FilterPlugin(LongDataPointFactory dataPointFactory)
@@ -104,20 +104,6 @@ public class FilterPlugin implements KairosDBService, KairosMetricReporter
 
 	}
 
-	@Override
-	public List<DataPointSet> getMetrics(long now)
-	{
-		long skippedMetrics = m_skippedMetrics.getAndSet(0);
-		ImmutableList.Builder<DataPointSet> ret = ImmutableList.builder();
-
-		DataPointSet ds = new DataPointSet("kairosdb.filter.skipped_metrics");
-		ds.addTag("host", m_hostName);
-		ds.addDataPoint(m_dataPointFactory.createDataPoint(now, skippedMetrics));
-		ret.add(ds);
-
-		return ret.build();
-	}
-
 	private interface Link
 	{
 		DataPointEvent filter(DataPointEvent event);
@@ -153,7 +139,8 @@ public class FilterPlugin implements KairosDBService, KairosMetricReporter
 		{
 			if (m_filter.contains(event.getMetricName()))
 			{
-				m_skippedMetrics.incrementAndGet();
+				stats.skippedMetrics().put(1);
+
 				return null;
 			}
 			else
@@ -192,7 +179,7 @@ public class FilterPlugin implements KairosDBService, KairosMetricReporter
 			{
 				if (name.startsWith(m_filter[i]))
 				{
-					m_skippedMetrics.incrementAndGet();
+					stats.skippedMetrics().put(1);
 					return null;
 				}
 			}
@@ -233,7 +220,7 @@ public class FilterPlugin implements KairosDBService, KairosMetricReporter
 			{
 				if (m_filter[i].matcher(name).matches())
 				{
-					m_skippedMetrics.incrementAndGet();
+					stats.skippedMetrics().put(1);
 					return null;
 				}
 			}

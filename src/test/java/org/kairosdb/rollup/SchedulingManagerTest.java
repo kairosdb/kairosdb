@@ -14,10 +14,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class SchedulingManagerTest extends RollupTestBase
 {
 	private static final String SERVER_GUID = "12345";
+	private static final String NOT_SERVER_GUID = "555555";
 
 	@Mock
 	private KairosDatastore mockDatastore;
@@ -132,7 +134,7 @@ public class SchedulingManagerTest extends RollupTestBase
 	}
 
 	@Test
-	public void testUnscheduleRemovedTasks() throws KairosDBException
+	public void testUnscheduledRemovedTasks() throws KairosDBException
 	{
 		assignmentStore.setAssignment(TASK1.getId(), SERVER_GUID);
 		assignmentStore.setAssignment(TASK2.getId(), SERVER_GUID);
@@ -152,7 +154,7 @@ public class SchedulingManagerTest extends RollupTestBase
 	}
 
 	@Test
-	public void testUnschedulUnassignedTasks() throws KairosDBException
+	public void testUnscheduledUnassignedTasks() throws KairosDBException
 	{
 		assignmentStore.setAssignment(TASK1.getId(), SERVER_GUID);
 		assignmentStore.setAssignment(TASK2.getId(), SERVER_GUID);
@@ -169,5 +171,21 @@ public class SchedulingManagerTest extends RollupTestBase
 		JobDetailImpl job = SchedulingManager.createJobDetail(TASK2, mockDatastore, LOCAL_HOST, mockEventBus, mockStatusStore);
 		verify(mockScheduler, times(1)).cancel(job.getKey());
 		verify(mockScheduler, times(1)).schedule(SchedulingManager.createJobDetail(TASK2, mockDatastore, LOCAL_HOST, mockEventBus, mockStatusStore), SchedulingManager.createTrigger(TASK2));
+	}
+
+
+	@Test
+	public void testUnassignedTasks() throws KairosDBException
+	{
+		assignmentStore.setAssignment(TASK1.getId(), SERVER_GUID);
+		assignmentStore.setAssignment(TASK2.getId(), NOT_SERVER_GUID);
+		assignmentStore.setAssignment(TASK3.getId(), SERVER_GUID);
+		addTasks(TASK1, TASK2, TASK3);
+
+		manager.checkSchedulingChanges();
+
+		verify(mockScheduler, times(1)).schedule(SchedulingManager.createJobDetail(TASK1, mockDatastore, LOCAL_HOST, mockEventBus, mockStatusStore), SchedulingManager.createTrigger(TASK1));
+		verify(mockScheduler, times(1)).schedule(SchedulingManager.createJobDetail(TASK3, mockDatastore, LOCAL_HOST, mockEventBus, mockStatusStore), SchedulingManager.createTrigger(TASK3));
+		verifyNoMoreInteractions(mockScheduler);
 	}
 }

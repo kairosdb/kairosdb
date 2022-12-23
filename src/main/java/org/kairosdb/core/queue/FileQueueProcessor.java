@@ -9,6 +9,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.bigqueue.IBigArray;
+import org.kairosdb.metrics4j.MetricSourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FileQueueProcessor extends QueueProcessor
 {
 	public static final Logger logger = LoggerFactory.getLogger(FileQueueProcessor.class);
+	public static final QueueStats stats = MetricSourceManager.getSource(QueueStats.class);
 	public static final String SECONDS_TILL_CHECKPOINT = "kairosdb.queue_processor.seconds_till_checkpoint";
 
 	private final Object m_lock = new Object();
@@ -34,20 +36,13 @@ public class FileQueueProcessor extends QueueProcessor
 	private final CircularFifoQueue<IndexedEvent> m_memoryQueue;
 	private final DataPointEventSerializer m_eventSerializer;
 	private final List<DataPointEvent> m_internalMetrics = new ArrayList<>();
-	private AtomicInteger m_readFromFileCount = new AtomicInteger();
-	private AtomicInteger m_readFromQueueCount = new AtomicInteger();
 	private Stopwatch m_stopwatch = Stopwatch.createStarted();
 	private CompletionCallBack m_lastCallback = new CompletionCallBack();
 	private final int m_secondsTillCheckpoint;
-	private ImmutableSortedMap<String, String> m_reportTags = ImmutableSortedMap.of();
 	private volatile boolean m_shuttingDown;
 
 	private long m_nextIndex = -1L;
 
-	private String m_hostName = "none";
-
-	@Inject
-	private LongDataPointFactory m_dataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
 	public FileQueueProcessor(
@@ -67,14 +62,13 @@ public class FileQueueProcessor extends QueueProcessor
 		m_nextIndex = m_bigArray.getTailIndex();
 		m_secondsTillCheckpoint = secondsTillCheckpoint;
 		m_shuttingDown = false;
+
+		MetricSourceManager.addSource(QueueStats.class.getName(),
+				"memoryQueueSize", null, "Amount of data in the memory queue", () -> m_memoryQueue.size());
+		MetricSourceManager.addSource(QueueStats.class.getName(),
+				"fileQueueSize", null, "Amount of data in the file queue", () -> m_bigArray.getHeadIndex() - m_nextIndex);
 	}
 
-	@Inject
-	public void setHostName(@Named("HOSTNAME")String hostName)
-	{
-		m_hostName = hostName;
-		m_reportTags = ImmutableSortedMap.of("host", m_hostName);
-	}
 
 	@Override
 	public void shutdown()
@@ -208,7 +202,7 @@ public class FileQueueProcessor extends QueueProcessor
 							{
 								DataPointEvent dataPointEvent = m_eventSerializer.deserializeEvent(m_bigArray.get(m_nextIndex));
 								event = new IndexedEvent(dataPointEvent, m_nextIndex);
-								m_readFromFileCount.incrementAndGet();
+								stats.readFromFile().put(1);
 							}
 							catch (IOException ioe)
 							{
@@ -232,7 +226,7 @@ public class FileQueueProcessor extends QueueProcessor
 		}
 
 		//System.out.println(ret.size());
-		m_readFromQueueCount.getAndAdd(ret.size());
+		stats.processCount("file").put(ret.size());
 
 		m_lastCallback.increment();
 		m_lastCallback.setCompletionIndex(returnIndex);
@@ -256,55 +250,6 @@ public class FileQueueProcessor extends QueueProcessor
 
 		return callbackToReturn;
 	}
-
-
-
-	//@Override
-	public void addReportedMetrics(ArrayList<DataPointSet> metrics, long now)
-	{
-		long arraySize = m_bigArray.getHeadIndex() - m_nextIndex;
-		long readFromFile = m_readFromFileCount.getAndSet(0);
-		long readFromQueue = m_readFromQueueCount.getAndSet(0);
-		//System.out.println(readFromQueue);
-
-		synchronized (m_lock)
-		{
-			m_internalMetrics.add(new DataPointEvent("kairosdb.queue.file_queue.size", m_reportTags,
-					m_dataPointFactory.createDataPoint(now, arraySize)));
-
-			m_internalMetrics.add(new DataPointEvent("kairosdb.queue.read_from_file", m_reportTags,
-					m_dataPointFactory.createDataPoint(now, readFromFile)));
-
-			m_internalMetrics.add(new DataPointEvent("kairosdb.queue.process_count", m_reportTags,
-					m_dataPointFactory.createDataPoint(now, readFromQueue)));
-		}
-
-		/*
-		Metrics returned below are sent through the event bus and placed at the end of the queue.
-		The metrics above (which are the same) are effectively put at the beginning of the queue.
-		If the system is getting behind the only way to know that is by looking at the queue
-		size but if that data is at the end of the queue it doesn't do any good.
-		 */
-
-		DataPointSet dps = new DataPointSet("kairosdb.queue.file_queue.size");
-		dps.addTag("host", m_hostName);
-		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, arraySize));
-
-		metrics.add(dps);
-
-		dps = new DataPointSet("kairosdb.queue.read_from_file");
-		dps.addTag("host", m_hostName);
-		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, readFromFile));
-
-		metrics.add(dps);
-
-		dps = new DataPointSet("kairosdb.queue.process_count");
-		dps.addTag("host", m_hostName);
-		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, readFromQueue));
-
-		metrics.add(dps);
-	}
-
 
 
 	/**

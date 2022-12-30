@@ -277,6 +277,7 @@ authFileSet = new RegExFileSet("src/main/conf/auth", ".*")
 zipLibDir = "$programName/lib"
 zipBinDir = "$programName/bin"
 zipConfDir = "$programName/conf"
+zipMetricConfDir = "$zipConfDir/metrics"
 zipConfLoggingDir = "$zipConfDir/logging"
 zipWebRootDir = "$programName/webroot"
 zipAuthDir = "$programName/conf/auth"
@@ -288,6 +289,7 @@ tarRule = new TarRule("build/${programName}-${version}-${release}.tar")
 		.addFileSetTo(zipAuthDir, authFileSet)
 		.addFileTo(zipConfDir, "src/main/resources", "kairosdb.conf")
 		.addFileTo(zipConfLoggingDir, "src/main/resources", "logback.xml")
+		.addFileTo(zipMetricConfDir, "src/main/resources", "metrics4j.conf")
 		.setFilePermission(".*\\.sh", 0755)
 
 for (AbstractFileSet fs in libFileSets)
@@ -376,6 +378,8 @@ def doRPM(Rule rule)
 			new File("src/main/resources/logback.xml"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 	rpmBuilder.addFile("$rpmBaseInstallDir/bin/kairosdb-env.sh",
 			new File("src/scripts/kairosdb-env.sh"), 0755, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
+	rpmBuilder.addFile("$rpmBaseInstallDir/conf/metrics/metrics4j.conf",
+			new File("src/main/resources/metrics4j.conf"), 0644, new Directive(Directive.RPMFILE_CONFIG | Directive.RPMFILE_NOREPLACE))
 
 	for (AbstractFileSet.File f : webrootFileSet.getFiles())
 		rpmBuilder.addFile("$rpmBaseInstallDir/webroot/$f.file", new File(f.getBaseDir(), f.getFile()))

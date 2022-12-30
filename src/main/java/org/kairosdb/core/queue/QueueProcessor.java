@@ -5,18 +5,16 @@ import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.BatchReductionEvent;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.metrics4j.MetricSourceManager;
-import org.kairosdb.util.SimpleStatsReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 /**
  Created by bhawkins on 10/12/16.
  */
-public abstract class QueueProcessor// implements KairosMetricReporter
+public abstract class QueueProcessor
 {
 	public static final Logger logger = LoggerFactory.getLogger(QueueProcessor.class);
 	public static final QueueStats stats = MetricSourceManager.getSource(QueueStats.class);
@@ -37,9 +35,6 @@ public abstract class QueueProcessor// implements KairosMetricReporter
 	private final int m_minBatchWait;
 
 	private volatile ProcessorHandler m_processorHandler;
-
-	@Inject
-	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
 
 	public QueueProcessor(ExecutorService executor, int batchSize, int minimumBatchSize,
@@ -157,6 +152,8 @@ public abstract class QueueProcessor// implements KairosMetricReporter
 					List<DataPointEvent> results = get(m_batchSize);
 					//getCompletionCallBack must be called after get()
 					EventCompletionCallBack callbackToPass = getCompletionCallBack();
+
+					stats.batchStats().put(results.size());
 
 					boolean fullBatch = false;
 

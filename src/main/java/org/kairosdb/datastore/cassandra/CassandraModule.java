@@ -87,7 +87,6 @@ public class CassandraModule extends AbstractModule
 		bind(CassandraConfiguration.class).in(Scopes.SINGLETON);
 		//bind(CassandraClient.class).to(CassandraClientImpl.class);
 		//bind(CassandraClientImpl.class).in(Scopes.SINGLETON);
-		bind(BatchStats.class).in(Scopes.SINGLETON);
 
 		bind(new TypeLiteral<Map<String, String>>(){}).annotatedWith(Names.named(CASSANDRA_AUTH_MAP))
 				.toInstance(m_authMap);

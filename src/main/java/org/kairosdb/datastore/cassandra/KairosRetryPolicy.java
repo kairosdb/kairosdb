@@ -15,17 +15,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
 
-public class KairosRetryPolicy implements RetryPolicy//, KairosMetricReporter
+public class KairosRetryPolicy implements RetryPolicy
 {
 	public static final Logger logger = LoggerFactory.getLogger(KairosRetryPolicy.class);
 	private static final RetryStats stats = MetricSourceManager.getSource(RetryStats.class);
 
 	private final int m_retryCount;
-
-	//private AtomicInteger m_readRetries = new AtomicInteger(0);
-	//private AtomicInteger m_writeRetries = new AtomicInteger(0);
-	//private AtomicInteger m_unavailableRetries = new AtomicInteger(0);
-	//private AtomicInteger m_errorRetries = new AtomicInteger(0);
 
 	@Inject
 	@Named("HOSTNAME")
@@ -108,32 +103,4 @@ public class KairosRetryPolicy implements RetryPolicy//, KairosMetricReporter
 		logger.info("Closing KairosRetryPolicy");
 	}
 
-	/*@Override
-	public List<DataPointSet> getMetrics(long now)
-	{
-		List<DataPointSet> ret = new ArrayList<>();
-
-		Map<String, String> tags = new HashMap<>();
-		tags.put("host", m_hostName);
-		tags.put("cluster", m_clusterName);
-
-		tags.put("retry_type", "read_timeout");
-		ret.add(new DataPointSet("kairosdb.datastore.cassandra.retry_count", tags,
-				Collections.singletonList(m_longDataPointFactory.createDataPoint(now, m_readRetries.getAndSet(0)))));
-
-		tags.put("retry_type", "write_timeout");
-		ret.add(new DataPointSet("kairosdb.datastore.cassandra.retry_count", tags,
-				Collections.singletonList(m_longDataPointFactory.createDataPoint(now, m_writeRetries.getAndSet(0)))));
-
-		tags.put("retry_type", "unavailable");
-		ret.add(new DataPointSet("kairosdb.datastore.cassandra.retry_count", tags,
-				Collections.singletonList(m_longDataPointFactory.createDataPoint(now, m_unavailableRetries.getAndSet(0)))));
-
-		tags.put("retry_type", "request_error");
-		ret.add(new DataPointSet("kairosdb.datastore.cassandra.retry_count", tags,
-				Collections.singletonList(m_longDataPointFactory.createDataPoint(now, m_errorRetries.getAndSet(0)))));
-
-
-		return ret;
-	}*/
 }

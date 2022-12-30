@@ -118,7 +118,7 @@ public class DataPointsParser
 			validationErrors.addErrorMessage("Invalid json. No content due to end of input.");
 		}
 
-		ingestTime = timer.elapsed(TimeUnit.MILLISECONDS);
+		ingestTime = timer.elapsed(TimeUnit.NANOSECONDS);
 
 		return validationErrors;
 	}

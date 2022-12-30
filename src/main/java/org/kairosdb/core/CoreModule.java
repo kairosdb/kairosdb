@@ -57,7 +57,6 @@ import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.sample.SampleQueryPlugin;
 import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.MemoryMonitor;
-import org.kairosdb.util.SimpleStatsReporter;
 import org.kairosdb.util.Util;
 import org.kairosdb.bigqueue.BigArrayImpl;
 import org.slf4j.Logger;
@@ -209,7 +208,6 @@ public class CoreModule extends AbstractModule
 		bind(KairosDBSchedulerImpl.class).in(Singleton.class);
 		bind(MemoryMonitor.class).in(Singleton.class);
 		bind(DataPointEventSerializer.class).in(Singleton.class);
-		bind(SimpleStatsReporter.class);
 
 		//Setup sink for internal Metrics4j reporting
 		bind(InternalSinkSetup.class).asEagerSingleton();

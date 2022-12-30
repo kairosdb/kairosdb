@@ -17,6 +17,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -64,9 +65,9 @@ public class FileQueueProcessor extends QueueProcessor
 		m_shuttingDown = false;
 
 		MetricSourceManager.addSource(QueueStats.class.getName(),
-				"memoryQueueSize", null, "Amount of data in the memory queue", () -> m_memoryQueue.size());
+				"memoryQueueSize", Collections.emptyMap(), "Amount of data in the memory queue", () -> m_memoryQueue.size());
 		MetricSourceManager.addSource(QueueStats.class.getName(),
-				"fileQueueSize", null, "Amount of data in the file queue", () -> m_bigArray.getHeadIndex() - m_nextIndex);
+				"fileQueueSize", Collections.emptyMap(), "Amount of data in the file queue", () -> m_bigArray.getHeadIndex() - m_nextIndex);
 	}
 
 

@@ -26,13 +26,11 @@ import org.kairosdb.core.http.rest.json.TestQueryPluginFactory;
 import org.kairosdb.core.processingstage.FeatureProcessingFactory;
 import org.kairosdb.core.processingstage.FeatureProcessor;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
-import org.kairosdb.core.scheduler.KairosDBSchedulerImpl;
 import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.testing.Client;
-import org.kairosdb.util.SimpleStatsReporter;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Trigger;
@@ -120,7 +118,6 @@ public abstract class ResourceBase
                 bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
                 bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
                 bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
-                bind(SimpleStatsReporter.class);
 
 
                 bind(DoubleDataPointFactory.class)

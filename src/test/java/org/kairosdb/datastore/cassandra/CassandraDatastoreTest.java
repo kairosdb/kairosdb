@@ -288,7 +288,6 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 				EnumSet.of(ClusterConnection.Type.WRITE, ClusterConnection.Type.META),
 				ImmutableMultimap.of(TAG_INDEXED_ROW_KEY_METRIC, "*")).startup(false);
 		m_rowSpec = m_clusterConnection.getRowSpec();
-		BatchStats batchStats = new BatchStats();
 		DataCache<DataPointsRowKey> rowKeyCache = new DataCache<>(1024);
 		DataCache<TimedString> metricNameCache = new DataCache<>(1024);
 

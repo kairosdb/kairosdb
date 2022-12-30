@@ -125,8 +125,8 @@ public class SchedulingManagerTest extends RollupTestBase
 
 		manager.checkSchedulingChanges();
 
-		verify(mockScheduler, times(1)).schedule(SchedulingManager.createJobDetail(TASK1, mockDatastore, LOCAL_HOST, mockEventBus, mockStatusStore), SchedulingManager.createTrigger(TASK1));
-		verify(mockScheduler, times(1)).schedule(SchedulingManager.createJobDetail(TASK3, mockDatastore, LOCAL_HOST, mockEventBus, mockStatusStore), SchedulingManager.createTrigger(TASK3));
+		verify(mockScheduler, times(1)).schedule(SchedulingManager.createJobDetail(TASK1), SchedulingManager.createTrigger(TASK1));
+		verify(mockScheduler, times(1)).schedule(SchedulingManager.createJobDetail(TASK3), SchedulingManager.createTrigger(TASK3));
 		verifyNoMoreInteractions(mockScheduler);
 	}
 }

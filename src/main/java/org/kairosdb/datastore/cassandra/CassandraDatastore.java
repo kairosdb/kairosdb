@@ -56,7 +56,6 @@ import org.kairosdb.metrics4j.MetricSourceManager;
 import org.kairosdb.util.IngestExecutorService;
 import org.kairosdb.util.KDataInput;
 import org.kairosdb.util.MemoryMonitor;
-import org.kairosdb.util.SimpleStatsReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,9 +116,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 	private final Map<String, ClusterConnection> m_clusterMap;
 
 	@Inject
-	private final BatchStats m_batchStats = new BatchStats();
-
-	@Inject
 	private DataCache<DataPointsRowKey> m_rowKeyCache = new DataCache<DataPointsRowKey>(1024);
 	@Inject
 	private DataCache<TimedString> m_metricNameCache = new DataCache<>(1024);
@@ -132,9 +128,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 	private final CassandraModule.CQLFilteredRowKeyIteratorFactory m_rowKeyFilterFactory;
 
 	private CassandraConfiguration m_cassandraConfiguration;
-
-	@Inject
-	private SimpleStatsReporter m_simpleStatsReporter = new SimpleStatsReporter();
 
 	@Inject
 	@Named("kairosdb.queue_processor.batch_size")
@@ -313,7 +306,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 
 		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);
 
-		Set<String> ret = new HashSet<String>();
+		Set<String> ret = new TreeSet<String>();
 
 		try
 		{

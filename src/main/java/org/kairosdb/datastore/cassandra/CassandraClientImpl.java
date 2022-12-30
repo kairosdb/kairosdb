@@ -30,7 +30,7 @@ import java.util.Map;
 /**
  Created by bhawkins on 3/4/15.
  */
-public class CassandraClientImpl implements CassandraClient, KairosPostConstructInit//, KairosMetricReporter
+public class CassandraClientImpl implements CassandraClient, KairosPostConstructInit
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraClientImpl.class);
 
@@ -180,6 +180,18 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 			m_snapshot = m_metrics.getRequestsTimer().getSnapshot();
 		}
 
+		@Reported(help = "Cleint bytes sent to Cassandra")
+		public long bytesSent()
+		{
+			return m_metrics.getBytesSent().getCount();
+		}
+
+		@Reported(help = "Cleint bytes received from Cassandra")
+		public long bytesReceived()
+		{
+			return m_metrics.getBytesReceived().getCount();
+		}
+
 		@Reported(help = "Client connection errors")
 		public long connectionErrors()
 		{
@@ -211,7 +223,7 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 		}
 
 		@Reported(help = "Number of open connections")
-		public long getOpenConnections()
+		public long openConnections()
 		{
 			return m_metrics.getOpenConnections().getValue();
 		}

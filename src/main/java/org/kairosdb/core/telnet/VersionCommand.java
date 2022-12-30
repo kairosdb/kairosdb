@@ -28,20 +28,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
-public class VersionCommand implements TelnetCommand//, KairosMetricReporter
+public class VersionCommand implements TelnetCommand
 {
 	private static final TelnetStats stats = MetricSourceManager.getSource(TelnetStats.class);
 
 	private AtomicInteger m_counter = new AtomicInteger();
-	private final LongDataPointFactory m_dataPointFactory;
-	private String m_hostName;
 
 	@Inject
-	public VersionCommand(@Named("HOSTNAME") String hostname, LongDataPointFactory factory)
+	public VersionCommand()
 	{
-		requireNonNullOrEmpty(hostname);
-		m_hostName = hostname;
-		m_dataPointFactory = factory;
 	}
 
 	@Override
@@ -63,14 +58,4 @@ public class VersionCommand implements TelnetCommand//, KairosMetricReporter
 		return ("version");
 	}
 
-	/*@Override
-	public List<DataPointSet> getMetrics(long now)
-	{
-		DataPointSet dps = new DataPointSet(REPORTING_METRIC_NAME);
-		dps.addTag("host", m_hostName);
-		dps.addTag("method", "version");
-		dps.addDataPoint(m_dataPointFactory.createDataPoint(now, m_counter.getAndSet(0)));
-
-		return (Collections.singletonList(dps));
-	}*/
 }

@@ -72,6 +72,8 @@ public class RollUpJob implements InterruptableJob
 			for (Rollup rollup : task.getRollups())
 			{
 				log.info("Executing Rollup Task: " + task.getName() + " for Rollup  " + rollup.getSaveAs());
+				stats.jobRunCount(rollup.getSaveAs(), task.getName()).put(1);
+				stats.jobQueryCount(rollup.getSaveAs(), task.getName()).put(rollup.getQueryMetrics().size());
 
 				RollupTaskStatus status = new RollupTaskStatus(jobExecutionContext.getNextFireTime(), m_hostName);
 				RollupProcessor processor = new RollupProcessorImpl(m_datastore);

@@ -44,7 +44,6 @@ import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.metrics4j.MetricSourceManager;
 import org.kairosdb.metrics4j.MetricThreadHelper;
 import org.kairosdb.util.MemoryMonitorException;
-import org.kairosdb.util.StatsMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,14 +99,7 @@ public class MetricsResource
 	//Used for parsing incoming metrics
 	private final Gson gson;
 
-	private final StatsMap m_statsMap = new StatsMap();
 	private final KairosDataPointFactory m_kairosDataPointFactory;
-
-	@Inject
-	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
-
-	@Inject
-	private StringDataPointFactory m_stringDataPointFactory = new StringDataPointFactory();
 
 	@Inject(optional = true)
 	private QueryPreProcessorContainer m_queryPreProcessor = new QueryPreProcessorContainer()
@@ -308,7 +300,7 @@ public class MetricsResource
 			ValidationErrors validationErrors = parser.parse();
 
 			stats.ingestCount().put(parser.getDataPointCount());
-			stats.ingestTime().put(Duration.ofMillis(parser.getIngestTime()));
+			stats.ingestTime().put(Duration.ofNanos(parser.getIngestTime()));
 
 			if (!validationErrors.hasErrors())
 				return setHeaders(Response.status(Response.Status.NO_CONTENT)).build();

@@ -50,19 +50,10 @@ saw.setProperty(PomRule.URL_PROPERTY, "http://kairosdb.org")
 saw = Tablesaw.getCurrentTablesaw()
 saw.includeDefinitionFile("definitions.xml")
 
-//add -D usejdk11=true for java 11 compile
-useJdk11 = saw.getProperty("usejdk11", "false").equals("true")
 
-javaVersion = "1.8"
+javaVersion = "11"
 defaultConfig = "default"
 testConfig = "test"
-
-if (useJdk11)
-{
-	javaVersion = "11"
-	defaultConfig = "jdk11"
-	testConfig = "testjdk11"
-}
 
 ivyConfig = [defaultConfig, "integration"]
 
@@ -294,6 +285,11 @@ tarRule = new TarRule("build/${programName}-${version}-${release}.tar")
 
 for (AbstractFileSet fs in libFileSets)
 	tarRule.addFileSetTo(zipLibDir, fs)
+
+buildPlugins.each { plugin, jars ->
+	libDir = "$zipLibDir/$plugin"
+	tarRule.addFileSetTo(libDir, jars)
+}
 
 
 gzipRule = new GZipRule("package").setSource(tarRule.getTarget())

@@ -222,7 +222,8 @@ public class KairosDatastore implements KairosPostConstructInit
 
 	public Iterable<String> getMetricNames(String prefix) throws DatastoreException
 	{
-		return (m_datastore.getMetricNames(prefix));
+		Iterable<String> metricNames = m_datastore.getMetricNames(prefix);
+		return metricNames;
 	}
 
 	public Iterable<String> getTagNames() throws DatastoreException

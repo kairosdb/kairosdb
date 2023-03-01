@@ -1,5 +1,6 @@
 package org.kairosdb.core.reporting;
 
+import org.kairosdb.metrics4j.annotation.Key;
 import org.kairosdb.metrics4j.collectors.DurationCollector;
 import org.kairosdb.metrics4j.collectors.LongCollector;
 import org.kairosdb.metrics4j.collectors.StringCollector;
@@ -14,6 +15,8 @@ public interface QueryStats
 	LongCollector queriesWaiting();
 
 	DurationCollector queryStartTime();
+
+	LongCollector metricNameCount(@Key("has_prefix") boolean hasPrefix);
 
 	//kairosdb.datastore.query_time
 	DurationCollector queryTime();

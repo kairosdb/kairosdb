@@ -50,7 +50,7 @@ public class MetadataResource
 			checkLocalService(service);
 			Iterable<String> keys = m_keyStore.listServiceKeys(service);
 			ResponseBuilder responseBuilder = Response.status(Status.OK).entity(
-					new ValuesStreamingOutput(jsonFormatter, keys));
+					new ValuesStreamingOutput(jsonFormatter, keys, null));
 			setHeaders(responseBuilder);
 			return responseBuilder.build();
 		}
@@ -81,7 +81,7 @@ public class MetadataResource
 					m_keyStore.listKeys(service, serviceKey, startsWidth);
 
 			ResponseBuilder responseBuilder = Response.status(Status.OK).entity(
-					new ValuesStreamingOutput(jsonFormatter, keys));
+					new ValuesStreamingOutput(jsonFormatter, keys, null));
 			setHeaders(responseBuilder);
 			return responseBuilder.build();
 		}

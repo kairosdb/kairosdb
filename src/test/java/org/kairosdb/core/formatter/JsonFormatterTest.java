@@ -22,6 +22,7 @@ import org.kairosdb.core.datastore.DataPointGroup;
 import org.kairosdb.core.datastore.StringIterable;
 import org.kairosdb.core.groupby.TagGroupBy;
 import org.kairosdb.core.groupby.TagGroupByResult;
+import org.kairosdb.metrics4j.collectors.LongCollector;
 import org.kairosdb.testing.ListDataPointGroup;
 
 import java.io.StringWriter;
@@ -29,6 +30,8 @@ import java.util.*;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class JsonFormatterTest
 {
@@ -48,6 +51,24 @@ public class JsonFormatterTest
 		StringWriter writer = new StringWriter();
 
 		formatter.format(writer, (List<List<DataPointGroup>>)null);
+	}
+
+	@Test
+	public void test_format_counter() throws FormatterException
+	{
+		JsonFormatter formatter = new JsonFormatter();
+		StringWriter writer = new StringWriter();
+		List<String> list = new ArrayList<>();
+		list.add("one");
+		list.add("two");
+		list.add("three");
+		list.add("four");
+		list.add("five");
+		LongCollector collector = mock(LongCollector.class);
+
+		formatter.format(writer, list, collector);
+
+		verify(collector).put(5);
 	}
 
 	@Test
@@ -134,7 +155,7 @@ public class JsonFormatterTest
 	{
 		JsonFormatter formatter = new JsonFormatter();
 
-		formatter.format(null, new TestStringIterable());
+		formatter.format(null, new TestStringIterable(), null);
 	}
 
 	@Test(expected = NullPointerException.class)
@@ -143,7 +164,7 @@ public class JsonFormatterTest
 		JsonFormatter formatter = new JsonFormatter();
 		StringWriter writer = new StringWriter();
 
-		formatter.format(writer, (StringIterable)null);
+		formatter.format(writer, (StringIterable)null, null);
 	}
 
 	@Test
@@ -151,7 +172,7 @@ public class JsonFormatterTest
 	{
 		JsonFormatter formatter = new JsonFormatter();
 		StringWriter writer = new StringWriter();
-		formatter.format(writer, new TestStringIterable());
+		formatter.format(writer, new TestStringIterable(), null);
 
 		assertThat(writer.toString(), equalTo("{\"results\":[\"Phil\",\"Bob\",\"Larry\",\"Moe\",\"Curly\"]}"));
 	}

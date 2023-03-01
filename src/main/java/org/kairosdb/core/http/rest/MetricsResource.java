@@ -43,6 +43,7 @@ import org.kairosdb.eventbus.Publisher;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.metrics4j.MetricSourceManager;
 import org.kairosdb.metrics4j.MetricThreadHelper;
+import org.kairosdb.metrics4j.collectors.LongCollector;
 import org.kairosdb.util.MemoryMonitorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -758,7 +759,7 @@ public class MetricsResource
 			DataFormatter formatter = formatters.get("json");
 
 			ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity(
-					new ValuesStreamingOutput(formatter, values));
+					new ValuesStreamingOutput(formatter, values, queryStats.metricNameCount(prefix != null)));
 			setHeaders(responseBuilder);
 			return responseBuilder.build();
 		}
@@ -775,11 +776,13 @@ public class MetricsResource
 	{
 		private DataFormatter m_formatter;
 		private Iterable<String> m_values;
+		private LongCollector m_collector;
 
-		public ValuesStreamingOutput(DataFormatter formatter, Iterable<String> values)
+		public ValuesStreamingOutput(DataFormatter formatter, Iterable<String> values, LongCollector countMetric)
 		{
 			m_formatter = formatter;
 			m_values = values;
+			m_collector = countMetric;
 		}
 
 		@SuppressWarnings("ResultOfMethodCallIgnored")
@@ -789,7 +792,7 @@ public class MetricsResource
 
 			try
 			{
-				m_formatter.format(writer, m_values);
+				m_formatter.format(writer, m_values, m_collector);
 			}
 			catch (FormatterException e)
 			{

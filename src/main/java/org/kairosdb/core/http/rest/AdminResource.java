@@ -1,9 +1,9 @@
 package org.kairosdb.core.http.rest;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import org.apache.commons.lang3.tuple.Pair;
 import org.kairosdb.core.datastore.QueryMetric;
 import org.kairosdb.core.datastore.QueryQueuingManager;
 import org.kairosdb.core.exception.KairosDBException;
@@ -11,8 +11,6 @@ import org.kairosdb.core.http.rest.json.ErrorResponse;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.agileclick.genorm.runtime.Pair;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -72,8 +70,8 @@ public class AdminResource
 			for (Pair<String, QueryMetric> query : runningQueries)
 			{
 				JsonObject queryJson = new JsonObject();
-				String queryHash = query.getFirst();
-				QueryMetric queryMetric = query.getSecond();
+				String queryHash = query.getLeft();
+				QueryMetric queryMetric = query.getRight();
 				queryJson.addProperty("query hash", queryHash);
 				queryJson.addProperty("metric name", queryMetric.getName());
 				queryJson.add("query JSON", queryMetric.getJsonObj());

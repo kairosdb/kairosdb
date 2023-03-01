@@ -16,6 +16,7 @@
 package org.kairosdb.core.formatter;
 
 import org.kairosdb.core.datastore.DataPointGroup;
+import org.kairosdb.metrics4j.collectors.LongCollector;
 
 import java.io.Writer;
 import java.util.List;
@@ -24,5 +25,5 @@ public interface DataFormatter
 {
 	void format(Writer writer, List<List<DataPointGroup>> data) throws FormatterException;
 
-	void format(Writer writer, Iterable<String> iterable) throws FormatterException;
+	void format(Writer writer, Iterable<String> iterable, LongCollector collector) throws FormatterException;
 }

@@ -17,25 +17,19 @@ package org.kairosdb.core.datastore;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.agileclick.genorm.runtime.Pair;
-import org.kairosdb.core.DataPointSet;
-import org.kairosdb.core.datapoints.LongDataPoint;
+import org.apache.commons.lang3.tuple.Pair;
 import org.kairosdb.core.reporting.QueryStats;
 import org.kairosdb.metrics4j.MetricSourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class QueryQueuingManager
 {
@@ -95,7 +89,7 @@ public class QueryQueuingManager
 			hashConflict = runningQueries.containsKey(queryHash);
 			if (!hashConflict)
 			{
-				runningQueries.put(queryHash, new Pair<>(metric, Thread.currentThread()));
+				runningQueries.put(queryHash, Pair.of(metric, Thread.currentThread()));
 			}
 		}
 		finally
@@ -120,7 +114,7 @@ public class QueryQueuingManager
 		{
 			for (String key : runningQueries.keySet())
 			{
-				runningQueriesList.add(new Pair<String, QueryMetric>(key, runningQueries.get(key).getFirst()));
+				runningQueriesList.add(Pair.of(key, runningQueries.get(key).getLeft()));
 			}
 		}
 		finally
@@ -137,7 +131,7 @@ public class QueryQueuingManager
 		{
 			if (runningQueries.get(queryHash) != null)
 			{
-				runningQueries.get(queryHash).getSecond().interrupt();    // Call interrupt on Thread associated with provided query hash
+				runningQueries.get(queryHash).getRight().interrupt();    // Call interrupt on Thread associated with provided query hash
 			}
 		}
 		finally

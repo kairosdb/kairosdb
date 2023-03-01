@@ -13,6 +13,7 @@ public interface QueryStats
 	//kairosdb.datastore.queries_waiting
 	LongCollector queriesWaiting();
 
+	DurationCollector queryStartTime();
 
 	//kairosdb.datastore.query_time
 	DurationCollector queryTime();

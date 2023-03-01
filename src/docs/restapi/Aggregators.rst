@@ -68,8 +68,9 @@ the following parameters on any range aggregator.
   that align_start_time and align_end_time are mutually exclusive. If more than one are set, unexpected
   results will occur.
 
-**align_sampling** - (boolean, optional, default value: false)
+**align_sampling** - (boolean, optional, default value: true)
 
+    Define sampling: The chunk of time you aggregate over.
     Setting this to true will cause the aggregation range to be aligned based on
     the sampling size.  For example if your sample size is either milliseconds,
     seconds, minutes or hours then the start of the range will always be at the top

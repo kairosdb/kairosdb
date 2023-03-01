@@ -1,8 +1,8 @@
-import org.freecompany.redline.Builder
-import org.freecompany.redline.header.Architecture
-import org.freecompany.redline.header.Os
-import org.freecompany.redline.header.RpmType
-import org.freecompany.redline.payload.Directive
+import org.redline_rpm.Builder
+import org.redline_rpm.header.Architecture
+import org.redline_rpm.header.Os
+import org.redline_rpm.header.RpmType
+import org.redline_rpm.payload.Directive
 import tablesaw.*
 import tablesaw.addons.GZipRule
 import tablesaw.addons.TarRule

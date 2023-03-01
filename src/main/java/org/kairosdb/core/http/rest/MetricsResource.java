@@ -509,9 +509,10 @@ public class MetricsResource
 			{
 				queryCount++;
 				MetricThreadHelper.addTag(METRIC_NAME_TAG, query.getName());
-				//ThreadReporter.addTag(METRIC_NAME_TAG, query.getName());
 				MetricThreadHelper.addTag(QUERY_INDEX_TAG, String.valueOf(queryCount));
-				//ThreadReporter.addTag(QUERY_INDEX_TAG, String.valueOf(queryCount));
+
+				//report how far back the query goes
+				queryStats.queryStartTime().put(Duration.ofMillis(System.currentTimeMillis() - query.getStartTime()));
 
 				DatastoreQuery dq = datastore.createQuery(query);
 				long startQuery = System.currentTimeMillis();
@@ -521,8 +522,6 @@ public class MetricsResource
 					List<DataPointGroup> results = dq.execute();
 					jsonResponse.formatQuery(results, query.isExcludeTags(), dq.getSampleSize(), true);
 
-					//ThreadReporter.addDataPoint(QUERY_TIME, System.currentTimeMillis() - startQuery);
-					//ThreadReporter.reportQueryTime(Duration.ofMillis(System.currentTimeMillis() - startQuery));
 					stats.queryTime().put(Duration.ofMillis(System.currentTimeMillis() - startQuery));
 				}
 				finally

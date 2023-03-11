@@ -180,6 +180,8 @@ data:
                             # Follow the instructions found here: http://docs.datastax.com/en/developer/java-driver/3.1/manual/ssl/
                             # to create a keystore and pass the values into Kairos using the -D switches
                             use_ssl: false
+                            auth.user_name=${?CASSANDRA_USER}
+                            auth.password=${?CASSANDRA_PASSWORD}
 
                             tag_indexed_row_key_lookup_metrics: []
                     }

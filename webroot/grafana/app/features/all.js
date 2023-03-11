@@ -1,4 +1,0 @@
-define([
-	'./panellinkeditor/module',
-], function () {
-});

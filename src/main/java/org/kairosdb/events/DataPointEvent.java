@@ -81,4 +81,15 @@ public class DataPointEvent
 		result = 31 * result + m_ttl;
 		return result;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "DataPointEvent{" +
+				"m_metricName='" + m_metricName + '\'' +
+				", m_tags=" + m_tags +
+				", m_dataPoint=" + m_dataPoint +
+				", m_ttl=" + m_ttl +
+				'}';
+	}
 }

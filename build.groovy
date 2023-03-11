@@ -261,7 +261,7 @@ libFileSets = [
 		ivyFileSet
 	]
 
-scriptsFileSet = new RegExFileSet("src/scripts", ".*").addExcludeFile("kairosdb-env.sh")
+scriptsFileSet = new RegExFileSet("src/scripts", ".*")
 webrootFileSet = new RegExFileSet("webroot", ".*").recurse()
 authFileSet = new RegExFileSet("src/main/conf/auth", ".*")
 

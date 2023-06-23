@@ -1,8 +1,16 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.*;
-import com.datastax.driver.core.exceptions.InvalidQueryException;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.cql.Statement;
+import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
+import com.datastax.oss.driver.api.core.servererrors.InvalidQueryException;
+import com.datastax.oss.driver.api.core.session.Session;
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -20,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -29,8 +38,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.ROW_KEY_METRIC_NAMES;
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.serializeString;
@@ -306,7 +315,7 @@ public class ClusterConnection
 	public PreparedStatement psServiceIndexGetEntries;
 	public PreparedStatement psDataPointsDelete;
 
-	private Session m_session;
+	private CqlSession m_session;
 	private final CassandraClient m_cassandraClient;
 	private boolean m_readonlyMode;
 	private final EnumSet<Type> m_clusterType;
@@ -572,7 +581,7 @@ public class ClusterConnection
 		return m_session.execute(statement);
 	}
 
-	public ResultSetFuture executeAsync(Statement statement)
+	public CompletionStage<AsyncResultSet> executeAsync(Statement statement)
 	{
 		return m_session.executeAsync(statement);
 	}
@@ -594,13 +603,13 @@ public class ClusterConnection
 
 	private void setupSchema(CassandraClient cassandraClient, EnumSet<Type> clusterType)
 	{
-		try (Session session = cassandraClient.getSession())
+		try (CqlSession session = cassandraClient.getSession())
 		{
 			session.execute(String.format(CREATE_KEYSPACE, cassandraClient.getKeyspace(),
 					cassandraClient.getReplication()));
 		}
 
-		try (Session session = cassandraClient.getKeyspaceSession())
+		try (CqlSession session = cassandraClient.getKeyspaceSession())
 		{
 			if (clusterType.contains(Type.WRITE))
 			{
@@ -669,9 +678,9 @@ public class ClusterConnection
 					psRowKeyInsert.bind()
 							.setString(0, rowKey.getMetricName())
 							.setString(1, DATA_POINTS_TABLE_NAME)
-							.setTimestamp(2, new Date(rowKey.getTimestamp()))
+							.setInstant(2, Instant.ofEpochMilli(rowKey.getTimestamp()))
 							.setString(3, rowKey.getDataType())
-							.setMap(4, rowKey.getTags())
+							.setMap(4, rowKey.getTags(), String.class, String.class)
 							.setInt(5, rowKeyTtl)
 							.setIdempotent(true);
 		}
@@ -691,9 +700,9 @@ public class ClusterConnection
 					psRowKeyDelete.bind()
 							.setString(0, rowKey.getMetricName())
 							.setString(1, DATA_POINTS_TABLE_NAME)
-							.setTimestamp(2, new Date(rowKey.getTimestamp()))
+							.setInstant(2, Instant.ofEpochMilli(rowKey.getTimestamp()))
 							.setString(3, rowKey.getDataType())
-							.setMap(4, rowKey.getTags())
+							.setMap(4, rowKey.getTags(), String.class, String.class)
 							.setIdempotent(true);
 		}
 
@@ -708,15 +717,15 @@ public class ClusterConnection
 
 
 		@Override
-		public ListenableFuture<ResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
+		public CompletionStage<AsyncResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
 		{
 			BoundStatement statement = psRowKeyQuery.bind()
 					.setString(0, metricName)
 					.setString(1, DATA_POINTS_TABLE_NAME)
-					.setTimestamp(2, new Date(rowKeyTimestamp));
+					.setInstant(2, Instant.ofEpochMilli(rowKeyTimestamp));
 
 			statement.setConsistencyLevel(getReadConsistencyLevel());
-			ResultSetFuture resultSetFuture = executeAsync(statement);
+			CompletionStage<AsyncResultSet> resultSetFuture = executeAsync(statement);
 			return resultSetFuture;
 		}
 
@@ -776,18 +785,18 @@ public class ClusterConnection
 		{
 			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
 			List<Statement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
-			Date rowKeyTimestamp = new Date(rowKey.getTimestamp());
+			Instant rowKeyTimestamp = Instant.ofEpochMilli(rowKey.getTimestamp());
 			for (String tagPair : tagSetHash.getTagPairHashes())
 			{
 				insertStatements.add(
 						psTagIndexedRowKeyInsert.bind()
 								.setString(0, rowKey.getMetricName())
 								.setString(1, DATA_POINTS_TABLE_NAME)
-								.setTimestamp(2, rowKeyTimestamp)
+								.setInstant(2, rowKeyTimestamp)
 								.setString(3, rowKey.getDataType())
 								.setString(4, tagPair)
 								.setInt(5, tagSetHash.getTagCollectionHash())
-								.setMap(6, rowKey.getTags())
+								.setMap(6, rowKey.getTags(), String.class, String.class)
 								.setInt(7, rowKeyTtl)
 								.setIdempotent(true));
 			}
@@ -800,17 +809,17 @@ public class ClusterConnection
 		{
 			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
 			List<Statement> deleteStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
-			Date rowKeyTimestamp = new Date(rowKey.getTimestamp());
+			Instant rowKeyTimestamp = Instant.ofEpochMilli(rowKey.getTimestamp());
 			for (String tagPair : tagSetHash.getTagPairHashes()) {
 				deleteStatements.add(
 						psTagIndexedRowKeyDelete.bind()
 								.setString(0, rowKey.getMetricName())
 								.setString(1, DATA_POINTS_TABLE_NAME)
-								.setTimestamp(2, rowKeyTimestamp)
+								.setInstant(2, rowKeyTimestamp)
 								.setString(3, rowKey.getDataType())
 								.setString(4, tagPair)
 								.setInt(5, tagSetHash.getTagCollectionHash())
-								.setMap(6, rowKey.getTags()));
+								.setMap(6, rowKey.getTags(), String.class, String.class));
 			}
 
 			//Need to delete from row keys table as well
@@ -820,7 +829,7 @@ public class ClusterConnection
 		}
 
 		@Override
-		public ListenableFuture<ResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
+		public CompletionStage<AsyncResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
 		{
 			//Todo: there is probably still to much going on in this method and can likely be simplified
 			if (tags.isEmpty())
@@ -835,7 +844,7 @@ public class ClusterConnection
 			{
 				Statement rowKeyQueryStmt = queryStatementByTagName.values().iterator().next();
 				rowKeyQueryStmt.setConsistencyLevel(getReadConsistencyLevel());
-				ResultSetFuture resultSetFuture = executeAsync(rowKeyQueryStmt);
+				CompletionStage<AsyncResultSet> resultSetFuture = executeAsync(rowKeyQueryStmt);
 
 				return resultSetFuture;
 			}
@@ -857,7 +866,7 @@ public class ClusterConnection
 				for (Statement rowKeyQueryStmt : queryStatements)
 				{
 					rowKeyQueryStmt.setConsistencyLevel(getReadConsistencyLevel());
-					ResultSetFuture resultSetFuture = executeAsync(rowKeyQueryStmt);
+					CompletionStage<AsyncResultSet> resultSetFuture = executeAsync(rowKeyQueryStmt);
 					resultSetForKeyTimeFutures.add(resultSetFuture);
 				}
 
@@ -905,7 +914,7 @@ public class ClusterConnection
 						tagPairEntry.getKey());
 			}
 
-			Date timestamp = new Date(rowKeyTimestamp);
+			Instant timestamp = Instant.ofEpochMilli(rowKeyTimestamp);
 			ListMultimap<String, Statement> queryStatementsByTagName = ArrayListMultimap.create(tagPairHashToTagName.size(), 1);
 			for (Map.Entry<String, String> tagPairHashAndTagNameEntry : tagPairHashToTagName.entrySet())
 			{
@@ -916,7 +925,7 @@ public class ClusterConnection
 						psTagIndexedRowKeyQuery.bind()
 								.setString(0, metricName)
 								.setString(1, DATA_POINTS_TABLE_NAME)
-								.setTimestamp(2, timestamp)
+								.setInstant(2, timestamp)
 								.setString(3, tagPair));
 			}
 			return queryStatementsByTagName;

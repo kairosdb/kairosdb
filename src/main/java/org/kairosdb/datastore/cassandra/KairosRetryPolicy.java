@@ -1,12 +1,14 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.WriteType;
-import com.datastax.driver.core.exceptions.DriverException;
-import com.datastax.driver.core.policies.RetryPolicy;
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.retry.RetryDecision;
+import com.datastax.oss.driver.api.core.retry.RetryPolicy;
+import com.datastax.oss.driver.api.core.retry.RetryVerdict;
+import com.datastax.oss.driver.api.core.servererrors.CoordinatorException;
+import com.datastax.oss.driver.api.core.servererrors.WriteType;
+import com.datastax.oss.driver.api.core.session.Request;
 import com.google.inject.Inject;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
 import org.kairosdb.metrics4j.MetricSourceManager;
@@ -40,61 +42,97 @@ public class KairosRetryPolicy implements RetryPolicy
 	}
 
 	@Override
-	public RetryDecision onReadTimeout(Statement statement, ConsistencyLevel cl,
-			int requiredResponses, int receivedResponses, boolean dataRetrieved, int nbRetry)
+	public RetryDecision onReadTimeout(
+			@NonNull Request request,
+			@NonNull ConsistencyLevel cl,
+			int blockFor,
+			int received,
+			boolean dataPresent,
+			int retryCount)
 	{
-		if (nbRetry == m_retryCount)
-			return RetryDecision.rethrow();
+		if (retryCount == m_retryCount)
+			return RetryDecision.RETHROW;
 		else
 		{
 			stats.retryCount(m_clusterName, "read_timeout").put(1);
-			return RetryDecision.tryNextHost(cl);
+			return RetryDecision.RETRY_NEXT;
 		}
 	}
 
 	@Override
-	public RetryDecision onWriteTimeout(Statement statement, ConsistencyLevel cl,
-			WriteType writeType, int requiredAcks, int receivedAcks, int nbRetry)
+	public RetryDecision onWriteTimeout(@NonNull Request request, @NonNull ConsistencyLevel cl, @NonNull WriteType writeType, int blockFor, int received, int retryCount)
 	{
-		if (nbRetry == m_retryCount)
-			return RetryDecision.rethrow();
+		if (retryCount == m_retryCount)
+			return RetryDecision.RETHROW;
 		else
 		{
 			stats.retryCount(m_clusterName, "write_timeout").put(1);
-			return RetryDecision.tryNextHost(cl);
+			return RetryDecision.RETRY_NEXT;
 		}
 	}
 
 	@Override
-	public RetryDecision onUnavailable(Statement statement, ConsistencyLevel cl,
-			int requiredReplica, int aliveReplica, int nbRetry)
+	public RetryDecision onUnavailable(@NonNull Request request, @NonNull ConsistencyLevel cl, int required, int alive, int retryCount)
 	{
-		if (nbRetry == m_retryCount)
-			return RetryDecision.rethrow();
+		if (retryCount == m_retryCount)
+			return RetryDecision.RETHROW;
 		else
 		{
 			stats.retryCount(m_clusterName, "unavailable").put(1);
-			return RetryDecision.tryNextHost(cl);
+			return RetryDecision.RETRY_NEXT;
 		}
 	}
 
 	@Override
-	public RetryDecision onRequestError(Statement statement, ConsistencyLevel cl,
-			DriverException e, int nbRetry)
+	public RetryVerdict onReadTimeoutVerdict(@NonNull Request request, @NonNull ConsistencyLevel cl, int blockFor, int received, boolean dataPresent, int retryCount)
 	{
-		if (nbRetry == m_retryCount)
-			return RetryDecision.rethrow();
+		return RetryPolicy.super.onReadTimeoutVerdict(request, cl, blockFor, received, dataPresent, retryCount);
+	}
+
+
+
+	@Override
+	public RetryVerdict onWriteTimeoutVerdict(@NonNull Request request, @NonNull ConsistencyLevel cl, @NonNull WriteType writeType, int blockFor, int received, int retryCount)
+	{
+		return RetryPolicy.super.onWriteTimeoutVerdict(request, cl, writeType, blockFor, received, retryCount);
+	}
+
+
+
+	@Override
+	public RetryVerdict onUnavailableVerdict(@NonNull Request request, @NonNull ConsistencyLevel cl, int required, int alive, int retryCount)
+	{
+		return RetryPolicy.super.onUnavailableVerdict(request, cl, required, alive, retryCount);
+	}
+
+	@Override
+	public RetryDecision onRequestAborted(@NonNull Request request, @NonNull Throwable error, int retryCount)
+	{
+		return null;
+	}
+
+	@Override
+	public RetryVerdict onRequestAbortedVerdict(@NonNull Request request, @NonNull Throwable error, int retryCount)
+	{
+		return RetryPolicy.super.onRequestAbortedVerdict(request, error, retryCount);
+	}
+
+	@Override
+	public RetryDecision onErrorResponse(@NonNull Request request, @NonNull CoordinatorException error, int retryCount)
+	{
+		if (retryCount == m_retryCount)
+			return RetryDecision.RETHROW;
 		else
 		{
-			stats.retryCount(m_clusterName, "request_error").put(1);
-			return RetryDecision.tryNextHost(cl);
+			stats.retryCount(m_clusterName, "error_reponse").put(1);
+			return RetryDecision.RETRY_NEXT;
 		}
 	}
 
 	@Override
-	public void init(Cluster cluster)
+	public RetryVerdict onErrorResponseVerdict(@NonNull Request request, @NonNull CoordinatorException error, int retryCount)
 	{
-		logger.info("Initializing KairosRetryPolicy: retry count set to "+m_retryCount);
+		return RetryPolicy.super.onErrorResponseVerdict(request, error, retryCount);
 	}
 
 	@Override

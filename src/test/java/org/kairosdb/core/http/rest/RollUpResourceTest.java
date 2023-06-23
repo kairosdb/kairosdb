@@ -34,7 +34,7 @@ import static javax.ws.rs.core.Response.Status.*;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -396,7 +396,7 @@ public class RollUpResourceTest
 	private void assertRollupResponse(String expected, RollupTask actual)
 	{
 		RollupResponse rollupResponse = new GsonBuilder().create().fromJson(expected, RollupResponse.class);
-		assertThat(rollupResponse.getId(), not(isEmptyOrNullString()));
+		assertThat(rollupResponse.getId(), not(emptyOrNullString()));
 		assertThat(rollupResponse.getName(), equalTo(actual.getName()));
 		assertThat(rollupResponse.getAttributes().get("url"), equalTo(RollUpResource.RESOURCE_URL + rollupResponse.getId()));
 	}

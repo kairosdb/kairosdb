@@ -6,6 +6,7 @@ import com.datastax.driver.core.Host;
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
 
 import java.util.Collection;
 import java.util.Iterator;

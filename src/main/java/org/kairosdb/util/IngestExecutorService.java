@@ -1,7 +1,6 @@
 package org.kairosdb.util;
 
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
-import com.datastax.driver.core.exceptions.UnavailableException;
+import com.datastax.oss.driver.api.core.servererrors.UnavailableException;
 import com.github.rholder.retry.Retryer;
 import com.github.rholder.retry.RetryerBuilder;
 import com.github.rholder.retry.WaitStrategies;
@@ -72,7 +71,7 @@ public class IngestExecutorService
 		});
 
 		m_retryer = RetryerBuilder.<Integer>newBuilder()
-				.retryIfExceptionOfType(NoHostAvailableException.class)
+				//.retryIfExceptionOfType(NoHostAvailableException.class)
 				.retryIfExceptionOfType(UnavailableException.class)
 				.withWaitStrategy(WaitStrategies.fibonacciWait(1, TimeUnit.MINUTES))
 				.build();

@@ -13,6 +13,12 @@ import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
 import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.auth.AuthProvider;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
+import com.datastax.oss.driver.internal.core.config.typesafe.DefaultDriverConfigLoader;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.kairosdb.core.KairosPostConstructInit;
@@ -34,7 +40,7 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraClientImpl.class);
 
-	private Cluster m_cluster;
+	private CqlSession m_cluster;
 	private final String m_keyspace;
 	private final String m_replication;
 	private LoadBalancingPolicy m_writeLoadBalancingPolicy;
@@ -62,59 +68,18 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 
 	public void init()
 	{
-		//Passing shuffleReplicas = false so we can properly batch data to
-		//instances.  A load balancing policy for reads will set shuffle to true
-		// When connecting to Cassandra notes in different datacenters, the local datacenter should be provided.
-		// Not doing this will select the datacenter from the first connected Cassandra node, which is not guaranteed to be the correct one.
-		m_writeLoadBalancingPolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), TokenAwarePolicy.ReplicaOrdering.TOPOLOGICAL);
-		TokenAwarePolicy readLoadBalancePolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), TokenAwarePolicy.ReplicaOrdering.RANDOM);
+		//final Cluster.Builder builder = new Cluster.Builder()
 
-		final Cluster.Builder builder = new Cluster.Builder()
-				//.withProtocolVersion(ProtocolVersion.V3)
-				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL,
-						m_clusterConfiguration.getConnectionsLocalCore(), m_clusterConfiguration.getConnectionsLocalMax())
-						.setConnectionsPerHost(HostDistance.REMOTE,
-								m_clusterConfiguration.getConnectionsRemoteCore(), m_clusterConfiguration.getConnectionsRemoteMax())
-						.setMaxRequestsPerConnection(HostDistance.LOCAL, m_clusterConfiguration.getRequestsPerConnectionLocal())
-						.setMaxRequestsPerConnection(HostDistance.REMOTE, m_clusterConfiguration.getRequestsPerConnectionRemote())
-						.setMaxQueueSize(m_clusterConfiguration.getMaxQueueSize()))
-				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 5 * 1000))
-				.withLoadBalancingPolicy(new SelectiveLoadBalancingPolicy(readLoadBalancePolicy, m_writeLoadBalancingPolicy))
-				.withCompression(m_clusterConfiguration.getCompression())
-				.withoutJMXReporting()
-				.withQueryOptions(new QueryOptions().setConsistencyLevel(m_clusterConfiguration.getReadConsistencyLevel()))
-				.withTimestampGenerator(new TimestampGenerator() //todo need to remove this and put it only on the datapoints call
-				{
-					@Override
-					public long next()
-					{
-						return System.currentTimeMillis();
-					}
-				})
-				.withRetryPolicy(m_kairosRetryPolicy);
+		CqlSessionBuilder builder = CqlSession.builder();
 
-		if (m_authProvider != null)
-		{
-			builder.withAuthProvider(m_authProvider);
-		}
-		else if (m_clusterConfiguration.getAuthUser() != null && m_clusterConfiguration.getAuthPassword() != null)
-		{
-			builder.withCredentials(m_clusterConfiguration.getAuthUser(),
-					m_clusterConfiguration.getAuthPassword());
-		}
+		builder.withConfigLoader(new DefaultDriverConfigLoader());
 
+		DefaultDriverOption.values();
 
-		for (Map.Entry<String, Integer> hostPort : m_clusterConfiguration.getHostList().entrySet())
-		{
-			logger.info("Connecting to "+hostPort.getKey()+":"+hostPort.getValue());
-			builder.addContactPoint(hostPort.getKey())
-					.withPort(hostPort.getValue());
-		}
-
-		if (m_clusterConfiguration.isUseSsl())
-			builder.withSSL();
 
 		m_cluster = builder.build();
+
+
 
 		Map<String, String> tags = ImmutableMap.of("cluster", m_clusterName);
 		ClientMetrics clientMetrics = new ClientMetrics();
@@ -127,7 +92,7 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 
 	public LoadBalancingPolicy getWriteLoadBalancingPolicy()
 	{
-		return m_writeLoadBalancingPolicy;
+		return m_cluster.getContext().getLoadBalancingPolicy("ingest");
 	}
 
 	public ClusterConfiguration getClusterConfiguration()
@@ -136,13 +101,13 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 	}
 
 	@Override
-	public Session getKeyspaceSession()
+	public CqlSession getKeyspaceSession()
 	{
 		return m_cluster.connect(m_keyspace);
 	}
 
 	@Override
-	public Session getSession()
+	public CqlSession getSession()
 	{
 		return m_cluster.connect();
 	}

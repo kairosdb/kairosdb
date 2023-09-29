@@ -25,6 +25,8 @@ $metric_query = $query[:metrics][0]
 
 $metric_name = nil
 
+$csv = false
+
 class Monitor
 	attr_accessor :warn_min, :warn_max, :crit_min, :crit_max, :on_empty,
 								:on_timeout
@@ -148,6 +150,39 @@ def print_results(query_results)
 	end
 end
 
+def print_csv(query_results)
+	unless query_results.nil?
+		headers = ['time']
+		column = 0
+		csv_results = Hash.new { |hash, key| hash[key] = []}
+		query_results.each do |name, groups, values|
+
+			group_str_arr = []
+
+			groups.each do |key, value|
+				group_str_arr.push("#{key}=#{value}")
+			end
+
+			headers.push("\"#{name} #{group_str_arr.join(',')}\"")
+			values.each do |value|
+
+				time_str = "#{Time.at(value[0] / 1000).to_datetime.strftime('%FT%T.%L%:z')}"
+
+				csv_results[time_str][column] = value[1]
+			end
+
+			column += 1
+		end
+
+		puts headers.join(',')
+		sorted_results = csv_results.sort.to_h
+
+		sorted_results.each do |time, values|
+			puts "#{time},#{values.join(',')}"
+		end
+	end
+end
+
 def check_results(query_results)
 
 	if !query_results.nil?
@@ -211,6 +246,8 @@ as well as monitor data.  The monitoring was designed to be used with Nagios NRP
 Usage: kairos_query.rb -h <kairos_host> -m <metric> -s <start_time> -e <end_time>
     -t <filter_tags> -a <aggregators> -g <groups>
 
+	kairos_query.rb -f <query file>
+
 For time options such as start and end time the format is a number followed by a time unit,
 ex. 10m (10 minutes) or 30s (30 seconds).
 Allowed time units are ms, s, m, h, d, w, y.
@@ -232,6 +269,11 @@ Available options:'
 
 	opts.on('-h', '--host <kairos url>', 'Ulr to Kairos host') do |v|
 		$host = v
+	end
+
+	opts.on('-f', '--file <query file>', 'Query file to use instead of command line options') do |v|
+		file = File.read(v)
+		$query = JSON.parse(file)
 	end
 
 	opts.on('-m', '--metric <metric>', 'Metric name') do |v|
@@ -298,6 +340,10 @@ Available options:'
 		$metric_query[:group_by].push(group_tags)
 		group_tags[:name] = 'tag'
 		group_tags[:tags] = groups
+	end
+
+	opts.on('--csv', 'Output query results in csv') do
+		$csv = true
 	end
 
 	# Monitor options
@@ -375,6 +421,8 @@ begin
 		check_results(query_results)
 		puts $monitor.get_message
 		exit($monitor.return_code)
+	elsif $csv
+		print_csv(query_results)
 	else
 		print_results(query_results)
 	end
@@ -382,5 +430,3 @@ rescue => error
 	puts "Query failed: #{error}"
 	exit(5)
 end
-
-

@@ -150,28 +150,34 @@ def print_results(query_results)
 	end
 end
 
-def print_csv(query_results)
-	unless query_results.nil?
+def print_csv(json_resp)
+	unless json_resp.nil?
 		headers = ['time']
 		column = 0
 		csv_results = Hash.new { |hash, key| hash[key] = []}
-		query_results.each do |name, groups, values|
 
-			group_str_arr = []
+		json_resp['queries'].each do |results|
+			query_results = QueryResults.new(results['results'])
 
-			groups.each do |key, value|
-				group_str_arr.push("#{key}=#{value}")
+			query_results.each do |name, groups, values|
+				puts name
+
+				group_str_arr = []
+
+				groups.each do |key, value|
+					group_str_arr.push("#{key}=#{value}")
+				end
+
+				headers.push("\"#{name} #{group_str_arr.join(',')}\"")
+				values.each do |value|
+
+					time_str = "#{Time.at(value[0] / 1000).to_datetime.strftime('%FT%T.%L%:z')}"
+
+					csv_results[time_str][column] = value[1]
+				end
+
+				column += 1
 			end
-
-			headers.push("\"#{name} #{group_str_arr.join(',')}\"")
-			values.each do |value|
-
-				time_str = "#{Time.at(value[0] / 1000).to_datetime.strftime('%FT%T.%L%:z')}"
-
-				csv_results[time_str][column] = value[1]
-			end
-
-			column += 1
 		end
 
 		puts headers.join(',')
@@ -422,7 +428,7 @@ begin
 		puts $monitor.get_message
 		exit($monitor.return_code)
 	elsif $csv
-		print_csv(query_results)
+		print_csv(json_resp)
 	else
 		print_results(query_results)
 	end

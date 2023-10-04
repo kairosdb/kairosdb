@@ -160,8 +160,6 @@ def print_csv(json_resp)
 			query_results = QueryResults.new(results['results'])
 
 			query_results.each do |name, groups, values|
-				puts name
-
 				group_str_arr = []
 
 				groups.each do |key, value|

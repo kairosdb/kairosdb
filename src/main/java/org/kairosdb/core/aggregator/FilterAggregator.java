@@ -25,7 +25,7 @@ import org.kairosdb.plugin.Aggregator;
 
 
 @FeatureComponent(
-        name = "filter",
+		name = "filter",
 		description = "Filters datapoints according to filter operation with a null data point."
 )
 public class FilterAggregator implements Aggregator

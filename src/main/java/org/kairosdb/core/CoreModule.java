@@ -233,6 +233,7 @@ public class CoreModule extends AbstractModule
 		bind(SmaAggregator.class);
 		bind(FilterAggregator.class);
 		bind(ScoreAggregator.class);
+		bind(PadAggregator.class);
 
 		bind(ValueGroupBy.class);
 		bind(TimeGroupBy.class);

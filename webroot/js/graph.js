@@ -169,12 +169,36 @@ function buildKairosDBQuery() {
 				}
 				metric.addScaleAggregator(scalingFactor);
 			}
-      else if (name == 'filter')
-      {
-        var filterop = $(aggregator).find(".aggregatorFilterOpValue").val();
+			else if (name == 'filter')
+			{
+				var filterop = $(aggregator).find(".aggregatorFilterOpValue").val();
 				var threshold = $(aggregator).find(".aggregatorFilterThresholdValue").val();
 				metric.addFilterAggregator(filterop, $.isNumeric(threshold) ? parseFloat(threshold) : threshold);
-      }
+			}
+			else if (name == 'sma')
+			{
+				var smaSize = $(aggregator).find(".aggregatorSmaSize").val();
+				if (!isValidInteger(smaSize)) {
+					showErrorMessage("sampling value must be an integer greater than 0.");
+					return true;
+				}
+
+				metric.addSmaAggregator(smaSize);
+			}
+			else if (name == 'pad')
+			{
+				var padValue = $(aggregator).find(".aggregatorPadValue").val();
+				value = $(aggregator).find(".aggregatorSamplingValue").val();
+				if (!isValidInteger(value)) {
+					showErrorMessage("sampling value must be an integer greater than 0.");
+					return true;
+				}
+				unit = $(aggregator).find(".aggregatorSamplingUnit").val();
+
+				var align = $(aggregator).find(".aggregatorAlign").val();
+
+				metric.addPadAggregator(padValue, value, unit, time_zone, align);
+			}
 			else if (name == 'trim')
 			{
 				var agg = metric.addAggregator(name);
@@ -654,7 +678,9 @@ function addAggregator(container) {
 		$aggregatorContainer.find(".aggregatorDev").hide();
 		$aggregatorContainer.find(".aggregatorSaveAs").hide();
 		$aggregatorContainer.find(".aggregatorRate").hide();
+		$aggregatorContainer.find(".aggregatorPad").hide();
 		$aggregatorContainer.find(".aggregatorAlign").hide();
+		$aggregatorContainer.find(".aggregatorSma").hide();
 
 		if (name == "rate" || name == "sampler") {
 			$aggregatorContainer.find(".aggregatorRate").show();
@@ -676,6 +702,17 @@ function addAggregator(container) {
 		}
 		else if (name == 'filter') {
 			$aggregatorContainer.find(".aggregatorFilter").show();
+		}
+		else if (name == 'sma') {
+			$aggregatorContainer.find(".aggregatorSma").show();
+		}
+		else if (name == 'pad') {
+			$aggregatorContainer.find(".aggregatorPad").show();
+			$aggregatorContainer.find(".aggregatorSamplingUnit").show();
+			$aggregatorContainer.find(".aggregatorSampling").show();
+			$aggregatorContainer.find(".aggregatorAlign").show();
+			// clear values
+			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
 		}
 		else if (name == 'trim') {
 			$aggregatorContainer.find(".aggregatorTrim").show();

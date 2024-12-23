@@ -20,7 +20,6 @@ public class RollUpModule extends AbstractModule
 	{
 		bind(RollUpResource.class).in(Scopes.SINGLETON);
 		bind(SchedulingManager.class).in(Scopes.SINGLETON);
-		//bind(AssignmentManager.class).in(Scopes.SINGLETON);
 		bind(AssignmentCoordinator.class).in(Scopes.SINGLETON);
 		bind(RollUpTasksStore.class).to(RollUpTasksStoreImpl.class).in(Scopes.SINGLETON);
 		bind(RollUpAssignmentStore.class).to(RollUpAssignmentStoreImpl.class).in(Scopes.SINGLETON);

@@ -183,8 +183,7 @@ public class AssignmentManager implements KairosDBService
     {
         lock.lock();
         try {
-            return  //hostManager.acknowledgeHostListChanged() ||
-                    assignmentsLastModified == 0 ||
+            return  assignmentsLastModified == 0 ||
                     rollupsLastModified == 0 ||
                     assignmentsLastModified != assignmentTime ||
                     rollupsLastModified != taskStoreTime;

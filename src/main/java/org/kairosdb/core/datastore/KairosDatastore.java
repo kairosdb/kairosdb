@@ -453,8 +453,6 @@ public class KairosDatastore implements KairosPostConstructInit
 			int waitingCount = m_queuingManager.getQueryWaitingCount();
 			if (waitingCount != 0)
 			{
-				//ThreadReporter.addDataPoint(QUERIES_WAITING_METRIC_NAME, waitingCount);
-				//ThreadReporter.reportQueriesWaiting(waitingCount);
 				queryStats.queriesWaiting().put(waitingCount);
 			}
 
@@ -527,8 +525,6 @@ public class KairosDatastore implements KairosPostConstructInit
 
 			queryStats.querySampleSize().put(m_dataPointCount);
 			queryStats.queryRowCount().put(m_rowCount);
-			//ThreadReporter.addDataPoint(QUERY_SAMPLE_SIZE, m_dataPointCount);
-			//ThreadReporter.addDataPoint(QUERY_ROW_COUNT, m_rowCount);
 
 			List<DataPointGroup> queryResults = groupByTypeAndTag(m_metric.getName(), m_metric.getAlias(),
 					returnedRows, getTagGroupBy(m_metric.getGroupBys()), m_metric.getOrder());
@@ -583,7 +579,6 @@ public class KairosDatastore implements KairosPostConstructInit
 
 			//Report how long query took
 			queryStats.queryTime().put(Duration.ofMillis(stopwatch.elapsed(java.util.concurrent.TimeUnit.MILLISECONDS)));
-			//ThreadReporter.addDataPoint(QUERY_METRIC_TIME, stopwatch.elapsed(java.util.concurrent.TimeUnit.MILLISECONDS));
 
 			return (m_results);
 		}

@@ -102,6 +102,8 @@
 			$(".aggregatorPercentile").hide();
 			$(".divisor").hide();
 			$(".scalingFactor").hide();
+			$(".aggregatorPad").hide();
+			$(".aggregatorSma").hide();
 			$(".aggregatorFilter").hide();
 			$(".aggregatorTrim").hide();
 			$(".aggregatorDev").hide();
@@ -526,11 +528,13 @@ Timezone: <select id="timeZone" class="ui-widget timeZone" style="margin-left: 1
 				<option value="least_squares">LEAST SQUARES</option>
 				<option value="max">MAX</option>
 				<option value="min">MIN</option>
+				<option value="pad">PAD</option>
 				<option value="percentile">PERCENTILE</option>
 				<option value="rate">RATE</option>
 				<option value="sampler">SAMPLER</option>
 				<option value="save_as">SAVE AS</option>
 				<option value="scale">SCALE</option>
+				<option value="sma">SMA</option>
 				<option value="sum" selected="selected">SUM</option>
 				<option value="trim">TRIM</option>
 
@@ -611,6 +615,20 @@ Timezone: <select id="timeZone" class="ui-widget timeZone" style="margin-left: 1
 				<option value="milliseconds" selected="selected">Milliseconds
 				</option>
 			</select>
+		</div>
+
+		<div style="float: left" class="aggregatorPad">
+			<span class="header"
+				style="margin-left: 10px; vertical-align: top;">Pad Value</span>
+			<input class="ui-widget aggregatorPadValue"
+				style="width: 60px; margin-left: 10px;" type="text" value="0"/>
+		</div>
+
+		<div style="float: left" class="aggregatorSma">
+			<span class="header"
+				style="margin-left: 10px; vertical-align: top;">Size</span>
+			<input class="ui-widget aggregatorSmaSize"
+				style="width: 60px; margin-left: 10px;" type="text" value="10"/>
 		</div>
 
 		<div style="float: left" class="aggregatorFilter">

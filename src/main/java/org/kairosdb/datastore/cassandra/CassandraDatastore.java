@@ -587,29 +587,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 	}
 
 
-	/*@Override
-	public List<DataPointSet> getMetrics(long now)
-	{
-		List<DataPointSet> ret = new ArrayList<>();
-
-		m_simpleStatsReporter.reportStats(m_batchStats.getNameStats(), now,
-				"kairosdb.datastore.cassandra.write_batch_size",
-				"table", "string_index", ret);
-		m_simpleStatsReporter.reportStats(m_batchStats.getDataPointStats(), now,
-				"kairosdb.datastore.cassandra.write_batch_size",
-				"table", "data_points", ret);
-		m_simpleStatsReporter.reportStats(m_batchStats.getRowKeyStats(), now,
-				"kairosdb.datastore.cassandra.write_batch_size",
-				"table", "row_keys", ret);
-		m_simpleStatsReporter.reportStats(m_batchStats.getRowKeyTimeStats(), now,
-				"kairosdb.datastore.cassandra.write_batch_size",
-				"table", "row_key_time_index", ret);
-		m_simpleStatsReporter.reportStats(m_batchStats.getTagIndexedStats(), now,
-				"kairosdb.datastore.cassandra.write_batch_size",
-				"table", "tag_indexed_row_keys", ret);
-
-		return ret;
-	}*/
 
 	private class QueryListener implements FutureCallback<ResultSet>
 	{
@@ -811,7 +788,6 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 		}
 
 		stats.rowKeyCount().put(rowCount);
-		//ThreadReporter.addDataPoint(ROW_KEY_COUNT, rowCount);
 
 		try
 		{

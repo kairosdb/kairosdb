@@ -1,7 +1,13 @@
-Removed get tag names and get tag values api
-Adding new key index that is written using CQL
-Converted queries to use CQL
-Added file backed queue option for ingested data
-Added kairosdb.queries.aggregate_stats=false to aggregate query stats instead of reporting with each call
-Added official dockerfile for building kairosdb in containers.
-Added the first helm chart for deploying kairosdb in kubernetes.
+1.3.2 update
+Moved to java 11
+Updated Dependencies
+Fixed pom generation bugs that skipped dependencies
+Updated getting started page
+Fixed bug where config is not reading lists correctly
+Fixed bug in HostManger not tracking other kairos hosts correctly.
+Added alias to returned metrics
+Moved internal metrics reporting over to Metrics4j
+Sort String queries such as tags and metric names
+Fixed bug in assigning rollup jobs
+Metric name filter that prevents some metrics from showing up in the UI see comment in kairosdb.conf
+Removed old grafana UI.

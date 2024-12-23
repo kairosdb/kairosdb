@@ -45,6 +45,7 @@ public class SmaAggregator implements Aggregator
 
 	//@NonZero
 	@FeatureProperty(
+			name = "size",
 			label = "Size",
 			description = "The period of the moving average. This is the number of data point to use each time the average is calculated.",
 			default_value = "10",

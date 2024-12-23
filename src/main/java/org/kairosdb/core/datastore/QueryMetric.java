@@ -234,26 +234,7 @@ public class QueryMetric implements DatastoreMetricQuery
 		this.plugins.add(plugin);
 	}
 
-	//@Override
-	public String toString_Not()
-	{
-		return "QueryMetric{" +
-				"startTime=" + startTime +
-				", endTime=" + endTime +
-				", endTimeSet=" + endTimeSet +
-				", cacheTime=" + cacheTime +
-				", name='" + name + '\'' +
-				", alias='" + alias + '\'' +
-				", tags=" + tags +
-				", groupBys=" + groupBys +
-				", aggregators=" + aggregators +
-				", cacheString='" + cacheString + '\'' +
-				", excludeTags=" + excludeTags +
-				", limit=" + limit +
-				", order=" + order +
-				", plugins=" + plugins +
-				'}';
-	}
+
 
 	public void setJsonObj(JsonObject obj)
 	{

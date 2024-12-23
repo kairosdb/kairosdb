@@ -24,7 +24,9 @@ kairosdb.Aggregators =
 	LAST: "last",
 	FILTER: "filter",
 	TRIM: "trim",
-	SAVE_AS: "save_as"
+	SAVE_AS: "save_as",
+	SMA: "sma",
+	PAD: "pad"
 };
 
 kairosdb.Unit =  //Values used for Aggregator sampling and Relative time
@@ -140,6 +142,30 @@ kairosdb.Metric = function (name) {
 		this.aggregators.push(aggregator);
 		return this;
 	};
+
+	this.addSmaAggregator = function (smaSize) {
+		if (!this.aggregators)
+			this.aggregators = [];
+
+		var aggregator = {};
+		aggregator.name = "sma";
+		aggregator.size = smaSize;
+
+		this.aggregators.push(aggregator);
+		return this;
+	}
+
+	this.addPadAggregator = function (padValue, sampleValue, sampleUnit, time_zone, align) {
+		if (!this.aggregators)
+			this.aggregators = [];
+
+		var aggregator = this.addRangeAggregator("pad", sampleValue, sampleUnit, time_zone, align);
+		if (padValue) {
+			aggregator.pad_value = padValue;
+		}
+
+		return this;
+	}
 
 	/**
 	 Genereic add Aggregator function, returns the new aggregator

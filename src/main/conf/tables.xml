@@ -208,8 +208,11 @@
 				<param name="tag_value" type="string"/>
 			</return>
 			<sql>
-				select "tag_value" from metric_tag
-				where "metric_id" = ? and "tag_name" = ?
+				select distinct mt."tag_value" as tag_value from metric m, metric_tag mt
+				where
+				mt."metric_id" = m."id"
+				and m."name" = ?
+				and mt."tag_name" = ?
 			</sql>
 		</query>
 

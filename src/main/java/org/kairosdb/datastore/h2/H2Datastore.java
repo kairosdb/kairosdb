@@ -330,24 +330,28 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 
 				Pattern pattern = Pattern.compile(regex);
 
+				boolean matched = false;
 				MetricTagValuesQuery.ResultSet resultSet = (new MetricTagValuesQuery(query.getName(), tagPair.getKey())).runQuery();
 				while (resultSet.next())
 				{
 					String tagValue = resultSet.getRecord().getTagValue();
 
 					if (pattern.matcher(tagValue).matches())
+					{
+						matched = true;
 						filterTags.put(tagPair.getKey(), tagValue);
+					}
 				}
 				resultSet.close();
 
+				if (!matched)
+					filterTags.put(tagPair.getKey(), "");
 			}
 			else
 			{
 				filterTags.put(tagPair.getKey(), tagPair.getValue());
 			}
 		}
-
-		//todo query tags and values and run the regex over them placing results in to filterTags
 
 		//Manually build the where clause for the tags
 		//This is subject to sql injection

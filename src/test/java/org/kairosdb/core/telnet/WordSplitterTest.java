@@ -54,6 +54,9 @@ public class WordSplitterTest
 
 		assertThat(WordSplitter.splitString("quoted string \"with\"in\" it"))
 				.containsExactly("quoted", "string", "with\"in", "it");
+
+		assertThat(WordSplitter.splitString("quoted string \"with \\\" in\" it"))
+				.containsExactly("quoted", "string", "with \\\" in", "it");
 	}
 
 	@Test

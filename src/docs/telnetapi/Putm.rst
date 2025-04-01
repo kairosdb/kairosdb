@@ -4,7 +4,7 @@ Putm
 
 This is identical to the put command except it always expects millisecond timestamps.
 
-You can submit data either with the telnet protocol on port 4242. The port can be changed in the kairosdb.properties file.
+You can submit data with the telnet protocol on port 4242. The port can be changed in the kairosdb.properties file.
 
 The format of the data is
 ::

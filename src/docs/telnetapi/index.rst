@@ -11,6 +11,7 @@ Contents:
    Overview
    Put
    Putm
+   Puts
    SpecialTags
    Version
 

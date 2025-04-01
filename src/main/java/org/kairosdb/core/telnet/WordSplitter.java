@@ -62,40 +62,56 @@ public class WordSplitter extends OneToOneDecoder
 		{
 			c = s.charAt(i);
 
-			//Normal word break
-			if (c <= ' ' && !quoted)
+			if (quoted)
 			{
-				if (i > start)
+				//End of quoted section
+				if (prev == '"' && c <= ' ')
 				{
-					ret.add(s.substring(start, i));
+					if (i > start)
+					{
+						ret.add(s.substring(start, i-1));
+					}
+
+					quoted = false;
+					start = i+1;
+					prev = c;
+					continue;
 				}
 
-				start = i+1;
-				prev = c;
-				continue;
-			}
-
-			//Start of quoted section
-			if ((c == '"') && (prev <= ' ') && !quoted)
-			{
-				quoted = true;
-				start = i+1;
-				prev = c;
-				continue;
-			}
-
-			//End of quoted section
-			if (quoted && prev == '"' && c <= ' ')
-			{
-				if (i > start)
+				//Checking for escape characters while in quoted section
+				if (prev == '\\' && c == '\\')
 				{
-					ret.add(s.substring(start, i-1));
+					c = 'A'; //this will become the prev char and not trigger any state changes
 				}
 
-				quoted = false;
-				start = i+1;
-				prev = c;
-				continue;
+				if (prev == '\\' && c == '"')
+				{
+					c = 'A'; //this will become the prev char and not trigger any state changes
+				}
+			}
+			else
+			{
+				//Normal word break
+				if (c <= ' ')
+				{
+					if (i > start)
+					{
+						ret.add(s.substring(start, i));
+					}
+
+					start = i+1;
+					prev = c;
+					continue;
+				}
+
+				//Start of quoted section
+				if ((c == '"') && (prev <= ' '))
+				{
+					quoted = true;
+					start = i+1;
+					prev = c;
+					continue;
+				}
 			}
 
 			prev = c;

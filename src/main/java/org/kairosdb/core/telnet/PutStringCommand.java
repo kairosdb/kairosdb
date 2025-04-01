@@ -26,6 +26,7 @@ public class PutStringCommand extends PutMillisecondCommand implements TelnetCom
 	@Override
 	protected DataPoint createDataPoint(long timestamp, String value)
 	{
+		value = value.replace("\\\\", "\\").replace("\\\"", "\"");
 		return m_stringFactory.createDataPoint(timestamp, value);
 	}
 

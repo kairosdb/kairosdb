@@ -14,6 +14,5 @@ Restart=always
 TimeoutStopSec=1min
 
 [Install]
-Alias=kairos
 WantedBy=multi-user.target
 

@@ -88,6 +88,7 @@
 
 	<definition name="kairos" command="java">
 		<option name="debug">-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005</option>
+		<option name="define" pattern="(.+)">-D$1</option>
 		<option name="profile" pattern="(.+)">$1</option>
 		<option>-Dio.netty.epollBugWorkaround=true</option>
 		<option name="classpath" pattern="(.+)">-cp $1</option>

@@ -459,6 +459,7 @@ new SimpleRule("import").setDescription("Imports metrics." +
 def doRun(Rule rule)
 {
 	kairosDefinition = saw.getDefinition("kairos")
+	//kairosDefinition.set("define", "javax.net.debug=all")
 
 	if (rule.getProperty("ACTION") == "export")
 	{

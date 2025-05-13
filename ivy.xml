@@ -74,7 +74,7 @@
 		</dependency>
 
 		<!-- Cassandra Client -->
-		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.10.2">
+		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.11.5">
 			<exclude org="com.fasterxml.jackson.core" name="jackson-databind"/>
 		</dependency>
 		<dependency org="net.jpountz.lz4" name="lz4" rev="1.3.0"/>

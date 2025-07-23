@@ -70,6 +70,7 @@ public class QueryParser
 	private Gson m_gson;
 	private Map<Class, Map<String, PropertyDescriptor>> m_descriptorMap;
 	private final Object m_descriptorMapLock = new Object();
+	private long m_now;  //The moment the query was started.  Used for getting and end time.
 
 	@Inject
 	public QueryParser(FeatureProcessor processingChain, QueryPluginFactory pluginFactory)
@@ -139,13 +140,15 @@ public class QueryParser
 
 	private long getStartTime(Query request, String context) throws BeanValidationException
 	{
+		m_now = System.currentTimeMillis();
+
 		if (request.getStartAbsolute() != null)
 		{
 			return request.getStartAbsolute();
 		}
 		else if (request.getStartRelative() != null)
 		{
-			return request.getStartRelative().getTimeRelativeTo(System.currentTimeMillis());
+			return request.getStartRelative().getTimeRelativeTo(m_now);
 		}
 		else
 		{
@@ -158,7 +161,7 @@ public class QueryParser
 		if (request.getEndAbsolute() != null)
 			return Optional.of(request.getEndAbsolute());
 		else if (request.getEndRelative() != null)
-			return Optional.of(request.getEndRelative().getTimeRelativeTo(System.currentTimeMillis()));
+			return Optional.of(request.getEndRelative().getTimeRelativeTo(m_now));
 		return Optional.empty();
 	}
 

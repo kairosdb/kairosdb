@@ -22,6 +22,8 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -30,6 +32,7 @@ import java.util.List;
 public class WordSplitter extends OneToOneDecoder
 {
 	private static final Charset CHARSET = Charset.forName("ISO-8859-1");
+	private static final Logger log = LoggerFactory.getLogger(WordSplitter.class);
 
 	/**
 	 Constructor.
@@ -51,6 +54,7 @@ public class WordSplitter extends OneToOneDecoder
 
 	protected static List<String> splitString(final String s)
 	{
+		log.debug(s);
 		List<String> ret = new ArrayList<String>();
 		int len = s.length();
 		boolean quoted = false;

@@ -37,7 +37,7 @@
 		<dependency org="com.google.inject.extensions" name="guice-assistedinject" rev="4.2.2" />
 		<dependency org="com.google.inject.extensions" name="guice-servlet" rev="4.2.2" />
 		<dependency org="com.h2database" name="h2" rev="2.1.210" />
-		<dependency org="org.kairosdb" name="bigqueue" rev="1.0.1" />
+		<dependency org="org.kairosdb" name="bigqueue" rev="1.0.4" />
 
 		<dependency org="com.typesafe" name="config" rev="1.4.0" />
 
@@ -111,9 +111,9 @@
 		<dependency org="org.quartz-scheduler" name="quartz" rev="2.3.2" />
 
 		<!-- Codehale Metrics -->
-		<dependency org="com.codahale.metrics" name="metrics-healthchecks"
-		            rev="3.0.2"/>
-		<dependency org="com.codahale.metrics" name="metrics-jvm" rev="3.0.2"/>
+		<dependency org="io.dropwizard.metrics" name="metrics-healthchecks"
+		            rev="3.2.6"/>
+		<dependency org="io.dropwizard.metrics" name="metrics-jvm" rev="3.2.6"/>
 
 		<dependency org="org.testng" name="testng" rev="6.8.5" conf="integration->default"/>
 

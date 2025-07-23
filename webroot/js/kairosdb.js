@@ -50,9 +50,14 @@ kairosdb.Metric = function (name) {
 	this.aggregators;
 	this.group_by;
 	this.limit;
+	this.align_sampling = true;
 
 	this.setAlias = function (alias) {
 		this.alias = alias;
+	}
+
+	this.setAlignSampling = function (align) {
+		this.align_sampling = align;
 	}
 
 	this.addGroupBy = function (groupBy) {
@@ -167,6 +172,18 @@ kairosdb.Metric = function (name) {
 		return this;
 	}
 
+	this.addTimeDiffAggregator = function (timeUnit) {
+		if (!this.aggregators)
+			this.aggregators = [];
+
+		var aggregator = {};
+		aggregator.name = "time_diff";
+		aggregator.time_unit = timeUnit;
+
+		this.aggregators.push(aggregator);
+		return this;
+	}
+
 	/**
 	 Genereic add Aggregator function, returns the new aggregator
 	 * @param name
@@ -195,7 +212,7 @@ kairosdb.Metric = function (name) {
 			aggregator.sampling.value = value;
 			aggregator.sampling.unit = unit;
 			aggregator.sampling.time_zone = time_zone;
-			aggregator.align_sampling = true;
+			aggregator.align_sampling = this.align_sampling;
 			if (align == "start") aggregator.align_start_time = true;
 			if (align == "end") aggregator.align_end_time = true;
 		}

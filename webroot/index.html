@@ -103,6 +103,7 @@
 			$(".divisor").hide();
 			$(".scalingFactor").hide();
 			$(".aggregatorPad").hide();
+			$(".aggregatorTimeDiff").hide();
 			$(".aggregatorSma").hide();
 			$(".aggregatorFilter").hide();
 			$(".aggregatorTrim").hide();
@@ -516,27 +517,28 @@ Timezone: <select id="timeZone" class="ui-widget timeZone" style="margin-left: 1
 	<div style="">
 		<div style="float: left">
 			<select class="ui-widget aggregatorName">
-				<option value="avg">AVG</option>
-				<option value="count">COUNT</option>
-				<option value="dev">DEV</option>
-				<option value="diff">DIFF</option>
-				<option value="div">DIV</option>
-				<option value="filter">FILTER</option>
-				<option value="first">FIRST</option>
-				<option value="gaps">GAPS</option>
-				<option value="last">LAST</option>
-				<option value="least_squares">LEAST SQUARES</option>
-				<option value="max">MAX</option>
-				<option value="min">MIN</option>
-				<option value="pad">PAD</option>
-				<option value="percentile">PERCENTILE</option>
-				<option value="rate">RATE</option>
-				<option value="sampler">SAMPLER</option>
-				<option value="save_as">SAVE AS</option>
-				<option value="scale">SCALE</option>
-				<option value="sma">SMA</option>
-				<option value="sum" selected="selected">SUM</option>
-				<option value="trim">TRIM</option>
+				<option value="avg" title="Returns the average value over an interval">AVG</option>
+				<option value="count" title="Counts data points within each interval">COUNT</option>
+				<option value="dev" title="Standard deviation of the data within the interval">DEV</option>
+				<option value="diff" title="Returns the difference between each data point">DIFF</option>
+				<option value="div" title="Divides each data point by a value">DIV</option>
+				<option value="filter" title="Filters out data points">FILTER</option>
+				<option value="first" title="Returns first data point in interval">FIRST</option>
+				<option value="gaps" title="Fills empty intervals with nulls to creat gaps in graph">GAPS</option>
+				<option value="last" title="Returns last data point in interval">LAST</option>
+				<option value="least_squares" title="Returns the least squares value over the interval">LEAST SQUARES</option>
+				<option value="max" title="Returns the maximum value over an interval">MAX</option>
+				<option value="min" title="Returns the minimum value over an interval">MIN</option>
+				<option value="pad" title="Pads data with value when no value is present">PAD</option>
+				<option value="percentile" title="Calculates the percentile over an interval">PERCENTILE</option>
+				<option value="rate" title="Converts a counter to a rate">RATE</option>
+				<option value="sampler" title="Sampling rate of change over an interval">SAMPLER</option>
+				<option value="save_as" title="Save results as a new metric">SAVE AS</option>
+				<option value="scale" title="Scale data points up or down">SCALE</option>
+				<option value="sma" title="Simple moving average">SMA</option>
+				<option value="sum" selected="selected" title="Sum data points over an interval">SUM</option>
+				<option value="time_diff" title="Report time difference between data points">TIME DIFF</option>
+				<option value="trim" title="Trims off the first and or last data point">TRIM</option>
 
 			</select>
 		</div>
@@ -582,8 +584,6 @@ Timezone: <select id="timeZone" class="ui-widget timeZone" style="margin-left: 1
 			<div style="display: table-cell" class="aggregatorPercentile">
 				<span class="header"
 					  style="margin-left: 10px; vertical-align: top;">Percentile</span>
-			</div>
-			<div style="display: table-cell" class="aggregatorPercentile">
 				<input class="ui-widget aggregatorPercentileValue"
 					   style="width: 40px; margin-left: 10px;" type="text"
 					   value="0.75"/>
@@ -622,6 +622,18 @@ Timezone: <select id="timeZone" class="ui-widget timeZone" style="margin-left: 1
 				style="margin-left: 10px; vertical-align: top;">Pad Value</span>
 			<input class="ui-widget aggregatorPadValue"
 				style="width: 60px; margin-left: 10px;" type="text" value="0"/>
+		</div>
+
+		<div style="float: left" class="aggregatorTimeDiff">
+			<select class="ui-widget timeDiffUnit" style="margin-left: 10px;" title="Time unit to report values in">
+				<option value="years">Years</option>
+				<option value="weeks">Weeks</option>
+				<option value="days">Days</option>
+				<option value="hours">Hours</option>
+				<option value="minutes">Minutes</option>
+				<option value="seconds">Seconds</option>
+				<option value="milliseconds" selected="selected">Milliseconds</option>
+			</select>
 		</div>
 
 		<div style="float: left" class="aggregatorSma">

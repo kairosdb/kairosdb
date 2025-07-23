@@ -95,13 +95,6 @@ Average
 	Computes average value.
 	Extends :ref:`range_aggregator`.
 
-------------------
-Standard Deviation
-------------------
-.. js:data:: dev
-
-	Computes standard deviation.
-	Extends :ref:`range_aggregator`.
 
 -----
 Count
@@ -110,6 +103,37 @@ Count
 
 	Counts the number of data points.
 	Extends :ref:`range_aggregator`.
+
+
+----
+Diff
+----
+.. js:data:: diff
+
+	Computes the difference between successive data points.
+
+------
+Divide
+------
+.. js:data:: div
+
+	Returns each data point divided by a divisor. Requires a "divisor" property
+	which is the value that all data points will be divided by.
+
+	Parameters:
+		**divisor** (double) - Value to divide data points by.
+
+------
+Filter
+------
+.. js:data:: filter
+
+	Filters out data points matching given critera.
+
+	Parameters:
+		**filter_op** (LTE, LT, GTE, GT, EQUAL) - Defines what data points to filter in relation to the threshold.
+
+		**threshold** (double) - Sets the threshold value for filtering data points.
 
 -----
 First
@@ -127,16 +151,6 @@ Gaps
 	Marks gaps in data according to sampling rate with a null data point.
 	Extends :ref:`range_aggregator`.
 
----------
-Histogram
----------
-.. js:data:: histogram
-
-	Calculates a probability distribution and returns the specified percentile
-	for the distribution. The "percentile" value is defined as 0 < percentile <= 1
-	where .5 is 50% and 1 is 100%. Note that this aggregator has been renamed to
-	*percentile* in release 0.9.2.
-	See :ref:`percentile_aggregator`.
 
 ----
 Last
@@ -170,7 +184,16 @@ Min
 	Returns the smallest value in the interval.
 	Extends :ref:`range_aggregator`.
 
-.. _percentile_aggregator:
+
+---
+Pad
+---
+.. js:data:: pad
+
+	Pads the data points with the specified value for each interval.
+
+	Parameters:
+		**pad_value** (long) - value to add to each interval if missing data.
 
 ----------
 Percentile
@@ -185,31 +208,6 @@ Percentile
 	Parameters:
 		**percentile** (double) - Percentile to count.
 
-----
-Sum
-----
-.. js:data:: sum
-
-	Sums all values
-	Extends :ref:`range_aggregator`.
-
-----
-Diff
-----
-.. js:data:: diff
-
-	Computes the difference between successive data points.
-
-------
-Divide
-------
-.. js:data:: div
-
-	Returns each data point divided by a divisor. Requires a "divisor" property
-	which is the value that all data points will be divided by.
-
-	Parameters:
-		**divisor** (double) - Value to divide data points by.
 
 ----
 Rate
@@ -244,27 +242,6 @@ Sampler
 
 		**time_zone** (Long format time zone) - Time zone for doing time calculations.
 
------
-Scale
------
-.. js:data:: scale
-
-	Scales each data point by a factor. Requires a "factor" property which is
-	the scaling value.
-
-	Parameters:
-		**factor** (double) - Scale factor.
-
-----
-Trim
-----
-.. js:data:: trim
-
-	Trims off the first, last or both data points for the interval.  Useful in
-	conjunction with the save_as aggregator to remove partial intervals.
-
-	Parameters:
-		**trim** (FIRST, LAST, BOTH) - Trims either first, last or both end data points.
 
 -------
 Save As
@@ -284,20 +261,20 @@ Save As
 
 		**add_saved_from** (boolean) - Tells the aggregator to add the saved_from tag to the new metric.  Defaults to true.
 
-------
-Filter
-------
-.. js:data:: filter
 
-	Filters out data points matching given critera.
+-----
+Scale
+-----
+.. js:data:: scale
+
+	Scales each data point by a factor. Requires a "factor" property which is
+	the scaling value.
 
 	Parameters:
-		**filter_op** (LTE, LT, GTE, GT, EQUAL) - Defines what data points to filter in relation to the threshold.
-
-		**threshold** (double) - Sets the threshold value for filtering data points.
+		**factor** (double) - Scale factor.
 
 ------
-Score
+Score  - Not in UI TODO
 ------
 .. js:data:: score
 
@@ -315,6 +292,40 @@ Score
 		  equal to the threshold value are greater than thresholds with inferior boundaries and less than thresholds with
 		  superior boundaries.
 
+---------------------
+Simple Moving Average
+---------------------
+
+------------------
+Standard Deviation
+------------------
+.. js:data:: dev
+
+	Computes standard deviation.
+	Extends :ref:`range_aggregator`.
+
+----
+Sum
+----
+.. js:data:: sum
+
+	Sums all values
+	Extends :ref:`range_aggregator`.
+
+---------
+Time Diff
+---------
+
+----
+Trim
+----
+.. js:data:: trim
+
+	Trims off the first, last or both data points for the interval.  Useful in
+	conjunction with the save_as aggregator to remove partial intervals.
+
+	Parameters:
+		**trim** (FIRST, LAST, BOTH) - Trims either first, last or both end data points.
 
 -------------
 JS Aggregator

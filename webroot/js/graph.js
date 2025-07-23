@@ -204,6 +204,11 @@ function buildKairosDBQuery() {
 				var agg = metric.addAggregator(name);
 				agg.trim = $(aggregator).find(".aggregatorTrimValue").val();
 			}
+			else if (name == 'time_diff')
+			{
+				var unit = $(aggregator).find(".timeDiffUnit").val()
+				metric.addTimeDiffAggregator(unit);
+			}
 			else if (name == 'dev') {
 				value = $(aggregator).find(".aggregatorSamplingValue").val();
 				if (!isValidInteger(value)) {
@@ -336,6 +341,10 @@ function buildKairosDBQuery() {
 		var endRelativeValue = $("#endRelativeValue").val();
 		if (endRelativeValue) {
 			query.setEndRelative(endRelativeValue, $("#endRelativeUnit").val())
+		}
+		else
+		{
+			query.setEndRelative(0, "seconds");
 		}
 	}
 
@@ -679,6 +688,7 @@ function addAggregator(container) {
 		$aggregatorContainer.find(".aggregatorSaveAs").hide();
 		$aggregatorContainer.find(".aggregatorRate").hide();
 		$aggregatorContainer.find(".aggregatorPad").hide();
+		$aggregatorContainer.find(".aggregatorTimeDiff").hide();
 		$aggregatorContainer.find(".aggregatorAlign").hide();
 		$aggregatorContainer.find(".aggregatorSma").hide();
 
@@ -713,6 +723,9 @@ function addAggregator(container) {
 			$aggregatorContainer.find(".aggregatorAlign").show();
 			// clear values
 			$aggregatorContainer.find(".aggregatorSamplingValue").val("");
+		}
+		else if (name == 'time_diff') {
+			$aggregatorContainer.find(".aggregatorTimeDiff").show();
 		}
 		else if (name == 'trim') {
 			$aggregatorContainer.find(".aggregatorTrim").show();

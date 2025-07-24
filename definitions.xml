@@ -99,4 +99,10 @@
 		<option name="properties" pattern="(.+)">-p $1</option>
 	</definition>
 
+	<definition name="docker" command="docker">
+		<option>buildx build</option>
+		<option name="tag" pattern="(.+)">-t $1</option>
+		<option>.</option>
+	</definition>
+
 </definitions>

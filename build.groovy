@@ -590,9 +590,12 @@ dockerBuild = new SimpleRule("docker-build").setDescription("Build a Docker imag
 
 def doDockerBuild(Rule rule)
 {
-	def tag = getDockerTag()
-	command = "docker build -t ${tag} --build-arg VERSION=${version}-${release} ."
-	saw.exec(command)
+	definition = saw.getDefinition("docker")
+	definition.set("tag", getDockerTag())
+
+	//def tag = getDockerTag()
+	//command = "docker build -t ${tag} --build-arg VERSION=${version}-${release} ."
+	saw.exec(definition.getCommand())
 }
 
 def getDockerTag()
@@ -609,7 +612,7 @@ def getDockerTag()
 //------------------------------------------------------------------------------
 // Push container
 new SimpleRule("docker-push").setDescription("Push a Docker image to registry, can specify docker registry with -D DOCKER_REGISTRY=<registry>")
-		.addDepend(dockerBuild)
+		//.addDepend(dockerBuild)
 		.setMakeAction("doDockerPush")
 
 def doDockerPush(Rule rule)

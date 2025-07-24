@@ -1,29 +1,5 @@
 {{- if .Values.enabled -}}
-{{- $waitCfgName := printf "kairosdb-wait-cfg" -}}
-{{- $maxCassandraNodes := (split "," .Values.storage.cassandra.contactPoints | len) -}}
-{{- $dbHost := printf "%s" .Values.storage.cassandra.contactPoints }}
 
-apiVersion: v1
-kind: ConfigMap 
-metadata:
-  name: {{ $waitCfgName }}
-  labels:
-{{ include "kairosdb.labels" . | indent 4 }}
-data:
-  config.json: |
-    [
-      {{- if .Values.storage.cassandra.enabled -}}
-        {{ range $i, $e := (split "," $dbHost) -}}
-        {
-          "host": "{{ $e }}",
-          "port": {{ $.Values.storage.cassandra.port }},
-          "type": "cassandra"
-        }{{ if lt ((trimPrefix "_" $i) | int | add 1) $maxCassandraNodes }},{{ end }}
-        {{- end }}
-      {{- end }}
-    ]
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -46,14 +22,6 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      initContainers:
-        - name: {{ .Release.Name }}-raw-data-wait
-          image: {{ .Values.image.waitContainer.image.repository }}:{{ .Values.image.waitContainer.image.tag }}
-          imagePullPolicy: {{ .Values.image.waitContainer.image.pullPolicy }}
-          args: [ "/etc/config/config.json" ]
-          volumeMounts:
-            - name: wait-config-volume
-              mountPath: /etc/config
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -61,22 +29,23 @@ spec:
           command: [ "bash" ]
           args:
             - "-c"
-            - "cp -f /etc/kairosdb/custom-configs/*.conf /etc/kairosdb && . ~/.bashrc && kairosdb.sh run"
+            - "cp -f conf/overrides/*.conf conf && bin/kairosdb.sh run"
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
           env:
-            - name: CASSANDRA_USER
+            #Grab all environment values
+            {{- range $key, $val := .Values.env }}
+            - name: {{ $key }}
+              {{- if and (kindIs "map" $val) (hasKey $val "valueFrom") }}
               valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.storage.cassandra.authSecret }}
-                  key: username
-            - name: CASSANDRA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.storage.cassandra.authSecret }}
-                  key: password
+                {{- toYaml $val.valueFrom | nindent 16 }}
+              {{- else }}
+              value: {{ $val | quote }}
+              {{- end }}
+            {{- end }}
+
           livenessProbe:
             httpGet:
               path: /
@@ -87,19 +56,14 @@ spec:
               port: http
           volumeMounts:
             - name: kairos-config-volume
-              mountPath: /etc/kairosdb/custom-configs
+              mountPath: /opt/kairosdb/conf/overrides
+              readOnly: true
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-        - name: wait-config-volume
-          configMap:
-            name: {{ $waitCfgName }}
         - name: kairos-config-volume
           configMap:
             name: kairosdb-config
-            items:
-              - key: kairosdb.conf
-                path: kairosdb.conf
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

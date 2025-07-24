@@ -43,3 +43,12 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
+
+{{/*
+Converts data to json
+*/}}
+{{- define "merge.keys" -}}
+{{- $key := .configKey }}
+{{- $data := index .root "Values" $key }}
+{{- toJson $data | quote }}
+{{- end -}}

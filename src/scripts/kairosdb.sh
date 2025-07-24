@@ -2,13 +2,12 @@
 
 # Find the location of the bin directory and change to the root of kairosdb
 KAIROSDB_BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "$KAIROSDB_BIN_DIR/.."
-
+cd "${KAIROSDB_BIN_DIR}/.."
 KAIROSDB_LIB_DIR="lib"
 KAIROSDB_LOG_DIR="log"
 
-if [ -f "$KAIROSDB_BIN_DIR/kairosdb-env.sh" ]; then
-	. "$KAIROSDB_BIN_DIR/kairosdb-env.sh"
+if [ -f "${KAIROSDB_BIN_DIR}/kairosdb-env.sh" ]; then
+	. "${KAIROSDB_BIN_DIR}/kairosdb-env.sh"
 fi
 
 if [ ! -d "$KAIROSDB_LOG_DIR" ]; then

@@ -234,7 +234,7 @@ public class PadAggregatorTest
 		aggregator.setStartTime(0);
 		aggregator.setAlignStartTime(true);
 		aggregator.setSampling(new Sampling(1, TimeUnit.SECONDS));
-		aggregator.setEndTime(3000);
+		aggregator.setEndTime(3001);
 		aggregator.init();
 
 		assertThat(

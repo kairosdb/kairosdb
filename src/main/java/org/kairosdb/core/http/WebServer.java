@@ -32,6 +32,7 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.util.ssl.KeyStoreScanner;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.ExecutorThreadPool;
 import org.kairosdb.core.KairosDBService;
@@ -64,6 +65,7 @@ public class WebServer implements KairosDBService
 	public static final String JETTY_SSL_CIPHER_SUITES = "kairosdb.jetty.ssl.cipherSuites";
 	public static final String JETTY_SSL_KEYSTORE_PATH = "kairosdb.jetty.ssl.keystore.path";
 	public static final String JETTY_SSL_KEYSTORE_PASSWORD = "kairosdb.jetty.ssl.keystore.password";
+	public static final String JETTY_SSL_KEYSTORE_SCANNER_INTERVAL = "kairosdb.jetty.ssl.keystore.scanner_interval";
 	public static final String JETTY_SSL_TRUSTSTORE_PATH = "kairosdb.jetty.ssl.truststore.path";
 	public static final String JETTY_THREADS_QUEUE_SIZE_PROPERTY = "kairosdb.jetty.threads.queue_size";
 	public static final String JETTY_THREADS_MIN_PROPERTY = "kairosdb.jetty.threads.min";
@@ -86,6 +88,7 @@ public class WebServer implements KairosDBService
 	private String[] m_protocols;
 	private String m_keyStorePath;
 	private String m_keyStorePassword;
+	private int m_keyStoreScannerInterval = 3600; //Defaults to 1 hour
 	private String m_trustStorePath = null;
 	private ExecutorThreadPool m_pool;
 	private boolean m_showStacktrace;
@@ -124,6 +127,12 @@ public class WebServer implements KairosDBService
 		m_sslPort = sslPort;
 		m_keyStorePath = requireNonNullOrEmpty(keyStorePath);
 		m_keyStorePassword = requireNonNullOrEmpty(keyStorePassword);
+	}
+
+	@Inject(optional = true)
+	public void setKeyStoreScannerInterval(@Named(JETTY_SSL_KEYSTORE_SCANNER_INTERVAL) int scannerInterval)
+	{
+		m_keyStoreScannerInterval = scannerInterval;
 	}
 
 	@Inject(optional = true)
@@ -296,6 +305,11 @@ public class WebServer implements KairosDBService
 
 		if (m_protocols != null && m_protocols.length > 0)
 			sslContextFactory.setIncludeProtocols(m_protocols);
+
+		//Add dynamic reload of certificates.
+		KeyStoreScanner keyStoreScanner = new KeyStoreScanner(sslContextFactory);
+		keyStoreScanner.setScanInterval(m_keyStoreScannerInterval);
+		m_server.addBean(keyStoreScanner);
 
 		ServerConnector https = new ServerConnector(m_server, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(httpConfig));
 		https.setPort(m_sslPort);

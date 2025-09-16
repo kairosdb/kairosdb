@@ -67,14 +67,10 @@ public class MonitorFilter implements Filter
 
 	private static final Logger logger = LoggerFactory.getLogger(MonitorFilter.class);
 	private static final HttpStats stats = MetricSourceManager.getSource(HttpStats.class);
-    
-	private final ConcurrentMap<String, AtomicInteger> counterMap = new ConcurrentHashMap<String, AtomicInteger>();
-	private final LongDataPointFactory m_dataPointFactory;
 
 	@Inject
-	public MonitorFilter(LongDataPointFactory dataPointFactory)
+	public MonitorFilter()
 	{
-		m_dataPointFactory = dataPointFactory;
 	}
 
 	@Override
@@ -116,20 +112,4 @@ public class MonitorFilter implements Filter
 	{
 	}
 
-	//@Override
-	public List<DataPointSet> getMetrics(long now)
-	{
-		List<DataPointSet> ret = new ArrayList<DataPointSet>();
-		for (String resource : counterMap.keySet())
-		{
-			//todo this is broken
-			DataPointSet dps = new DataPointSet("kairosdb.protocol.http_request_count");
-			dps.addTag("method", resource);
-			dps.addDataPoint(m_dataPointFactory.createDataPoint(now, (long)counterMap.get(resource).getAndSet(0)));
-
-			ret.add(dps);
-		}
-
-		return (ret);
-	}
 }

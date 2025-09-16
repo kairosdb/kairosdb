@@ -503,6 +503,10 @@ def doRun(Rule rule)
 	runClasspath = jc.getClasspath()
 	runClasspath.addPath("src/main/resources").addPath("src/main/java")
 	runClasspath.addPaths(ivyDefaultResolve.getClasspath())
+	buildPlugins.each { plugin, jars ->
+		runClasspath.addPaths(jars.getFullFilePaths())
+	}
+
 	kairosDefinition.set("classpath", runClasspath)
 	//ret = saw.exec("java ${debug} -Dio.netty.epollBugWorkaround=true -cp ${runClasspath} org.kairosdb.core.Main ${args}", false)
 	ret = saw.exec(kairosDefinition.getCommand())

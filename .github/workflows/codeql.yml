@@ -65,8 +65,11 @@ jobs:
 
     #   If the Autobuild fails above, remove it and uncomment the following three lines.
     #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
-
-    - run: |
+    - name: Build with Tablesaw
+      uses: actions/setup-java@v5
+      with:
+        java-version: '11'
+      run: |
         echo "Run, Build Application using script"
         CLASSPATH=tools/tablesaw-1.2.9.jar java make clean compile
 

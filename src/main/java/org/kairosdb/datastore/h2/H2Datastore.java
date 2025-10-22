@@ -328,7 +328,7 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 			{
 				String regex = tagPair.getValue().substring(m_regexPrefix.length());
 
-				Pattern pattern = Pattern.compile(regex);
+				Pattern pattern = Pattern.compile(Pattern.quote(regex));
 
 				boolean matched = false;
 				MetricTagValuesQuery.ResultSet resultSet = (new MetricTagValuesQuery(query.getName(), tagPair.getKey())).runQuery();

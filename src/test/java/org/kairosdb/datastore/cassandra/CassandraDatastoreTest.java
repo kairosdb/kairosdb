@@ -483,7 +483,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 
 		DataPointGroup dataPointGroup = results.get(0);
 		int counter = 0;
-		int total = 0;
+		long total = 0;
 		while (dataPointGroup.hasNext())
 		{
 			DataPoint dp = dataPointGroup.next();

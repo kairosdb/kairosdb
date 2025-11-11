@@ -17,7 +17,7 @@
 package org.kairosdb.testing;
 
 import com.google.common.collect.ImmutableList;
-import org.apache.bval.jsr303.ApacheValidationProvider;
+import org.apache.bval.jsr.ApacheValidationProvider;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;

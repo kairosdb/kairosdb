@@ -89,6 +89,7 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	private static final long MAX_TIME_VALUE = Long.MAX_VALUE;
 
 	private Connection m_holdConnection;  //Connection that holds the database open
+	private volatile boolean m_shutdown = false;
 	private final KairosDataPointFactory m_dataPointFactory;
 	private final Publisher<RowKeyEvent> m_rowKeyPublisher;
 	private final String m_regexPrefix;
@@ -180,6 +181,7 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	 */
 	public void shutdown()
 	{
+		m_shutdown = true;
 		try {
 			m_holdConnection.createStatement().execute("SHUTDOWN");
 		}
@@ -191,6 +193,7 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	@Override
 	public void close()
 	{
+		m_shutdown = true;
 		try
 		{
 			if (m_holdConnection != null) {
@@ -206,6 +209,9 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 	@Subscribe
 	public synchronized void putDataPoint(DataPointEvent event) throws DatastoreException
 	{
+		if (m_shutdown)
+			return;
+
 		GenOrmDataSource.attachAndBegin();
 		try
 		{

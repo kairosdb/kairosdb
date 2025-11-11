@@ -89,7 +89,7 @@ public class BlastServer implements KairosDBService, Runnable
 		{
 			long now = System.currentTimeMillis();
 			DataPoint dataPoint = m_longDataPointFactory.createDataPoint(now, 42);
-			int row = RandomUtils.nextInt(0, m_numberOfRows);
+			int row = RandomUtils.insecure().randomInt(0, m_numberOfRows);
 			ImmutableSortedMap<String, String> tags = ImmutableSortedMap.of("row",
 					String.valueOf(row), "host", "blast_server");
 

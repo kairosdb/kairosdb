@@ -27,7 +27,7 @@ import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import com.google.inject.Inject;
 import org.apache.bval.constraints.NotEmpty;
-import org.apache.bval.jsr303.ApacheValidationProvider;
+import org.apache.bval.jsr.ApacheValidationProvider;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.aggregator.*;
 import org.kairosdb.core.annotation.Feature;
@@ -901,6 +901,18 @@ public class QueryParser
 		}
 
 		@Override
+		public Object[] getExecutableParameters()
+		{
+			return new Object[0];
+		}
+
+		@Override
+		public Object getExecutableReturnValue()
+		{
+			return null;
+		}
+
+		@Override
 		public Path getPropertyPath()
 		{
 			return new SimplePath(context);
@@ -914,6 +926,12 @@ public class QueryParser
 
 		@Override
 		public ConstraintDescriptor<?> getConstraintDescriptor()
+		{
+			return null;
+		}
+
+		@Override
+		public <U> U unwrap(Class<U> type)
 		{
 			return null;
 		}

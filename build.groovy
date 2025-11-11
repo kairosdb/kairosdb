@@ -32,7 +32,7 @@ if (programName == null)
 
 //Do not use '-' in version string, it breaks rpm uninstall.
 version = "1.3.2"
-release = saw.getProperty("KAIROS_RELEASE_NUMBER", "1") //package release number
+release = saw.getProperty("KAIROS_RELEASE_NUMBER", "SNAPSHOT") //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -128,7 +128,7 @@ pomRule = configurePomRule(ivy.createPomRule("build/jar/pom.xml", ivy.getResolve
 
 //------------------------------------------------------------------------------
 //==-- Publish Artifacts --==
-if (version.contains("SNAPSHOT"))
+if (release.contains("SNAPSHOT"))
 	defaultResolver = "local-m2-publish-snapshot"
 else
 	defaultResolver = "local-m2-publish"

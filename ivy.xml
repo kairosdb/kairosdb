@@ -59,6 +59,7 @@
 		<dependency org="commons-io" name="commons-io" rev="2.21.0" />
 		<dependency org="com.beust" name="jcommander" rev="1.75" />
 		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.5.14" />
+		<dependency org="commons-codec" name="commons-codec" rev="1.19.0"/> <!-- force dependency update for httpclient -->
 		<dependency org="joda-time" name="joda-time" rev="2.10.6" />
 
 		<dependency org="ch.qos.logback" name="logback-core" rev="1.5.21" />
@@ -80,9 +81,10 @@
 		</dependency>
 
 		<!-- Cassandra Client -->
-		<dependency org="com.datastax.cassandra" name="cassandra-driver-core" rev="3.11.5">
+		<dependency org="org.apache.cassandra" name="cassandra-driver-core" rev="3.12.1">
 			<exclude org="com.fasterxml.jackson.core" name="jackson-databind"/>
 		</dependency>
+		<dependency org="io.netty" name="netty-handler" rev="4.1.128.Final"/> <!-- force dependency update for cassandra-driver -->
 		<dependency org="net.jpountz.lz4" name="lz4" rev="1.3.0"/>
 
 

@@ -48,10 +48,11 @@ import java.io.Writer;
 import java.net.Socket;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
+
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ExportTest
@@ -151,8 +152,8 @@ public class ExportTest
 		QueryMetric queryMetric = new QueryMetric(0, 0, METRIC_NAME);
 		DatastoreQuery query = ds.createQuery(queryMetric);
 		List<DataPointGroup> results = query.execute();
-		assertThat(results.size(), equalTo(1));
-		assertThat(results.get(0).hasNext(), equalTo(false));
+		assertThat(results.size()).isEqualTo(1);
+		assertThat(results.get(0).hasNext()).isFalse();
 
 		query.close();
 
@@ -178,9 +179,11 @@ public class ExportTest
 		DatastoreQuery query = ds.createQuery(queryMetric);
 		List<DataPointGroup> results = query.execute();
 
-		assertThat(results.size(), equalTo(1));
-		assertThat(results.get(0).hasNext(), equalTo(true));
-		assertThat(results.get(0).next().getDoubleValue(), equalTo(126500.0));
+
+		System.out.println(Objects.toString(results));
+		assertThat(results.size()).isEqualTo(1);
+		assertThat(results.get(0).hasNext()).isTrue();
+		assertThat(results.get(0).next().getDoubleValue()).isEqualTo(126500.0);
 
 		query.close();
 	}

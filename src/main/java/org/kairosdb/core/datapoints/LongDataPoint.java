@@ -17,7 +17,7 @@ import java.io.IOException;
  */
 public class LongDataPoint extends DataPointHelper
 {
-	private long m_value;
+	private final long m_value;
 
 	public LongDataPoint(long timestamp, long value)
 	{

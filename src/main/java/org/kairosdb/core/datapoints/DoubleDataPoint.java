@@ -16,7 +16,7 @@ import java.io.IOException;
  */
 public class DoubleDataPoint extends DataPointHelper
 {
-	private double m_value;
+	private final double m_value;
 
 	public DoubleDataPoint(long timestamp, double value)
 	{

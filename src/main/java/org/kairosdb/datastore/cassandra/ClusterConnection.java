@@ -922,6 +922,7 @@ public class ClusterConnection
 			return queryStatementsByTagName;
 		}
 
+		@SuppressWarnings("deprecation")
 		private TagSetHash generateTagPairHashes(DataPointsRowKey rowKey)
 		{
 			//identify which tags we are indexing on

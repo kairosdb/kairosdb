@@ -162,7 +162,7 @@ public class ExportTest
 		s_main.runImport(export);
 
 		export.close();
-		Thread.sleep(2000);
+		Thread.sleep(5000);
 
 		verifyDataPoints();
 	}

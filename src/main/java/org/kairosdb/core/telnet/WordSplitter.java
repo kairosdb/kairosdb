@@ -16,12 +16,9 @@
 
 package org.kairosdb.core.telnet;
 
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Splitter;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToMessageDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +26,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-public class WordSplitter extends OneToOneDecoder
+public class WordSplitter extends MessageToMessageDecoder<ByteBuf>
 {
 	private static final Charset CHARSET = Charset.forName("ISO-8859-1");
 	private static final Logger log = LoggerFactory.getLogger(WordSplitter.class);
@@ -42,15 +39,12 @@ public class WordSplitter extends OneToOneDecoder
 	}
 
 	@Override
-	protected Object decode(final ChannelHandlerContext ctx,
-	                        final Channel channel,
-	                        final Object msg) throws Exception
+	protected void decode(final ChannelHandlerContext ctx,
+	                      final ByteBuf msg,
+	                      final List<Object> out) throws Exception
 	{
-		return splitString(((ChannelBuffer) msg).toString(CHARSET));
+		out.add(splitString(msg.toString(CHARSET)));
 	}
-
-
-	private static String[] arrayType = new String[0];
 
 	protected static List<String> splitString(final String s)
 	{

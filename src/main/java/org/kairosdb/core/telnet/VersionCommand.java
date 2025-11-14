@@ -17,16 +17,12 @@
 package org.kairosdb.core.telnet;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import org.jboss.netty.channel.Channel;
-import org.kairosdb.core.datapoints.LongDataPointFactory;
+import io.netty.channel.Channel;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.metrics4j.MetricSourceManager;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class VersionCommand implements TelnetCommand
 {
@@ -44,11 +40,11 @@ public class VersionCommand implements TelnetCommand
 	{
 		stats.request(getCommand()).put(1);
 		m_counter.incrementAndGet();
-		if (chan.isConnected())
+		if (chan.isActive())
 		{
 			Package thisPackage = getClass().getPackage();
 			String versionString = thisPackage.getImplementationTitle()+" "+thisPackage.getImplementationVersion();
-			chan.write(versionString+"\n");
+			chan.writeAndFlush(versionString+"\n");
 		}
 	}
 

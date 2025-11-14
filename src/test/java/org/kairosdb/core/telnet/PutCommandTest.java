@@ -15,11 +15,7 @@
  */
 package org.kairosdb.core.telnet;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelConfig;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelPipeline;
+import io.netty.channel.Channel;
 import org.junit.Before;
 import org.junit.Test;
 import org.kairosdb.core.DataPoint;
@@ -38,14 +34,13 @@ import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.util.ValidationException;
 
-import javax.annotation.Nullable;
-import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 public class PutCommandTest
 {
@@ -66,7 +61,7 @@ public class PutCommandTest
 	@Test
 	public void test() throws DatastoreException, ValidationException
 	{
-		m_command.execute(new FakeChannel(), Arrays.asList("telnet", "MetricName", "12345678999", "789", "foo=bar", "fum=barfum"));
+		m_command.execute(mock(Channel.class), Arrays.asList("telnet", "MetricName", "12345678999", "789", "foo=bar", "fum=barfum"));
 
 		assertThat(m_datastore.getSet().getName(), equalTo("MetricName"));
 		assertThat(m_datastore.getSet().getTags().size(), equalTo(2));
@@ -81,7 +76,7 @@ public class PutCommandTest
 	{
 		try
 		{
-			m_command.execute(new FakeChannel(), Arrays.asList("telnet", "", "12345678999", "789", "foo=bar", "fum=barfum"));
+			m_command.execute(mock(Channel.class), Arrays.asList("telnet", "", "12345678999", "789", "foo=bar", "fum=barfum"));
 			fail("ValidationException expected");
 		}
 		catch (DatastoreException e)
@@ -97,7 +92,7 @@ public class PutCommandTest
 	@Test
 	public void test_metricName_characters_valid() throws DatastoreException, ValidationException
 	{
-		m_command.execute(new FakeChannel(), Arrays.asList("telnet", "你好", "12345678999", "789", "foo=bar", "fum=barfum"));
+		m_command.execute(mock(Channel.class), Arrays.asList("telnet", "你好", "12345678999", "789", "foo=bar", "fum=barfum"));
 	}
 
 	@Test
@@ -105,7 +100,7 @@ public class PutCommandTest
 	{
 		try
 		{
-			m_command.execute(new FakeChannel(), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "=barfum"));
+			m_command.execute(mock(Channel.class), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "=barfum"));
 			fail("ValidationException expected");
 		}
 		catch (DatastoreException e)
@@ -121,7 +116,7 @@ public class PutCommandTest
 	@Test
 	public void test_tagName_characters_validColonTagName() throws DatastoreException, ValidationException
 	{
-		m_command.execute(new FakeChannel(), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "fum:fi=barfum"));
+		m_command.execute(mock(Channel.class), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "fum:fi=barfum"));
 	}
 
 	@Test
@@ -129,7 +124,7 @@ public class PutCommandTest
 	{
 		try
 		{
-			m_command.execute(new FakeChannel(), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "fum="));
+			m_command.execute(mock(Channel.class), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "fum="));
 			fail("ValidationException expected");
 		}
 		catch (DatastoreException e)
@@ -145,7 +140,7 @@ public class PutCommandTest
 	@Test
 	public void test_tagValue_characters_validColonTagValue() throws DatastoreException, ValidationException
 	{
-		m_command.execute(new FakeChannel(), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "fum=bar:fum"));
+		m_command.execute(mock(Channel.class), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "fum=bar:fum"));
 	}
 
 	@Test
@@ -153,7 +148,7 @@ public class PutCommandTest
 	{
 		try
 		{
-			m_command.execute(new FakeChannel(), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "fum-barfum"));
+			m_command.execute(mock(Channel.class), Arrays.asList("telnet", "metricName", "12345678999", "789", "foo=bar", "fum-barfum"));
 			fail("ValidationException expected");
 		}
 		catch (DatastoreException e)
@@ -163,176 +158,6 @@ public class PutCommandTest
 		catch (ValidationException e)
 		{
 			assertThat(e.getMessage(), equalTo("tag[1] must be in the format 'name=value'."));
-		}
-	}
-
-	public static class FakeChannel implements Channel
-	{
-		@Override
-		public Integer getId()
-		{
-			return null;
-		}
-
-		@Override
-		public ChannelFactory getFactory()
-		{
-			return null;
-		}
-
-		@Override
-		public Channel getParent()
-		{
-			return null;
-		}
-
-		@Override
-		public ChannelConfig getConfig()
-		{
-			return null;
-		}
-
-		@Override
-		public ChannelPipeline getPipeline()
-		{
-			return null;
-		}
-
-		@Override
-		public boolean isOpen()
-		{
-			return false;
-		}
-
-		@Override
-		public boolean isBound()
-		{
-			return false;
-		}
-
-		@Override
-		public boolean isConnected()
-		{
-			return false;
-		}
-
-		@Override
-		public SocketAddress getLocalAddress()
-		{
-			return null;
-		}
-
-		@Override
-		public SocketAddress getRemoteAddress()
-		{
-			return null;
-		}
-
-		@Override
-		public ChannelFuture write(Object o)
-		{
-			return null;
-		}
-
-		@Override
-		public ChannelFuture write(Object o, SocketAddress socketAddress)
-		{
-			return null;
-		}
-
-		@Override
-		public ChannelFuture bind(SocketAddress socketAddress)
-		{
-			return null;
-		}
-
-		@Override
-		public ChannelFuture connect(SocketAddress socketAddress)
-		{
-			return null;
-		}
-
-		@Override
-		public ChannelFuture disconnect()
-		{
-			return null;
-		}
-
-		@Override
-		public ChannelFuture unbind()
-		{
-			return null;
-		}
-
-		@Override
-		public ChannelFuture close()
-		{
-			return null;
-		}
-
-		@Override
-		public ChannelFuture getCloseFuture()
-		{
-			return null;
-		}
-
-		@Override
-		public int getInterestOps()
-		{
-			return 0;
-		}
-
-		@Override
-		public boolean isReadable()
-		{
-			return false;
-		}
-
-		@Override
-		public boolean isWritable()
-		{
-			return false;
-		}
-
-		@Override
-		public ChannelFuture setInterestOps(int i)
-		{
-			return null;
-		}
-
-		@Override
-		public ChannelFuture setReadable(boolean b)
-		{
-			return null;
-		}
-
-		@Override
-		public boolean getUserDefinedWritability(int index)
-		{
-			return false;
-		}
-
-		@Override
-		public void setUserDefinedWritability(int index, boolean isWritable)
-		{
-
-		}
-
-		@Override
-		public Object getAttachment()
-		{
-			return null;
-		}
-
-		@Override
-		public void setAttachment(Object o)
-		{
-		}
-
-		@Override
-		public int compareTo(@Nullable Channel o)
-		{
-			return 0;
 		}
 	}
 

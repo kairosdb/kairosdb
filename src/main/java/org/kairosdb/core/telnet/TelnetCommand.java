@@ -16,7 +16,7 @@
 
 package org.kairosdb.core.telnet;
 
-import org.jboss.netty.channel.Channel;
+import io.netty.channel.Channel;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.util.ValidationException;
 

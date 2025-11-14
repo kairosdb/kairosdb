@@ -18,7 +18,7 @@ package org.kairosdb.core.telnet;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.Inject;
-import org.jboss.netty.channel.Channel;
+import io.netty.channel.Channel;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
@@ -33,8 +33,6 @@ import org.kairosdb.util.ValidationException;
 import org.kairosdb.util.Validator;
 
 import java.util.List;
-
-import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class PutMillisecondCommand implements TelnetCommand
 {

@@ -18,6 +18,7 @@ package org.kairosdb.core.http;
 import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
+import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.Matchers;
@@ -48,7 +49,7 @@ import java.util.Set;
 
 public class WebServletModule extends ServletModule
 {
-	private Set<Class> m_resourceClasses = new HashSet<>();
+	private Set<Class<?>> m_resourceClasses = new HashSet<>();
 
 	public WebServletModule(KairosRootConfig props)
 	{
@@ -79,77 +80,28 @@ public class WebServletModule extends ServletModule
 		bind(InvalidServerTypeExceptionMapper.class).in(Scopes.SINGLETON);
 
 		// Configure Jersey 3 ServletContainer with HK2-Guice bridge
-		Map<String, String> jerseyParams = new HashMap<>();
+		/*Map<String, String> jerseyParams = new HashMap<>();
 		jerseyParams.put("jakarta.ws.rs.Application", KairosResourceConfig.class.getName());
-		serve("/*").with(ServletContainer.class, jerseyParams);
+		serve("/*").with(ServletContainer.class, jerseyParams);*/
 
 		bindListener(Matchers.any(), new TypeListener()
 		{
 			@Override
 			public <I> void hear(TypeLiteral<I> type, TypeEncounter<I> encounter)
 			{
-				Class<? extends Class> clazz = (Class<? extends Class>) type.getRawType();
-				System.out.println("Looking at "+clazz);
+				Class<?> clazz = type.getRawType();
 
 				if (clazz.isAnnotationPresent(Path.class))
-				{
-					System.out.println("Found binding for "+clazz.getName());
 					m_resourceClasses.add(clazz);
-				}
 			}
 		});
 	}
 
-	/**
-	 * Jersey ResourceConfig that sets up the HK2-Guice bridge
-	 */
-	public static class KairosResourceConfig extends ResourceConfig
+	@Provides
+	@ResourceClasses
+	public Set<Class<?>> getResources()
 	{
-		@Inject
-		public KairosResourceConfig(Injector injector)
-		{
-			// Register the Guice bridge feature
-			register(new GuiceBridgeFeature(injector));
-
-			// Register JAX-RS resources
-			register(MetricsResource.class);
-			register(MetadataResource.class);
-			register(FeaturesResource.class);
-			register(AdminResource.class);
-
-			// Register providers
-			register(JacksonJsonProvider.class);
-			register(InvalidServerTypeExceptionMapper.class);
-		}
+		return m_resourceClasses;
 	}
 
-	/**
-	 * Jersey Feature that initializes the HK2-Guice bridge
-	 */
-	private static class GuiceBridgeFeature implements Feature
-	{
-		private final Injector injector;
-
-		public GuiceBridgeFeature(Injector injector)
-		{
-			this.injector = injector;
-		}
-
-		@Override
-		public boolean configure(FeatureContext context)
-		{
-			// Get the InjectionManager (Jersey 3's abstraction over HK2)
-			InjectionManager injectionManager = InjectionManager.class.cast(context.getConfiguration().getProperty(InjectionManager.class.getName()));
-			if (injectionManager == null) {
-				throw new IllegalStateException("InjectionManager not found in configuration");
-			}
-			
-			// Initialize HK2-Guice bridge using the underlying ServiceLocator
-			org.glassfish.hk2.api.ServiceLocator serviceLocator = injectionManager.getInstance(org.glassfish.hk2.api.ServiceLocator.class);
-			GuiceBridge.getGuiceBridge().initializeGuiceBridge(serviceLocator);
-			GuiceIntoHK2Bridge guiceBridge = serviceLocator.getService(GuiceIntoHK2Bridge.class);
-			guiceBridge.bridgeGuiceInjector(injector);
-			return true;
-		}
-	}
 }

@@ -164,6 +164,7 @@ public class MetricsResource
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
 			KairosDataPointFactory dataPointFactory, FilterEventBus eventBus)
 	{
+		System.out.println("Initialized MetricsResource $$$$$$$$$$$$");
 		this.datastore = requireNonNull(datastore);
 		this.queryParser = requireNonNull(queryParser);
 		m_kairosDataPointFactory = dataPointFactory;

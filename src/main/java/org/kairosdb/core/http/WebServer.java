@@ -19,8 +19,10 @@ package org.kairosdb.core.http;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.name.Named;
 import com.google.inject.servlet.GuiceFilter;
+import com.google.inject.servlet.GuiceServletContextListener;
 import com.typesafe.config.Config;
 import org.eclipse.jetty.ee10.servlet.DefaultServlet;
 import org.eclipse.jetty.ee10.servlet.FilterHolder;
@@ -37,7 +39,9 @@ import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.handler.QoSHandler;
+import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.eclipse.jetty.util.resource.ResourceFactory;
 import org.eclipse.jetty.util.ssl.KeyStoreScanner;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
@@ -107,6 +111,8 @@ public class WebServer implements KairosDBService
 	private String[] m_loggingIgnorePaths;
 	private Config m_qosConfig;
 
+	@Inject
+	private Injector m_injector;
 
 	public WebServer(int port, String webRoot)
 			throws UnknownHostException
@@ -253,14 +259,28 @@ public class WebServer implements KairosDBService
 			//servletContextHandler.addServlet(DefaultServlet.class, "/api/*");
 			ServletHolder holder = new ServletHolder(ServletContainer.class);
 			holder.setInitParameter("jakarta.ws.rs.Application", GuiceJerseyResourceConfig.class.getName());
-			servletContextHandler.addServlet(holder, "/*");
+			servletContextHandler.addServlet(holder, "/api/*");
+			servletContextHandler.setBaseResourceAsString("/");
 
+			//Add this listener so we can get guice injector from within GuiceJerseyResourceConfig
+			servletContextHandler.addEventListener(new GuiceServletContextListener() {
+				@Override
+				protected Injector getInjector() {
+					return m_injector;
+				}
+			});
 
-			ServletHolder servletHolder = new ServletHolder("static", DefaultServlet.class);
-			servletHolder.setInitParameter("resourceBase",m_webRoot);
+			ResourceFactory resourceFactory = ResourceFactory.of(m_server);
+			ResourceHandler resourceHandler = new ResourceHandler();
+			resourceHandler.setBaseResource(resourceFactory.newResource(m_webRoot));
+			resourceHandler.setDirAllowed(true);
+			resourceHandler.setWelcomeFiles("index.html");
+
+			/*ServletHolder servletHolder = new ServletHolder("static", DefaultServlet.class);
+			servletHolder.setInitParameter("baseResource", m_webRoot);
 			servletHolder.setInitParameter("dirAllowed","true");
 			servletContextHandler.addServlet(servletHolder,"/");
-			servletContextHandler.setWelcomeFiles(new String[]{"index.html"});
+			servletContextHandler.setWelcomeFiles(new String[]{"index.html"});*/
 
 			//adding gzip handler
 			GzipHandler gzipHandler = new GzipHandler();
@@ -271,6 +291,7 @@ public class WebServer implements KairosDBService
 			//chain handlers
 			gzipHandler.setHandler(servletContextHandler);
 
+			Handler currentHandler = gzipHandler;
 
 
 			if (m_qosConfig != null)
@@ -280,14 +301,16 @@ public class WebServer implements KairosDBService
 
 				//todo do some config stuff
 
-				m_server.setHandler(qoSHandler);
-			}
-			else
-			{
-				m_server.setHandler(gzipHandler);
+				currentHandler = qoSHandler;
 			}
 
+			resourceHandler.setHandler(currentHandler);
+			//m_server.setHandler(resourceHandler);
+
+			m_server.setHandler(servletContextHandler);
+
 			m_server.setDefaultHandler(new DefaultHandler());
+
 
 
 			//some code for logging

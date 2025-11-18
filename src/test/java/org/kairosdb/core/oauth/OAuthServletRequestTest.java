@@ -3,7 +3,7 @@ package org.kairosdb.core.oauth;
 import org.junit.Test;
 import org.kairosdb.core.oauth.OAuthFilter.OAuthServletRequest;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 

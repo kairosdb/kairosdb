@@ -14,8 +14,8 @@ import org.kairosdb.events.ShutdownEvent;
 import org.kairosdb.metrics4j.MetricSourceManager;
 import org.kairosdb.metrics4j.collectors.DurationCollector;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;

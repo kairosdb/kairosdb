@@ -3,7 +3,7 @@ package org.kairosdb.core.health;
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 public class HealthCheckModule extends AbstractModule
 {

@@ -88,16 +88,30 @@
 		<!-- Jetty server stuff -->
 		<dependency org="org.eclipse.jetty" name="jetty-server"
 		            rev="${jetty.version}"/>
-		<dependency org="org.eclipse.jetty" name="jetty-servlet"
+		<dependency org="org.eclipse.jetty.ee10" name="jetty-ee10-servlet"
 		            rev="${jetty.version}"/>
-		<dependency org="org.eclipse.jetty" name="jetty-servlets"
+		<dependency org="org.eclipse.jetty.ee10" name="jetty-ee10-servlets"
 		            rev="${jetty.version}"/>
-		<dependency org="org.eclipse.jetty" name="jetty-jaas"
-		            rev="${jetty.version}"/>
+		<!--<dependency org="org.eclipse.jetty" name="jetty-jaas"
+		            rev="${jetty.version}"/>-->
 		<dependency org="org.apache.mina" name="mina-core" rev="2.2.4"/> <!-- force dependency update for jetty-jaas -->
 
 		<!--Jersey-->
-		<dependency org="com.sun.jersey.contribs" name="jersey-guice"
+		<dependency org="org.glassfish.jersey.containers" name="jersey-container-servlet" rev="${jersey.version}"/>
+		<dependency org="org.glassfish.jersey.inject" name="jersey-hk2" rev="${jersey.version}"/>
+		<dependency org="org.glassfish.jersey.ext" name="jersey-bean-validation" rev="${jersey.version}"/>
+		<dependency org="org.glassfish.jersey.media" name="jersey-media-json-jackson" rev="${jersey.version}"/>
+		<dependency org="org.glassfish.jersey.security" name="oauth1-server" rev="${jersey.version}"/>
+		<dependency org="org.glassfish.jersey.security" name="oauth1-signature" rev="${jersey.version}"/>
+		<dependency org="jakarta.ws.rs" name="jakarta.ws.rs-api" rev="4.0.0"/>
+		<dependency org="org.glassfish.hk2" name="guice-bridge" rev="3.1.1"/>
+		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.20.1"/>
+		<dependency org="com.fasterxml.jackson.jakarta.rs" name="jackson-jakarta-rs-json-provider" rev="2.20.1"/>
+
+
+
+
+		<!--<dependency org="com.sun.jersey.contribs" name="jersey-guice"
 		            rev="${jersey.version}"/>
 		<dependency org="com.sun.jersey" name="jersey-server" rev="${jersey.version}"/>
 		<dependency org="com.sun.jersey" name="jersey-core" rev="${jersey.version}"/>
@@ -105,11 +119,12 @@
 		            transitive="false"/>
 		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-signature" rev="${jersey.version}" />
 		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-server" rev="${jersey.version}" />
-		<dependency org="com.fasterxml.jackson.jaxrs" name="jackson-jaxrs-json-provider" rev="2.20.1"/>
+		<dependency org="com.fasterxml.jackson.jaxrs" name="jackson-jaxrs-json-provider" rev="2.20.1"/>-->
+
 
 		<!-- Pulse -->
-		<dependency org="javax.validation" name="validation-api" rev="2.0.1.Final"/>
-		<dependency org="org.apache.bval" name="bval-jsr" rev="1.1.2"/>
+		<dependency org="jakarta.validation" name="jakarta.validation-api" rev="3.1.0"/>
+		<dependency org="org.hibernate.validator" name="hibernate-validator" rev="8.0.3.Final"/>
 		<dependency org="com.google.code.findbugs" name="jsr305" rev="1.3.9"/>
 
 		<!-- Quartz -->
@@ -125,11 +140,11 @@
 		<dependency org="org.kairosdb" name="metrics4j" rev="1.0.4"/>
 
 		<!-- Dependencies removed in jdk9 -->
-		<dependency org="javax.xml.bind" name="jaxb-api" rev="2.3.0" />
-		<dependency org="com.sun.xml.bind" name="jaxb-core" rev="2.3.0" />
-		<dependency org="com.sun.xml.bind" name="jaxb-impl" rev="2.3.0" />
+		<dependency org="jakarta.xml.bind" name="jakarta.xml.bind-api" rev="4.0.2" />
+		<dependency org="org.glassfish.jaxb" name="jaxb-runtime" rev="4.0.5" />
+		<dependency org="jakarta.activation" name="jakarta.activation-api" rev="2.1.3" />
 
-		<dependency org="com.sun.activation" name="javax.activation" rev="1.2.0" />
+		<dependency org="jakarta.servlet" name="jakarta.servlet-api" rev="6.1.0" />
 
 
 

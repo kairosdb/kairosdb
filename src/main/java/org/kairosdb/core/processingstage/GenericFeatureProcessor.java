@@ -5,7 +5,7 @@ import org.kairosdb.core.annotation.Feature;
 import org.kairosdb.core.processingstage.metadata.FeatureProcessingMetadata;
 import org.kairosdb.core.processingstage.metadata.FeatureProcessorMetadata;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 

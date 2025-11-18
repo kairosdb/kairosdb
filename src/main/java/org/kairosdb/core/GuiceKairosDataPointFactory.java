@@ -25,7 +25,7 @@ import org.kairosdb.util.KDataInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;

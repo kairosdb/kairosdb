@@ -15,14 +15,14 @@
  */
 package org.kairosdb.core.groupby;
 
-import org.apache.bval.constraints.NotEmpty;
+import jakarta.validation.constraints.NotEmpty;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.annotation.FeatureComponent;
 import org.kairosdb.core.annotation.FeatureProperty;
 import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.plugin.GroupBy;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

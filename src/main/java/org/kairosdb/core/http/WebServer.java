@@ -21,20 +21,27 @@ import com.google.common.base.Splitter;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.inject.servlet.GuiceFilter;
-import org.eclipse.jetty.jaas.JAASLoginService;
-import org.eclipse.jetty.security.*;
+import com.typesafe.config.Config;
+import org.eclipse.jetty.ee10.servlet.DefaultServlet;
+import org.eclipse.jetty.ee10.servlet.FilterHolder;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.servlet.security.ConstraintMapping;
+import org.eclipse.jetty.ee10.servlet.security.ConstraintSecurityHandler;
+import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.security.Constraint;
+import org.eclipse.jetty.security.LoginService;
+import org.eclipse.jetty.security.SecurityHandler;
+import org.eclipse.jetty.security.jaas.JAASLoginService;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.ErrorHandler;
-import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.QoSHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
-import org.eclipse.jetty.servlet.DefaultServlet;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.ssl.KeyStoreScanner;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.eclipse.jetty.util.thread.ExecutorThreadPool;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.glassfish.jersey.servlet.ServletContainer;
 import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.exception.KairosDBException;
 import org.slf4j.Logger;
@@ -43,9 +50,9 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.EnumSet;
+
+import jakarta.servlet.DispatcherType;
 
 import static java.util.Objects.requireNonNull;
 import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
@@ -55,6 +62,8 @@ public class WebServer implements KairosDBService
 {
 	public static final Logger logger = LoggerFactory.getLogger(WebServer.class);
 	public static final int LOG_RETAIN_DAYS = 30;
+
+	public static final String QOS_CONFIG = "kairosdb.qos";
 
 	public static final String JETTY_ADDRESS_PROPERTY = "kairosdb.jetty.address";
 	public static final String JETTY_PORT_PROPERTY = "kairosdb.jetty.port";
@@ -90,12 +99,13 @@ public class WebServer implements KairosDBService
 	private String m_keyStorePassword;
 	private int m_keyStoreScannerInterval = 3600; //Defaults to 1 hour
 	private String m_trustStorePath = null;
-	private ExecutorThreadPool m_pool;
+	private QueuedThreadPool m_pool;
 	private boolean m_showStacktrace;
 	private String m_authModuleName = null;
 	private int m_requestLoggingRetainDays = LOG_RETAIN_DAYS;
 	private boolean m_requestLoggingEnabled;
 	private String[] m_loggingIgnorePaths;
+	private Config m_qosConfig;
 
 
 	public WebServer(int port, String webRoot)
@@ -117,6 +127,12 @@ public class WebServer implements KairosDBService
 		m_webRoot = webRoot;
 		m_address = InetAddress.getByName(address);
 		m_idleTimeout = idleTimeout;
+	}
+
+	@Inject(optional = true)
+	public void setQosConfig(@Named(QOS_CONFIG) Config qosConfig)
+	{
+		m_qosConfig = qosConfig;
 	}
 
 	@Inject(optional = true)
@@ -160,9 +176,8 @@ public class WebServer implements KairosDBService
 	                            @Named(JETTY_THREADS_MAX_PROPERTY) int maxThreads,
 	                            @Named(JETTY_THREADS_KEEP_ALIVE_MS_PROPERTY) long keepAliveMs)
 	{
-		LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>(maxQueueSize);
-		ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(minThreads, maxThreads, keepAliveMs, TimeUnit.MILLISECONDS, queue);
-		m_pool = new ExecutorThreadPool(threadPoolExecutor);
+		m_pool = new QueuedThreadPool(maxThreads, minThreads, (int)keepAliveMs);
+		// Note: Jetty 12's QueuedThreadPool manages queue size automatically
 	}
 
 	@Inject
@@ -221,17 +236,26 @@ public class WebServer implements KairosDBService
 			if (m_keyStorePath != null && !m_keyStorePath.isEmpty())
 				initializeSSL();
 
-			ServletContextHandler servletContextHandler = new ServletContextHandler();
-			//As of Jetty 9.4 the default alias checker allows symbolic links
+			ServletContextHandler servletContextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+			servletContextHandler.setContextPath("/");
 
 			if (m_authModuleName != null)
 			{
 				servletContextHandler.setSecurityHandler(initializeAuth());
-				servletContextHandler.setContextPath("/");
 			}
 
-			servletContextHandler.addFilter(GuiceFilter.class, "/api/*", null);
-			servletContextHandler.addServlet(DefaultServlet.class, "/api/*");
+			// Add GuiceFilter - note: Guice 4.x+ requires manual filter registration
+			//FilterHolder guiceFilter = new FilterHolder();
+			//guiceFilter.setName("guice");
+			//guiceFilter.setClassName(GuiceFilter.class.getName());
+
+			servletContextHandler.addFilter(GuiceFilter.class, "/api/*", EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC));
+			//servletContextHandler.addServlet(DefaultServlet.class, "/api/*");
+			ServletHolder holder = new ServletHolder(ServletContainer.class);
+			holder.setInitParameter("jakarta.ws.rs.Application", GuiceJerseyResourceConfig.class.getName());
+			servletContextHandler.addServlet(holder, "/*");
+
+
 			ServletHolder servletHolder = new ServletHolder("static", DefaultServlet.class);
 			servletHolder.setInitParameter("resourceBase",m_webRoot);
 			servletHolder.setInitParameter("dirAllowed","true");
@@ -240,16 +264,30 @@ public class WebServer implements KairosDBService
 
 			//adding gzip handler
 			GzipHandler gzipHandler = new GzipHandler();
-			gzipHandler.setIncludedMimeTypes("application/json");
+			gzipHandler.addIncludedMimeTypes("application/json");
 			gzipHandler.addIncludedMethods("GET","POST");
-			gzipHandler.setIncludedPaths("/*");
+			gzipHandler.addIncludedPaths("/*");
 
 			//chain handlers
 			gzipHandler.setHandler(servletContextHandler);
 
-			HandlerList handlers = new HandlerList();
-			handlers.setHandlers(new Handler[]{gzipHandler, new DefaultHandler()}); //DefaultHandler only called if other handlers aren't called.
-			m_server.setHandler(handlers);
+
+
+			if (m_qosConfig != null)
+			{
+				QoSHandler qoSHandler = new QoSHandler();
+				qoSHandler.setHandler(gzipHandler);
+
+				//todo do some config stuff
+
+				m_server.setHandler(qoSHandler);
+			}
+			else
+			{
+				m_server.setHandler(gzipHandler);
+			}
+
+			m_server.setDefaultHandler(new DefaultHandler());
 
 
 			//some code for logging
@@ -294,7 +332,7 @@ public class WebServer implements KairosDBService
 		httpConfig.setSecurePort(m_sslPort);
 		httpConfig.addCustomizer(new SecureRequestCustomizer());
 
-		SslContextFactory sslContextFactory = new SslContextFactory.Server();
+		SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 		sslContextFactory.setKeyStorePath(m_keyStorePath);
 		sslContextFactory.setKeyStorePassword(m_keyStorePassword);
 		if (m_trustStorePath != null && !m_trustStorePath.isEmpty())
@@ -311,7 +349,9 @@ public class WebServer implements KairosDBService
 		keyStoreScanner.setScanInterval(m_keyStoreScannerInterval);
 		m_server.addBean(keyStoreScanner);
 
-		ServerConnector https = new ServerConnector(m_server, new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(httpConfig));
+		SslConnectionFactory sslFactory = new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString());
+		HttpConnectionFactory httpFactory = new HttpConnectionFactory(httpConfig);
+		ServerConnector https = new ServerConnector(m_server, sslFactory, httpFactory);
 		https.setPort(m_sslPort);
 		https.setIdleTimeout(m_idleTimeout);
 		m_server.addConnector(https);
@@ -319,12 +359,14 @@ public class WebServer implements KairosDBService
 
 	private SecurityHandler initializeAuth() throws Exception
 	{
-		Constraint constraint = new Constraint();
-		constraint.setName(Constraint.__BASIC_AUTH);
-		constraint.setRoles(new String[]{Constraint.ANY_AUTH}); //authentication is all that's supported so this allows any role.
-		constraint.setAuthenticate(true);
+		Constraint constraint = new Constraint.Builder()
+				.name("BASIC")
+				.roles("*") //authentication is all that's supported so this allows any role.
+				.authorization(Constraint.Authorization.ANY_USER)
+				.build();
 
-		Constraint noConstraint = new Constraint();
+		Constraint noConstraint = new Constraint.Builder()
+				.build();
 
 		ConstraintMapping healthcheckConstraintMapping = new ConstraintMapping();
 		healthcheckConstraintMapping.setConstraint(noConstraint);
@@ -336,6 +378,7 @@ public class WebServer implements KairosDBService
 
 		ConstraintSecurityHandler csh = new ConstraintSecurityHandler();
 		JAASLoginService l = new JAASLoginService();
+		l.setName(m_authModuleName);
 		l.setLoginModuleName(m_authModuleName);
 		csh.addConstraintMapping(healthcheckConstraintMapping);
 		csh.addConstraintMapping(cm);

@@ -19,7 +19,7 @@ package org.kairosdb.core.http.rest.json;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collections;
 import java.util.List;
 

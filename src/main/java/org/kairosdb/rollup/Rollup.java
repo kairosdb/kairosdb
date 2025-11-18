@@ -1,11 +1,11 @@
 package org.kairosdb.rollup;
 
 import com.google.gson.annotations.SerializedName;
-import org.apache.bval.constraints.NotEmpty;
+import jakarta.validation.constraints.NotEmpty;
 import org.joda.time.DateTimeZone;
 import org.kairosdb.core.datastore.QueryMetric;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 

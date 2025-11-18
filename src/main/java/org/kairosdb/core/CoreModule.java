@@ -63,8 +63,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.kairosdb.bigqueue.IBigArray;
 
-import javax.inject.Named;
-import javax.inject.Singleton;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.util.List;
 import java.util.MissingResourceException;

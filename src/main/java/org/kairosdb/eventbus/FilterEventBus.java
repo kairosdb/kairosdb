@@ -3,7 +3,7 @@ package org.kairosdb.eventbus;
 import com.google.common.eventbus.EventBus;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.logging.Level;

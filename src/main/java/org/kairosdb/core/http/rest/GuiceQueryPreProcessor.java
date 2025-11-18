@@ -7,7 +7,7 @@ import com.google.inject.Key;
 import org.kairosdb.core.http.rest.json.Query;
 import org.kairosdb.plugin.QueryPreProcessor;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

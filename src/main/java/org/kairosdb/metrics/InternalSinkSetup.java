@@ -8,7 +8,7 @@ import org.kairosdb.metrics4j.MetricSourceManager;
 import org.kairosdb.metrics4j.SinkNotification;
 import org.kairosdb.metrics4j.sinks.MetricSink;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class InternalSinkSetup implements SinkNotification
 {

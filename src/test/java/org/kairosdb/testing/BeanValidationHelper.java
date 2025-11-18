@@ -17,17 +17,16 @@
 package org.kairosdb.testing;
 
 import com.google.common.collect.ImmutableList;
-import org.apache.bval.jsr.ApacheValidationProvider;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import java.util.Collection;
 import java.util.List;
 
 public class BeanValidationHelper
 {
-	public static final Validator VALIDATOR = Validation.byProvider(ApacheValidationProvider.class).configure().buildValidatorFactory().getValidator();
+	public static final Validator VALIDATOR = Validation.buildDefaultValidatorFactory().getValidator();
 
 	public static List<String> messagesFor(Collection<? extends ConstraintViolation<?>> violations)
 	{

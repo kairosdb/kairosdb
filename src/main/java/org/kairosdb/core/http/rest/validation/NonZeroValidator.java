@@ -5,8 +5,8 @@
 //        
 package org.kairosdb.core.http.rest.validation;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 public class NonZeroValidator implements ConstraintValidator<NonZero, Double>
 {

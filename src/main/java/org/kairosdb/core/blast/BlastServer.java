@@ -2,6 +2,8 @@ package org.kairosdb.core.blast;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableSortedMap;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.apache.commons.lang3.RandomUtils;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.core.KairosDBService;
@@ -15,8 +17,7 @@ import org.kairosdb.metrics4j.MetricSourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+
 import java.util.concurrent.TimeUnit;
 
 /**

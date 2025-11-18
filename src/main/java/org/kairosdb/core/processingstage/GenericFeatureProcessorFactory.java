@@ -8,7 +8,7 @@ import org.kairosdb.core.annotation.FeatureComponent;
 import org.kairosdb.core.processingstage.metadata.FeatureProcessorMetadata;
 import org.kairosdb.core.processingstage.metadata.FeaturePropertyMetadata;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Comparator;

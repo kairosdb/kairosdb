@@ -131,7 +131,7 @@ public abstract class ResourceBase
                 bind(LegacyDataPointFactory.class).in(Singleton.class);
                 bind(StringDataPointFactory.class).in(Singleton.class);
 
-                bind(QueryPreProcessorContainer.class).to(GuiceQueryPreProcessor.class).in(javax.inject.Singleton.class);
+                bind(QueryPreProcessorContainer.class).to(GuiceQueryPreProcessor.class).in(jakarta.inject.Singleton.class);
             }
         });
         KairosDatastore kairosDatastore = injector.getInstance(KairosDatastore.class);

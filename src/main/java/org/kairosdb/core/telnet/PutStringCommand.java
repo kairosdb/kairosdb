@@ -7,7 +7,7 @@ import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.eventbus.FilterEventBus;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 

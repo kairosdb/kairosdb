@@ -15,88 +15,141 @@
  */
 package org.kairosdb.core.http;
 
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Injector;
 import com.google.inject.Scopes;
-import com.google.inject.servlet.GuiceFilter;
-import com.sun.jersey.guice.JerseyServletModule;
-import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
-import org.eclipse.jetty.servlets.QoSFilter;
-import org.kairosdb.core.http.exceptionmapper.InvalidServerTypeExceptionMapper;
+import com.google.inject.TypeLiteral;
+import com.google.inject.matcher.Matchers;
+import com.google.inject.servlet.ServletModule;
+import com.google.inject.spi.TypeEncounter;
+import com.google.inject.spi.TypeListener;
+import jakarta.ws.rs.Path;
+import org.eclipse.jetty.ee10.servlets.QoSFilter;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.servlet.ServletContainer;
+import org.jvnet.hk2.guice.bridge.api.GuiceBridge;
+import org.jvnet.hk2.guice.bridge.api.GuiceIntoHK2Bridge;
 import org.kairosdb.core.KairosRootConfig;
+import org.kairosdb.core.http.exceptionmapper.InvalidServerTypeExceptionMapper;
 import org.kairosdb.core.http.rest.AdminResource;
 import org.kairosdb.core.http.rest.FeaturesResource;
 import org.kairosdb.core.http.rest.MetadataResource;
 import org.kairosdb.core.http.rest.MetricsResource;
 
-public class WebServletModule extends JerseyServletModule
-{
-	public static final String QOS_URL = "kairosdb.qos.url";
-	public static final String QOS_PREFIX = "kairosdb.qos.";
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Feature;
+import jakarta.ws.rs.core.FeatureContext;
+import org.glassfish.jersey.internal.inject.InjectionManager;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-	private String qosURL = null;
-	private ImmutableMap<String, String> qosParams;
+public class WebServletModule extends ServletModule
+{
+	private Set<Class> m_resourceClasses = new HashSet<>();
 
 	public WebServletModule(KairosRootConfig props)
 	{
-		if (props.hasPath(QOS_URL) && !(props.getString(QOS_URL,"")).trim().equals(""))
-		{
-			qosURL =  props.getString(QOS_URL);
-			ImmutableMap.Builder<String, String> qosBuilder = new ImmutableMap.Builder<>();
-			for (String key : props)
-			{
-				if (key.startsWith(QOS_PREFIX) && !key.contentEquals(QOS_URL))
-				{
-					String qosKey = key.substring(QOS_PREFIX.length());
-					String qosValue = props.getString(key);
-					qosBuilder.put(qosKey, qosValue);
-				}
-			}
-			this.qosParams = qosBuilder.build();
-		}
 	}
 
-	public String getQosUrl()
-	{
-		return qosURL;
-	}
-
-	public ImmutableMap<String, String> getQosParams()
-	{
-		return qosParams;
-	}
 
 	@Override
 	protected void configureServlets()
 	{
 		binder().requireExplicitBindings();
-		bind(GuiceFilter.class);
 
 		//Bind web server
 		bind(WebServer.class);
+		bind(ServletContainer.class).in(Scopes.SINGLETON);
 
-		//Bind resource classes here
+		//Bind resource classes here - these will be injected by Guice and bridged to HK2
 		bind(MetricsResource.class).in(Scopes.SINGLETON);
 		bind(MetadataResource.class).in(Scopes.SINGLETON);
 		bind(FeaturesResource.class).in(Scopes.SINGLETON);
 		bind(AdminResource.class).in(Scopes.SINGLETON);
 
-		bind(GuiceContainer.class);
-
+		//Bind filters
 		bind(LoggingFilter.class).in(Scopes.SINGLETON);
 		filter("/*").through(LoggingFilter.class);
 
-		if (qosURL != null)
+		// Bind providers and exception mappers
+		bind(JacksonJsonProvider.class).in(Scopes.SINGLETON);
+		bind(InvalidServerTypeExceptionMapper.class).in(Scopes.SINGLETON);
+
+		// Configure Jersey 3 ServletContainer with HK2-Guice bridge
+		Map<String, String> jerseyParams = new HashMap<>();
+		jerseyParams.put("jakarta.ws.rs.Application", KairosResourceConfig.class.getName());
+		serve("/*").with(ServletContainer.class, jerseyParams);
+
+		bindListener(Matchers.any(), new TypeListener()
 		{
-			bind(QoSFilter.class).in(Scopes.SINGLETON);
-			filter(qosURL).through(QoSFilter.class, qosParams);
+			@Override
+			public <I> void hear(TypeLiteral<I> type, TypeEncounter<I> encounter)
+			{
+				Class<? extends Class> clazz = (Class<? extends Class>) type.getRawType();
+				System.out.println("Looking at "+clazz);
+
+				if (clazz.isAnnotationPresent(Path.class))
+				{
+					System.out.println("Found binding for "+clazz.getName());
+					m_resourceClasses.add(clazz);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Jersey ResourceConfig that sets up the HK2-Guice bridge
+	 */
+	public static class KairosResourceConfig extends ResourceConfig
+	{
+		@Inject
+		public KairosResourceConfig(Injector injector)
+		{
+			// Register the Guice bridge feature
+			register(new GuiceBridgeFeature(injector));
+
+			// Register JAX-RS resources
+			register(MetricsResource.class);
+			register(MetadataResource.class);
+			register(FeaturesResource.class);
+			register(AdminResource.class);
+
+			// Register providers
+			register(JacksonJsonProvider.class);
+			register(InvalidServerTypeExceptionMapper.class);
+		}
+	}
+
+	/**
+	 * Jersey Feature that initializes the HK2-Guice bridge
+	 */
+	private static class GuiceBridgeFeature implements Feature
+	{
+		private final Injector injector;
+
+		public GuiceBridgeFeature(Injector injector)
+		{
+			this.injector = injector;
 		}
 
-		// hook Jackson into Jersey as the POJO <-> JSON mapper
-		bind(JacksonJsonProvider.class).in(Scopes.SINGLETON);
-		serve("/*").with(GuiceContainer.class);
-
-		//
-		bind(InvalidServerTypeExceptionMapper.class).in(Scopes.SINGLETON);
+		@Override
+		public boolean configure(FeatureContext context)
+		{
+			// Get the InjectionManager (Jersey 3's abstraction over HK2)
+			InjectionManager injectionManager = InjectionManager.class.cast(context.getConfiguration().getProperty(InjectionManager.class.getName()));
+			if (injectionManager == null) {
+				throw new IllegalStateException("InjectionManager not found in configuration");
+			}
+			
+			// Initialize HK2-Guice bridge using the underlying ServiceLocator
+			org.glassfish.hk2.api.ServiceLocator serviceLocator = injectionManager.getInstance(org.glassfish.hk2.api.ServiceLocator.class);
+			GuiceBridge.getGuiceBridge().initializeGuiceBridge(serviceLocator);
+			GuiceIntoHK2Bridge guiceBridge = serviceLocator.getService(GuiceIntoHK2Bridge.class);
+			guiceBridge.bridgeGuiceInjector(injector);
+			return true;
+		}
 	}
 }

@@ -20,7 +20,7 @@ import org.junit.Test;
 import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.testing.BeanValidationHelper;
 
-import javax.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolation;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;

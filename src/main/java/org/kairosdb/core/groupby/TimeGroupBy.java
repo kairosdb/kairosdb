@@ -28,8 +28,8 @@ import org.kairosdb.core.datastore.TimeUnit;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.plugin.GroupBy;
 
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import java.io.StringWriter;
 import java.util.Calendar;
 import java.util.Map;

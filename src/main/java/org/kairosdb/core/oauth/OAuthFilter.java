@@ -1,14 +1,14 @@
 package org.kairosdb.core.oauth;
 
 import com.google.inject.Inject;
-import com.sun.jersey.oauth.signature.*;
+import org.glassfish.jersey.oauth1.signature.*;
 import org.kairosdb.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -24,13 +24,15 @@ import java.util.*;
 public class OAuthFilter implements Filter
 {
 	public static final Logger logger = LoggerFactory.getLogger(OAuthFilter.class);
+	private final OAuth1Signature m_signature;
 
-	private ConsumerTokenStore m_tokenStore;
+	private final ConsumerTokenStore m_tokenStore;
 
 	@Inject
-	public OAuthFilter(ConsumerTokenStore tokenStore)
+	public OAuthFilter(ConsumerTokenStore tokenStore, OAuth1Signature signature)
 	{
 		m_tokenStore = tokenStore;
+		m_signature = signature;
 	}
 
 	@Override
@@ -49,13 +51,13 @@ public class OAuthFilter implements Filter
 		{
 			// Read the OAuth parameters from the request
 			OAuthServletRequest request = new OAuthServletRequest(httpRequest);
-			OAuthParameters params = new OAuthParameters();
+			OAuth1Parameters params = new OAuth1Parameters();
 			params.readRequest(request);
 
 			String consumerKey = params.getConsumerKey();
 
 			// Set the secret(s), against which we will verify the request
-			OAuthSecrets secrets = new OAuthSecrets();
+			OAuth1Secrets secrets = new OAuth1Secrets();
 			secrets.setConsumerSecret(m_tokenStore.getToken(consumerKey));
 
 			// Check that the timestamp has not expired
@@ -81,7 +83,7 @@ public class OAuthFilter implements Filter
 			// Verify the signature
 			try
 			{
-				if(!OAuthSignature.verify(request, params, secrets))
+				if(!m_signature.verify(request, params, secrets))
 				{
 					logger.warn("Invalid OAuth signature");
 
@@ -89,7 +91,7 @@ public class OAuthFilter implements Filter
 					return;
 				}
 			}
-			catch (OAuthSignatureException e)
+			catch (OAuth1SignatureException e)
 			{
 				logger.warn("OAuth exception", e);
 
@@ -106,7 +108,7 @@ public class OAuthFilter implements Filter
 	{
 	}
 
-	public static class OAuthServletRequest implements OAuthRequest
+	public static class OAuthServletRequest implements OAuth1Request
 	{
 		private HttpServletRequest m_request;
 

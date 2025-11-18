@@ -11,8 +11,8 @@ import org.kairosdb.eventbus.Subscribe;
 import org.kairosdb.events.DataPointEvent;
 import org.kairosdb.metrics4j.MetricSourceManager;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;

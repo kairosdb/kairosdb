@@ -18,8 +18,8 @@ package org.kairosdb.core.http.rest.validation;
 
 import org.kairosdb.core.datastore.TimeUnit;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 public class TimeUnitRequiredValidator implements ConstraintValidator<TimeUnitRequired, String>
 {

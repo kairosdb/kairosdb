@@ -24,7 +24,7 @@ import org.kairosdb.core.annotation.ValidationProperty;
 import org.kairosdb.core.formatter.FormatterException;
 import org.kairosdb.plugin.GroupBy;
 
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Min;
 import java.io.StringWriter;
 import java.util.Map;
 

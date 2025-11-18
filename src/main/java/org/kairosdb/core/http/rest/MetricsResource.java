@@ -48,9 +48,9 @@ import org.kairosdb.util.MemoryMonitorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.*;
 import java.io.*;
 import java.time.Duration;
 import java.time.Instant;
@@ -59,7 +59,7 @@ import java.util.zip.GZIPInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static javax.ws.rs.core.Response.ResponseBuilder;
+import static jakarta.ws.rs.core.Response.ResponseBuilder;
 import static org.kairosdb.core.reporting.QueryStats.METRIC_NAME_TAG;
 import static org.kairosdb.core.reporting.QueryStats.QUERY_INDEX_TAG;
 

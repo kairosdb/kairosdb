@@ -51,7 +51,7 @@ saw = Tablesaw.getCurrentTablesaw()
 saw.includeDefinitionFile("definitions.xml")
 
 
-javaVersion = "11"
+javaVersion = "17"
 defaultConfig = "default"
 testConfig = "test"
 

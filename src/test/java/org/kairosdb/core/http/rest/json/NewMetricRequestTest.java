@@ -18,7 +18,7 @@ package org.kairosdb.core.http.rest.json;
 import org.kairosdb.testing.BeanValidationHelper;
 import org.junit.Test;
 
-import javax.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolation;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;

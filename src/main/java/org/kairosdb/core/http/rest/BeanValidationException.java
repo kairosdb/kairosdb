@@ -18,7 +18,7 @@ package org.kairosdb.core.http.rest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-import javax.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolation;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;

@@ -16,7 +16,7 @@ import org.kairosdb.util.RetryCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;

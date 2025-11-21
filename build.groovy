@@ -31,7 +31,7 @@ if (programName == null)
 	programName = "kairosdb"
 
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "1.3.2"
+version = "1.4.0"
 release = saw.getProperty("KAIROS_RELEASE_NUMBER", "SNAPSHOT") //package release number
 summary = "KairosDB"
 description = """\

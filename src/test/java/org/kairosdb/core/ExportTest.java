@@ -115,7 +115,7 @@ public class ExportTest
 
 		QueryMetric metric = new QueryMetric(ds.getDatastore().getMinTimeValue(), ds.getDatastore().getMaxTimeValue(), 0, METRIC_NAME);
 		ds.delete(metric);
-		ds.close();
+
 		Thread.sleep(500);
 	}
 
@@ -124,6 +124,8 @@ public class ExportTest
 	{
 		deleteData();
 
+		KairosDatastore ds = s_injector.getInstance(KairosDatastore.class);
+		ds.close();
 		s_main.stopServices();
 	}
 

@@ -51,8 +51,6 @@
 
 		<!-- provides connection pooling -->
 		<dependency org="com.mchange" name="c3p0" rev="0.9.5.5"/>
-		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.36" />
-		<dependency org="org.slf4j" name="jul-to-slf4j" rev="1.7.36" />
 		<dependency org="org.apache.commons" name="commons-math3" rev="3.2" />
 		<dependency org="commons-io" name="commons-io" rev="2.21.0" />
 		<dependency org="com.beust" name="jcommander" rev="1.75" />
@@ -60,8 +58,11 @@
 		<dependency org="commons-codec" name="commons-codec" rev="1.19.0"/> <!-- force dependency update for httpclient -->
 		<dependency org="joda-time" name="joda-time" rev="2.10.6" />
 
+		<!-- Logging dependencies -->
 		<dependency org="ch.qos.logback" name="logback-core" rev="1.5.21" />
 		<dependency org="ch.qos.logback" name="logback-classic" rev="1.5.21" />
+		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17" />
+		<dependency org="org.slf4j" name="jul-to-slf4j" rev="2.0.17" />
 
 		<!--Genormous dependencies-->
 		<dependency org="org.agileclick.genorm" name="genormous" rev="1.6.5.jdbc41" conf="default,build_tools->default">
@@ -145,7 +146,7 @@
 		            rev="3.2.6"/>
 		<dependency org="io.dropwizard.metrics" name="metrics-jvm" rev="3.2.6"/>
 
-		<dependency org="org.testng" name="testng" rev="6.8.5" conf="integration->default"/>
+		<dependency org="org.testng" name="testng" rev="7.11.0" conf="integration->default"/>
 
 		<dependency org="org.kairosdb" name="metrics4j" rev="1.0.4"/>
 

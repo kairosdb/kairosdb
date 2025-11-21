@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -175,7 +176,7 @@ public class RollUpTasksStoreImpl implements RollUpTasksStore
     private void importFromOldFile()
             throws RollUpException, IOException, QueryException
     {
-        File oldFile = new File(oldFileName);
+        File oldFile = Paths.get(oldFileName).toFile();
         if (oldFile.exists()) {
             List<String> taskJson = Files.readAllLines(oldFile.toPath(), StandardCharsets.UTF_8);
             List<RollupTask> tasks = new ArrayList<>();

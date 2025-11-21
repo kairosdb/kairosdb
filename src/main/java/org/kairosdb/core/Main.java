@@ -103,7 +103,7 @@ public class Main
 	{
 		File propDir = propertiesFile.getParentFile();
 		if (propDir == null)
-			propDir = new File(".");
+			propDir = Paths.get(".").toFile();
 
 		String[] pluginProps = propDir.list(new FilenameFilter()
 		{

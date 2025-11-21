@@ -65,6 +65,7 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -105,7 +106,7 @@ public class H2Datastore implements Datastore, ServiceKeyStore
 		boolean createDB = false;
 		m_regexPrefix = regexPrefix;
 
-		File dataDir = new File(dbPath);
+		File dataDir = Paths.get(dbPath).toFile();
 		if (!dataDir.exists())
 			createDB = true;
 	

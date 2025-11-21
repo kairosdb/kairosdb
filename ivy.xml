@@ -160,7 +160,7 @@
 
 
 		<!-- Build tools -->
-		<dependency org="org.gaul" name="modernizer-maven-plugin" rev="2.0.0" conf="build_tools->default" />
+		<dependency org="org.gaul" name="modernizer-maven-plugin" rev="3.2.0" conf="build_tools->default" />
 
 		<!-- Must match dependency declared above -->
 		<conflict org="com.google.guava" module="guava" rev="32.1.3-jre"/>

@@ -28,7 +28,7 @@ import java.util.Map;
  */
 public class TestCommandProvider implements CommandProvider
 {
-	private Map<String, TelnetCommand> m_commandMap;
+	private final Map<String, TelnetCommand> m_commandMap;
 
 	public TestCommandProvider()
 	{

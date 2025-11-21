@@ -29,8 +29,8 @@ import java.util.Set;
  */
 public class BeanValidationException extends IOException
 {
-	private ImmutableSet<ConstraintViolation<Object>> violations;
-	private String context;
+	private final ImmutableSet<ConstraintViolation<Object>> violations;
+	private final String context;
 
 	public BeanValidationException(Set<ConstraintViolation<Object>> violations)
 	{

@@ -30,7 +30,7 @@ public class HealthCheckResourceTest
 	{
 		datastore = mock(KairosDatastore.class);
 		query = mock(DatastoreQuery.class);
-		when(datastore.getMetricNames(null)).thenReturn(Collections.<String>emptyList());
+		when(datastore.getMetricNames(null)).thenReturn(Collections.emptyList());
 		when(datastore.createQuery(any(QueryMetric.class))).thenReturn(query);
 
 		HealthCheckService healthCheckService = new TestHealthCheckService();

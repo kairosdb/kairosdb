@@ -162,8 +162,8 @@ public class QueryQueuingManagerTest
 
 	private class Query extends Thread
 	{
-		private QueryQueuingManager manager;
-		private String hash;
+		private final QueryQueuingManager manager;
+		private final String hash;
 		private boolean didRun = false;
 		private long queriesWatiting;
 		private boolean release = false;

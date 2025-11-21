@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.kairosdb.core.processingstage.GenericFeatureProcessorFactoryTest.assertQueryProcessors;
 import static org.kairosdb.core.processingstage.GenericFeatureProcessorFactoryTest.factory_valid_metadata_generator;
 
@@ -28,7 +29,7 @@ public class GenericProcessingChainTest
     public static void chain_generation_valid()
             throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException
     {
-        Injector injector = Guice.createInjector((Module) binder -> binder.bind(AAggregator.class));
+        Injector injector = Guice.createInjector(binder -> binder.bind(AAggregator.class));
 
         GenericProcessingChainTest.processingChain = new TestKairosDBProcessor(new ArrayList<FeatureProcessingFactory<?>>()
         {{
@@ -60,7 +61,7 @@ public class GenericProcessingChainTest
     public void chain_getter_factory_with_name_failure()
     {
         FeatureProcessingFactory<?> factory = GenericProcessingChainTest.processingChain.getFeatureProcessingFactory(GroupBy.class);
-        assertEquals("Invalid type of FeatureProcessingFactory", null, factory);
+	    assertNull("Invalid type of FeatureProcessingFactory", factory);
     }
 
     @Test
@@ -74,7 +75,7 @@ public class GenericProcessingChainTest
     public void chain_getter_factory_with_class_failure()
     {
         FeatureProcessingFactory<?> factory = GenericProcessingChainTest.processingChain.getFeatureProcessingFactory("groupby");
-        assertEquals("Invalid type of FeatureProcessingFactory", null, factory);
+	    assertNull("Invalid type of FeatureProcessingFactory", factory);
     }
 
     @Test
@@ -83,7 +84,7 @@ public class GenericProcessingChainTest
     {
         assertQueryProcessorFactories(
                 ImmutableList.copyOf(chain_valid_metadata_generator()),
-                this.processingChain.getFeatureProcessingMetadata()
+                processingChain.getFeatureProcessingMetadata()
         );
     }
 

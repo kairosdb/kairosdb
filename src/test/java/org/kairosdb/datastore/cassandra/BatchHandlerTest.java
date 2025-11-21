@@ -46,9 +46,9 @@ public class BatchHandlerTest
 
 	private class FakeCQLBatch extends CQLBatch
 	{
-		private List<DataPointsRowKey> m_newRowKeys = new ArrayList<>();
-		private List<TimedString> m_newMetrics = new ArrayList<>();
-		private RuntimeException m_exceptionToThrow;
+		private final List<DataPointsRowKey> m_newRowKeys = new ArrayList<>();
+		private final List<TimedString> m_newMetrics = new ArrayList<>();
+		private final RuntimeException m_exceptionToThrow;
 
 		public FakeCQLBatch(RuntimeException exceptionToThrow)
 		{
@@ -137,7 +137,7 @@ public class BatchHandlerTest
 		long now = System.currentTimeMillis();
 
 		ImmutableSortedMap<String, String> tags = ImmutableSortedMap.of("host", "bob");
-		List<DataPointEvent> events = Arrays.asList(
+		List<DataPointEvent> events = List.of(
 				new DataPointEvent("metric_name", tags, dataPointFactory.createDataPoint(now, 42L)));
 
 		setup(events);
@@ -158,7 +158,7 @@ public class BatchHandlerTest
 		long now = System.currentTimeMillis();
 
 		ImmutableSortedMap<String, String> tags = ImmutableSortedMap.of("host", "bob");
-		List<DataPointEvent> events = Arrays.asList(
+		List<DataPointEvent> events = List.of(
 				new DataPointEvent("metric_name", tags, dataPointFactory.createDataPoint(now, 42L)));
 
 		setup(events);

@@ -16,7 +16,7 @@ import java.util.List;
 )
 public class LeastSquaresAggregator extends RangeAggregator
 {
-	private DoubleDataPointFactory m_dataPointFactory;
+	private final DoubleDataPointFactory m_dataPointFactory;
 
 	@Inject
 	public LeastSquaresAggregator(DoubleDataPointFactory dataPointFactory)

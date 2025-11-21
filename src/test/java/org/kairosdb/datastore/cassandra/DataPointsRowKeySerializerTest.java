@@ -5,6 +5,7 @@ import org.kairosdb.core.datapoints.LegacyDataPointFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -13,7 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class DataPointsRowKeySerializerTest
 {
-	public static final Charset UTF8 = Charset.forName("UTF-8");
+	public static final Charset UTF8 = StandardCharsets.UTF_8;
 
 	@Test
 	public void test_toByteBuffer_oldFormat()

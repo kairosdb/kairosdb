@@ -41,8 +41,8 @@ import java.util.Map;
 )
 public class TestAggregatorFactory implements FeatureProcessingFactory<Aggregator>
 {
-	private Injector injector;
-	private Map<String, Class<?>> aggregators = new HashMap<>();
+	private final Injector injector;
+	private final Map<String, Class<?>> aggregators = new HashMap<>();
 
 	public TestAggregatorFactory() throws KairosDBException
 	{

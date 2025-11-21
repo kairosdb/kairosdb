@@ -21,7 +21,7 @@ public class KairosConfig
 		JSON("json"),
 		HOCON("conf");
 
-		private String extension;
+		private final String extension;
 
 		ConfigFormat(String extension)
 		{

@@ -38,8 +38,8 @@ public class PutMillisecondCommand implements TelnetCommand
 {
 	private static final TelnetStats stats = MetricSourceManager.getSource(TelnetStats.class);
 
-	private LongDataPointFactory m_longFactory;
-	private DoubleDataPointFactory m_doubleFactory;
+	private final LongDataPointFactory m_longFactory;
+	private final DoubleDataPointFactory m_doubleFactory;
 	private final Publisher<DataPointEvent> m_publisher;
 
 	@Inject

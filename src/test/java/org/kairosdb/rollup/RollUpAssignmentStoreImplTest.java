@@ -18,8 +18,8 @@ import static org.junit.Assert.assertThrows;
 
     public class RollUpAssignmentStoreImplTest
 {
-    private FakeServiceKeyStore fakeKeyStore = new FakeServiceKeyStore();
-    private RollUpAssignmentStore store = new RollUpAssignmentStoreImpl(fakeKeyStore);
+    private final FakeServiceKeyStore fakeKeyStore = new FakeServiceKeyStore();
+    private final RollUpAssignmentStore store = new RollUpAssignmentStoreImpl(fakeKeyStore);
 
     @Before
     public void setup()

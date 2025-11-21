@@ -12,7 +12,7 @@ public class QueryMonitor
 	private Throwable m_exception;
 	private final long m_limit;
 	private final AtomicLong m_counter = new AtomicLong();
-	private Stopwatch m_timer;
+	private final Stopwatch m_timer;
 	private final long m_timeLimit;  //Seconds
 
 	public QueryMonitor(long limit, long timeLimit)

@@ -12,10 +12,10 @@ public interface ListExtractor
 	 * @param path the {@link Config} path
 	 * @return the extracted list value
 	 */
-	public List<?> extractListValue(Config config, String path);
+	List<?> extractListValue(Config config, String path);
 
 	/**
 	 * @return the {@link List} type this {@link ListExtractor} extracts.
 	 */
-	public Type getMatchingParameterizedType();
+	Type getMatchingParameterizedType();
 }

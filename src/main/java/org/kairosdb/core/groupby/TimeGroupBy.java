@@ -67,7 +67,7 @@ public class TimeGroupBy implements GroupBy
 	private int groupCount;
 
 	private long startDate;
-	private Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+	private final Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
 
 	public TimeGroupBy()

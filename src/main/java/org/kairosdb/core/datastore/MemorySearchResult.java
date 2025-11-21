@@ -53,7 +53,7 @@ public class MemorySearchResult implements SearchResult
 
 	private class MemoryDataPointWriter implements DataPointWriter
 	{
-		private MemoryDataPointRow m_currentRow;
+		private final MemoryDataPointRow m_currentRow;
 
 		public MemoryDataPointWriter(MemoryDataPointRow currentRow)
 		{

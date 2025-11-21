@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
@@ -34,8 +35,8 @@ public class RollUpTasksStoreImpl implements RollUpTasksStore
     static final String SERVICE = "_Rollups";
     static final String SERVICE_KEY_CONFIG = "Config";
 
-    private ServiceKeyStore keyStore;
-    private QueryParser parser;
+    private final ServiceKeyStore keyStore;
+    private final QueryParser parser;
     private String oldFileName = OLD_FILENAME;
 
     public RollUpTasksStoreImpl(ServiceKeyStore keyStore, QueryParser parser, String oldFileName) throws RollUpException
@@ -176,7 +177,7 @@ public class RollUpTasksStoreImpl implements RollUpTasksStore
     {
         File oldFile = new File(oldFileName);
         if (oldFile.exists()) {
-            List<String> taskJson = Files.readAllLines(oldFile.toPath(), Charset.forName("UTF-8"));
+            List<String> taskJson = Files.readAllLines(oldFile.toPath(), StandardCharsets.UTF_8);
             List<RollupTask> tasks = new ArrayList<>();
             for (String json : taskJson) {
                 RollupTask task = parser.parseRollupTask(json);

@@ -27,9 +27,9 @@ public class TournamentTree<T>
 	{
 	private static class TreeValue<T>
 		{
-		private int m_iteratorNum;
+		private final int m_iteratorNum;
 		private T m_value;
-		private Iterator<T> m_iterator;
+		private final Iterator<T> m_iterator;
 
 		public TreeValue(Iterator<T> iterator, T value, int iteratorNum)
 			{
@@ -58,10 +58,10 @@ public class TournamentTree<T>
 		}
 
 	//===========================================================================
-	private TreeSet<TreeValue<T>> m_treeSet;
-	private Comparator<T> m_comparator;
+	private final TreeSet<TreeValue<T>> m_treeSet;
+	private final Comparator<T> m_comparator;
 	private int m_iteratorIndex = 0;
-	private Order m_order;
+	private final Order m_order;
 
 	public TournamentTree(Comparator<T> comparator, Order order)
 	{

@@ -131,7 +131,7 @@ public class RelativeTimeTest
 		Set<ConstraintViolation<RelativeTime>> violations = BeanValidationHelper.VALIDATOR.validate(time);
 		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
 
-		assertThat(violationMessages.get(0), equalTo("unit may not be null"));
+		assertThat(violationMessages.get(0), equalTo("unit must not be null"));
 	}
 
 	@Test

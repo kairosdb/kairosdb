@@ -40,11 +40,10 @@ public class LoggingFilter implements Filter
 	{
 		if (log.isDebugEnabled())
 		{
-			StringBuilder sb = new StringBuilder();
 
-			sb.append(servletRequest.getRemoteAddr()).append(" - ");
-			sb.append(((HttpServletRequest)servletRequest).getRequestURI());
-			log.debug(sb.toString());
+			String sb = servletRequest.getRemoteAddr() + " - " +
+					((HttpServletRequest) servletRequest).getRequestURI();
+			log.debug(sb);
 		}
 
 		filterChain.doFilter(servletRequest, servletResponse);
@@ -56,10 +55,9 @@ public class LoggingFilter implements Filter
 
 	private String getRequestString(ServletRequest servletRequest)
 	{
-		StringBuilder sb = new StringBuilder();
-		sb.append(servletRequest.getRemoteAddr()).append(" - ");
-		sb.append(((HttpServletRequest)servletRequest).getRequestURI());
-		return sb.toString();
+		String sb = servletRequest.getRemoteAddr() + " - " +
+				((HttpServletRequest) servletRequest).getRequestURI();
+		return sb;
 	}
 
 	@Override

@@ -17,8 +17,8 @@ import java.util.Map;
  */
 public class TestDataPointFactory implements KairosDataPointFactory
 {
-	private Map<String, DataPointFactory> m_factoryMapDataStore = new HashMap<String, DataPointFactory>();
-	private Map<String, DataPointFactory> m_factoryMapRegistered = new HashMap<String, DataPointFactory>();
+	private final Map<String, DataPointFactory> m_factoryMapDataStore = new HashMap<String, DataPointFactory>();
+	private final Map<String, DataPointFactory> m_factoryMapRegistered = new HashMap<String, DataPointFactory>();
 
 	private void addFactory(String type, DataPointFactory factory)
 	{

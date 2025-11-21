@@ -27,7 +27,7 @@ public class HostManagerTest
     private static final String SERVICE_KEY = "Active";
 
     private HostManager manager;
-    private FakeServiceKeyStore keyStore = new FakeServiceKeyStore();
+    private final FakeServiceKeyStore keyStore = new FakeServiceKeyStore();
 
     @Mock
     private ScheduledExecutorService mockExecutorService;

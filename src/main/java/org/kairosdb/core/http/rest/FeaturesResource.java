@@ -22,8 +22,8 @@ import static org.kairosdb.core.http.rest.MetricsResource.setHeaders;
 @Path("/api/v1/features")
 public class FeaturesResource
 {
-    private FeatureProcessor m_featureProcessor;
-    private Gson gson = new Gson();
+    private final FeatureProcessor m_featureProcessor;
+    private final Gson gson = new Gson();
 
     @Inject
     public FeaturesResource(FeatureProcessor featureProcessor)

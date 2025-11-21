@@ -11,8 +11,8 @@ import java.util.List;
 
 public abstract class GenericFeatureProcessor implements FeatureProcessor
 {
-    private List<FeatureProcessingFactory<?>> featureProcessingFactories = new ArrayList<>();
-    private List<FeatureProcessingMetadata> featureProcessingMetadata = new ArrayList<>();
+    private final List<FeatureProcessingFactory<?>> featureProcessingFactories = new ArrayList<>();
+    private final List<FeatureProcessingMetadata> featureProcessingMetadata = new ArrayList<>();
 
     /**
      * Constructor of a generic class to easily generate a feature processor.

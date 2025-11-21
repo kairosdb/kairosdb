@@ -41,6 +41,7 @@ import java.util.List;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+@ChannelHandler.Sharable
 public class TelnetServer extends ChannelInboundHandlerAdapter implements KairosDBService
 {
 	private static final Logger logger = LoggerFactory.getLogger(TelnetServer.class);
@@ -49,7 +50,7 @@ public class TelnetServer extends ChannelInboundHandlerAdapter implements Kairos
 	private final CommandProvider commandProvider;
 	private final int maxCommandLength;
 
-	private InetAddress address;
+	private final InetAddress address;
 	private ServerBootstrap serverBootstrap;
 	private NioEventLoopGroup bossGroup;
 	private NioEventLoopGroup workerGroup;

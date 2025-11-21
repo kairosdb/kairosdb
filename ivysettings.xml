@@ -2,6 +2,7 @@
 	<property name="jetty.version" value="12.0.17"/>
 	<property name="jersey.version" value="3.1.11"/>
 	<property name="guice.version" value="7.0.0"/>
+	<property name="resteasy.version" value="6.2.10.Final"/>
 
 	<settings defaultResolver="default"/>
 	<resolvers>

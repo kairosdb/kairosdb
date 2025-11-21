@@ -42,7 +42,7 @@ public class SamplerAggregator implements Aggregator, TimezoneAware
 	private TimeUnit _ui_unit;
 	private Sampling m_sampling;
 
-	private DoubleDataPointFactory m_dataPointFactory;
+	private final DoubleDataPointFactory m_dataPointFactory;
 	private DateTimeZone m_timeZone;
 
 	@Inject

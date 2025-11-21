@@ -97,7 +97,7 @@ public class IngestExecutorService
 	}
 
 
-	private Stopwatch m_timer = Stopwatch.createStarted();
+	private final Stopwatch m_timer = Stopwatch.createStarted();
 
 	/**
 	 Calls to submit will block until a permit is available to process the request

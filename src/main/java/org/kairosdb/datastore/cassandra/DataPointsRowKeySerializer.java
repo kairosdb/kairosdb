@@ -20,11 +20,12 @@ import org.kairosdb.util.StringPool;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.SortedMap;
 
 public class DataPointsRowKeySerializer
 {
-	public static final Charset UTF8 = Charset.forName("UTF-8");
+	public static final Charset UTF8 = StandardCharsets.UTF_8;
 
 	private StringPool m_stringPool;
 

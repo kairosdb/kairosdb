@@ -2,9 +2,9 @@ package org.kairosdb.core.processingstage.metadata;
 
 public class FeatureValidationMetadata
 {
-    private String expression;
-    private String type;
-    private String message;
+    private final String expression;
+    private final String type;
+    private final String message;
 
     public FeatureValidationMetadata(String expression, String type, String message)
     {

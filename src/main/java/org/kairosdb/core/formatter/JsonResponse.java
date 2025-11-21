@@ -29,8 +29,8 @@ import java.util.List;
 
 public class JsonResponse
 {
-	private Writer m_writer;
-	private JSONWriter m_jsonWriter;
+	private final Writer m_writer;
+	private final JSONWriter m_jsonWriter;
 
 	public JsonResponse(Writer writer)
 	{

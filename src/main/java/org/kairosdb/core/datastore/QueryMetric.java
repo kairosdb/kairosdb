@@ -36,17 +36,17 @@ public class QueryMetric implements DatastoreMetricQuery
 	private long startTime;
 	private long endTime;
 	private boolean endTimeSet;
-	private int cacheTime;
-	private String name;
+	private final int cacheTime;
+	private final String name;
 	private String alias;
 	private SetMultimap<String, String> tags = HashMultimap.create();
-	private List<GroupBy> groupBys = new ArrayList<GroupBy>();
-	private List<Aggregator> aggregators;
+	private final List<GroupBy> groupBys = new ArrayList<GroupBy>();
+	private final List<Aggregator> aggregators;
 	private String cacheString;
 	private boolean excludeTags = false;
 	private int limit;
 	private Order order = Order.ASC;
-	private List<QueryPlugin> plugins;
+	private final List<QueryPlugin> plugins;
 	private boolean explicitTags = false;
 	private JsonObject m_jsonObj;
 

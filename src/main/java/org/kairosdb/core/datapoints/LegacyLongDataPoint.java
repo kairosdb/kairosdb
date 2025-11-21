@@ -16,7 +16,7 @@ import java.io.IOException;
  */
 public class LegacyLongDataPoint extends LegacyDataPoint
 {
-	private long m_value;
+	private final long m_value;
 
 	public LegacyLongDataPoint(long timestamp, long l)
 	{

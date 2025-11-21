@@ -5,6 +5,6 @@ package org.kairosdb.congestion;
  */
 public interface ProcessTracker
 {
-	public void finished();
-	public void failed();
+	void finished();
+	void failed();
 }

@@ -15,7 +15,7 @@ import org.kairosdb.plugin.Aggregator;
 )
 public class TimeDiffAggregator implements Aggregator
 {
-	private DoubleDataPointFactory m_dataPointFactory;
+	private final DoubleDataPointFactory m_dataPointFactory;
 
 	@FeatureProperty(
 			name = "time_unit",

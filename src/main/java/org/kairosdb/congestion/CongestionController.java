@@ -5,5 +5,5 @@ package org.kairosdb.congestion;
  */
 public interface CongestionController
 {
-	public ProcessTracker getProcessTracker();
+	ProcessTracker getProcessTracker();
 }

@@ -25,7 +25,7 @@ import java.util.Set;
 public abstract class AggregatedDataPointGroupWrapper implements DataPointGroup
 {
 	protected DataPoint currentDataPoint = null;
-	private DataPointGroup innerDataPointGroup;
+	private final DataPointGroup innerDataPointGroup;
 
 
 	public AggregatedDataPointGroupWrapper(DataPointGroup innerDataPointGroup)

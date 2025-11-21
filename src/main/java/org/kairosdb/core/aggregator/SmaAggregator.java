@@ -41,7 +41,7 @@ import org.kairosdb.plugin.Aggregator;
 )
 public class SmaAggregator implements Aggregator
 {
-	private DoubleDataPointFactory m_dataPointFactory;
+	private final DoubleDataPointFactory m_dataPointFactory;
 
 	//@NonZero
 	@FeatureProperty(
@@ -96,7 +96,7 @@ public class SmaAggregator implements Aggregator
 
 	private class SmaDataPointGroup implements DataPointGroup
 	{
-		private DataPointGroup m_innerDataPointGroup;
+		private final DataPointGroup m_innerDataPointGroup;
 		ArrayList<DataPoint> subSet = new ArrayList<DataPoint>();
 
 		public SmaDataPointGroup(DataPointGroup innerDataPointGroup)

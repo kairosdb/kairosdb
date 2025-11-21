@@ -46,6 +46,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -62,13 +63,6 @@ public class ExportTest
 	private static Injector s_injector;
 	public static final long LOAD = 1000L;
 
-	@SuppressWarnings("ResultOfMethodCallIgnored")
-	@BeforeClass
-	public static void setup()
-	{
-		METRIC_NAME += "_" + UUID.randomUUID();
-		new File("build").mkdir();
-	}
 
 	private static void loadData(int port) throws IOException, InterruptedException
 	{
@@ -79,9 +73,9 @@ public class ExportTest
 
 		for (long i = 0; i < LOAD; i++)
 		{
-			os.println("putm "+METRIC_NAME+" "+String.valueOf(i+start)+ " 42 host=A");
-			os.println("putm "+METRIC_NAME+" "+String.valueOf(i+start)+ " 42 host=B");
-			os.println("putm "+METRIC_NAME+" "+String.valueOf(i+start)+ " 42.5 host=C");
+			os.println("putm "+METRIC_NAME+" "+ (i + start) + " 42 host=A");
+			os.println("putm "+METRIC_NAME+" "+ (i + start) + " 42 host=B");
+			os.println("putm "+METRIC_NAME+" "+ (i + start) + " 42.5 host=C");
 		}
 
 		os.close();
@@ -92,6 +86,9 @@ public class ExportTest
 	@BeforeClass
 	public static void loadData() throws IOException, KairosDBException, InterruptedException
 	{
+		METRIC_NAME += "_" + UUID.randomUUID();
+		new File("build").mkdir();
+
 		File props = new File("kairosdb.properties");
 		if (!props.exists())
 			props = null;
@@ -102,6 +99,7 @@ public class ExportTest
 		s_main = new Main(props);
 		s_main.startServices();
 		s_injector = s_main.getInjector();
+		Thread.sleep(2000);
 
 		//make sure it is cleared out
 		deleteData();
@@ -135,7 +133,7 @@ public class ExportTest
 	{
 		verifyDataPoints();
 
-		Writer ps = new OutputStreamWriter(new FileOutputStream("build/export.json"), "UTF-8");
+		Writer ps = new OutputStreamWriter(new FileOutputStream("build/export.json"), StandardCharsets.UTF_8);
 		s_main.runExport(ps, Collections.singletonList(METRIC_NAME));
 		ps.flush();
 		ps.close();
@@ -180,7 +178,7 @@ public class ExportTest
 		List<DataPointGroup> results = query.execute();
 
 
-		System.out.println(Objects.toString(results));
+		System.out.println(results);
 		assertThat(results.size()).isEqualTo(1);
 		assertThat(results.get(0).hasNext()).isTrue();
 		assertThat(results.get(0).next().getDoubleValue()).isEqualTo(126500.0);

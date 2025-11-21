@@ -29,8 +29,8 @@ public class TournamentTreeTest
 {
 	private class RowData
 	{
-		private long m_ts;
-		private int m_value;
+		private final long m_ts;
+		private final int m_value;
 
 		public RowData(long ts, int value)
 		{

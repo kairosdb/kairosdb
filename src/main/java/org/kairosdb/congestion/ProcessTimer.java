@@ -9,8 +9,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ProcessTimer implements ProcessTracker
 {
-	private Stopwatch m_timer;
-	private AdaptiveCongestionController m_adaptiveCongestionController;
+	private final Stopwatch m_timer;
+	private final AdaptiveCongestionController m_adaptiveCongestionController;
 
 	public ProcessTimer(AdaptiveCongestionController congestionController)
 	{

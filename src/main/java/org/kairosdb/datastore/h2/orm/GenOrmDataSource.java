@@ -105,7 +105,7 @@ public class GenOrmDataSource
 		The linked list acts as a stack for multiple connections on the same thread.
 		Only the top connection is used at a time.
 	*/
-	private static GenOrmThreadLocal s_tlConnectionList = new GenOrmThreadLocal();
+	private static final GenOrmThreadLocal s_tlConnectionList = new GenOrmThreadLocal();
 
 	
 	/**

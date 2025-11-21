@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
  */
 public class QueueProcessorTest
 {
-	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
+	private final LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 	private QueueProcessor.DeliveryThread m_deliveryThread;
 
@@ -207,7 +207,7 @@ public class QueueProcessorTest
 		m_deliveryThread.run();
 
 		verify(bigArray, times(1)).append(eq(serializer.serializeEvent(event)));
-		verify(processorHandler, times(1)).handleEvents(eq(Arrays.asList(event)), any(), eq(false));
+		verify(processorHandler, times(1)).handleEvents(eq(List.of(event)), any(), eq(false));
 		verify(bigArray, times(0)).get(anyLong());
 	}
 
@@ -282,6 +282,6 @@ public class QueueProcessorTest
 
 		verify(bigArray, times(2)).append(eq(serializer.serializeEvent(event)));
 		//verify(bigArray, times(1)).get(anyLong()); //Item taken from memory
-		verify(bigArray, times(1)).removeBeforeIndex(eq(1l));
+		verify(bigArray, times(1)).removeBeforeIndex(eq(1L));
 	}
 }

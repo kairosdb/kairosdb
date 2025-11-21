@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class StringPool
 {
-	private ConcurrentHashMap<String, String> m_stringPool;
+	private final ConcurrentHashMap<String, String> m_stringPool;
 
 	public StringPool()
 	{

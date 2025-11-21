@@ -16,27 +16,21 @@
 
 package org.kairosdb.core.http;
 
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Splitter;
+import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.name.Named;
 import com.google.inject.servlet.GuiceFilter;
 import com.google.inject.servlet.GuiceServletContextListener;
 import com.typesafe.config.Config;
-import org.eclipse.jetty.ee10.servlet.DefaultServlet;
-import org.eclipse.jetty.ee10.servlet.FilterHolder;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
-import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.ee10.servlet.security.ConstraintMapping;
 import org.eclipse.jetty.ee10.servlet.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.security.Constraint;
-import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.jaas.JAASLoginService;
 import org.eclipse.jetty.server.*;
-import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.handler.QoSHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
@@ -45,7 +39,8 @@ import org.eclipse.jetty.util.resource.ResourceFactory;
 import org.eclipse.jetty.util.ssl.KeyStoreScanner;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.glassfish.jersey.servlet.ServletContainer;
+import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
+import org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap;
 import org.kairosdb.core.KairosDBService;
 import org.kairosdb.core.exception.KairosDBException;
 import org.slf4j.Logger;
@@ -80,7 +75,6 @@ public class WebServer implements KairosDBService
 	public static final String JETTY_SSL_KEYSTORE_PASSWORD = "kairosdb.jetty.ssl.keystore.password";
 	public static final String JETTY_SSL_KEYSTORE_SCANNER_INTERVAL = "kairosdb.jetty.ssl.keystore.scanner_interval";
 	public static final String JETTY_SSL_TRUSTSTORE_PATH = "kairosdb.jetty.ssl.truststore.path";
-	public static final String JETTY_THREADS_QUEUE_SIZE_PROPERTY = "kairosdb.jetty.threads.queue_size";
 	public static final String JETTY_THREADS_MIN_PROPERTY = "kairosdb.jetty.threads.min";
 	public static final String JETTY_THREADS_MAX_PROPERTY = "kairosdb.jetty.threads.max";
 	public static final String JETTY_THREADS_KEEP_ALIVE_MS_PROPERTY = "kairosdb.jetty.threads.keep_alive_ms";
@@ -91,9 +85,9 @@ public class WebServer implements KairosDBService
 	public static final String JETTY_REQUEST_LOGGING_IGNORE_PATHS = "kairosdb.jetty.request_logging.ignore_paths";
 
 
-	private InetAddress m_address;
-	private int m_port;
-	private String m_webRoot;
+	private final InetAddress m_address;
+	private final int m_port;
+	private final String m_webRoot;
 	private Server m_server;
 	private final int m_idleTimeout;
 	private int m_sslPort;
@@ -114,10 +108,12 @@ public class WebServer implements KairosDBService
 	@Inject
 	private Injector m_injector;
 
+	//Used by unit tests
 	public WebServer(int port, String webRoot)
 			throws UnknownHostException
 	{
 		this(null, port, webRoot, 120000);
+		m_injector = Guice.createInjector();
 	}
 
 	@Inject
@@ -177,8 +173,7 @@ public class WebServer implements KairosDBService
 	}
 
 	@Inject(optional = true)
-	public void setThreadPool(@Named(JETTY_THREADS_QUEUE_SIZE_PROPERTY) int maxQueueSize,
-	                            @Named(JETTY_THREADS_MIN_PROPERTY) int minThreads,
+	public void setThreadPool(@Named(JETTY_THREADS_MIN_PROPERTY) int minThreads,
 	                            @Named(JETTY_THREADS_MAX_PROPERTY) int maxThreads,
 	                            @Named(JETTY_THREADS_KEEP_ALIVE_MS_PROPERTY) long keepAliveMs)
 	{
@@ -250,37 +245,32 @@ public class WebServer implements KairosDBService
 				servletContextHandler.setSecurityHandler(initializeAuth());
 			}
 
-			// Add GuiceFilter - note: Guice 4.x+ requires manual filter registration
-			//FilterHolder guiceFilter = new FilterHolder();
-			//guiceFilter.setName("guice");
-			//guiceFilter.setClassName(GuiceFilter.class.getName());
+			servletContextHandler.addEventListener(new ResteasyBootstrap());
 
-			servletContextHandler.addFilter(GuiceFilter.class, "/api/*", EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC));
-			//servletContextHandler.addServlet(DefaultServlet.class, "/api/*");
-			ServletHolder holder = new ServletHolder(ServletContainer.class);
-			holder.setInitParameter("jakarta.ws.rs.Application", GuiceJerseyResourceConfig.class.getName());
-			servletContextHandler.addServlet(holder, "/api/*");
-			servletContextHandler.setBaseResourceAsString("/");
-
-			//Add this listener so we can get guice injector from within GuiceJerseyResourceConfig
-			servletContextHandler.addEventListener(new GuiceServletContextListener() {
+			servletContextHandler.addEventListener(new GuiceServletContextListener()
+			{
 				@Override
-				protected Injector getInjector() {
+				protected Injector getInjector()
+				{
 					return m_injector;
 				}
 			});
 
+			//Adds guice injection for resteasy
+			servletContextHandler.addEventListener(m_injector.getInstance(GuiceResourceInjectionListener.class));
+
+
+			servletContextHandler.addFilter(GuiceFilter.class, "/api/*", EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC));
+			servletContextHandler.addServlet(HttpServletDispatcher.class, "/api/*");
+
+
+			//File resource handler
 			ResourceFactory resourceFactory = ResourceFactory.of(m_server);
 			ResourceHandler resourceHandler = new ResourceHandler();
 			resourceHandler.setBaseResource(resourceFactory.newResource(m_webRoot));
 			resourceHandler.setDirAllowed(true);
 			resourceHandler.setWelcomeFiles("index.html");
 
-			/*ServletHolder servletHolder = new ServletHolder("static", DefaultServlet.class);
-			servletHolder.setInitParameter("baseResource", m_webRoot);
-			servletHolder.setInitParameter("dirAllowed","true");
-			servletContextHandler.addServlet(servletHolder,"/");
-			servletContextHandler.setWelcomeFiles(new String[]{"index.html"});*/
 
 			//adding gzip handler
 			GzipHandler gzipHandler = new GzipHandler();
@@ -305,11 +295,10 @@ public class WebServer implements KairosDBService
 			}
 
 			resourceHandler.setHandler(currentHandler);
-			//m_server.setHandler(resourceHandler);
+			m_server.setHandler(resourceHandler);
 
-			m_server.setHandler(servletContextHandler);
 
-			m_server.setDefaultHandler(new DefaultHandler());
+			//m_server.setDefaultHandler(new DefaultHandler());
 
 
 
@@ -322,6 +311,22 @@ public class WebServer implements KairosDBService
 		catch (Exception e)
 		{
 			throw new KairosDBException(e);
+		}
+	}
+
+	private static void setHandler(Handler.Wrapper handlerWrapper, Handler handlerToAdd) {
+		Handler currentInnerHandler = handlerWrapper.getHandler();
+		if (currentInnerHandler == null) {
+			handlerWrapper.setHandler(handlerToAdd);
+		} else if (currentInnerHandler instanceof Handler.Collection) {
+			((Handler.Collection) currentInnerHandler).addHandler(handlerToAdd);
+		} else if (currentInnerHandler instanceof Handler.Wrapper) {
+			setHandler((Handler.Wrapper) currentInnerHandler, handlerToAdd);
+		} else {
+			Handler.Collection handlerList = new Handler.Sequence();
+			handlerList.addHandler(currentInnerHandler);
+			handlerList.addHandler(handlerToAdd);
+			handlerWrapper.setHandler(handlerWrapper);
 		}
 	}
 

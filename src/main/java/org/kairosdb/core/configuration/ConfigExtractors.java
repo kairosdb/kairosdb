@@ -148,7 +148,7 @@ public enum ConfigExtractors implements ConfigExtractor
 		}
 	}
 
-	private ConfigExtractors(Class<?>... matchingClasses)
+	ConfigExtractors(Class<?>... matchingClasses)
 	{
 		this.matchingClasses = matchingClasses;
 	}

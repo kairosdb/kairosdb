@@ -39,7 +39,7 @@ import static com.google.common.base.Preconditions.checkState;
 )
 public class DivideAggregator implements Aggregator
 {
-	private DoubleDataPointFactory m_dataPointFactory;
+	private final DoubleDataPointFactory m_dataPointFactory;
 
 	@NonZero
 	@FeatureProperty(
@@ -93,7 +93,7 @@ public class DivideAggregator implements Aggregator
 
 	private class DivideDataPointGroup implements DataPointGroup
 	{
-		private DataPointGroup m_innerDataPointGroup;
+		private final DataPointGroup m_innerDataPointGroup;
 
 		DivideDataPointGroup(DataPointGroup innerDataPointGroup)
 		{

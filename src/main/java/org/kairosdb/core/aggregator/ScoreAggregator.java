@@ -101,7 +101,7 @@ public class ScoreAggregator implements Aggregator
 
     private class MappedDataPointGroup implements DataPointGroup
     {
-        private DataPointGroup innerDataPointGroup;
+        private final DataPointGroup innerDataPointGroup;
 
         MappedDataPointGroup(DataPointGroup innerDataPointGroup)
         {

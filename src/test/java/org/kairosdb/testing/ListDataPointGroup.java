@@ -23,7 +23,7 @@ import java.util.*;
 
 public class ListDataPointGroup extends AbstractDataPointGroup
 {
-	private List<DataPoint> dataPoints = new ArrayList<DataPoint>();
+	private final List<DataPoint> dataPoints = new ArrayList<DataPoint>();
 	private Iterator<DataPoint> iterator;
 
 	public ListDataPointGroup(String name)

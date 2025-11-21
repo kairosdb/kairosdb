@@ -39,7 +39,7 @@ public class RollupProcessorImplTest
 	private static final long MINUTE = 1000 * 60;
 
 	private static KairosDatastore datastore;
-	private static FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new KairosRootConfig()));
+	private static final FilterEventBus eventBus = new FilterEventBus(new EventBusConfiguration(new KairosRootConfig()));
 	private static RollupProcessor processor;
 	private static QueryParser queryParser;
 	private static Publisher<DataPointEvent> publisher;

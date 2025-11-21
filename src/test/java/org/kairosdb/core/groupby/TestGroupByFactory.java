@@ -31,7 +31,7 @@ import java.util.Map;
 )
 public class TestGroupByFactory implements FeatureProcessingFactory<GroupBy>
 {
-    private Map<String, GroupBy> groupBys = new HashMap<String, GroupBy>();
+    private final Map<String, GroupBy> groupBys = new HashMap<String, GroupBy>();
 
     public TestGroupByFactory()
     {

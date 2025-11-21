@@ -45,7 +45,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KairosDatastoreTest
 {
-	private FeatureProcessingFactory<Aggregator> aggFactory;
+	private final FeatureProcessingFactory<Aggregator> aggFactory;
 
 	public KairosDatastoreTest() throws KairosDBException
 	{
@@ -72,7 +72,7 @@ public class KairosDatastoreTest
 
 		QueryMetric metric = new QueryMetric(1L, 1, "metric1");
 		Aggregator agg = aggFactory.createFeatureProcessor("sum");
-		((RangeAggregator)agg).init();
+		agg.init();
 		metric.addAggregator(agg);
 
 		DatastoreQuery dq = datastore.createQuery(metric);

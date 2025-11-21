@@ -58,7 +58,7 @@ public class SchedulingManager implements KairosDBService
 	private long m_assignmentsLastModified;
 	private long m_rollupsLastModified;
 	private Set<String> m_cachedAssignments = new HashSet<>();
-	private Map<String, RollupTask> m_tasksCache = new HashMap<>();
+	private final Map<String, RollupTask> m_tasksCache = new HashMap<>();
 
 	@Inject
 	public SchedulingManager(RollUpTasksStore taskStore, RollUpAssignmentStore assignmentStore,

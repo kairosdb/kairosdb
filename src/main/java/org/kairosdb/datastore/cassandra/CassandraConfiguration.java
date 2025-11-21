@@ -93,7 +93,7 @@ public class CassandraConfiguration
 	@Named(QUERY_TIME_LIMIT)
 	private long m_queryTimeLimit = 0;
 
-	private Map<String, Integer> m_hostList = new HashMap<>();
+	private final Map<String, Integer> m_hostList = new HashMap<>();
 
 	private final ClusterConfiguration m_writeCluster;
 	private final ClusterConfiguration m_metaCluster;

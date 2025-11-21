@@ -8,6 +8,7 @@ import org.xerial.snappy.Snappy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  Created by bhawkins on 09/15/2018.
@@ -16,7 +17,7 @@ public class SnappyStringDataPointFactory implements DataPointFactory
 {
 	public static final String DST_STRING = "kairos_string";
 	public static final String GROUP_TYPE = "text";
-	public static final Charset UTF8 = Charset.forName("UTF-8");
+	public static final Charset UTF8 = StandardCharsets.UTF_8;
 
 	@Override
 	public String getDataStoreType()

@@ -11,5 +11,5 @@ import org.kairosdb.core.DataPoint;
  */
 public interface DoubleDataPointFactory extends DataPointFactory
 {
-	public DataPoint createDataPoint(long timestamp, double value);
+	DataPoint createDataPoint(long timestamp, double value);
 }

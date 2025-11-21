@@ -27,35 +27,35 @@ public interface DataPointRow extends Iterator<DataPoint>
 	 Returns the metric name for this group
 	 @return Metric name
 	 */
-	public String getName();
+	String getName();
 
 	/**
 	 Returns the data type associated with the data points in this row
 	 @return
 	 */
-	public String getDatastoreType();
+	String getDatastoreType();
 
 	/**
 	 Returns a set of tag names associated with this group of data points
 	 @return Set of tag names
 	 */
-	public Set<String> getTagNames();
+	Set<String> getTagNames();
 
 	/**
 	 Returns the tag value for the given tag name.
 	 @param tag Tag to get the value for
 	 @return A tag value
 	 */
-	public String getTagValue(String tag);
+	String getTagValue(String tag);
 
 	/**
 	 Close any underlying resources held open by this DataPointGroup.  This
 	 will be called at the end of a query to free up resources.
 	 */
-	public void close();
+	void close();
 
 	/**
 	 Returns the number of datapoints in this row
 	 */
-	public int getDataPointCount();
+	int getDataPointCount();
 }

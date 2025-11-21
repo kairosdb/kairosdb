@@ -40,10 +40,10 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class Client
 {
-	private CloseableHttpClient client;
+	private final CloseableHttpClient client;
 	private String username;
 	private String password;
-	private Map<String, String> headers = new HashMap<>();
+	private final Map<String, String> headers = new HashMap<>();
 
 	public Client()
 	{

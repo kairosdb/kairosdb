@@ -93,9 +93,7 @@ public class LongDataPoint extends DataPointHelper
 
 		LongDataPoint that = (LongDataPoint) o;
 
-		if (m_value != that.m_value) return false;
-
-		return true;
+		return m_value == that.m_value;
 	}
 
 	@Override

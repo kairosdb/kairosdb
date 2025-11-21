@@ -38,7 +38,7 @@ public class HostManager implements KairosDBService
     private final Publisher<CoordinatorChangeEvent> m_coordinatorPublisher;
     private final Publisher<HostChangeEvent> m_hostPublisher;
     private final long m_delay;
-    private ScheduledExecutorService m_executorService;
+    private final ScheduledExecutorService m_executorService;
 
     private volatile SortedMap<String, ServiceKeyValue> m_activeHosts = new TreeMap<>();
     private boolean m_isCoordinatorHost = false;

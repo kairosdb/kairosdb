@@ -33,8 +33,8 @@ public class AssignmentManagerTest extends RollupTestBase
     @Mock
     private HostManager mockHostManager;
 
-    private RollupTaskStatusStore statusStore = new RollupTaskStatusStoreImpl(fakeServiceKeyStore);
-    private BalancingAlgorithm balancingAlgorithm = new ScoreBalancingAlgorithm();
+    private final RollupTaskStatusStore statusStore = new RollupTaskStatusStoreImpl(fakeServiceKeyStore);
+    private final BalancingAlgorithm balancingAlgorithm = new ScoreBalancingAlgorithm();
     private AssignmentManager manager;
 
     @Before

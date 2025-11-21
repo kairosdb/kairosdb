@@ -34,7 +34,7 @@ public class CacheFileCleaner implements KairosDBJob
 	public static final String CLEANING_SCHEDULE = "kairosdb.query_cache.cache_file_cleaner_schedule";
 
 	private final KairosDatastore datastore;
-	private String schedule;
+	private final String schedule;
 
 	@Inject
 	public CacheFileCleaner(@Named(CLEANING_SCHEDULE) String schedule, KairosDatastore datastore)

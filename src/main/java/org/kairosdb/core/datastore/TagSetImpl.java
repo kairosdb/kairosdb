@@ -13,7 +13,7 @@ import java.util.Set;
  */
 public class TagSetImpl implements TagSet
 {
-	private TreeMultimap<String, String> m_tags = TreeMultimap.create();
+	private final TreeMultimap<String, String> m_tags = TreeMultimap.create();
 
 	public void addTag(String name, String value)
 	{

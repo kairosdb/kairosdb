@@ -39,7 +39,7 @@ public class RateAggregator implements Aggregator, TimezoneAware
     )
 	private Sampling m_sampling;
 
-	private DoubleDataPointFactory m_dataPointFactory;
+	private final DoubleDataPointFactory m_dataPointFactory;
 	private DateTimeZone m_timeZone;
 
 	@Inject

@@ -85,7 +85,7 @@ import static org.kairosdb.core.CoreModule.HOSTNAME_CONFIG;
 
 public class Main
 {
-	public static final Logger logger = (Logger) LoggerFactory.getLogger(Main.class);
+	public static final org.slf4j.Logger logger = LoggerFactory.getLogger(Main.class);
 
 	public static final String SERVICE_PREFIX = "kairosdb.service.";
 	public static final String SERVICE_FOLDER_PREFIX = "kairosdb.service_folder.";
@@ -96,8 +96,8 @@ public class Main
 
 	private static final Arguments arguments = new Arguments();
 
-	private Injector m_injector;
-	private List<KairosDBService> m_services = new ArrayList<KairosDBService>();
+	private final Injector m_injector;
+	private final List<KairosDBService> m_services = new ArrayList<KairosDBService>();
 
 	private void loadPlugins(KairosRootConfig config, final File propertiesFile) throws IOException
 	{
@@ -232,7 +232,7 @@ public class Main
 
 			if (propertiesFile != null) {
 				Path path = Paths.get(propertiesFile.getAbsoluteFile().getParent(), GUID_PROPERTIES_FILENAME);
-				java.nio.file.Files.write(path, (KAIROSDB_SERVER_GUID + "=" + guid).getBytes(Charset.forName("UTF-8")));
+				java.nio.file.Files.write(path, (KAIROSDB_SERVER_GUID + "=" + guid).getBytes(UTF_8));
 			}
 		}
 
@@ -336,19 +336,23 @@ public class Main
 
 		if (!arguments.operationCommand.equals("run"))
 		{
-			//Turn off console logging
-			Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-			Appender<ILoggingEvent> stdout = root.getAppender("stdout");
-			if (stdout != null)
+			//Turn off console logging - if we are in a unit test this won't be a logback logger.
+			org.slf4j.Logger slflogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+			if (slflogger instanceof Logger)
 			{
-				stdout.addFilter(new Filter<ILoggingEvent>()
+				Logger root = (Logger) slflogger;
+				Appender < ILoggingEvent > stdout = root.getAppender("stdout");
+				if (stdout != null)
 				{
-					@Override
-					public FilterReply decide(ILoggingEvent iLoggingEvent)
+					stdout.addFilter(new Filter<ILoggingEvent>()
 					{
-						return (FilterReply.DENY);
-					}
-				});
+						@Override
+						public FilterReply decide(ILoggingEvent iLoggingEvent)
+						{
+							return (FilterReply.DENY);
+						}
+					});
+				}
 			}
 		}
 
@@ -477,7 +481,7 @@ public class Main
 			long stop = System.currentTimeMillis();
 			long time = stop - start;
 			System.out.println(time);
-			System.out.println((I * 1000) / time);
+			System.out.println((I * 1000L) / time);
 
 		}
 		catch (Exception e)

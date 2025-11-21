@@ -16,6 +16,7 @@
 package org.kairosdb.datastore.cassandra;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -115,12 +116,10 @@ public class DataPointsRowKey
 		DataPointsRowKey that = (DataPointsRowKey) o;
 
 		if (m_timestamp != that.m_timestamp) return false;
-		if (m_dataType != null ? !m_dataType.equals(that.m_dataType) : that.m_dataType != null)
+		if (!Objects.equals(m_dataType, that.m_dataType))
 			return false;
 		if (!m_metricName.equals(that.m_metricName)) return false;
-		if (!m_tags.equals(that.m_tags)) return false;
-
-		return true;
+		return m_tags.equals(that.m_tags);
 	}
 
 	@Override

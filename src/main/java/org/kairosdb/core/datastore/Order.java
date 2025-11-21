@@ -15,7 +15,7 @@ public enum Order
 	ASC("asc"),
 	DESC("desc");
 
-	private String m_text;
+	private final String m_text;
 
 	Order(String text)
 	{

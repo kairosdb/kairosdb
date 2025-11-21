@@ -46,7 +46,7 @@ class FilterSubscriber implements Comparable<FilterSubscriber>
 	/**
 	 The event bus this subscriber belongs to.
 	 */
-	private FilterEventBus bus;
+	private final FilterEventBus bus;
 
 	/**
 	 The object with the subscriber method.

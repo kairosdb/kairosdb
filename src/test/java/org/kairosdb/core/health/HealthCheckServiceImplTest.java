@@ -7,6 +7,7 @@ import com.google.inject.Injector;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Objects;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -47,7 +48,7 @@ public class HealthCheckServiceImplTest
 
 	private static class HealthStatus1 implements HealthStatus
 	{
-		private String name = getClass().getSimpleName();
+		private final String name = getClass().getSimpleName();
 
 		@Override
 		public String getName()
@@ -75,7 +76,7 @@ public class HealthCheckServiceImplTest
 
 			HealthStatus1 that = (HealthStatus1) o;
 
-			return !(name != null ? !name.equals(that.name) : that.name != null);
+			return !(!Objects.equals(name, that.name));
 		}
 
 		@Override
@@ -87,7 +88,7 @@ public class HealthCheckServiceImplTest
 
 	private static class HealthStatus2 implements HealthStatus
 	{
-		private String name = getClass().getSimpleName();
+		private final String name = getClass().getSimpleName();
 
 		@Override
 		public String getName()
@@ -115,7 +116,7 @@ public class HealthCheckServiceImplTest
 
 			HealthStatus2 that = (HealthStatus2) o;
 
-			return !(name != null ? !name.equals(that.name) : that.name != null);
+			return !(!Objects.equals(name, that.name));
 		}
 
 		@Override

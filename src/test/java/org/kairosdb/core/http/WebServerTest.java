@@ -102,20 +102,13 @@ public class WebServerTest
 		server.setSSLProtocols(null);
 	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void test_setThreadPool_maxQueueSize_invalid() throws UnknownHostException
-	{
-		server = new WebServer(0, ".");
-		// arguments: maxQueueSize, minThreads, maxThreads, keepAliveMs
-		server.setThreadPool(0, 1, 2, 1000);
-	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void test_setThreadPool_minThreads_invalid() throws UnknownHostException
 	{
 		server = new WebServer(0, ".");
 		// arguments: maxQueueSize, minThreads, maxThreads, keepAliveMs
-		server.setThreadPool(1, 3, 2, 1000);
+		server.setThreadPool(3, 2, 1000);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -123,15 +116,7 @@ public class WebServerTest
 	{
 		server = new WebServer(0, ".");
 		// arguments: maxQueueSize, minThreads, maxThreads, keepAliveMs
-		server.setThreadPool(1, 1, 0, 1000);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_setThreadPool_keepAliveMs_invalid() throws UnknownHostException
-	{
-		server = new WebServer(0, ".");
-		// arguments: maxQueueSize, minThreads, maxThreads, keepAliveMs
-		server.setThreadPool(1, 1, 2, -1);
+		server.setThreadPool( 1, 0, 1000);
 	}
 
 	@Test
@@ -248,7 +233,7 @@ public class WebServerTest
 	{
 		server = new WebServer(9001, ".");
 		// arguments: maxQueueSize, minThreads, maxThreads, keepAliveMs
-		server.setThreadPool(1000, 1000, 2500, 1000);
+		server.setThreadPool( 1000, 2500, 1000);
 		server.start();
 
 		client = new Client();

@@ -8,7 +8,7 @@ import java.util.Collections;
 
 public class JavaMonitor
 {
-	private Runtime m_runtime;
+	private final Runtime m_runtime;
 
 	@Inject
 	public JavaMonitor()

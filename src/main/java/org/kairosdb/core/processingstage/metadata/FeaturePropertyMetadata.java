@@ -16,10 +16,10 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 public class FeaturePropertyMetadata
 {
     private String name;
-    private String label;
+    private final String label;
     private String description;
     private boolean optional;
-    private String type;
+    private final String type;
     private String[] options;
     private String defaultValue;
     private String autocomplete;
@@ -127,7 +127,7 @@ public class FeaturePropertyMetadata
 
     private class ExplicitComparator implements Comparator<FeaturePropertyMetadata>
     {
-        private List<String> order;
+        private final List<String> order;
 
         private ExplicitComparator(List<String> order)
         {

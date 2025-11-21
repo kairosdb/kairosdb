@@ -45,12 +45,12 @@ public class Group
 	public static final byte LONG_FLAG = 0x1;
 	public static final byte DOUBLE_FLAG = 0x2;
 
-	private File m_groupCacheFile;
-	private DataOutputStream m_dataOutputStream;
-	private List<GroupByResult> groupByResults;
-	private String name;
-	private String alias;
-	private HashMultimap<String, String> tags = HashMultimap.create();
+	private final File m_groupCacheFile;
+	private final DataOutputStream m_dataOutputStream;
+	private final List<GroupByResult> groupByResults;
+	private final String name;
+	private final String alias;
+	private final HashMultimap<String, String> tags = HashMultimap.create();
 	private int m_dataPointCount; //Number of datapoints written to file
 
 	private final KairosDataPointFactory dataPointFactory;
@@ -98,7 +98,7 @@ public class Group
 			builder.append(groupId);
 		}
 
-		return File.createTempFile("grouper-" + builder.toString(), ".cache");
+		return File.createTempFile("grouper-" + builder, ".cache");
 	}
 
 	private int getStorageTypeId(String storageType)
@@ -151,7 +151,7 @@ public class Group
 	private class CachedDataPointGroup implements DataPointGroup
 	{
 		private int m_readCount = 0; //number of datapoints read from file
-		private KDataInputStream m_dataInputStream;
+		private final KDataInputStream m_dataInputStream;
 
 		private CachedDataPointGroup() throws IOException
 		{

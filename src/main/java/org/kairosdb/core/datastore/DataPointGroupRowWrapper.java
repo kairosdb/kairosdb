@@ -25,7 +25,7 @@ import java.util.Set;
 
 public class DataPointGroupRowWrapper implements DataPointGroup
 {
-	private DataPointRow m_row;
+	private final DataPointRow m_row;
 
 	public DataPointGroupRowWrapper(DataPointRow row)
 	{

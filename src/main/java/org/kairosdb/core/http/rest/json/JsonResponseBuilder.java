@@ -25,8 +25,8 @@ import static java.util.Objects.requireNonNull;
 
 public class JsonResponseBuilder
 {
-	private List<String> errorMessages = new ArrayList<String>();
-	private int status;
+	private final List<String> errorMessages = new ArrayList<String>();
+	private final int status;
 
 	public JsonResponseBuilder(Response.Status status)
 	{

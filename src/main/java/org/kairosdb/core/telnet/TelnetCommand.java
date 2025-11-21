@@ -24,13 +24,13 @@ import java.util.List;
 
 public interface TelnetCommand
 {
-	public static final String REPORTING_METRIC_NAME = "kairosdb.protocol.telnet_request_count";
+	String REPORTING_METRIC_NAME = "kairosdb.protocol.telnet_request_count";
 
-	public void execute(Channel chan, List<String> command) throws DatastoreException, ValidationException;
+	void execute(Channel chan, List<String> command) throws DatastoreException, ValidationException;
 
 	/**
 	 Returns the telnet command this class repsonds to (ie put, version)
 	 @return
 	 */
-	public String getCommand();
+	String getCommand();
 }

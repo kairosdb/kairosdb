@@ -14,7 +14,7 @@ import java.util.Set;
  */
 public class LimitAggregator implements Aggregator
 {
-	private int m_limit;
+	private final int m_limit;
 
 	public LimitAggregator(int limit)
 	{
@@ -47,7 +47,7 @@ public class LimitAggregator implements Aggregator
 
 	private class LimitDataPointGroup implements DataPointGroup
 	{
-		private DataPointGroup m_innerDataPointGroup;
+		private final DataPointGroup m_innerDataPointGroup;
 		private int m_counter;
 
 		public LimitDataPointGroup(DataPointGroup innerDataPointGroup)

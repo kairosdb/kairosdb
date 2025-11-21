@@ -49,7 +49,7 @@ public class ScaleAggregator implements Aggregator
 			}
 	)
 	private double m_factor;
-	private DoubleDataPointFactory m_dataPointFactory;
+	private final DoubleDataPointFactory m_dataPointFactory;
 
 	@Inject
 	public ScaleAggregator(DoubleDataPointFactory dataPointFactory)
@@ -90,7 +90,7 @@ public class ScaleAggregator implements Aggregator
 
 	private class ScaleDataPointGroup implements DataPointGroup
 	{
-		private DataPointGroup m_innerDataPointGroup;
+		private final DataPointGroup m_innerDataPointGroup;
 
 		public ScaleDataPointGroup(DataPointGroup innerDataPointGroup)
 		{

@@ -13,7 +13,7 @@ import java.util.Set;
  */
 public class ConsumerTokenStore
 {
-	private Map<String, String> m_tokenMap;
+	private final Map<String, String> m_tokenMap;
 
 	public ConsumerTokenStore()
 	{

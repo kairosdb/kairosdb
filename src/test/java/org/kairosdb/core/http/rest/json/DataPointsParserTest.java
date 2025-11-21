@@ -55,7 +55,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
 public class DataPointsParserTest
 {
-	private static KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
+	private static final KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
 	private FilterEventBus eventBus;
 	private Publisher<DataPointEvent> publisher;
 
@@ -764,7 +764,7 @@ public class DataPointsParserTest
 			if ((lastDataPointSet == null) || (!lastDataPointSet.getName().equals(event.getMetricName())) ||
 					(!lastDataPointSet.getTags().equals(event.getTags())))
 			{
-				lastDataPointSet = new DataPointSet(event.getMetricName(), event.getTags(), Collections.<DataPoint>emptyList());
+				lastDataPointSet = new DataPointSet(event.getMetricName(), event.getTags(), Collections.emptyList());
 				dataPointSetList.add(lastDataPointSet);
 			}
 

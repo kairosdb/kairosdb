@@ -69,7 +69,7 @@ public class CachedSearchResult implements SearchResult
 	private final KairosDataPointFactory m_dataPointFactory;
 	private final StringPool m_stringPool;
 	private int m_maxReadBufferSize = 8192;  //Default value in BufferedInputStream
-	private boolean m_keepCacheFiles;
+	private final boolean m_keepCacheFiles;
 	private final ReentrantReadWriteLock m_lock = new ReentrantReadWriteLock();
 
 
@@ -348,7 +348,7 @@ public class CachedSearchResult implements SearchResult
 	{
 		private long m_startPosition;
 		private long m_endPosition;
-		private Map<String, String> m_tags;
+		private final Map<String, String> m_tags;
 		private String m_dataType;
 		private int m_dataPointCount;
 
@@ -434,10 +434,10 @@ public class CachedSearchResult implements SearchResult
 	//===========================================================================
 	private class CachedDataPointRow implements DataPointRow
 	{
-		private long m_currentPosition;
-		private long m_endPostition;
+		private final long m_currentPosition;
+		private final long m_endPostition;
 		private KDataInputStream m_readBuffer = null;
-		private Map<String, String> m_tags;
+		private final Map<String, String> m_tags;
 		private final String m_dataType;
 		private final int m_dataPointCount;
 		private int m_dataPointsRead = 0;

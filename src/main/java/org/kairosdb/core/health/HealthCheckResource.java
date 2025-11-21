@@ -25,7 +25,7 @@ public class HealthCheckResource
 
 	@Inject
 	@Named("kairosdb.health.healthyResponseCode")
-	private int m_healthyResponse = Response.Status.NO_CONTENT.getStatusCode();
+	private final int m_healthyResponse = Response.Status.NO_CONTENT.getStatusCode();
 
 
 	@Inject

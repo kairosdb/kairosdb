@@ -5,5 +5,5 @@ package org.kairosdb.core.datastore;
  */
 public interface QueryPluginFactory
 {
-	public QueryPlugin createQueryPlugin(String name);
+	QueryPlugin createQueryPlugin(String name);
 }

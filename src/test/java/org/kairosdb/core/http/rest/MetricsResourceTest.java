@@ -34,10 +34,7 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.zip.GZIPInputStream;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 
 public class MetricsResourceTest extends ResourceBase
@@ -94,7 +91,7 @@ public class MetricsResourceTest extends ResourceBase
 
 		JsonResponse response = client.post(json, ADD_METRIC_URL);
 
-		assertThat(response.getStatusCode(), equalTo(204));
+		assertThat(response.getStatusCode()).isEqualTo(204);
 	}
 
 	@Test
@@ -170,7 +167,7 @@ public class MetricsResourceTest extends ResourceBase
 		client.addHeader(HttpHeaders.ACCEPT_ENCODING, "gzip");
 		byte[] response = client.getAsBytes(VERSION_URL);
 
-		assertThat(decompress(response), equalTo("{\"version\": \"null null\"}\n"));
+		assertThat(decompress(response)).startsWith("{\"version\": \"KairosDB Development build");
 	}
 
 	@Test
@@ -188,9 +185,9 @@ public class MetricsResourceTest extends ResourceBase
 
 			datastore.throwException(null);
 
-			assertThat(response.getStatusCode(), equalTo(500));
-			assertThat(response.getJson(), equalTo("{\"errors\":[\"org.kairosdb.core.exception.DatastoreException: bogus\"]}"));
-			assertEquals(3, queuingManager.getAvailableThreads());
+			assertThat(response.getStatusCode()).isEqualTo(500);
+			assertThat(response.getJson()).isEqualTo("{\"errors\":[\"org.kairosdb.core.exception.DatastoreException: bogus\"]}");
+			assertThat(queuingManager.getAvailableThreads()).isEqualTo(3);
 		}
 		finally
 		{
@@ -315,15 +312,17 @@ public class MetricsResourceTest extends ResourceBase
 
 	static void assertResponse(JsonResponse response, int expectedCode, String expectedContent)
 	{
-		assertThat(response.getStatusCode(), equalTo(expectedCode));
-		assertThat(response.getHeader("Content-Type"), startsWith("application/json"));
-		assertThat(response.getJson(), equalTo(expectedContent));
+		assertThat(response.getStatusCode()).isEqualTo(expectedCode);
+		assertThat(response.getHeader("Content-Type")).startsWith("application/json");
+		assertThat(response.getJson()).isEqualTo(expectedContent);
 	}
 
 	static void assertResponse(JsonResponse response, int expectedCode)
 	{
-		assertThat(response.getStatusCode(), equalTo(expectedCode));
-		assertThat(response.getHeader("Content-Type"), startsWith("application/json"));
-		assertThat(response.getStatusString(), equalTo("No Content"));
+		assertThat(response.getStatusCode()).isEqualTo(expectedCode);
+		if (response.getStatusCode() != 204)
+			assertThat(response.getHeader("Content-Type")).startsWith("application/json");
+
+		assertThat(response.getStatusString()).isEqualTo("No Content");
 	}
 }

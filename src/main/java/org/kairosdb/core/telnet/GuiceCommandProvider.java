@@ -26,7 +26,7 @@ import java.util.Map;
 
 public class GuiceCommandProvider implements CommandProvider
 {
-	private Map<String, TelnetCommand> m_commandMap = new HashMap<String, TelnetCommand>();
+	private final Map<String, TelnetCommand> m_commandMap = new HashMap<String, TelnetCommand>();
 
 	@Inject
 	public GuiceCommandProvider(Injector injector)

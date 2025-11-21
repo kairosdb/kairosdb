@@ -16,7 +16,7 @@ import java.io.IOException;
  */
 public class LegacyDoubleDataPoint extends LegacyDataPoint
 {
-	private double m_value;
+	private final double m_value;
 
 	public LegacyDoubleDataPoint(long timestamp, double value)
 	{

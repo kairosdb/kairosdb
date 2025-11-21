@@ -48,7 +48,7 @@ public class MemoryMonitor
 	}
 
 	private int m_checkRate;
-	private AtomicInteger m_checkCounter;
+	private final AtomicInteger m_checkCounter;
 
 	public MemoryMonitor()
 	{

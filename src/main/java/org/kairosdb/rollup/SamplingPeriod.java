@@ -7,8 +7,8 @@ import java.util.Date;
 
 public class SamplingPeriod
 {
-	private long startTime;
-	private long endTime;
+	private final long startTime;
+	private final long endTime;
 
 	public SamplingPeriod(long startTime, long endTime)
 	{

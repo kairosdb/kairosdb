@@ -52,8 +52,8 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 	private static final int MAX_ROW_READ_SIZE = 1024;
 	private static final int OVERFLOW_SIZE = MAX_ROW_READ_SIZE * 2 + 10;
 
-	private static KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
-	private static Random random = new Random();
+	private static final KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
+	private static final Random random = new Random();
 	private static CassandraDatastore s_datastore;
 	private static long s_dataPointTime;
 	public static final HashMultimap<String,String> EMPTY_MAP = HashMultimap.create();
@@ -492,7 +492,7 @@ public class CassandraDatastoreTest extends DatastoreTestHelper
 		}
 
 		dataPointGroup.close();
-		assertThat(total).isEqualTo(counter * 42);
+		assertThat(total).isEqualTo(counter * 42L);
 		assertThat(counter).isEqualTo(OVERFLOW_SIZE);
 		dq.close();
 	}

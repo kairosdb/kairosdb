@@ -23,8 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+
 
 public class NewMetricRequestTest
 {
@@ -36,9 +36,7 @@ public class NewMetricRequestTest
 		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(request);
 		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
 
-		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("name may not be null"));
-
+		assertThat(violationMessages).containsExactlyInAnyOrder("name must not be null", "name must not be empty");
 	}
 
 	@Test
@@ -49,8 +47,7 @@ public class NewMetricRequestTest
 		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(request);
 		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
 
-		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("name may not be empty"));
+		assertThat(violationMessages).containsExactlyInAnyOrder("name must not be empty");
 
 	}
 
@@ -63,8 +60,7 @@ public class NewMetricRequestTest
 		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(request);
 		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
 
-		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("datapoints[0].value may not be null"));
+		assertThat(violationMessages).containsExactlyInAnyOrder("datapoints[0].value must not be null", "datapoints[0].value must not be empty");
 
 	}
 
@@ -77,8 +73,7 @@ public class NewMetricRequestTest
 		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(request);
 		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
 
-		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("datapoints[0].value may not be empty"));
+		assertThat(violationMessages).containsExactlyInAnyOrder("datapoints[0].value must not be empty");
 
 	}
 
@@ -91,8 +86,7 @@ public class NewMetricRequestTest
 		Set<ConstraintViolation<NewMetricRequest>> violations = BeanValidationHelper.VALIDATOR.validate(request);
 		List<String> violationMessages = BeanValidationHelper.messagesFor(violations);
 
-		assertThat(violationMessages.size(), equalTo(1));
-		assertThat(violationMessages.get(0), equalTo("datapoints[0].timestamp must be greater than or equal to 1"));
+		assertThat(violationMessages).containsExactlyInAnyOrder("datapoints[0].timestamp must be greater than or equal to 1");
 
 	}
 }

@@ -28,7 +28,7 @@ import static java.util.Objects.requireNonNull;
 public class TagGroupByResult implements GroupByResult
 {
 	private Map<String, String> tagResults = new HashMap<String, String>();
-	private TagGroupBy groupBy;
+	private final TagGroupBy groupBy;
 
 	public TagGroupByResult(TagGroupBy groupBy, Map<String, String> tagResults)
 	{

@@ -28,8 +28,8 @@ public class CountDataPointsForMetricQuery extends org.agileclick.genorm.runtime
 	public static final String QUERY_NAME = "count_data_points_for_metric";
 	public static final String QUERY = "select count(0) as dp_count\n				from data_point dp\n				where\n				dp.\"metric_id\" = ?\n				and dp.\"timestamp\" >= ?\n				and dp.\"timestamp\" <= ?";
 	private static final int ATTRIBUTE_COUNT = 1;
-	private static Map<String, Integer> s_attributeIndex;
-	private static String[] s_attributeNames = {
+	private static final Map<String, Integer> s_attributeIndex;
+	private static final String[] s_attributeNames = {
 			"dpCount" };
 			
 	static
@@ -74,13 +74,12 @@ public class CountDataPointsForMetricQuery extends org.agileclick.genorm.runtime
 	//---------------------------------------------------------------------------
 	public String toString()
 		{
-		StringBuilder sb = new StringBuilder();
-		sb.append(this.getClass().getName());
-		sb.append(" metricId=").append(String.valueOf(m_metricId));
-		sb.append(" startTime=").append(String.valueOf(m_startTime));
-		sb.append(" endTime=").append(String.valueOf(m_endTime));
+			String sb = this.getClass().getName() +
+					" metricId=" + m_metricId +
+					" startTime=" + m_startTime +
+					" endTime=" + m_endTime;
 		
-		return (sb.toString());
+		return (sb);
 		}
 		
 	
@@ -198,19 +197,19 @@ public class CountDataPointsForMetricQuery extends org.agileclick.genorm.runtime
 	//===========================================================================
 	public interface ResultSet extends GenOrmQueryResultSet<CountDataPointsForMetricData>
 		{
-		public List<CountDataPointsForMetricData> getArrayList(int maxRows);
-		public List<CountDataPointsForMetricData> getArrayList();
-		public CountDataPointsForMetricData getRecord();
-		public CountDataPointsForMetricData getOnlyRecord();
+		List<CountDataPointsForMetricData> getArrayList(int maxRows);
+		List<CountDataPointsForMetricData> getArrayList();
+		CountDataPointsForMetricData getRecord();
+		CountDataPointsForMetricData getOnlyRecord();
 		}
 		
 	//===========================================================================
 	private class SQLResultSet 
 			implements ResultSet
 		{
-		private java.sql.ResultSet m_resultSet;
-		private java.sql.Statement m_statement;
-		private String m_query;
+		private final java.sql.ResultSet m_resultSet;
+		private final java.sql.Statement m_statement;
+		private final String m_query;
 		private boolean m_onFirstResult;
 		
 		//------------------------------------------------------------------------
@@ -390,7 +389,7 @@ public class CountDataPointsForMetricQuery extends org.agileclick.genorm.runtime
 		protected Record(java.sql.ResultSet rs)
 				throws java.sql.SQLException
 			{
-			m_dpCount = (int)rs.getInt(1);
+			m_dpCount = rs.getInt(1);
 
 			if (m_serializable)
 				{
@@ -407,12 +406,11 @@ public class CountDataPointsForMetricQuery extends org.agileclick.genorm.runtime
 		//------------------------------------------------------------------------
 		public String toString()
 			{
-			StringBuilder sb = new StringBuilder();
-			sb.append(" dp_count=\"");
-			sb.append(m_dpCount);
-			sb.append("\"");
+				String sb = " dp_count=\"" +
+						m_dpCount +
+						"\"";
 
-			return (sb.toString().trim());
+			return (sb.trim());
 			}
 			
 		//------------------------------------------------------------------------

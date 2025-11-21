@@ -153,7 +153,7 @@ public class KairosDatastore implements KairosPostConstructInit
 			return;
 		File[] list = directory.listFiles();
 
-		if (list != null && list.length > 0)
+		if (list != null)
 		{
 			for (File aList : list)
 			{
@@ -254,7 +254,7 @@ public class KairosDatastore implements KairosPostConstructInit
 	{
 		TagSet tagSet = m_datastore.queryMetricTags(metric);
 
-		return Collections.<DataPointGroup>singletonList(new EmptyDataPointGroup(metric.getName(), tagSet));
+		return Collections.singletonList(new EmptyDataPointGroup(metric.getName(), tagSet));
 
 	}
 
@@ -439,8 +439,8 @@ public class KairosDatastore implements KairosPostConstructInit
 
 	private class DatastoreQueryImpl implements DatastoreQuery
 	{
-		private String m_cacheFilename;
-		private QueryMetric m_metric;
+		private final String m_cacheFilename;
+		private final QueryMetric m_metric;
 		private List<DataPointGroup> m_results;
 		private int m_dataPointCount;
 		private int m_rowCount;

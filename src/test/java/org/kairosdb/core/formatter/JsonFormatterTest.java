@@ -50,7 +50,7 @@ public class JsonFormatterTest
 		JsonFormatter formatter = new JsonFormatter();
 		StringWriter writer = new StringWriter();
 
-		formatter.format(writer, (List<List<DataPointGroup>>)null);
+		formatter.format(writer, null);
 	}
 
 	@Test
@@ -164,7 +164,7 @@ public class JsonFormatterTest
 		JsonFormatter formatter = new JsonFormatter();
 		StringWriter writer = new StringWriter();
 
-		formatter.format(writer, (StringIterable)null, null);
+		formatter.format(writer, null, null);
 	}
 
 	@Test

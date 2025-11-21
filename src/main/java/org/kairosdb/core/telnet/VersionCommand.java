@@ -28,7 +28,7 @@ public class VersionCommand implements TelnetCommand
 {
 	private static final TelnetStats stats = MetricSourceManager.getSource(TelnetStats.class);
 
-	private AtomicInteger m_counter = new AtomicInteger();
+	private final AtomicInteger m_counter = new AtomicInteger();
 
 	@Inject
 	public VersionCommand()

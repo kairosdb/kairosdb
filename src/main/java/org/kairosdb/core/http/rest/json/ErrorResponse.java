@@ -25,7 +25,7 @@ import java.util.List;
 
 public class ErrorResponse
 {
-	private List<String> m_errors;
+	private final List<String> m_errors;
 
 	@JsonCreator
 	public ErrorResponse(@JsonProperty("errors") List<String> errors)

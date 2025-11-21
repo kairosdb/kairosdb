@@ -23,12 +23,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 public class WordSplitter extends MessageToMessageDecoder<ByteBuf>
 {
-	private static final Charset CHARSET = Charset.forName("ISO-8859-1");
+	private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
 	private static final Logger log = LoggerFactory.getLogger(WordSplitter.class);
 
 	/**
@@ -121,7 +122,7 @@ public class WordSplitter extends MessageToMessageDecoder<ByteBuf>
 			if (quoted && c == '"')
 				ret.add(s.substring(start, s.length()-1));
 			else
-				ret.add(s.substring(start, s.length()));
+				ret.add(s.substring(start));
 		}
 
 		return ret;

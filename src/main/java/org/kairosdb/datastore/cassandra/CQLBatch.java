@@ -18,6 +18,7 @@ import jakarta.inject.Named;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,7 +37,7 @@ public class CQLBatch
 {
 	private static final BatchMetrics metrics = MetricSourceManager.getSource(BatchMetrics.class);
 	public static final Logger logger = LoggerFactory.getLogger(CQLBatch.class);
-	private static final Charset UTF_8 = Charset.forName("UTF-8");
+	private static final Charset UTF_8 = StandardCharsets.UTF_8;
 	public static final String METRIC_INDEX_FILTER_PREFIX = "kairosdb.metric_index_filter.prefix";
 
 	private final ClusterConnection m_clusterConnection;
@@ -49,14 +50,14 @@ public class CQLBatch
 	private long m_rowKeyTimeIndexCount = 0;
 	private long m_tagIndexedRowKeysCount = 0;
 
-	private Map<Host, BatchStatement> m_batchMap = new HashMap<>();
+	private final Map<Host, BatchStatement> m_batchMap = new HashMap<>();
 
-	private BatchStatement m_metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-	private BatchStatement m_dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-	private BatchStatement m_rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+	private final BatchStatement m_metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+	private final BatchStatement m_dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+	private final BatchStatement m_rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
 
-	private List<DataPointsRowKey> m_newRowKeys = new ArrayList<>();
-	private List<TimedString> m_newMetrics = new ArrayList<>();
+	private final List<DataPointsRowKey> m_newRowKeys = new ArrayList<>();
+	private final List<TimedString> m_newMetrics = new ArrayList<>();
 
 	private List<String> m_prefixFilterList = new ArrayList<>();
 

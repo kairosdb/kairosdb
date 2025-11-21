@@ -28,10 +28,10 @@ import static java.util.Objects.requireNonNull;
 
 public abstract class AbstractDataPointGroup implements DataPointGroup
 {
-	private String name;
+	private final String name;
 	private String alias;
 	private TreeMultimap<String, String> tags = TreeMultimap.create();
-	private List<GroupByResult> groupByResult = new ArrayList<>();
+	private final List<GroupByResult> groupByResult = new ArrayList<>();
 
 	public AbstractDataPointGroup(String name)
 	{

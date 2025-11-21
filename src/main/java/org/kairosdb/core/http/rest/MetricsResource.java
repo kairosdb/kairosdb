@@ -24,11 +24,8 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.MalformedJsonException;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import jakarta.inject.Named;
 import org.kairosdb.core.KairosDataPointFactory;
-import org.kairosdb.core.datapoints.LongDataPointFactory;
-import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
-import org.kairosdb.core.datapoints.StringDataPointFactory;
 import org.kairosdb.core.datastore.*;
 import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.core.exception.InvalidServerTypeException;
@@ -54,6 +51,7 @@ import jakarta.ws.rs.core.*;
 import java.io.*;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
@@ -103,7 +101,7 @@ public class MetricsResource
 	private final KairosDataPointFactory m_kairosDataPointFactory;
 
 	@Inject(optional = true)
-	private QueryPreProcessorContainer m_queryPreProcessor = new QueryPreProcessorContainer()
+	private final QueryPreProcessorContainer m_queryPreProcessor = new QueryPreProcessorContainer()
 	{
 		@Override
 		public Query preProcess(Query query)
@@ -146,7 +144,7 @@ public class MetricsResource
 	{
 		if (serverType.equals("ALL")) return;
 		String serverTypeString = serverType.replaceAll("\\s+","");
-		List<String> serverTypeList = Arrays.asList(serverTypeString.split(","));
+		String[] serverTypeList = serverTypeString.split(",");
 
 		m_serverType = EnumSet.noneOf(ServerType.class);
 
@@ -164,7 +162,6 @@ public class MetricsResource
 	public MetricsResource(KairosDatastore datastore, QueryParser queryParser,
 			KairosDataPointFactory dataPointFactory, FilterEventBus eventBus)
 	{
-		System.out.println("Initialized MetricsResource $$$$$$$$$$$$");
 		this.datastore = requireNonNull(datastore);
 		this.queryParser = requireNonNull(queryParser);
 		m_kairosDataPointFactory = dataPointFactory;
@@ -198,7 +195,7 @@ public class MetricsResource
 		{
 			String logtext = "Disabled request type: " + methodServerType.name() + ", " + requestType + " request via URI \"" +  methodName + "\"";
 			logger.info(logtext);
-			String exceptionMessage = "{\"errors\": [\"Forbidden: " + methodServerType.toString() + " API methods are disabled on this KairosDB instance.\"]}";
+			String exceptionMessage = "{\"errors\": [\"Forbidden: " + methodServerType + " API methods are disabled on this KairosDB instance.\"]}";
 			throw new InvalidServerTypeException(exceptionMessage);
 		}
 	}
@@ -219,7 +216,10 @@ public class MetricsResource
 	public Response getVersion()
 	{
 		Package thisPackage = getClass().getPackage();
-		String versionString = thisPackage.getImplementationTitle() + " " + thisPackage.getImplementationVersion();
+		String name = (thisPackage.getImplementationTitle() == null ? "KairosDB" : thisPackage.getImplementationTitle());
+		String version = (thisPackage.getImplementationVersion() == null ? "Development build "+ LocalDateTime.now() : thisPackage.getImplementationVersion());
+
+		String versionString = name + " " + version;
 		ResponseBuilder responseBuilder = Response.status(Response.Status.OK).entity("{\"version\": \"" + versionString + "\"}\n");
 		setHeaders(responseBuilder);
 		return responseBuilder.build();
@@ -775,9 +775,9 @@ public class MetricsResource
 
 	public static class ValuesStreamingOutput implements StreamingOutput
 	{
-		private DataFormatter m_formatter;
-		private Iterable<String> m_values;
-		private LongCollector m_collector;
+		private final DataFormatter m_formatter;
+		private final Iterable<String> m_values;
+		private final LongCollector m_collector;
 
 		public ValuesStreamingOutput(DataFormatter formatter, Iterable<String> values, LongCollector countMetric)
 		{
@@ -806,7 +806,7 @@ public class MetricsResource
 
 	public static class FileStreamingOutput implements StreamingOutput
 	{
-		private File m_responseFile;
+		private final File m_responseFile;
 
 		public FileStreamingOutput(File responseFile)
 		{

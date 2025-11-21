@@ -35,8 +35,8 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 	private final String m_clusterName;
 	private final RowSpec m_rowSpec;
 	private int m_rawRowKeyCount = 0;
-	private Map<String, Pattern> m_patternFilter;
-	private Set<DataPointsRowKey> m_returnedKeys;  //keep from returning duplicates, querying old and new indexes
+	private final Map<String, Pattern> m_patternFilter;
+	private final Set<DataPointsRowKey> m_returnedKeys;  //keep from returning duplicates, querying old and new indexes
 
 
 	@Inject
@@ -163,9 +163,7 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 	private DataPointsRowKey nextKeyFromIterator(ResultSet iterator)
 	{
 		DataPointsRowKey next = null;
-		boolean newIndex = false;
-		if (iterator.getColumnDefinitions().contains("row_time"))
-			newIndex = true;
+		boolean newIndex = iterator.getColumnDefinitions().contains("row_time");
 
 outer:
 		while (!iterator.isExhausted())

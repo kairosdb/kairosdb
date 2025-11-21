@@ -6,5 +6,5 @@ public interface HealthStatus
 {
 	String getName();
 
-	public Result execute();
+	Result execute();
 }

@@ -30,6 +30,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.TimeZone;
 
@@ -41,7 +42,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 	private long m_queryStartTime = 0L;
 	private long m_queryEndTime = 0L;
 	private boolean m_started = false;
-	private boolean m_exhaustive;
+	private final boolean m_exhaustive;
 	private DateTimeZone m_timeZone = DateTimeZone.UTC;
 	private boolean m_alignSampling = true;
 
@@ -340,7 +341,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 		{
 			super(innerDataPointGroup);
 			m_subAggregator = subAggregator;
-			m_dpIterator = new ArrayList<DataPoint>().iterator();
+			m_dpIterator = Collections.emptyIterator();
 		}
 
 
@@ -407,7 +408,7 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 		 */
 		protected class SubRangeIterator implements Iterator<DataPoint>
 		{
-			private long m_endRange;
+			private final long m_endRange;
 
 			public SubRangeIterator(long endRange)
 			{
@@ -519,6 +520,6 @@ public abstract class RangeAggregator implements Aggregator, TimezoneAware
 		 @param dataPointRange Range to aggregate over.
 		 @return
 		 */
-		public Iterable<DataPoint> getNextDataPoints(long returnTime, Iterator<DataPoint> dataPointRange);
+		Iterable<DataPoint> getNextDataPoints(long returnTime, Iterator<DataPoint> dataPointRange);
 	}
 }

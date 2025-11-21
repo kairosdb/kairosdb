@@ -55,8 +55,8 @@ public abstract class DatastoreTestHelper
 	protected static FilterEventBus s_eventBus = new FilterEventBus(new EventBusConfiguration(new KairosRootConfig()));
 	protected static final List<String> metricNames = new ArrayList<>();
 	private static long s_startTime;
-	private static String s_unicodeNameWithSpace = "你好 means hello";
-	private static String s_unicodeName = "你好";
+	private static final String s_unicodeNameWithSpace = "你好 means hello";
+	private static final String s_unicodeName = "你好";
 
 	private static List<String> listFromIterable(Iterable<String> iterable)
 	{

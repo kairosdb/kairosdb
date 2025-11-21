@@ -23,5 +23,5 @@ public interface WriteBufferStats
 	 thread from the calling thread, otherwise a deadlock could occur.
 	 @param pendingWrites
 	 */
-	public void saveWriteSize(int pendingWrites);
+	void saveWriteSize(int pendingWrites);
 }

@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertSame;
 import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -62,8 +63,7 @@ public class FilterSubscriberTest {
         Object result = subscriber.invokeSubscriberMethod(FIXTURE_ARGUMENT);
 
         assertTrue("Subscriber must call provided method", methodCalled);
-        assertTrue("Subscriber argument must be exactly the provided object.",
-                methodArgument == FIXTURE_ARGUMENT);
+	    assertSame("Subscriber argument must be exactly the provided object.", FIXTURE_ARGUMENT, methodArgument);
         assertThat(result, instanceOf(String.class));
         assertThat(result, equalTo(FIXTURE_ARGUMENT));
     }
@@ -103,8 +103,7 @@ public class FilterSubscriberTest {
         Object result = subscriber.dispatchEvent(FIXTURE_ARGUMENT);
 
         assertTrue("Subscriber must call provided method", methodCalled);
-        assertTrue("Subscriber argument must be exactly the provided object.",
-                methodArgument == FIXTURE_ARGUMENT);
+	    assertSame("Subscriber argument must be exactly the provided object.", FIXTURE_ARGUMENT, methodArgument);
         assertThat(result, instanceOf(String.class));
         assertThat(result, equalTo(FIXTURE_ARGUMENT));
     }

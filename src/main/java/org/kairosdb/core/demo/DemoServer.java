@@ -40,7 +40,7 @@ public class DemoServer implements KairosDBService, Runnable
 
 	@jakarta.inject.Inject
 	@Named("HOSTNAME")
-	private String m_hostName = "none";
+	private final String m_hostName = "none";
 
 	@Inject
 	public DemoServer(

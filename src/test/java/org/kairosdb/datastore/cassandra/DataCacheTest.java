@@ -18,6 +18,7 @@ package org.kairosdb.datastore.cassandra;
 
 import org.junit.Test;
 
+import static junit.framework.TestCase.assertSame;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -41,9 +42,7 @@ public class DataCacheTest
 
 			TestObject that = (TestObject) o;
 
-			if (!m_data.equals(that.m_data)) return false;
-
-			return true;
+			return m_data.equals(that.m_data);
 		}
 
 		@Override
@@ -83,22 +82,22 @@ public class DataCacheTest
 		cache.cacheItem(td3);
 
 		TestObject ret = cache.cacheItem(new TestObject("td1"));
-		assertTrue(td1 == ret);
+		assertSame(td1, ret);
 
 		ret = cache.cacheItem(new TestObject("td2"));
-		assertTrue(td2 == ret);
+		assertSame(td2, ret);
 
 		ret = cache.cacheItem(new TestObject("td3"));
-		assertTrue(td3 == ret);
+		assertSame(td3, ret);
 
 		//Now if we do this again we should still get the original objects
 		ret = cache.cacheItem(new TestObject("td1"));
-		assertTrue(td1 == ret);
+		assertSame(td1, ret);
 
 		ret = cache.cacheItem(new TestObject("td2"));
-		assertTrue(td2 == ret);
+		assertSame(td2, ret);
 
 		ret = cache.cacheItem(new TestObject("td3"));
-		assertTrue(td3 == ret);
+		assertSame(td3, ret);
 	}
 }

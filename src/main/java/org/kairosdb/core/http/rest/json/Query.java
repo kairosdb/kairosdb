@@ -122,13 +122,13 @@ public class Query implements PluggableQuery
 			sb.append(m_startAbsolute).append(":");
 
 		if (start_relative != null)
-			sb.append(start_relative.toString()).append(":");
+			sb.append(start_relative).append(":");
 
 		if (m_endAbsolute != null)
 			sb.append(m_endAbsolute).append(":");
 
 		if (end_relative != null)
-			sb.append(end_relative.toString()).append(":");
+			sb.append(end_relative).append(":");
 
 		return (sb.toString());
 	}

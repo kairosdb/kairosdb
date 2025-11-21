@@ -37,7 +37,7 @@ public class FileQueueProcessor extends QueueProcessor
 	private final CircularFifoQueue<IndexedEvent> m_memoryQueue;
 	private final DataPointEventSerializer m_eventSerializer;
 	private final List<DataPointEvent> m_internalMetrics = new ArrayList<>();
-	private Stopwatch m_stopwatch = Stopwatch.createStarted();
+	private final Stopwatch m_stopwatch = Stopwatch.createStarted();
 	private CompletionCallBack m_lastCallback = new CompletionCallBack();
 	private final int m_secondsTillCheckpoint;
 	private volatile boolean m_shuttingDown;

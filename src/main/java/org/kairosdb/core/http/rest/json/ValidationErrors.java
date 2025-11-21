@@ -22,7 +22,7 @@ import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class ValidationErrors
 {
-	private List<String> errors = new ArrayList<String>();
+	private final List<String> errors = new ArrayList<String>();
 
 	@SuppressWarnings("ThrowableResultOfMethodCallIgnored")
 	public void addErrorMessage(String message)

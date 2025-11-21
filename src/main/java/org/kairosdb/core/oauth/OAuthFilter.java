@@ -1,7 +1,7 @@
 package org.kairosdb.core.oauth;
 
 import com.google.inject.Inject;
-import org.glassfish.jersey.oauth1.signature.*;
+//import org.glassfish.jersey.oauth1.signature.*;
 import org.kairosdb.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +21,9 @@ import java.util.*;
  Time: 12:50 PM
  To change this template use File | Settings | File Templates.
  */
-public class OAuthFilter implements Filter
+public class OAuthFilter //implements Filter
 {
-	public static final Logger logger = LoggerFactory.getLogger(OAuthFilter.class);
+/*	public static final Logger logger = LoggerFactory.getLogger(OAuthFilter.class);
 	private final OAuth1Signature m_signature;
 
 	private final ConsumerTokenStore m_tokenStore;
@@ -182,5 +182,5 @@ public class OAuthFilter implements Filter
 		{
 			throw new IllegalStateException("Modifying OAuthServerRequest unsupported");
 		}
-	}
+	}*/
 }

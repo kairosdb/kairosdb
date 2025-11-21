@@ -37,7 +37,7 @@ import java.util.Set;
  */
 public class DataCache<T>
 {
-	private Map<T, T> m_internalMap;
+	private final Map<T, T> m_internalMap;
 
 	public DataCache(final int cacheSize)
 	{

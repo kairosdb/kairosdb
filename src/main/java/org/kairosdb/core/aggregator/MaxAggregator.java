@@ -32,7 +32,7 @@ import java.util.Iterator;
 )
 public class MaxAggregator extends RangeAggregator
 {
-	private DoubleDataPointFactory m_dataPointFactory;
+	private final DoubleDataPointFactory m_dataPointFactory;
 
 	@Inject
 	public MaxAggregator(DoubleDataPointFactory dataPointFactory)

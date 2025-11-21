@@ -16,7 +16,7 @@ public class DoubleDataPointFactoryImpl implements DoubleDataPointFactory
 	@Override
 	public DataPoint createDataPoint(long timestamp, double value)
 	{
-		return ((DataPoint)new DoubleDataPoint(timestamp, value));
+		return new DoubleDataPoint(timestamp, value);
 	}
 
 	@Override

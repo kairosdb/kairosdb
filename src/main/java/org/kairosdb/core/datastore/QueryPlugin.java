@@ -9,5 +9,5 @@ package org.kairosdb.core.datastore;
  */
 public interface QueryPlugin
 {
-	public String getName();
+	String getName();
 }

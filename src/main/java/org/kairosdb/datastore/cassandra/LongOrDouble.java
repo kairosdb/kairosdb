@@ -18,7 +18,7 @@ package org.kairosdb.datastore.cassandra;
 
 public class LongOrDouble
 {
-	private boolean m_isLong;
+	private final boolean m_isLong;
 	private long m_longValue;
 	private double m_doubleValue;
 

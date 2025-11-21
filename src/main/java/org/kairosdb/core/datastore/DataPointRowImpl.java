@@ -21,9 +21,9 @@ import java.util.*;
 
 public class DataPointRowImpl implements DataPointRow
 {
-	private List<DataPoint> dataPoints = new ArrayList<DataPoint>();
+	private final List<DataPoint> dataPoints = new ArrayList<DataPoint>();
 	private Iterator<DataPoint> iterator;
-	private Map<String, String> tags = new TreeMap<String, String>();
+	private final Map<String, String> tags = new TreeMap<String, String>();
 	private String name;
 
 	public void addTag(String name, String value)

@@ -90,7 +90,7 @@ public enum ListExtractors implements ListExtractor
 		}
 	}
 
-	private ListExtractors(Class<?> parameterizedTypeClass) {
+	ListExtractors(Class<?> parameterizedTypeClass) {
 		this.parameterizedTypeClass = parameterizedTypeClass;
 	}
 

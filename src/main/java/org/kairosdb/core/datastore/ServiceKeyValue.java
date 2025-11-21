@@ -5,8 +5,8 @@ import java.util.Objects;
 
 public class ServiceKeyValue
 {
-    private String value;
-    private Date lastModified;
+    private final String value;
+    private final Date lastModified;
 
     public ServiceKeyValue(String value, Date lastModified)
     {

@@ -33,7 +33,7 @@ public interface DataPointGroup extends Iterator<DataPoint>, TagSet
 	 Returns the metric name for this group
 	 @return Metric name
 	 */
-	public String getName();
+	String getName();
 
 	/**
 	 * Retuns an alias for this metric that was passed with the query.
@@ -46,7 +46,7 @@ public interface DataPointGroup extends Iterator<DataPoint>, TagSet
 	 *
 	 * @return list of group by results
 	 */
-	public List<GroupByResult> getGroupByResult();
+	List<GroupByResult> getGroupByResult();
 
 	/**
 	 Returns the api data type for this group
@@ -58,7 +58,7 @@ public interface DataPointGroup extends Iterator<DataPoint>, TagSet
 	 Close any underlying resources held open by this DataPointGroup.  This
 	 will be called at the end of a query to free up resources.
 	 */
-	public void close();
+	void close();
 
 
 }

@@ -8,9 +8,9 @@ public class AdaptiveCongestionController implements CongestionController
 	private int m_processCounter;
 	private int m_maxProcesses;
 
-	private Object m_processLock = new Object();
+	private final Object m_processLock = new Object();
 	private boolean m_shuttingDown = false;
-	private boolean m_inSlowStart = true;
+	private final boolean m_inSlowStart = true;
 
 	private void processReturned()
 	{

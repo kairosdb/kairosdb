@@ -45,10 +45,10 @@ public class BlastServer implements KairosDBService, Runnable
 
 	@Inject
 	@Named("HOSTNAME")
-	private String m_hostName = "none";
+	private final String m_hostName = "none";
 
 	@Inject
-	private LongDataPointFactory m_dataPointFactory = new LongDataPointFactoryImpl();
+	private final LongDataPointFactory m_dataPointFactory = new LongDataPointFactoryImpl();
 
 	@Inject
 	public BlastServer(FilterEventBus evenBus,

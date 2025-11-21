@@ -16,7 +16,7 @@ import org.kairosdb.plugin.Aggregator;
 )
 public class DiffAggregator implements Aggregator
 {
-	private DoubleDataPointFactory m_dataPointFactory;
+	private final DoubleDataPointFactory m_dataPointFactory;
 
 	@Inject
 	public DiffAggregator(DoubleDataPointFactory dataPointFactory)

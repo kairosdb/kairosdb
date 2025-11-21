@@ -17,7 +17,7 @@
 package org.kairosdb.core.oauth;
 
 import com.google.inject.servlet.ServletModule;
-import org.glassfish.jersey.oauth1.signature.OAuth1Signature;
+//import org.glassfish.jersey.oauth1.signature.OAuth1Signature;
 import org.kairosdb.core.KairosRootConfig;
 
 import jakarta.inject.Singleton;
@@ -26,7 +26,7 @@ public class OAuthModule extends ServletModule
 {
 	public static final String CONSUMER_PREFIX = "kairosdb.oauth.consumer.";
 
-	private ConsumerTokenStore m_tokenStore;
+	private final ConsumerTokenStore m_tokenStore;
 
 	public OAuthModule(KairosRootConfig props)
 	{
@@ -53,10 +53,10 @@ public class OAuthModule extends ServletModule
 	protected void configureServlets()
 	{
 		bind(ConsumerTokenStore.class).toInstance(m_tokenStore);
-		bind(OAuth1Signature.class);
+		//bind(OAuth1Signature.class);
 
 		bind(OAuthFilter.class).in(Singleton.class);
-		filter("/api/*").through(OAuthFilter.class);
+		//filter("/api/*").through(OAuthFilter.class);
 	}
 
 

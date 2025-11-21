@@ -7,8 +7,8 @@ import org.agileclick.genorm.runtime.*;
 
 public class DSEnvelope implements GenOrmDSEnvelope
 	{
-	private DataSource m_dataSource;
-	private Map<String, GenOrmKeyGenerator> m_keyGenMap;
+	private final DataSource m_dataSource;
+	private final Map<String, GenOrmKeyGenerator> m_keyGenMap;
 	
 	public DSEnvelope(DataSource ds)
 		{

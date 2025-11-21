@@ -37,7 +37,7 @@ public class GenericFeatureProcessorFactoryTest
     public static void factory_generation_valid()
             throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException
     {
-        Injector injector = Guice.createInjector((Module) binder -> binder.bind(AAggregator.class));
+        Injector injector = Guice.createInjector(binder -> binder.bind(AAggregator.class));
         GenericFeatureProcessorFactoryTest.factory = new AggregatorFactory(injector);
     }
 
@@ -45,7 +45,7 @@ public class GenericFeatureProcessorFactoryTest
     public void factory_generation_invalid_metadata()
             throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException
     {
-        Injector injector = Guice.createInjector((Module) binder -> binder.bind(InvalidAggregator.class));
+        Injector injector = Guice.createInjector(binder -> binder.bind(InvalidAggregator.class));
         FeatureProcessingFactory<Aggregator> factory = new AggregatorFactory(injector);
     }
 

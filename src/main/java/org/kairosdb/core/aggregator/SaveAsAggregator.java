@@ -30,7 +30,7 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 	private final Publisher<DataPointEvent> m_publisher;
 	private Map<String, String> m_tags;
 	private int m_ttl = 0;
-	private Set<String> m_tagsToKeep = new HashSet<>();
+	private final Set<String> m_tagsToKeep = new HashSet<>();
 	private boolean m_addSavedFrom = true;
 
 	@FeatureProperty(
@@ -132,8 +132,8 @@ public class SaveAsAggregator implements Aggregator, GroupByAware
 
 	private class SaveAsDataPointAggregator implements DataPointGroup
 	{
-		private DataPointGroup m_innerDataPointGroup;
-		private ImmutableSortedMap<String, String> m_groupTags;
+		private final DataPointGroup m_innerDataPointGroup;
+		private final ImmutableSortedMap<String, String> m_groupTags;
 
 		public SaveAsDataPointAggregator(DataPointGroup innerDataPointGroup)
 		{

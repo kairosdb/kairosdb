@@ -43,9 +43,9 @@ public class StdAggregator extends RangeAggregator
 	public enum Dev
 	{
 		POS_SD, NEG_SD, VALUE
-	};
+	}
 
-	private DoubleDataPointFactory m_dataPointFactory;
+	private final DoubleDataPointFactory m_dataPointFactory;
 	private Dev m_dev;
 	private int m_devCount = 1;
 

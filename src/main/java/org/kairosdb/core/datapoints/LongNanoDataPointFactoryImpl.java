@@ -22,7 +22,7 @@ public class LongNanoDataPointFactoryImpl extends LongDataPointFactoryImpl
 	@Override
 	public DataPoint createDataPoint(long timestamp, long value)
 	{
-		return ((DataPoint)new LongNanoDataPoint(timestamp, value));
+		return new LongNanoDataPoint(timestamp, value);
 	}
 
 	@Override

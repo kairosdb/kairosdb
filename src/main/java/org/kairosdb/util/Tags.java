@@ -13,6 +13,6 @@ public class Tags
 {
 	public static ImmutableSortedMap.Builder<String, String> create()
 	{
-		return ImmutableSortedMap.<String, String>naturalOrder();
+		return ImmutableSortedMap.naturalOrder();
 	}
 }

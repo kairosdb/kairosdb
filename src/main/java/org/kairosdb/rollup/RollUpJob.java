@@ -35,8 +35,8 @@ public class RollUpJob implements InterruptableJob
 	private final RollupTaskStatusStore m_statusStore;
 
 	private boolean interrupted;
-	private LongDataPointFactory longDataPointFactory = new LongDataPointFactoryImpl();
-	private StringDataPointFactory stringDataPointFactory = new StringDataPointFactory();
+	private final LongDataPointFactory longDataPointFactory = new LongDataPointFactoryImpl();
+	private final StringDataPointFactory stringDataPointFactory = new StringDataPointFactory();
 
 	@Inject
 	public RollUpJob(KairosDatastore datastore, FilterEventBus eventBus,

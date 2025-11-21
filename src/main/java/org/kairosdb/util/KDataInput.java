@@ -10,17 +10,17 @@ import java.nio.ByteBuffer;
  */
 public interface KDataInput extends DataInput
 {
-	public static KDataInput createInput(byte[] buf)
+	static KDataInput createInput(byte[] buf)
 	{
 		return (new KDataInputStream(new ByteArrayInputStream(buf)));
 	}
 
-	public static KDataInput createInput(ByteBuffer buf)
+	static KDataInput createInput(ByteBuffer buf)
 	{
 		return new ByteBufferDataInput(buf);
 	}
 
-	public int read(byte[] b) throws IOException;
+	int read(byte[] b) throws IOException;
 
 
 }

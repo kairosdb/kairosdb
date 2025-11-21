@@ -49,11 +49,11 @@ public class ClusterConfiguration
 	private String m_authPassword;
 	private String m_authUser;
 	private String m_localDCName;
-	private String m_replication;
-	private long m_startTime;
-	private long m_endTime;
-	private long m_rowWidth;
-	private TimeUnit m_rowUnit;
+	private final String m_replication;
+	private final long m_startTime;
+	private final long m_endTime;
+	private final long m_rowWidth;
+	private final TimeUnit m_rowUnit;
 
 	public ClusterConfiguration(KairosConfig config) throws ParseException
 	{
@@ -92,7 +92,7 @@ public class ClusterConfiguration
 
 		List<String> hostList = config.getStringList("cql_host_list", Collections.singletonList("localhost"));
 
-		ImmutableMap.Builder<String, Integer> hostBuilder = ImmutableMap.<String, Integer>builder();
+		ImmutableMap.Builder<String, Integer> hostBuilder = ImmutableMap.builder();
 		for (String hostEntry : hostList)
 		{
 			Iterator<String> hostPort = PortSplitter.split(hostEntry).iterator();

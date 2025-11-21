@@ -64,6 +64,7 @@ import jakarta.inject.Named;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -106,7 +107,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 	public static final String ROW_KEY_METRIC_NAMES = "metric_names";
 	public static final String ROW_KEY_TAG_NAMES = "tag_names";
 	public static final String ROW_KEY_TAG_VALUES = "tag_values";
-	private static final Charset UTF_8 = Charset.forName("UTF-8");
+	private static final Charset UTF_8 = StandardCharsets.UTF_8;
 
 
 	private final ClusterConnection m_writeCluster;
@@ -127,7 +128,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 	private final CassandraModule.DeleteBatchHandlerFactory m_deleteBatchHandlerFactory;
 	private final CassandraModule.CQLFilteredRowKeyIteratorFactory m_rowKeyFilterFactory;
 
-	private CassandraConfiguration m_cassandraConfiguration;
+	private final CassandraConfiguration m_cassandraConfiguration;
 
 	@Inject
 	@Named("kairosdb.queue_processor.batch_size")
@@ -843,9 +844,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 		boolean clearCache = false;
 
 
-		boolean deleteAll = false;
-		if (deleteQuery.getStartTime() == Long.MIN_VALUE && deleteQuery.getEndTime() == Long.MAX_VALUE)
-			deleteAll = true;
+		boolean deleteAll = deleteQuery.getStartTime() == Long.MIN_VALUE && deleteQuery.getEndTime() == Long.MAX_VALUE;
 
 		Iterator<DataPointsRowKey> rowKeyIterator = getKeysForQueryIterator(deleteQuery);
 
@@ -1049,7 +1048,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 
 	private class DeletingCallback implements QueryCallback
 	{
-		private String m_metricName;
+		private final String m_metricName;
 		RowSpec m_rowSpec;
 
 		public DeletingCallback(String metricName, RowSpec rowSpec)
@@ -1067,8 +1066,8 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 
 		private class DeleteDatePointWriter implements DataPointWriter
 		{
-			private String m_dataType;
-			private SortedMap<String, String> m_tags;
+			private final String m_dataType;
+			private final SortedMap<String, String> m_tags;
 			private List<DataPoint> m_dataPoints;
 
 			public DeleteDatePointWriter(String dataType, SortedMap<String, String> tags)
@@ -1118,7 +1117,7 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 		{
 			sb.append(hostIterator.next().toString()).append(" ");
 		}
-		System.out.println(sb.toString());
+		System.out.println(sb);
 	}
 
 	private static final IDontCareCallBack s_dontCareCallBack = new IDontCareCallBack();

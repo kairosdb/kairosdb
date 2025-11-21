@@ -89,7 +89,7 @@ public class CoreModule extends AbstractModule
 	public static final String DATAPOINTS_FACTORY_DOUBLE = "kairosdb.datapoints.factory.double";
 
 	private final FilterEventBus m_eventBus;
-	private KairosRootConfig m_config;
+	private final KairosRootConfig m_config;
 
 	public CoreModule(KairosRootConfig config)
 	{

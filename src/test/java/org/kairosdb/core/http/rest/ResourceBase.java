@@ -28,6 +28,7 @@ import org.kairosdb.core.processingstage.FeatureProcessor;
 import org.kairosdb.core.scheduler.KairosDBScheduler;
 import org.kairosdb.eventbus.EventBusConfiguration;
 import org.kairosdb.eventbus.FilterEventBus;
+import org.kairosdb.metrics.InternalSinkSetup;
 import org.kairosdb.plugin.Aggregator;
 import org.kairosdb.plugin.GroupBy;
 import org.kairosdb.testing.Client;
@@ -56,8 +57,8 @@ public abstract class ResourceBase
     public static void startup() throws Exception
     {
         //This sends jersey java util logging to logback
-        SLF4JBridgeHandler.removeHandlersForRootLogger();
-        SLF4JBridgeHandler.install();
+        //SLF4JBridgeHandler.removeHandlersForRootLogger();
+        //SLF4JBridgeHandler.install();
 
         datastore = new TestDatastore();
         queuingManager = new QueryQueuingManager(3);
@@ -118,6 +119,7 @@ public abstract class ResourceBase
                 bindConstant().annotatedWith(Names.named("HOSTNAME")).to("HOST");
                 bind(KairosDataPointFactory.class).to(GuiceKairosDataPointFactory.class);
                 bind(QueryPluginFactory.class).to(TestQueryPluginFactory.class);
+                bind(InternalSinkSetup.class).asEagerSingleton();
 
 
                 bind(DoubleDataPointFactory.class)
@@ -156,7 +158,7 @@ public abstract class ResourceBase
     public static class TestDatastore implements Datastore, ServiceKeyStore
     {
         private DatastoreException m_toThrow = null;
-        private Map<String, String> metadata = new TreeMap<>();
+        private final Map<String, String> metadata = new TreeMap<>();
 
         TestDatastore()
         {

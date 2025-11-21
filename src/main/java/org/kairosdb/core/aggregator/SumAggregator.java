@@ -36,7 +36,7 @@ public class SumAggregator extends RangeAggregator
 {
 	public static final Logger logger = LoggerFactory.getLogger(SumAggregator.class);
 
-	private DoubleDataPointFactory m_dataPointFactory;
+	private final DoubleDataPointFactory m_dataPointFactory;
 
 	@Inject
 	public SumAggregator(DoubleDataPointFactory dataPointFactory)

@@ -33,7 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CachedSearchResultTest
 {
-	private static KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
+	private static final KairosDataPointFactory dataPointFactory = new TestDataPointFactory();
 	@Test
 	public void test_createCachedSearchResult() throws IOException
 	{
@@ -126,7 +126,7 @@ public class CachedSearchResultTest
 				"metric2", tempFile, dataPointFactory, true);
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
-		QueryCallback.DataPointWriter dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptySortedMap());
+		QueryCallback.DataPointWriter dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.emptySortedMap());
 
 		long now = System.currentTimeMillis();
 		for (int i = 0; i < numberOfDataPoints; i++)
@@ -159,7 +159,7 @@ public class CachedSearchResultTest
 				"metric3", tempFile, dataPointFactory, true);
 
 		int numberOfDataPoints = CachedSearchResult.WRITE_BUFFER_SIZE * 2;
-		QueryCallback.DataPointWriter dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.<String, String>emptySortedMap());
+		QueryCallback.DataPointWriter dataPointWriter = csResult.startDataPointSet(LegacyDataPointFactory.DATASTORE_TYPE, Collections.emptySortedMap());
 
 		long now = System.currentTimeMillis();
 		for (int i = 0; i < numberOfDataPoints; i++)

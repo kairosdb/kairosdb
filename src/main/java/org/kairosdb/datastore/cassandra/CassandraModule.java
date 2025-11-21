@@ -60,7 +60,7 @@ public class CassandraModule extends AbstractModule
 	public static final String AUTH_PREFIX = "kairosdb.datastore.cassandra.auth.";
 	public static final String HECTOR_PREFIX = "kairosdb.datastore.cassandra.hector.";
 
-	private Map<String, String> m_authMap = new HashMap<String, String>();
+	private final Map<String, String> m_authMap = new HashMap<String, String>();
 
 	public CassandraModule(KairosRootConfig props)
 	{
@@ -136,7 +136,7 @@ public class CassandraModule extends AbstractModule
 		ClusterConfiguration writeConfig = configuration.getWriteCluster();
 		ClusterConfiguration metaConfig = configuration.getMetaCluster();
 
-		Injector writeInjector = injector.createChildInjector((Module) binder -> bindCassandraClient(binder, writeConfig) );
+		Injector writeInjector = injector.createChildInjector(binder -> bindCassandraClient(binder, writeConfig));
 
 		CassandraClient writeClient = writeInjector.getInstance(CassandraClient.class);
 
@@ -154,7 +154,7 @@ public class CassandraModule extends AbstractModule
 					writeConfig.getTagIndexedMetrics());
 			m_writeCluster.startup(configuration.isStartAsync());
 
-			Injector metaInjector = injector.createChildInjector((Module) binder -> bindCassandraClient(binder, metaConfig) );
+			Injector metaInjector = injector.createChildInjector(binder -> bindCassandraClient(binder, metaConfig));
 
 			CassandraClient metaClient = metaInjector.getInstance(CassandraClient.class);
 
@@ -211,7 +211,7 @@ public class CassandraModule extends AbstractModule
 		{
 			for (ClusterConfiguration clusterConfiguration : configuration.getReadClusters())
 			{
-				Injector readInjector = injector.createChildInjector((Module) binder -> bindCassandraClient(binder, clusterConfiguration) );
+				Injector readInjector = injector.createChildInjector(binder -> bindCassandraClient(binder, clusterConfiguration));
 
 				CassandraClient client = readInjector.getInstance(CassandraClient.class);
 

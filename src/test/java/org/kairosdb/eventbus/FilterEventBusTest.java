@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class FilterEventBusTest
@@ -77,7 +78,7 @@ public class FilterEventBusTest
 		assertEquals("Hi", subscriber1.what());
 		assertEquals("Hi", subscriber2.what());
 		assertEquals("Hi", filter.what());
-		assertEquals(null, subscriber3.what());
+		assertNull(subscriber3.what());
 		assertThat(subscriber3.isWasCalled()).isFalse();
 	}
 

@@ -57,7 +57,7 @@ public class DatastoreQueryHealthCheckTest
 		Result result = healthCheck.check();
 
 		assertFalse(result.isHealthy());
-		assertThat(result.getError(), CoreMatchers.<Throwable>equalTo(exception));
+		assertThat(result.getError(), CoreMatchers.equalTo(exception));
 		assertThat(result.getMessage(), equalTo(exception.getMessage()));
 	}
 

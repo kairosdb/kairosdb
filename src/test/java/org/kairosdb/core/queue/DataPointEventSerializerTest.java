@@ -17,7 +17,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class DataPointEventSerializerTest
 {
-	private LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
+	private final LongDataPointFactory m_longDataPointFactory = new LongDataPointFactoryImpl();
 
 	@Test
 	public void test_serializeDeserialize()

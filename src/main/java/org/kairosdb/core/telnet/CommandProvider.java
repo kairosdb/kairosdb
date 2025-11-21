@@ -18,5 +18,5 @@ package org.kairosdb.core.telnet;
 
 public interface CommandProvider
 {
-	public TelnetCommand getCommand(String command);
+	TelnetCommand getCommand(String command);
 }

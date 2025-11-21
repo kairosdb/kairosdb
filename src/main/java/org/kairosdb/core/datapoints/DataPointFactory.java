@@ -18,7 +18,7 @@ public interface DataPointFactory
 	 retrieving data from the datastore.
 	 @return
 	 */
-	public String getDataStoreType();
+	String getDataStoreType();
 
 	/**
 	 This really is for aggregation purposes.  We know if an aggregator can handle
@@ -29,7 +29,7 @@ public interface DataPointFactory
 	 'text'.  This is free formed and you can make up your own.
 	 @return
 	 */
-	public String getGroupType();
+	String getGroupType();
 
 	/**
 	 This returns the data type that is in the json serialized form of the datapoints
@@ -42,6 +42,6 @@ public interface DataPointFactory
 	 */
 	//public String getAPIType();
 
-	public DataPoint getDataPoint(long timestamp, JsonElement json) throws IOException;
-	public DataPoint getDataPoint(long timestamp, KDataInput buffer) throws IOException;
+	DataPoint getDataPoint(long timestamp, JsonElement json) throws IOException;
+	DataPoint getDataPoint(long timestamp, KDataInput buffer) throws IOException;
 }

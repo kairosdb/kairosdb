@@ -37,7 +37,7 @@ public class BufferedDataOutputStream extends DataOutputStream
 
 	private static class WrappedOutputStream extends OutputStream
 	{
-		private FileChannel m_file;
+		private final FileChannel m_file;
 		private long m_position;
 
 		public WrappedOutputStream(RandomAccessFile file, long startPosition)

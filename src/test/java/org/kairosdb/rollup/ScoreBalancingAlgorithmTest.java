@@ -11,7 +11,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ScoreBalancingAlgorithmTest
 {
-    private ScoreBalancingAlgorithm algorithm = new ScoreBalancingAlgorithm();
+    private final ScoreBalancingAlgorithm algorithm = new ScoreBalancingAlgorithm();
 
     @Test
     public void test_balance()

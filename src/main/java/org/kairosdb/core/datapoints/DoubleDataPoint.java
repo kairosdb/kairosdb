@@ -91,9 +91,7 @@ public class DoubleDataPoint extends DataPointHelper
 
 		DoubleDataPoint that = (DoubleDataPoint) o;
 
-		if (Double.compare(that.m_value, m_value) != 0) return false;
-
-		return true;
+		return Double.compare(that.m_value, m_value) == 0;
 	}
 
 	@Override

@@ -2,12 +2,12 @@ package org.kairosdb.rollup;
 
 public class RollupQueryMetricStatus
 {
-    private String metricName;
-    private String lastExecuted;
+    private final String metricName;
+    private final String lastExecuted;
     private long dataPointCount;
-    private long executionLength;
+    private final long executionLength;
     private String errorMessage;
-    private long lastExecutionTime; // added to be backward compatible
+    private final long lastExecutionTime; // added to be backward compatible
 
     public RollupQueryMetricStatus(String metricName, String lastExecuted, long dataPointCount, long executionLength, long lastExecutionTime)
     {

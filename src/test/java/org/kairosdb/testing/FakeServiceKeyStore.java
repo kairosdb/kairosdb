@@ -14,8 +14,8 @@ import java.util.Set;
 
 public class FakeServiceKeyStore implements ServiceKeyStore
 {
-    private Table<String, String, Map<String, ServiceKeyValue>> table = HashBasedTable.create();
-    private Map<String, Date> timeStamps = new HashMap<>();
+    private final Table<String, String, Map<String, ServiceKeyValue>> table = HashBasedTable.create();
+    private final Map<String, Date> timeStamps = new HashMap<>();
 
     @SuppressWarnings("Java8MapApi")
     @Override

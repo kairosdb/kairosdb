@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 
 
@@ -30,7 +31,7 @@ public class SampleQueryPlugin implements QueryPlugin, CassandraRowKeyPlugin
 	public Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query)
 	{
 		logger.info("getKeysForQueryIterator was called");
-		return new ArrayList<DataPointsRowKey>().iterator();
+		return Collections.emptyIterator();
 	}
 
 	public void setMessage(String message)

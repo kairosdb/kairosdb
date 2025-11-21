@@ -26,9 +26,9 @@ import java.util.List;
 
 public class SortingDataPointGroup extends AbstractDataPointGroup
 {
-	private TournamentTree<DataPoint> m_tree;
+	private final TournamentTree<DataPoint> m_tree;
 	//We keep this list so we can close the iterators
-	private List<DataPointGroup> m_taggedDataPointsList = new ArrayList<>();
+	private final List<DataPointGroup> m_taggedDataPointsList = new ArrayList<>();
 
 	public SortingDataPointGroup(String name, String alias, Order order)
 	{

@@ -42,9 +42,7 @@ public abstract class DataPointHelper implements DataPoint
 
 		DataPointHelper that = (DataPointHelper) o;
 
-		if (m_timestamp != that.m_timestamp) return false;
-
-		return true;
+		return m_timestamp == that.m_timestamp;
 	}
 
 	@Override

@@ -53,13 +53,11 @@ public class ClusterConnection
 		READ
 	}
 
-	public static final String CREATE_KEYSPACE = "" +
-			"CREATE KEYSPACE IF NOT EXISTS %s" +
+	public static final String CREATE_KEYSPACE = "CREATE KEYSPACE IF NOT EXISTS %s" +
 			"  WITH REPLICATION = %s";
 
 	public static final String DATA_POINTS_TABLE_NAME = "data_points";
-	public static final String DATA_POINTS_TABLE = "" +
-			"CREATE TABLE IF NOT EXISTS "+DATA_POINTS_TABLE_NAME+" (\n" +
+	public static final String DATA_POINTS_TABLE = "CREATE TABLE IF NOT EXISTS "+DATA_POINTS_TABLE_NAME+" (\n" +
 			"  key blob,\n" +
 			"  column1 blob,\n" +
 			"  value blob,\n" +
@@ -80,8 +78,7 @@ public class ClusterConnection
 
 	//old row key index
 	public static final String ROW_KEY_INDEX_TABLE_NAME = "row_key_index";
-	public static final String ROW_KEY_INDEX_TABLE = "" +
-			"CREATE TABLE IF NOT EXISTS "+ROW_KEY_INDEX_TABLE_NAME+" (\n" +
+	public static final String ROW_KEY_INDEX_TABLE = "CREATE TABLE IF NOT EXISTS "+ROW_KEY_INDEX_TABLE_NAME+" (\n" +
 			"  key blob,\n" +
 			"  column1 blob,\n" +
 			"  value blob,\n" +
@@ -89,8 +86,7 @@ public class ClusterConnection
 			")";
 
 	public static final String ROW_KEY_TIME_INDEX_NAME = "row_key_time_index";
-	public static final String ROW_KEY_TIME_INDEX = "" +
-			"CREATE TABLE IF NOT EXISTS "+ROW_KEY_TIME_INDEX_NAME+" (\n" +
+	public static final String ROW_KEY_TIME_INDEX = "CREATE TABLE IF NOT EXISTS "+ROW_KEY_TIME_INDEX_NAME+" (\n" +
 			"  metric text,\n" +
 			"  table_name text,\n" +
 			"  row_time timestamp,\n" +
@@ -99,8 +95,7 @@ public class ClusterConnection
 			")";
 
 	public static final String ROW_KEYS_NAME = "row_keys";
-	public static final String ROW_KEYS = "" +
-			"CREATE TABLE IF NOT EXISTS "+ROW_KEYS_NAME+" (\n" +
+	public static final String ROW_KEYS = "CREATE TABLE IF NOT EXISTS "+ROW_KEYS_NAME+" (\n" +
 			"  metric text,\n" +
 			"  table_name text, \n" +
 			"  row_time timestamp,\n" +
@@ -116,8 +111,7 @@ public class ClusterConnection
 	 * partion key. This is used to improve lookups for high tag cardinality.
 	 */
 	public static final String TAG_INDEXED_ROW_KEYS_NAME = "tag_indexed_row_keys";
-	public static final String TAG_INDEXED_ROW_KEYS = "" +
-			"CREATE TABLE IF NOT EXISTS "+TAG_INDEXED_ROW_KEYS_NAME+" (\n" +
+	public static final String TAG_INDEXED_ROW_KEYS = "CREATE TABLE IF NOT EXISTS "+TAG_INDEXED_ROW_KEYS_NAME+" (\n" +
 			"  metric text,\n" +
 			"  table_name text, \n" +
 			"  row_time timestamp,\n" +
@@ -131,8 +125,7 @@ public class ClusterConnection
 			")";
 
 	public static final String STRING_INDEX_TABLE_NAME = "string_index";
-	public static final String STRING_INDEX_TABLE = "" +
-			"CREATE TABLE IF NOT EXISTS "+STRING_INDEX_TABLE_NAME+" (\n" +
+	public static final String STRING_INDEX_TABLE = "CREATE TABLE IF NOT EXISTS "+STRING_INDEX_TABLE_NAME+" (\n" +
 			"  key blob,\n" +
 			"  column1 text,\n" +
 			"  value blob,\n" +
@@ -140,8 +133,7 @@ public class ClusterConnection
 			")";
 
 	public static final String SERVICE_INDEX_NAME = "service_index";
-	public static final String SERVICE_INDEX = "" +
-			"CREATE TABLE IF NOT EXISTS "+SERVICE_INDEX_NAME+" (" +
+	public static final String SERVICE_INDEX = "CREATE TABLE IF NOT EXISTS "+SERVICE_INDEX_NAME+" (" +
 			" service text," +
 			" service_key text," +
 			" key text," +
@@ -151,8 +143,7 @@ public class ClusterConnection
 			")";
 
 	public static final String SPEC_TABLE_NAME = "spec";
-	public static final String SPEC_TABLE = "" +
-			"CREATE TABLE IF NOT EXISTS "+SPEC_TABLE_NAME+" (" +
+	public static final String SPEC_TABLE = "CREATE TABLE IF NOT EXISTS "+SPEC_TABLE_NAME+" (" +
 			" spec_type text," +
 			" name text," +
 			" value text," +
@@ -946,7 +937,7 @@ public class ClusterConnection
 
 		private String hashForTagPair(String tagName, String tagValue)
 		{
-			return new StringBuilder().append(tagName).append('=').append(tagValue).toString();
+			return tagName + '=' + tagValue;
 		}
 	}
 

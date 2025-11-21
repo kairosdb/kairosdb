@@ -10,6 +10,7 @@ import org.kairosdb.core.exception.KairosDBException;
 import org.kairosdb.events.DataPointEvent;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -90,9 +91,9 @@ public class FilterPluginTest
 	public void test_combination() throws KairosDBException
 	{
 		FilterPlugin filter = new FilterPlugin();
-		filter.setList(Arrays.asList("bad.guy"));
-		filter.setPrefixList(Arrays.asList("nope."));
-		filter.setRegexList(Arrays.asList(".*metric.*"));
+		filter.setList(List.of("bad.guy"));
+		filter.setPrefixList(List.of("nope."));
+		filter.setRegexList(List.of(".*metric.*"));
 		filter.start();
 
 		assertNoFilter(filter,"good.metri");

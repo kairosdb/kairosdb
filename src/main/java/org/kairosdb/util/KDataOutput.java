@@ -10,8 +10,8 @@ import java.io.IOException;
  */
 public class KDataOutput implements DataOutput
 {
-	private ByteArrayOutputStream m_arrayOutputStream;
-	private DataOutputStream m_dataOutputStream;
+	private final ByteArrayOutputStream m_arrayOutputStream;
+	private final DataOutputStream m_dataOutputStream;
 
 	public KDataOutput()
 	{

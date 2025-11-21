@@ -13,5 +13,5 @@ import java.nio.ByteBuffer;
  */
 public interface LongDataPointFactory extends DataPointFactory
 {
-	public DataPoint createDataPoint(long timestamp, long value);
+	DataPoint createDataPoint(long timestamp, long value);
 }

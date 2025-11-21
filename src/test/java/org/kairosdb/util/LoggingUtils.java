@@ -10,6 +10,7 @@ import ch.qos.logback.classic.Logger;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+
 public class LoggingUtils
 {
 	private LoggingUtils()
@@ -23,9 +24,14 @@ public class LoggingUtils
 	 */
 	public static Level setLogLevel(Level level)
 	{
-		Logger root = (Logger) getLogger(Logger.ROOT_LOGGER_NAME);
-		Level previous = root.getLevel();
-		root.setLevel(level);
+		Level previous = level;
+		org.slf4j.Logger logger = getLogger(Logger.ROOT_LOGGER_NAME);
+		if (logger instanceof Logger)
+		{
+			Logger root = (Logger) logger;
+			previous = root.getLevel();
+			root.setLevel(level);
+		}
 		return previous;
 	}
 

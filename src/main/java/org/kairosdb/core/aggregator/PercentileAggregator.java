@@ -42,7 +42,7 @@ public class PercentileAggregator extends RangeAggregator
 {
 	public static final Logger logger = LoggerFactory.getLogger(PercentileAggregator.class);
 
-	private DoubleDataPointFactory m_dataPointFactory;
+	private final DoubleDataPointFactory m_dataPointFactory;
 
 	@Inject
 	public PercentileAggregator(DoubleDataPointFactory dataPointFactory)

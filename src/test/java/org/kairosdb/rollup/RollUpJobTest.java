@@ -113,7 +113,7 @@ public class RollUpJobTest
 	private class RollupStatusMatcher implements ArgumentMatcher<RollupTaskStatus>
 	{
 		private String errorMessage;
-		private RollupTaskStatus expected;
+		private final RollupTaskStatus expected;
 
 		RollupStatusMatcher(RollupTaskStatus expected)
 		{
@@ -141,6 +141,7 @@ public class RollUpJobTest
 					if (status.getErrorMessage().startsWith(expectedStatus.getErrorMessage()))
 					{
 						found = true;
+						break;
 					}
 				}
 				if (!found)

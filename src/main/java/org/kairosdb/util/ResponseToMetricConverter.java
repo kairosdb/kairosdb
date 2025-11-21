@@ -115,9 +115,9 @@ public class ResponseToMetricConverter
 
 	private static class MetricTo
 	{
-		private String name;
-		private Map<String, String> tags = new HashMap<String, String>();
-		private long[][] datapoints;
+		private final String name;
+		private final Map<String, String> tags = new HashMap<String, String>();
+		private final long[][] datapoints;
 
 		private MetricTo(MetricFrom from)
 		{

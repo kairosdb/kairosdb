@@ -34,8 +34,8 @@ import java.util.List;
  */
 public class TelnetClient implements Closeable
 {
-	private Socket m_socket;
-	private PrintWriter m_writer;
+	private final Socket m_socket;
+	private final PrintWriter m_writer;
 
 	public TelnetClient(String host, int port) throws IOException
 	{

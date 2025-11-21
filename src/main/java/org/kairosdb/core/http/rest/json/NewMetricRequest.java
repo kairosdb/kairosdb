@@ -33,13 +33,13 @@ public class NewMetricRequest
 {
 	@NotNull
 	@NotEmpty
-	private String name;
+	private final String name;
 
-	private Map<String, String> tags;
+	private final Map<String, String> tags;
 
 	@Valid
 	@JsonDeserialize(using = DataPointDeserializer.class)
-	private List<DataPointRequest> datapoints = new ArrayList<DataPointRequest>();
+	private final List<DataPointRequest> datapoints = new ArrayList<DataPointRequest>();
 
 	@JsonCreator
 	public NewMetricRequest(@JsonProperty("name") String name,
@@ -74,7 +74,7 @@ public class NewMetricRequest
 		}
 		else
 		{
-			return Collections.unmodifiableMap(Collections.<String, String>emptyMap());
+			return Collections.unmodifiableMap(Collections.emptyMap());
 		}
 	}
 }

@@ -31,9 +31,9 @@ import java.util.Map;
 public class JsonResponse
 {
 	private String json;
-	private String statusString;
-	private int statusCode;
-	private Map<String, String> headers = new HashMap<String, String>();
+	private final String statusString;
+	private final int statusCode;
+	private final Map<String, String> headers = new HashMap<String, String>();
 
 	public JsonResponse(HttpResponse response) throws IOException
 	{

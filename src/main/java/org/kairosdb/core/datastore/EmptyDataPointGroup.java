@@ -16,8 +16,8 @@ import java.util.Set;
  */
 public class EmptyDataPointGroup implements DataPointGroup
 {
-	private String m_name;
-	private TagSet m_tags;
+	private final String m_name;
+	private final TagSet m_tags;
 
 	public EmptyDataPointGroup(String name, TagSet tags)
 	{

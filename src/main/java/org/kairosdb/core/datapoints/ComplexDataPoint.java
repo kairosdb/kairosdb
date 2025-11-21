@@ -13,8 +13,8 @@ import java.io.IOException;
 public class ComplexDataPoint extends DataPointHelper
 {
 	private static final String API_TYPE = "complex";
-	private double m_real;
-	private double m_imaginary;
+	private final double m_real;
+	private final double m_imaginary;
 
 	public ComplexDataPoint(long timestamp, double real, double imaginary)
 	{

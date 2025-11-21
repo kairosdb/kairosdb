@@ -7,6 +7,7 @@ import org.kairosdb.core.datastore.Duration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -135,7 +136,7 @@ public class RollupTask
 
 		RollupTask that = (RollupTask) o;
 
-		return !(id != null ? !id.equals(that.id) : that.id != null);
+		return !(!Objects.equals(id, that.id));
 
 	}
 

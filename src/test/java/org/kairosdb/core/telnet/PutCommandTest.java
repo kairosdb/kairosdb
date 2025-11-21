@@ -179,7 +179,7 @@ public class PutCommandTest
 		public void putDataPoint(DataPointEvent event) throws DatastoreException
 		{
 			if (set == null)
-				set = new DataPointSet(event.getMetricName(), event.getTags(), Collections.<DataPoint>emptyList());
+				set = new DataPointSet(event.getMetricName(), event.getTags(), Collections.emptyList());
 
 			set.addDataPoint(event.getDataPoint());
 		}

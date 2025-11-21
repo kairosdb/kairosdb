@@ -11,8 +11,7 @@ public class DropAggregator implements Aggregator
 	public enum Drop
 	{
 		HIGH, LOW, BOTH
-	};
-
+	}
 
 
 	@Override

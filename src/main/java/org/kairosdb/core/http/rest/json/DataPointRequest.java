@@ -25,10 +25,10 @@ public class DataPointRequest
 {
 	@NotNull
 	@NotEmpty
-	private String value;
+	private final String value;
 
 	@Min(1)
-	private long timestamp;
+	private final long timestamp;
 
 	public DataPointRequest(long timestamp, String value)
 	{

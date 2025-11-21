@@ -16,5 +16,5 @@ public interface CassandraRowKeyPlugin extends QueryPlugin
 	 @param query
 	 @return
 	 */
-	public Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query);
+	Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query);
 }

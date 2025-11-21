@@ -29,10 +29,10 @@ import static org.kairosdb.util.Preconditions.requireNonNullOrEmpty;
 
 public class DatastoreMetricQueryImpl implements DatastoreMetricQuery
 {
-	private String m_name;
-	private SetMultimap<String, String> m_tags;
-	private long m_startTime;
-	private long m_endTime;
+	private final String m_name;
+	private final SetMultimap<String, String> m_tags;
+	private final long m_startTime;
+	private final long m_endTime;
 
 
 	public DatastoreMetricQueryImpl(String name, SetMultimap<String, String> tags,

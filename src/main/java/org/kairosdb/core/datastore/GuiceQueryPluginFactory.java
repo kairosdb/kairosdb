@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class GuiceQueryPluginFactory implements QueryPluginFactory
 {
-	private Map<String, Class<QueryPlugin>> m_plugins = new HashMap<String, Class<QueryPlugin>>();
+	private final Map<String, Class<QueryPlugin>> m_plugins = new HashMap<String, Class<QueryPlugin>>();
 	private final Injector m_injector;
 
 	@Inject
@@ -29,7 +29,7 @@ public class GuiceQueryPluginFactory implements QueryPluginFactory
 			Class<?> bindingClass = key.getTypeLiteral().getRawType();
 			if (QueryPlugin.class.isAssignableFrom(bindingClass))
 			{
-				PluginName ann = (PluginName) bindingClass.getAnnotation(PluginName.class);
+				PluginName ann = bindingClass.getAnnotation(PluginName.class);
 				if (ann == null)
 					throw new IllegalStateException("QueryPlugin class " + bindingClass.getName() +
 							" does not have required annotation " + PluginName.class.getName());

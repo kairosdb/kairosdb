@@ -5,9 +5,9 @@ import java.util.Map;
 
 public class RollupResponse
 {
-	private String id;
-	private String name;
-	private Map<String, String> attributes = new HashMap<String, String>();
+	private final String id;
+	private final String name;
+	private final Map<String, String> attributes = new HashMap<String, String>();
 
 	public RollupResponse(String id, String name, String url)
 	{

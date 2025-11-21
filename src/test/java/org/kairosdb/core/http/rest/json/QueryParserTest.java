@@ -43,8 +43,7 @@ import org.kairosdb.rollup.RollupTask;
 import java.io.IOException;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 public class QueryParserTest
@@ -66,14 +65,14 @@ public class QueryParserTest
 
 		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
-		assertThat(results.size(), equalTo(1));
+		assertThat(results.size()).isEqualTo(1);
 
 		QueryMetric queryMetric = results.get(0);
-		assertThat(queryMetric.getName(), equalTo("abc.123"));
-		assertThat(queryMetric.getStartTime(), equalTo(784041330L));
-		assertThat(queryMetric.getEndTime(), equalTo(788879730L));
-		assertThat(queryMetric.getAggregators().size(), equalTo(1));
-		assertThat(queryMetric.getGroupBys().size(), equalTo(2));
+		assertThat(queryMetric.getName()).isEqualTo("abc.123");
+		assertThat(queryMetric.getStartTime()).isEqualTo(784041330L);
+		assertThat(queryMetric.getEndTime()).isEqualTo(788879730L);
+		assertThat(queryMetric.getAggregators().size()).isEqualTo(1);
+		assertThat(queryMetric.getGroupBys().size()).isEqualTo(2);
 	}
 
 	@Test
@@ -83,12 +82,12 @@ public class QueryParserTest
 
 		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
-		assertThat(results.size(), equalTo(1));
+		assertThat(results.size()).isEqualTo(1);
 
 		QueryMetric queryMetric = results.get(0);
-		assertThat(queryMetric.getName(), equalTo("abc.123"));
-		assertThat(queryMetric.getStartTime(), equalTo(-200L));
-		assertThat(queryMetric.getEndTime(), equalTo(-100L));
+		assertThat(queryMetric.getName()).isEqualTo("abc.123");
+		assertThat(queryMetric.getStartTime()).isEqualTo(-200L);
+		assertThat(queryMetric.getEndTime()).isEqualTo(-100L);
 	}
 
 	@Test
@@ -98,22 +97,22 @@ public class QueryParserTest
 
 		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
-		assertThat(results.size(), equalTo(1));
+		assertThat(results.size()).isEqualTo(1);
 
 		QueryMetric queryMetric = results.get(0);
-		assertThat(queryMetric.getName(), equalTo("abc.123"));
-		assertThat(queryMetric.getStartTime(), equalTo(784041330L));
-		assertThat(queryMetric.getEndTime(), equalTo(788879730L));
-		assertThat(queryMetric.getAggregators().size(), equalTo(0));
-		assertThat(queryMetric.getGroupBys().size(), equalTo(2));
+		assertThat(queryMetric.getName()).isEqualTo("abc.123");
+		assertThat(queryMetric.getStartTime()).isEqualTo(784041330L);
+		assertThat(queryMetric.getEndTime()).isEqualTo(788879730L);
+		assertThat(queryMetric.getAggregators().size()).isEqualTo(0);
+		assertThat(queryMetric.getGroupBys().size()).isEqualTo(2);
 	}
 
 	@Test
 	public void test_underscoreConverter()
 	{
-		assertThat(QueryParser.getUnderscorePropertyName("groupBy"), equalTo("group_by"));
-		assertThat(QueryParser.getUnderscorePropertyName("groupByValue"), equalTo("group_by_value"));
-		assertThat(QueryParser.getUnderscorePropertyName("ABC"), equalTo("_a_b_c"));
+		assertThat(QueryParser.getUnderscorePropertyName("groupBy")).isEqualTo("group_by");
+		assertThat(QueryParser.getUnderscorePropertyName("groupByValue")).isEqualTo("group_by_value");
+		assertThat(QueryParser.getUnderscorePropertyName("ABC")).isEqualTo("_a_b_c");
 	}
 
 	@Test(expected = BeanValidationException.class)
@@ -131,9 +130,9 @@ public class QueryParserTest
 
 		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
-		assertThat(results.size(), equalTo(1));
+		assertThat(results.size()).isEqualTo(1);
 		QueryMetric queryMetric = results.get(0);
-		assertThat(queryMetric.getTags(), notNullValue());
+		assertThat(queryMetric.getTags()).isNotNull();
 	}
 
 	@Test
@@ -143,11 +142,11 @@ public class QueryParserTest
 
 		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
-		assertThat(results.size(), equalTo(1));
+		assertThat(results.size()).isEqualTo(1);
 		QueryMetric queryMetric = results.get(0);
-		assertThat(queryMetric.getTags(), notNullValue());
-		assertThat(queryMetric.getTags().get("host").size(), equalTo(1));
-		assertThat(queryMetric.getTags().get("host"), hasItem("bar"));
+		assertThat(queryMetric.getTags()).isNotNull();
+		assertThat(queryMetric.getTags().get("host").size()).isEqualTo(1);
+		assertThat(queryMetric.getTags().get("host")).contains("bar");
 	}
 
 	@Test
@@ -157,13 +156,13 @@ public class QueryParserTest
 
 		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
-		assertThat(results.size(), equalTo(1));
+		assertThat(results.size()).isEqualTo(1);
 		QueryMetric queryMetric = results.get(0);
-		assertThat(queryMetric.getCacheString(), equalTo("784041330:788879730:bob:host=bar:host=foo:"));
-		assertThat(queryMetric.getTags(), notNullValue());
-		assertThat(queryMetric.getTags().get("host").size(), equalTo(2));
-		assertThat(queryMetric.getTags().get("host"), hasItem("bar"));
-		assertThat(queryMetric.getTags().get("host"), hasItem("foo"));
+		assertThat(queryMetric.getCacheString()).isEqualTo("784041330:788879730:bob:host=bar:host=foo:");
+		assertThat(queryMetric.getTags()).isNotNull();
+		assertThat(queryMetric.getTags().get("host").size()).isEqualTo(2);
+		assertThat(queryMetric.getTags().get("host")).contains("bar");
+		assertThat(queryMetric.getTags().get("host")).contains("foo");
 	}
 
 	@Test
@@ -173,14 +172,14 @@ public class QueryParserTest
 
 		List<QueryMetric> results = parser.parseQueryMetric(json).getQueryMetrics();
 
-		assertThat(results.size(), equalTo(1));
+		assertThat(results.size()).isEqualTo(1);
 		QueryMetric queryMetric = results.get(0);
-		assertThat(queryMetric.getCacheString(), equalTo("784041330:788879730:bob:host=bar:host=foo:"));
-		assertThat(queryMetric.isExcludeTags(), equalTo(true));
-		assertThat(queryMetric.getTags(), notNullValue());
-		assertThat(queryMetric.getTags().get("host").size(), equalTo(2));
-		assertThat(queryMetric.getTags().get("host"), hasItem("bar"));
-		assertThat(queryMetric.getTags().get("host"), hasItem("foo"));
+		assertThat(queryMetric.getCacheString()).isEqualTo("784041330:788879730:bob:host=bar:host=foo:");
+		assertThat(queryMetric.isExcludeTags()).isEqualTo(true);
+		assertThat(queryMetric.getTags()).isNotNull();
+		assertThat(queryMetric.getTags().get("host").size()).isEqualTo(2);
+		assertThat(queryMetric.getTags().get("host")).contains("bar");
+		assertThat(queryMetric.getTags().get("host")).contains("foo");
 	}
 
 	@Test
@@ -258,7 +257,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-empty-name.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].name may not be empty");
+		assertBeanValidation(json, "query.metric[0].name must not be empty");
 	}
 
 	@Test
@@ -427,7 +426,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-group_by-tag-missing-tags.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].group_by[0].tags may not be null");
+		assertBeanValidation(json, "query.metric[0].group_by[0].tags must not be null", "query.metric[0].group_by[0].tags must not be empty");
 	}
 
 	@Test
@@ -435,7 +434,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-group_by-tag-empty-tags.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].group_by[0].tags may not be empty");
+		assertBeanValidation(json, "query.metric[0].group_by[0].tags must not be empty");
 	}
 
 	@Test
@@ -443,7 +442,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-query-metric-group_by-time-missing-range_size.json"), Charsets.UTF_8);
 
-		assertBeanValidation(json, "query.metric[0].group_by[0].rangeSize may not be null");
+		assertBeanValidation(json, "query.metric[0].group_by[0].rangeSize must not be null");
 	}
 
 	@Test
@@ -483,7 +482,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-rollup-no-name-empty.json"), Charsets.UTF_8);
 
-		assertRollupBeanValidation(json, "name may not be empty");
+		assertRollupBeanValidation(json, "name must not be empty");
 	}
 
 	@Test
@@ -491,7 +490,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-rollup-no-execution_interval.json"), Charsets.UTF_8);
 
-		assertRollupBeanValidation(json, "executionInterval may not be null");
+		assertRollupBeanValidation(json, "executionInterval must not be null");
 	}
 
 	@Test
@@ -499,7 +498,7 @@ public class QueryParserTest
 	{
 		String json = Resources.toString(Resources.getResource("invalid-rollup-no-saveAs.json"), Charsets.UTF_8);
 
-		assertRollupBeanValidation(json, "rollup[0].saveAs may not be empty");
+		assertRollupBeanValidation(json, "rollup[0].saveAs must not be empty");
 	}
 
 	/**
@@ -529,9 +528,9 @@ public class QueryParserTest
 
 		RollupTask task = parser.parseRollupTask(json);
 
-		assertThat(task.getName(), equalTo("Rollup1"));
-		assertThat(task.getExecutionInterval(), equalTo(new Duration(1, TimeUnit.HOURS)));
-		assertThat(task.getRollups().size(), equalTo(1));
+		assertThat(task.getName()).isEqualTo("Rollup1");
+		assertThat(task.getExecutionInterval()).isEqualTo(new Duration(1, TimeUnit.HOURS));
+		assertThat(task.getRollups().size()).isEqualTo(1);
 
 		assertRollup(
 				task.getRollups().get(0),
@@ -552,17 +551,17 @@ public class QueryParserTest
 
 		List<RollupTask> tasks = parser.parseRollupTasks(json);
 
-		assertThat(tasks.size(), equalTo(2));
+		assertThat(tasks.size()).isEqualTo(2);
 
 		RollupTask rollupTask1 = tasks.get(0);
-		assertThat(rollupTask1.getName(), equalTo("Rollup1"));
-		assertThat(rollupTask1.getExecutionInterval(), equalTo(new Duration(1, TimeUnit.HOURS)));
-		assertThat(rollupTask1.getRollups().size(), equalTo(1));
+		assertThat(rollupTask1.getName()).isEqualTo("Rollup1");
+		assertThat(rollupTask1.getExecutionInterval()).isEqualTo(new Duration(1, TimeUnit.HOURS));
+		assertThat(rollupTask1.getRollups().size()).isEqualTo(1);
 
 		RollupTask rollupTask2 = tasks.get(1);
-		assertThat(rollupTask2.getName(), equalTo("Rollup2"));
-		assertThat(rollupTask2.getExecutionInterval(), equalTo(new Duration(1, TimeUnit.MINUTES)));
-		assertThat(rollupTask2.getRollups().size(), equalTo(1));
+		assertThat(rollupTask2.getName()).isEqualTo("Rollup2");
+		assertThat(rollupTask2.getExecutionInterval()).isEqualTo(new Duration(1, TimeUnit.MINUTES));
+		assertThat(rollupTask2.getRollups().size()).isEqualTo(1);
 
 		assertRollup(
 				rollupTask1.getRollups().get(0),
@@ -600,12 +599,12 @@ public class QueryParserTest
 		}
 		catch (BeanValidationException e)
 		{
-			assertThat(e.getErrorMessages().size(), equalTo(1));
-			assertThat(e.getErrorMessages().get(0), equalTo(expectedMessage));
+			assertThat(e.getErrorMessages().size()).isEqualTo(1);
+			assertThat(e.getErrorMessages().get(0)).isEqualTo(expectedMessage);
 		}
 	}
 
-	private void assertBeanValidation(String json, String expectedMessage)
+	private void assertBeanValidation(String json, String... expectedMessages)
 	{
 		try
 		{
@@ -618,18 +617,18 @@ public class QueryParserTest
 		}
 		catch (BeanValidationException e)
 		{
-			assertThat(e.getErrorMessages().size(), equalTo(1));
-			assertThat(e.getErrorMessages().get(0), equalTo(expectedMessage));
+			//assertThat(e.getErrorMessages().size()).isEqualTo(1);
+			assertThat(e.getErrorMessages()).containsExactlyInAnyOrder(expectedMessages);
 		}
 	}
 
 	private void assertRollup(Rollup rollup, int queryCount, String metricName, String saveAsName, Aggregator... aggregators)
 	{
-		assertThat(rollup.getSaveAs(), equalTo(saveAsName));
-		assertThat(rollup.getQueryMetrics().size(), equalTo(queryCount));
+		assertThat(rollup.getSaveAs()).isEqualTo(saveAsName);
+		assertThat(rollup.getQueryMetrics().size()).isEqualTo(queryCount);
 
 		QueryMetric query = rollup.getQueryMetrics().get(0);
-		assertThat(query.getName(), equalTo(metricName));
+		assertThat(query.getName()).isEqualTo(metricName);
 
 		for (Aggregator aggregator : aggregators)
 		{
@@ -643,7 +642,7 @@ public class QueryParserTest
 			}
 			else
 			{
-				assertThat(query.getAggregators(), hasItem(aggregator));
+				assertThat(query.getAggregators()).contains(aggregator);
 			}
 		}
 	}
@@ -660,8 +659,8 @@ public class QueryParserTest
 			{
 				saveAsAggregatorCount++;
 				SaveAsAggregator actual = (SaveAsAggregator) aggregator;
-				assertThat("SaveAsAggregator metric names do not match", actual.getMetricName(), equalTo(expected.getMetricName()));
-				assertThat("SaveAsAggregator groupBys do not match", actual.getTagsToKeep(), equalTo(expected.getTagsToKeep()));
+				assertThat(actual.getMetricName()).isEqualTo(expected.getMetricName());
+				assertThat(actual.getTagsToKeep()).isEqualTo(expected.getTagsToKeep());
 			}
 		}
 
@@ -687,7 +686,7 @@ public class QueryParserTest
 			{
 				aggregatorCount++;
 				SumAggregator actual = (SumAggregator) aggregator;
-				assertThat("SumAggregator metric names do not match", actual.getSampling(), equalTo(expected.getSampling()));
+				assertThat(actual.getSampling()).isEqualTo(expected.getSampling());
 			}
 		}
 

@@ -111,7 +111,7 @@ def configurePomRule(PomRule pomRule)
 			.addDeveloper("brianhks", "Brian", "brianhks1+kairos@gmail.com")
 			.addDeveloper("jeff", "Jeff", "jeff.sabin+kairos@gmail.com")
 
-	return pomRule;
+	return pomRule
 }
 
 //------------------------------------------------------------------------------
@@ -604,7 +604,7 @@ def doDockerBuild(Rule rule)
 
 def getDockerTag()
 {
-	def registry = saw.getProperty("DOCKER_REGISTRY", "");
+	def registry = saw.getProperty("DOCKER_REGISTRY", "")
 
 	if ( registry != "" ) {
 		registry += "/"

@@ -20,7 +20,7 @@ import static org.kairosdb.core.annotation.AnnotationUtils.getPropertyMetadata;
 
 public abstract class GenericFeatureProcessorFactory<FEATURE> implements FeatureProcessingFactory<FEATURE>
 {
-    private Class<FEATURE> featureClass;
+    private final Class<FEATURE> featureClass;
     protected Map<String, Class<FEATURE>> featureProcessors = new HashMap<>();
     protected List<FeatureProcessorMetadata> featureProcessorMetadata = new ArrayList<>();
     protected Injector injector;

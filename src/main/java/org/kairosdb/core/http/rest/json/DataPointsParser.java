@@ -140,7 +140,7 @@ public class DataPointsParser
 
 	private static class Context
 	{
-		private int m_count;
+		private final int m_count;
 		private String m_name;
 		private String m_attribute;
 
@@ -178,8 +178,8 @@ public class DataPointsParser
 
 	private static class SubContext
 	{
-		private Context m_context;
-		private String m_contextName;
+		private final Context m_context;
+		private final String m_contextName;
 		private int m_count;
 		private String m_name;
 		private String m_attribute;
@@ -414,14 +414,14 @@ public class DataPointsParser
 	private static class NewMetric
 	{
 		private String name;
-		private Long timestamp = null;
-		private Long time = null;
+		private final Long timestamp = null;
+		private final Long time = null;
 		private JsonElement value;
 		private Map<String, String> tags;
 		private JsonElement[][] datapoints;
-		private boolean skip_validate = false;
+		private final boolean skip_validate = false;
 		private String type;
-		private int ttl = 0;
+		private final int ttl = 0;
 
 		private String getName()
 		{
@@ -443,7 +443,7 @@ public class DataPointsParser
 
 		public Map<String, String> getTags()
 		{
-			return tags != null ? tags : Collections.<String, String>emptyMap();
+			return tags != null ? tags : Collections.emptyMap();
 		}
 
 		private JsonElement[][] getDatapoints()

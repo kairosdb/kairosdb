@@ -17,7 +17,7 @@ import java.util.Map;
  */
 public class GuiceQueryPreProcessor implements QueryPreProcessorContainer
 {
-	private List<QueryPreProcessor> m_preProcessors;
+	private final List<QueryPreProcessor> m_preProcessors;
 
 
 	@Inject

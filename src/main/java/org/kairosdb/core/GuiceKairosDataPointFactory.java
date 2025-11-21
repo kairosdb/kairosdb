@@ -42,8 +42,8 @@ public class GuiceKairosDataPointFactory implements KairosDataPointFactory
 	public static final Logger logger = LoggerFactory.getLogger(GuiceKairosDataPointFactory.class);
 	public static final String DATAPOINTS_FACTORY_PROP_PREFIX = "kairosdb.datapoints.factory.";
 
-	private Map<String, DataPointFactory> m_factoryMapDataStore = new HashMap<String, DataPointFactory>();
-	private Map<String, DataPointFactory> m_factoryMapRegistered = new HashMap<String, DataPointFactory>();
+	private final Map<String, DataPointFactory> m_factoryMapDataStore = new HashMap<String, DataPointFactory>();
+	private final Map<String, DataPointFactory> m_factoryMapRegistered = new HashMap<String, DataPointFactory>();
 
 
 	@Inject

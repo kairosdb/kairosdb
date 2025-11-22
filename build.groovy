@@ -422,10 +422,11 @@ def doDeb(Rule rule)
 
 	if (password != null)
 	{
-		sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --scripts --bump=0 --to-deb $rpmFile")
+		//sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --scripts --bump=0 --to-deb $rpmFile")
+		sudo = saw.createAsyncProcess(rpmDir, "alien --scripts --bump=0 --to-deb $rpmFile")
 		sudo.run()
 		//pass the password to the process on stdin
-		sudo.sendMessage("$password\n")
+		//sudo.sendMessage("$password\n")
 		sudo.waitForProcess()
 		if (sudo.getExitCode() != 0)
 			throw new TablesawException("Unable to run alien application")

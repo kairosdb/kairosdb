@@ -97,16 +97,7 @@
 		            rev="${jetty.version}"/>-->
 		<dependency org="org.apache.mina" name="mina-core" rev="2.2.4"/> <!-- force dependency update for jetty-jaas -->
 
-		<!--Jersey-->
-		<!-- <dependency org="org.glassfish.jersey.containers" name="jersey-container-servlet" rev="${jersey.version}"/>
-		<dependency org="org.glassfish.jersey.inject" name="jersey-hk2" rev="${jersey.version}"/>
-		<dependency org="org.glassfish.jersey.ext" name="jersey-bean-validation" rev="${jersey.version}"/>
-		<dependency org="org.glassfish.jersey.media" name="jersey-media-json-jackson" rev="${jersey.version}"/>
-		<dependency org="org.glassfish.jersey.security" name="oauth1-server" rev="${jersey.version}"/>
-		<dependency org="org.glassfish.jersey.security" name="oauth1-signature" rev="${jersey.version}"/>
-		<dependency org="org.glassfish.hk2" name="guice-bridge" rev="3.1.1"/> -->
-
-
+		<!--REST Easy-->
 		<dependency org="org.jboss.resteasy" name="resteasy-servlet-initializer" rev="${resteasy.version}"/>
 		<dependency org="org.jboss.resteasy" name="resteasy-core" rev="${resteasy.version}"/>
 		<dependency org="org.jboss.resteasy" name="resteasy-jackson2-provider" rev="${resteasy.version}"/>
@@ -117,20 +108,6 @@
 		<dependency org="jakarta.ws.rs" name="jakarta.ws.rs-api" rev="3.1.0"/>
 		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.20.1"/>
 		<dependency org="com.fasterxml.jackson.jakarta.rs" name="jackson-jakarta-rs-json-provider" rev="2.20.1"/>
-
-
-
-
-
-		<!-- <dependency org="com.sun.jersey.contribs" name="jersey-guice"
-		            rev="${jersey.version}"/>
-		<dependency org="com.sun.jersey" name="jersey-server" rev="${jersey.version}"/>
-		<dependency org="com.sun.jersey" name="jersey-core" rev="${jersey.version}"/>
-		<dependency org="com.sun.jersey" name="jersey-servlet" rev="${jersey.version}"
-		            transitive="false"/>
-		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-signature" rev="${jersey.version}" />
-		<dependency org="com.sun.jersey.contribs.jersey-oauth" name="oauth-server" rev="${jersey.version}" />
-		<dependency org="com.fasterxml.jackson.jaxrs" name="jackson-jaxrs-json-provider" rev="2.20.1"/>-->
 
 
 		<!-- Pulse -->

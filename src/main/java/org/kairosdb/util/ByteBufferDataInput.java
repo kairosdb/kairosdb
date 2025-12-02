@@ -18,6 +18,18 @@ public class ByteBufferDataInput implements KDataInput
 	}
 
 	@Override
+	public void mark()
+	{
+		m_buffer.mark();
+	}
+
+	@Override
+	public void reset()
+	{
+		m_buffer.reset();
+	}
+
+	@Override
 	public void readFully(byte[] b) throws IOException
 	{
 		m_buffer.get(b);

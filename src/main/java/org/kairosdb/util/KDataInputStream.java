@@ -13,4 +13,11 @@ public class KDataInputStream extends DataInputStream implements KDataInput
 	{
 		super(in);
 	}
+
+	@Override
+	public void mark()
+	{
+		this.mark(64);
+	}
+
 }

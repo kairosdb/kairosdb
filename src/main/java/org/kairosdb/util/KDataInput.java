@@ -22,5 +22,7 @@ public interface KDataInput extends DataInput
 
 	int read(byte[] b) throws IOException;
 
+	void mark();
 
+	void reset() throws IOException;
 }

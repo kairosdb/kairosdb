@@ -81,7 +81,7 @@ public class LongDataPoint extends DataPointHelper
 	@Override
 	public boolean isDouble()
 	{
-		return true;
+		return false;
 	}
 
 	@Override

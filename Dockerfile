@@ -1,6 +1,5 @@
-FROM alpine:3.22
+FROM eclipse-temurin:17.0.17_10-jre-alpine-3.23
 
-RUN apk add openjdk11
 RUN apk add bash
 
 ADD ./build/kairosdb-*.tar /opt

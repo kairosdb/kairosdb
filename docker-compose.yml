@@ -1,0 +1,32 @@
+name: kairosdb-stack
+version: '3.8'
+services:
+  cassandra:
+    image: cassandra:5.0.6
+    container_name: cassandra
+    environment:
+      CASSANDRA_CLUSTER_NAME: "kairosdb-cluster"
+      CASSANDRA_SEEDS: "cassandra"
+    ports:
+      - "9042:9042"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'DESCRIBE KEYSPACES' 127.0.0.1 9042 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  kairosdb:
+    image: ghcr.io/kairosdb/kairosdb:1.4.0-snapshot
+    container_name: kairosdb
+    environment:
+      KAIROSDB_SERVICE_DATASTORE: "org.kairosdb.datastore.cassandra.CassandraModule"
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+volumes:
+  cassandra_data:

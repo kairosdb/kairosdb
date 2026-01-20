@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 	
 */
 public class ServiceIndex_base extends GenOrmRecord
-	{
+{
 	protected static final Logger s_logger = LoggerFactory.getLogger(ServiceIndex.class.getName());
 
 	public static final String COL_SERVICE = "service";
@@ -44,11 +44,13 @@ public class ServiceIndex_base extends GenOrmRecord
 	//===========================================================================
 	public static ServiceIndexFactoryImpl factory = new ServiceIndexFactoryImpl();
 	
-	public static interface ServiceIndexFactory extends GenOrmRecordFactory
-		{
-		public boolean delete(String service, String serviceKey, String key);
-		public ServiceIndex find(String service, String serviceKey, String key);
-		public ServiceIndex findOrCreate(String service, String serviceKey, String key);
+	public interface ServiceIndexFactory extends GenOrmRecordFactory
+	{
+		boolean delete(String service, String serviceKey, String key);
+		ServiceIndex find(String service, String serviceKey, String key);
+		ServiceIndex findOrCreate(String service, String serviceKey, String key);
+		ServiceIndex create(String service, String serviceKey, String key);
+		ServiceIndex update(String service, String serviceKey, String key);
 		/**
 
 			@param service String
@@ -68,34 +70,34 @@ public class ServiceIndex_base extends GenOrmRecord
 			@param keyPrefix String
 			@return Results*/
 		public ResultSet getKeysLike(String service, String serviceKey, String keyPrefix);
-		}
+	}
 	
 	public static class ServiceIndexFactoryImpl //Inherit interfaces
 			implements ServiceIndexFactory 
-		{
+	{
 		public static final String CREATE_SQL = "CREATE CACHED TABLE service_index (\n	\"service\" VARCHAR  NOT NULL,\n	\"service_key\" VARCHAR  NOT NULL,\n	\"key\" VARCHAR  NOT NULL,\n	\"value\" VARCHAR  NULL,\n	\"modification_time\" TIMESTAMP  NULL,\n	PRIMARY KEY (\"service\", \"service_key\", \"key\")\n	)";
 
-		private ArrayList<GenOrmFieldMeta> m_fieldMeta;
-		private ArrayList<GenOrmConstraint> m_foreignKeyConstraints;
+		private final ArrayList<GenOrmFieldMeta> m_fieldMeta;
+		private final ArrayList<GenOrmConstraint> m_foreignKeyConstraints;
 		
 		protected ServiceIndexFactoryImpl()
-			{
-			m_fieldMeta = new ArrayList<GenOrmFieldMeta>();
+		{
+			m_fieldMeta = new ArrayList<>();
 			m_fieldMeta.add(SERVICE_FIELD_META);
 			m_fieldMeta.add(SERVICE_KEY_FIELD_META);
 			m_fieldMeta.add(KEY_FIELD_META);
 			m_fieldMeta.add(VALUE_FIELD_META);
 			m_fieldMeta.add(MODIFICATION_TIME_FIELD_META);
 
-			m_foreignKeyConstraints = new ArrayList<GenOrmConstraint>();
-			}
+			m_foreignKeyConstraints = new ArrayList<>();
+		}
 			
 		protected ServiceIndex newServiceIndex(java.sql.ResultSet rs)
-			{
+		{
 			ServiceIndex rec = new ServiceIndex();
-			((ServiceIndex_base)rec).initialize(rs);
+			rec.initialize(rs);
 			return ((ServiceIndex)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
-			}
+		}
 	
 		//---------------------------------------------------------------------------
 		/**
@@ -103,9 +105,9 @@ public class ServiceIndex_base extends GenOrmRecord
 			@return List of GenOrmFieldMeta
 		*/
 		public List<GenOrmFieldMeta> getFields()
-			{
+		{
 			return (m_fieldMeta);
-			}
+		}
 
 		//---------------------------------------------------------------------------
 		/**
@@ -113,9 +115,9 @@ public class ServiceIndex_base extends GenOrmRecord
 			@return List of GenOrmConstraint
 		*/
 		public List<GenOrmConstraint> getForeignKeyConstraints()
-			{
+		{
 			return (m_foreignKeyConstraints);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -123,9 +125,9 @@ public class ServiceIndex_base extends GenOrmRecord
 			@return SQL create statement
 		*/
 		public String getCreateStatement()
-			{
+		{
 			return (CREATE_SQL);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -136,29 +138,49 @@ public class ServiceIndex_base extends GenOrmRecord
 			@return new ServiceIndex
 		*/
 		public ServiceIndex create(String service, String serviceKey, String key)
-			{
+		{
 			ServiceIndex rec = new ServiceIndex();
 			rec.m_isNewRecord = true;
 			
-			((ServiceIndex_base)rec).setService(service);
-			((ServiceIndex_base)rec).setServiceKey(serviceKey);
-			((ServiceIndex_base)rec).setKey(key);
+			rec.setService(service);
+			rec.setServiceKey(serviceKey);
+			rec.setKey(key);
 
 			
 			return ((ServiceIndex)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
-			}
+		}
+
+		/**
+		 Creates a new entry with the specified primary keys for purpose of updating an existing table entry.
+		 This will not try to create the entry before updating it.
+		 @param service String
+		 @param serviceKey String
+		 @param key String
+		 @return new ServiceIndex
+		*/
+		public ServiceIndex update(String service, String serviceKey, String key)
+		{
+			ServiceIndex rec = new ServiceIndex();
+
+			rec.setService(service);
+						rec.setServiceKey(serviceKey);
+						rec.setKey(key);
+						
+
+			return ((ServiceIndex)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
+		}
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry that is empty
 			@return new blank ServiceIndex
 		*/
 		public ServiceIndex createRecord()
-			{
+		{
 			ServiceIndex rec = new ServiceIndex();
 			rec.m_isNewRecord = true;
 			
 			return ((ServiceIndex)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -167,9 +189,9 @@ public class ServiceIndex_base extends GenOrmRecord
 		@return ServiceIndex with generated primary key
 		*/
 		public ServiceIndex createWithGeneratedKey()
-			{
+		{
 			throw new UnsupportedOperationException("ServiceIndex does not support a generated primary key");
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -180,10 +202,10 @@ public class ServiceIndex_base extends GenOrmRecord
 		@return ServiceIndex or null if no record is found
 		*/
 		public ServiceIndex findRecord(Object keys)
-			{
+		{
 			Object[] kArr = (Object[])keys;
 			return (find((String)kArr[0], (String)kArr[1], (String)kArr[2]));
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -196,29 +218,29 @@ public class ServiceIndex_base extends GenOrmRecord
 			either in the transaction cache or the db.
 		*/
 		public boolean delete(String service, String serviceKey, String key)
-			{
-			boolean ret = false;
+		{
+			boolean ret;
 			ServiceIndex rec = new ServiceIndex();
 			
-			((ServiceIndex_base)rec).initialize(service, serviceKey, key);
+			rec.initialize(service, serviceKey, key);
 			GenOrmConnection con = GenOrmDataSource.getGenOrmConnection();
 			ServiceIndex cachedRec = (ServiceIndex)con.getCachedRecord(rec.getRecordKey());
 			
 			if (cachedRec != null)
-				{
+			{
 				ret = true;
 				cachedRec.delete();
-				}
+			}
 			else
-				{
+			{
 				rec = (ServiceIndex)con.getUniqueRecord(rec);  //This adds the record to the cache
 				rec.delete();
 				ret = rec.flush();
 				rec.setIgnored(true); //So the system does not try to delete it again at commmit
-				}
+			}
 				
 			return (ret);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -226,20 +248,20 @@ public class ServiceIndex_base extends GenOrmRecord
 		@return ServiceIndex or null if no record is found
 		*/
 		public ServiceIndex find(String service, String serviceKey, String key)
-			{
+		{
 			ServiceIndex rec = new ServiceIndex();
 			
 			//Create temp object and look in cache for it
-			((ServiceIndex_base)rec).initialize(service, serviceKey, key);
+			rec.initialize(service, serviceKey, key);
 			rec = (ServiceIndex)GenOrmDataSource.getGenOrmConnection().getCachedRecord(rec.getRecordKey());
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			java.sql.ResultSet genorm_rs = null;
 			
 			if (rec == null)
-				{
+			{
 				try
-					{
+				{
 					//No cached object so look in db
 					genorm_statement = GenOrmDataSource.prepareStatement(SELECT+FROM+KEY_WHERE);
 					genorm_statement.setString(1, service);
@@ -251,30 +273,30 @@ public class ServiceIndex_base extends GenOrmRecord
 					genorm_rs = genorm_statement.executeQuery();
 					if (genorm_rs.next())
 						rec = newServiceIndex(genorm_rs);
-					}
+				}
 				catch (java.sql.SQLException sqle)
-					{
+				{
 					throw new GenOrmException(sqle);
-					}
+				}
 				finally
-					{
+				{
 					try
-						{
+					{
 						if (genorm_rs != null)
 							genorm_rs.close();
 							
 						if (genorm_statement != null)
 							genorm_statement.close();
-						}
+					}
 					catch (java.sql.SQLException sqle2)
-						{
+					{
 						throw new GenOrmException(sqle2);
-						}
 					}
 				}
+			}
 				
 			return (rec);
-			}
+		}
 		
 		//---------------------------------------------------------------------------
 		/**
@@ -283,13 +305,13 @@ public class ServiceIndex_base extends GenOrmRecord
 		@return A new or existing record.  
 		*/
 		public ServiceIndex findOrCreate(String service, String serviceKey, String key)
-			{
+		{
 			ServiceIndex rec = find(service, serviceKey, key);
 			if (rec == null)
 				rec = create(service, serviceKey, key);
 				
 			return (rec);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -299,9 +321,9 @@ public class ServiceIndex_base extends GenOrmRecord
 			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where)
-			{
+		{
 			return (select(where, null));
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -312,57 +334,57 @@ public class ServiceIndex_base extends GenOrmRecord
 			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where, String orderBy)
-			{
-			ResultSet rs = null;
+		{
+			ResultSet rs;
 			java.sql.Statement stmnt = null;
 			
 			try
-				{
+			{
 				stmnt = GenOrmDataSource.createStatement();
 				StringBuilder sb = new StringBuilder();
 				sb.append(SELECT);
 				sb.append(FROM);
 				if (where != null)
-					{
+				{
 					sb.append(WHERE);
 					sb.append(where);
-					}
+				}
 					
 				if (orderBy != null)
-					{
+				{
 					sb.append(" ");
 					sb.append(orderBy);
-					}
+				}
 				
 				String query = sb.toString();
 				rs = new SQLResultSet(stmnt.executeQuery(query), query, stmnt);
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				try
-					{
+				{
 					if (stmnt != null)
 						stmnt.close();
-					}
+				}
 				catch (java.sql.SQLException sqle2) { }
 					
 				throw new GenOrmException(sqle);
-				}
+			}
 				
 			return (rs);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
 		*/
 		public ResultSet getKeys(String service, String serviceKey)
-			{
+		{
 			String query = SELECT+"from service_index this\n				where\n				this.\"service\" = ?\n				and this.\"service_key\" = ?\n				order by this.\"key\" asc";
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			
 			try
-				{
+			{
 				genorm_statement = GenOrmDataSource.prepareStatement(query);
 				genorm_statement.setString(1, service);genorm_statement.setString(2, serviceKey);
 				
@@ -371,33 +393,33 @@ public class ServiceIndex_base extends GenOrmRecord
 				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
 				
 				return (rs);
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				try
-					{
+				{
 					if (genorm_statement != null)
 						genorm_statement.close();
-					}
+				}
 				catch (java.sql.SQLException sqle2) { }
 					
 				if (s_logger.isDebugEnabled())
 					sqle.printStackTrace();
 				throw new GenOrmException(sqle);
-				}
 			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
 		*/
 		public ResultSet getServiceKeys(String service)
-			{
+		{
 			String query = SELECT+"from service_index this\n				WHERE\n				this.\"service\" = ?\n				ORDER BY this.\"key\" asc";
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			
 			try
-				{
+			{
 				genorm_statement = GenOrmDataSource.prepareStatement(query);
 				genorm_statement.setString(1, service);
 				
@@ -406,33 +428,33 @@ public class ServiceIndex_base extends GenOrmRecord
 				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
 				
 				return (rs);
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				try
-					{
+				{
 					if (genorm_statement != null)
 						genorm_statement.close();
-					}
+				}
 				catch (java.sql.SQLException sqle2) { }
 					
 				if (s_logger.isDebugEnabled())
 					sqle.printStackTrace();
 				throw new GenOrmException(sqle);
-				}
 			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
 		*/
 		public ServiceIndex getModificationTime()
-			{
+		{
 			String query = SELECT+"select \"modification_time\" from service_index";
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			
 			try
-				{
+			{
 				genorm_statement = GenOrmDataSource.prepareStatement(query);
 				
 				s_logger.debug(genorm_statement.toString());
@@ -440,33 +462,33 @@ public class ServiceIndex_base extends GenOrmRecord
 				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
 				
 				return (rs.getOnlyRecord());
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				try
-					{
+				{
 					if (genorm_statement != null)
 						genorm_statement.close();
-					}
+				}
 				catch (java.sql.SQLException sqle2) { }
 					
 				if (s_logger.isDebugEnabled())
 					sqle.printStackTrace();
 				throw new GenOrmException(sqle);
-				}
 			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
 		*/
 		public ResultSet getKeysLike(String service, String serviceKey, String keyPrefix)
-			{
+		{
 			String query = SELECT+"from service_index this\n				where\n				this.\"service\" = ?\n				AND this.\"service_key\" = ?\n				AND this.\"key\" LIKE ?\n				ORDER BY this.\"key\" asc";
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			
 			try
-				{
+			{
 				genorm_statement = GenOrmDataSource.prepareStatement(query);
 				genorm_statement.setString(1, service);genorm_statement.setString(2, serviceKey);genorm_statement.setString(3, keyPrefix);
 				
@@ -475,21 +497,21 @@ public class ServiceIndex_base extends GenOrmRecord
 				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
 				
 				return (rs);
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				try
-					{
+				{
 					if (genorm_statement != null)
 						genorm_statement.close();
-					}
+				}
 				catch (java.sql.SQLException sqle2) { }
 					
 				if (s_logger.isDebugEnabled())
 					sqle.printStackTrace();
 				throw new GenOrmException(sqle);
-				}
 			}
+		}
 			
 
 		
@@ -498,7 +520,7 @@ public class ServiceIndex_base extends GenOrmRecord
 			Calls all query methods with test parameters.
 		*/
 		public void testQueryMethods()
-			{
+		{
 			ResultSet rs;
 			System.out.println("ServiceIndex.getKeys");
 			rs = getKeys("foo", "foo");
@@ -513,35 +535,35 @@ public class ServiceIndex_base extends GenOrmRecord
 			rs = getKeysLike("foo", "foo", "key%");
 			rs.close();
 
-			}
 		}
+	}
 		
 	//===========================================================================
-	public static interface ResultSet extends GenOrmResultSet
-		{
-		public ArrayList<ServiceIndex> getArrayList(int maxRows);
-		public ArrayList<ServiceIndex> getArrayList();
-		public ServiceIndex getRecord();
-		public ServiceIndex getOnlyRecord();
-		}
+	public interface ResultSet extends GenOrmResultSet
+	{
+		ArrayList<ServiceIndex> getArrayList(int maxRows);
+		ArrayList<ServiceIndex> getArrayList();
+		ServiceIndex getRecord();
+		ServiceIndex getOnlyRecord();
+	}
 		
 	//===========================================================================
 	private static class SQLResultSet 
 			implements ResultSet
-		{
-		private java.sql.ResultSet m_resultSet;
-		private java.sql.Statement m_statement;
-		private String m_query;
+	{
+		private final java.sql.ResultSet m_resultSet;
+		private final java.sql.Statement m_statement;
+		private final String m_query;
 		private boolean m_onFirstResult;
 		
 		//------------------------------------------------------------------------
 		protected SQLResultSet(java.sql.ResultSet resultSet, String query, java.sql.Statement statement)
-			{
+		{
 			m_resultSet = resultSet;
 			m_statement = statement;
 			m_query = query;
 			m_onFirstResult = false;
-			}
+		}
 		
 		//------------------------------------------------------------------------
 		/**
@@ -549,17 +571,17 @@ public class ServiceIndex_base extends GenOrmRecord
 			that was used to create this results set.
 		*/
 		public void close()
-			{
+		{
 			try
-				{
+			{
 				m_resultSet.close();
 				m_statement.close();
-				}
-			catch (java.sql.SQLException sqle)
-				{
-				throw new GenOrmException(sqle);
-				}
 			}
+			catch (java.sql.SQLException sqle)
+			{
+				throw new GenOrmException(sqle);
+			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
@@ -569,36 +591,35 @@ public class ServiceIndex_base extends GenOrmRecord
 				then an exception is thrown
 		*/
 		public ArrayList<ServiceIndex> getArrayList(int maxRows)
-			{
-			ArrayList<ServiceIndex> results = new ArrayList<ServiceIndex>();
+		{
+			ArrayList<ServiceIndex> results = new ArrayList<>();
 			int count = 0;
 			
 			try
-				{
+			{
 				if (m_onFirstResult)
-					{
+				{
 					count ++;
 					results.add(factory.newServiceIndex(m_resultSet));
-					}
+				}
 					
 				while (m_resultSet.next() && (count < maxRows))
-					{
+				{
 					count ++;
 					results.add(factory.newServiceIndex(m_resultSet));
-					}
+				}
 					
 				if (m_resultSet.next())
 					throw new GenOrmException("Bound of "+maxRows+" is too small for query ["+m_query+"]");
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
-				sqle.printStackTrace();
+			{
 				throw new GenOrmException(sqle);
-				}
+			}
 				
 			close();
 			return (results);
-			}
+		}
 		
 		//------------------------------------------------------------------------
 		/**
@@ -606,44 +627,43 @@ public class ServiceIndex_base extends GenOrmRecord
 			The Result set is closed within this call
 		*/
 		public ArrayList<ServiceIndex> getArrayList()
-			{
-			ArrayList<ServiceIndex> results = new ArrayList<ServiceIndex>();
+		{
+			ArrayList<ServiceIndex> results = new ArrayList<>();
 			
 			try
-				{
+			{
 				if (m_onFirstResult)
 					results.add(factory.newServiceIndex(m_resultSet));
 					
 				while (m_resultSet.next())
 					results.add(factory.newServiceIndex(m_resultSet));
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
-				sqle.printStackTrace();
+			{
 				throw new GenOrmException(sqle);
-				}
+			}
 				
 			close();
 			return (results);
-			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
 			Returns the underlying java.sql.ResultSet object
 		*/
 		public java.sql.ResultSet getResultSet()
-			{
+		{
 			return (m_resultSet);
-			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
 			Returns the current record in the result set
 		*/
 		public ServiceIndex getRecord()
-			{
+		{
 			return (factory.newServiceIndex(m_resultSet));
-			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
@@ -652,57 +672,57 @@ public class ServiceIndex_base extends GenOrmRecord
 			The ResultSet object is automatically closed by this call.
 		*/
 		public ServiceIndex getOnlyRecord()
-			{
+		{
 			ServiceIndex ret = null;
 			
 			try
-				{
+			{
 				if (m_resultSet.next())
 					ret = factory.newServiceIndex(m_resultSet);
 					
 				if (m_resultSet.next())
 					throw new GenOrmException("Multiple rows returned in call from ServiceIndex.getOnlyRecord");
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				throw new GenOrmException(sqle);
-				}
+			}
 				
 			close();
 			return (ret);
-			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
 			Returns true if there is another record in the result set.
 		*/
 		public boolean next()
-			{
-			boolean ret = false;
+		{
+			boolean ret;
 			m_onFirstResult = true;
 			try
-				{
+			{
 				ret = m_resultSet.next();
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				throw new GenOrmException(sqle);
-				}
+			}
 			
 			return (ret);
-			}
 		}
+	}
 		
 	//===========================================================================
 		
-	private GenOrmString m_service;
-	private GenOrmString m_serviceKey;
-	private GenOrmString m_key;
-	private GenOrmString m_value;
-	private GenOrmTimestamp m_modificationTime;
+	protected GenOrmString m_service;
+	protected GenOrmString m_serviceKey;
+	protected GenOrmString m_key;
+	protected GenOrmString m_value;
+	protected GenOrmTimestamp m_modificationTime;
 
 	
-	private List<GenOrmRecordKey> m_foreignKeys;
+	private final List<GenOrmRecordKey> m_foreignKeys;
 	
 	public List<GenOrmRecordKey> getForeignKeys() { return (m_foreignKeys); }
 
@@ -714,12 +734,12 @@ public class ServiceIndex_base extends GenOrmRecord
 	*/
 	public String getService() { return (m_service.getValue()); }
 	public ServiceIndex setService(String data)
-		{
+	{
 		boolean changed = m_service.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
-			{
+		{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
@@ -727,10 +747,10 @@ public class ServiceIndex_base extends GenOrmRecord
 			
 			if (m_isNewRecord) //Force set the prev value
 				m_service.setPrevValue(data);
-			}
+		}
 			
 		return ((ServiceIndex)this);
-		}
+	}
 		
 
 	//---------------------------------------------------------------------------
@@ -740,12 +760,12 @@ public class ServiceIndex_base extends GenOrmRecord
 	*/
 	public String getServiceKey() { return (m_serviceKey.getValue()); }
 	public ServiceIndex setServiceKey(String data)
-		{
+	{
 		boolean changed = m_serviceKey.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
-			{
+		{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
@@ -753,10 +773,10 @@ public class ServiceIndex_base extends GenOrmRecord
 			
 			if (m_isNewRecord) //Force set the prev value
 				m_serviceKey.setPrevValue(data);
-			}
+		}
 			
 		return ((ServiceIndex)this);
-		}
+	}
 		
 
 	//---------------------------------------------------------------------------
@@ -766,12 +786,12 @@ public class ServiceIndex_base extends GenOrmRecord
 	*/
 	public String getKey() { return (m_key.getValue()); }
 	public ServiceIndex setKey(String data)
-		{
+	{
 		boolean changed = m_key.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
-			{
+		{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
@@ -779,10 +799,10 @@ public class ServiceIndex_base extends GenOrmRecord
 			
 			if (m_isNewRecord) //Force set the prev value
 				m_key.setPrevValue(data);
-			}
+		}
 			
 		return ((ServiceIndex)this);
-		}
+	}
 		
 
 	//---------------------------------------------------------------------------
@@ -792,12 +812,12 @@ public class ServiceIndex_base extends GenOrmRecord
 	*/
 	public String getValue() { return (m_value.getValue()); }
 	public ServiceIndex setValue(String data)
-		{
+	{
 		boolean changed = m_value.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
-			{
+		{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
@@ -805,30 +825,30 @@ public class ServiceIndex_base extends GenOrmRecord
 			
 			if (m_isNewRecord) //Force set the prev value
 				m_value.setPrevValue(data);
-			}
+		}
 			
 		return ((ServiceIndex)this);
-		}
+	}
 		
 	public boolean isValueNull()
-		{
+	{
 		return (m_value.isNull());
-		}
+	}
 		
 	public ServiceIndex setValueNull()
-		{
+	{
 		boolean changed = m_value.setNull();
 		
 		if (changed)
-			{
+		{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
 			m_dirtyFlags.set(VALUE_FIELD_META.getDirtyFlag());
-			}
+		}
 		
 		return ((ServiceIndex)this);
-		}
+	}
 
 	//---------------------------------------------------------------------------
 	/**
@@ -837,12 +857,12 @@ public class ServiceIndex_base extends GenOrmRecord
 	*/
 	public java.sql.Timestamp getModificationTime() { return (m_modificationTime.getValue()); }
 	public ServiceIndex setModificationTime(java.sql.Timestamp data)
-		{
+	{
 		boolean changed = m_modificationTime.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
-			{
+		{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
@@ -850,37 +870,37 @@ public class ServiceIndex_base extends GenOrmRecord
 			
 			if (m_isNewRecord) //Force set the prev value
 				m_modificationTime.setPrevValue(data);
-			}
+		}
 			
 		return ((ServiceIndex)this);
-		}
+	}
 		
 	public boolean isModificationTimeNull()
-		{
+	{
 		return (m_modificationTime.isNull());
-		}
+	}
 		
 	public ServiceIndex setModificationTimeNull()
-		{
+	{
 		boolean changed = m_modificationTime.setNull();
 		
 		if (changed)
-			{
+		{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
 			m_dirtyFlags.set(MODIFICATION_TIME_FIELD_META.getDirtyFlag());
-			}
+		}
 		
 		return ((ServiceIndex)this);
-		}
+	}
 	
 	
 	
 	
 	//---------------------------------------------------------------------------
 	protected void initialize(String service, String serviceKey, String key)
-		{
+	{
 		m_service.setValue(service);
 		m_service.setPrevValue(service);
 		m_serviceKey.setValue(serviceKey);
@@ -888,40 +908,40 @@ public class ServiceIndex_base extends GenOrmRecord
 		m_key.setValue(key);
 		m_key.setPrevValue(key);
 
-		}
+	}
 		
 	//---------------------------------------------------------------------------
 	protected void initialize(java.sql.ResultSet rs)
-		{
+	{
 		try
-			{
+		{
 			if (s_logger.isDebugEnabled())
-				{
+			{
 				java.sql.ResultSetMetaData meta = rs.getMetaData();
 				for (int I = 1; I <= meta.getColumnCount(); I++)
-					{
+				{
 					s_logger.debug("Reading - "+meta.getColumnName(I) +" : "+rs.getString(I));
-					}
 				}
+			}
 			m_service.setValue(rs, 1);
 			m_serviceKey.setValue(rs, 2);
 			m_key.setValue(rs, 3);
 			m_value.setValue(rs, 4);
 			m_modificationTime.setValue(rs, 5);
 
-			}
-		catch (java.sql.SQLException sqle)
-			{
-			throw new GenOrmException(sqle);
-			}
 		}
+		catch (java.sql.SQLException sqle)
+		{
+			throw new GenOrmException(sqle);
+		}
+	}
 	
 	//---------------------------------------------------------------------------
 	/*package*/ ServiceIndex_base()
-		{
+	{
 		super(TABLE_NAME);
 		m_logger = s_logger;
-		m_foreignKeys = new ArrayList<GenOrmRecordKey>();
+		m_foreignKeys = new ArrayList<>();
 		m_dirtyFlags = new java.util.BitSet(NUMBER_OF_COLUMNS);
 		
 
@@ -941,38 +961,38 @@ public class ServiceIndex_base extends GenOrmRecord
 		addField(COL_MODIFICATION_TIME, m_modificationTime);
 
 		GenOrmRecordKey foreignKey;
-		}
+	}
 	
 	//---------------------------------------------------------------------------
 	@Override
 	public GenOrmConnection getGenOrmConnection()
-		{
+	{
 		return (GenOrmDataSource.getGenOrmConnection());
-		}
+	}
 		
 	//---------------------------------------------------------------------------
 	@Override
 	public String getFieldEscapeString()
-		{
+	{
 		return (s_fieldEscapeString);
-		}
+	}
 		
 	//---------------------------------------------------------------------------
 	@Override
 	public void setMTS()
-		{
+	{
 		setModificationTime(new java.sql.Timestamp(System.currentTimeMillis()));
-		}
+	}
 		
 	//---------------------------------------------------------------------------
 	@Override
 	public void setCTS()
-		{
-		}
+	{
+	}
 		
 	//---------------------------------------------------------------------------
 	public String toString()
-		{
+	{
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append("service=\"");
@@ -993,12 +1013,12 @@ public class ServiceIndex_base extends GenOrmRecord
 
 		
 		return (sb.toString().trim());
-		}
+	}
 		
 	//===========================================================================
 
 	
 	
-	}
+}
 	
 	

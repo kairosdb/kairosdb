@@ -200,6 +200,9 @@ public class CassandraDatastore implements Datastore, ProcessorHandler,
 	public void cleanRowKeyCache()
 	{
 		RowSpec rowSpec = m_writeCluster.getRowSpec();
+		if (rowSpec == null)
+			return; //This can be ran by the scheduler before we have a connection to Cassandra
+
 		long currentRow = rowSpec.calculateRowTime(System.currentTimeMillis());
 
 		Set<DataPointsRowKey> keys = m_rowKeyCache.getCachedKeys();

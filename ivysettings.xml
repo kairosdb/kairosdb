@@ -19,8 +19,7 @@
 		</filesystem>
 
 		<filesystem name="local-m2-publish-snapshot" m2compatible="true">
-			<artifact
-					pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision]-SNAPSHOT.[ext]"/>
+			<artifact pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision]-SNAPSHOT.[ext]"/>
 		</filesystem>
 
 		<chain name="default">

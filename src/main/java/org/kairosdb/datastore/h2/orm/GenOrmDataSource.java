@@ -5,6 +5,7 @@ import javax.sql.DataSource;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.io.Closeable;
 import org.agileclick.genorm.runtime.*;
 
 /**
@@ -45,33 +46,33 @@ import org.agileclick.genorm.runtime.*;
 	
 */
 public class GenOrmDataSource
-	{
+{
 	private static class GenOrmThreadLocal extends ThreadLocal<LinkedList<GenOrmConnection>>
-		{
+	{
 		@Override
 		protected synchronized LinkedList<GenOrmConnection> initialValue()
-			{
+		{
 			return (new LinkedList<GenOrmConnection>());
-			}
+		}
 			
 		/**
 			Adds a connection to the thread
 		 	@param connection Connection to add to thread
 		*/
 		public void addConnection(GenOrmConnection connection)
-			{
+		{
 			get().addFirst(connection);
-			}
+		}
 			
 		/**
 			Gets the current connection on the thread or null if none
 		 	@return GenOrmConnection on the thread if any
 		*/
 		public GenOrmConnection getConnection()
-			{
+		{
 			GenOrmConnection con = get().peek();
 			return (con);
-			}
+		}
 			
 		/**
 			Removes the connection from the thread.
@@ -80,7 +81,7 @@ public class GenOrmDataSource
 			@return GenOrmConnection on the thread if any
 		*/
 		public GenOrmConnection removeConnection()
-			{
+		{
 			GenOrmConnection con = get().remove();
 			
 			//If it is the last connection we are going to clean up the thread local data
@@ -88,8 +89,8 @@ public class GenOrmDataSource
 				remove();
 				
 			return (con);
-			}
 		}
+	}
 		
 	/**
 		The default data source to use
@@ -105,7 +106,7 @@ public class GenOrmDataSource
 		The linked list acts as a stack for multiple connections on the same thread.
 		Only the top connection is used at a time.
 	*/
-	private static final GenOrmThreadLocal s_tlConnectionList = new GenOrmThreadLocal();
+	private static GenOrmThreadLocal s_tlConnectionList = new GenOrmThreadLocal();
 
 	
 	/**
@@ -113,9 +114,9 @@ public class GenOrmDataSource
 		@return GenOrmDSEnvelope
 	*/
 	public static GenOrmDSEnvelope getDataSource()
-		{
+	{
 		return (s_dsEnvelope);
-		}
+	}
 		
 	/**
 		Gets the data source for the particular key
@@ -123,18 +124,18 @@ public class GenOrmDataSource
 		@return GenOrmDSEnvelope
 	 */
 	public static GenOrmDSEnvelope getDataSource(String key)
-		{
+	{
 		return (s_dataSourceMap.get(key));
-		}
+	}
 		
 	/**
 		Sets the default data source used to create connections for each thread
 		@param ds Envenlope containing the data source to use.
 	*/
 	public static void setDataSource(GenOrmDSEnvelope ds)
-		{
+	{
 		s_dsEnvelope = ds;
-		}
+	}
 		
 	/**
 		Associates a datasource with a key.  Later you can call 
@@ -143,98 +144,106 @@ public class GenOrmDataSource
 		@param ds Data source envelope
 	*/
 	public static void setDataSource(String key, GenOrmDSEnvelope ds)
-		{
+	{
 		s_dataSourceMap.put(key, ds);
-		}
+	}
 		
 	/**
 		Begin a transaction using a connection retrieved by first looking up the 
 		data source with the <code>source</code> parameter.
 		@param source Key used to lookup the data source to use to create the connection.
 	*/
-	public static void attachAndBegin(String source)
-		{
+	public static Closeable attachAndBegin(String source)
+	{
 		attach(s_dataSourceMap.get(source)).begin();
-		}
+
+		return GenOrmDataSource::close;
+	}
 		
 	//---------------------------------------------------------------------------
 	/**
 		Begin a transaction using the data source passed into the method
 		@param source Data source used to create a connection.
 	*/
-	public static void attachAndBegin(GenOrmDSEnvelope source)
-		{
+	public static Closeable attachAndBegin(GenOrmDSEnvelope source)
+	{
 		attach(source).begin();
-		}
+
+		return GenOrmDataSource::close;
+	}
 		
 	//---------------------------------------------------------------------------
 	/**
 		Begin a transaction using the Connection passed in.
 		@param con Connection to use
 	*/
-	public static void attachAndBegin(Connection con)
-		{
+	public static Closeable attachAndBegin(Connection con)
+	{
 		GenOrmTransactionConnection gcon = attach(s_dsEnvelope);
 		gcon.setConnection(con);
 		gcon.begin();
-		}
+
+		return GenOrmDataSource::close;
+	}
 		
 	//---------------------------------------------------------------------------
 	/**
 		Begin a transaction using the default data source that was set using
 		{@link #setDataSource(GenOrmDSEnvelope)}
 	*/
-	public static void attachAndBegin()
-		{
+	public static Closeable attachAndBegin()
+	{
 		attach().begin();
-		}
+
+		return GenOrmDataSource::close;
+	}
 		
 	//---------------------------------------------------------------------------
 	public static GenOrmTransactionConnection attach(GenOrmDSEnvelope source)
-		{
+	{
 		GenOrmTransactionConnection con = new GenOrmTransactionConnection(source);
 		s_tlConnectionList.addConnection(con);
 		return (con);
-		}
+	}
 		
 	//---------------------------------------------------------------------------
 	public static GenOrmTransactionConnection attach()
-		{
+	{
 		return (attach(s_dsEnvelope));
-		}
+	}
 
 	//---------------------------------------------------------------------------
 	/**
 		Flush all modified records on the current connection
 	*/
 	public static void flush()
-		{
+	{
 		s_tlConnectionList.getConnection().flush();
-		}
+	}
 		
 	/**
 		Commit the transaciton on the current connection
 	*/
 	public static void commit()
-		{
+	{
 		s_tlConnectionList.getConnection().commit();
-		}
+	}
 		
 	/**
 		Close the current connection
 	*/
 	public static void close()
-		{
+	{
 		s_tlConnectionList.removeConnection().close();
-		}
+	}
 		
 	/**
 		Roll back the current connection
 	*/
 	public static void rollback()
-		{
+	{
 		s_tlConnectionList.getConnection().rollback();
-		}
+	}
 		
 	/**
 		Return the {@link GenOrmConnection} from off the thread local data.
@@ -243,14 +252,14 @@ public class GenOrmDataSource
 		@return Returns the GenOrmConnection
 	*/
 	public static GenOrmConnection getGenOrmConnection()
-		{
+	{
 		GenOrmConnection goCon = s_tlConnectionList.get().peek();
 		
 		if (goCon == null)
 			goCon = new GenOrmDudConnection(s_dsEnvelope);
 			
 		return (goCon);
-		}
+	}
 		
 	/**
 		Return the java.sql.Connection object from off the thread local data
@@ -258,13 +267,13 @@ public class GenOrmDataSource
 		connection set on the thread
 	*/
 	public static Connection getConnection()
-		{
+	{
 		GenOrmConnection genCon = getGenOrmConnection();
 		if (genCon != null)
 			return (genCon.getConnection());
 		else
 			return (null);
-		}
+	}
 		
 	/**
 		Returns the {@link GenOrmKeyGenerator} that is associated with the
@@ -274,13 +283,13 @@ public class GenOrmDataSource
 		connection set on the thread.
 	*/
 	public static GenOrmKeyGenerator getKeyGenerator(String table)
-		{
+	{
 		GenOrmConnection genCon = getGenOrmConnection();
 		if (genCon != null)
 			return (genCon.getKeyGenerator(table));
 		else
 			return (null);
-		}
+	}
 		
 	/**
 		Creates a <code>java.sql.Statement</code> using the current connection on 
@@ -291,10 +300,10 @@ public class GenOrmDataSource
 	*/
 	public static Statement createStatement()
 			throws SQLException
-		{
+	{
 		GenOrmConnection genCon = getGenOrmConnection();
 		return (genCon.createStatement());
-		}
+	}
 		
 	/**
 		Creates a <code>java.sql.PreparedStatement</code> using the current connection on 
@@ -306,10 +315,10 @@ public class GenOrmDataSource
 	*/
 	public static PreparedStatement prepareStatement(String sql)
 			throws SQLException
-		{
+	{
 		GenOrmConnection goc = getGenOrmConnection();
 		return (goc.prepareStatement(sql));
-		}
+	}
 	
 	/**
 		Shortcut to process SQL using the current connection.  This method is the same
@@ -323,10 +332,10 @@ public class GenOrmDataSource
 	*/
 	public static int rawUpdate(String sql)
 			throws SQLException
-		{
+	{
 		Statement stmt = createStatement();
 		int ret = stmt.executeUpdate(sql);
 		stmt.close();
 		return (ret);
-		}
 	}
+}

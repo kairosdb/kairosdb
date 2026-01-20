@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 	
 */
 public class MetricTag_base extends GenOrmRecord
-	{
+{
 	protected static final Logger s_logger = LoggerFactory.getLogger(MetricTag.class.getName());
 
 	public static final String COL_METRIC_ID = "metric_id";
@@ -40,11 +40,13 @@ public class MetricTag_base extends GenOrmRecord
 	//===========================================================================
 	public static MetricTagFactoryImpl factory = new MetricTagFactoryImpl();
 	
-	public static interface MetricTagFactory extends GenOrmRecordFactory
-		{
-		public boolean delete(String metricId, String tagName, String tagValue);
-		public MetricTag find(String metricId, String tagName, String tagValue);
-		public MetricTag findOrCreate(String metricId, String tagName, String tagValue);
+	public interface MetricTagFactory extends GenOrmRecordFactory
+	{
+		boolean delete(String metricId, String tagName, String tagValue);
+		MetricTag find(String metricId, String tagName, String tagValue);
+		MetricTag findOrCreate(String metricId, String tagName, String tagValue);
+		MetricTag create(String metricId, String tagName, String tagValue);
+		MetricTag update(String metricId, String tagName, String tagValue);
 		/**
 
 			@param tagName String
@@ -55,35 +57,35 @@ public class MetricTag_base extends GenOrmRecord
 			@param metricId String
 			@return Results*/
 		public ResultSet getByMetric(String metricId);
-		}
+	}
 	
 	public static class MetricTagFactoryImpl //Inherit interfaces
 			implements MetricTagFactory 
-		{
+	{
 		public static final String CREATE_SQL = "CREATE CACHED TABLE metric_tag (\n	\"metric_id\" VARCHAR  NOT NULL,\n	\"tag_name\" VARCHAR  NOT NULL,\n	\"tag_value\" VARCHAR  NOT NULL,\n	PRIMARY KEY (\"metric_id\", \"tag_name\", \"tag_value\"),\n	CONSTRAINT metric_tag_metric_id_fkey FOREIGN KEY (\"metric_id\")\n		REFERENCES metric (\"id\") ON DELETE CASCADE,\n	CONSTRAINT metric_tag_tag_name_fkey FOREIGN KEY (\"tag_name\", \"tag_value\")\n		REFERENCES tag (\"name\", \"value\") \n	)";
 
-		private ArrayList<GenOrmFieldMeta> m_fieldMeta;
-		private ArrayList<GenOrmConstraint> m_foreignKeyConstraints;
+		private final ArrayList<GenOrmFieldMeta> m_fieldMeta;
+		private final ArrayList<GenOrmConstraint> m_foreignKeyConstraints;
 		
 		protected MetricTagFactoryImpl()
-			{
-			m_fieldMeta = new ArrayList<GenOrmFieldMeta>();
+		{
+			m_fieldMeta = new ArrayList<>();
 			m_fieldMeta.add(METRIC_ID_FIELD_META);
 			m_fieldMeta.add(TAG_NAME_FIELD_META);
 			m_fieldMeta.add(TAG_VALUE_FIELD_META);
 
-			m_foreignKeyConstraints = new ArrayList<GenOrmConstraint>();
+			m_foreignKeyConstraints = new ArrayList<>();
 			m_foreignKeyConstraints.add(new GenOrmConstraint("metric", "metric_tag_metric_id_fkey", "CONSTRAINT metric_tag_metric_id_fkey FOREIGN KEY (\"metric_id\")\n	REFERENCES metric (\"id\") ON DELETE CASCADE"));
 			m_foreignKeyConstraints.add(new GenOrmConstraint("tag", "metric_tag_tag_name_fkey", "CONSTRAINT metric_tag_tag_name_fkey FOREIGN KEY (\"tag_name\", \"tag_value\")\n	REFERENCES tag (\"name\", \"value\")"));
 
-			}
+		}
 			
 		protected MetricTag newMetricTag(java.sql.ResultSet rs)
-			{
+		{
 			MetricTag rec = new MetricTag();
-			((MetricTag_base)rec).initialize(rs);
+			rec.initialize(rs);
 			return ((MetricTag)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
-			}
+		}
 	
 		//---------------------------------------------------------------------------
 		/**
@@ -91,9 +93,9 @@ public class MetricTag_base extends GenOrmRecord
 			@return List of GenOrmFieldMeta
 		*/
 		public List<GenOrmFieldMeta> getFields()
-			{
+		{
 			return (m_fieldMeta);
-			}
+		}
 
 		//---------------------------------------------------------------------------
 		/**
@@ -101,9 +103,9 @@ public class MetricTag_base extends GenOrmRecord
 			@return List of GenOrmConstraint
 		*/
 		public List<GenOrmConstraint> getForeignKeyConstraints()
-			{
+		{
 			return (m_foreignKeyConstraints);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -111,9 +113,9 @@ public class MetricTag_base extends GenOrmRecord
 			@return SQL create statement
 		*/
 		public String getCreateStatement()
-			{
+		{
 			return (CREATE_SQL);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -124,29 +126,49 @@ public class MetricTag_base extends GenOrmRecord
 			@return new MetricTag
 		*/
 		public MetricTag create(String metricId, String tagName, String tagValue)
-			{
+		{
 			MetricTag rec = new MetricTag();
 			rec.m_isNewRecord = true;
 			
-			((MetricTag_base)rec).setMetricId(metricId);
-			((MetricTag_base)rec).setTagName(tagName);
-			((MetricTag_base)rec).setTagValue(tagValue);
+			rec.setMetricId(metricId);
+			rec.setTagName(tagName);
+			rec.setTagValue(tagValue);
 
 			
 			return ((MetricTag)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
-			}
+		}
+
+		/**
+		 Creates a new entry with the specified primary keys for purpose of updating an existing table entry.
+		 This will not try to create the entry before updating it.
+		 @param metricId String
+		 @param tagName String
+		 @param tagValue String
+		 @return new MetricTag
+		*/
+		public MetricTag update(String metricId, String tagName, String tagValue)
+		{
+			MetricTag rec = new MetricTag();
+
+			rec.setMetricId(metricId);
+						rec.setTagName(tagName);
+						rec.setTagValue(tagValue);
+						
+
+			return ((MetricTag)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
+		}
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry that is empty
 			@return new blank MetricTag
 		*/
 		public MetricTag createRecord()
-			{
+		{
 			MetricTag rec = new MetricTag();
 			rec.m_isNewRecord = true;
 			
 			return ((MetricTag)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -155,9 +177,9 @@ public class MetricTag_base extends GenOrmRecord
 		@return MetricTag with generated primary key
 		*/
 		public MetricTag createWithGeneratedKey()
-			{
+		{
 			throw new UnsupportedOperationException("MetricTag does not support a generated primary key");
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -168,10 +190,10 @@ public class MetricTag_base extends GenOrmRecord
 		@return MetricTag or null if no record is found
 		*/
 		public MetricTag findRecord(Object keys)
-			{
+		{
 			Object[] kArr = (Object[])keys;
 			return (find((String)kArr[0], (String)kArr[1], (String)kArr[2]));
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -184,29 +206,29 @@ public class MetricTag_base extends GenOrmRecord
 			either in the transaction cache or the db.
 		*/
 		public boolean delete(String metricId, String tagName, String tagValue)
-			{
-			boolean ret = false;
+		{
+			boolean ret;
 			MetricTag rec = new MetricTag();
 			
-			((MetricTag_base)rec).initialize(metricId, tagName, tagValue);
+			rec.initialize(metricId, tagName, tagValue);
 			GenOrmConnection con = GenOrmDataSource.getGenOrmConnection();
 			MetricTag cachedRec = (MetricTag)con.getCachedRecord(rec.getRecordKey());
 			
 			if (cachedRec != null)
-				{
+			{
 				ret = true;
 				cachedRec.delete();
-				}
+			}
 			else
-				{
+			{
 				rec = (MetricTag)con.getUniqueRecord(rec);  //This adds the record to the cache
 				rec.delete();
 				ret = rec.flush();
 				rec.setIgnored(true); //So the system does not try to delete it again at commmit
-				}
+			}
 				
 			return (ret);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -214,20 +236,20 @@ public class MetricTag_base extends GenOrmRecord
 		@return MetricTag or null if no record is found
 		*/
 		public MetricTag find(String metricId, String tagName, String tagValue)
-			{
+		{
 			MetricTag rec = new MetricTag();
 			
 			//Create temp object and look in cache for it
-			((MetricTag_base)rec).initialize(metricId, tagName, tagValue);
+			rec.initialize(metricId, tagName, tagValue);
 			rec = (MetricTag)GenOrmDataSource.getGenOrmConnection().getCachedRecord(rec.getRecordKey());
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			java.sql.ResultSet genorm_rs = null;
 			
 			if (rec == null)
-				{
+			{
 				try
-					{
+				{
 					//No cached object so look in db
 					genorm_statement = GenOrmDataSource.prepareStatement(SELECT+FROM+KEY_WHERE);
 					genorm_statement.setString(1, metricId);
@@ -239,30 +261,30 @@ public class MetricTag_base extends GenOrmRecord
 					genorm_rs = genorm_statement.executeQuery();
 					if (genorm_rs.next())
 						rec = newMetricTag(genorm_rs);
-					}
+				}
 				catch (java.sql.SQLException sqle)
-					{
+				{
 					throw new GenOrmException(sqle);
-					}
+				}
 				finally
-					{
+				{
 					try
-						{
+					{
 						if (genorm_rs != null)
 							genorm_rs.close();
 							
 						if (genorm_statement != null)
 							genorm_statement.close();
-						}
+					}
 					catch (java.sql.SQLException sqle2)
-						{
+					{
 						throw new GenOrmException(sqle2);
-						}
 					}
 				}
+			}
 				
 			return (rec);
-			}
+		}
 		
 		//---------------------------------------------------------------------------
 		/**
@@ -271,13 +293,13 @@ public class MetricTag_base extends GenOrmRecord
 		@return A new or existing record.  
 		*/
 		public MetricTag findOrCreate(String metricId, String tagName, String tagValue)
-			{
+		{
 			MetricTag rec = find(metricId, tagName, tagValue);
 			if (rec == null)
 				rec = create(metricId, tagName, tagValue);
 				
 			return (rec);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -287,9 +309,9 @@ public class MetricTag_base extends GenOrmRecord
 			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where)
-			{
+		{
 			return (select(where, null));
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -300,57 +322,57 @@ public class MetricTag_base extends GenOrmRecord
 			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where, String orderBy)
-			{
-			ResultSet rs = null;
+		{
+			ResultSet rs;
 			java.sql.Statement stmnt = null;
 			
 			try
-				{
+			{
 				stmnt = GenOrmDataSource.createStatement();
 				StringBuilder sb = new StringBuilder();
 				sb.append(SELECT);
 				sb.append(FROM);
 				if (where != null)
-					{
+				{
 					sb.append(WHERE);
 					sb.append(where);
-					}
+				}
 					
 				if (orderBy != null)
-					{
+				{
 					sb.append(" ");
 					sb.append(orderBy);
-					}
+				}
 				
 				String query = sb.toString();
 				rs = new SQLResultSet(stmnt.executeQuery(query), query, stmnt);
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				try
-					{
+				{
 					if (stmnt != null)
 						stmnt.close();
-					}
+				}
 				catch (java.sql.SQLException sqle2) { }
 					
 				throw new GenOrmException(sqle);
-				}
+			}
 				
 			return (rs);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
 		*/
 		public ResultSet getByTag(String tagName, String tagValue)
-			{
+		{
 			String query = SELECT+"FROM metric_tag this WHERE this.\"tag_name\" = ? AND this.\"tag_value\" = ?";
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			
 			try
-				{
+			{
 				genorm_statement = GenOrmDataSource.prepareStatement(query);
 				genorm_statement.setString(1, tagName);genorm_statement.setString(2, tagValue);
 				
@@ -359,33 +381,33 @@ public class MetricTag_base extends GenOrmRecord
 				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
 				
 				return (rs);
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				try
-					{
+				{
 					if (genorm_statement != null)
 						genorm_statement.close();
-					}
+				}
 				catch (java.sql.SQLException sqle2) { }
 					
 				if (s_logger.isDebugEnabled())
 					sqle.printStackTrace();
 				throw new GenOrmException(sqle);
-				}
 			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
 		*/
 		public ResultSet getByMetric(String metricId)
-			{
+		{
 			String query = SELECT+"FROM metric_tag this WHERE this.\"metric_id\" = ?";
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			
 			try
-				{
+			{
 				genorm_statement = GenOrmDataSource.prepareStatement(query);
 				genorm_statement.setString(1, metricId);
 				
@@ -394,21 +416,21 @@ public class MetricTag_base extends GenOrmRecord
 				ResultSet rs = new SQLResultSet(genorm_statement.executeQuery(), query, genorm_statement);
 				
 				return (rs);
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				try
-					{
+				{
 					if (genorm_statement != null)
 						genorm_statement.close();
-					}
+				}
 				catch (java.sql.SQLException sqle2) { }
 					
 				if (s_logger.isDebugEnabled())
 					sqle.printStackTrace();
 				throw new GenOrmException(sqle);
-				}
 			}
+		}
 			
 
 		
@@ -417,37 +439,37 @@ public class MetricTag_base extends GenOrmRecord
 			Calls all query methods with test parameters.
 		*/
 		public void testQueryMethods()
-			{
+		{
 			ResultSet rs;
-			}
 		}
+	}
 		
 	//===========================================================================
-	public static interface ResultSet extends GenOrmResultSet
-		{
-		public ArrayList<MetricTag> getArrayList(int maxRows);
-		public ArrayList<MetricTag> getArrayList();
-		public MetricTag getRecord();
-		public MetricTag getOnlyRecord();
-		}
+	public interface ResultSet extends GenOrmResultSet
+	{
+		ArrayList<MetricTag> getArrayList(int maxRows);
+		ArrayList<MetricTag> getArrayList();
+		MetricTag getRecord();
+		MetricTag getOnlyRecord();
+	}
 		
 	//===========================================================================
 	private static class SQLResultSet 
 			implements ResultSet
-		{
-		private java.sql.ResultSet m_resultSet;
-		private java.sql.Statement m_statement;
-		private String m_query;
+	{
+		private final java.sql.ResultSet m_resultSet;
+		private final java.sql.Statement m_statement;
+		private final String m_query;
 		private boolean m_onFirstResult;
 		
 		//------------------------------------------------------------------------
 		protected SQLResultSet(java.sql.ResultSet resultSet, String query, java.sql.Statement statement)
-			{
+		{
 			m_resultSet = resultSet;
 			m_statement = statement;
 			m_query = query;
 			m_onFirstResult = false;
-			}
+		}
 		
 		//------------------------------------------------------------------------
 		/**
@@ -455,17 +477,17 @@ public class MetricTag_base extends GenOrmRecord
 			that was used to create this results set.
 		*/
 		public void close()
-			{
+		{
 			try
-				{
+			{
 				m_resultSet.close();
 				m_statement.close();
-				}
-			catch (java.sql.SQLException sqle)
-				{
-				throw new GenOrmException(sqle);
-				}
 			}
+			catch (java.sql.SQLException sqle)
+			{
+				throw new GenOrmException(sqle);
+			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
@@ -475,36 +497,35 @@ public class MetricTag_base extends GenOrmRecord
 				then an exception is thrown
 		*/
 		public ArrayList<MetricTag> getArrayList(int maxRows)
-			{
-			ArrayList<MetricTag> results = new ArrayList<MetricTag>();
+		{
+			ArrayList<MetricTag> results = new ArrayList<>();
 			int count = 0;
 			
 			try
-				{
+			{
 				if (m_onFirstResult)
-					{
+				{
 					count ++;
 					results.add(factory.newMetricTag(m_resultSet));
-					}
+				}
 					
 				while (m_resultSet.next() && (count < maxRows))
-					{
+				{
 					count ++;
 					results.add(factory.newMetricTag(m_resultSet));
-					}
+				}
 					
 				if (m_resultSet.next())
 					throw new GenOrmException("Bound of "+maxRows+" is too small for query ["+m_query+"]");
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
-				sqle.printStackTrace();
+			{
 				throw new GenOrmException(sqle);
-				}
+			}
 				
 			close();
 			return (results);
-			}
+		}
 		
 		//------------------------------------------------------------------------
 		/**
@@ -512,44 +533,43 @@ public class MetricTag_base extends GenOrmRecord
 			The Result set is closed within this call
 		*/
 		public ArrayList<MetricTag> getArrayList()
-			{
-			ArrayList<MetricTag> results = new ArrayList<MetricTag>();
+		{
+			ArrayList<MetricTag> results = new ArrayList<>();
 			
 			try
-				{
+			{
 				if (m_onFirstResult)
 					results.add(factory.newMetricTag(m_resultSet));
 					
 				while (m_resultSet.next())
 					results.add(factory.newMetricTag(m_resultSet));
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
-				sqle.printStackTrace();
+			{
 				throw new GenOrmException(sqle);
-				}
+			}
 				
 			close();
 			return (results);
-			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
 			Returns the underlying java.sql.ResultSet object
 		*/
 		public java.sql.ResultSet getResultSet()
-			{
+		{
 			return (m_resultSet);
-			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
 			Returns the current record in the result set
 		*/
 		public MetricTag getRecord()
-			{
+		{
 			return (factory.newMetricTag(m_resultSet));
-			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
@@ -558,55 +578,55 @@ public class MetricTag_base extends GenOrmRecord
 			The ResultSet object is automatically closed by this call.
 		*/
 		public MetricTag getOnlyRecord()
-			{
+		{
 			MetricTag ret = null;
 			
 			try
-				{
+			{
 				if (m_resultSet.next())
 					ret = factory.newMetricTag(m_resultSet);
 					
 				if (m_resultSet.next())
 					throw new GenOrmException("Multiple rows returned in call from MetricTag.getOnlyRecord");
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				throw new GenOrmException(sqle);
-				}
+			}
 				
 			close();
 			return (ret);
-			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
 			Returns true if there is another record in the result set.
 		*/
 		public boolean next()
-			{
-			boolean ret = false;
+		{
+			boolean ret;
 			m_onFirstResult = true;
 			try
-				{
+			{
 				ret = m_resultSet.next();
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				throw new GenOrmException(sqle);
-				}
+			}
 			
 			return (ret);
-			}
 		}
+	}
 		
 	//===========================================================================
 		
-	private GenOrmString m_metricId;
-	private GenOrmString m_tagName;
-	private GenOrmString m_tagValue;
+	protected GenOrmString m_metricId;
+	protected GenOrmString m_tagName;
+	protected GenOrmString m_tagValue;
 
 	
-	private List<GenOrmRecordKey> m_foreignKeys;
+	private final List<GenOrmRecordKey> m_foreignKeys;
 	
 	public List<GenOrmRecordKey> getForeignKeys() { return (m_foreignKeys); }
 
@@ -618,12 +638,12 @@ public class MetricTag_base extends GenOrmRecord
 	*/
 	public String getMetricId() { return (m_metricId.getValue()); }
 	public MetricTag setMetricId(String data)
-		{
+	{
 		boolean changed = m_metricId.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
-			{
+		{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
@@ -631,10 +651,10 @@ public class MetricTag_base extends GenOrmRecord
 			
 			if (m_isNewRecord) //Force set the prev value
 				m_metricId.setPrevValue(data);
-			}
+		}
 			
 		return ((MetricTag)this);
-		}
+	}
 		
 
 	//---------------------------------------------------------------------------
@@ -644,12 +664,12 @@ public class MetricTag_base extends GenOrmRecord
 	*/
 	public String getTagName() { return (m_tagName.getValue()); }
 	public MetricTag setTagName(String data)
-		{
+	{
 		boolean changed = m_tagName.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
-			{
+		{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
@@ -657,10 +677,10 @@ public class MetricTag_base extends GenOrmRecord
 			
 			if (m_isNewRecord) //Force set the prev value
 				m_tagName.setPrevValue(data);
-			}
+		}
 			
 		return ((MetricTag)this);
-		}
+	}
 		
 
 	//---------------------------------------------------------------------------
@@ -670,12 +690,12 @@ public class MetricTag_base extends GenOrmRecord
 	*/
 	public String getTagValue() { return (m_tagValue.getValue()); }
 	public MetricTag setTagValue(String data)
-		{
+	{
 		boolean changed = m_tagValue.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
-			{
+		{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
@@ -683,73 +703,73 @@ public class MetricTag_base extends GenOrmRecord
 			
 			if (m_isNewRecord) //Force set the prev value
 				m_tagValue.setPrevValue(data);
-			}
+		}
 			
 		return ((MetricTag)this);
-		}
+	}
 		
 	
 	
 	//---------------------------------------------------------------------------
 	public Metric getMetricRef()
-		{
+	{
 		return (Metric.factory.find(m_metricId.getValue()));
-		}
+	}
 		
 	//--------------------------------------------------------------------------
 	public MetricTag setMetricRef(Metric table)
-		{
+	{
 		//We add the record to the transaction if one of the key values change
 		if (m_metricId.setValue(table.getId()))
-			{
+		{
 			if ((m_dirtyFlags.isEmpty()) && (GenOrmDataSource.getGenOrmConnection() != null))
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 			
 			m_dirtyFlags.set(METRIC_ID_FIELD_META.getDirtyFlag());
-			}
+		}
 
 
 			
 		return ((MetricTag)this);
-		}
+	}
 
 	//---------------------------------------------------------------------------
 	public Tag getTagRef()
-		{
+	{
 		return (Tag.factory.find(m_tagName.getValue(), m_tagValue.getValue()));
-		}
+	}
 		
 	//--------------------------------------------------------------------------
 	public MetricTag setTagRef(Tag table)
-		{
+	{
 		//We add the record to the transaction if one of the key values change
 		if (m_tagName.setValue(table.getName()))
-			{
+		{
 			if ((m_dirtyFlags.isEmpty()) && (GenOrmDataSource.getGenOrmConnection() != null))
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 			
 			m_dirtyFlags.set(TAG_NAME_FIELD_META.getDirtyFlag());
-			}
+		}
 
 		if (m_tagValue.setValue(table.getValue()))
-			{
+		{
 			if ((m_dirtyFlags.isEmpty()) && (GenOrmDataSource.getGenOrmConnection() != null))
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 			
 			m_dirtyFlags.set(TAG_VALUE_FIELD_META.getDirtyFlag());
-			}
+		}
 
 
 			
 		return ((MetricTag)this);
-		}
+	}
 
 
 	
 	
 	//---------------------------------------------------------------------------
 	protected void initialize(String metricId, String tagName, String tagValue)
-		{
+	{
 		m_metricId.setValue(metricId);
 		m_metricId.setPrevValue(metricId);
 		m_tagName.setValue(tagName);
@@ -757,38 +777,38 @@ public class MetricTag_base extends GenOrmRecord
 		m_tagValue.setValue(tagValue);
 		m_tagValue.setPrevValue(tagValue);
 
-		}
+	}
 		
 	//---------------------------------------------------------------------------
 	protected void initialize(java.sql.ResultSet rs)
-		{
+	{
 		try
-			{
+		{
 			if (s_logger.isDebugEnabled())
-				{
+			{
 				java.sql.ResultSetMetaData meta = rs.getMetaData();
 				for (int I = 1; I <= meta.getColumnCount(); I++)
-					{
+				{
 					s_logger.debug("Reading - "+meta.getColumnName(I) +" : "+rs.getString(I));
-					}
 				}
+			}
 			m_metricId.setValue(rs, 1);
 			m_tagName.setValue(rs, 2);
 			m_tagValue.setValue(rs, 3);
 
-			}
-		catch (java.sql.SQLException sqle)
-			{
-			throw new GenOrmException(sqle);
-			}
 		}
+		catch (java.sql.SQLException sqle)
+		{
+			throw new GenOrmException(sqle);
+		}
+	}
 	
 	//---------------------------------------------------------------------------
 	/*package*/ MetricTag_base()
-		{
+	{
 		super(TABLE_NAME);
 		m_logger = s_logger;
-		m_foreignKeys = new ArrayList<GenOrmRecordKey>();
+		m_foreignKeys = new ArrayList<>();
 		m_dirtyFlags = new java.util.BitSet(NUMBER_OF_COLUMNS);
 		
 
@@ -813,37 +833,37 @@ public class MetricTag_base extends GenOrmRecord
 
 		m_foreignKeys.add(foreignKey);
 
-		}
+	}
 	
 	//---------------------------------------------------------------------------
 	@Override
 	public GenOrmConnection getGenOrmConnection()
-		{
+	{
 		return (GenOrmDataSource.getGenOrmConnection());
-		}
+	}
 		
 	//---------------------------------------------------------------------------
 	@Override
 	public String getFieldEscapeString()
-		{
+	{
 		return (s_fieldEscapeString);
-		}
+	}
 		
 	//---------------------------------------------------------------------------
 	@Override
 	public void setMTS()
-		{
-		}
+	{
+	}
 		
 	//---------------------------------------------------------------------------
 	@Override
 	public void setCTS()
-		{
-		}
+	{
+	}
 		
 	//---------------------------------------------------------------------------
 	public String toString()
-		{
+	{
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append("metric_id=\"");
@@ -858,12 +878,12 @@ public class MetricTag_base extends GenOrmRecord
 
 		
 		return (sb.toString().trim());
-		}
+	}
 		
 	//===========================================================================
 
 	
 	
-	}
+}
 	
 	

@@ -6,15 +6,15 @@ import javax.sql.*;
 import org.agileclick.genorm.runtime.*;
 
 public class DSEnvelope implements GenOrmDSEnvelope
-	{
-	private final DataSource m_dataSource;
-	private final Map<String, GenOrmKeyGenerator> m_keyGenMap;
+{
+	private DataSource m_dataSource;
+	private Map<String, GenOrmKeyGenerator> m_keyGenMap;
 	
 	public DSEnvelope(DataSource ds)
-		{
+	{
 		m_dataSource = ds;
 		m_keyGenMap = new HashMap<String, GenOrmKeyGenerator>();
-		}
+	}
 		
 	public DataSource getDataSource()
 		{
@@ -22,9 +22,9 @@ public class DSEnvelope implements GenOrmDSEnvelope
 		}
 		
 	public GenOrmKeyGenerator getKeyGenerator(String table)
-		{
+	{
 		return (m_keyGenMap.get(table));
-		}
+	}
 	
 	public void initialize()
 		{
@@ -37,7 +37,7 @@ public class DSEnvelope implements GenOrmDSEnvelope
 	 	@param generator Key generator to use
 	*/
 	public void setKeyGenerator(String table, GenOrmKeyGenerator generator)
-		{
+	{
 		m_keyGenMap.put(table, generator);
-		}
+	}
 	}

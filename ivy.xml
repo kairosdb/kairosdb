@@ -65,7 +65,7 @@
 		<dependency org="org.slf4j" name="jul-to-slf4j" rev="2.0.17" />
 
 		<!--Genormous dependencies-->
-		<dependency org="org.agileclick.genorm" name="genormous" rev="1.6.5.jdbc41" conf="default,build_tools->default">
+		<dependency org="org.agileclick.genorm" name="genormous" rev="1.7.0" conf="default,build_tools->default">
 			<exclude org="javax.servlet" name="servlet-api"/>
 			<exclude org="org.agileclick.slickxml" name="slickxml"/>
 			<exclude org="org.agileclick.ultramc" name="ultramc"/>

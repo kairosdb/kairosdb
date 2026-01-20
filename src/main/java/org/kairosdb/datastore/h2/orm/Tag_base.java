@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 	
 */
 public class Tag_base extends GenOrmRecord
-	{
+{
 	protected static final Logger s_logger = LoggerFactory.getLogger(Tag.class.getName());
 
 	public static final String COL_NAME = "name";
@@ -38,36 +38,38 @@ public class Tag_base extends GenOrmRecord
 	//===========================================================================
 	public static TagFactoryImpl factory = new TagFactoryImpl();
 	
-	public static interface TagFactory extends GenOrmRecordFactory
-		{
-		public boolean delete(String name, String value);
-		public Tag find(String name, String value);
-		public Tag findOrCreate(String name, String value);
-		}
+	public interface TagFactory extends GenOrmRecordFactory
+	{
+		boolean delete(String name, String value);
+		Tag find(String name, String value);
+		Tag findOrCreate(String name, String value);
+		Tag create(String name, String value);
+		Tag update(String name, String value);
+	}
 	
 	public static class TagFactoryImpl //Inherit interfaces
 			implements TagFactory 
-		{
+	{
 		public static final String CREATE_SQL = "CREATE CACHED TABLE tag (\n	\"name\" VARCHAR  NOT NULL,\n	\"value\" VARCHAR  NOT NULL,\n	PRIMARY KEY (\"name\", \"value\")\n	)";
 
-		private ArrayList<GenOrmFieldMeta> m_fieldMeta;
-		private ArrayList<GenOrmConstraint> m_foreignKeyConstraints;
+		private final ArrayList<GenOrmFieldMeta> m_fieldMeta;
+		private final ArrayList<GenOrmConstraint> m_foreignKeyConstraints;
 		
 		protected TagFactoryImpl()
-			{
-			m_fieldMeta = new ArrayList<GenOrmFieldMeta>();
+		{
+			m_fieldMeta = new ArrayList<>();
 			m_fieldMeta.add(NAME_FIELD_META);
 			m_fieldMeta.add(VALUE_FIELD_META);
 
-			m_foreignKeyConstraints = new ArrayList<GenOrmConstraint>();
-			}
+			m_foreignKeyConstraints = new ArrayList<>();
+		}
 			
 		protected Tag newTag(java.sql.ResultSet rs)
-			{
+		{
 			Tag rec = new Tag();
-			((Tag_base)rec).initialize(rs);
+			rec.initialize(rs);
 			return ((Tag)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
-			}
+		}
 	
 		//---------------------------------------------------------------------------
 		/**
@@ -75,9 +77,9 @@ public class Tag_base extends GenOrmRecord
 			@return List of GenOrmFieldMeta
 		*/
 		public List<GenOrmFieldMeta> getFields()
-			{
+		{
 			return (m_fieldMeta);
-			}
+		}
 
 		//---------------------------------------------------------------------------
 		/**
@@ -85,9 +87,9 @@ public class Tag_base extends GenOrmRecord
 			@return List of GenOrmConstraint
 		*/
 		public List<GenOrmConstraint> getForeignKeyConstraints()
-			{
+		{
 			return (m_foreignKeyConstraints);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -95,9 +97,9 @@ public class Tag_base extends GenOrmRecord
 			@return SQL create statement
 		*/
 		public String getCreateStatement()
-			{
+		{
 			return (CREATE_SQL);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -107,28 +109,46 @@ public class Tag_base extends GenOrmRecord
 			@return new Tag
 		*/
 		public Tag create(String name, String value)
-			{
+		{
 			Tag rec = new Tag();
 			rec.m_isNewRecord = true;
 			
-			((Tag_base)rec).setName(name);
-			((Tag_base)rec).setValue(value);
+			rec.setName(name);
+			rec.setValue(value);
 
 			
 			return ((Tag)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
-			}
+		}
+
+		/**
+		 Creates a new entry with the specified primary keys for purpose of updating an existing table entry.
+		 This will not try to create the entry before updating it.
+		 @param name String
+		 @param value String
+		 @return new Tag
+		*/
+		public Tag update(String name, String value)
+		{
+			Tag rec = new Tag();
+
+			rec.setName(name);
+						rec.setValue(value);
+						
+
+			return ((Tag)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
+		}
 		//---------------------------------------------------------------------------
 		/**
 			Creates a new entry that is empty
 			@return new blank Tag
 		*/
 		public Tag createRecord()
-			{
+		{
 			Tag rec = new Tag();
 			rec.m_isNewRecord = true;
 			
 			return ((Tag)GenOrmDataSource.getGenOrmConnection().getUniqueRecord(rec));
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -137,9 +157,9 @@ public class Tag_base extends GenOrmRecord
 		@return Tag with generated primary key
 		*/
 		public Tag createWithGeneratedKey()
-			{
+		{
 			throw new UnsupportedOperationException("Tag does not support a generated primary key");
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -150,10 +170,10 @@ public class Tag_base extends GenOrmRecord
 		@return Tag or null if no record is found
 		*/
 		public Tag findRecord(Object keys)
-			{
+		{
 			Object[] kArr = (Object[])keys;
 			return (find((String)kArr[0], (String)kArr[1]));
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -166,29 +186,29 @@ public class Tag_base extends GenOrmRecord
 			either in the transaction cache or the db.
 		*/
 		public boolean delete(String name, String value)
-			{
-			boolean ret = false;
+		{
+			boolean ret;
 			Tag rec = new Tag();
 			
-			((Tag_base)rec).initialize(name, value);
+			rec.initialize(name, value);
 			GenOrmConnection con = GenOrmDataSource.getGenOrmConnection();
 			Tag cachedRec = (Tag)con.getCachedRecord(rec.getRecordKey());
 			
 			if (cachedRec != null)
-				{
+			{
 				ret = true;
 				cachedRec.delete();
-				}
+			}
 			else
-				{
+			{
 				rec = (Tag)con.getUniqueRecord(rec);  //This adds the record to the cache
 				rec.delete();
 				ret = rec.flush();
 				rec.setIgnored(true); //So the system does not try to delete it again at commmit
-				}
+			}
 				
 			return (ret);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -196,20 +216,20 @@ public class Tag_base extends GenOrmRecord
 		@return Tag or null if no record is found
 		*/
 		public Tag find(String name, String value)
-			{
+		{
 			Tag rec = new Tag();
 			
 			//Create temp object and look in cache for it
-			((Tag_base)rec).initialize(name, value);
+			rec.initialize(name, value);
 			rec = (Tag)GenOrmDataSource.getGenOrmConnection().getCachedRecord(rec.getRecordKey());
 			
 			java.sql.PreparedStatement genorm_statement = null;
 			java.sql.ResultSet genorm_rs = null;
 			
 			if (rec == null)
-				{
+			{
 				try
-					{
+				{
 					//No cached object so look in db
 					genorm_statement = GenOrmDataSource.prepareStatement(SELECT+FROM+KEY_WHERE);
 					genorm_statement.setString(1, name);
@@ -220,30 +240,30 @@ public class Tag_base extends GenOrmRecord
 					genorm_rs = genorm_statement.executeQuery();
 					if (genorm_rs.next())
 						rec = newTag(genorm_rs);
-					}
+				}
 				catch (java.sql.SQLException sqle)
-					{
+				{
 					throw new GenOrmException(sqle);
-					}
+				}
 				finally
-					{
+				{
 					try
-						{
+					{
 						if (genorm_rs != null)
 							genorm_rs.close();
 							
 						if (genorm_statement != null)
 							genorm_statement.close();
-						}
+					}
 					catch (java.sql.SQLException sqle2)
-						{
+					{
 						throw new GenOrmException(sqle2);
-						}
 					}
 				}
+			}
 				
 			return (rec);
-			}
+		}
 		
 		//---------------------------------------------------------------------------
 		/**
@@ -252,13 +272,13 @@ public class Tag_base extends GenOrmRecord
 		@return A new or existing record.  
 		*/
 		public Tag findOrCreate(String name, String value)
-			{
+		{
 			Tag rec = find(name, value);
 			if (rec == null)
 				rec = create(name, value);
 				
 			return (rec);
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -268,9 +288,9 @@ public class Tag_base extends GenOrmRecord
 			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where)
-			{
+		{
 			return (select(where, null));
-			}
+		}
 			
 		//---------------------------------------------------------------------------
 		/**
@@ -281,45 +301,45 @@ public class Tag_base extends GenOrmRecord
 			@return {@link ResultSet}
 		*/
 		public ResultSet select(String where, String orderBy)
-			{
-			ResultSet rs = null;
+		{
+			ResultSet rs;
 			java.sql.Statement stmnt = null;
 			
 			try
-				{
+			{
 				stmnt = GenOrmDataSource.createStatement();
 				StringBuilder sb = new StringBuilder();
 				sb.append(SELECT);
 				sb.append(FROM);
 				if (where != null)
-					{
+				{
 					sb.append(WHERE);
 					sb.append(where);
-					}
+				}
 					
 				if (orderBy != null)
-					{
+				{
 					sb.append(" ");
 					sb.append(orderBy);
-					}
+				}
 				
 				String query = sb.toString();
 				rs = new SQLResultSet(stmnt.executeQuery(query), query, stmnt);
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				try
-					{
+				{
 					if (stmnt != null)
 						stmnt.close();
-					}
+				}
 				catch (java.sql.SQLException sqle2) { }
 					
 				throw new GenOrmException(sqle);
-				}
+			}
 				
 			return (rs);
-			}
+		}
 			
 		
 		//---------------------------------------------------------------------------
@@ -327,37 +347,37 @@ public class Tag_base extends GenOrmRecord
 			Calls all query methods with test parameters.
 		*/
 		public void testQueryMethods()
-			{
+		{
 			ResultSet rs;
-			}
 		}
+	}
 		
 	//===========================================================================
-	public static interface ResultSet extends GenOrmResultSet
-		{
-		public ArrayList<Tag> getArrayList(int maxRows);
-		public ArrayList<Tag> getArrayList();
-		public Tag getRecord();
-		public Tag getOnlyRecord();
-		}
+	public interface ResultSet extends GenOrmResultSet
+	{
+		ArrayList<Tag> getArrayList(int maxRows);
+		ArrayList<Tag> getArrayList();
+		Tag getRecord();
+		Tag getOnlyRecord();
+	}
 		
 	//===========================================================================
 	private static class SQLResultSet 
 			implements ResultSet
-		{
-		private java.sql.ResultSet m_resultSet;
-		private java.sql.Statement m_statement;
-		private String m_query;
+	{
+		private final java.sql.ResultSet m_resultSet;
+		private final java.sql.Statement m_statement;
+		private final String m_query;
 		private boolean m_onFirstResult;
 		
 		//------------------------------------------------------------------------
 		protected SQLResultSet(java.sql.ResultSet resultSet, String query, java.sql.Statement statement)
-			{
+		{
 			m_resultSet = resultSet;
 			m_statement = statement;
 			m_query = query;
 			m_onFirstResult = false;
-			}
+		}
 		
 		//------------------------------------------------------------------------
 		/**
@@ -365,17 +385,17 @@ public class Tag_base extends GenOrmRecord
 			that was used to create this results set.
 		*/
 		public void close()
-			{
+		{
 			try
-				{
+			{
 				m_resultSet.close();
 				m_statement.close();
-				}
-			catch (java.sql.SQLException sqle)
-				{
-				throw new GenOrmException(sqle);
-				}
 			}
+			catch (java.sql.SQLException sqle)
+			{
+				throw new GenOrmException(sqle);
+			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
@@ -385,36 +405,35 @@ public class Tag_base extends GenOrmRecord
 				then an exception is thrown
 		*/
 		public ArrayList<Tag> getArrayList(int maxRows)
-			{
-			ArrayList<Tag> results = new ArrayList<Tag>();
+		{
+			ArrayList<Tag> results = new ArrayList<>();
 			int count = 0;
 			
 			try
-				{
+			{
 				if (m_onFirstResult)
-					{
+				{
 					count ++;
 					results.add(factory.newTag(m_resultSet));
-					}
+				}
 					
 				while (m_resultSet.next() && (count < maxRows))
-					{
+				{
 					count ++;
 					results.add(factory.newTag(m_resultSet));
-					}
+				}
 					
 				if (m_resultSet.next())
 					throw new GenOrmException("Bound of "+maxRows+" is too small for query ["+m_query+"]");
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
-				sqle.printStackTrace();
+			{
 				throw new GenOrmException(sqle);
-				}
+			}
 				
 			close();
 			return (results);
-			}
+		}
 		
 		//------------------------------------------------------------------------
 		/**
@@ -422,44 +441,43 @@ public class Tag_base extends GenOrmRecord
 			The Result set is closed within this call
 		*/
 		public ArrayList<Tag> getArrayList()
-			{
-			ArrayList<Tag> results = new ArrayList<Tag>();
+		{
+			ArrayList<Tag> results = new ArrayList<>();
 			
 			try
-				{
+			{
 				if (m_onFirstResult)
 					results.add(factory.newTag(m_resultSet));
 					
 				while (m_resultSet.next())
 					results.add(factory.newTag(m_resultSet));
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
-				sqle.printStackTrace();
+			{
 				throw new GenOrmException(sqle);
-				}
+			}
 				
 			close();
 			return (results);
-			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
 			Returns the underlying java.sql.ResultSet object
 		*/
 		public java.sql.ResultSet getResultSet()
-			{
+		{
 			return (m_resultSet);
-			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
 			Returns the current record in the result set
 		*/
 		public Tag getRecord()
-			{
+		{
 			return (factory.newTag(m_resultSet));
-			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
@@ -468,54 +486,54 @@ public class Tag_base extends GenOrmRecord
 			The ResultSet object is automatically closed by this call.
 		*/
 		public Tag getOnlyRecord()
-			{
+		{
 			Tag ret = null;
 			
 			try
-				{
+			{
 				if (m_resultSet.next())
 					ret = factory.newTag(m_resultSet);
 					
 				if (m_resultSet.next())
 					throw new GenOrmException("Multiple rows returned in call from Tag.getOnlyRecord");
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				throw new GenOrmException(sqle);
-				}
+			}
 				
 			close();
 			return (ret);
-			}
+		}
 			
 		//------------------------------------------------------------------------
 		/**
 			Returns true if there is another record in the result set.
 		*/
 		public boolean next()
-			{
-			boolean ret = false;
+		{
+			boolean ret;
 			m_onFirstResult = true;
 			try
-				{
+			{
 				ret = m_resultSet.next();
-				}
+			}
 			catch (java.sql.SQLException sqle)
-				{
+			{
 				throw new GenOrmException(sqle);
-				}
+			}
 			
 			return (ret);
-			}
 		}
+	}
 		
 	//===========================================================================
 		
-	private GenOrmString m_name;
-	private GenOrmString m_value;
+	protected GenOrmString m_name;
+	protected GenOrmString m_value;
 
 	
-	private List<GenOrmRecordKey> m_foreignKeys;
+	private final List<GenOrmRecordKey> m_foreignKeys;
 	
 	public List<GenOrmRecordKey> getForeignKeys() { return (m_foreignKeys); }
 
@@ -527,12 +545,12 @@ public class Tag_base extends GenOrmRecord
 	*/
 	public String getName() { return (m_name.getValue()); }
 	public Tag setName(String data)
-		{
+	{
 		boolean changed = m_name.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
-			{
+		{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
@@ -540,10 +558,10 @@ public class Tag_base extends GenOrmRecord
 			
 			if (m_isNewRecord) //Force set the prev value
 				m_name.setPrevValue(data);
-			}
+		}
 			
 		return ((Tag)this);
-		}
+	}
 		
 
 	//---------------------------------------------------------------------------
@@ -553,12 +571,12 @@ public class Tag_base extends GenOrmRecord
 	*/
 	public String getValue() { return (m_value.getValue()); }
 	public Tag setValue(String data)
-		{
+	{
 		boolean changed = m_value.setValue(data);
 		
 		//Add the now dirty record to the transaction only if it is not previously dirty
 		if (changed)
-			{
+		{
 			if (m_dirtyFlags.isEmpty())
 				GenOrmDataSource.getGenOrmConnection().addToTransaction(this);
 				
@@ -566,10 +584,10 @@ public class Tag_base extends GenOrmRecord
 			
 			if (m_isNewRecord) //Force set the prev value
 				m_value.setPrevValue(data);
-			}
+		}
 			
 		return ((Tag)this);
-		}
+	}
 		
 	
 	
@@ -577,43 +595,43 @@ public class Tag_base extends GenOrmRecord
 	
 	//---------------------------------------------------------------------------
 	protected void initialize(String name, String value)
-		{
+	{
 		m_name.setValue(name);
 		m_name.setPrevValue(name);
 		m_value.setValue(value);
 		m_value.setPrevValue(value);
 
-		}
+	}
 		
 	//---------------------------------------------------------------------------
 	protected void initialize(java.sql.ResultSet rs)
-		{
+	{
 		try
-			{
+		{
 			if (s_logger.isDebugEnabled())
-				{
+			{
 				java.sql.ResultSetMetaData meta = rs.getMetaData();
 				for (int I = 1; I <= meta.getColumnCount(); I++)
-					{
+				{
 					s_logger.debug("Reading - "+meta.getColumnName(I) +" : "+rs.getString(I));
-					}
 				}
+			}
 			m_name.setValue(rs, 1);
 			m_value.setValue(rs, 2);
 
-			}
-		catch (java.sql.SQLException sqle)
-			{
-			throw new GenOrmException(sqle);
-			}
 		}
+		catch (java.sql.SQLException sqle)
+		{
+			throw new GenOrmException(sqle);
+		}
+	}
 	
 	//---------------------------------------------------------------------------
 	/*package*/ Tag_base()
-		{
+	{
 		super(TABLE_NAME);
 		m_logger = s_logger;
-		m_foreignKeys = new ArrayList<GenOrmRecordKey>();
+		m_foreignKeys = new ArrayList<>();
 		m_dirtyFlags = new java.util.BitSet(NUMBER_OF_COLUMNS);
 		
 
@@ -624,37 +642,37 @@ public class Tag_base extends GenOrmRecord
 		addField(COL_VALUE, m_value);
 
 		GenOrmRecordKey foreignKey;
-		}
+	}
 	
 	//---------------------------------------------------------------------------
 	@Override
 	public GenOrmConnection getGenOrmConnection()
-		{
+	{
 		return (GenOrmDataSource.getGenOrmConnection());
-		}
+	}
 		
 	//---------------------------------------------------------------------------
 	@Override
 	public String getFieldEscapeString()
-		{
+	{
 		return (s_fieldEscapeString);
-		}
+	}
 		
 	//---------------------------------------------------------------------------
 	@Override
 	public void setMTS()
-		{
-		}
+	{
+	}
 		
 	//---------------------------------------------------------------------------
 	@Override
 	public void setCTS()
-		{
-		}
+	{
+	}
 		
 	//---------------------------------------------------------------------------
 	public String toString()
-		{
+	{
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append("name=\"");
@@ -666,12 +684,12 @@ public class Tag_base extends GenOrmRecord
 
 		
 		return (sb.toString().trim());
-		}
+	}
 		
 	//===========================================================================
 
 	
 	
-	}
+}
 	
 	

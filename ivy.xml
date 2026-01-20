@@ -83,7 +83,7 @@
 		<dependency org="org.apache.cassandra" name="cassandra-driver-core" rev="3.12.1">
 			<exclude org="com.fasterxml.jackson.core" name="jackson-databind"/>
 		</dependency>
-		<dependency org="net.jpountz.lz4" name="lz4" rev="1.3.0"/>
+		<dependency org="at.yawk.lz4" name="lz4-java" rev="1.10.2"/>
 
 
 		<!-- Jetty server stuff -->

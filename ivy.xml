@@ -59,8 +59,8 @@
 		<dependency org="joda-time" name="joda-time" rev="2.10.6" />
 
 		<!-- Logging dependencies -->
-		<dependency org="ch.qos.logback" name="logback-core" rev="1.5.21" />
-		<dependency org="ch.qos.logback" name="logback-classic" rev="1.5.21" />
+		<dependency org="ch.qos.logback" name="logback-core" rev="1.5.25" />
+		<dependency org="ch.qos.logback" name="logback-classic" rev="1.5.25" />
 		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17" />
 		<dependency org="org.slf4j" name="jul-to-slf4j" rev="2.0.17" />
 

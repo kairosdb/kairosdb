@@ -314,7 +314,7 @@ def templateRule = new SimpleRule("templates").setDescription("Writes template f
 templates.each { source, target ->
 	def tempRule = new SimpleRule().addSource(source)
 			.addTarget(target)
-			.addDepend("version.properties")
+			.addSource("version.properties")
 			.setMakeAction("copyTemplate")
 	templateRule.addDepend(tempRule)
 }

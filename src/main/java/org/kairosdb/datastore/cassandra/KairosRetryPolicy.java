@@ -1,11 +1,12 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.WriteType;
-import com.datastax.driver.core.exceptions.DriverException;
-import com.datastax.driver.core.policies.RetryPolicy;
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.context.DriverContext;
+import com.datastax.oss.driver.api.core.cql.Statement;
+import com.datastax.oss.driver.api.core.retry.RetryDecision;
+import com.datastax.oss.driver.api.core.retry.RetryPolicy;
+import com.datastax.oss.driver.api.core.servererrors.WriteType;
+import com.datastax.oss.driver.api.core.session.Request;
 import com.google.inject.Inject;
 import org.kairosdb.core.datapoints.LongDataPointFactory;
 import org.kairosdb.core.datapoints.LongDataPointFactoryImpl;
@@ -40,59 +41,69 @@ public class KairosRetryPolicy implements RetryPolicy
 	}
 
 	@Override
-	public RetryDecision onReadTimeout(Statement statement, ConsistencyLevel cl,
-			int requiredResponses, int receivedResponses, boolean dataRetrieved, int nbRetry)
+	public RetryDecision onReadTimeout(Request request, ConsistencyLevel cl,
+			int requiredResponses, int receivedResponses, boolean dataRetrieved, int retryCount)
 	{
-		if (nbRetry == m_retryCount)
-			return RetryDecision.rethrow();
+		if (retryCount >= m_retryCount)
+			return RetryDecision.RETHROW;
 		else
 		{
 			stats.retryCount(m_clusterName, "read_timeout").put(1);
-			return RetryDecision.tryNextHost(cl);
+			return RetryDecision.RETRY_NEXT;
 		}
 	}
 
 	@Override
-	public RetryDecision onWriteTimeout(Statement statement, ConsistencyLevel cl,
-			WriteType writeType, int requiredAcks, int receivedAcks, int nbRetry)
+	public RetryDecision onWriteTimeout(Request request, ConsistencyLevel cl,
+			WriteType writeType, int requiredAcks, int receivedAcks, int retryCount)
 	{
-		if (nbRetry == m_retryCount)
-			return RetryDecision.rethrow();
+		if (retryCount >= m_retryCount)
+			return RetryDecision.RETHROW;
 		else
 		{
 			stats.retryCount(m_clusterName, "write_timeout").put(1);
-			return RetryDecision.tryNextHost(cl);
+			return RetryDecision.RETRY_NEXT;
 		}
 	}
 
 	@Override
-	public RetryDecision onUnavailable(Statement statement, ConsistencyLevel cl,
-			int requiredReplica, int aliveReplica, int nbRetry)
+	public RetryDecision onUnavailable(Request request, ConsistencyLevel cl,
+			int requiredReplica, int aliveReplica, int retryCount)
 	{
-		if (nbRetry == m_retryCount)
-			return RetryDecision.rethrow();
+		if (retryCount >= m_retryCount)
+			return RetryDecision.RETHROW;
 		else
 		{
 			stats.retryCount(m_clusterName, "unavailable").put(1);
-			return RetryDecision.tryNextHost(cl);
+			return RetryDecision.RETRY_NEXT;
 		}
 	}
 
 	@Override
-	public RetryDecision onRequestError(Statement statement, ConsistencyLevel cl,
-			DriverException e, int nbRetry)
+	public RetryDecision onErrorResponse(Request request, com.datastax.oss.driver.api.core.servererrors.CoordinatorException error, int retryCount)
 	{
-		if (nbRetry == m_retryCount)
-			return RetryDecision.rethrow();
+		if (retryCount >= m_retryCount)
+			return RetryDecision.RETHROW;
 		else
 		{
 			stats.retryCount(m_clusterName, "request_error").put(1);
-			return RetryDecision.tryNextHost(cl);
+			return RetryDecision.RETRY_NEXT;
 		}
 	}
 
 	@Override
-	public void init(Cluster cluster)
+	public RetryDecision onRequestAborted(Request request, Throwable error, int retryCount)
+	{
+		if (retryCount >= m_retryCount)
+			return RetryDecision.RETHROW;
+		else
+		{
+			stats.retryCount(m_clusterName, "request_aborted").put(1);
+			return RetryDecision.RETRY_NEXT;
+		}
+	}
+
+	public void init(DriverContext context)
 	{
 		logger.info("Initializing KairosRetryPolicy: retry count set to "+m_retryCount);
 	}

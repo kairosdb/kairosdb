@@ -1,11 +1,12 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.ProtocolOptions;
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.DefaultConsistencyLevel;
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
+import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigValue;
@@ -33,7 +34,7 @@ public class ClusterConfiguration
 	private final String m_keyspace;
 	private final ConsistencyLevel m_readConsistencyLevel;
 	private final ConsistencyLevel m_writeConsistencyLevel;
-	private final ProtocolOptions.Compression m_compression;
+	private final String m_compression;
 	private final boolean m_useSsl;
 	private final int m_maxQueueSize;
 	private final int m_connectionsLocalCore;
@@ -49,6 +50,7 @@ public class ClusterConfiguration
 	private String m_authPassword;
 	private String m_authUser;
 	private String m_localDCName;
+	private final Config m_config;
 	private final String m_replication;
 	private final long m_startTime;
 	private final long m_endTime;
@@ -59,12 +61,13 @@ public class ClusterConfiguration
 	{
 		//todo load defaults into a config before getting values using withfallback
 
-		m_keyspace = config.getString("keyspace", "kairosdb");
+		m_config = config.getRawConfig();
+		m_keyspace = config.getString("client.basic.session-keyspace", "kairosdb");
 		m_replication = config.getString("replication", "{'class': 'SimpleStrategy','replication_factor' : 1}");
 		m_clusterName = config.getString("name", "default");
-		m_readConsistencyLevel = ConsistencyLevel.valueOf(config.getString("read_consistency_level", "ONE"));
-		m_writeConsistencyLevel = ConsistencyLevel.valueOf(config.getString("write_consistency_level", "QUORUM"));
-		m_compression = ProtocolOptions.Compression.valueOf(config.getString("protocol_compression", "LZ4"));
+		m_readConsistencyLevel = DefaultConsistencyLevel.valueOf(config.getString("read_consistency_level", "ONE"));
+		m_writeConsistencyLevel = DefaultConsistencyLevel.valueOf(config.getString("write_consistency_level", "QUORUM"));
+		m_compression = config.getString("protocol_compression", "LZ4");
 
 		m_rowUnit = TimeUnit.valueOf(config.getString("row_time_unit", TimeUnit.MILLISECONDS.toString()));
 
@@ -173,6 +176,8 @@ public class ClusterConfiguration
 		}
 	}
 
+	public Config getRawConfig() { return m_config; }
+
 	public String getKeyspace()
 	{
 		return m_keyspace;
@@ -188,7 +193,7 @@ public class ClusterConfiguration
 		return m_writeConsistencyLevel;
 	}
 
-	public ProtocolOptions.Compression getCompression()
+	public String getCompression()
 	{
 		return m_compression;
 	}

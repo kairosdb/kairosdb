@@ -1,7 +1,7 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
-import com.datastax.driver.core.exceptions.UnavailableException;
+import com.datastax.oss.driver.api.core.AllNodesFailedException;
+import com.datastax.oss.driver.api.core.servererrors.UnavailableException;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import org.json.JSONWriter;
@@ -101,11 +101,17 @@ public class DeleteBatchHandler extends RetryCallable
 
 			}
 			//If More exceptions are added to retry they need to be added to AdaptiveExecutorService
-			catch (NoHostAvailableException | UnavailableException nae)
+			catch (AllNodesFailedException e)
 			{
 				//Throw this out so the back off retry can happen
-				logger.error(nae.getMessage());
-				throw nae;
+				logger.error(e.getMessage());
+				throw e;
+			}
+			catch (UnavailableException ue)
+			{
+				//Throw this out so the back off retry can happen
+				logger.error(ue.getMessage());
+				throw ue;
 			}
 			catch (Exception e)
 			{

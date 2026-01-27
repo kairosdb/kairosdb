@@ -1,13 +1,8 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
+import com.datastax.oss.driver.api.core.cql.*;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
@@ -15,8 +10,10 @@ import org.kairosdb.core.exception.DatastoreException;
 import org.kairosdb.metrics4j.MetricSourceManager;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.regex.Pattern;
 
 import static org.kairosdb.core.KairosConfigProperties.QUERIES_REGEX_PREFIX;
@@ -28,15 +25,12 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 
 	private final SetMultimap<String, String> m_filterTags;
 	private final Set<String> m_filterTagNames;
-	private DataPointsRowKey m_nextKey;
-	private final Iterator<ResultSet> m_resultSets;
-	private ResultSet m_currentResultSet;
 	private final String m_metricName;
 	private final String m_clusterName;
 	private final RowSpec m_rowSpec;
-	private int m_rawRowKeyCount = 0;
-	private final Map<String, Pattern> m_patternFilter;
-	private final Set<DataPointsRowKey> m_returnedKeys;  //keep from returning duplicates, querying old and new indexes
+	private final Iterator<DataPointsRowKey> m_iterator;
+	private Map<String, Pattern> m_patternFilter;
+	private Set<DataPointsRowKey> m_returnedKeys;  //Contains row keys this iterator will return from.
 
 
 	@Inject
@@ -52,6 +46,8 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 		m_filterTagNames = new HashSet<>();
 		m_patternFilter = new HashMap<>();
 		m_rowSpec = cluster.getRowSpec();
+
+		AsyncResultCollector collector = new AsyncResultCollector();
 
 		//Set of tags to pass to the RowKeyResultSetProcessor, it cannot contain
 		//tags that are also specified as regex values
@@ -80,42 +76,39 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 
 		m_metricName = metricName;
 		m_clusterName = cluster.getClusterName();
-		List<ListenableFuture<ResultSet>> futures = new ArrayList<>();
 		m_returnedKeys = new HashSet<>();
 		long timerStart = System.currentTimeMillis();
 
 		//Legacy key index - index is all in one row
 		if ((startTime < 0) && (endTime >= 0))
 		{
-			BoundStatement negStatement = new BoundStatement(cluster.psRowKeyIndexQuery);
+			BoundStatementBuilder negStatement = cluster.psRowKeyIndexQuery.boundStatementBuilder();
 			negStatement.setBytesUnsafe(0, CassandraDatastore.serializeString(metricName));
 			setStartEndKeys(negStatement, metricName, startTime, -1L);
 			negStatement.setConsistencyLevel(cluster.getReadConsistencyLevel());
 
-			ResultSetFuture future = cluster.executeAsync(negStatement);
+			CompletionStage<AsyncResultSet> future = cluster.executeAsync(negStatement.build());
 
-			futures.add(future);
+			collector.addResultSet(future, this::loadKeyFromOldIndex);
 
-			BoundStatement posStatement = new BoundStatement(cluster.psRowKeyIndexQuery);
-			posStatement.setBytesUnsafe(0, CassandraDatastore.serializeString(metricName));
+			BoundStatementBuilder posStatement = cluster.psRowKeyIndexQuery.boundStatementBuilder()
+					.setBytesUnsafe(0, CassandraDatastore.serializeString(metricName));
+
 			setStartEndKeys(posStatement, metricName, 0L, endTime);
 			posStatement.setConsistencyLevel(cluster.getReadConsistencyLevel());
 
-			future = cluster.executeAsync(posStatement);
-
-			futures.add(future);
-
+			future = cluster.executeAsync(posStatement.build());
+			collector.addResultSet(future, this::loadKeyFromOldIndex);
 		}
 		else
 		{
-			BoundStatement statement = new BoundStatement(cluster.psRowKeyIndexQuery);
-			statement.setBytesUnsafe(0, CassandraDatastore.serializeString(metricName));
+			BoundStatementBuilder statement = cluster.psRowKeyIndexQuery.boundStatementBuilder()
+					.setBytesUnsafe(0, CassandraDatastore.serializeString(metricName));
 			setStartEndKeys(statement, metricName, startTime, endTime);
 			statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
 
-			ResultSetFuture future = cluster.executeAsync(statement);
-
-			futures.add(future);
+			CompletionStage<AsyncResultSet> future = cluster.executeAsync(statement.build());
+			collector.addResultSet(future, this::loadKeyFromOldIndex);
 		}
 
 		//System.out.println();
@@ -124,29 +117,54 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 		List<Long> queryKeyList = createQueryKeyList(cluster, metricName, startTime, endTime);
 		for (Long keyTime : queryKeyList)
 		{
-			futures.add(rowKeyLookup.queryRowKeys(metricName, keyTime, m_filterTags));
+			CompletionStage<AsyncResultSet> future = rowKeyLookup.queryRowKeys(metricName, keyTime, m_filterTags);
+			collector.addResultSet(future, this::loadKeyFromNewIndex);
 		}
 
-		ListenableFuture<List<ResultSet>> listListenableFuture = Futures.allAsList(futures);
+		collector.join();
 
-		try
+		if (collector.hasThrownException())
 		{
-			m_resultSets = listListenableFuture.get().iterator();
-			if (m_resultSets.hasNext())
-				m_currentResultSet = m_resultSets.next();
+			Throwable thrownException = collector.getThrownException();
+			throw new DatastoreException("Error querying keys", thrownException);
+		}
 
-			//ThreadReporter.addDataPoint(CassandraDatastore.KEY_QUERY_TIME, System.currentTimeMillis() - timerStart);
-			//ThreadReporter.reportKeyQueryTime(Duration.ofMillis(System.currentTimeMillis() - timerStart));
-			stats.keyQueryTime().put(Duration.ofMillis(System.currentTimeMillis() - timerStart));
-		}
-		catch (InterruptedException e)
+		m_iterator = m_returnedKeys.iterator();
+
+		stats.keyQueryTime().put(Duration.ofMillis(System.currentTimeMillis() - timerStart));
+	}
+
+	private void addRowKey(DataPointsRowKey rowKey)
+	{
+		Map<String, String> keyTags = rowKey.getTags();
+		for (String tag : m_filterTagNames)
 		{
-			throw new DatastoreException("Index query interrupted", e);
+			String value = keyTags.get(tag);
+			if (value == null || !(m_filterTags.get(tag).contains(value) ||
+					matchRegexFilter(tag, value)))
+				return; //Don't want this key
 		}
-		catch (ExecutionException e)
-		{
-			throw new DatastoreException("Failed to read key index", e);
-		}
+
+		m_returnedKeys.add(rowKey);
+	}
+
+
+	private void loadKeyFromNewIndex(Row record)
+	{
+		if (record.getString(1) == null)
+			return;
+
+		DataPointsRowKey rowKey = new DataPointsRowKey(m_metricName, m_clusterName, record.getInstant(0).toEpochMilli(),
+				record.getString(1), new TreeMap<String, String>(record.getMap(2, String.class, String.class)));
+
+		rowKey.setTtl(record.getInt(3));
+		addRowKey(rowKey);
+	}
+
+	private void loadKeyFromOldIndex(Row record)
+	{
+		DataPointsRowKey rowKey = CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER.fromByteBuffer(record.getByteBuffer(0), m_clusterName);
+		addRowKey(rowKey);
 	}
 
 	private boolean matchRegexFilter(String tag, String value)
@@ -160,52 +178,6 @@ public class CQLFilteredRowKeyIterator implements Iterator<DataPointsRowKey>
 		return false;
 	}
 
-	private DataPointsRowKey nextKeyFromIterator(ResultSet iterator)
-	{
-		DataPointsRowKey next = null;
-		boolean newIndex = iterator.getColumnDefinitions().contains("row_time");
-
-outer:
-		while (!iterator.isExhausted())
-		{
-			DataPointsRowKey rowKey;
-			Row record = iterator.one();
-
-			if (newIndex)
-			{
-				if (record.getString(1) == null)
-					continue; //empty row
-
-				rowKey = new DataPointsRowKey(m_metricName, m_clusterName, record.getTimestamp(0).getTime(),
-						record.getString(1), new TreeMap<String, String>(record.getMap(2, String.class, String.class)));
-
-				rowKey.setTtl(record.getInt(3));
-			}
-			else
-				rowKey = CassandraDatastore.DATA_POINTS_ROW_KEY_SERIALIZER.fromByteBuffer(record.getBytes(0), m_clusterName);
-
-			m_rawRowKeyCount ++;
-
-			Map<String, String> keyTags = rowKey.getTags();
-			for (String tag : m_filterTagNames)
-			{
-				String value = keyTags.get(tag);
-				if (value == null || !(m_filterTags.get(tag).contains(value) || 
-						matchRegexFilter(tag, value)))
-					continue outer; //Don't want this key
-			}
-
-			/* We can get duplicate keys from querying old and new indexes */
-			if (m_returnedKeys.contains(rowKey))
-				continue;
-
-			m_returnedKeys.add(rowKey);
-			next = rowKey;
-			break;
-		}
-
-		return (next);
-	}
 
 	private List<Long> createQueryKeyList(ClusterConnection cluster, String metricName,
 			long startTime, long endTime)
@@ -214,28 +186,27 @@ outer:
 
 		if (cluster.psRowKeyTimeQuery != null) //cluster may be old
 		{
-			BoundStatement statement = new BoundStatement(cluster.psRowKeyTimeQuery);
-			statement.setString(0, metricName);
-			statement.setString(1, DATA_POINTS_TABLE_NAME);
-			statement.setTimestamp(2, new Date(m_rowSpec.calculateRowTime(startTime)));
-			statement.setTimestamp(3, new Date(endTime));
-			statement.setConsistencyLevel(cluster.getReadConsistencyLevel());
+			BoundStatement statement = cluster.psRowKeyTimeQuery.boundStatementBuilder()
+					.setString(0, metricName)
+					.setString(1, DATA_POINTS_TABLE_NAME)
+					.setInstant(2, Instant.ofEpochMilli(m_rowSpec.calculateRowTime(startTime)))
+					.setInstant(3, Instant.ofEpochMilli(endTime))
+					.setConsistencyLevel(cluster.getReadConsistencyLevel())
+					.build();
 
 			//printHosts(m_loadBalancingPolicy.newQueryPlan(m_keyspace, statement));
 
 			ResultSet rows = cluster.execute(statement);
 
-			while (!rows.isExhausted())
-			{
-				ret.add(rows.one().getTimestamp(0).getTime());
-			}
+			for (Row record : rows)
+				ret.add(record.getInstant(0).toEpochMilli());
 		}
 
 		return ret;
 	}
 
 	private void setStartEndKeys(
-			BoundStatement boundStatement,
+			BoundStatementBuilder boundStatement,
 			String metricName, long startTime, long endTime)
 	{
 		DataPointsRowKey startKey = new DataPointsRowKey(metricName, m_clusterName,
@@ -252,36 +223,13 @@ outer:
 	@Override
 	public boolean hasNext()
 	{
-		if (m_nextKey != null)
-			return true;
-
-		while (m_currentResultSet != null && (!m_currentResultSet.isExhausted() || m_resultSets.hasNext()))
-		{
-			m_nextKey = nextKeyFromIterator(m_currentResultSet);
-
-			if (m_nextKey != null)
-				break;
-
-			if (m_resultSets.hasNext())
-				m_currentResultSet = m_resultSets.next();
-		}
-
-		if (m_nextKey == null)
-		{
-			//todo make this a common atomic value
-			stats.rawRowKeyCount().put(m_rawRowKeyCount);
-			//ThreadReporter.addDataPoint(CassandraDatastore.RAW_ROW_KEY_COUNT, m_rawRowKeyCount);
-		}
-
-		return (m_nextKey != null);
+		return m_iterator.hasNext();
 	}
 
 	@Override
 	public DataPointsRowKey next()
 	{
-		DataPointsRowKey ret = m_nextKey;
-		m_nextKey = null;
-		return ret;
+		return m_iterator.next();
 	}
 
 	@Override

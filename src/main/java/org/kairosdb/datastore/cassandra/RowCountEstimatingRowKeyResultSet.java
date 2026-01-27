@@ -1,9 +1,9 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.ColumnDefinitions;
-import com.datastax.driver.core.ExecutionInfo;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
+import com.datastax.oss.driver.api.core.cql.ColumnDefinitions;
+import com.datastax.oss.driver.api.core.cql.ExecutionInfo;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.google.common.primitives.UnsignedInteger;
@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -160,12 +161,6 @@ class RowCountEstimatingRowKeyResultSet implements ResultSet
 	}
 
 	@Override
-	public boolean isExhausted()
-	{
-		return !rowIterator.hasNext();
-	}
-
-	@Override
 	public boolean isFullyFetched()
 	{
 		// TODO If we want to use this as a real ResultSet, this will need to get implemented
@@ -174,13 +169,6 @@ class RowCountEstimatingRowKeyResultSet implements ResultSet
 
 	@Override
 	public int getAvailableWithoutFetching()
-	{
-		// TODO If we want to use this as a real ResultSet, this will need to get implemented
-		throw new UnsupportedOperationException("Not yet implemented");
-	}
-
-	@Override
-	public ListenableFuture<ResultSet> fetchMoreResults()
 	{
 		// TODO If we want to use this as a real ResultSet, this will need to get implemented
 		throw new UnsupportedOperationException("Not yet implemented");
@@ -206,10 +194,9 @@ class RowCountEstimatingRowKeyResultSet implements ResultSet
 	}
 
 	@Override
-	public List<ExecutionInfo> getAllExecutionInfo()
+	public List<ExecutionInfo> getExecutionInfos()
 	{
-		// TODO If we want to use this as a real ResultSet, this will need to get implemented
-		throw new UnsupportedOperationException("Not yet implemented");
+		return Collections.emptyList();
 	}
 
 

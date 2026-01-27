@@ -1,13 +1,15 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Statement;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BatchableStatement;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Statement;
 import com.google.common.base.Function;
 import com.google.common.collect.SetMultimap;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Interface for creating statements for CRUD operations for the row_keys or tag_indexed_row_keys tables.
@@ -17,12 +19,12 @@ interface RowKeyLookup
 	/**
 	 * Create the statements to add new entries for the given row key.
 	 */
-	List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl);
+	List<BatchableStatement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl);
 
 	/**
 	 * Create the statements to index references to the given row key.
 	 */
-	default List<Statement> createIndexStatements(DataPointsRowKey rowKey, int rowKeyTtl) {
+	default List<BatchableStatement> createIndexStatements(DataPointsRowKey rowKey, int rowKeyTtl) {
 		return new ArrayList<>();
 	}
 
@@ -31,7 +33,7 @@ interface RowKeyLookup
 	 */
 	List<Statement> createDeleteStatements(DataPointsRowKey rowKey);
 
-	ListenableFuture<ResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags);
+	CompletionStage<AsyncResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags);
 
 
 	/**

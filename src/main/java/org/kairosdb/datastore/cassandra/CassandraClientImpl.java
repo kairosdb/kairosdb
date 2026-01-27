@@ -1,24 +1,26 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.AuthProvider;
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.HostDistance;
-import com.datastax.driver.core.Metrics;
-import com.datastax.driver.core.PoolingOptions;
-import com.datastax.driver.core.QueryOptions;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.TimestampGenerator;
-import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
-import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
-import com.datastax.driver.core.policies.RoundRobinPolicy;
-import com.datastax.driver.core.policies.TokenAwarePolicy;
+import com.codahale.metrics.*;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.auth.AuthProvider;
+import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
+import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
+import com.datastax.oss.driver.api.core.metadata.Node;
+import com.datastax.oss.driver.api.core.metrics.DefaultNodeMetric;
+import com.datastax.oss.driver.api.core.metrics.DefaultSessionMetric;
+import com.datastax.oss.driver.api.core.metrics.Metrics;
+import com.datastax.oss.driver.internal.core.config.typesafe.DefaultDriverConfigLoader;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import org.kairosdb.core.KairosPostConstructInit;
 import org.kairosdb.metrics4j.MetricSourceManager;
+import org.kairosdb.metrics4j.annotation.Key;
 import org.kairosdb.metrics4j.annotation.Reported;
 import org.kairosdb.metrics4j.annotation.Snapshot;
+import org.kairosdb.metrics4j.collectors.LongCollector;
 import org.kairosdb.metrics4j.collectors.MetricCollector;
 import org.kairosdb.metrics4j.reporting.DoubleValue;
 import org.kairosdb.metrics4j.reporting.MetricReporter;
@@ -26,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.UUID;
 
 /**
  Created by bhawkins on 3/4/15.
@@ -33,8 +36,11 @@ import java.util.Map;
 public class CassandraClientImpl implements CassandraClient, KairosPostConstructInit
 {
 	public static final Logger logger = LoggerFactory.getLogger(CassandraClientImpl.class);
+	public static final NodeMetrics s_nodeMetrics = MetricSourceManager.getSource(NodeMetrics.class);
+	public static final Meter EMPTY_METER = new Meter();
+	public static final Gauge<Integer> EMPTY_GAUGE = () -> 0;
 
-	private Cluster m_cluster;
+	private CqlSession m_session;
 	private final String m_keyspace;
 	private final String m_replication;
 	private LoadBalancingPolicy m_writeLoadBalancingPolicy;
@@ -62,72 +68,34 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 
 	public void init()
 	{
-		//Passing shuffleReplicas = false so we can properly batch data to
-		//instances.  A load balancing policy for reads will set shuffle to true
-		// When connecting to Cassandra notes in different datacenters, the local datacenter should be provided.
-		// Not doing this will select the datacenter from the first connected Cassandra node, which is not guaranteed to be the correct one.
-		m_writeLoadBalancingPolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), TokenAwarePolicy.ReplicaOrdering.TOPOLOGICAL);
-		TokenAwarePolicy readLoadBalancePolicy = new TokenAwarePolicy((m_clusterConfiguration.getLocalDCName() == null) ? new RoundRobinPolicy() : DCAwareRoundRobinPolicy.builder().withLocalDc(m_clusterConfiguration.getLocalDCName()).build(), TokenAwarePolicy.ReplicaOrdering.RANDOM);
+		//final Cluster.Builder builder = new Cluster.Builder()
 
-		final Cluster.Builder builder = new Cluster.Builder()
-				//.withProtocolVersion(ProtocolVersion.V3)
-				.withPoolingOptions(new PoolingOptions().setConnectionsPerHost(HostDistance.LOCAL,
-						m_clusterConfiguration.getConnectionsLocalCore(), m_clusterConfiguration.getConnectionsLocalMax())
-						.setConnectionsPerHost(HostDistance.REMOTE,
-								m_clusterConfiguration.getConnectionsRemoteCore(), m_clusterConfiguration.getConnectionsRemoteMax())
-						.setMaxRequestsPerConnection(HostDistance.LOCAL, m_clusterConfiguration.getRequestsPerConnectionLocal())
-						.setMaxRequestsPerConnection(HostDistance.REMOTE, m_clusterConfiguration.getRequestsPerConnectionRemote())
-						.setMaxQueueSize(m_clusterConfiguration.getMaxQueueSize()))
-				.withReconnectionPolicy(new ExponentialReconnectionPolicy(100, 5 * 1000))
-				.withLoadBalancingPolicy(new SelectiveLoadBalancingPolicy(readLoadBalancePolicy, m_writeLoadBalancingPolicy))
-				.withCompression(m_clusterConfiguration.getCompression())
-				.withoutJMXReporting()
-				.withQueryOptions(new QueryOptions().setConsistencyLevel(m_clusterConfiguration.getReadConsistencyLevel()))
-				.withTimestampGenerator(new TimestampGenerator() //todo need to remove this and put it only on the datapoints call
-				{
-					@Override
-					public long next()
-					{
-						return System.currentTimeMillis();
-					}
-				})
-				.withRetryPolicy(m_kairosRetryPolicy);
+		//This grabs all .conf files in the path - we are looking for the cassandra driver reference.conf
+		Config root = ConfigFactory.load("reference.conf");
+		Config reference = root.getConfig("datastax-java-driver");
 
-		if (m_authProvider != null)
-		{
-			builder.withAuthProvider(m_authProvider);
-		}
-		else if (m_clusterConfiguration.getAuthUser() != null && m_clusterConfiguration.getAuthPassword() != null)
-		{
-			builder.withCredentials(m_clusterConfiguration.getAuthUser(),
-					m_clusterConfiguration.getAuthPassword());
-		}
+		Config clusterConfig = m_clusterConfiguration.getRawConfig();
+		Config clientConfig = clusterConfig.getConfig("client");
+		clientConfig.withFallback(reference);
 
+		CqlSessionBuilder builder = CqlSession.builder();
 
-		for (Map.Entry<String, Integer> hostPort : m_clusterConfiguration.getHostList().entrySet())
-		{
-			logger.info("Connecting to "+hostPort.getKey()+":"+hostPort.getValue());
-			builder.addContactPoint(hostPort.getKey())
-					.withPort(hostPort.getValue());
-		}
+		builder.withConfigLoader(new DefaultDriverConfigLoader(() -> clientConfig));
 
-		if (m_clusterConfiguration.isUseSsl())
-			builder.withSSL();
-
-		m_cluster = builder.build();
+		m_session = builder.build();
 
 		Map<String, String> tags = ImmutableMap.of("cluster", m_clusterName);
-		ClientMetrics clientMetrics = new ClientMetrics();
+		SessionMetrics clientMetrics = new SessionMetrics();
 		//this reports all the @Reported annotated methods
 		MetricSourceManager.addSource(clientMetrics, tags);
 		//This reports for the request timer that needs a snapshot done first
-		MetricSourceManager.addSource(ClientMetrics.class.getName(), "requestsTimer", tags,
+		MetricSourceManager.addSource(SessionMetrics.class.getName(), "requestsTimer", tags,
 				"Client requests timer", clientMetrics);
 	}
 
 	public LoadBalancingPolicy getWriteLoadBalancingPolicy()
 	{
-		return m_writeLoadBalancingPolicy;
+		return m_session.getContext().getLoadBalancingPolicy("ingest");
 	}
 
 	public ClusterConfiguration getClusterConfiguration()
@@ -136,15 +104,16 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 	}
 
 	@Override
-	public Session getKeyspaceSession()
+	public CqlSession getKeyspaceSession()
 	{
-		return m_cluster.connect(m_keyspace);
+		//return m_session.connect(m_keyspace);
+		return m_session;
 	}
 
 	@Override
-	public Session getSession()
+	public CqlSession getSession()
 	{
-		return m_cluster.connect();
+		return m_session;
 	}
 
 	@Override
@@ -159,16 +128,24 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 	@Override
 	public void close()
 	{
-		m_cluster.close();
+		m_session.close();
+	}
+
+	public interface NodeMetrics
+	{
+		LongCollector connections(@Key("cluster")String cluster, @Key("node")String node);
+		LongCollector writeTimeouts(@Key("cluster")String cluster, @Key("node")String node);
+		LongCollector retries(@Key("cluster")String cluster, @Key("node")String node);
 	}
 
 
-	public class ClientMetrics implements MetricCollector
+	public class SessionMetrics implements MetricCollector
 	{
 		private Metrics m_metrics;
 		private com.codahale.metrics.Snapshot m_snapshot;
 
-		public ClientMetrics()
+
+		public SessionMetrics()
 		{
 
 		}
@@ -176,74 +153,44 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 		@Snapshot
 		public void takeSnapshot()
 		{
-			m_metrics = m_cluster.getMetrics();
-			m_snapshot = m_metrics.getRequestsTimer().getSnapshot();
+			m_metrics = m_session.getMetrics().get();
+			Map<UUID, Node> nodes = m_session.getMetadata().getNodes();//some metrics we need to get from the nodes and we will need to tag those metrics
+			for (Map.Entry<UUID, Node> nodeEntry : nodes.entrySet()) {
+				m_metrics.getNodeMetric(nodeEntry.getValue(), DefaultNodeMetric.OPEN_CONNECTIONS).ifPresent(metric ->
+						s_nodeMetrics.connections(m_clusterName, nodeEntry.getKey().toString()).put(((Gauge<Integer>)metric).getValue()));
+
+				m_metrics.getNodeMetric(nodeEntry.getValue(), DefaultNodeMetric.WRITE_TIMEOUTS).ifPresent(metric ->
+						s_nodeMetrics.writeTimeouts(m_clusterName, nodeEntry.getKey().toString()).put(((Counter)metric).getCount()));
+
+				m_metrics.getNodeMetric(nodeEntry.getValue(), DefaultNodeMetric.RETRIES).ifPresent(metric ->
+						s_nodeMetrics.retries(m_clusterName, nodeEntry.getKey().toString()).put(((Counter)metric).getCount()));
+
+
+			}
+
+			Timer metric = (Timer) m_metrics.getSessionMetric(DefaultSessionMetric.CQL_REQUESTS).get();
+			m_snapshot = metric.getSnapshot();
 		}
 
-		@Reported(help = "Cleint bytes sent to Cassandra")
+		@Reported(help = "Client bytes sent to Cassandra")
 		public long bytesSent()
 		{
-			return m_metrics.getBytesSent().getCount();
+			Meter sessionMetric = (Meter) m_metrics.getSessionMetric(DefaultSessionMetric.BYTES_SENT).orElse(EMPTY_METER);
+			return sessionMetric.getCount();
 		}
 
-		@Reported(help = "Cleint bytes received from Cassandra")
+		@Reported(help = "Client bytes received from Cassandra")
 		public long bytesReceived()
 		{
-			return m_metrics.getBytesReceived().getCount();
-		}
-
-		@Reported(help = "Client connection errors")
-		public long connectionErrors()
-		{
-			return m_metrics.getErrorMetrics().getConnectionErrors().getCount();
-		}
-
-		@Reported(help = "Client blocking executor queue depth")
-		public long blockingExecutorQueueDepth()
-		{
-			return m_metrics.getBlockingExecutorQueueDepth().getValue();
-		}
-
-		@Reported(help = "Number of connections to hosts")
-		public long connectedToHosts()
-		{
-			return m_metrics.getConnectedToHosts().getValue();
-		}
-
-		@Reported(help = "Client executor queue depth")
-		public long executorQueueDepth()
-		{
-			return m_metrics.getExecutorQueueDepth().getValue();
+			Meter sessionMetric = (Meter) m_metrics.getSessionMetric(DefaultSessionMetric.BYTES_RECEIVED).orElse(EMPTY_METER);
+			return sessionMetric.getCount();
 		}
 
 		@Reported(help = "Number of known hosts")
 		public long knownHosts()
 		{
-			return m_metrics.getKnownHosts().getValue();
-		}
-
-		@Reported(help = "Number of open connections")
-		public long openConnections()
-		{
-			return m_metrics.getOpenConnections().getValue();
-		}
-
-		@Reported(help = "Queue size for reconnection scheduler")
-		public long reconnectionSchedulerQueueSize()
-		{
-			return m_metrics.getReconnectionSchedulerQueueSize().getValue();
-		}
-
-		@Reported(help = "Queue size for task scheduler")
-		public long taskSchedulerQueueSize()
-		{
-			return m_metrics.getTaskSchedulerQueueSize().getValue();
-		}
-
-		@Reported(help = "Number of trashed connections")
-		public long trashedConnections()
-		{
-			return m_metrics.getTrashedConnections().getValue();
+			Gauge<Integer> sessionMetric = (Gauge<Integer>) m_metrics.getSessionMetric(DefaultSessionMetric.CONNECTED_NODES).orElse(EMPTY_GAUGE);
+			return sessionMetric.getValue();
 		}
 
 		@Override

@@ -1,11 +1,15 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.BatchStatement;
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Host;
-import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.oss.driver.api.core.cql.BatchStatement;
+import com.datastax.oss.driver.api.core.cql.BatchType;
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.datastax.oss.driver.api.core.cql.BatchableStatement;
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.metadata.Node;
+import com.datastax.oss.driver.api.core.cql.Statement;
+import com.datastax.oss.driver.api.core.cql.DefaultBatchType;
+import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
+import java.time.Instant;
 import org.kairosdb.core.DataPoint;
 import org.kairosdb.metrics4j.MetricSourceManager;
 import org.kairosdb.core.annotation.InjectProperty;
@@ -50,11 +54,11 @@ public class CQLBatch
 	private long m_rowKeyTimeIndexCount = 0;
 	private long m_tagIndexedRowKeysCount = 0;
 
-	private final Map<Host, BatchStatement> m_batchMap = new HashMap<>();
+	private final Map<Node, BatchStatement> m_batchMap = new HashMap<>();
 
-	private final BatchStatement m_metricNamesBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-	private final BatchStatement m_dataPointBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
-	private final BatchStatement m_rowKeyBatch = new BatchStatement(BatchStatement.Type.UNLOGGED);
+	private BatchStatement m_metricNamesBatch = BatchStatement.newInstance(DefaultBatchType.UNLOGGED);
+	private BatchStatement m_dataPointBatch = BatchStatement.newInstance(DefaultBatchType.UNLOGGED);
+	private BatchStatement m_rowKeyBatch = BatchStatement.newInstance(DefaultBatchType.UNLOGGED);
 
 	private final List<DataPointsRowKey> m_newRowKeys = new ArrayList<>();
 	private final List<TimedString> m_newMetrics = new ArrayList<>();
@@ -87,12 +91,13 @@ public class CQLBatch
 
 	public void addTimeIndex(String metricName, long rowKeyTime, int rowKeyTtl)
 	{
-		Statement bs = m_clusterConnection.psRowKeyTimeInsert.bind()
+		BoundStatement bs = m_clusterConnection.psRowKeyTimeInsert.boundStatementBuilder()
 				.setString(0, metricName)
 				.setString(1, DATA_POINTS_TABLE_NAME)
-				.setTimestamp(2, new Date(rowKeyTime))
+				.setInstant(2, Instant.ofEpochMilli(rowKeyTime))
 				.setInt(3, rowKeyTtl)
-				.setIdempotent(true);
+				.setIdempotence(true)
+				.build();
 
 		bs.setConsistencyLevel(m_consistencyLevel);
 
@@ -106,12 +111,12 @@ public class CQLBatch
 
 		m_rowKeysCount++;
 		RowKeyLookup rowKeyLookup = m_clusterConnection.getRowKeyLookupForMetric(rowKey.getMetricName());
-		List<Statement> insertStatements = rowKeyLookup.createInsertStatements(rowKey, rowKeyTtl);
+		List<BatchableStatement> insertStatements = rowKeyLookup.createInsertStatements(rowKey, rowKeyTtl);
 		//if this is greater than 1 we are indexing on a tag
 		if (insertStatements.size() > 1)
 			m_tagIndexedRowKeysCount += (insertStatements.size() - 1)
 					;
-		for (Statement rowKeyInsertStmt : insertStatements)
+		for (BatchableStatement rowKeyInsertStmt : insertStatements)
 		{
 			rowKeyInsertStmt.setConsistencyLevel(m_consistencyLevel);
 			m_rowKeyBatch.add(rowKeyInsertStmt);
@@ -121,7 +126,7 @@ public class CQLBatch
 	public void indexRowKey(DataPointsRowKey rowKey, int rowKeyTtl)
 	{
 		RowKeyLookup rowKeyLookup = m_clusterConnection.getRowKeyLookupForMetric(rowKey.getMetricName());
-		for (Statement rowKeyInsertStmt : rowKeyLookup.createIndexStatements(rowKey, rowKeyTtl))
+		for (BatchableStatement rowKeyInsertStmt : rowKeyLookup.createIndexStatements(rowKey, rowKeyTtl))
 		{
 			m_tagIndexedRowKeysCount++;
 			rowKeyInsertStmt.setConsistencyLevel(m_consistencyLevel);
@@ -145,27 +150,29 @@ public class CQLBatch
 		if (!skip)
 		{
 			m_newMetrics.add(metricNameTime);
-			BoundStatement bs = new BoundStatement(m_clusterConnection.psStringIndexInsert);
-			bs.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)));
-			bs.setString(1, metricName);
-			bs.setConsistencyLevel(m_consistencyLevel);
-			bs.setIdempotent(true);
+			BoundStatement bs = m_clusterConnection.psStringIndexInsert.boundStatementBuilder()
+					.setBytesUnsafe(0, ByteBuffer.wrap(ROW_KEY_METRIC_NAMES.getBytes(UTF_8)))
+					.setString(1, metricName)
+					.setConsistencyLevel(m_consistencyLevel)
+					.setIdempotence(true)
+					.build();
 			m_metricNamesBatch.add(bs);
 		}
 	}
 
 	private void addBoundStatement(BoundStatement boundStatement)
 	{
-		Iterator<Host> hosts = m_loadBalancingPolicy.newQueryPlan(m_clusterConnection.getKeyspace(), boundStatement);
+		Iterator<Node> hosts = m_loadBalancingPolicy.newQueryPlan(m_clusterConnection.getKeyspace(), boundStatement);
 		if (hosts.hasNext())
 		{
-			Host hostKey = hosts.next();
+			Node hostKey = hosts.next();
 
 			BatchStatement batchStatement = m_batchMap.get(hostKey);
 			if (batchStatement == null)
 			{
-				batchStatement = new BatchStatement(BatchStatement.Type.UNLOGGED);
-				batchStatement.setConsistencyLevel(m_consistencyLevel);
+				batchStatement = BatchStatement.builder(BatchType.UNLOGGED)
+						.setConsistencyLevel(m_consistencyLevel)
+						.build();
 				m_batchMap.put(hostKey, batchStatement);
 			}
 			batchStatement.add(boundStatement);
@@ -178,15 +185,15 @@ public class CQLBatch
 
 	public void deleteDataPoint(DataPointsRowKey rowKey, int columnTime) throws IOException
 	{
-		BoundStatement boundStatement = new BoundStatement(m_clusterConnection.psDataPointsDelete);
-		boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 		ByteBuffer b = ByteBuffer.allocate(4);
 		b.putInt(columnTime);
 		b.rewind();
-		boundStatement.setBytesUnsafe(1, b);
-
-		boundStatement.setConsistencyLevel(m_consistencyLevel);
-		boundStatement.setIdempotent(true);
+		BoundStatement boundStatement = m_clusterConnection.psDataPointsDelete.boundStatementBuilder()
+				.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey))
+				.setBytesUnsafe(1, b)
+				.setConsistencyLevel(m_consistencyLevel)
+				.setIdempotence(true)
+				.build();
 
 		addBoundStatement(boundStatement);
 	}
@@ -197,17 +204,19 @@ public class CQLBatch
 		KDataOutput kDataOutput = new KDataOutput();
 		dataPoint.writeValueToBuffer(kDataOutput);
 
-		BoundStatement boundStatement = new BoundStatement(m_clusterConnection.psDataPointsInsert);
-		boundStatement.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey));
 		ByteBuffer b = ByteBuffer.allocate(4);
 		b.putInt(columnTime);
 		b.rewind();
-		boundStatement.setBytesUnsafe(1, b);
-		boundStatement.setBytesUnsafe(2, ByteBuffer.wrap(kDataOutput.getBytes()));
-		boundStatement.setInt(3, ttl);
-		boundStatement.setLong(4, m_now);
-		boundStatement.setConsistencyLevel(m_consistencyLevel);
-		boundStatement.setIdempotent(true);
+		BoundStatement boundStatement = m_clusterConnection.psDataPointsInsert.boundStatementBuilder()
+				.setBytesUnsafe(0, DATA_POINTS_ROW_KEY_SERIALIZER.toByteBuffer(rowKey))
+				.setBytesUnsafe(1, b)
+				.setBytesUnsafe(2, ByteBuffer.wrap(kDataOutput.getBytes()))
+				.setInt(3, ttl)
+				.setLong(4, m_now)
+				.setConsistencyLevel(m_consistencyLevel)
+				.setIdempotence(true)
+				.build();
+
 
 		addBoundStatement(boundStatement);
 	}

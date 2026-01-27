@@ -80,9 +80,11 @@
 		</dependency>
 
 		<!-- Cassandra Client -->
-		<dependency org="org.apache.cassandra" name="cassandra-driver-core" rev="3.12.1">
+		<dependency org="org.apache.cassandra" name="java-driver-core" rev="4.19.2"/>
+
+		<!--<dependency org="org.apache.cassandra" name="cassandra-driver-core" rev="3.12.1">
 			<exclude org="com.fasterxml.jackson.core" name="jackson-databind"/>
-		</dependency>
+		</dependency>-->
 		<dependency org="at.yawk.lz4" name="lz4-java" rev="1.10.2"/>
 
 

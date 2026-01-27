@@ -1,8 +1,11 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.*;
-import com.datastax.driver.core.exceptions.InvalidQueryException;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.*;
+import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
+import com.datastax.oss.driver.api.core.servererrors.InvalidQueryException;
+import com.datastax.oss.driver.api.core.session.Session;
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -20,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -30,6 +34,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.ROW_KEY_METRIC_NAMES;
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.serializeString;
@@ -52,11 +58,13 @@ public class ClusterConnection
 		READ
 	}
 
-	public static final String CREATE_KEYSPACE = "CREATE KEYSPACE IF NOT EXISTS %s" +
+	public static final String CREATE_KEYSPACE = "" +
+			"CREATE KEYSPACE IF NOT EXISTS %s" +
 			"  WITH REPLICATION = %s";
 
 	public static final String DATA_POINTS_TABLE_NAME = "data_points";
-	public static final String DATA_POINTS_TABLE = "CREATE TABLE IF NOT EXISTS "+DATA_POINTS_TABLE_NAME+" (\n" +
+	public static final String DATA_POINTS_TABLE = "" +
+			"CREATE TABLE IF NOT EXISTS "+DATA_POINTS_TABLE_NAME+" (\n" +
 			"  key blob,\n" +
 			"  column1 blob,\n" +
 			"  value blob,\n" +
@@ -77,7 +85,8 @@ public class ClusterConnection
 
 	//old row key index
 	public static final String ROW_KEY_INDEX_TABLE_NAME = "row_key_index";
-	public static final String ROW_KEY_INDEX_TABLE = "CREATE TABLE IF NOT EXISTS "+ROW_KEY_INDEX_TABLE_NAME+" (\n" +
+	public static final String ROW_KEY_INDEX_TABLE = "" +
+			"CREATE TABLE IF NOT EXISTS "+ROW_KEY_INDEX_TABLE_NAME+" (\n" +
 			"  key blob,\n" +
 			"  column1 blob,\n" +
 			"  value blob,\n" +
@@ -85,7 +94,8 @@ public class ClusterConnection
 			")";
 
 	public static final String ROW_KEY_TIME_INDEX_NAME = "row_key_time_index";
-	public static final String ROW_KEY_TIME_INDEX = "CREATE TABLE IF NOT EXISTS "+ROW_KEY_TIME_INDEX_NAME+" (\n" +
+	public static final String ROW_KEY_TIME_INDEX = "" +
+			"CREATE TABLE IF NOT EXISTS "+ROW_KEY_TIME_INDEX_NAME+" (\n" +
 			"  metric text,\n" +
 			"  table_name text,\n" +
 			"  row_time timestamp,\n" +
@@ -94,7 +104,8 @@ public class ClusterConnection
 			")";
 
 	public static final String ROW_KEYS_NAME = "row_keys";
-	public static final String ROW_KEYS = "CREATE TABLE IF NOT EXISTS "+ROW_KEYS_NAME+" (\n" +
+	public static final String ROW_KEYS = "" +
+			"CREATE TABLE IF NOT EXISTS "+ROW_KEYS_NAME+" (\n" +
 			"  metric text,\n" +
 			"  table_name text, \n" +
 			"  row_time timestamp,\n" +
@@ -110,7 +121,8 @@ public class ClusterConnection
 	 * partion key. This is used to improve lookups for high tag cardinality.
 	 */
 	public static final String TAG_INDEXED_ROW_KEYS_NAME = "tag_indexed_row_keys";
-	public static final String TAG_INDEXED_ROW_KEYS = "CREATE TABLE IF NOT EXISTS "+TAG_INDEXED_ROW_KEYS_NAME+" (\n" +
+	public static final String TAG_INDEXED_ROW_KEYS = "" +
+			"CREATE TABLE IF NOT EXISTS "+TAG_INDEXED_ROW_KEYS_NAME+" (\n" +
 			"  metric text,\n" +
 			"  table_name text, \n" +
 			"  row_time timestamp,\n" +
@@ -124,7 +136,8 @@ public class ClusterConnection
 			")";
 
 	public static final String STRING_INDEX_TABLE_NAME = "string_index";
-	public static final String STRING_INDEX_TABLE = "CREATE TABLE IF NOT EXISTS "+STRING_INDEX_TABLE_NAME+" (\n" +
+	public static final String STRING_INDEX_TABLE = "" +
+			"CREATE TABLE IF NOT EXISTS "+STRING_INDEX_TABLE_NAME+" (\n" +
 			"  key blob,\n" +
 			"  column1 text,\n" +
 			"  value blob,\n" +
@@ -132,7 +145,8 @@ public class ClusterConnection
 			")";
 
 	public static final String SERVICE_INDEX_NAME = "service_index";
-	public static final String SERVICE_INDEX = "CREATE TABLE IF NOT EXISTS "+SERVICE_INDEX_NAME+" (" +
+	public static final String SERVICE_INDEX = "" +
+			"CREATE TABLE IF NOT EXISTS "+SERVICE_INDEX_NAME+" (" +
 			" service text," +
 			" service_key text," +
 			" key text," +
@@ -142,7 +156,8 @@ public class ClusterConnection
 			")";
 
 	public static final String SPEC_TABLE_NAME = "spec";
-	public static final String SPEC_TABLE = "CREATE TABLE IF NOT EXISTS "+SPEC_TABLE_NAME+" (" +
+	public static final String SPEC_TABLE = "" +
+			"CREATE TABLE IF NOT EXISTS "+SPEC_TABLE_NAME+" (" +
 			" spec_type text," +
 			" name text," +
 			" value text," +
@@ -296,7 +311,7 @@ public class ClusterConnection
 	public PreparedStatement psServiceIndexGetEntries;
 	public PreparedStatement psDataPointsDelete;
 
-	private Session m_session;
+	private CqlSession m_session;
 	private final CassandraClient m_cassandraClient;
 	private boolean m_readonlyMode;
 	private final EnumSet<Type> m_clusterType;
@@ -557,12 +572,12 @@ public class ClusterConnection
 		return m_cassandraClient.getClusterConfiguration().getClusterName();
 	}
 
-	public ResultSet execute(Statement statement)
+	public ResultSet execute(Statement<?> statement)
 	{
 		return m_session.execute(statement);
 	}
 
-	public ResultSetFuture executeAsync(Statement statement)
+	public CompletionStage<AsyncResultSet> executeAsync(Statement<?> statement)
 	{
 		return m_session.executeAsync(statement);
 	}
@@ -584,13 +599,13 @@ public class ClusterConnection
 
 	private void setupSchema(CassandraClient cassandraClient, EnumSet<Type> clusterType)
 	{
-		try (Session session = cassandraClient.getSession())
+		try (CqlSession session = cassandraClient.getSession())
 		{
 			session.execute(String.format(CREATE_KEYSPACE, cassandraClient.getKeyspace(),
 					cassandraClient.getReplication()));
 		}
 
-		try (Session session = cassandraClient.getKeyspaceSession())
+		try (CqlSession session = cassandraClient.getKeyspaceSession())
 		{
 			if (clusterType.contains(Type.WRITE))
 			{
@@ -653,15 +668,15 @@ public class ClusterConnection
 		{
 		}
 
-		protected Statement createInsertStatement(DataPointsRowKey rowKey, int rowKeyTtl)
+		protected BatchableStatement createInsertStatement(DataPointsRowKey rowKey, int rowKeyTtl)
 		{
 			return
 					psRowKeyInsert.bind()
 							.setString(0, rowKey.getMetricName())
 							.setString(1, DATA_POINTS_TABLE_NAME)
-							.setTimestamp(2, new Date(rowKey.getTimestamp()))
+							.setInstant(2, Instant.ofEpochMilli(rowKey.getTimestamp()))
 							.setString(3, rowKey.getDataType())
-							.setMap(4, rowKey.getTags())
+							.setMap(4, rowKey.getTags(), String.class, String.class)
 							.setInt(5, rowKeyTtl)
 							.setIdempotent(true);
 		}
@@ -670,7 +685,7 @@ public class ClusterConnection
 		 This we want to return as it is added to a batch for insert
 		 */
 		@Override
-		public List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
+		public List<BatchableStatement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
 		{
 			return ImmutableList.of(createInsertStatement(rowKey, rowKeyTtl));
 		}
@@ -681,9 +696,9 @@ public class ClusterConnection
 					psRowKeyDelete.bind()
 							.setString(0, rowKey.getMetricName())
 							.setString(1, DATA_POINTS_TABLE_NAME)
-							.setTimestamp(2, new Date(rowKey.getTimestamp()))
+							.setInstant(2, Instant.ofEpochMilli(rowKey.getTimestamp()))
 							.setString(3, rowKey.getDataType())
-							.setMap(4, rowKey.getTags())
+							.setMap(4, rowKey.getTags(), String.class, String.class)
 							.setIdempotent(true);
 		}
 
@@ -698,15 +713,15 @@ public class ClusterConnection
 
 
 		@Override
-		public ListenableFuture<ResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
+		public CompletionStage<AsyncResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
 		{
 			BoundStatement statement = psRowKeyQuery.bind()
 					.setString(0, metricName)
 					.setString(1, DATA_POINTS_TABLE_NAME)
-					.setTimestamp(2, new Date(rowKeyTimestamp));
+					.setInstant(2, Instant.ofEpochMilli(rowKeyTimestamp));
 
 			statement.setConsistencyLevel(getReadConsistencyLevel());
-			ResultSetFuture resultSetFuture = executeAsync(statement);
+			CompletionStage<AsyncResultSet> resultSetFuture = executeAsync(statement);
 			return resultSetFuture;
 		}
 
@@ -747,10 +762,10 @@ public class ClusterConnection
 		}
 
 		@Override
-		public List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
+		public List<BatchableStatement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
 		{
 			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
-			List<Statement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
+			List<BatchableStatement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
 
 			//Insert index statements
 			insertStatements.addAll(createIndexStatements(rowKey, rowKeyTtl));
@@ -762,22 +777,22 @@ public class ClusterConnection
 		}
 
 		@Override
-		public List<Statement> createIndexStatements(DataPointsRowKey rowKey, int rowKeyTtl)
+		public List<BatchableStatement> createIndexStatements(DataPointsRowKey rowKey, int rowKeyTtl)
 		{
 			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
-			List<Statement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
-			Date rowKeyTimestamp = new Date(rowKey.getTimestamp());
+			List<BatchableStatement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
+			Instant rowKeyTimestamp = Instant.ofEpochMilli(rowKey.getTimestamp());
 			for (String tagPair : tagSetHash.getTagPairHashes())
 			{
 				insertStatements.add(
 						psTagIndexedRowKeyInsert.bind()
 								.setString(0, rowKey.getMetricName())
 								.setString(1, DATA_POINTS_TABLE_NAME)
-								.setTimestamp(2, rowKeyTimestamp)
+								.setInstant(2, rowKeyTimestamp)
 								.setString(3, rowKey.getDataType())
 								.setString(4, tagPair)
 								.setInt(5, tagSetHash.getTagCollectionHash())
-								.setMap(6, rowKey.getTags())
+								.setMap(6, rowKey.getTags(), String.class, String.class)
 								.setInt(7, rowKeyTtl)
 								.setIdempotent(true));
 			}
@@ -790,17 +805,17 @@ public class ClusterConnection
 		{
 			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
 			List<Statement> deleteStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
-			Date rowKeyTimestamp = new Date(rowKey.getTimestamp());
+			Instant rowKeyTimestamp = Instant.ofEpochMilli(rowKey.getTimestamp());
 			for (String tagPair : tagSetHash.getTagPairHashes()) {
 				deleteStatements.add(
 						psTagIndexedRowKeyDelete.bind()
 								.setString(0, rowKey.getMetricName())
 								.setString(1, DATA_POINTS_TABLE_NAME)
-								.setTimestamp(2, rowKeyTimestamp)
+								.setInstant(2, rowKeyTimestamp)
 								.setString(3, rowKey.getDataType())
 								.setString(4, tagPair)
 								.setInt(5, tagSetHash.getTagCollectionHash())
-								.setMap(6, rowKey.getTags()));
+								.setMap(6, rowKey.getTags(), String.class, String.class));
 			}
 
 			//Need to delete from row keys table as well
@@ -810,7 +825,7 @@ public class ClusterConnection
 		}
 
 		@Override
-		public ListenableFuture<ResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
+		public CompletionStage<AsyncResultSet> queryRowKeys(String metricName, long rowKeyTimestamp, SetMultimap<String, String> tags)
 		{
 			//Todo: there is probably still to much going on in this method and can likely be simplified
 			if (tags.isEmpty())
@@ -825,7 +840,7 @@ public class ClusterConnection
 			{
 				Statement rowKeyQueryStmt = queryStatementByTagName.values().iterator().next();
 				rowKeyQueryStmt.setConsistencyLevel(getReadConsistencyLevel());
-				ResultSetFuture resultSetFuture = executeAsync(rowKeyQueryStmt);
+				CompletionStage<AsyncResultSet> resultSetFuture = executeAsync(rowKeyQueryStmt);
 
 				return resultSetFuture;
 			}
@@ -843,14 +858,19 @@ public class ClusterConnection
 				}
 
 
-				List<ListenableFuture<ResultSet>> resultSetForKeyTimeFutures = new ArrayList<>(queryStatements.size());
+				List<CompletionStage<AsyncResultSet>> resultSetForKeyTimeFutures = new ArrayList<>(queryStatements.size());
 				for (Statement rowKeyQueryStmt : queryStatements)
 				{
 					rowKeyQueryStmt.setConsistencyLevel(getReadConsistencyLevel());
-					ResultSetFuture resultSetFuture = executeAsync(rowKeyQueryStmt);
+					CompletionStage<AsyncResultSet> resultSetFuture = executeAsync(rowKeyQueryStmt);
+
 					resultSetForKeyTimeFutures.add(resultSetFuture);
 				}
 
+				CompletableFuture<Void> future = CompletableFuture.allOf(resultSetForKeyTimeFutures.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new));
+
+				future.join();
+				future.isCompletedExceptionally();
 
 				ListenableFuture<ResultSet> keyTimeQueryResultSetFuture =
 						Futures.transform(Futures.allAsList(resultSetForKeyTimeFutures), new Function<List<ResultSet>, ResultSet>()
@@ -895,7 +915,7 @@ public class ClusterConnection
 						tagPairEntry.getKey());
 			}
 
-			Date timestamp = new Date(rowKeyTimestamp);
+			Instant timestamp = Instant.ofEpochMilli(rowKeyTimestamp);
 			ListMultimap<String, Statement> queryStatementsByTagName = ArrayListMultimap.create(tagPairHashToTagName.size(), 1);
 			for (Map.Entry<String, String> tagPairHashAndTagNameEntry : tagPairHashToTagName.entrySet())
 			{
@@ -906,13 +926,12 @@ public class ClusterConnection
 						psTagIndexedRowKeyQuery.bind()
 								.setString(0, metricName)
 								.setString(1, DATA_POINTS_TABLE_NAME)
-								.setTimestamp(2, timestamp)
+								.setInstant(2, timestamp)
 								.setString(3, tagPair));
 			}
 			return queryStatementsByTagName;
 		}
 
-		@SuppressWarnings("deprecation")
 		private TagSetHash generateTagPairHashes(DataPointsRowKey rowKey)
 		{
 			//identify which tags we are indexing on
@@ -936,7 +955,7 @@ public class ClusterConnection
 
 		private String hashForTagPair(String tagName, String tagValue)
 		{
-			return tagName + '=' + tagValue;
+			return new StringBuilder().append(tagName).append('=').append(tagValue).toString();
 		}
 	}
 

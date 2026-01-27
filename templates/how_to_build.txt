@@ -17,12 +17,12 @@ To build docker image and push it to Github container registry :
 
 if not logined to github, generate a PAT (classic) on github (https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic) :
 >export CR_PAT=<YOUR_TOKEN>
->echo $CR_PAT | docker login ghcr.io -u <USERNAME> --password-stdin
+>echo \$CR_PAT | docker login ghcr.io -u <USERNAME> --password-stdin
 
 then
 >java make docker-push -D DOCKER_REGISTRY=ghcr.io/kairosdb
 
 
 If you prefer to use docker by your own, you can easily run the following commands from the top folder of this repository:
->docker build -t kairosdb:1.4.0-SNAPSHOT .
->docker run -it --rm -p 0.0.0.0:8080:8080 -p 0.0.0.0:4242:4242 kairosdb:1.4.0-SNAPSHOT
+>docker build -t kairosdb:${version}-${release} .
+>docker run -it --rm -p 0.0.0.0:8080:8080 -p 0.0.0.0:4242:4242 kairosdb:${version}-${release}

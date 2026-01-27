@@ -20,19 +20,24 @@ import tablesaw.rules.DirectoryRule
 import tablesaw.rules.Rule
 import tablesaw.rules.SimpleRule
 
+import java.nio.file.Files
+import java.nio.file.Path
+import groovy.text.SimpleTemplateEngine
+
 import javax.swing.*
 
 println("===============================================")
 
 saw.setProperty(Tablesaw.PROP_MULTI_THREAD_OUTPUT, Tablesaw.PROP_VALUE_ON)
+saw.loadPropertiesFile("version.properties")
 
 programName = saw.getProperty(JavaProgram.PROGRAM_NAME_PROPERTY)
 if (programName == null)
 	programName = "kairosdb"
 
 //Do not use '-' in version string, it breaks rpm uninstall.
-version = "1.4.0"
-release = saw.getProperty("KAIROS_RELEASE_NUMBER", "SNAPSHOT") //package release number
+version = saw.getProperty("kairos.version")
+release = saw.getProperty("KAIROS_RELEASE_NUMBER", saw.getProperty("kairos.release")) //package release number
 summary = "KairosDB"
 description = """\
 KairosDB is a time series database that stores numeric values along
@@ -296,6 +301,36 @@ gzipRule = new GZipRule("package").setSource(tarRule.getTarget())
 		.setDescription("Create deployable tar file")
 		.setTarget("build/${programName}-${version}-${release}.tar.gz")
 		.addDepend(tarRule)
+
+//------------------------------------------------------------------------------
+//Write out template files with version info
+def templates = [:]
+templates["templates/how_to_build.txt"] = "how_to_build.txt"
+templates["templates/Chart.yaml"] = "deployment/helm/Chart.yaml"
+templates["templates/docker-compose.yml"] = "docker-compose.yml"
+
+def templateRule = new SimpleRule("templates").setDescription("Writes template files that contain KairosDB version")
+
+templates.each { source, target ->
+	def tempRule = new SimpleRule().addSource(source)
+			.addTarget(target)
+			.addDepend("version.properties")
+			.setMakeAction("copyTemplate")
+	templateRule.addDepend(tempRule)
+}
+
+
+def copyTemplate(Rule rule)
+{
+	println("Writing ${rule.getTarget()}")
+	def template = Files.readString(Path.of(rule.getSource()))
+
+	def bindings = [version: version, release: release]
+	def engine = new SimpleTemplateEngine()
+	def output = engine.createTemplate(template).make(bindings)
+
+	Files.writeString(Path.of(rule.getTarget()), output.toString())
+}
 
 //------------------------------------------------------------------------------
 //Build rpm file
@@ -591,6 +626,7 @@ def doDocs(Rule rule)
 //Build Docker container
 dockerBuild = new SimpleRule("docker-build").setDescription("Build a Docker image, can specify docker registry with -D DOCKER_REGISTRY=<registry>")
 		.addDepend(tarRule)
+		.addDepend(templateRule)
 		.setMakeAction("doDockerBuild")
 
 def doDockerBuild(Rule rule)

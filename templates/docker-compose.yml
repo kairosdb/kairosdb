@@ -19,7 +19,7 @@ services:
       retries: 30
 
   kairosdb:
-    image: ghcr.io/kairosdb/kairosdb:1.4.0-SNAPSHOT
+    image: ghcr.io/kairosdb/kairosdb:${version}-${release}
     container_name: kairosdb
     environment:
       KAIROSDB_SERVICE_DATASTORE: "org.kairosdb.datastore.cassandra.CassandraModule"

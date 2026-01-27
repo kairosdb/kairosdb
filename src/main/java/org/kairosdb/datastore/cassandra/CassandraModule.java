@@ -16,8 +16,6 @@
 
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.SetMultimap;
@@ -228,7 +226,7 @@ public class CassandraModule extends AbstractModule
 		return clusters.build();
 	}
 
-	@Provides
+	/*@Provides
 	@Singleton
 	LoadBalancingPolicy getLoadBalancingPolicy(@Named("write_cluster")ClusterConnection connection)
 	{
@@ -240,7 +238,7 @@ public class CassandraModule extends AbstractModule
 	ConsistencyLevel getWriteConsistencyLevel(CassandraConfiguration configuration)
 	{
 		return configuration.getWriteCluster().getWriteConsistencyLevel();
-	}
+	}*/
 
 	/*@Provides
 	@Singleton

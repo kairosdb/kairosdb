@@ -1,6 +1,7 @@
 package org.kairosdb.datastore.cassandra;
 
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BatchableStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Statement;
 import com.google.common.base.Function;
@@ -18,12 +19,12 @@ interface RowKeyLookup
 	/**
 	 * Create the statements to add new entries for the given row key.
 	 */
-	List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl);
+	List<BatchableStatement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl);
 
 	/**
 	 * Create the statements to index references to the given row key.
 	 */
-	default List<Statement> createIndexStatements(DataPointsRowKey rowKey, int rowKeyTtl) {
+	default List<BatchableStatement> createIndexStatements(DataPointsRowKey rowKey, int rowKeyTtl) {
 		return new ArrayList<>();
 	}
 

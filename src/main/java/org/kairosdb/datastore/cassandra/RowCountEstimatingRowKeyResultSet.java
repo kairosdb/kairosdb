@@ -1,19 +1,23 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.ColumnDefinitions;
-import com.datastax.driver.core.ExecutionInfo;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
+import com.datastax.oss.driver.api.core.PagingIterable;
+import com.datastax.oss.driver.api.core.cql.ColumnDefinitions;
+import com.datastax.oss.driver.api.core.cql.ExecutionInfo;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.google.common.primitives.UnsignedInteger;
-import com.google.common.util.concurrent.ListenableFuture;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Wrapper around a ResultSet query on the tag_indexed_row_keys table that uses a probabilistic algorithm to estimate
@@ -159,11 +163,26 @@ class RowCountEstimatingRowKeyResultSet implements ResultSet
 		throw new UnsupportedOperationException("Not yet implemented");
 	}
 
+	@NonNull
 	@Override
+	public <TargetElementT> PagingIterable<TargetElementT> map(
+			Function<? super Row, ? extends TargetElementT> elementMapper)
+	{
+		return ResultSet.super.map(elementMapper);
+	}
+
+	@NonNull
+	@Override
+	public Spliterator<Row> spliterator()
+	{
+		return ResultSet.super.spliterator();
+	}
+
+	/*@Override
 	public boolean isExhausted()
 	{
 		return !rowIterator.hasNext();
-	}
+	}*/
 
 	@Override
 	public boolean isFullyFetched()
@@ -179,12 +198,12 @@ class RowCountEstimatingRowKeyResultSet implements ResultSet
 		throw new UnsupportedOperationException("Not yet implemented");
 	}
 
-	@Override
+	/*@Override
 	public ListenableFuture<ResultSet> fetchMoreResults()
 	{
 		// TODO If we want to use this as a real ResultSet, this will need to get implemented
 		throw new UnsupportedOperationException("Not yet implemented");
-	}
+	}*/
 
 	@Override
 	public List<Row> all()
@@ -199,18 +218,31 @@ class RowCountEstimatingRowKeyResultSet implements ResultSet
 	}
 
 	@Override
+	public void forEach(Consumer<? super Row> action)
+	{
+		ResultSet.super.forEach(action);
+	}
+
+	@Override
 	public ExecutionInfo getExecutionInfo()
 	{
 		// TODO If we want to use this as a real ResultSet, this will need to get implemented
 		throw new UnsupportedOperationException("Not yet implemented");
 	}
 
+	@NonNull
 	@Override
+	public List<ExecutionInfo> getExecutionInfos()
+	{
+		return null;
+	}
+
+	/*@Override
 	public List<ExecutionInfo> getAllExecutionInfo()
 	{
 		// TODO If we want to use this as a real ResultSet, this will need to get implemented
 		throw new UnsupportedOperationException("Not yet implemented");
-	}
+	}*/
 
 
 }

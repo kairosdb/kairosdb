@@ -1,15 +1,14 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.BatchStatement;
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Host;
-import com.datastax.driver.core.HostDistance;
-import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
+import com.datastax.oss.driver.api.core.cql.BatchStatement;
 import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
+import com.datastax.oss.driver.api.core.metadata.Node;
+import com.datastax.oss.driver.api.core.session.Request;
+import com.datastax.oss.driver.api.core.session.Session;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
 
 /**
@@ -32,58 +31,59 @@ public class SelectiveLoadBalancingPolicy implements LoadBalancingPolicy
 	}
 
 	@Override
-	public void init(Cluster cluster, Collection<Host> hosts)
+	public void init(@NonNull Map<UUID, Node> nodes, @NonNull DistanceReporter distanceReporter)
 	{
-		m_queryPolicy.init(cluster, hosts);
-		m_writePolicy.init(cluster, hosts);
+		m_queryPolicy.init(nodes, distanceReporter);
+		m_writePolicy.init(nodes, distanceReporter);
 	}
 
-	@Override
-	public HostDistance distance(Host host)
+	/*public HostDistance distance(Node host)
 	{
 		return m_writePolicy.distance(host);
-	}
+	}*/
 
+	@NonNull
 	@Override
-	public Iterator<Host> newQueryPlan(String loggedKeyspace, Statement statement)
+	public Queue<Node> newQueryPlan(@Nullable Request request, @Nullable Session session)
 	{
-		if (statement instanceof BatchStatement)
+		if (request instanceof BatchStatement)
 		{
-			return m_writePolicy.newQueryPlan(loggedKeyspace, statement);
+			return m_writePolicy.newQueryPlan(request, session);
 		}
 		else
 		{
-			return m_queryPolicy.newQueryPlan(loggedKeyspace, statement);
+			return m_queryPolicy.newQueryPlan(request, session);
 		}
 	}
 
 	@Override
-	public void onAdd(Host host)
+	public void onAdd(Node host)
 	{
 		m_queryPolicy.onAdd(host);
 		m_writePolicy.onAdd(host);
 	}
 
 	@Override
-	public void onUp(Host host)
+	public void onUp(Node host)
 	{
 		m_queryPolicy.onUp(host);
 		m_writePolicy.onUp(host);
 	}
 
 	@Override
-	public void onDown(Host host)
+	public void onDown(Node host)
 	{
 		m_queryPolicy.onDown(host);
 		m_writePolicy.onDown(host);
 	}
 
 	@Override
-	public void onRemove(Host host)
+	public void onRemove(Node host)
 	{
 		m_queryPolicy.onRemove(host);
 		m_writePolicy.onRemove(host);
 	}
+
 
 	@Override
 	public void close()

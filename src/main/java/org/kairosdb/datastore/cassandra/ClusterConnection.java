@@ -2,12 +2,7 @@ package org.kairosdb.datastore.cassandra;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
-import com.datastax.oss.driver.api.core.cql.BoundStatement;
-import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.core.cql.ResultSet;
-import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.oss.driver.api.core.cql.Statement;
+import com.datastax.oss.driver.api.core.cql.*;
 import com.datastax.oss.driver.api.core.loadbalancing.LoadBalancingPolicy;
 import com.datastax.oss.driver.api.core.servererrors.InvalidQueryException;
 import com.datastax.oss.driver.api.core.session.Session;
@@ -39,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static org.kairosdb.datastore.cassandra.CassandraDatastore.ROW_KEY_METRIC_NAMES;
@@ -576,12 +572,12 @@ public class ClusterConnection
 		return m_cassandraClient.getClusterConfiguration().getClusterName();
 	}
 
-	public ResultSet execute(Statement statement)
+	public ResultSet execute(Statement<?> statement)
 	{
 		return m_session.execute(statement);
 	}
 
-	public CompletionStage<AsyncResultSet> executeAsync(Statement statement)
+	public CompletionStage<AsyncResultSet> executeAsync(Statement<?> statement)
 	{
 		return m_session.executeAsync(statement);
 	}
@@ -672,7 +668,7 @@ public class ClusterConnection
 		{
 		}
 
-		protected Statement createInsertStatement(DataPointsRowKey rowKey, int rowKeyTtl)
+		protected BatchableStatement createInsertStatement(DataPointsRowKey rowKey, int rowKeyTtl)
 		{
 			return
 					psRowKeyInsert.bind()
@@ -689,7 +685,7 @@ public class ClusterConnection
 		 This we want to return as it is added to a batch for insert
 		 */
 		@Override
-		public List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
+		public List<BatchableStatement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
 		{
 			return ImmutableList.of(createInsertStatement(rowKey, rowKeyTtl));
 		}
@@ -766,10 +762,10 @@ public class ClusterConnection
 		}
 
 		@Override
-		public List<Statement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
+		public List<BatchableStatement> createInsertStatements(DataPointsRowKey rowKey, int rowKeyTtl)
 		{
 			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
-			List<Statement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
+			List<BatchableStatement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
 
 			//Insert index statements
 			insertStatements.addAll(createIndexStatements(rowKey, rowKeyTtl));
@@ -781,10 +777,10 @@ public class ClusterConnection
 		}
 
 		@Override
-		public List<Statement> createIndexStatements(DataPointsRowKey rowKey, int rowKeyTtl)
+		public List<BatchableStatement> createIndexStatements(DataPointsRowKey rowKey, int rowKeyTtl)
 		{
 			TagSetHash tagSetHash = generateTagPairHashes(rowKey);
-			List<Statement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
+			List<BatchableStatement> insertStatements = new ArrayList<>(tagSetHash.getTagPairHashes().size());
 			Instant rowKeyTimestamp = Instant.ofEpochMilli(rowKey.getTimestamp());
 			for (String tagPair : tagSetHash.getTagPairHashes())
 			{
@@ -862,14 +858,19 @@ public class ClusterConnection
 				}
 
 
-				List<ListenableFuture<ResultSet>> resultSetForKeyTimeFutures = new ArrayList<>(queryStatements.size());
+				List<CompletionStage<AsyncResultSet>> resultSetForKeyTimeFutures = new ArrayList<>(queryStatements.size());
 				for (Statement rowKeyQueryStmt : queryStatements)
 				{
 					rowKeyQueryStmt.setConsistencyLevel(getReadConsistencyLevel());
 					CompletionStage<AsyncResultSet> resultSetFuture = executeAsync(rowKeyQueryStmt);
+
 					resultSetForKeyTimeFutures.add(resultSetFuture);
 				}
 
+				CompletableFuture<Void> future = CompletableFuture.allOf(resultSetForKeyTimeFutures.stream().map(CompletionStage::toCompletableFuture).toArray(CompletableFuture[]::new));
+
+				future.join();
+				future.isCompletedExceptionally();
 
 				ListenableFuture<ResultSet> keyTimeQueryResultSetFuture =
 						Futures.transform(Futures.allAsList(resultSetForKeyTimeFutures), new Function<List<ResultSet>, ResultSet>()

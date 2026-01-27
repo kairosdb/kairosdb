@@ -1,7 +1,5 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
-import com.datastax.driver.core.exceptions.UnavailableException;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.inject.assistedinject.Assisted;
 import org.json.JSONWriter;
@@ -217,7 +215,7 @@ public class BatchHandler extends RetryCallable
 
 			}
 			//If More exceptions are added to retry they need to be added to IngestExecutorService
-			catch (NoHostAvailableException nae)
+			/*catch (NoHostAvailableException nae)
 			{
 				clearCacheOfFailedBatch(lastBatch);
 				//Throw this out so the back off retry can happen
@@ -230,7 +228,7 @@ public class BatchHandler extends RetryCallable
 				//Throw this out so the back off retry can happen
 				logger.error(ue.getMessage());
 				throw ue;
-			}
+			}*/
 			catch (Exception e)
 			{
 				clearCacheOfFailedBatch(lastBatch);

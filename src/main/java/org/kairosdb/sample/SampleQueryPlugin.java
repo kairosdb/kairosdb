@@ -24,7 +24,7 @@ import java.util.Iterator;
 @PluginName(name = "samplePlugin", description = "")
 public class SampleQueryPlugin implements QueryPlugin, CassandraRowKeyPlugin
 {
-	public static final Logger logger = LoggerFactory.getLogger(BatchHandler.class);
+	public static final Logger logger = LoggerFactory.getLogger(SampleQueryPlugin.class);
 
 	@Override
 	public Iterator<DataPointsRowKey> getKeysForQueryIterator(DatastoreMetricQuery query)

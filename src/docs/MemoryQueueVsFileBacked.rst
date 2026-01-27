@@ -3,12 +3,12 @@ Memory Queue vs File Backed Queue
 =================================
 
 In the kairosdb.conf file there is a sub section for queue_processor.  The queue
-processor class can be set to either MemoryQueueProcessor or FileQueueProcessor.
-The primary job of the queue processor is to batch up data so it can be efficiently
+rowProcessor class can be set to either MemoryQueueProcessor or FileQueueProcessor.
+The primary job of the queue rowProcessor is to batch up data so it can be efficiently
 sent to whatever data store you have configured.  The queue also helps smooth
 out spikes of incoming data.
 
-Regardless of what queue you configure the queue processor works the same.  Data
+Regardless of what queue you configure the queue rowProcessor works the same.  Data
 is first inserted into the queue.  A single worker thread waits for data to be inserted
 into the queue.  The thread waits for a minimum batch size or a time limit before
 grabbing data to be inserted.  The minimum limits are configured in kairosdb.conf.

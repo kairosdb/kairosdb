@@ -1,10 +1,10 @@
 package org.kairosdb.util;
 
 import com.datastax.oss.driver.api.core.servererrors.UnavailableException;
-import com.github.rholder.retry.Retryer;
-import com.github.rholder.retry.RetryerBuilder;
-import com.github.rholder.retry.WaitStrategies;
 import com.google.common.base.Stopwatch;
+import io.github.itning.retry.Retryer;
+import io.github.itning.retry.RetryerBuilder;
+import io.github.itning.retry.strategy.wait.WaitStrategies;
 import org.kairosdb.core.DataPointSet;
 import org.kairosdb.core.datapoints.DoubleDataPointFactory;
 import org.kairosdb.core.datapoints.DoubleDataPointFactoryImpl;

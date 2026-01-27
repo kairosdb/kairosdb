@@ -1,7 +1,5 @@
 package org.kairosdb.datastore.cassandra;
 
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
-import com.datastax.driver.core.exceptions.UnavailableException;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import org.json.JSONWriter;

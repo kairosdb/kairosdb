@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  Created by bhawkins on 3/4/15.
@@ -173,86 +174,100 @@ public class CassandraClientImpl implements CassandraClient, KairosPostConstruct
 
 		}
 
+		//Added this as metrics can get collected after the cluster has shut down
+		private long ifNotNull(Supplier<Long> cb)
+		{
+			if (m_metrics != null)
+				return cb.get();
+			else
+				return 0L;
+		}
+
 		@Snapshot
 		public void takeSnapshot()
 		{
 			m_metrics = m_cluster.getMetrics();
-			m_snapshot = m_metrics.getRequestsTimer().getSnapshot();
+
+			if (m_metrics != null)
+				m_snapshot = m_metrics.getRequestsTimer().getSnapshot();
 		}
 
 		@Reported(help = "Cleint bytes sent to Cassandra")
 		public long bytesSent()
 		{
-			return m_metrics.getBytesSent().getCount();
+			return ifNotNull(() -> m_metrics.getBytesSent().getCount());
 		}
 
 		@Reported(help = "Cleint bytes received from Cassandra")
 		public long bytesReceived()
 		{
-			return m_metrics.getBytesReceived().getCount();
+			return ifNotNull(() -> m_metrics.getBytesReceived().getCount());
 		}
 
 		@Reported(help = "Client connection errors")
 		public long connectionErrors()
 		{
-			return m_metrics.getErrorMetrics().getConnectionErrors().getCount();
+			return ifNotNull(() -> m_metrics.getErrorMetrics().getConnectionErrors().getCount());
 		}
 
 		@Reported(help = "Client blocking executor queue depth")
 		public long blockingExecutorQueueDepth()
 		{
-			return m_metrics.getBlockingExecutorQueueDepth().getValue();
+			return ifNotNull(() -> (long)m_metrics.getBlockingExecutorQueueDepth().getValue());
 		}
 
 		@Reported(help = "Number of connections to hosts")
 		public long connectedToHosts()
 		{
-			return m_metrics.getConnectedToHosts().getValue();
+			return ifNotNull(() -> (long)m_metrics.getConnectedToHosts().getValue());
 		}
 
 		@Reported(help = "Client executor queue depth")
 		public long executorQueueDepth()
 		{
-			return m_metrics.getExecutorQueueDepth().getValue();
+			return ifNotNull(() -> (long)m_metrics.getExecutorQueueDepth().getValue());
 		}
 
 		@Reported(help = "Number of known hosts")
 		public long knownHosts()
 		{
-			return m_metrics.getKnownHosts().getValue();
+			return ifNotNull(() -> (long)m_metrics.getKnownHosts().getValue());
 		}
 
 		@Reported(help = "Number of open connections")
 		public long openConnections()
 		{
-			return m_metrics.getOpenConnections().getValue();
+			return ifNotNull(() -> (long)m_metrics.getOpenConnections().getValue());
 		}
 
 		@Reported(help = "Queue size for reconnection scheduler")
 		public long reconnectionSchedulerQueueSize()
 		{
-			return m_metrics.getReconnectionSchedulerQueueSize().getValue();
+			return ifNotNull(() -> (long)m_metrics.getReconnectionSchedulerQueueSize().getValue());
 		}
 
 		@Reported(help = "Queue size for task scheduler")
 		public long taskSchedulerQueueSize()
 		{
-			return m_metrics.getTaskSchedulerQueueSize().getValue();
+			return ifNotNull(() -> (long)m_metrics.getTaskSchedulerQueueSize().getValue());
 		}
 
 		@Reported(help = "Number of trashed connections")
 		public long trashedConnections()
 		{
-			return m_metrics.getTrashedConnections().getValue();
+			return ifNotNull(() -> (long)m_metrics.getTrashedConnections().getValue());
 		}
 
 		@Override
 		public void reportMetric(MetricReporter metricReporter)
 		{
-			metricReporter.put("max", new DoubleValue(m_snapshot.getMax()));
-			metricReporter.put("min", new DoubleValue(m_snapshot.getMin()));
-			metricReporter.put("avg", new DoubleValue(m_snapshot.getMean()));
-			metricReporter.put("count", new DoubleValue(m_snapshot.size()));
+			if (m_snapshot != null)
+			{
+				metricReporter.put("max", new DoubleValue(m_snapshot.getMax()));
+				metricReporter.put("min", new DoubleValue(m_snapshot.getMin()));
+				metricReporter.put("avg", new DoubleValue(m_snapshot.getMean()));
+				metricReporter.put("count", new DoubleValue(m_snapshot.size()));
+			}
 		}
 
 		@Override

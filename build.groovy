@@ -6,13 +6,8 @@ import org.redline_rpm.payload.Directive
 import tablesaw.*
 import tablesaw.addons.GZipRule
 import tablesaw.addons.TarRule
-import tablesaw.addons.ivy.IvyAddon
-import tablesaw.addons.ivy.PomRule
-import tablesaw.addons.ivy.PublishRule
-import tablesaw.addons.java.Classpath
-import tablesaw.addons.java.JarRule
-import tablesaw.addons.java.JavaCRule
-import tablesaw.addons.java.JavaProgram
+import tablesaw.addons.ivy.*
+import tablesaw.addons.java.*
 import tablesaw.addons.junit.JUnitRule
 import tablesaw.definitions.Definition
 import tablesaw.rules.CopyRule
@@ -457,11 +452,11 @@ def doDeb(Rule rule)
 
 	if (password != null)
 	{
-		//sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --scripts --bump=0 --to-deb $rpmFile")
-		sudo = saw.createAsyncProcess(rpmDir, "alien --scripts --bump=0 --to-deb $rpmFile")
+		sudo = saw.createAsyncProcess(rpmDir, "sudo -S alien --scripts --bump=0 --to-deb $rpmFile")
+		//sudo = saw.createAsyncProcess(rpmDir, "alien --scripts --bump=0 --to-deb $rpmFile")
 		sudo.run()
 		//pass the password to the process on stdin
-		//sudo.sendMessage("$password\n")
+		sudo.sendMessage("$password\n")
 		sudo.waitForProcess()
 		if (sudo.getExitCode() != 0)
 			throw new TablesawException("Unable to run alien application")
@@ -665,40 +660,14 @@ def doDockerPush(Rule rule)
 
 //------------------------------------------------------------------------------
 //==-- Maven Artifacts --==
-bundleDir = new DirectoryRule("build/bundle")
-copyBundleBits = new CopyRule()
-		.addDepend(bundleDir)
-		.addDepend(gzipRule)
-		.addDepend(jp.getJarRule())
-		.addDepend(jp.getJavaDocJarRule())
-		.addDepend(jp.getSourceJarRule())
-		.addDepend(pomRule)
-		.addFile(gzipRule.getTarget())
-		.addFile(jp.getJarRule().getTarget())
-		.addFile(jp.getJavaDocJarRule().getTarget())
-		.addFile(jp.getSourceJarRule().getTarget())
-		.addFile("build/jar/pom.xml")
-		.setDestination("build/bundle")
+new BundleRule(jp, pomRule).setSignCallback("signArtifacts").setup()
 
-mavenArtifactsRule = new SimpleRule("maven-artifacts").setDescription("Create maven artifacts for maven central")
-		.addDepend(copyBundleBits)
 
-		.setMakeAction("signArtifacts")
-
-void signArtifacts(Rule rule)
+void signArtifacts(String file)
 {
-	for (String source : new RegExFileSet("build/bundle", ".*").getFullFilePaths())
-	{
-		cmd = "gpg -ab "+source
-		saw.exec(cmd)
-	}
+	cmd = "gpg -ab "+file
+	saw.exec(cmd)
 }
-
-new JarRule("maven-bundle", "build/bundle.jar").setDescription("Create bundle for uploading to maven central")
-		.addDepend(mavenArtifactsRule)
-		.addFileSet(new RegExFileSet("build/bundle", ".*"))
-
-
 
 saw.setDefaultTarget("jar")
 

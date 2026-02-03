@@ -130,3 +130,102 @@ To stop KairosDB when running as a background process type
 ::
 
 	> ./kairosdb.sh stop
+
+====================
+Install using Docker
+====================
+
+This guide helps you get started quickly with KairosDB using Docker or Docker Compose.
+
+First, install Docker and verify your installation:
+
+.. code-block:: bash
+
+    docker --version
+    docker compose version
+
+------------------------------
+1. KairosDB (Single Container)
+------------------------------
+
+Running KairosDB on Docker is as simple as:
+
+.. code-block:: bash
+
+    docker run -p 8080:8080 ghcr.io/kairosdb/kairosdb:<TAG>
+
+where ``<TAG>`` is one of the available `image tags <https://github.com/kairosdb/kairosdb/pkgs/container/kairosdb>`_. This starts KairosDB with a sample configuration using the H2 datastore and exposes it on port 8080.
+
+This setup is intended for local testing and development. You may connect to the container to modify the configuration.
+
+------------------------------------------------
+2. KairosDB + Cassandra (Multi-Container Stack)
+------------------------------------------------
+
+If you plan to use Cassandra as a datastore, copy the following ``docker-compose.yml`` file to your computer.
+
+.. code-block:: yaml
+
+    name: kairosdb-stack
+    version: '3.8'
+    services:
+      cassandra:
+        image: cassandra:5.0.6
+        container_name: cassandra
+        environment:
+          CASSANDRA_CLUSTER_NAME: "kairosdb-cluster"
+          CASSANDRA_SEEDS: "cassandra"
+        ports:
+          - "9042:9042"
+        volumes:
+          - cassandra_data:/var/lib/cassandra
+        healthcheck:
+          test: ["CMD-SHELL", "cqlsh -e 'DESCRIBE KEYSPACES' 127.0.0.1 9042 >/dev/null 2>&1"]
+          interval: 10s
+          timeout: 5s
+          retries: 30
+
+      kairosdb:
+        image: ghcr.io/kairosdb/kairosdb:<TAG>
+        container_name: kairosdb
+        environment:
+          KAIROSDB_SERVICE_DATASTORE: "org.kairosdb.datastore.cassandra.CassandraModule"
+        depends_on:
+          cassandra:
+            condition: service_healthy
+        ports:
+          - "8080:8080"
+
+    volumes:
+      cassandra_data:
+
+Adjust the KairosDB image tag and then, from the project root directory, run:
+
+.. code-block:: bash
+
+    docker compose up -d
+
+This starts two services:
+
+- **Cassandra**: Database (port 9042)
+- **KairosDB**: KairosDB API (port 8080)
+
+You can check the status with the following command:
+
+.. code-block:: bash
+
+    docker compose ps
+
+You should see:
+
+.. code-block:: text
+
+    NAME         IMAGE                           STATUS
+    cassandra    cassandra:5.0.6                 Up
+    kairosdb     ghcr.io/kairosdb/kairosdb:...   Up
+
+------------------
+3. Access KairosDB
+------------------
+
+Once the services are ready, access KairosDB via the **Web UI** at http://localhost:8080 and use the **REST API** at http://localhost:8080/api

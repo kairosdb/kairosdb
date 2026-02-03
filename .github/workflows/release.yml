@@ -1,0 +1,105 @@
+name: Release to GHCR
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Build package (creates build/*.tar.gz)
+        shell: bash
+        run: |
+          set -euo pipefail
+          export CLASSPATH="tools/tablesaw-1.3.0.jar"
+          java make package
+          ls -lah build
+
+      - name: Find tar artifact
+        id: artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAR_PATH="$(ls -1 build/*.tar.gz | head -n 1)"
+          echo "tar_path=$TAR_PATH" >> "$GITHUB_OUTPUT"
+          echo "tar_name=$(basename "$TAR_PATH")" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        if: github.event_name != 'workflow_dispatch'
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            ${{ steps.artifact.outputs.tar_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine version from tag
+        id: ver
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            # workflow_dispatch: use 'test' as tag
+            TAG="test-$(date +%Y%m%d%H%M%S)"
+          fi
+
+          VERSION="${TAG#v}"  # remove leading 'v' if present
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}" >> "$GITHUB_OUTPUT"
+
+          echo "Using git tag: $TAG"
+          echo "Docker image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          outputs: type=image,push=true
+          provenance: false
+          sbom: false
+          push: true
+          tags: ${{ steps.ver.outputs.image }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

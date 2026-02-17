@@ -154,6 +154,8 @@ The time zone for the time range of the query. If not specified, UTC is used.
 
 	Changing aggregators on a query does not effect the use of cache.
 
+	Note that caching will not be used unless the ``kairosdb.query_cache.keep_cache_files`` configuration property is set to "true" (the default value is "false").
+
 -----------------
 Metric Properties
 -----------------
